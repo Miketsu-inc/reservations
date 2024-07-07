@@ -553,3 +553,8 @@ video {
   --tw-contain-paint:  ;
   --tw-contain-style:  ;
 }
+
+.text-fuchsia-600 {
+  --tw-text-opacity: 1;
+  color: rgb(192 38 211 / var(--tw-text-opacity));
+}

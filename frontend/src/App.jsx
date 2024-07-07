@@ -1,8 +1,8 @@
 function App() {
   return (
     <>
-      <div class="">
-        <h1>Reservations</h1>
+      <div>
+        <p>Reservations</p>
       </div>
     </>
   )
