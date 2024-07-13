@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 # tailwindcss
-frontend/src/output.css
+frontend/src/assets/output.css
 
 # backend
 .env

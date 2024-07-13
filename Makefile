@@ -5,4 +5,4 @@ air:
 	@air
 
 tailwindcss:
-	@npx tailwindcss -i ./frontend/src/input.css -o ./frontend/src/output.css --watch
+	@npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
