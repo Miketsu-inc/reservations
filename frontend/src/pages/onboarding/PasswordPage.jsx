@@ -15,7 +15,7 @@ export default function PasswordPage() {
           id={"passwordInput"}
         />
         <label
-          className="absolute left-2.5 text-gray-400 scale-110 pointer-events-none transition-all peer-focus:scale-90 peer-focus:-translate-y-4 peer-focus:left-1 peer-focus:text-primary"
+          className="absolute left-2.5 text-gray-400 scale-110 pointer-events-none transition-all peer-focus:scale-90 peer-focus:-translate-y-4 peer-focus:left-1 peer-focus:text-primary peer-valid:scale-90 peer-valid:-translate-y-4 peer-valid:left-1 peer-valid:text-customtxt peer-autofill:scale-90 peer-autofill:-translate-y-4 peer-autofill:left-0.5 peer-autofill:text-customtxt"
           htmlFor="passwordInput"
         >
           Password
@@ -28,12 +28,12 @@ export default function PasswordPage() {
           name={"password"}
           ariaLabel={"password"}
           required={true}
-          autoComplete={"new-password"}
+          autoComplete={"current-password"}
           minLength={"6"}
           id={"confirmPassword"}
         />
         <label
-          className="absolute left-3 text-gray-400 scale-110 pointer-events-none transition-all peer-focus:scale-90 peer-focus:-translate-y-4 peer-focus:left-0.5 peer-focus:text-primary"
+          className="absolute left-3 text-gray-400 scale-110 pointer-events-none transition-all peer-focus:scale-90 peer-focus:-translate-y-4 peer-focus:left-0.5 peer-focus:text-primary peer-valid:scale-90 peer-valid:-translate-y-4 peer-valid:left-1 peer-valid:text-customtxt peer-autofill:scale-90 peer-autofill:-translate-y-4 peer-autofill:left-0.5 peer-autofill:text-customtxt"
           htmlFor="confirmPassword"
         >
           Confirm Password
