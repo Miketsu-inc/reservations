@@ -11,7 +11,7 @@ export default function Input(props) {
       {isTypePassword ? (
         <>
           <input
-            className={`${props.styles} p-2 left-1 w-5/6 bg-transparent outline-none`}
+            className={`${props.styles} left-1 w-5/6 bg-transparent p-2 outline-none`}
             type={visible ? "text" : props.type}
             value={props.value}
             name={props.name}
@@ -46,7 +46,7 @@ export default function Input(props) {
         </>
       ) : (
         <input
-          className={`${props.styles} p-2 w-full bg-transparent focus:outline-none`}
+          className={`${props.styles} w-full bg-transparent p-2 focus:outline-none`}
           name={props.name}
           aria-label={props.ariaLabel}
           type={props.type}

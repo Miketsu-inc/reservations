@@ -3,9 +3,8 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Calendar from "./pages/dashboard/Calendar.jsx";
 import LandingPage from "./pages/landing/LandingPage.jsx";
-import LoginPage from "./pages/onboarding/LoginPage.jsx";
-import SingUp from "./pages/onboarding/SignUp.jsx";
 import LogIn from "./pages/onboarding/LogIn.jsx";
+import SingUp from "./pages/onboarding/SignUp.jsx";
 
 const router = createBrowserRouter([
   {

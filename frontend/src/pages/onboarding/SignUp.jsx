@@ -1,9 +1,9 @@
-import PersonalInfo from "./PersonalInfo";
+import { useState } from "react";
+import TickIcon from "../../assets/TickIcon";
+import Button from "../../components/Button";
 import EmailPage from "./EmailPage";
 import PasswordPage from "./PasswordPage";
-import { useState } from "react";
-import Button from "../../components/Button";
-import TickIcon from "../../assets/TickIcon";
+import PersonalInfo from "./PersonalInfo";
 
 export default function SingUp() {
   const [page, setpage] = useState(0);
@@ -22,10 +22,13 @@ export default function SingUp() {
   };
 
   return (
-    <div className="flex justify-center items-center min-w-min min-h-screen bg-custombg sm:bg-white">
+    <div className="flex min-h-screen min-w-min items-center justify-center bg-custombg sm:bg-white">
       {/*log in container*/}
-      <div className="flex flex-col bg-custombg shadow-sm w-full min-h-screen max-w-md sm:shadow-lg sm:rounded-md sm:min-h-1.5 sm:h-4/5 px-10 lg:px-8 sm:pb-16 sm:pt-6">
-        <div className="flex items-center justify-center mb-8 mt-6 sm:mt-4">
+      <div
+        className="flex min-h-screen w-full max-w-md flex-col bg-custombg px-10 shadow-sm sm:h-4/5
+          sm:min-h-1.5 sm:rounded-md sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
+      >
+        <div className="mb-8 mt-6 flex items-center justify-center sm:mt-4">
           <div
             className={complete ? "complete" : page === 0 ? "active" : "steps"}
           >
@@ -37,8 +40,8 @@ export default function SingUp() {
             <span
               className={
                 complete
-                  ? "absolute text-sm text-customtxt top-10"
-                  : "absolute text-sm text-gray-300 top-10"
+                  ? "absolute top-10 text-sm text-customtxt"
+                  : "absolute top-10 text-sm text-gray-300"
               }
             >
               Name
@@ -58,8 +61,8 @@ export default function SingUp() {
             <span
               className={
                 complete
-                  ? "absolute text-sm text-customtxt top-10"
-                  : "absolute text-sm text-gray-400 top-10"
+                  ? "absolute top-10 text-sm text-customtxt"
+                  : "absolute top-10 text-sm text-gray-400"
               }
             >
               Email
@@ -79,25 +82,25 @@ export default function SingUp() {
             <span
               className={
                 complete
-                  ? "absolute text-sm text-customtxt top-10"
-                  : "absolute text-sm text-gray-300 top-10"
+                  ? "absolute top-10 text-sm text-customtxt"
+                  : "absolute top-10 text-sm text-gray-300"
               }
             >
               Password
             </span>
           </div>
         </div>
-        <h2 className="text-customtxt text-2xl py-2 mt-8 sm:mt-4">
+        <h2 className="mt-8 py-2 text-2xl text-customtxt sm:mt-4">
           {titles[page]}
         </h2>
         <form
-          className="flex flex-col "
+          className="flex flex-col"
           method="POST"
           action=""
           autoComplete="on"
         >
           {PageDisplay()}
-          <div className="text-sm flex justify-between items-center mt-2 py-8 sm:mt-8 sm:pt-6 sm:pb-1">
+          <div className="mt-2 flex items-center justify-between py-8 text-sm sm:mt-8 sm:pb-1 sm:pt-6">
             <Button
               styles={""}
               type={"button"}
