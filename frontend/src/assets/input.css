@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .active {
+    @apply rounded-full w-8 h-8 relative bg-accent flex justify-center items-center text-customtxt;
+  }
+  .steps {
+    @apply relative rounded-full bg-gray-400 p-2 flex items-center justify-center h-8 w-8 text-customtxt;
+  }
+  .complete {
+    @apply relative rounded-full bg-green-700 p-2 flex items-center justify-center h-8 w-8 text-white;
+  }
+  .connectSteps {
+    @apply flex-auto border-t-2 border-gray-400;
+  }
+  .connectComplete {
+    @apply flex-auto border-t-2 border-green-700;
+  }
+}

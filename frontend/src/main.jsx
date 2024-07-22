@@ -1,9 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import Calendar from './pages/dashboard/Calendar.jsx'
-import LandingPage from './pages/landing/LandingPage.jsx'
-import LoginPage from './pages/onboarding/LoginPage.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import Calendar from "./pages/dashboard/Calendar.jsx";
+import LandingPage from "./pages/landing/LandingPage.jsx";
+import LoginPage from "./pages/onboarding/LoginPage.jsx";
+import SingUp from "./pages/onboarding/SignUp.jsx";
+import LogIn from "./pages/onboarding/LogIn.jsx";
 
 const router = createBrowserRouter([
   {
@@ -11,17 +13,21 @@ const router = createBrowserRouter([
     element: <LandingPage />,
   },
   {
+    path: "/signup",
+    element: <SingUp />,
+  },
+  {
     path: "/login",
-    element: <LoginPage />,
+    element: <LogIn />,
   },
   {
     path: "/calendar",
-    element: <Calendar />
-  }
-])
+    element: <Calendar />,
+  },
+]);
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <RouterProvider router={router} />
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
