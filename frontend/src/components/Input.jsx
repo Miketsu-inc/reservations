@@ -11,14 +11,16 @@ export default function Input(props) {
       {isTypePassword ? (
         <>
           <input
-            className={`${props.styles} left-1 w-5/6 bg-transparent p-2 outline-none`}
+            className={`${props.styles} left-1 w-5/6 bg-transparent p-2 text-customtxt outline-none
+              autofill:p-1`}
             type={visible ? "text" : props.type}
             value={props.value}
             name={props.name}
-            required={props.required}
             autoComplete={props.autoComplete}
             minLength={props.minLength}
             id={props.id}
+            onChange={props.onChange}
+            onBlur={props.onBlur}
           />
           <div>
             {visible ? (
@@ -46,15 +48,16 @@ export default function Input(props) {
         </>
       ) : (
         <input
-          className={`${props.styles} w-full bg-transparent p-2 focus:outline-none`}
+          className={`${props.styles} w-full bg-transparent p-2 text-customtxt focus:outline-none`}
           name={props.name}
           aria-label={props.ariaLabel}
           type={props.type}
           value={props.value}
-          required={props.required}
           autoComplete={props.autoComplete}
           minLength={props.minLength}
           id={props.id}
+          onChange={props.onChange}
+          onBlur={props.onBlur}
         />
       )}
     </>
