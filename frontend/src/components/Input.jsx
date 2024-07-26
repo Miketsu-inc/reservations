@@ -17,7 +17,6 @@ export default function Input(props) {
             value={props.value}
             name={props.name}
             autoComplete={props.autoComplete}
-            minLength={props.minLength}
             id={props.id}
             onChange={props.onChange}
             onBlur={props.onBlur}
@@ -54,7 +53,6 @@ export default function Input(props) {
           type={props.type}
           value={props.value}
           autoComplete={props.autoComplete}
-          minLength={props.minLength}
           id={props.id}
           onChange={props.onChange}
           onBlur={props.onBlur}

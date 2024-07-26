@@ -1,95 +1,109 @@
 import { useState } from "react";
-import TickIcon from "../../assets/TickIcon";
 import Button from "../../components/Button";
 import EmailPage from "./EmailPage";
 import PasswordPage from "./PasswordPage";
 import PersonalInfo from "./PersonalInfo";
+import PrograssionBar from "./ProgressionBar";
 
 export default function SingUp() {
   const [page, setpage] = useState(0);
-  const [complete, setComplete] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isValid, setIsValid] = useState({
+    firstname: true,
+    lastName: true,
+    email: true,
+    password: true,
+    confirmPassword: true,
+  });
+
+  const [formValues, setFormValues] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues((...prevData) => ({ ...prevData, [name]: value }));
+    setErrors((...prevErrors) => ({ ...prevErrors, [name]: "" }));
+    setIsValid((...prevIsValid) => ({ ...prevIsValid, [name]: true }));
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const Errors = { ...errors };
+    const newIsValid = { ...isValid };
+    if (name === "firstName") {
+    } else if (name === "lastName") {
+    } else if (
+      name === "email" &&
+      formValues.email.trim() !== "" &&
+      formValues.email.includes("@") !== true
+    ) {
+      Errors.email = "Please enter a valid email";
+      newIsValid.email = false;
+    } else if (name === "password" && formValues.password.trim() !== "") {
+    } else if (
+      name === "confirmPassword" &&
+      formValues.confirmPassword !== formValues.password &&
+      formValues.password.trim() !== true &&
+      formValues.confirmPassword.trim() !== ""
+    ) {
+      Errors.confirmPassword = "This password should match the previous one";
+      newIsValid.confirmPassword = false;
+    } else {
+      delete Errors[name];
+      newIsValid[name] = true;
+    }
+    setIsValid(newIsValid);
+    setErrors(Errors);
+  };
 
   const titles = ["Enter your name", "Enter your email", "Enter your password"];
 
   const PageDisplay = () => {
     if (page === 0) {
-      return <PersonalInfo />;
+      return (
+        <PersonalInfo
+          formValues={formValues}
+          handleChange={handleChange}
+          handleBlur={handleBlur}
+          errors={errors}
+        />
+      );
     } else if (page === 1) {
-      return <EmailPage />;
+      return (
+        <EmailPage
+          formValues={formValues}
+          handleChange={handleChange}
+          handleBlur={handleBlur}
+          errors={errors}
+        />
+      );
     } else if (page === 2) {
-      return <PasswordPage />;
+      return (
+        <PasswordPage
+          formValues={formValues}
+          handleChange={handleChange}
+          handleBlur={handleBlur}
+          errors={errors}
+        />
+      );
     }
   };
 
   return (
-    <div className="flex min-h-screen min-w-min items-center justify-center bg-custombg sm:bg-white">
+    <div className="flex min-h-screen min-w-min items-center justify-center bg-custombg">
       {/*log in container*/}
       <div
         className="flex min-h-screen w-full max-w-md flex-col bg-custombg px-10 shadow-sm sm:h-4/5
-          sm:min-h-1.5 sm:rounded-md sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
+          sm:min-h-1.5 sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6
+          sm:shadow-lg lg:px-8"
       >
-        <div className="mb-8 mt-6 flex items-center justify-center sm:mt-4">
-          <div
-            className={complete ? "complete" : page === 0 ? "active" : "steps"}
-          >
-            {complete ? (
-              <TickIcon height={"20"} width={"20"} styles={"fill-white"} />
-            ) : (
-              "1"
-            )}
-            <span
-              className={
-                complete
-                  ? "absolute top-10 text-sm text-customtxt"
-                  : "absolute top-10 text-sm text-gray-300"
-              }
-            >
-              Name
-            </span>
-          </div>
-          <div
-            className={page === 1 ? "connectComplete" : "connectSteps"}
-          ></div>
-          <div
-            className={complete ? "complete" : page === 1 ? "active" : "steps"}
-          >
-            {complete ? (
-              <TickIcon height={"20"} width={"20"} styles={"fill-white"} />
-            ) : (
-              "2"
-            )}
-            <span
-              className={
-                complete
-                  ? "absolute top-10 text-sm text-customtxt"
-                  : "absolute top-10 text-sm text-gray-400"
-              }
-            >
-              Email
-            </span>
-          </div>
-          <div
-            className={page === 2 ? "connectComplete" : "connectSteps"}
-          ></div>
-          <div
-            className={complete ? "complete" : page === 2 ? "active" : "steps"}
-          >
-            {complete ? (
-              <TickIcon height={"20"} width={"20"} styles={"fill-white"} />
-            ) : (
-              "3"
-            )}
-            <span
-              className={
-                complete
-                  ? "absolute top-10 text-sm text-customtxt"
-                  : "absolute top-10 text-sm text-gray-300"
-              }
-            >
-              Password
-            </span>
-          </div>
-        </div>
+        <PrograssionBar page={page} />
+
         <h2 className="mt-8 py-2 text-2xl text-customtxt sm:mt-4">
           {titles[page]}
         </h2>
@@ -102,10 +116,10 @@ export default function SingUp() {
           {PageDisplay()}
           <div className="mt-2 flex items-center justify-between py-8 text-sm sm:mt-8 sm:pb-1 sm:pt-6">
             <Button
-              styles={""}
-              type={"button"}
+              styles="px-2"
+              type="button"
               disabled={page === 0}
-              onClickHandler={() => {
+              onClick={() => {
                 setpage((currentPage) => currentPage - 1);
               }}
             >
@@ -113,9 +127,10 @@ export default function SingUp() {
             </Button>
             {/*continue button*/}
             <Button
-              styles={""}
+              styles="px-2"
               type={page === titles.length - 1 ? "submit" : "button"}
-              onClickHandler={() => {
+              disabled={page === 2}
+              onClick={() => {
                 page === setpage((currentPage) => currentPage + 1);
               }}
             >
