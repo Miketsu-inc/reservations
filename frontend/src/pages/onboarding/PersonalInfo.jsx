@@ -1,6 +1,12 @@
 import Input from "../../components/Input";
 
-export default function PersonalInfo() {
+export default function PersonalInfo({
+  formValues,
+  handleBlur,
+  handleChange,
+  isValid,
+  errors,
+}) {
   return (
     <div className="mt-6 flex flex-col items-center justify-center gap-4">
       {/* Full name input box*/}
@@ -9,13 +15,15 @@ export default function PersonalInfo() {
           focus-within:border-primary focus-within:outline-none"
       >
         <Input
-          styles={"peer mt-4"}
-          type={"text"}
-          ariaLabel={"first name"}
-          name={"first Name"}
-          required={true}
-          autoComplete={"family-name"}
-          id={"firstName"}
+          styles="peer mt-4"
+          type="text"
+          ariaLabel="first name"
+          name="first Name"
+          autoComplete="family-name"
+          id="firstName"
+          value={formValues.firstName}
+          onChange={handleChange}
+          onBlur={handleBlur}
         />
         <label
           className="pointer-events-none absolute left-2.5 scale-110 text-gray-400 transition-all
@@ -28,18 +36,23 @@ export default function PersonalInfo() {
           First Name
         </label>
       </div>
+      {errors.firstName && (
+        <span className="text-sm text-red-600">{errors.email}</span>
+      )}
       <div
         className="relative flex w-full items-center justify-center border-2 border-customtxt
           focus-within:border-primary focus-within:outline-none"
       >
         <Input
-          styles={"peer mt-4"}
-          type={"text"}
-          ariaLabel={"last name"}
-          name={"Last Name"}
-          required={true}
-          autoComplete={"given-name"}
-          id={"lastName"}
+          styles="peer mt-4"
+          type="text"
+          ariaLabel="last name"
+          name="Last Name"
+          autoComplete="given-name"
+          id="lastName"
+          value={formValues.lastName}
+          onChange={handleChange}
+          onBlur={handleBlur}
         />
         <label
           className="pointer-events-none absolute left-2.5 scale-110 text-gray-400 transition-all
@@ -52,6 +65,9 @@ export default function PersonalInfo() {
           Last Name
         </label>
       </div>
+      {errors.lastName && (
+        <span className="text-sm text-red-600">{errors.email}</span>
+      )}
     </div>
   );
 }

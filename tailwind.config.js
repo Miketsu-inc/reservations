@@ -11,11 +11,11 @@ export default {
     },
     extend: {
       colors: {
-        primary: "#9D90DD",
-        customhvr1: "#9589CF",
-        secondary: "#41386B",
-        customhvr2: "#9589CF",
-        accent: "#6A5AB8",
+        primary: "#6454b1",
+        customhvr1: "#6d5fb3",
+        secondary: "#873984",
+        customhvr2: "#B347AF",
+        accent: "#6666c0",
         custombg: "#131217",
         customtxt: "#EDEDEF",
       },

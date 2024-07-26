@@ -24,7 +24,7 @@ export default function LogIn() {
     const Errors = { ...errors };
     const newIsValid = { ...isValid };
     if (
-      !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formValues.email) &&
+      formValues.email.includes("@") !== true &&
       name === "email" &&
       formValues.email.trim() !== ""
     ) {
@@ -87,9 +87,13 @@ export default function LogIn() {
         <Button
           type="Button"
           name="Goolge button"
-          styles="flex justify-center items-center gap-2 my-2 bg-transparent border border-primary hover:border-2 hover:bg-transparent text-primary"
+          styles="group flex justify-center items-center gap-2 my-2 bg-transparent border border-secondary hover:border-customhvr2 hover:bg-transparent text-secondary hover:text-customhvr2"
         >
-          <GoogleIcon width="20" height="20" styles="fill-primary" />
+          <GoogleIcon
+            width="20"
+            height="20"
+            styles="fill-secondary group-hover:fill-customhvr2"
+          />
           Log in with google
         </Button>
         <div className="mt-4 grid grid-cols-3 items-center text-customtxt">
@@ -102,7 +106,7 @@ export default function LogIn() {
           method="POST"
           action=""
           autoComplete="on"
-          className="relative flex flex-col"
+          className="flex flex-col"
         >
           <div
             className={
@@ -114,12 +118,12 @@ export default function LogIn() {
             }
           >
             <Input
-              styles={"peer mt-4"}
-              type={"text"}
-              name={"email"}
-              ariaLabel={"Email"}
-              autocomplete={"email"}
-              id={"emailInput"}
+              styles="peer mt-4"
+              type="text"
+              name="email"
+              ariaLabel="Email"
+              autocomplete="email"
+              id="emailInput"
               value={formValues.email}
               onChange={handleChange}
               onBlur={handleBlur}
@@ -200,12 +204,12 @@ export default function LogIn() {
             className={
               isValid.password === true
                 ? "mt-3 text-right text-sm text-customtxt hover:underline"
-                : "mt-4 text-right text-sm text-customtxt hover:underline"
+                : "mb-2 text-right text-sm text-customtxt hover:underline"
             }
           >
             Forgot your password?
           </a>
-          <Button name={"login"} type={"submit"} styles={"mt-4"}>
+          <Button name="login" type="submit" styles="mt-4">
             Login
           </Button>
         </form>

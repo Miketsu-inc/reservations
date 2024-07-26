@@ -1,6 +1,12 @@
 import Input from "../../components/Input";
 
-export default function PasswordPage() {
+export default function PasswordPage({
+  formValues,
+  handleBlur,
+  handleChange,
+  isValid,
+  errors,
+}) {
   return (
     <div className="mt-6 flex flex-col items-center justify-center gap-4">
       <div
@@ -8,14 +14,15 @@ export default function PasswordPage() {
           focus-within:border-primary focus-within:outline-none"
       >
         <Input
-          styles={"peer mt-4"}
-          type={"password"}
-          name={"password"}
-          ariaLabel={"password"}
-          required={true}
+          styles="peer mt-4"
+          type="password"
+          name="password"
+          ariaLabel="password"
           autoComplete={"new-password"}
-          minLength={"6"}
-          id={"passwordInput"}
+          id="passwordInput"
+          value={formValues.firstName}
+          onChange={handleChange}
+          onBlur={handleBlur}
         />
         <label
           className="pointer-events-none absolute left-2.5 scale-110 text-gray-400 transition-all
@@ -28,19 +35,23 @@ export default function PasswordPage() {
           Password
         </label>
       </div>
+      {errors.password && (
+        <span className="text-sm text-red-600">{errors.email}</span>
+      )}
       <div
         className="relative flex w-full items-center justify-between border-2 border-customtxt
           focus-within:border-primary focus-within:outline-none"
       >
         <Input
-          styles={"peer mt-4"}
-          type={"password"}
-          name={"password"}
-          ariaLabel={"password"}
-          required={true}
-          autoComplete={"current-password"}
-          minLength={"6"}
-          id={"confirmPassword"}
+          styles="peer mt-4"
+          type="password"
+          name="password"
+          ariaLabel="password"
+          autoComplete="current-password"
+          id="confirmPassword"
+          value={formValues.firstName}
+          onChange={handleChange}
+          onBlur={handleBlur}
         />
         <label
           className="pointer-events-none absolute left-3 scale-110 text-gray-400 transition-all
@@ -53,6 +64,9 @@ export default function PasswordPage() {
           Confirm Password
         </label>
       </div>
+      {errors.confirmPassword && (
+        <span className="text-sm text-red-600">{errors.email}</span>
+      )}
     </div>
   );
 }
