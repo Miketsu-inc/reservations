@@ -1,62 +1,72 @@
 import { useState } from "react";
-import EyeIcon from "../assets/EyeIcon";
-import EyeSlashIcon from "../assets/EyeSlashIcon";
+import InputBase from "./InputBase";
 
 export default function Input(props) {
-  const isTypePassword = props.type === "password";
-  const [visible, setVisible] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [errorText, setErrorText] = useState("");
+  const [isValid, setIsValid] = useState(false);
+
+  const isEmpty = inputValue.trim() === "";
+
+  function onChangeHandler(e) {
+    setInputValue(e.target.value);
+    setErrorText("");
+    setIsValid(true);
+  }
+
+  function onBlurHandler(e) {
+    if (props.inputValidation(inputValue)) {
+      setIsValid(true);
+      setErrorText("");
+    } else {
+      setErrorText(props.errorText);
+      setIsValid(false);
+    }
+
+    props.inputData({
+      name: props.name,
+      value: inputValue,
+      isValid: isValid,
+    });
+  }
 
   return (
     <>
-      {isTypePassword ? (
-        <>
-          <input
-            className={`${props.styles} left-1 w-5/6 bg-transparent p-2 text-customtxt outline-none
-              autofill:p-1`}
-            type={visible ? "text" : props.type}
-            value={props.value}
-            name={props.name}
-            autoComplete={props.autoComplete}
-            id={props.id}
-            onChange={props.onChange}
-            onBlur={props.onBlur}
-          />
-          <div>
-            {visible ? (
-              <EyeSlashIcon
-                onClick={() => {
-                  setVisible(!visible);
-                }}
-                styles={"fill-customtxt absolute -translate-y-1/2 right-4"}
-                width={"20"}
-                height={"20"}
-                role={"button"}
-              />
-            ) : (
-              <EyeIcon
-                onClick={() => {
-                  setVisible(!visible);
-                }}
-                styles={"fill-customtxt absolute -translate-y-1/2 right-4"}
-                width={"20"}
-                height={"20"}
-                role={"button"}
-              />
-            )}
-          </div>
-        </>
-      ) : (
-        <input
-          className={`${props.styles} w-full bg-transparent p-2 text-customtxt focus:outline-none`}
-          name={props.name}
-          aria-label={props.ariaLabel}
+      <div
+        className={`${isValid || isEmpty ? "justify-between border-customtxt focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
+          relative mt-6 flex w-full items-center border-2 focus-within:outline-none`}
+      >
+        <InputBase
+          styles={`${props.styles} peer mt-4`}
           type={props.type}
-          value={props.value}
-          autoComplete={props.autoComplete}
+          value={inputValue}
+          name={props.name}
           id={props.id}
-          onChange={props.onChange}
-          onBlur={props.onBlur}
+          autoComplete={props.autoComplete}
+          onChange={onChangeHandler}
+          onBlur={onBlurHandler}
         />
+        <label
+          className={`${
+            isEmpty
+              ? `left-2.5 scale-110 text-gray-400 transition-all peer-focus:left-1
+                peer-focus:-translate-y-4 peer-focus:scale-90 peer-focus:text-primary`
+              : `${
+                isValid
+                    ? `text-customtxt transition-all peer-focus:left-1 peer-focus:-translate-y-4
+                      peer-focus:scale-90 peer-focus:text-primary`
+                    : "text-red-600"
+                } left-1 -translate-y-4 scale-90`
+ 
+            } pointer-events-none absolute peer-autofill:left-0.5
+            peer-autofill:-translate-y-4 peer-autofill:scale-90`}
+          htmlFor={props.labelHtmlFor}
+        >
+          {props.labelText}
+        </label>
+      </div>
+      {errorText && !isEmpty && (
+        <span className="text-sm text-red-600">{errorText}</span>
       )}
     </>
   );

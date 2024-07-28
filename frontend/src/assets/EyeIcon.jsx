@@ -2,10 +2,10 @@ export default function eyeIcon(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={props.width}
-      height={props.height}
+      width={props.width === undefined ? "20" : props.width}
+      height={props.height === undefined ? "20" : props.height}
+      role={props.role === undefined ? "button" : props.role}
       className={props.styles}
-      role={props.role}
       onClick={props.onClick}
       viewBox="0 0 16 16"
     >
