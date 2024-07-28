@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import GoogleIcon from "../../assets/GoogleIcon";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
@@ -15,6 +15,8 @@ const defaultLoginData = {
 };
 
 export default function LogIn() {
+  const emailRef = useRef();
+  const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
 
   function handleInputData(data) {
@@ -39,9 +41,11 @@ export default function LogIn() {
     e.preventDefault();
 
     if (!loginData.email.isValid) {
-      console.log("Form was not submitted, email is invalid!");
-    } else if (!loginData.password.isValid) {
-      console.log("Form was not submitted, password is invalid!");
+      emailRef.current.triggerValidationError();
+    }
+
+    if (!loginData.password.isValid) {
+      passwordRef.current.triggerValidationError();
     }
   }
 
@@ -79,6 +83,7 @@ export default function LogIn() {
           className="flex flex-col"
         >
           <Input
+            ref={emailRef}
             styles=""
             type="text"
             name="email"
@@ -92,6 +97,7 @@ export default function LogIn() {
             inputData={handleInputData}
           />
           <Input
+            ref={passwordRef}
             styles=""
             type="password"
             name="password"

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import InputBase from "./InputBase";
 
-export default function Input(props) {
+// forwardRef needed for assessing ref
+export default forwardRef(function Input(props, ref) {
+  const [errorTriggered, setErrorTriggered] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [errorText, setErrorText] = useState("");
   const [isValid, setIsValid] = useState(false);
@@ -10,30 +12,44 @@ export default function Input(props) {
 
   function onChangeHandler(e) {
     setInputValue(e.target.value);
+    setErrorTriggered(false);
     setErrorText("");
     setIsValid(true);
   }
 
   function onBlurHandler(e) {
+    let valid = isValid;
+
     if (props.inputValidation(inputValue)) {
-      setIsValid(true);
       setErrorText("");
+      valid = true;
     } else {
       setErrorText(props.errorText);
-      setIsValid(false);
+      valid = false;
     }
+
+    setIsValid(valid);
 
     props.inputData({
       name: props.name,
       value: inputValue,
-      isValid: isValid,
+      isValid: valid,
     });
   }
+
+  // expose triggerErrorText function to Parent component
+  useImperativeHandle(ref, () => ({
+    triggerValidationError() {
+      setErrorText(props.errorText);
+      setErrorTriggered(true);
+      setIsValid(false);
+    },
+  }));
 
   return (
     <>
       <div
-        className={`${isValid || isEmpty ? "justify-between border-customtxt focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
+        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between border-customtxt focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
           relative mt-6 flex w-full items-center border-2 focus-within:outline-none`}
       >
         <InputBase
@@ -48,7 +64,7 @@ export default function Input(props) {
         />
         <label
           className={`${
-            isEmpty
+            isEmpty && !errorTriggered
               ? `left-2.5 scale-110 text-gray-400 transition-all peer-focus:left-1
                 peer-focus:-translate-y-4 peer-focus:scale-90 peer-focus:text-primary`
               : `${
@@ -65,9 +81,11 @@ export default function Input(props) {
           {props.labelText}
         </label>
       </div>
-      {errorText && !isEmpty && (
+      {(errorText && !isEmpty) || errorTriggered ? (
         <span className="text-sm text-red-600">{errorText}</span>
+      ) : (
+        <></>
       )}
     </>
   );
-}
+});
