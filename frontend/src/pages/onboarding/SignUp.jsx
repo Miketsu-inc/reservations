@@ -1,98 +1,94 @@
 import { useState } from "react";
+import TickIcon from "../../assets/TickIcon";
 import Button from "../../components/Button";
 import EmailPage from "./EmailPage";
 import PasswordPage from "./PasswordPage";
 import PersonalInfo from "./PersonalInfo";
 import PrograssionBar from "./ProgressionBar";
 
+const defaultSignUpData = {
+  firstName: {
+    value: "",
+    isValid: false,
+  },
+  lastName: {
+    value: "",
+    isValid: false,
+  },
+  email: {
+    value: "",
+    isValid: false,
+  },
+  password: {
+    value: "",
+    isValid: false,
+  },
+  confirmPassword: {
+    value: "",
+    isValid: false,
+  },
+};
+
+const titles = ["Enter your name", "Enter your email", "Enter your password"];
+
 export default function SingUp() {
   const [page, setpage] = useState(0);
-  const [errors, setErrors] = useState({});
-  const [isValid, setIsValid] = useState({
-    firstname: true,
-    lastName: true,
-    email: true,
-    password: true,
-    confirmPassword: true,
-  });
+  const [signUpData, setSignUpData] = useState(defaultSignUpData);
+  const [submitted, setSubmitted] = useState(false);
 
-  const [formValues, setFormValues] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  function handleInputData(data) {
+    setSignUpData((prevSignUpData) => ({
+      ...prevSignUpData,
+      [data.name]: {
+        value: data.value,
+        isValid: data.isValid,
+      },
+    }));
+  }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues((...prevData) => ({ ...prevData, [name]: value }));
-    setErrors((...prevErrors) => ({ ...prevErrors, [name]: "" }));
-    setIsValid((...prevIsValid) => ({ ...prevIsValid, [name]: true }));
-  };
-
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    const Errors = { ...errors };
-    const newIsValid = { ...isValid };
-    if (name === "firstName") {
-    } else if (name === "lastName") {
-    } else if (
-      name === "email" &&
-      formValues.email.trim() !== "" &&
-      formValues.email.includes("@") !== true
+  function handleClick() {
+    if (
+      (page === 0 &&
+        signUpData.firstName.isValid === true &&
+        page === 0 &&
+        signUpData.lastName.isValid === true) ||
+      (page === 1 && signUpData.email.isValid === true)
     ) {
-      Errors.email = "Please enter a valid email";
-      newIsValid.email = false;
-    } else if (name === "password" && formValues.password.trim() !== "") {
-    } else if (
-      name === "confirmPassword" &&
-      formValues.confirmPassword !== formValues.password &&
-      formValues.password.trim() !== true &&
-      formValues.confirmPassword.trim() !== ""
+      setpage((currentPage) => currentPage + 1);
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (
+      signUpData.password.isValid === true &&
+      signUpData.confirmPassword.isValid === true
     ) {
-      Errors.confirmPassword = "This password should match the previous one";
-      newIsValid.confirmPassword = false;
+      setSubmitted(true);
+      console.log(signUpData);
+    }
+  }
+
+  function changeInputField() {
+    if (page === 0 && !submitted) {
+      return <PersonalInfo handleInputData={handleInputData} />;
+    } else if (page === 1 && !submitted) {
+      return <EmailPage handleInputData={handleInputData} />;
+    } else if (page === 2 && !submitted) {
+      return <PasswordPage handleInputData={handleInputData} />;
     } else {
-      delete Errors[name];
-      newIsValid[name] = true;
-    }
-    setIsValid(newIsValid);
-    setErrors(Errors);
-  };
-
-  const titles = ["Enter your name", "Enter your email", "Enter your password"];
-
-  const PageDisplay = () => {
-    if (page === 0) {
       return (
-        <PersonalInfo
-          formValues={formValues}
-          handleChange={handleChange}
-          handleBlur={handleBlur}
-          errors={errors}
-        />
-      );
-    } else if (page === 1) {
-      return (
-        <EmailPage
-          formValues={formValues}
-          handleChange={handleChange}
-          handleBlur={handleBlur}
-          errors={errors}
-        />
-      );
-    } else if (page === 2) {
-      return (
-        <PasswordPage
-          formValues={formValues}
-          handleChange={handleChange}
-          handleBlur={handleBlur}
-          errors={errors}
-        />
+        <div className="flex flex-col items-center justify-center">
+          <div className="my-4 rounded-full border-4 border-green-600 p-6">
+            <TickIcon height="60" width="60" styles="fill-green-600" />
+          </div>
+          <div className="mt-10 text-center text-xl font-semibold text-customtxt">
+            You signed up successfully
+          </div>
+        </div>
       );
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center bg-custombg">
@@ -102,40 +98,40 @@ export default function SingUp() {
           sm:min-h-1.5 sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6
           sm:shadow-lg lg:px-8"
       >
-        <PrograssionBar page={page} />
+        <PrograssionBar page={page} submitted={submitted} />
 
         <h2 className="mt-8 py-2 text-2xl text-customtxt sm:mt-4">
-          {titles[page]}
+          {!submitted ? titles[page] : ""}
         </h2>
         <form
           className="flex flex-col"
           method="POST"
           action=""
           autoComplete="on"
+          onSubmit={handleSubmit}
         >
-          {PageDisplay()}
-          <div className="mt-2 flex items-center justify-between py-8 text-sm sm:mt-8 sm:pb-1 sm:pt-6">
-            <Button
-              styles="px-2"
-              type="button"
-              disabled={page === 0}
-              onClick={() => {
-                setpage((currentPage) => currentPage - 1);
-              }}
-            >
-              Prev
-            </Button>
-            {/*continue button*/}
-            <Button
-              styles="px-2"
-              type={page === titles.length - 1 ? "submit" : "button"}
-              disabled={page === 2}
-              onClick={() => {
-                page === setpage((currentPage) => currentPage + 1);
-              }}
-            >
-              {page === titles.length - 1 ? "Submit" : "Countinue"}
-            </Button>
+          {changeInputField()}
+          <div className="flex items-center justify-center">
+            {page < titles.length - 1 ? (
+              <Button
+                styles="mt-10 w-3/4 font-semibold"
+                type="button"
+                key="continueButton"
+                onClick={handleClick}
+              >
+                Continue
+              </Button>
+            ) : !submitted ? (
+              <Button
+                styles="mt-10 w-3/4 font-semibold"
+                type="submit"
+                key="submitButton"
+              >
+                Finish
+              </Button>
+            ) : (
+              ""
+            )}
           </div>
         </form>
         {/* Login page link */}
