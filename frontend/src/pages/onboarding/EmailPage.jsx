@@ -7,6 +7,7 @@ export default function EmailPage(props) {
   return (
     <Input
       styles=""
+      ref={props.emailRef}
       type="text"
       name="email"
       id="emailInput"

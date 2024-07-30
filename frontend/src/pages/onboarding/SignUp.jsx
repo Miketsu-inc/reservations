@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import TickIcon from "../../assets/TickIcon";
 import Button from "../../components/Button";
 import EmailPage from "./EmailPage";
@@ -32,6 +32,11 @@ const defaultSignUpData = {
 const titles = ["Enter your name", "Enter your email", "Enter your password"];
 
 export default function SingUp() {
+  const firstNameRef = useRef();
+  const lastNameRef = useRef();
+  const emailRef = useRef();
+  const passwordRef = useRef();
+  const confirmPasswordRef = useRef();
   const [page, setpage] = useState(0);
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [submitted, setSubmitted] = useState(false);
@@ -47,23 +52,44 @@ export default function SingUp() {
   }
 
   function handleClick() {
-    if (
-      (page === 0 &&
-        signUpData.firstName.isValid === true &&
-        page === 0 &&
-        signUpData.lastName.isValid === true) ||
-      (page === 1 && signUpData.email.isValid === true)
-    ) {
+    let hasError = false;
+    if (page === 0 && !signUpData.firstName.isValid) {
+      firstNameRef.current.triggerValidationError();
+      hasError = true;
+    }
+    if (page === 0 && !signUpData.lastName.isValid) {
+      lastNameRef.current.triggerValidationError();
+      hasError = true;
+    }
+    if (page === 1 && !signUpData.email.isValid) {
+      emailRef.current.triggerValidationError();
+      hasError = true;
+    }
+
+    if (!hasError) {
       setpage((currentPage) => currentPage + 1);
     }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
+    let hasError = false;
+    if (!signUpData.password.isValid) {
+      passwordRef.current.triggerValidationError();
+      hasError = true;
+    }
+    if (!signUpData.confirmPassword.isValid) {
+      confirmPasswordRef.current.triggerValidationError();
+      hasError = true;
+    }
     if (
-      signUpData.password.isValid === true &&
-      signUpData.confirmPassword.isValid === true
+      signUpData.password.value !== signUpData.confirmPassword.value &&
+      signUpData.password.isValid
     ) {
+      confirmPasswordRef.current.triggerValidationError();
+      hasError = true;
+    }
+    if (!hasError) {
       setSubmitted(true);
       console.log(signUpData);
     }
@@ -71,11 +97,25 @@ export default function SingUp() {
 
   function changeInputField() {
     if (page === 0 && !submitted) {
-      return <PersonalInfo handleInputData={handleInputData} />;
+      return (
+        <PersonalInfo
+          handleInputData={handleInputData}
+          firstNameRef={firstNameRef}
+          lastNameRef={lastNameRef}
+        />
+      );
     } else if (page === 1 && !submitted) {
-      return <EmailPage handleInputData={handleInputData} />;
+      return (
+        <EmailPage handleInputData={handleInputData} emailRef={emailRef} />
+      );
     } else if (page === 2 && !submitted) {
-      return <PasswordPage handleInputData={handleInputData} />;
+      return (
+        <PasswordPage
+          handleInputData={handleInputData}
+          passwordRef={passwordRef}
+          confirmPasswordRef={confirmPasswordRef}
+        />
+      );
     } else {
       return (
         <div className="flex flex-col items-center justify-center">

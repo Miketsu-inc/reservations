@@ -12,6 +12,7 @@ export default function PersonalInfo(props) {
     <>
       <Input
         styles=""
+        ref={props.firstNameRef}
         type="text"
         name="firstName"
         id="firstNameInput"
@@ -19,12 +20,13 @@ export default function PersonalInfo(props) {
         autoComplete="family-name"
         labelText="First Name"
         labelHtmlFor="firstNameInput"
-        errorText=""
+        errorText="Please enter your first name"
         inputValidation={firstNameValidation}
         inputData={props.handleInputData}
       />
       <Input
         styles=""
+        ref={props.lastNameRef}
         type="text"
         name="lastName"
         id="lastNameInput"
@@ -32,7 +34,7 @@ export default function PersonalInfo(props) {
         autoComplete="given-name"
         labelText="Last Name"
         labelHtmlFor="lastNameInput"
-        errorText=""
+        errorText="Please enter your last name"
         inputValidation={lastNameValidation}
         inputData={props.handleInputData}
       />

@@ -14,6 +14,7 @@ export default function PasswordPage(props) {
     <>
       <Input
         styles=""
+        ref={props.passwordRef}
         type="password"
         name="password"
         id="passwordInput"
@@ -27,6 +28,7 @@ export default function PasswordPage(props) {
       />
       <Input
         styles=""
+        ref={props.confirmPasswordRef}
         type="password"
         name="confirmPassword"
         id="confirmPasswordInput"
@@ -34,7 +36,7 @@ export default function PasswordPage(props) {
         autoComplete="new-password"
         labelText="Confirm Password"
         labelHtmlFor="confirmPasswordInput"
-        errorText=""
+        errorText="The two password should match"
         inputValidation={confirmPasswordValidation}
         inputData={props.handleInputData}
       />
