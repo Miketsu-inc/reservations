@@ -122,7 +122,7 @@ export default function SingUp() {
           <div className="my-4 rounded-full border-4 border-green-600 p-6">
             <TickIcon height="60" width="60" styles="fill-green-600" />
           </div>
-          <div className="mt-10 text-center text-xl font-semibold text-customtxt">
+          <div className="mt-10 text-center text-xl font-semibold">
             You signed up successfully
           </div>
         </div>
@@ -131,16 +131,16 @@ export default function SingUp() {
   }
 
   return (
-    <div className="flex min-h-screen min-w-min items-center justify-center bg-custombg">
+    <div className="flex min-h-screen min-w-min items-center justify-center">
       {/*log in container*/}
       <div
-        className="flex min-h-screen w-full max-w-md flex-col bg-custombg px-10 shadow-sm sm:h-4/5
-          sm:min-h-1.5 sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6
-          sm:shadow-lg lg:px-8"
+        className="flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
+          sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6 sm:shadow-lg
+          lg:px-8"
       >
         <PrograssionBar page={page} submitted={submitted} />
 
-        <h2 className="mt-8 py-2 text-2xl text-customtxt sm:mt-4">
+        <h2 className="mt-8 py-2 text-2xl sm:mt-4">
           {!submitted ? titles[page] : ""}
         </h2>
         <form

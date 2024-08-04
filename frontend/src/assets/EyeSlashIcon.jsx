@@ -1,12 +1,12 @@
-export default function eyeSlashIcon(props) {
+export default function eyeSlashIcon({ width, height, role, styles, onClick }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={props.width === undefined ? "20" : props.width}
-      height={props.height === undefined ? "20" : props.height}
-      role={props.role === undefined ? "button" : props.role}
-      className={props.styles}
-      onClick={props.onClick}
+      width={width === undefined ? "20" : width}
+      height={height === undefined ? "20" : height}
+      role={role === undefined ? "button" : role}
+      className={styles}
+      onClick={onClick}
       viewBox="0 0 16 16"
     >
       <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z" />

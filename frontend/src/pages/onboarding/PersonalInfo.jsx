@@ -1,6 +1,10 @@
 import Input from "../../components/Input";
 
-export default function PersonalInfo(props) {
+export default function PersonalInfo({
+  firstNameRef,
+  lastNameRef,
+  handleInputData,
+}) {
   function firstNameValidation(firstName) {
     return firstName;
   }
@@ -12,7 +16,7 @@ export default function PersonalInfo(props) {
     <>
       <Input
         styles=""
-        ref={props.firstNameRef}
+        ref={firstNameRef}
         type="text"
         name="firstName"
         id="firstNameInput"
@@ -22,11 +26,11 @@ export default function PersonalInfo(props) {
         labelHtmlFor="firstNameInput"
         errorText="Please enter your first name"
         inputValidation={firstNameValidation}
-        inputData={props.handleInputData}
+        inputData={handleInputData}
       />
       <Input
         styles=""
-        ref={props.lastNameRef}
+        ref={lastNameRef}
         type="text"
         name="lastName"
         id="lastNameInput"
@@ -36,7 +40,7 @@ export default function PersonalInfo(props) {
         labelHtmlFor="lastNameInput"
         errorText="Please enter your last name"
         inputValidation={lastNameValidation}
-        inputData={props.handleInputData}
+        inputData={handleInputData}
       />
     </>
   );

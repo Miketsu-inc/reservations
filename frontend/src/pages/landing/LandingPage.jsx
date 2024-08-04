@@ -1,7 +1,7 @@
 export default function LandingPage() {
   return (
     <>
-      <p>Reservations</p>
+      <p className="">Reservations</p>
     </>
   );
 }

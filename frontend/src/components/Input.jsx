@@ -2,10 +2,23 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 import InputBase from "./InputBase";
 
 // forwardRef needed for assessing ref
-export default forwardRef(function Input(props, ref) {
+export default forwardRef(function Input(
+  {
+    id,
+    name,
+    type,
+    autoComplete,
+    labelText,
+    labelHtmlFor,
+    styles,
+    errorText,
+    inputValidation,
+    inputData,
+  },
+  ref
+) {
   const [errorTriggered, setErrorTriggered] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [errorText, setErrorText] = useState("");
   const [isValid, setIsValid] = useState(false);
 
   const isEmpty = inputValue.trim() === "";
@@ -13,25 +26,22 @@ export default forwardRef(function Input(props, ref) {
   function onChangeHandler(e) {
     setInputValue(e.target.value);
     setErrorTriggered(false);
-    setErrorText("");
     setIsValid(true);
   }
 
   function onBlurHandler(e) {
     let valid = isValid;
 
-    if (props.inputValidation(inputValue)) {
-      setErrorText("");
+    if (inputValidation(inputValue)) {
       valid = true;
     } else {
-      setErrorText(props.errorText);
       valid = false;
     }
 
     setIsValid(valid);
 
-    props.inputData({
-      name: props.name,
+    inputData({
+      name: name,
       value: inputValue,
       isValid: valid,
     });
@@ -40,7 +50,6 @@ export default forwardRef(function Input(props, ref) {
   // expose triggerErrorText function to Parent component
   useImperativeHandle(ref, () => ({
     triggerValidationError() {
-      setErrorText(props.errorText);
       setErrorTriggered(true);
       setIsValid(false);
     },
@@ -49,16 +58,16 @@ export default forwardRef(function Input(props, ref) {
   return (
     <>
       <div
-        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between border-customtxt focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
+        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
           relative mt-6 flex w-full items-center border-2 focus-within:outline-none`}
       >
         <InputBase
-          styles={`${props.styles} peer mt-4`}
-          type={props.type}
+          styles={`${styles} peer mt-4`}
+          type={type}
           value={inputValue}
-          name={props.name}
-          id={props.id}
-          autoComplete={props.autoComplete}
+          name={name}
+          id={id}
+          autoComplete={autoComplete}
           onChange={onChangeHandler}
           onBlur={onBlurHandler}
         />
@@ -69,19 +78,19 @@ export default forwardRef(function Input(props, ref) {
                 peer-focus:-translate-y-4 peer-focus:scale-90 peer-focus:text-primary`
               : `${
                 isValid
-                    ? `text-customtxt transition-all peer-focus:left-1 peer-focus:-translate-y-4
-                      peer-focus:scale-90 peer-focus:text-primary`
+                    ? `transition-all peer-focus:left-1 peer-focus:-translate-y-4 peer-focus:scale-90
+                      peer-focus:text-primary`
                     : "text-red-600"
                 } left-1 -translate-y-4 scale-90`
  
             } pointer-events-none absolute peer-autofill:left-0.5
             peer-autofill:-translate-y-4 peer-autofill:scale-90`}
-          htmlFor={props.labelHtmlFor}
+          htmlFor={labelHtmlFor}
         >
-          {props.labelText}
+          {labelText}
         </label>
       </div>
-      {(errorText && !isEmpty) || errorTriggered ? (
+      {(!isValid && !isEmpty) || errorTriggered ? (
         <span className="text-sm text-red-600">{errorText}</span>
       ) : (
         <></>

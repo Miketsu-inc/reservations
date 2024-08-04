@@ -1,3 +1,6 @@
+run:
+	@make -j 3 tailwindcss vite air
+
 vite:
 	@npm run dev
 

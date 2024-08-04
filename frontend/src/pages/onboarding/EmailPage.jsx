@@ -1,13 +1,13 @@
 import Input from "../../components/Input";
 
-export default function EmailPage(props) {
+export default function EmailPage({ emailRef, handleInputData }) {
   function emailValidation(email) {
     return email.includes("@");
   }
   return (
     <Input
       styles=""
-      ref={props.emailRef}
+      ref={emailRef}
       type="text"
       name="email"
       id="emailInput"
@@ -17,7 +17,7 @@ export default function EmailPage(props) {
       labelHtmlFor="emailInput"
       errorText="Please enter a valid email!"
       inputValidation={emailValidation}
-      inputData={props.handleInputData}
+      inputData={handleInputData}
     />
   );
 }

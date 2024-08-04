@@ -1,8 +1,13 @@
 import Input from "../../components/Input";
+import { MIN_PASSWORD_LENGTH } from "../../lib/constants";
 
-export default function PasswordPage(props) {
+export default function PasswordPage({
+  passwordRef,
+  confirmPasswordRef,
+  handleInputData,
+}) {
   function passwordValidation(password) {
-    return password.length > 6;
+    return password.length > MIN_PASSWORD_LENGTH;
   }
   function confirmPasswordValidation(confirmPassword) {
     return confirmPassword;
@@ -14,7 +19,7 @@ export default function PasswordPage(props) {
     <>
       <Input
         styles=""
-        ref={props.passwordRef}
+        ref={passwordRef}
         type="password"
         name="password"
         id="passwordInput"
@@ -24,11 +29,11 @@ export default function PasswordPage(props) {
         labelHtmlFor="passwordInput"
         errorText="Please enter a valid password!"
         inputValidation={passwordValidation}
-        inputData={props.handleInputData}
+        inputData={handleInputData}
       />
       <Input
         styles=""
-        ref={props.confirmPasswordRef}
+        ref={confirmPasswordRef}
         type="password"
         name="confirmPassword"
         id="confirmPasswordInput"
@@ -38,7 +43,7 @@ export default function PasswordPage(props) {
         labelHtmlFor="confirmPasswordInput"
         errorText="The two password should match"
         inputValidation={confirmPasswordValidation}
-        inputData={props.handleInputData}
+        inputData={handleInputData}
       />
     </>
   );

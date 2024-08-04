@@ -2,23 +2,32 @@ import { useState } from "react";
 import EyeIcon from "../assets/EyeIcon";
 import EyeSlashIcon from "../assets/EyeSlashIcon";
 
-export default function InputBase(props) {
-  const isTypePassword = props.type === "password";
+export default function InputBase({
+  id,
+  name,
+  type,
+  value,
+  autoComplete,
+  styles,
+  onChange,
+  onBlur,
+}) {
+  const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
 
   return (
     <>
       <input
-        className={`${props.styles} ${isTypePassword ? "left-1 w-5/6 autofill:p-1" : "w-full"}
-          bg-transparent p-2 text-customtxt outline-none`}
+        className={`${styles} ${isTypePassword ? "left-1 w-5/6 autofill:p-1" : "w-full"}
+          bg-transparent p-2 outline-none`}
         // is this needed? wouldn't all non password inputs be text?
-        type={isTypePassword ? (visible ? "text" : props.type) : props.type}
-        value={props.value}
-        name={props.name}
-        id={props.id}
-        autoComplete={props.autoComplete}
-        onChange={props.onChange}
-        onBlur={props.onBlur}
+        type={isTypePassword ? (visible ? "text" : type) : type}
+        value={value}
+        name={name}
+        id={id}
+        autoComplete={autoComplete}
+        onChange={onChange}
+        onBlur={onBlur}
       />
       {isTypePassword ? (
         <div>

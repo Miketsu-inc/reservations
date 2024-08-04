@@ -1,9 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
+    "./frontend/index.html",
     "./frontend/src/main.jsx",
-    "./frontend/src/components/*.jsx",
+    "./frontend/src/assets/*.jsx",
     "./frontend/src/pages/**/*.jsx",
+    "./frontend/src/components/*.jsx",
   ],
   theme: {
     fontFamily: {
