@@ -57,7 +57,7 @@ export default function LogIn() {
           sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:py-8 sm:shadow-lg md:rounded-md
           lg:h-auto lg:rounded-md lg:px-8 xl:h-auto xl:rounded-md xl:px-8"
       >
-        <h2 className={"mt-8 py-1 text-4xl font-bold sm:mt-4"}>Login</h2>
+        <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
         <p className="mt-2 py-2 text-sm">Welcome back!</p>
         <Button
           type="Button"
@@ -109,14 +109,14 @@ export default function LogIn() {
             inputValidation={passwordValidation}
             inputData={handleInputData}
           />
-          <a href="#" className={"mt-3 text-right text-sm hover:underline"}>
+          <a href="#" className="mt-3 text-right text-sm hover:underline">
             Forgot your password?
           </a>
           <Button name="login" type="submit" styles="mt-4">
             Login
           </Button>
         </form>
-        <hr className={"mt-10 border-gray-300"} />
+        <hr className="mt-10 border-gray-300" />
         <div className="mt-2 flex items-center justify-evenly pb-4 pt-8 text-sm sm:mt-2 sm:pt-8">
           <p className="flex-1">If you don't have an account...</p>
           <a
