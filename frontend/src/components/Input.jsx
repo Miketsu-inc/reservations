@@ -74,17 +74,17 @@ export default forwardRef(function Input(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `left-2.5 scale-110 text-gray-400 transition-all peer-focus:left-1
-                peer-focus:-translate-y-4 peer-focus:scale-90 peer-focus:text-primary`
+              ? `left-2 text-lg text-gray-400 transition-all peer-focus:left-2
+                peer-focus:-translate-y-4 peer-focus:text-sm peer-focus:text-primary`
               : `${
                 isValid
-                    ? `transition-all peer-focus:left-1 peer-focus:-translate-y-4 peer-focus:scale-90
+                    ? `transition-all peer-focus:left-2 peer-focus:-translate-y-4 peer-focus:text-sm
                       peer-focus:text-primary`
                     : "text-red-600"
-                } left-1 -translate-y-4 scale-90`
+                } left-2 -translate-y-4 text-sm`
  
-            } pointer-events-none absolute peer-autofill:left-0.5
-            peer-autofill:-translate-y-4 peer-autofill:scale-90`}
+            } pointer-events-none absolute peer-autofill:left-2 peer-autofill:-translate-y-4
+            peer-autofill:text-sm`}
           htmlFor={labelHtmlFor}
         >
           {labelText}
