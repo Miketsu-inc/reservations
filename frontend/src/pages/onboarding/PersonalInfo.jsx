@@ -1,19 +1,66 @@
+import { useRef, useState } from "react";
+import Button from "../../components/Button";
 import Input from "../../components/Input";
 
-export default function PersonalInfo({
-  firstNameRef,
-  lastNameRef,
-  handleInputData,
-}) {
+const defaultNameData = {
+  firstName: {
+    value: "",
+    isValid: false,
+  },
+  lastName: {
+    value: "",
+    isValid: false,
+  },
+};
+
+export default function PersonalInfo({ isCompleted, sendInputData }) {
+  const firstNameRef = useRef();
+  const lastNameRef = useRef();
+  const [nameData, setNameData] = useState(defaultNameData);
+
   function firstNameValidation(firstName) {
-    return firstName;
+    return true;
   }
+
   function lastNameValidation(lastName) {
-    return lastName;
+    return true;
+  }
+
+  function handleInputData(data) {
+    setNameData((prevNameData) => ({
+      ...prevNameData,
+      [data.name]: {
+        value: data.value,
+        isValid: data.isValid,
+      },
+    }));
+  }
+
+  function handleClick() {
+    let hasError = false;
+
+    if (!nameData.firstName.isValid) {
+      firstNameRef.current.triggerValidationError();
+      hasError = true;
+    }
+
+    if (!nameData.lastName.isValid) {
+      lastNameRef.current.triggerValidationError();
+      hasError = true;
+    }
+
+    if (!hasError) {
+      sendInputData({
+        firstName: nameData.firstName.value,
+        lastName: nameData.lastName.value,
+      });
+      isCompleted(true);
+    }
   }
 
   return (
     <>
+      <h2 className="mt-8 py-2 text-2xl sm:mt-4">Enter your name</h2>
       <Input
         styles=""
         ref={firstNameRef}
@@ -42,6 +89,15 @@ export default function PersonalInfo({
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />
+      <div className="flex items-center justify-center">
+        <Button
+          styles="mt-10 w-full font-semibold"
+          type="button"
+          onClick={handleClick}
+        >
+          Continue
+        </Button>
+      </div>
     </>
   );
 }

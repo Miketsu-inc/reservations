@@ -1,17 +1,17 @@
 import ProgressBarStep from "./ProgressBarStep";
 
-export default function ProgressBar({ page, submitted }) {
+export default function ProgressBar({ step }) {
   return (
     <div className="mb-8 mt-6 flex items-center justify-center sm:mt-4">
       <ProgressBarStep
         step="1"
         stepName="Name"
-        isActive={page === 0}
-        isCompleted={page > 0}
+        isActive={step === 0}
+        isCompleted={step > 0}
       />
       <div
         className={
-          page > 0
+          step > 0
             ? "flex-auto border-t-2 border-green-700 transition-all"
             : "flex-auto border-t-2 border-gray-400"
         }
@@ -19,12 +19,12 @@ export default function ProgressBar({ page, submitted }) {
       <ProgressBarStep
         step="2"
         stepName="Email"
-        isActive={page === 1}
-        isCompleted={page > 1}
+        isActive={step === 1}
+        isCompleted={step > 1}
       />
       <div
         className={
-          page > 1
+          step > 1
             ? "flex-auto border-t-2 border-green-700 transition-all"
             : "flex-auto border-t-2 border-gray-400"
         }
@@ -32,8 +32,8 @@ export default function ProgressBar({ page, submitted }) {
       <ProgressBarStep
         step="3"
         stepName="Password"
-        isActive={page === 2}
-        isCompleted={submitted}
+        isActive={step === 2}
+        isCompleted={step > 2}
       />
     </div>
   );

@@ -1,148 +1,75 @@
-import { useRef, useState } from "react";
-import TickIcon from "../../assets/TickIcon";
-import Button from "../../components/Button";
+import { useEffect, useState } from "react";
+import { useMultiStepForm } from "../../lib/hooks";
 import EmailPage from "./EmailPage";
 import PasswordPage from "./PasswordPage";
 import PersonalInfo from "./PersonalInfo";
 import ProgressBar from "./ProgressBar";
+import SubmissionCompleted from "./SubmissionCompleted";
 
 const defaultSignUpData = {
-  firstName: {
-    value: "",
-    isValid: false,
-  },
-  lastName: {
-    value: "",
-    isValid: false,
-  },
-  email: {
-    value: "",
-    isValid: false,
-  },
-  password: {
-    value: "",
-    isValid: false,
-  },
-  confirmPassword: {
-    value: "",
-    isValid: false,
-  },
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
 };
 
-const titles = ["Enter your name", "Enter your email", "Enter your password"];
-
 export default function SingUp() {
-  const firstNameRef = useRef();
-  const lastNameRef = useRef();
-  const emailRef = useRef();
-  const passwordRef = useRef();
-  const confirmPasswordRef = useRef();
-  const [page, setpage] = useState(0);
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
-  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitDone, setIsSubmitDone] = useState(false);
+  const { step, stepIndex, nextStep } = useMultiStepForm([
+    <PersonalInfo
+      sendInputData={signUpDataHandler}
+      isCompleted={isCompletedHandler}
+    />,
+    <EmailPage
+      sendInputData={signUpDataHandler}
+      isCompleted={isCompletedHandler}
+    />,
+    <PasswordPage
+      sendInputData={signUpDataHandler}
+      isCompleted={isCompletedHandler}
+    />,
+    <></>,
+  ]);
 
-  function handleInputData(data) {
-    setSignUpData((prevSignUpData) => ({
-      ...prevSignUpData,
-      [data.name]: {
-        value: data.value,
-        isValid: data.isValid,
-      },
-    }));
-  }
+  useEffect(() => {
+    if (isSubmitting) {
+      setIsSubmitting(false);
 
-  function handleClick() {
-    let hasError = false;
-    if (page === 0 && !signUpData.firstName.isValid) {
-      firstNameRef.current.triggerValidationError();
-      hasError = true;
+      // send POST request
+      console.log(signUpData);
+      setIsSubmitDone(true);
     }
-    if (page === 0 && !signUpData.lastName.isValid) {
-      lastNameRef.current.triggerValidationError();
-      hasError = true;
-    }
-    if (page === 1 && !signUpData.email.isValid) {
-      emailRef.current.triggerValidationError();
-      hasError = true;
-    }
-
-    if (!hasError) {
-      setpage((currentPage) => currentPage + 1);
-    }
-  }
+  }, [signUpData, isSubmitting]);
 
   function handleSubmit(e) {
     e.preventDefault();
-    let hasError = false;
-    if (!signUpData.password.isValid) {
-      passwordRef.current.triggerValidationError();
-      hasError = true;
-    }
-    if (!signUpData.confirmPassword.isValid) {
-      confirmPasswordRef.current.triggerValidationError();
-      hasError = true;
-    }
-    if (
-      signUpData.password.value !== signUpData.confirmPassword.value &&
-      signUpData.password.isValid
-    ) {
-      confirmPasswordRef.current.triggerValidationError();
-      hasError = true;
-    }
-    if (!hasError) {
-      setSubmitted(true);
-      console.log(signUpData);
-    }
+    setIsSubmitting(true);
   }
 
-  function changeInputField() {
-    if (page === 0 && !submitted) {
-      return (
-        <PersonalInfo
-          handleInputData={handleInputData}
-          firstNameRef={firstNameRef}
-          lastNameRef={lastNameRef}
-        />
-      );
-    } else if (page === 1 && !submitted) {
-      return (
-        <EmailPage handleInputData={handleInputData} emailRef={emailRef} />
-      );
-    } else if (page === 2 && !submitted) {
-      return (
-        <PasswordPage
-          handleInputData={handleInputData}
-          passwordRef={passwordRef}
-          confirmPasswordRef={confirmPasswordRef}
-        />
-      );
-    } else {
-      return (
-        <div className="flex flex-col items-center justify-center">
-          <div className="my-4 rounded-full border-4 border-green-600 p-6">
-            <TickIcon height="60" width="60" styles="fill-green-600" />
-          </div>
-          <div className="mt-10 text-center text-xl font-semibold">
-            You signed up successfully
-          </div>
-        </div>
-      );
+  function signUpDataHandler(data) {
+    setSignUpData((prev) => {
+      return { ...prev, ...data };
+    });
+  }
+
+  function isCompletedHandler(isCompleted) {
+    if (isCompleted) {
+      nextStep();
     }
   }
 
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
-      {/*log in container*/}
       <div
         className="flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
           sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6 sm:shadow-lg
           lg:px-8"
       >
-        <ProgressBar page={page} submitted={submitted} />
+        <ProgressBar step={stepIndex} />
 
-        <h2 className="mt-8 py-2 text-2xl sm:mt-4">
-          {!submitted ? titles[page] : ""}
-        </h2>
         <form
           className="flex flex-col"
           method="POST"
@@ -150,31 +77,13 @@ export default function SingUp() {
           autoComplete="on"
           onSubmit={handleSubmit}
         >
-          {changeInputField()}
-          <div className="flex items-center justify-center">
-            {page < titles.length - 1 ? (
-              <Button
-                styles="mt-10 w-3/4 font-semibold"
-                type="button"
-                key="continueButton"
-                onClick={handleClick}
-              >
-                Continue
-              </Button>
-            ) : !submitted ? (
-              <Button
-                styles="mt-10 w-3/4 font-semibold"
-                type="submit"
-                key="submitButton"
-              >
-                Finish
-              </Button>
-            ) : (
-              ""
-            )}
-          </div>
+          {step}
         </form>
-        {/* Login page link */}
+        {isSubmitDone ? (
+          <SubmissionCompleted text="You signed up successfully" />
+        ) : (
+          <></>
+        )}
       </div>
     </div>
   );
