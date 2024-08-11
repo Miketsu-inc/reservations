@@ -9,7 +9,7 @@ const defaultEmailData = {
   },
 };
 
-export default function EmailPage({ isCompleted, sendInputData }) {
+export default function EmailForm({ isCompleted, sendInputData }) {
   const emailRef = useRef();
   const [emailData, setEmailData] = useState(defaultEmailData);
 

@@ -13,7 +13,7 @@ const defaultNameData = {
   },
 };
 
-export default function PersonalInfo({ isCompleted, sendInputData }) {
+export default function NameForm({ isCompleted, sendInputData }) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);

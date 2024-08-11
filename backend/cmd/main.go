@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"reservations/backend/server"
+	"reservations/backend/cmd/server"
 )
 
 func main() {

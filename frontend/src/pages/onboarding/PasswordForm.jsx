@@ -14,7 +14,7 @@ const defaultPasswordData = {
   },
 };
 
-export default function PasswordPage({ isCompleted, sendInputData }) {
+export default function PasswordForm({ isCompleted, sendInputData }) {
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
@@ -52,7 +52,7 @@ export default function PasswordPage({ isCompleted, sendInputData }) {
 
     if (passwordData.password.value !== passwordData.confirmPassword.value) {
       confirmPasswordRef.current.triggerValidationError();
-      hasError = true
+      hasError = true;
     }
 
     if (!hasError) {

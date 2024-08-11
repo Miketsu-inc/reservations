@@ -3,9 +3,10 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Calendar from "./pages/dashboard/Calendar.jsx";
 import LandingPage from "./pages/landing/LandingPage.jsx";
-import LogIn from "./pages/onboarding/LogIn.jsx";
-import SingUp from "./pages/onboarding/SignUp.jsx";
+import LoginPage from "./pages/onboarding/LoginPage.jsx";
+import SingUpPage from "./pages/onboarding/SignUpPage.jsx";
 
+// make sure to also add the route path to router.go
 const router = createBrowserRouter([
   {
     path: "/",
@@ -13,11 +14,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/signup",
-    element: <SingUp />,
+    element: <SingUpPage />,
   },
   {
     path: "/login",
-    element: <LogIn />,
+    element: <LoginPage />,
   },
   {
     path: "/calendar",

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMultiStepForm } from "../../lib/hooks";
-import EmailPage from "./EmailPage";
-import PasswordPage from "./PasswordPage";
-import PersonalInfo from "./PersonalInfo";
+import EmailForm from "./EmailForm";
+import NameForm from "./NameForm";
+import PasswordForm from "./PasswordForm";
 import ProgressBar from "./ProgressBar";
 import SubmissionCompleted from "./SubmissionCompleted";
 
@@ -14,20 +14,20 @@ const defaultSignUpData = {
   confirmPassword: "",
 };
 
-export default function SingUp() {
+export default function SingUpPage() {
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const { step, stepIndex, nextStep } = useMultiStepForm([
-    <PersonalInfo
+    <NameForm
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
-    <EmailPage
+    <EmailForm
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
-    <PasswordPage
+    <PasswordForm
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,

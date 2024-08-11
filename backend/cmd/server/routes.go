@@ -23,6 +23,7 @@ func staticFilesHandler(r *chi.Mux) {
 		"/login",
 		"/signup",
 		"/calendar",
+		"/reservations",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
