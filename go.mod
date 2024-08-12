@@ -1,4 +1,4 @@
-module reservations
+module github.com/miketsu-inc/reservations
 
 go 1.22.3
 

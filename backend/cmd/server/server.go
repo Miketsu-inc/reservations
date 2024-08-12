@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	"reservations/backend/cmd/database"
+	"github.com/miketsu-inc/reservations/backend/cmd/database"
 )
 
 type Server struct {

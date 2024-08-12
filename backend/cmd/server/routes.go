@@ -2,7 +2,8 @@ package server
 
 import (
 	"net/http"
-	"reservations/frontend"
+
+	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

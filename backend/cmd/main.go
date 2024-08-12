@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"reservations/backend/cmd/server"
+
+	"github.com/miketsu-inc/reservations/backend/cmd/server"
 )
 
 func main() {
