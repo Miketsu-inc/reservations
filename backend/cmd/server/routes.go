@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -14,6 +15,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.Logger)
 
 	staticFilesHandler(r)
+
+	r.Route("/api/v1/reservations", reservationRoutes)
 
 	return r
 }
@@ -38,4 +41,10 @@ func staticFilesHandler(r *chi.Mux) {
 	r.Get("/assets/*", func(w http.ResponseWriter, r *http.Request) {
 		http.StripPrefix("/assets/", http.FileServerFS(assets)).ServeHTTP(w, r)
 	})
+}
+
+func reservationRoutes(r chi.Router) {
+	reservationHandler := &handlers.Reservation{}
+
+	r.Post("/", reservationHandler.Create)
 }

@@ -5,6 +5,7 @@ import Calendar from "./pages/dashboard/Calendar.jsx";
 import LandingPage from "./pages/landing/LandingPage.jsx";
 import LoginPage from "./pages/onboarding/LoginPage.jsx";
 import SingUpPage from "./pages/onboarding/SignUpPage.jsx";
+import ReservationPage from "./pages/reservation/ReservationPage.jsx";
 
 // make sure to also add the route path to router.go
 const router = createBrowserRouter([
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
   {
     path: "/calendar",
     element: <Calendar />,
+  },
+  {
+    path: "/reservation",
+    element: <ReservationPage />,
   },
 ]);
 
