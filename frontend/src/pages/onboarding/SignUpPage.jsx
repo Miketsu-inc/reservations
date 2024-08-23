@@ -30,6 +30,7 @@ export default function SingUpPage() {
     <PasswordForm
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
+      isSubmitting={isSubmitting}
     />,
     <></>,
   ]);
@@ -37,7 +38,6 @@ export default function SingUpPage() {
   useEffect(() => {
     if (isSubmitting) {
       setIsSubmitting(false);
-
       // send POST request
       console.log(signUpData);
       setIsSubmitDone(true);
@@ -68,7 +68,7 @@ export default function SingUpPage() {
           sm:rounded-md sm:bg-slate-400 sm:bg-opacity-5 sm:pb-16 sm:pt-6 sm:shadow-lg
           lg:px-8"
       >
-        <ProgressBar step={stepIndex} />
+        <ProgressBar isSubmitDone={isSubmitDone} step={stepIndex} />
 
         <form
           className="flex flex-col"
@@ -77,13 +77,12 @@ export default function SingUpPage() {
           autoComplete="on"
           onSubmit={handleSubmit}
         >
-          {step}
+          {isSubmitDone ? (
+            <SubmissionCompleted text="You signed up successfully" />
+          ) : (
+            step
+          )}
         </form>
-        {isSubmitDone ? (
-          <SubmissionCompleted text="You signed up successfully" />
-        ) : (
-          <></>
-        )}
       </div>
     </div>
   );

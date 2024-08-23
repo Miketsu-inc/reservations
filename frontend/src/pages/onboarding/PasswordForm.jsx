@@ -14,7 +14,11 @@ const defaultPasswordData = {
   },
 };
 
-export default function PasswordForm({ isCompleted, sendInputData }) {
+export default function PasswordForm({
+  isCompleted,
+  sendInputData,
+  isSubmitting,
+}) {
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
@@ -101,9 +105,9 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
           styles="mt-10 w-full font-semibold"
           type="button"
           onClick={handleClick}
-        >
-          Finish
-        </Button>
+          isLoading={isSubmitting}
+          buttonText="Finish"
+        ></Button>
       </div>
     </>
   );

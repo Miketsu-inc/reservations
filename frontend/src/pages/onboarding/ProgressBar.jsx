@@ -1,6 +1,6 @@
 import ProgressBarStep from "./ProgressBarStep";
 
-export default function ProgressBar({ step }) {
+export default function ProgressBar({ step, isSubmitDone }) {
   return (
     <div className="mb-8 mt-6 flex items-center justify-center sm:mt-4">
       <ProgressBarStep
@@ -33,7 +33,7 @@ export default function ProgressBar({ step }) {
         step="3"
         stepName="Password"
         isActive={step === 2}
-        isCompleted={step > 2}
+        isCompleted={isSubmitDone}
       />
     </div>
   );

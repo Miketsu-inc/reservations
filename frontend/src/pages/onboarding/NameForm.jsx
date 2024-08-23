@@ -94,9 +94,8 @@ export default function NameForm({ isCompleted, sendInputData }) {
           styles="mt-10 w-full font-semibold"
           type="button"
           onClick={handleClick}
-        >
-          Continue
-        </Button>
+          buttonText="Continue"
+        />
       </div>
     </>
   );

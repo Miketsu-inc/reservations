@@ -19,6 +19,7 @@ export default function LoginPage() {
   const emailRef = useRef();
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleInputData(data) {
     setLoginData((prevLoginData) => ({
@@ -65,9 +66,9 @@ export default function LoginPage() {
           styles="group flex justify-center items-center gap-2 my-2 bg-transparent border
             border-secondary hover:border-customhvr2 hover:bg-transparent text-secondary
             hover:text-customhvr2"
+          buttonText="Log in with Google"
         >
           <GoogleIcon styles="fill-secondary group-hover:fill-customhvr2" />
-          Log in with google
         </Button>
         <div className="mt-4 grid grid-cols-3 items-center">
           <hr />
@@ -112,9 +113,13 @@ export default function LoginPage() {
           <a href="#" className="mt-3 text-right text-sm hover:underline">
             Forgot your password?
           </a>
-          <Button name="login" type="submit" styles="mt-4">
-            Login
-          </Button>
+          <Button
+            name="login"
+            type="submit"
+            styles="mt-4"
+            buttonText="Login"
+            isLoading={isSubmitting}
+          />
         </form>
         <hr className="mt-10 border-gray-300" />
         <div className="mt-2 flex items-center justify-evenly pb-4 pt-8 text-sm sm:mt-2 sm:pt-8">
