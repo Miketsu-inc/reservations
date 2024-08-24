@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import Calendar from "./pages/dashboard/Calendar.jsx";
+import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
 import LandingPage from "./pages/landing/LandingPage.jsx";
 import LoginPage from "./pages/onboarding/LoginPage.jsx";
 import SingUpPage from "./pages/onboarding/SignUpPage.jsx";
@@ -22,12 +22,12 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: "/calendar",
-    element: <Calendar />,
-  },
-  {
     path: "/reservation",
     element: <ReservationPage />,
+  },
+  {
+    path: "/dashboard",
+    element: <DashboardPage />,
   },
 ]);
 

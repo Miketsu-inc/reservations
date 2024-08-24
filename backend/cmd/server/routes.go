@@ -26,7 +26,7 @@ func staticFilesHandler(r *chi.Mux) {
 		"/",
 		"/login",
 		"/signup",
-		"/calendar",
+		"/dashboard",
 		"/reservations",
 	}
 
