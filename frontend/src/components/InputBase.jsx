@@ -11,6 +11,7 @@ export default function InputBase({
   styles,
   onChange,
   onBlur,
+  onFocus,
 }) {
   const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
@@ -28,6 +29,7 @@ export default function InputBase({
         autoComplete={autoComplete}
         onChange={onChange}
         onBlur={onBlur}
+        onFocus={onFocus}
       />
       {isTypePassword ? (
         <div>

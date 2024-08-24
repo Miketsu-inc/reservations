@@ -20,6 +20,7 @@ export default forwardRef(function Input(
   const [errorTriggered, setErrorTriggered] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isValid, setIsValid] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const isEmpty = inputValue.trim() === "";
 
@@ -30,6 +31,7 @@ export default forwardRef(function Input(
   }
 
   function onBlurHandler(e) {
+    setIsInputFocused(false);
     let valid = isValid;
 
     if (inputValidation(inputValue)) {
@@ -58,8 +60,9 @@ export default forwardRef(function Input(
   return (
     <>
       <div
-        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between focus-within:border-primary" : "border-red-600 focus-within:border-red-600"}
-          relative mt-6 flex w-full items-center border-2 focus-within:outline-none`}
+        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between" : "border-red-600 focus-within:border-red-600"}
+          relative mt-6 flex w-full items-center border-2 focus-within:outline-none
+          ${isInputFocused ? "border-primary" : ""}`}
       >
         <InputBase
           styles={`${styles} peer mt-4`}
@@ -70,6 +73,9 @@ export default forwardRef(function Input(
           autoComplete={autoComplete}
           onChange={onChangeHandler}
           onBlur={onBlurHandler}
+          onFocus={() => {
+            setIsInputFocused(true);
+          }}
         />
         <label
           className={`${
