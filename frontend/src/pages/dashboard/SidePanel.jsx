@@ -47,14 +47,17 @@ export default function SidePanel({ children, profileImage, profileText }) {
           h-screen w-64 transition-transform`}
         aria-label="Sidepanel"
       >
-        <div className="h-full overflow-y-auto bg-gray-50 px-3 py-4 dark:bg-gray-800">
+        <div className="flex h-full flex-col overflow-y-auto bg-gray-50 px-3 py-4 dark:bg-gray-800">
           <SidePanelProfile
             image={profileImage}
             text={profileText}
             closeSidePanel={closeSidePanelHandler}
+            windowSize={windowSize}
           />
-          <hr className="my-3"></hr>
-          <ul className="space-y-2 font-medium">{children}</ul>
+          <hr className="my-4"></hr>
+          <div className="flex flex-1 flex-col space-y-2 font-medium">
+            {children}
+          </div>
         </div>
       </aside>
     </>

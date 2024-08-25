@@ -1,6 +1,6 @@
 export default function SidePanelItem({ children, link, text, isPro }) {
   return (
-    <li>
+    <div>
       <a
         href={link}
         className="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100
@@ -19,6 +19,6 @@ export default function SidePanelItem({ children, link, text, isPro }) {
           <></>
         )}
       </a>
-    </li>
+    </div>
   );
 }
