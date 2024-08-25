@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBreakPoint } from "./utils";
+import "./autofill/detect-autofill";
 
 export function useMultiStepForm(steps) {
   const [stepIndex, setStepIndex] = useState(0);
@@ -50,4 +51,26 @@ export function useClickOutside(ref, callback) {
     document.addEventListener("mousedown", clickOutsideHandler);
     return () => document.removeEventListener("mousedown", clickOutsideHandler);
   });
+}
+
+export function useAutofill(ref, callback) {
+  useEffect(() => {
+    const input = ref.current;
+    if (!input) return;
+
+    function onAutofill(e) {
+      const event = new CustomEvent("autofillEvent");
+      Object.defineProperty(event, "target", {
+        writable: false,
+        value: {
+          value: input.value,
+        },
+      });
+
+      callback(event);
+    }
+
+    input.addEventListener("onautocomplete", onAutofill);
+    return () => input.removeEventListener("onautocomplete", onAutofill);
+  }, []);
 }

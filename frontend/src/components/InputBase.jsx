@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import EyeIcon from "../assets/EyeIcon";
 import EyeSlashIcon from "../assets/EyeSlashIcon";
+import { useAutofill } from "../lib/hooks";
 
 export default function InputBase({
   id,
@@ -15,6 +16,9 @@ export default function InputBase({
 }) {
   const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
+  const inputRef = useRef();
+
+  useAutofill(inputRef, onBlur);
 
   return (
     <>
@@ -30,6 +34,7 @@ export default function InputBase({
         onChange={onChange}
         onBlur={onBlur}
         onFocus={onFocus}
+        ref={inputRef}
       />
       {isTypePassword ? (
         <div>

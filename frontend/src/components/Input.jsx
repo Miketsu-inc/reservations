@@ -1,7 +1,6 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import InputBase from "./InputBase";
 
-// forwardRef needed for assessing ref
 export default forwardRef(function Input(
   {
     id,
@@ -34,7 +33,7 @@ export default forwardRef(function Input(
     setIsInputFocused(false);
     let valid = isValid;
 
-    if (inputValidation(inputValue)) {
+    if (inputValidation(e.target.value)) {
       valid = true;
     } else {
       valid = false;
@@ -44,12 +43,11 @@ export default forwardRef(function Input(
 
     inputData({
       name: name,
-      value: inputValue,
+      value: e.target.value,
       isValid: valid,
     });
   }
 
-  // expose triggerErrorText function to Parent component
   useImperativeHandle(ref, () => ({
     triggerValidationError() {
       setErrorTriggered(true);
