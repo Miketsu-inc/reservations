@@ -32,9 +32,9 @@ export default function SidePanel({ children, profileImage, profileText }) {
       <button
         aria-controls="sidepanel"
         type="button"
-        className="ms-3 mt-2 inline-flex items-center rounded-lg p-2 text-sm text-gray-500
-          hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 sm:hidden
-          dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+        className="text-text-color hover:bg-hvr-gray ms-3 mt-2 inline-flex items-center rounded-lg
+          p-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 sm:hidden
+          dark:focus:ring-gray-600"
         onClick={sidePanelClickHandler}
       >
         <span className="sr-only">Open sidepanel</span>
@@ -47,7 +47,7 @@ export default function SidePanel({ children, profileImage, profileText }) {
           h-screen w-64 transition-transform`}
         aria-label="Sidepanel"
       >
-        <div className="flex h-full flex-col overflow-y-auto bg-gray-50 px-3 py-4 dark:bg-gray-800">
+        <div className="bg-layer-bg flex h-full flex-col overflow-y-auto px-3 py-4">
           <SidePanelProfile
             image={profileImage}
             text={profileText}

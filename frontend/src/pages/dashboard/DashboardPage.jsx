@@ -42,8 +42,8 @@ export default function DashboardPage() {
           </SidePanelIcon>
         </SidePanelItem>
       </SidePanel>
-      <div className="p-4 sm:ml-64">
-        <div className="rounded-lg bg-white p-4">
+      <div className="light p-4 sm:ml-64">
+        <div className="bg-bg-color rounded-lg p-4">
           <Calendar />
         </div>
       </div>

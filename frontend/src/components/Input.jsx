@@ -58,9 +58,13 @@ export default forwardRef(function Input(
   return (
     <>
       <div
-        className={`${(isValid || isEmpty) && !errorTriggered ? "justify-between" : "border-red-600 focus-within:border-red-600"}
-          relative mt-6 flex w-full items-center border-2 focus-within:outline-none
-          ${isInputFocused ? "border-primary" : ""}`}
+        className={`relative mt-6 flex w-full items-center border-2 outline-none ${
+          errorTriggered || (!isEmpty && !isValid)
+            ? "border-red-600"
+            : isInputFocused
+              ? "border-primary"
+              : "border-text-color"
+          } `}
       >
         <InputBase
           styles={`${styles} peer mt-4`}

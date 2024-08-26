@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.light {
+  --primary: 66, 90, 190;
+  --hvr-primary: 56, 77, 163;
+  --secondary: 210, 151, 190;
+  --hvr-secondary: 189, 136, 171;
+  --accent: 226, 201, 102;
+  --bg-color: 245, 246, 251;
+  --layer-bg: 236, 238, 248;
+  --text-color: 12, 14, 28;
+  --hvr-gray: 209 213 219;
+}
+
+.dark {
+  --primary: 99, 84, 176;
+  --hvr-primary: 109, 95, 179;
+  --secondary: 137, 57, 134;
+  --hvr-secondary: 179, 71, 175;
+  --accent: 206, 199, 64;
+  --bg-color: 19, 18, 23;
+  --layer-bg: 25, 25, 26;
+  --text-color: 236, 236, 238;
+  --hvr-gray: 31, 41, 55;
+}

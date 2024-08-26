@@ -78,13 +78,13 @@ export default function ReservationPage() {
           <select
             defaultValue="default"
             onChange={typeChangeHandler}
-            className="text-custombg"
+            className="text-text-color"
           >
             <option value="default" disabled hidden>
               Choose a reservation type
             </option>
             {reservationTypes.map((type, index) => (
-              <option key={index} value={type} className="text-custombg">
+              <option key={index} value={type} className="text-text-color">
                 {type}
               </option>
             ))}
@@ -92,7 +92,7 @@ export default function ReservationPage() {
           <input
             type="datetime-local"
             onChange={dateChangeHandler}
-            className="text-custombg"
+            className="text-text-color"
           ></input>
           <button type="submit" className="border-2">
             Reserve

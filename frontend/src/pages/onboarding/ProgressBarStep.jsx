@@ -13,7 +13,7 @@ export default function ProgressBarStep({
           ? `relative flex h-8 w-8 items-center justify-center rounded-full bg-green-700 p-2
             transition-all`
           : isActive
-            ? `relative flex h-8 w-8 items-center justify-center rounded-full bg-accent
+            ? `relative flex h-8 w-8 items-center justify-center rounded-full bg-accent/50
               transition-all`
             : "relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 p-2"
       }

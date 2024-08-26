@@ -11,7 +11,7 @@ export default function eyeIcon({ width, height, role, styles, onClick }) {
       width={width === undefined ? "20" : width}
       height={height === undefined ? "20" : height}
       role={role === undefined ? "button" : role}
-      className={`${styles} outline-none focus-visible:outline-1 focus-visible:outline-white`}
+      className={`${styles} focus-visible:outline-text-color outline-none focus-visible:outline-1`}
       onClick={onClick}
       viewBox="0 0 16 16"
       tabIndex={0}

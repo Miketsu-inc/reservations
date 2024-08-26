@@ -12,7 +12,7 @@ export default function Button({
   return (
     <button
       onClick={onClick}
-      className={`${styles} rounded-lg bg-primary py-2 font-medium shadow-md hover:bg-customhvr1
+      className={`${styles} rounded-lg bg-primary py-2 font-medium shadow-md
         ${isLoading ? "opacity-50 transition-opacity" : ""}`}
       name={name}
       type={type}
