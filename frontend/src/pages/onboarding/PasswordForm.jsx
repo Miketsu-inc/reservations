@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import { MIN_PASSWORD_LENGTH } from "../../lib/constants";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "../../lib/constants";
 
 const defaultPasswordData = {
   password: {
@@ -24,11 +24,14 @@ export default function PasswordForm({
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
 
   function passwordValidation(password) {
-    return password.length > MIN_PASSWORD_LENGTH;
+    return (
+      password.length > MIN_PASSWORD_LENGTH &&
+      password.length < MAX_PASSWORD_LENGTH
+    );
   }
 
   function confirmPasswordValidation(confirmPassword) {
-    return confirmPassword;
+    return confirmPassword.length < MAX_PASSWORD_LENGTH;
   }
 
   function handleInputData(data) {
@@ -62,7 +65,7 @@ export default function PasswordForm({
     if (!hasError) {
       sendInputData({
         password: passwordData.password.value,
-        confirmPassword: passwordData.confirmPassword.value,
+        //confirmPassword: passwordData.confirmPassword.value,
       });
       e.target.form.requestSubmit();
       isCompleted(true);

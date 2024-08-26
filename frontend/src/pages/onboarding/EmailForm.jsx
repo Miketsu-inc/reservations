@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import { MAX_INPUT_LENGTH } from "../../lib/constants";
 
 const defaultEmailData = {
   email: {
@@ -14,7 +15,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
   const [emailData, setEmailData] = useState(defaultEmailData);
 
   function emailValidation(email) {
-    return email.includes("@");
+    return email.includes("@") && email.length < MAX_INPUT_LENGTH;
   }
 
   function handleInputData(data) {
@@ -58,7 +59,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
       <div className="flex items-center justify-center">
         <Button
           styles="mt-10 w-full font-semibold focus-visible:outline-1 hover:bg-hvr-primary
-text-white"
+            text-white"
           type="button"
           onClick={handleClick}
           buttonText="Continue"

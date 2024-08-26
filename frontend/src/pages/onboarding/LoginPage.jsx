@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 import GoogleIcon from "../../assets/GoogleIcon";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import { MIN_PASSWORD_LENGTH } from "../../lib/constants";
+import {
+  MAX_INPUT_LENGTH,
+  MAX_PASSWORD_LENGTH,
+MIN_PASSWORD_LENGTH,
+} from "../../lib/constants";
 
 const defaultLoginData = {
   email: {
@@ -32,11 +36,14 @@ export default function LoginPage() {
   }
 
   function emailValidation(email) {
-    return email.includes("@");
+    return email.includes("@") && email.length < MAX_INPUT_LENGTH;
   }
 
   function passwordValidation(password) {
-    return password.length > MIN_PASSWORD_LENGTH;
+    return (
+password.length > MIN_PASSWORD_LENGTH &&
+      password.length < MAX_PASSWORD_LENGTH
+    );
   }
 
   function formSubmitHandler(e) {

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import { MAX_INPUT_LENGTH } from "../../lib/constants";
 
 const defaultNameData = {
   firstName: {
@@ -19,11 +20,11 @@ export default function NameForm({ isCompleted, sendInputData }) {
   const [nameData, setNameData] = useState(defaultNameData);
 
   function firstNameValidation(firstName) {
-    return true;
+    return firstName.length < MAX_INPUT_LENGTH;
   }
 
   function lastNameValidation(lastName) {
-    return true;
+    return lastName.length < MAX_INPUT_LENGTH;
   }
 
   function handleInputData(data) {
