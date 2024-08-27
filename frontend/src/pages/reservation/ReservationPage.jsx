@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Button from "../../components/Button";
 
 const defaultReservation = {
   user: "DEFAULT USER",
@@ -58,11 +59,11 @@ export default function ReservationPage() {
 
   return (
     <>
-      <div className="flex flex-col items-center gap-6 md:flex-row-reverse">
+      <div className="bg-layer-bg flex flex-col items-center gap-6 md:flex-row-reverse">
         <div>
           <img src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"></img>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 px-4 pb-4">
           <h1 className="text-center">Company name</h1>
           <p className="text-justify">
             Short description about the core values of the company, maybe also
@@ -74,17 +75,23 @@ export default function ReservationPage() {
         </div>
       </div>
       <form method="POST" onSubmit={onSubmitHandler}>
-        <div className="flex flex-col gap-2 pt-10">
+        <div className="flex flex-col gap-2 px-10 pt-10">
           <select
             defaultValue="default"
             onChange={typeChangeHandler}
-            className="text-text-color"
+            className="text-text-color bg-layer-bg border-text-color hover:bg-hvr-gray
+              focus:bg-hvr-gray block w-full rounded-md border px-4 py-3 text-base shadow-sm
+              focus:outline-none"
           >
             <option value="default" disabled hidden>
               Choose a reservation type
             </option>
             {reservationTypes.map((type, index) => (
-              <option key={index} value={type} className="text-text-color">
+              <option
+                key={index}
+                value={type}
+                className="bg-layer-bg text-text-color border-text-color hover:bg-hvr-gray mt-1 py-1"
+              >
                 {type}
               </option>
             ))}
@@ -92,11 +99,20 @@ export default function ReservationPage() {
           <input
             type="datetime-local"
             onChange={dateChangeHandler}
-            className="text-text-color"
+            className="text-text-color bg-layer-bg border-text-color hover:bg-hvr-gray
+              focus:bg-hvr-gray mt-4 block w-full rounded-md border px-4 py-2 text-base
+              shadow-sm focus:outline-none dark:[color-scheme:dark]"
           ></input>
-          <button type="submit" className="border-2">
+          <Button
+            type="submit"
+            styles="text-white dark:bg-transparent dark:border-2 border-secondary
+              dark:text-secondary dark:hover:border-hvr-secondary
+              dark:hover:text-hvr-secondary mt-6 font-semibold border-primary
+              hover:bg-hvr-primary dark:focus:outline-none dark:focus:border-hvr-secondary
+              dark:focus:text-hvr-secondary"
+          >
             Reserve
-          </button>
+          </Button>
           {errorMessage ? (
             <p className="text-center text-red-500">{errorMessage}</p>
           ) : (
