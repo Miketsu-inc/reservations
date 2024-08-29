@@ -6,7 +6,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 
 export default function Calendar() {
   return (
-    <div className="bg-bg-color text-text-color">
+    <div className="bg-bg_color text-text_color">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin]}
         weekNumberCalculation={"ISO"}

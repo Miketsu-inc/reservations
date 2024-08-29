@@ -3,7 +3,7 @@ export default function SidePanelItem({ children, link, text, isPro }) {
     <div>
       <a
         href={link}
-        className="hover:bg-hvr-gray text-text-color group flex items-center rounded-lg p-2"
+        className="hover:bg-hvr_gray text-text_color group flex items-center rounded-lg p-2"
       >
         {children}
         <span className="ms-3 flex-1 whitespace-nowrap">{text}</span>

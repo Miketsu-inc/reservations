@@ -124,7 +124,7 @@ export default function PasswordForm({
       <div className="flex items-center justify-center">
         <Button
           styles="mt-10 w-full font-semibold mt-4 focus-visible:outline-1 bg-primary
-            hover:bg-hvr-primary text-white"
+            hover:bg-hvr_primary text-white"
           type="button"
           onClick={handleClick}
           isLoading={isSubmitting}

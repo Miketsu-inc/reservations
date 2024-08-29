@@ -59,7 +59,7 @@ export default function ReservationPage() {
 
   return (
     <>
-      <div className="bg-layer-bg flex flex-col items-center gap-6 md:flex-row-reverse">
+      <div className="bg-layer_bg flex flex-col items-center gap-6 md:flex-row-reverse">
         <div>
           <img src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"></img>
         </div>
@@ -79,8 +79,8 @@ export default function ReservationPage() {
           <select
             defaultValue="default"
             onChange={typeChangeHandler}
-            className="text-text-color bg-layer-bg border-text-color hover:bg-hvr-gray
-              focus:bg-hvr-gray block w-full rounded-md border px-4 py-3 text-base shadow-sm
+            className="hover:bg-hvr_gray focus:bg-hvr_gray bg-layer_bg border-text_color
+              text-text_color block w-full rounded-md border px-4 py-3 text-base shadow-sm
               focus:outline-none"
           >
             <option value="default" disabled hidden>
@@ -90,7 +90,7 @@ export default function ReservationPage() {
               <option
                 key={index}
                 value={type}
-                className="bg-layer-bg text-text-color border-text-color hover:bg-hvr-gray mt-1 py-1"
+                className="hover:bg-hvr_gray bg-layer_bg border-text_color text-text_color mt-1 py-1"
               >
                 {type}
               </option>
@@ -99,17 +99,17 @@ export default function ReservationPage() {
           <input
             type="datetime-local"
             onChange={dateChangeHandler}
-            className="text-text-color bg-layer-bg border-text-color hover:bg-hvr-gray
-              focus:bg-hvr-gray mt-4 block w-full rounded-md border px-4 py-2 text-base
+            className="hover:bg-hvr_gray focus:bg-hvr_gray bg-layer_bg border-text_color
+              text-text_color mt-4 block w-full rounded-md border px-4 py-2 text-base
               shadow-sm focus:outline-none dark:[color-scheme:dark]"
           ></input>
           <Button
             type="submit"
             styles="text-white dark:bg-transparent dark:border-2 border-secondary
-              dark:text-secondary dark:hover:border-hvr-secondary
-              dark:hover:text-hvr-secondary mt-6 font-semibold border-primary
-              hover:bg-hvr-primary dark:focus:outline-none dark:focus:border-hvr-secondary
-              dark:focus:text-hvr-secondary"
+              dark:text-secondary dark:hover:border-hvr_secondary
+              dark:hover:text-hvr_secondary mt-6 font-semibold border-primary
+              hover:bg-hvr_primary dark:focus:outline-none dark:focus:border-hvr_secondary
+              dark:focus:text-hvr_secondary"
           >
             Reserve
           </Button>

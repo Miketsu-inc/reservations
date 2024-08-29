@@ -43,7 +43,7 @@ export default function DashboardPage() {
         </SidePanelItem>
       </SidePanel>
       <div className="light p-4 sm:ml-64">
-        <div className="bg-bg-color rounded-lg p-4">
+        <div className="bg-bg_color rounded-lg p-4">
           <Calendar />
         </div>
       </div>

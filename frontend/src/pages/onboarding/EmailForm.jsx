@@ -67,7 +67,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
       />
       <div className="flex items-center justify-center">
         <Button
-          styles="mt-10 w-full font-semibold focus-visible:outline-1 hover:bg-hvr-primary
+          styles="mt-10 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
             text-white"
           type="button"
           onClick={handleClick}

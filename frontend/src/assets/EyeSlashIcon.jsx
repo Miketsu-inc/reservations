@@ -12,7 +12,7 @@ export default function eyeSlashIcon({ width, height, role, styles, onClick }) {
       width={width === undefined ? "20" : width}
       height={height === undefined ? "20" : height}
       role={role === undefined ? "button" : role}
-      className={`${styles} focus-visible:outline-text-color focus:outline-none
+      className={`${styles} focus-visible:outline-text_color focus:outline-none
         focus-visible:outline-1`}
       onClick={onClick}
       viewBox="0 0 16 16"

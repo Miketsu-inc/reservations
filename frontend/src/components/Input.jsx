@@ -63,7 +63,7 @@ export default forwardRef(function Input(
             ? "border-red-600"
             : isInputFocused
               ? "border-primary"
-              : "border-text-color"
+              : "border-text_color"
           } `}
       >
         <InputBase

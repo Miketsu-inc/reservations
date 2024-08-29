@@ -64,7 +64,7 @@ export default function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-layer-bg flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm
+        className="sm:bg-layer_bg flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm
 sm:h-4/5 sm:min-h-1.5 sm:rounded-md sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
       >
         <ProgressBar isSubmitDone={isSubmitDone} step={stepIndex} />

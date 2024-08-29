@@ -23,7 +23,8 @@ export default function InputBase({
   return (
     <>
       <input
-        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} bg-transparent p-2 outline-none`}
+        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} bg-transparent p-2 outline-none
+          dark:[color-scheme:dark]`}
         // is this needed? wouldn't all non password inputs be text?
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}
@@ -42,14 +43,14 @@ export default function InputBase({
               onClick={() => {
                 setVisible(!visible);
               }}
-              styles="fill-text-color absolute -translate-y-1/2 right-4"
+              styles="fill-text_color absolute -translate-y-1/2 right-4"
             />
           ) : (
             <EyeIcon
               onClick={() => {
                 setVisible(!visible);
               }}
-              styles="fill-text-color absolute -translate-y-1/2 right-4"
+              styles="fill-text_color absolute -translate-y-1/2 right-4"
             />
           )}
         </div>

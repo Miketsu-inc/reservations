@@ -7,7 +7,7 @@ export default function SidePanelProfile({ image, text, closeSidePanel }) {
       <span className="ml-2 basis-auto">{text}</span>
       <XIcon
         onClick={closeSidePanel}
-        styles="basis-1/8 ml-auto h-7 w-7 rounded-md hover:bg-hvr-gray sm:hidden"
+        styles="basis-1/8 ml-auto h-7 w-7 rounded-md hover:bg-hvr_gray sm:hidden"
       />
     </div>
   );
