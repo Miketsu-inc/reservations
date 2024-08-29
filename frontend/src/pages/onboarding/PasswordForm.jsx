@@ -22,16 +22,34 @@ export default function PasswordForm({
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
+  const [errorMessage, setErrorMessage] = useState(
+    "Please enter your password!"
+  );
 
   function passwordValidation(password) {
-    return (
-      password.length > MIN_PASSWORD_LENGTH &&
-      password.length < MAX_PASSWORD_LENGTH
-    );
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage(
+        `Password must be ${MIN_PASSWORD_LENGTH} characters or more!`
+      );
+      return false;
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      setErrorMessage(
+        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
+      );
+      return false;
+    }
+    return true;
   }
 
   function confirmPasswordValidation(confirmPassword) {
-    return confirmPassword.length < MAX_PASSWORD_LENGTH;
+    if (confirmPassword.length > MAX_PASSWORD_LENGTH) {
+      setErrorMessage(
+        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
+      );
+      return false;
+    }
+    return true;
   }
 
   function handleInputData(data) {
@@ -85,7 +103,7 @@ export default function PasswordForm({
         autoComplete="new-password"
         labelText="Password"
         labelHtmlFor="passwordInput"
-        errorText="Please enter a valid password!"
+        errorText={errorMessage}
         inputValidation={passwordValidation}
         inputData={handleInputData}
       />
@@ -99,7 +117,7 @@ export default function PasswordForm({
         autoComplete="new-password"
         labelText="Confirm Password"
         labelHtmlFor="confirmPasswordInput"
-        errorText="The two password should match"
+        errorText={errorMessage}
         inputValidation={confirmPasswordValidation}
         inputData={handleInputData}
       />

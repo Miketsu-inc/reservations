@@ -1,11 +1,6 @@
 import XIcon from "../../assets/XIcon";
 
-export default function SidePanelProfile({
-  image,
-  text,
-  closeSidePanel,
-  windowSize,
-}) {
+export default function SidePanelProfile({ image, text, closeSidePanel }) {
   return (
     <div className="flex flex-row items-center">
       <img className="basis-1/8 rounded-full" src={image} />

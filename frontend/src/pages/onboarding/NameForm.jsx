@@ -18,13 +18,28 @@ export default function NameForm({ isCompleted, sendInputData }) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);
+  const [errorMessage, setErrorMessage] = useState("Please enter your name!");
 
   function firstNameValidation(firstName) {
-    return firstName.length < MAX_INPUT_LENGTH;
+    if (firstName.length > MAX_INPUT_LENGTH) {
+      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+      return false;
+    }
+    if (firstName.length === 0) {
+      return false;
+    }
+    return true;
   }
 
   function lastNameValidation(lastName) {
-    return lastName.length < MAX_INPUT_LENGTH;
+    if (lastName.length > MAX_INPUT_LENGTH) {
+      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+      return false;
+    }
+    if (lastName.length === 0) {
+      return false;
+    }
+    return true;
   }
 
   function handleInputData(data) {
@@ -72,7 +87,7 @@ export default function NameForm({ isCompleted, sendInputData }) {
         autoComplete="family-name"
         labelText="First Name"
         labelHtmlFor="firstNameInput"
-        errorText="Please enter your first name"
+        errorText={errorMessage}
         inputValidation={firstNameValidation}
         inputData={handleInputData}
       />
@@ -86,7 +101,7 @@ export default function NameForm({ isCompleted, sendInputData }) {
         autoComplete="given-name"
         labelText="Last Name"
         labelHtmlFor="lastNameInput"
-        errorText="Please enter your last name"
+        errorText={errorMessage}
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />

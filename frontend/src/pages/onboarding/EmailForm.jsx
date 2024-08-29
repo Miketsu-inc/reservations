@@ -13,9 +13,18 @@ const defaultEmailData = {
 export default function EmailForm({ isCompleted, sendInputData }) {
   const emailRef = useRef();
   const [emailData, setEmailData] = useState(defaultEmailData);
+  const [errorMessage, setErrorMessage] = useState("Please enter your email!");
 
   function emailValidation(email) {
-    return email.includes("@") && email.length < MAX_INPUT_LENGTH;
+    if (email.length > MAX_INPUT_LENGTH) {
+      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+      return false;
+    }
+    if (!email.includes("@")) {
+      setErrorMessage("Please enter a valid email!");
+      return false;
+    }
+    return true;
   }
 
   function handleInputData(data) {
@@ -52,7 +61,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         autoComplete="email"
         labelText="Email"
         labelHtmlFor="emailInput"
-        errorText="Please enter a valid email!"
+        errorText={errorMessage}
         inputValidation={emailValidation}
         inputData={handleInputData}
       />

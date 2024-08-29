@@ -24,6 +24,9 @@ export default function LoginPage() {
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+const [errorMessage, setErrorMessage] = useState(
+    "Please fill out this field!"
+  );
 
   function handleInputData(data) {
     setLoginData((prevLoginData) => ({
@@ -36,15 +39,59 @@ export default function LoginPage() {
   }
 
   function emailValidation(email) {
-    return email.includes("@") && email.length < MAX_INPUT_LENGTH;
+    if (email.length > MAX_INPUT_LENGTH) {
+      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+      return false;
+    }
+    if (!email.includes("@")) {
+      setErrorMessage("Please enter a valid email!");
+      return false;
+    }
+    return true;
   }
 
   function passwordValidation(password) {
-    return (
-password.length > MIN_PASSWORD_LENGTH &&
-      password.length < MAX_PASSWORD_LENGTH
-    );
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage(
+        `Password must be ${MIN_PASSWORD_LENGTH} characters or more!`
+      );
+      return false;
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      setErrorMessage(
+        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
+      );
+      return false;
+    }
+    return true;
   }
+
+  useEffect(() => {
+    if (isSubmitting) {
+      const sendRequest = async () => {
+        try {
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              email: loginData.email.value,
+              password: loginData.password.value,
+            }),
+          });
+          const result = await response.json();
+          console.log(result);
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      sendRequest();
+    }
+  }, [loginData, isSubmitting]);
 
   function formSubmitHandler(e) {
     e.preventDefault();
@@ -100,7 +147,7 @@ dark:focus:border-hvr-secondary hover:bg-hvr-secondary/50 focus:bg-hvr-secondary
             autoComplete="email"
             labelText="Email"
             labelHtmlFor="emailInput"
-            errorText="Please enter a valid email!"
+            errorText={errorMessage}
             inputValidation={emailValidation}
             inputData={handleInputData}
           />
@@ -114,7 +161,7 @@ dark:focus:border-hvr-secondary hover:bg-hvr-secondary/50 focus:bg-hvr-secondary
             autoComplete="password"
             labelText="Password"
             labelHtmlFor="passwordInput"
-            errorText="Please enter your password!"
+            errorText={errorMessage}
             inputValidation={passwordValidation}
             inputData={handleInputData}
           />
