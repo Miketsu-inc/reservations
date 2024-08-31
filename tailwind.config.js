@@ -26,5 +26,16 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addBase }) {
+      addBase({
+        ".autofill:-webkit-autofill, .autofill:-webkit-autofill:hover, .autofill:-webkit-autofill:focus, .autofill-styles select:-webkit-autofill, .autofill-styles select:-webkit-autofill:hover, .autofill-styles select:-webkit-autofill:focus":
+          {
+            "-webkit-text-fill-color": "rgb(var(--text-color))",
+            "-webkit-box-shadow": "0 0 0px 1000px rgba(255, 255, 255, 0) inset",
+            transition: "background-color 5000s ease-in-out 0s",
+          },
+      });
+    },
+  ],
 };

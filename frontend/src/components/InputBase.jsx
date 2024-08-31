@@ -23,8 +23,8 @@ export default function InputBase({
   return (
     <>
       <input
-        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} bg-transparent p-2 outline-none
-          dark:[color-scheme:dark]`}
+        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill bg-transparent p-2
+          outline-none dark:[color-scheme:dark]`}
         // is this needed? wouldn't all non password inputs be text?
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}
