@@ -14,6 +14,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
+	r.Route("/api/v1/auth", userAuthRoutes)
+
 	staticFilesHandler(r)
 
 	r.Route("/api/v1/reservations", reservationRoutes)
@@ -47,4 +49,11 @@ func reservationRoutes(r chi.Router) {
 	reservationHandler := &handlers.Reservation{}
 
 	r.Post("/", reservationHandler.Create)
+}
+
+func userAuthRoutes(r chi.Router) {
+	userauthHandler := &handlers.Auth{}
+
+	r.Post("/signup", userauthHandler.HandleSignup)
+	r.Post("/login", userauthHandler.HandleLogin)
 }

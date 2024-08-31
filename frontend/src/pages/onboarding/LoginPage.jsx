@@ -70,7 +70,7 @@ export default function LoginPage() {
     if (isSubmitting) {
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/login", {
+          const response = await fetch("/api/v1/auth/login", {
             method: "POST",
             headers: {
               Accept: "application/json",
@@ -112,8 +112,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-layer_bg flex min-h-screen w-full max-w-md flex-col px-10 sm:h-auto
-          sm:min-h-0 sm:rounded-md sm:py-8 sm:shadow-lg lg:px-8"
+        className="flex min-h-screen w-full max-w-md flex-col px-10 sm:h-auto sm:min-h-0
+          sm:rounded-md sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
         <p className="mt-2 py-2 text-sm">Welcome back!</p>
@@ -183,7 +183,7 @@ export default function LoginPage() {
             isLoading={isSubmitting}
           />
         </form>
-        <hr className="border-text_color mt-10" />
+        <hr className="mt-10 border-text_color" />
         <div className="mt-2 flex items-center justify-evenly pb-4 pt-8 text-sm sm:mt-2 sm:pt-8">
           <p className="flex-1">If you don't have an account...</p>
           <a

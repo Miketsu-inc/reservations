@@ -11,7 +11,6 @@ const defaultSignUpData = {
   lastName: "",
   email: "",
   password: "",
-  confirmPassword: "",
 };
 
 export default function SingUpPage() {
@@ -32,15 +31,31 @@ export default function SingUpPage() {
       isCompleted={isCompletedHandler}
       isSubmitting={isSubmitting}
     />,
-    <></>,
   ]);
 
   useEffect(() => {
     if (isSubmitting) {
-      setIsSubmitting(false);
-      // send POST request
       console.log(signUpData);
-      setIsSubmitDone(true);
+      const sendRequest = async () => {
+        try {
+          const response = await fetch("/api/v1/auth/signup", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(signUpData),
+          });
+          const result = await response.json();
+          console.log(result);
+          setIsSubmitDone(true);
+        } catch (err) {
+          console.error("Error messsage from server:", err.message);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      sendRequest();
     }
   }, [signUpData, isSubmitting]);
 
@@ -64,8 +79,8 @@ export default function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-layer_bg flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm
-sm:h-4/5 sm:min-h-1.5 sm:rounded-md sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
+        className="flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
+          sm:rounded-md sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
       >
         <ProgressBar isSubmitDone={isSubmitDone} step={stepIndex} />
 
