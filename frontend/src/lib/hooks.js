@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getBreakPoint } from "./utils";
 import "./autofill/detect-autofill";
+import { getBreakPoint } from "./utils";
 
 export function useMultiStepForm(steps) {
   const [stepIndex, setStepIndex] = useState(0);
