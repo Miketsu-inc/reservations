@@ -2,7 +2,6 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ mode }) => {
-  console.log(mode);
   if (mode === "production") {
     return {
       plugins: [react()],
