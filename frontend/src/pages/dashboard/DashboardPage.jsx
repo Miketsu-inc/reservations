@@ -3,7 +3,7 @@ import SidePanel from "./SidePanel";
 
 export default function DashboardPage() {
   return (
-    <>
+    <div className="h-screen overflow-y-auto">
       <SidePanel
         profileImage="https://dummyimage.com/40x40/000/fff.png&text=logo"
         profileText="Company name"
@@ -13,6 +13,6 @@ export default function DashboardPage() {
           <Calendar />
         </div>
       </div>
-    </>
+    </div>
   );
 }

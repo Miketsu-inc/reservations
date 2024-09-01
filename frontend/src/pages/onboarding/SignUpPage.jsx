@@ -19,14 +19,17 @@ export default function SingUpPage() {
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const { step, stepIndex, nextStep } = useMultiStepForm([
     <NameForm
+      key="nameForm"
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
     <EmailForm
+      key="emailForm"
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
     <PasswordForm
+      key="passwordForm"
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
       isSubmitting={isSubmitting}

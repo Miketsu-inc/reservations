@@ -25,12 +25,12 @@ export function useWindowSize() {
     isWindowClient ? window.innerWidth : undefined
   );
 
+  function setSize() {
+    setWindowSize(window.innerWidth);
+  }
+
   useEffect(() => {
     if (isWindowClient) {
-      function setSize() {
-        setWindowSize(window.innerWidth);
-      }
-
       window.addEventListener("resize", setSize);
 
       return () => window.removeEventListener("resize", setSize);
@@ -58,7 +58,7 @@ export function useAutofill(ref, callback) {
     const input = ref.current;
     if (!input) return;
 
-    function onAutofill(e) {
+    function onAutofill() {
       const event = new CustomEvent("autofillEvent");
       Object.defineProperty(event, "target", {
         writable: false,
@@ -72,5 +72,5 @@ export function useAutofill(ref, callback) {
 
     input.addEventListener("onautocomplete", onAutofill);
     return () => input.removeEventListener("onautocomplete", onAutofill);
-  }, []);
+  }, [ref, callback]);
 }
