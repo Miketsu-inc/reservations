@@ -1,4 +1,4 @@
-import LoaderIcon from "../assets/LoaderIcon";
+import LoaderIcon from "../assets/icons/LoaderIcon";
 
 export default function Button({
   children,

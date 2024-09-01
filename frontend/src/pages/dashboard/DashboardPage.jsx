@@ -1,8 +1,8 @@
-import CalendarIcon from "../../assets/CalendarIcon";
-import ChartIcon from "../../assets/ChartIcon";
-import DashboardIcon from "../../assets/DashboardIcon";
-import SettingsIcon from "../../assets/SettingsIcon";
-import SignOutIcon from "../../assets/SignOutIcon";
+import CalendarIcon from "../../assets/icons/CalendarIcon";
+import ChartIcon from "../../assets/icons/ChartIcon";
+import DashboardIcon from "../../assets/icons/DashboardIcon";
+import SettingsIcon from "../../assets/icons/SettingsIcon";
+import SignOutIcon from "../../assets/icons/SignOutIcon";
 import Calendar from "./Calendar";
 import SidePanel from "./SidePanel";
 import SidePanelIcon from "./SidePanelIcon";
@@ -43,7 +43,7 @@ export default function DashboardPage() {
         </SidePanelItem>
       </SidePanel>
       <div className="light p-4 sm:ml-64">
-        <div className="bg-bg_color rounded-lg p-4">
+        <div className="rounded-lg bg-bg_color p-4">
           <Calendar />
         </div>
       </div>

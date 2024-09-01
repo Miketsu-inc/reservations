@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import HamburgerMenuIcon from "../../assets/HamburgerMenuIcon";
+import HamburgerMenuIcon from "../../assets/icons/HamburgerMenuIcon";
 import { useClickOutside, useWindowSize } from "../../lib/hooks";
 import SidePanelProfile from "./SidePanelProfile";
 

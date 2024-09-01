@@ -9,15 +9,15 @@ export default function Calendar() {
     <div className="bg-bg_color text-text_color">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin]}
-        weekNumberCalculation={"ISO"}
-        locale={"hu"}
+        weekNumberCalculation="ISO"
+        locale="hu"
         editable={true}
         eventDurationEditable={true}
         selectable={true}
         initialView="timeGridWeek"
         weekNumbers={true}
         navLinks={true}
-        height={"auto"}
+        height="auto"
         events={[
           {
             id: "test",
@@ -37,55 +37,55 @@ export default function Calendar() {
           console.log(date);
           console.log(end);
         }}
-        views={{
-          dayGridMonth: {
-            fixedWeekCount: false,
-          },
-          timeGridWeek: {
-            titleFormat: {
-              year: "numeric",
-              month: "long",
-              day: "2-digit",
-            },
-            slotLabelFormat: {
-              hour: "numeric",
-              minute: "2-digit",
-            },
-            slotDuration: "00:15:00",
-            slotMinTime: "08:00:00",
-            slotMaxTime: "17:30:00",
-            nowIndicator: true,
-          },
-          timeGridDay: {
-            slotLabelFormat: {
-              hour: "numeric",
-              minute: "2-digit",
-            },
-            slotDuration: "00:15:00",
-            slotMinTime: "08:00:00",
-            slotMaxTime: "17:30:00",
-            nowIndicator: true,
-          },
-        }}
-        headerToolbar={{
-          left: "dayGridMonth,timeGridWeek,timeGridDay,list",
-          center: "title",
-          right: "today,prev,next",
-        }}
-        allDaySlot={false}
-        eventTimeFormat={{
-          hour: "numeric",
-          minute: "2-digit",
-          second: "2-digit",
-          meridiem: false,
-        }}
-        buttonText={{
-          month: "hónap",
-          today: "ma",
-          week: "hét",
-          day: "nap",
-          list: "lista",
-        }}
+        // views={{
+        //   dayGridMonth: {
+        //     fixedWeekCount: false,
+        //   },
+        //   timeGridWeek: {
+        //     titleFormat: {
+        //       year: "numeric",
+        //       month: "long",
+        //       day: "2-digit",
+        //     },
+        //     slotLabelFormat: {
+        //       hour: "numeric",
+        //       minute: "2-digit",
+        //     },
+        //     slotDuration: "00:15:00",
+        //     slotMinTime: "08:00:00",
+        //     slotMaxTime: "17:30:00",
+        //     nowIndicator: true,
+        //   },
+        //   timeGridDay: {
+        //     slotLabelFormat: {
+        //       hour: "numeric",
+        //       minute: "2-digit",
+        //     },
+        //     slotDuration: "00:15:00",
+        //     slotMinTime: "08:00:00",
+        //     slotMaxTime: "17:30:00",
+        //     nowIndicator: true,
+        //   },
+        // }}
+        // headerToolbar={{
+        //   left: "dayGridMonth,timeGridWeek,timeGridDay,list",
+        //   center: "title",
+        //   right: "today,prev,next",
+        // }}
+        // allDaySlot={false}
+        // eventTimeFormat={{
+        //   hour: "numeric",
+        //   minute: "2-digit",
+        //   second: "2-digit",
+        //   meridiem: false,
+        // }}
+        // buttonText={{
+        //   month: "hónap",
+        //   today: "ma",
+        //   week: "hét",
+        //   day: "nap",
+        //   list: "lista",
+        // }}
       />
     </div>
   );

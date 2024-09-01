@@ -1,4 +1,4 @@
-export default function eyeSlashIcon({ width, height, role, styles, onClick }) {
+export default function EyeSlashIcon({ width, height, role, styles, onClick }) {
   function handleKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -12,8 +12,8 @@ export default function eyeSlashIcon({ width, height, role, styles, onClick }) {
       width={width === undefined ? "20" : width}
       height={height === undefined ? "20" : height}
       role={role === undefined ? "button" : role}
-      className={`${styles} focus-visible:outline-text_color focus:outline-none
-        focus-visible:outline-1`}
+      className={`${styles} focus:outline-none focus-visible:outline-1
+        focus-visible:outline-text_color`}
       onClick={onClick}
       viewBox="0 0 16 16"
       tabIndex={0}

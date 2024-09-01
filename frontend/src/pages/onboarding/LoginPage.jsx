@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import GoogleIcon from "../../assets/GoogleIcon";
+import GoogleIcon from "../../assets/icons/GoogleIcon";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import {

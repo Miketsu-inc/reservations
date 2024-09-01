@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import EyeIcon from "../assets/EyeIcon";
-import EyeSlashIcon from "../assets/EyeSlashIcon";
+import EyeIcon from "../assets/icons/EyeIcon";
+import EyeSlashIcon from "../assets/icons/EyeSlashIcon";
 import { useAutofill } from "../lib/hooks";
 
 export default function InputBase({

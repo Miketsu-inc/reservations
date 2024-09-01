@@ -1,4 +1,4 @@
-import XIcon from "../../assets/XIcon";
+import XIcon from "../../assets/icons/XIcon";
 
 export default function SidePanelProfile({ image, text, closeSidePanel }) {
   return (
