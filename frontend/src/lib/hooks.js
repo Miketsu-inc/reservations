@@ -59,7 +59,9 @@ export function useAutofill(ref, callback) {
     if (!input) return;
 
     function onAutofill() {
-      const event = new CustomEvent("autofillEvent");
+      const event = new CustomEvent("autofillEvent", {
+        detail: { isAutofillEvent: true },
+      });
       Object.defineProperty(event, "target", {
         writable: false,
         value: {

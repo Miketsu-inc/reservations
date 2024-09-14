@@ -43,14 +43,14 @@ export default function InputBase({
               onClick={() => {
                 setVisible(!visible);
               }}
-              styles="fill-text_color absolute -translate-y-1/2 right-4"
+              styles="absolute -translate-y-1/2 right-4"
             />
           ) : (
             <EyeIcon
               onClick={() => {
                 setVisible(!visible);
               }}
-              styles="fill-text_color absolute -translate-y-1/2 right-4"
+              styles="absolute -translate-y-1/2 right-4"
             />
           )}
         </div>

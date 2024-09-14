@@ -30,7 +30,9 @@ export default forwardRef(function Input(
   }
 
   function onBlurHandler(e) {
-    setIsInputFocused(false);
+    if (!e.detail?.isAutofillEvent) {
+      setIsInputFocused(false);
+    }
     let valid = isValid;
 
     if (inputValidation(e.target.value)) {
@@ -58,7 +60,7 @@ export default forwardRef(function Input(
   return (
     <>
       <div
-        className={`relative mt-6 flex w-full items-center border-2 outline-none ${
+        className={`relative mt-6 flex w-full items-center border-2 ${
           errorTriggered || (!isEmpty && !isValid)
             ? "border-red-600"
             : isInputFocused
@@ -82,17 +84,17 @@ export default forwardRef(function Input(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `left-2 text-lg text-gray-400 transition-all peer-focus:left-2
-                peer-focus:-translate-y-4 peer-focus:text-sm peer-focus:text-primary`
+              ? `left-2 text-lg text-gray-400 peer-focus:left-2 peer-focus:-translate-y-4
+                peer-focus:text-sm peer-focus:text-primary`
               : `${
                 isValid
-                    ? `transition-all peer-focus:left-2 peer-focus:-translate-y-4 peer-focus:text-sm
+                    ? `peer-focus:left-2 peer-focus:-translate-y-4 peer-focus:text-sm
                       peer-focus:text-primary`
                     : "text-red-600"
                 } left-2 -translate-y-4 text-sm`
  
-            } pointer-events-none absolute peer-autofill:left-2 peer-autofill:-translate-y-4
-            peer-autofill:text-sm`}
+            } pointer-events-none absolute transition-all peer-autofill:left-2
+            peer-autofill:-translate-y-4 peer-autofill:text-sm`}
           htmlFor={labelHtmlFor}
         >
           {labelText}
