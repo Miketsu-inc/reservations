@@ -37,6 +37,7 @@ export default forwardRef(function Input(
 
     if (inputValidation(e.target.value)) {
       valid = true;
+      setErrorTriggered(false);
     } else {
       valid = false;
     }

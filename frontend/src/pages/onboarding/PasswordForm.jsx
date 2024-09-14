@@ -14,6 +14,11 @@ const defaultPasswordData = {
   },
 };
 
+const defaultErrorMeassage = {
+  password: "Please enter your password!",
+  confirmPassword: "Please enter your password again!",
+};
+
 export default function PasswordForm({
   isCompleted,
   sendInputData,
@@ -22,19 +27,26 @@ export default function PasswordForm({
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
-  const [errorMessage, setErrorMessage] = useState(
-    "Please enter your password!"
-  );
+  const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
+
+  function updateErrors(key, message) {
+    setErrorMessage((prevErrorMessage) => ({
+      ...prevErrorMessage,
+      [key]: message,
+    }));
+  }
 
   function passwordValidation(password) {
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setErrorMessage(
+      updateErrors(
+        "password",
         `Password must be ${MIN_PASSWORD_LENGTH} characters or more!`
       );
       return false;
     }
     if (password.length > MAX_PASSWORD_LENGTH) {
-      setErrorMessage(
+      updateErrors(
+        "password",
         `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
       );
       return false;
@@ -44,7 +56,8 @@ export default function PasswordForm({
 
   function confirmPasswordValidation(confirmPassword) {
     if (confirmPassword.length > MAX_PASSWORD_LENGTH) {
-      setErrorMessage(
+      updateErrors(
+        "confirmPassword",
         `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
       );
       return false;
@@ -70,20 +83,23 @@ export default function PasswordForm({
       hasError = true;
     }
 
-    if (!passwordData.confirmPassword.isValid) {
+    if (
+      !passwordData.confirmPassword.isValid ||
+      passwordData.confirmPassword.value.length === 0
+    ) {
       confirmPasswordRef.current.triggerValidationError();
       hasError = true;
     }
 
     if (passwordData.password.value !== passwordData.confirmPassword.value) {
       confirmPasswordRef.current.triggerValidationError();
+      updateErrors("confirmPassword", "The two passwords should match!");
       hasError = true;
     }
 
     if (!hasError) {
       sendInputData({
         password: passwordData.password.value,
-        //confirmPassword: passwordData.confirmPassword.value,
       });
       e.target.form.requestSubmit();
       isCompleted(true);
@@ -103,7 +119,7 @@ export default function PasswordForm({
         autoComplete="new-password"
         labelText="Password"
         labelHtmlFor="passwordInput"
-        errorText={errorMessage}
+        errorText={errorMessage.password}
         inputValidation={passwordValidation}
         inputData={handleInputData}
       />
@@ -117,11 +133,11 @@ export default function PasswordForm({
         autoComplete="new-password"
         labelText="Confirm Password"
         labelHtmlFor="confirmPasswordInput"
-        errorText={errorMessage}
+        errorText={errorMessage.confirmPassword}
         inputValidation={confirmPasswordValidation}
         inputData={handleInputData}
       />
-      <div className="flex items-center justify-center">
+      <div className="mt-4 flex items-center justify-center">
         <Button
           styles="mt-10 w-full font-semibold mt-4 focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"

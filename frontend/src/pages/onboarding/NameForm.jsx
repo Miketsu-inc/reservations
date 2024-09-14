@@ -14,18 +14,30 @@ const defaultNameData = {
   },
 };
 
+const defaultErrorMeassage = {
+  firstname: "Please enter your first name",
+  lastname: "Please enter your last name",
+};
+
 export default function NameForm({ isCompleted, sendInputData }) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);
-  const [errorMessage, setErrorMessage] = useState("Please enter your name!");
+  const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
+
+  function updateErrors(key, message) {
+    setErrorMessage((prevErrorMessage) => ({
+      ...prevErrorMessage,
+      [key]: message,
+    }));
+  }
 
   function firstNameValidation(firstName) {
     if (firstName.length > MAX_INPUT_LENGTH) {
-      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
-      return false;
-    }
-    if (firstName.length === 0) {
+      updateErrors(
+        "firstname",
+        `Inputs must be ${MAX_INPUT_LENGTH} characters or less!`
+      );
       return false;
     }
     return true;
@@ -33,10 +45,10 @@ export default function NameForm({ isCompleted, sendInputData }) {
 
   function lastNameValidation(lastName) {
     if (lastName.length > MAX_INPUT_LENGTH) {
-      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
-      return false;
-    }
-    if (lastName.length === 0) {
+      updateErrors(
+        "lastname",
+        `Inputs must be ${MAX_INPUT_LENGTH} characters or less!`
+      );
       return false;
     }
     return true;
@@ -55,12 +67,12 @@ export default function NameForm({ isCompleted, sendInputData }) {
   function handleClick() {
     let hasError = false;
 
-    if (!nameData.firstName.isValid) {
+    if (!nameData.firstName.isValid || nameData.firstName.value.length === 0) {
       firstNameRef.current.triggerValidationError();
       hasError = true;
     }
 
-    if (!nameData.lastName.isValid) {
+    if (!nameData.lastName.isValid || nameData.lastName.value.length === 0) {
       lastNameRef.current.triggerValidationError();
       hasError = true;
     }
@@ -87,7 +99,7 @@ export default function NameForm({ isCompleted, sendInputData }) {
         autoComplete="family-name"
         labelText="First Name"
         labelHtmlFor="firstNameInput"
-        errorText={errorMessage}
+        errorText={errorMessage.firstname}
         inputValidation={firstNameValidation}
         inputData={handleInputData}
       />
@@ -101,7 +113,7 @@ export default function NameForm({ isCompleted, sendInputData }) {
         autoComplete="given-name"
         labelText="Last Name"
         labelHtmlFor="lastNameInput"
-        errorText={errorMessage}
+        errorText={errorMessage.lastname}
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />

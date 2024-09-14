@@ -19,14 +19,17 @@ const defaultLoginData = {
   },
 };
 
+const defaultErrorMeassage = {
+  email: "Please enter your email",
+  password: "Please enter your password",
+};
+
 export default function LoginPage() {
   const emailRef = useRef();
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(
-    "Please fill out this field!"
-  );
+  const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
 
   function handleInputData(data) {
     setLoginData((prevLoginData) => ({
@@ -37,14 +40,23 @@ export default function LoginPage() {
       },
     }));
   }
+function updateErrors(key, message) {
+    setErrorMessage((prevErrorMessage) => ({
+      ...prevErrorMessage,
+      [key]: message,
+    }));
+  }
 
   function emailValidation(email) {
     if (email.length > MAX_INPUT_LENGTH) {
-      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+      updateErrors(
+        "email",
+`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`
+);
       return false;
     }
     if (!email.includes("@")) {
-      setErrorMessage("Please enter a valid email!");
+      updateErrors("email", "Please enter a valid email");
       return false;
     }
     return true;
@@ -52,13 +64,15 @@ export default function LoginPage() {
 
   function passwordValidation(password) {
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setErrorMessage(
+      updateErrors(
+        "password",
         `Password must be ${MIN_PASSWORD_LENGTH} characters or more!`
       );
       return false;
     }
     if (password.length > MAX_PASSWORD_LENGTH) {
-      setErrorMessage(
+      updateErrors(
+        "password",
         `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
       );
       return false;
@@ -151,7 +165,7 @@ export default function LoginPage() {
             autoComplete="email"
             labelText="Email"
             labelHtmlFor="emailInput"
-            errorText={errorMessage}
+            errorText={errorMessage.email}
             inputValidation={emailValidation}
             inputData={handleInputData}
           />
@@ -165,7 +179,7 @@ export default function LoginPage() {
             autoComplete="password"
             labelText="Password"
             labelHtmlFor="passwordInput"
-            errorText={errorMessage}
+            errorText={errorMessage.password}
             inputValidation={passwordValidation}
             inputData={handleInputData}
           />
