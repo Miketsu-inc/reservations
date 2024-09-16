@@ -44,7 +44,7 @@ export default function SidePanel({ profileImage, profileText }) {
         onClick={sidePanelClickHandler}
       >
         <span className="sr-only">Open sidepanel</span>
-        <HamburgerMenuIcon styles={"h-6 w-6"} />
+        <HamburgerMenuIcon styles="h-6 w-6" />
       </button>
       <aside
         ref={sidePanelRef}

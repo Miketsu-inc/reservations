@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 
 const defaultReservation = {
-  user: "DEFAULT USER",
-  shop: "DEFAULT SHOP",
-  reservationType: "",
-  date: "",
+  user: "Fliki",
+  merchant: "Nail salon",
+  type: "",
+  location: "Kiraly utca",
+  from_date: "",
+  to_date: "lol",
 };
 
 const reservationTypes = ["hair", "nail", "face"];
@@ -19,16 +21,18 @@ export default function ReservationPage() {
     if (isSubmitting) {
       setIsSubmitting(false);
 
-      fetch("/api/v1/reservations", {
+      fetch("/api/v1/appointments", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",
         },
         body: JSON.stringify({
           user: reservation.user,
-          shop: reservation.shop,
-          reservationType: reservation.reservationType,
-          date: reservation.date,
+          merchant: reservation.merchant,
+          type: reservation.type,
+          location: reservation.location,
+          from_date: reservation.from_date,
+          to_date: reservation.to_date,
         }),
       });
     }
@@ -38,11 +42,11 @@ export default function ReservationPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    if (reservation.date === "") {
+    if (reservation.from_date === "") {
       setErrorMessage("Please set a reservation date!");
     }
 
-    if (reservation.reservationType === "") {
+    if (reservation.type === "") {
       setErrorMessage("Please set a reservation type!");
     }
 
@@ -50,16 +54,16 @@ export default function ReservationPage() {
   }
 
   function dateChangeHandler(e) {
-    setReservation((prev) => ({ ...prev, date: e.target.value }));
+    setReservation((prev) => ({ ...prev, from_date: e.target.value }));
   }
 
   function typeChangeHandler(e) {
-    setReservation((prev) => ({ ...prev, reservationType: e.target.value }));
+    setReservation((prev) => ({ ...prev, type: e.target.value }));
   }
 
   return (
     <>
-      <div className="bg-layer_bg flex flex-col items-center gap-6 md:flex-row-reverse">
+      <div className="flex flex-col items-center gap-6 bg-layer_bg md:flex-row-reverse">
         <div>
           <img src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"></img>
         </div>
@@ -79,9 +83,8 @@ export default function ReservationPage() {
           <select
             defaultValue="default"
             onChange={typeChangeHandler}
-            className="hover:bg-hvr_gray focus:bg-hvr_gray bg-layer_bg border-text_color
-              text-text_color block w-full rounded-md border px-4 py-3 text-base shadow-sm
-              focus:outline-none"
+            className="block w-full rounded-md border border-text_color bg-layer_bg px-4 py-3 text-base
+              text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray focus:outline-none"
           >
             <option value="default" disabled hidden>
               Choose a reservation type
@@ -90,7 +93,7 @@ export default function ReservationPage() {
               <option
                 key={index}
                 value={type}
-                className="hover:bg-hvr_gray bg-layer_bg border-text_color text-text_color mt-1 py-1"
+                className="mt-1 border-text_color bg-layer_bg py-1 text-text_color hover:bg-hvr_gray"
               >
                 {type}
               </option>
@@ -99,9 +102,9 @@ export default function ReservationPage() {
           <input
             type="datetime-local"
             onChange={dateChangeHandler}
-            className="hover:bg-hvr_gray focus:bg-hvr_gray bg-layer_bg border-text_color
-              text-text_color mt-4 block w-full rounded-md border px-4 py-2 text-base
-              shadow-sm focus:outline-none dark:[color-scheme:dark]"
+            className="mt-4 block w-full rounded-md border border-text_color bg-layer_bg px-4 py-2
+              text-base text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray
+              focus:outline-none dark:[color-scheme:dark]"
           ></input>
           <Button
             type="submit"

@@ -15,7 +15,7 @@ import (
 type Server struct {
 	port int
 
-	db database.Service
+	db database.PostgreSQL
 }
 
 func NewServer() *http.Server {

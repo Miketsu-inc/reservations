@@ -7,11 +7,14 @@ import (
 	"reflect"
 	"unicode"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Auth struct{}
+type Auth struct {
+	Postgresdb database.PostgreSQL
+}
 
 func NewAuthHandler() *Auth {
 	return &Auth{}

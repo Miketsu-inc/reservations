@@ -1,5 +1,7 @@
+include .env
+
 run:
-	@make -j 3 tailwindcss vite air
+	@make -j 4 tailwindcss vite air db
 
 build:
 	@npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
@@ -14,3 +16,13 @@ air:
 
 tailwindcss:
 	@npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
+
+db:
+	@docker start postgresdb
+
+create-db:
+	@docker run --name postgresdb -p ${DB_PORT}:${DB_PORT} -d -e POSTGRES_PASSWORD=${DB_PASSWORD} -e POSTGRES_USER=${DB_USERNAME} -e POSTGRES_DB=${DB_DATABASE} -v pgdata:/var/lib/postgresql/data postgres
+
+connect-db:
+	containerID=$(shell docker ps -q -f ancestor=postgres); \
+	docker exec -it $$containerID psql -U ${DB_USERNAME} ${DB_DATABASE}

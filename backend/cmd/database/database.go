@@ -14,7 +14,7 @@ import (
 )
 
 // Service represents a service that interacts with a database.
-type Service interface {
+type PostgreSQL interface {
 	// Health returns a map of health status information.
 	// The keys and values in the map are service-specific.
 	Health() map[string]string
@@ -22,6 +22,11 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// Appointment functions
+	NewAppointment(Appointment) error
+	GetAppointmentsByUser(user string) ([]Appointment, error)
+	GetAppointmentsByMerchant(merchant string) ([]Appointment, error)
 }
 
 type service struct {
@@ -38,7 +43,7 @@ var (
 	dbInstance *service
 )
 
-func New() Service {
+func New() PostgreSQL {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance

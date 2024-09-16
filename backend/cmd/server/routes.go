@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
 	"github.com/miketsu-inc/reservations/frontend"
 
@@ -14,11 +15,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Route("/api/v1/auth", userAuthRoutes)
-
 	staticFilesHandler(r)
 
-	r.Route("/api/v1/reservations", reservationRoutes)
+	var rh = RouteHandlers{&s.db}
+	r.Route("/api/v1/auth", rh.userAuthRoutes)
+	r.Route("/api/v1/appointments", rh.appointmentRoutes)
 
 	return r
 }
@@ -45,14 +46,22 @@ func staticFilesHandler(r *chi.Mux) {
 	})
 }
 
-func reservationRoutes(r chi.Router) {
-	reservationHandler := &handlers.Reservation{}
-
-	r.Post("/", reservationHandler.Create)
+type RouteHandlers struct {
+	Postgresdb *database.PostgreSQL
 }
 
-func userAuthRoutes(r chi.Router) {
-	userauthHandler := &handlers.Auth{}
+func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
+	appointmentHandler := &handlers.Appointment{
+		Postgresdb: *rh.Postgresdb,
+	}
+
+	r.Post("/", appointmentHandler.Create)
+}
+
+func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
+	userauthHandler := &handlers.Auth{
+		Postgresdb: *rh.Postgresdb,
+	}
 
 	r.Post("/signup", userauthHandler.HandleSignup)
 	r.Post("/login", userauthHandler.HandleLogin)
