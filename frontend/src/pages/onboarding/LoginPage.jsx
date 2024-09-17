@@ -29,6 +29,7 @@ export default function LoginPage() {
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState(undefined);
   const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
 
   function handleInputData(data) {
@@ -40,7 +41,7 @@ export default function LoginPage() {
       },
     }));
   }
-function updateErrors(key, message) {
+  function updateErrors(key, message) {
     setErrorMessage((prevErrorMessage) => ({
       ...prevErrorMessage,
       [key]: message,
@@ -51,8 +52,8 @@ function updateErrors(key, message) {
     if (email.length > MAX_INPUT_LENGTH) {
       updateErrors(
         "email",
-`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`
-);
+        `Inputs must be ${MAX_INPUT_LENGTH} characters or less!`
+      );
       return false;
     }
     if (!email.includes("@")) {
@@ -96,9 +97,15 @@ function updateErrors(key, message) {
             }),
           });
           const result = await response.json();
-          console.log(result);
+          if (result.error) {
+            setServerError(result.error);
+            return;
+          } else {
+            console.log(result);
+          }
         } catch (err) {
           console.log(err);
+          setServerError("An error occurred. Please try again.");
         } finally {
           setIsSubmitting(false);
         }
@@ -130,15 +137,26 @@ function updateErrors(key, message) {
           sm:rounded-md sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
+        {serverError && (
+          <div
+            className="mb-2 mt-4 flex items-start gap-2 rounded-md border-[1px] border-red-800
+              bg-red-600/25 px-2 py-3 text-red-950 dark:border-red-800 dark:bg-red-700/15
+              dark:text-red-500"
+          >
+            {/* <ExclamationIcon styles="" /> */}
+            <span className="pl-3">Error:</span> {serverError}
+          </div>
+        )}
         <p className="mt-2 py-2 text-sm">Welcome back!</p>
+
         <Button
           type="Button"
           name="Goolge button"
-          styles="group flex justify-center items-center my-2 dark:bg-transparent bg-secondary/50
+          styles="group flex justify-center items-center my-2 dark:bg-transparent bg-secondary
             dark:border dark:border-secondary dark:hover:border-hvr_secondary
             dark:text-secondary text-text_color dark:hover:text-hvr_secondary
             dark:focus:outline-none dark:focus:text-hvr_secondary
-            dark:focus:border-hvr_secondary hover:bg-hvr_secondary/50 focus:bg-hvr_secondary"
+            dark:focus:border-hvr_secondary hover:bg-hvr_secondary/90 focus:bg-secondary"
           buttonText="Log in with Google"
         >
           <GoogleIcon styles="dark:fill-secondary dark:group-hover:fill-hvr_secondary fill-text_color" />

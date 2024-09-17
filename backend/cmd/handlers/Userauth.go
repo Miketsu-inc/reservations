@@ -41,8 +41,9 @@ func isASCII(s string) bool {
 	return true
 }
 
+// check for the maximum 72 bytes before hashing
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 15)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
@@ -68,7 +69,7 @@ func Sanitize(s interface{}) (interface{}, error) {
 			strValue := field.String()
 
 			if !isASCII(strValue) {
-				return nil, fmt.Errorf("%s contains non-ASCII characters", fieldName)
+				return nil, fmt.Errorf("%s cannot contain non-ASCII characters", fieldName)
 			}
 
 			escapedValue := html.EscapeString(strValue)
@@ -97,14 +98,14 @@ func (a *Auth) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	sanitizedData, ok := sanitizedInterface.(LoginData)
 	if !ok {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during sanitization"))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during handling data"))
 		return
 	}
 
 	if sanitizedData.Email == *stored_email && HashCompare(sanitizedData.Password, *stored_hash) {
 		utils.WriteJSON(w, http.StatusOK, map[string]string{"Response": "User logged in successfully"})
 	} else {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid email or password"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("incorrect email or password"))
 	}
 
 }
@@ -124,12 +125,12 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	//change interface to SignupData
 	sanitizedData, ok := sanitizedInterface.(SignUpData)
 	if !ok {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("assertation failed"))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during handling data"))
 		return
 	}
 
 	if *stored_email == sanitizedData.Email {
-		utils.WriteError(w, http.StatusConflict, fmt.Errorf("this email is already used"))
+		utils.WriteError(w, http.StatusConflict, fmt.Errorf("the email %s is already used", sanitizedData.Email))
 		return
 	}
 	hashedPassword, err := HashPassword(sanitizedData.Password)
