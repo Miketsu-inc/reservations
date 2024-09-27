@@ -102,6 +102,7 @@ export default function LoginPage() {
             return;
           } else {
             console.log(result);
+            setServerError(undefined);
           }
         } catch (err) {
           console.log(err);
@@ -175,7 +176,7 @@ export default function LoginPage() {
         >
           <Input
             ref={emailRef}
-            styles=""
+            styles="mt-4"
             type="text"
             name="email"
             id="emailInput"
@@ -189,7 +190,7 @@ export default function LoginPage() {
           />
           <Input
             ref={passwordRef}
-            styles=""
+            styles="mt-4"
             type="password"
             name="password"
             id="passwordInput"

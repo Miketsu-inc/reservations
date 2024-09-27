@@ -19,11 +19,7 @@ const defaultErrorMeassage = {
   confirmPassword: "Please enter your password again!",
 };
 
-export default function PasswordForm({
-  isCompleted,
-  sendInputData,
-  isSubmitting,
-}) {
+export default function PasswordForm({ isCompleted, sendInputData }) {
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const [passwordData, setPasswordData] = useState(defaultPasswordData);
@@ -101,14 +97,17 @@ export default function PasswordForm({
       sendInputData({
         password: passwordData.password.value,
       });
-      e.target.form.requestSubmit();
       isCompleted(true);
     }
   }
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-2xl sm:mt-4">Enter your password</h2>
+      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Password</h2>
+      <p className="py-2 text-center">
+        Enter a password, which later you can use to login into your account.
+        Please try to provide strong passwords
+      </p>
       <Input
         styles=""
         ref={passwordRef}
@@ -124,7 +123,7 @@ export default function PasswordForm({
         inputData={handleInputData}
       />
       <Input
-        styles=""
+        styles="mt-4"
         ref={confirmPasswordRef}
         type="password"
         name="confirmPassword"
@@ -143,8 +142,7 @@ export default function PasswordForm({
             hover:bg-hvr_primary text-white"
           type="button"
           onClick={handleClick}
-          isLoading={isSubmitting}
-          buttonText="Finish"
+          buttonText="Continue"
         ></Button>
       </div>
     </>

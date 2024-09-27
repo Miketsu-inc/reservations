@@ -19,7 +19,12 @@ const defaultErrorMeassage = {
   lastname: "Please enter your last name",
 };
 
-export default function NameForm({ isCompleted, sendInputData }) {
+export default function NameForm({
+  isCompleted,
+  sendInputData,
+  isSubmitting,
+  SubmitForm,
+}) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);
@@ -82,13 +87,17 @@ export default function NameForm({ isCompleted, sendInputData }) {
         firstName: nameData.firstName.value,
         lastName: nameData.lastName.value,
       });
+      SubmitForm();
       isCompleted(true);
     }
   }
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-2xl sm:mt-4">Enter your name</h2>
+      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Username</h2>
+      <p className="py-2 text-center">
+        Enter your first and last name, which you will use over the application.
+      </p>
       <Input
         styles=""
         ref={firstNameRef}
@@ -104,7 +113,7 @@ export default function NameForm({ isCompleted, sendInputData }) {
         inputData={handleInputData}
       />
       <Input
-        styles=""
+        styles="mt-4"
         ref={lastNameRef}
         type="text"
         name="lastName"
@@ -117,14 +126,15 @@ export default function NameForm({ isCompleted, sendInputData }) {
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />
-      <div className="flex items-center justify-center">
+      <div className="mt-4 flex items-center justify-center">
         <Button
-          styles="mt-10 w-full font-semibold focus-visible:outline-1 bg-primary
+          styles="mt-6 w-full font-semibold mt-4 focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
           type="button"
           onClick={handleClick}
-          buttonText="Continue"
-        />
+          isLoading={isSubmitting}
+          buttonText="Finish"
+        ></Button>
       </div>
     </>
   );

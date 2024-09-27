@@ -3,6 +3,7 @@ import { useMultiStepForm } from "../../lib/hooks";
 import EmailForm from "./EmailForm";
 import NameForm from "./NameForm";
 import PasswordForm from "./PasswordForm";
+import PhoneNumForm from "./PhoneNumForm";
 import ProgressBar from "./ProgressBar";
 import SubmissionCompleted from "./SubmissionCompleted";
 
@@ -10,6 +11,7 @@ const defaultSignUpData = {
   firstName: "",
   lastName: "",
   email: "",
+  phoneNum: "",
   password: "",
 };
 
@@ -18,19 +20,25 @@ export default function SingUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const { step, stepIndex, nextStep } = useMultiStepForm([
-    <NameForm
-      key="nameForm"
+    <EmailForm
+      key="emailForm"
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
-    <EmailForm
-      key="emailForm"
+    <PhoneNumForm
+      key="phoneNumForm"
       sendInputData={signUpDataHandler}
       isCompleted={isCompletedHandler}
     />,
     <PasswordForm
       key="passwordForm"
       sendInputData={signUpDataHandler}
+      isCompleted={isCompletedHandler}
+    />,
+    <NameForm
+      key="nameForm"
+      sendInputData={signUpDataHandler}
+      SubmitForm={handleSubmit}
       isCompleted={isCompletedHandler}
       isSubmitting={isSubmitting}
     />,
@@ -50,8 +58,13 @@ export default function SingUpPage() {
             body: JSON.stringify(signUpData),
           });
           const result = await response.json();
-          console.log(result);
-          setIsSubmitDone(true);
+          if (result.error) {
+            console.log(result);
+            return;
+          } else {
+            console.log(result);
+            setIsSubmitDone(true);
+          }
         } catch (err) {
           console.error("Error messsage from server:", err.message);
         } finally {
@@ -62,8 +75,7 @@ export default function SingUpPage() {
     }
   }, [signUpData, isSubmitting]);
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit() {
     setIsSubmitting(true);
   }
 
@@ -83,23 +95,15 @@ export default function SingUpPage() {
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
         className="flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
-          sm:rounded-md sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg lg:px-8"
+          sm:rounded-3xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg"
       >
         <ProgressBar isSubmitDone={isSubmitDone} step={stepIndex} />
 
-        <form
-          className="flex flex-col"
-          method="POST"
-          action=""
-          autoComplete="on"
-          onSubmit={handleSubmit}
-        >
-          {isSubmitDone ? (
-            <SubmissionCompleted text="You signed up successfully" />
-          ) : (
-            step
-          )}
-        </form>
+        {isSubmitDone ? (
+          <SubmissionCompleted text="You signed up successfully" />
+        ) : (
+          step
+        )}
       </div>
     </div>
   );

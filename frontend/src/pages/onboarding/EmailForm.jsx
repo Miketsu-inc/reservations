@@ -26,7 +26,6 @@ export default function EmailForm({ isCompleted, sendInputData }) {
     }
     return true;
   }
-
   function handleInputData(data) {
     setEmailData((prevEmailData) => ({
       ...prevEmailData,
@@ -50,7 +49,10 @@ export default function EmailForm({ isCompleted, sendInputData }) {
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-2xl sm:mt-4">Enter your email</h2>
+      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Email</h2>
+      <p className="py-2 text-center">
+        Enter your email to get started with creating your account
+      </p>
       <Input
         styles=""
         ref={emailRef}
@@ -65,13 +67,18 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         inputValidation={emailValidation}
         inputData={handleInputData}
       />
+      <p className="px-1 pt-4 text-center text-sm tracking-tight">
+        After giving your email you'll get a
+        <span className="underline"> verification email</span>. Please check
+        your inbox and verify your email.
+      </p>
       <div className="flex items-center justify-center">
         <Button
-          styles="mt-10 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
+          styles="mt-6 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
             text-white"
           type="button"
           onClick={handleClick}
-          buttonText="Continue"
+          buttonText="Verify email"
         />
       </div>
     </>

@@ -5,7 +5,6 @@ import (
 	"html"
 	"net/http"
 	"reflect"
-	"unicode"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
@@ -29,19 +28,10 @@ type SignUpData struct {
 	Firstname string `json:"firstName"`
 	Lastname  string `json:"lastName"`
 	Email     string `json:"email"`
+	Phonenum  string `json:"phoneNum"`
 	Password  string `json:"password"`
 }
 
-func isASCII(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] > unicode.MaxASCII {
-			return false
-		}
-	}
-	return true
-}
-
-// check for the maximum 72 bytes before hashing
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
@@ -63,15 +53,9 @@ func Sanitize(s interface{}) (interface{}, error) {
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Field(i)
 		sanitizedField := sanitizedData.Field(i)
-		fieldName := value.Type().Field(i).Name
 
 		if field.Kind() == reflect.String {
 			strValue := field.String()
-
-			if !isASCII(strValue) {
-				return nil, fmt.Errorf("%s cannot contain non-ASCII characters", fieldName)
-			}
-
 			escapedValue := html.EscapeString(strValue)
 			sanitizedField.SetString(escapedValue)
 		} else {
@@ -135,7 +119,7 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	}
 	hashedPassword, err := HashPassword(sanitizedData.Password)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("the password is too long"))
 		return
 	}
 
