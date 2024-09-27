@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/Button";
+import Selector from "../../components/Selector";
+import SelectorItem from "../../components/SelectorItem";
 
 const defaultReservation = {
   user: "Fliki",
@@ -10,7 +12,16 @@ const defaultReservation = {
   to_date: "lol",
 };
 
-const reservationTypes = ["hair", "nail", "face"];
+const reservationTypes = [
+  "hair",
+  "nail",
+  "face",
+  "kjfgkljsdf",
+  "dfgjgsjh",
+  "fhgkjhg",
+  "fgjkjhfd",
+  "fjghkfj",
+];
 
 export default function ReservationPage() {
   const [reservation, setReservation] = useState(defaultReservation);
@@ -20,7 +31,7 @@ export default function ReservationPage() {
   useEffect(() => {
     if (isSubmitting) {
       setIsSubmitting(false);
-
+      console.log(reservation);
       fetch("/api/v1/appointments", {
         method: "POST",
         headers: {
@@ -57,8 +68,8 @@ export default function ReservationPage() {
     setReservation((prev) => ({ ...prev, from_date: e.target.value }));
   }
 
-  function typeChangeHandler(e) {
-    setReservation((prev) => ({ ...prev, type: e.target.value }));
+  function typeChangeHandler(value) {
+    setReservation((prev) => ({ ...prev, type: value }));
   }
 
   return (
@@ -80,25 +91,18 @@ export default function ReservationPage() {
       </div>
       <form method="POST" onSubmit={onSubmitHandler}>
         <div className="flex flex-col gap-2 px-10 pt-10">
-          <select
-            defaultValue="default"
-            onChange={typeChangeHandler}
-            className="block w-full rounded-md border border-text_color bg-layer_bg px-4 py-3 text-base
-              text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray focus:outline-none"
+          <Selector
+            defaultValue="Choose a reservation type"
+            styles="text-base p-1 rounded-lg border-text_color border px-3"
+            dropdownStyles="rounded-md bg-layer_bg border border-gray-600 w-full translate-y-[2.9rem] absolute sm:h-32 h-28 md:h-44"
+            onSelect={typeChangeHandler}
           >
-            <option value="default" disabled hidden>
-              Choose a reservation type
-            </option>
             {reservationTypes.map((type, index) => (
-              <option
-                key={index}
-                value={type}
-                className="mt-1 border-text_color bg-layer_bg py-1 text-text_color hover:bg-hvr_gray"
-              >
+              <SelectorItem key={index} value={type} styles="text-base py-1">
                 {type}
-              </option>
+              </SelectorItem>
             ))}
-          </select>
+          </Selector>
           <input
             type="datetime-local"
             onChange={dateChangeHandler}
