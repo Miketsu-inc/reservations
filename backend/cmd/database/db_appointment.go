@@ -1,33 +1,37 @@
 package database
 
+import (
+	"context"
+)
+
 type Appointment struct {
-	User             string `json:"user"`
-	Merchant         string `json:"merchant"`
-	Appointment_type string `json:"type"`
-	Location         string `json:"location"`
-	From_date        string `json:"from_date"`
-	To_date          string `json:"to_date"`
+	User            string `json:"user"`
+	Merchant        string `json:"merchant"`
+	AppointmentType string `json:"type"`
+	Location        string `json:"location"`
+	FromDate        string `json:"from_date"`
+	ToDate          string `json:"to_date"`
 }
 
-func (s *service) NewAppointment(app Appointment) error {
+func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
 	query := `
 	insert into appointment("user", merchant, type, location, from_date, to_date)
 	values ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := s.db.Exec(query, app.User, app.Merchant, app.Appointment_type, app.Location, app.From_date, app.To_date)
+	_, err := s.db.ExecContext(ctx, query, app.User, app.Merchant, app.AppointmentType, app.Location, app.FromDate, app.ToDate)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *service) GetAppointmentsByUser(user string) ([]Appointment, error) {
+func (s *service) GetAppointmentsByUser(ctx context.Context, user string) ([]Appointment, error) {
 	query := `
 	select * from appointment where "user" = $1
 	`
 
-	rows, err := s.db.Query(query, user)
+	rows, err := s.db.QueryContext(ctx, query, user)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +40,7 @@ func (s *service) GetAppointmentsByUser(user string) ([]Appointment, error) {
 	var appointments []Appointment
 	for rows.Next() {
 		var app Appointment
-		if err := rows.Scan(&app.User, &app.Merchant, &app.Appointment_type, &app.Location, &app.From_date, &app.To_date); err != nil {
+		if err := rows.Scan(&app.User, &app.Merchant, &app.AppointmentType, &app.Location, &app.FromDate, &app.ToDate); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)
@@ -45,12 +49,12 @@ func (s *service) GetAppointmentsByUser(user string) ([]Appointment, error) {
 	return appointments, nil
 }
 
-func (s *service) GetAppointmentsByMerchant(merchant string) ([]Appointment, error) {
+func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchant string) ([]Appointment, error) {
 	query := `
 	select * from appointment where merchant = $1
 	`
 
-	rows, err := s.db.Query(query, merchant)
+	rows, err := s.db.QueryContext(ctx, query, merchant)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +64,7 @@ func (s *service) GetAppointmentsByMerchant(merchant string) ([]Appointment, err
 
 	for rows.Next() {
 		var app Appointment
-		if err := rows.Scan(&app.User, &app.Merchant, &app.Appointment_type, &app.Location, &app.From_date, &app.To_date); err != nil {
+		if err := rows.Scan(&app.User, &app.Merchant, &app.AppointmentType, &app.Location, &app.FromDate, &app.ToDate); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)

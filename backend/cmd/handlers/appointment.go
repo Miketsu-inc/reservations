@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
+	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 )
 
 type Appointment struct {
@@ -15,16 +15,15 @@ type Appointment struct {
 func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	var app database.Appointment
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&app); err != nil {
+	if err := utils.ParseJSON(r, &app); err != nil {
 		slog.Error(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "JSON parsing failed on appointment", http.StatusInternalServerError)
 		return
 	}
 
-	if err := a.Postgresdb.NewAppointment(app); err != nil {
-		slog.Debug(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Could not make new apppointment", http.StatusInternalServerError)
 		return
 	}
 

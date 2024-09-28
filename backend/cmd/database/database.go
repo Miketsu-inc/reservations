@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -23,10 +24,27 @@ type PostgreSQL interface {
 	// It returns an error if the connection cannot be closed.
 	Close() error
 
-	// Appointment functions
-	NewAppointment(Appointment) error
-	GetAppointmentsByUser(user string) ([]Appointment, error)
-	GetAppointmentsByMerchant(merchant string) ([]Appointment, error)
+	// -- Appointment --
+
+	// Insert a new Appointment to the database.
+	NewAppointment(context.Context, Appointment) error
+	// Get all Appointments made by a User.
+	GetAppointmentsByUser(context.Context, string) ([]Appointment, error)
+	// Get all Aappintments assigned to a Merchant.
+	GetAppointmentsByMerchant(context.Context, string) ([]Appointment, error)
+
+	// -- Auth --
+
+	// Insert a new User to the database.
+	NewUser(context.Context, User) error
+	// Get a User by user id.
+	GetUserById(context.Context, uuid.UUID) (User, error)
+	// Get a User's password by the User's email.
+	// Used for comparing password hashes on login.
+	//
+	// Can also be used for checking if an email exists
+	// by checking for the slq.ErrNoRows error.
+	GetUserPasswordByUserEmail(context.Context, string) (string, error)
 }
 
 type service struct {

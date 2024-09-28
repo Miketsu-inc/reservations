@@ -14,11 +14,13 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(middleware.AllowContentType("application/json"))
+	r.Use(middleware.Recoverer)
 
 	staticFilesHandler(r)
 
 	var rh = RouteHandlers{&s.db}
-	r.Route("/api/v1/auth", rh.userAuthRoutes)
+	r.Route("/api/v1/auth", rh.AuthRoutes)
 	r.Route("/api/v1/appointments", rh.appointmentRoutes)
 
 	return r
@@ -58,11 +60,11 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 	r.Post("/", appointmentHandler.Create)
 }
 
-func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
-	userauthHandler := &handlers.Auth{
+func (rh *RouteHandlers) AuthRoutes(r chi.Router) {
+	authHandler := &handlers.Auth{
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Post("/signup", userauthHandler.HandleSignup)
-	r.Post("/login", userauthHandler.HandleLogin)
+	r.Post("/signup", authHandler.HandleSignup)
+	r.Post("/login", authHandler.HandleLogin)
 }
