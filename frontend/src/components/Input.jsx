@@ -61,7 +61,7 @@ export default forwardRef(function Input(
   return (
     <>
       <div
-        className={`relative mt-6 flex w-full items-center border-2 ${
+        className={`relative flex w-full items-center border-2 ${styles} ${
           errorTriggered || (!isEmpty && !isValid)
             ? "border-red-600"
             : isInputFocused
@@ -70,7 +70,7 @@ export default forwardRef(function Input(
           } `}
       >
         <InputBase
-          styles={`${styles} peer mt-4`}
+          styles="peer mt-1 pt-4"
           type={type}
           value={inputValue}
           name={name}
@@ -102,7 +102,7 @@ export default forwardRef(function Input(
         </label>
       </div>
       {(!isValid && !isEmpty) || errorTriggered ? (
-        <span className="text-sm text-red-600">{errorText}</span>
+        <span className="text-nowrap text-sm text-red-600">{errorText}</span>
       ) : (
         <></>
       )}

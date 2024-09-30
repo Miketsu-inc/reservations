@@ -41,7 +41,7 @@ export default function PhoneNumForm({ isCompleted, sendInputData }) {
       phoneNumRef.current.triggerValidationError();
     } else {
       sendInputData({
-        phoneNum: countryCode + phoneNumData.phoneNum.value,
+        phoneNum: phoneNumData.phoneNum.value,
       });
       isCompleted(true);
     }
