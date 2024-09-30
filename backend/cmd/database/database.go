@@ -31,7 +31,7 @@ type PostgreSQL interface {
 	// Get all Appointments made by a User.
 	GetAppointmentsByUser(context.Context, string) ([]Appointment, error)
 	// Get all Aappintments assigned to a Merchant.
-	GetAppointmentsByMerchant(context.Context, string) ([]Appointment, error)
+	GetAppointmentsByMerchant(context.Context, string, string, string) ([]Appointment, error)
 
 	// -- Auth --
 

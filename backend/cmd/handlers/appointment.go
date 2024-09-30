@@ -27,5 +27,24 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	}
+
+func (a *Appointment) GetEvents(w http.ResponseWriter, r *http.Request) {
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
+
+	// id := r.URL.Query().Get("id")
+
+	apps, err := a.Postgresdb.GetAppointmentsByMerchant(r.Context(), "Hair salon", start, end)
+	if err != nil {
+		println("the error is here")
+		slog.Error(err.Error())
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if len(apps) == 0 {
+		println("No appointments found")
+	}
+
+	utils.WriteJSON(w, http.StatusOK, apps)
 }

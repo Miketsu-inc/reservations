@@ -4,18 +4,18 @@ import Selector from "../../components/Selector";
 import SelectorItem from "../../components/SelectorItem";
 
 const defaultReservation = {
-  user: "Fliki",
-  merchant: "Nail salon",
+  user: "Marci",
+  merchant: "Hair salon",
   type: "",
   location: "Kiraly utca",
   from_date: "",
-  to_date: "lol",
+  to_date: "2024-10-03T08:00Z",
 };
 
 const reservationTypes = [
-  "hair",
-  "nail",
-  "face",
+  "Hair",
+  "Nail",
+  "Face",
   "kjfgkljsdf",
   "dfgjgsjh",
   "fhgkjhg",

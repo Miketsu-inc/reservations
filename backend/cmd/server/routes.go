@@ -58,6 +58,7 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 	}
 
 	r.Post("/", appointmentHandler.Create)
+	r.Get("/calendar", appointmentHandler.GetEvents)
 }
 
 func (rh *RouteHandlers) AuthRoutes(r chi.Router) {

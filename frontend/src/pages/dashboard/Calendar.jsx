@@ -3,14 +3,78 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { useCallback, useState } from "react";
+
 
 export default function Calendar() {
+const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState(undefined);
+ 
+  const formatData = (data) => {
+    return data.map((event) => ({
+      id: event.location,
+      title: event.appointment_type,
+      start: event.from_date,
+      end: event.to_date,
+      extendedProps: {
+        name: event.user,
+        //anything basically
+      },
+    }));
+  };
+
+  const fetchEvents = useCallback(
+    async (fetchInfo, successCallback, failureCallback) => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/v1/appointments/calendar?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`,
+          {
+            method: "GET",
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data);
+        if (data.error) {
+          setServerError(data.error);
+          failureCallback(data.error);
+        } else {
+          const events = formatData(data);
+          successCallback(events);
+        }
+      } catch (err) {
+        setServerError(
+          "Error occured. Please try again by refreshing the page"
+        );
+        failureCallback(err);
+      } finally {
+        setServerError(undefined);
+        setIsLoading(false);
+      }
+    },
+    []
+  );
   return (
+<div className="flex items-center justify-center">
+      <div className="w-1/2">
+        {isLoading && <div>Loading the calendar</div>}
+        {serverError && <span className="text-red-600">{serverError}</span>}
+      </div>
     <div className="bg-bg_color text-text_color">
       <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, listPlugin]}
+        plugins={[
+dayGridPlugin,
+interactionPlugin,
+timeGridPlugin,
+listPlugin,
+]}
         weekNumberCalculation="ISO"
         locale="hu"
+timeZone="UTC"
         editable={true}
         eventDurationEditable={true}
         selectable={true}
@@ -18,14 +82,7 @@ export default function Calendar() {
         weekNumbers={true}
         navLinks={true}
         height="auto"
-        events={[
-          {
-            id: "test",
-            title: "testTitle",
-            start: "2024-07-16T08:30:00",
-            end: "2024-07-16T09:30:00",
-          },
-        ]}
+        events={fetchEvents}
         eventClick={(e) => {
           const id = e.event.id;
           const title = e.event.title;
@@ -37,6 +94,7 @@ export default function Calendar() {
           console.log(date);
           console.log(end);
         }}
+lazyFetching={true}
         // views={{
         //   dayGridMonth: {
         //     fixedWeekCount: false,

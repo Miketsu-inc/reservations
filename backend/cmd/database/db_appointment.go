@@ -49,12 +49,15 @@ func (s *service) GetAppointmentsByUser(ctx context.Context, user string) ([]App
 	return appointments, nil
 }
 
-func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchant string) ([]Appointment, error) {
+func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchant, start, end string) ([]Appointment, error) {
 	query := `
-	select * from appointment where merchant = $1
+	select * from appointment 
+where merchant = $1
+and from_date >= $2 
+		and to_date <= $3
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, merchant)
+	rows, err := s.db.QueryContext(ctx, query, merchant, start, end)
 	if err != nil {
 		return nil, err
 	}
