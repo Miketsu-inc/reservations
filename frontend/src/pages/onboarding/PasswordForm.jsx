@@ -71,7 +71,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
     }));
   }
 
-  function handleClick(e) {
+  function handleClick() {
     let hasError = false;
 
     if (!passwordData.password.isValid) {

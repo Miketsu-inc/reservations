@@ -74,7 +74,7 @@ func parseSanitizeConvert[T any](r *http.Request) (T, error) {
 
 	sanitizedData, ok := sanitizedInterface.(T)
 	if !ok {
-		return data, errors.New("unexpected error during handling data")
+		return data, fmt.Errorf("unexpected error during handling data")
 	}
 
 	return sanitizedData, nil
@@ -89,12 +89,14 @@ func (a *Auth) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	login, err := parseSanitizeConvert[LoginData](r)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data"))
+		return
 	}
 
 	password, err := a.Postgresdb.GetUserPasswordByUserEmail(r.Context(), login.Email)
 	if err != nil {
 		slog.Error(err.Error())
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("incorrect email or password"))
+		return
 	}
 
 	if hashCompare(login.Password, password) {
