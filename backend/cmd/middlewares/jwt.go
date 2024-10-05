@@ -12,25 +12,32 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 )
 
 type contextKey struct {
 	name string
 }
 
-var tokenCtxKey = &contextKey{"Token"}
+var UserIDCtxKey = &contextKey{"UserID"}
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		token, err := verifyRequest(r, getTokenFromHeader, getTokenFromCookie)
+		claims, err := verifyRequest(r, getTokenFromHeader, getTokenFromCookie)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf(err.Error()))
 			return
 		}
 
-		ctx = context.WithValue(ctx, tokenCtxKey, token)
+		userID := getUserIdFromClaims(claims)
+		if userID == uuid.Nil {
+			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims"))
+			return
+		}
+
+		ctx = context.WithValue(ctx, UserIDCtxKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -57,22 +64,36 @@ func CreateJWT(secret []byte, userID uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
-func verifyToken(tokenString string) (jwt.Token, error) {
+func getUserIdFromClaims(claims jwt.MapClaims) uuid.UUID {
+	uuidStr, err := claims.GetSubject()
+	if err != nil {
+		return uuid.Nil
+	}
+
+	userID, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return userID
+}
+
+func verifyToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {
-		return jwt.Token{}, err
+		return nil, err
 	}
 
-	if !token.Valid {
-		return jwt.Token{}, fmt.Errorf("invalid token")
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
 	}
 
-	return *token, nil
+	return nil, fmt.Errorf("invalid token")
 }
 
-func verifyRequest(r *http.Request, findTokenFns ...func(r *http.Request) string) (jwt.Token, error) {
+func verifyRequest(r *http.Request, findTokenFns ...func(r *http.Request) string) (jwt.MapClaims, error) {
 	var tokenString string
 
 	for _, fn := range findTokenFns {
@@ -82,7 +103,7 @@ func verifyRequest(r *http.Request, findTokenFns ...func(r *http.Request) string
 		}
 	}
 	if tokenString == "" {
-		return jwt.Token{}, fmt.Errorf("JWT token could not be found")
+		return nil, fmt.Errorf("JWT token could not be found")
 	}
 
 	return verifyToken(tokenString)
