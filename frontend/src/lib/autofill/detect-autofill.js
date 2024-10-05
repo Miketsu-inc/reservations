@@ -27,7 +27,7 @@
 */
 
 import "./custom-event-polyfill";
-import "./detect-autofill.scss";
+import "./detect-autofill.css";
 
 document.addEventListener("animationend", onAnimationStart, true);
 document.addEventListener("input", onInput, true);
