@@ -5,12 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"log"
 	"log/slog"
 	"net/http"
+	"os"
 	"reflect"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -118,6 +123,7 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	if !errors.Is(err, sql.ErrNoRows) {
 		if err != nil {
 			utils.WriteError(w, http.StatusConflict, fmt.Errorf("unexpected error during handling data"))
+			slog.Error(err.Error())
 			return
 		}
 
@@ -142,6 +148,7 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 		FirstName:    signup.Firstname,
 		LastName:     signup.Lastname,
 		Email:        signup.Email,
+		Phonenumber:  signup.Phonenum,
 		Password:     hashedPassword,
 		Subscription: 0,
 		Settings:     make(map[string]bool),
@@ -151,6 +158,29 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user"))
 		return
 	}
+
+	token, err := middlewares.CreateJWT([]byte(os.Getenv("JWT_SECRET")), userId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating jwt token"))
+		return
+	}
+
+	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		HttpOnly: true,
+		MaxAge:   exp_time,
+		Expires:  time.Now().UTC().Add(time.Hour * 24 * 30),
+		Path:     "/",
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	utils.WriteJSON(w, http.StatusOK, map[string]string{"Response": "User created successfully"})
 }

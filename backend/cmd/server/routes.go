@@ -5,6 +5,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -21,7 +22,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	var rh = RouteHandlers{&s.db}
 	r.Route("/api/v1/auth", rh.AuthRoutes)
-	r.Route("/api/v1/appointments", rh.appointmentRoutes)
+
+	// routes which requires auth
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.JWTMiddleware)
+
+		r.Route("/api/v1/appointments", rh.appointmentRoutes)
+	})
 
 	return r
 }
