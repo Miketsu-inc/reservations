@@ -1,5 +1,6 @@
-import { Children, cloneElement, useState } from "react";
+import { Children, cloneElement, useRef, useState } from "react";
 import BackArrowIcon from "../assets/icons/BackArrowIcon";
+import { useClickOutside } from "../lib/hooks";
 
 export default function Selector({
   children,
@@ -8,8 +9,11 @@ export default function Selector({
   dropdownStyles,
   onSelect,
 }) {
+  const selectorRef = useRef();
   const [value, setValue] = useState(defaultValue);
   const [showOptions, setShowOptions] = useState(false);
+  useClickOutside(selectorRef, () => setShowOptions(false));
+
   function handleSelect(newValue) {
     setValue(newValue);
     setShowOptions(false);
@@ -17,7 +21,10 @@ export default function Selector({
   }
 
   return (
-    <div className="relative flex w-full flex-col transition-all">
+    <div
+      ref={selectorRef}
+      className="relative flex w-full flex-col transition-all"
+    >
       <button
         className={`relative inline-flex w-full flex-shrink-0 items-center ${styles}
           ${showOptions ? "border-[1px] border-gray-600 bg-hvr_gray" : ""}`}

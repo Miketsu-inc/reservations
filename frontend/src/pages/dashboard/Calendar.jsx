@@ -3,14 +3,17 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useClickOutside } from "../../lib/hooks";
 import CalendarModal from "./CalendarModal";
 
 export default function Calendar() {
+  const modalRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState({});
+  useClickOutside(modalRef, () => setIsModalOpen(false));
 
   const formatData = (data) => {
     return data.map((event) => ({
@@ -60,10 +63,12 @@ export default function Calendar() {
     },
     []
   );
+
   function handleClick(e) {
     setEventInfo(e.event);
     setIsModalOpen(true);
   }
+
   return (
     <div className="flex items-center justify-center">
       <div className="w-1/2">
@@ -142,13 +147,15 @@ export default function Calendar() {
           // }}
         />
       </div>
-      <CalendarModal
-        eventInfo={eventInfo}
-        isOpen={isModalOpen}
-        close={() => {
-          setIsModalOpen(false);
-        }}
-      />
+      <span ref={modalRef}>
+        <CalendarModal
+          eventInfo={eventInfo}
+          isOpen={isModalOpen}
+          close={() => {
+            setIsModalOpen(false);
+          }}
+        />
+      </span>
     </div>
   );
 }
