@@ -7,22 +7,23 @@ import (
 )
 
 type User struct {
-	Id           uuid.UUID       `json:"id"`
-	FirstName    string          `json:"first_name"`
-	LastName     string          `json:"last_name"`
-	Email        string          `json:"email"`
-	Password     string          `json:"password"`
-	Subscription int             `json:"subscription"`
-	Settings     map[string]bool `json:"settings"`
+	Id             uuid.UUID       `json:"ID"`
+	FirstName      string          `json:"first_name"`
+	LastName       string          `json:"last_name"`
+	Email          string          `json:"email"`
+	Phonenumber    string          `json:"phone_number"`
+	PasswordHash   string          `json:"password_hash"`
+	SubscriptionId int             `json:"subscription_id"`
+	Settings       map[string]bool `json:"settings"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
 	query := `
-	insert into "user"(id, first_name, last_name, email, password, subscription, settings)
-	values ($1, $2, $3, $4, $5, $6, $7)
+	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, subscription, settings)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.Password, user.Subscription, user.Settings)
+	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.Phonenumber, user.PasswordHash, user.SubscriptionId, user.Settings)
 	if err != nil {
 		return err
 	}
@@ -30,13 +31,14 @@ func (s *service) NewUser(ctx context.Context, user User) error {
 	return nil
 }
 
-func (s *service) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, error) {
 	query := `
-	select * from "user" where id = $1
+	select * from "User"
+	where id = $1
 	`
 
 	var user User
-	err := s.db.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Subscription, &user.Settings)
+	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Phonenumber, &user.PasswordHash, &user.SubscriptionId, &user.Settings)
 	if err != nil {
 		return User{}, err
 	}
@@ -46,7 +48,8 @@ func (s *service) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 
 func (s *service) GetUserPasswordByUserEmail(ctx context.Context, email string) (string, error) {
 	query := `
-	select password from "user" where email = $1
+	select password_hash from "User"
+	where email = $1
 	`
 
 	var password string

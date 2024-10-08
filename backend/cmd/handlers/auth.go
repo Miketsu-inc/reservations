@@ -146,17 +146,16 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = a.Postgresdb.NewUser(r.Context(), database.User{
-		Id:           userId,
-		FirstName:    signup.Firstname,
-		LastName:     signup.Lastname,
-		Email:        signup.Email,
-		Phonenumber:  signup.Phonenum,
-		Password:     hashedPassword,
-		Subscription: 0,
-		Settings:     make(map[string]bool),
+		Id:             userId,
+		FirstName:      signup.Firstname,
+		LastName:       signup.Lastname,
+		Email:          signup.Email,
+		Phonenumber:    signup.Phonenum,
+		PasswordHash:   hashedPassword,
+		SubscriptionId: 0,
+		Settings:       make(map[string]bool),
 	})
 	if err != nil {
-		slog.Error(err.Error())
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user"))
 		return
 	}
