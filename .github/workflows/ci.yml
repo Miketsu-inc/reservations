@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Node.js 22 setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Go 1.22.3 setup
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.3"
+
+      - name: Install go dependencies
+        run: go mod download
+
+      - name: Node lint
+        run: npm run lint
+
+      - name: Tailwind build
+        run: npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
+
+      - name: Node build
+        run: npm run build
+
+      # TODO
+      # - name: Node test
+      #   run: npm test
+
+      - name: Go build
+        run: go build -o backend/bin/reservations backend/cmd/main.go
+
+      # TODO
+      # - name: Go test
+      #   run: go test
