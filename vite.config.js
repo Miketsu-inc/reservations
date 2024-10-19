@@ -1,15 +1,16 @@
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ mode }) => {
   if (mode === "production") {
     return {
-      plugins: [react()],
+      plugins: [react(), TanStackRouterVite()],
       root: "frontend",
     };
   } else {
     return {
-      plugins: [react()],
+      plugins: [react(), TanStackRouterVite()],
       root: "frontend",
       server: {
         proxy: {

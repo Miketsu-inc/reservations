@@ -13,6 +13,9 @@ dist
 # tailwindcss
 frontend/src/assets/output.css
 
+# tanstack generated routes
+frontend/src/routeTree.gen.ts
+
 # backend
 .env
 backend/bin
