@@ -12,8 +12,8 @@ export default function ProgressBar({ step, isSubmitDone }) {
       <div
         className={
           step > 0
-            ? "flex-auto border-t-2 border-green-700 transition-all"
-            : "flex-auto border-t-2 border-gray-400"
+            ? "flex-auto border-t-4 border-green-700 transition-all duration-700 ease-in"
+            : "flex-auto border-t-4 border-gray-600"
         }
       ></div>
       <ProgressBarStep
@@ -25,8 +25,8 @@ export default function ProgressBar({ step, isSubmitDone }) {
       <div
         className={
           step > 1
-            ? "flex-auto border-t-2 border-green-700 transition-all"
-            : "flex-auto border-t-2 border-gray-400"
+            ? "flex-auto border-t-4 border-green-700 transition-all duration-700 ease-in"
+            : "flex-auto border-t-4 border-gray-600"
         }
       ></div>
       <ProgressBarStep
@@ -38,8 +38,8 @@ export default function ProgressBar({ step, isSubmitDone }) {
       <div
         className={
           step > 2
-            ? "flex-auto border-t-2 border-green-700 transition-all"
-            : "flex-auto border-t-2 border-gray-400"
+            ? "flex-auto border-t-4 border-green-700 transition-all duration-700 ease-in"
+            : "flex-auto border-t-4 border-gray-600"
         }
       ></div>
       <ProgressBarStep
