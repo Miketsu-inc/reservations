@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"html"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -167,9 +167,7 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.Nil(err, err.Error())
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",

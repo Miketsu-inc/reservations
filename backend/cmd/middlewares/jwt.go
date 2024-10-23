@@ -3,7 +3,6 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 type contextKey struct {
@@ -44,9 +44,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 func CreateJWT(secret []byte, userID uuid.UUID) (string, error) {
 	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.Nil(err, err.Error())
 
 	expiration := time.Second * time.Duration(exp_time)
 

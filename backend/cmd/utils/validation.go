@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 func StructValidation(s interface{}) map[string]string {
@@ -19,9 +20,7 @@ func StructValidation(s interface{}) map[string]string {
 		for _, err := range errors {
 
 			jsonTag, ok := getJsonTagForField(s, err.Field())
-			if !ok {
-				panic(fmt.Sprintf("%s field does not have a json tag", err.Field()))
-			}
+			assert.True(ok, fmt.Sprintf("%s field does not have a json tag", err.Field()), err.Error())
 
 			errorMsg[jsonTag] = errorMessageForTag(err)
 		}

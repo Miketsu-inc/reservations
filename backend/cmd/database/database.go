@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 // Service represents a service that interacts with a database.
@@ -68,9 +69,8 @@ func New() PostgreSQL {
 	}
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
 	db, err := sql.Open("pgx", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.Nil(err, err.Error())
+
 	dbInstance = &service{
 		db: db,
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 type Appointment struct {
@@ -29,14 +30,12 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if errors := utils.StructValidation(newApp); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"error": errors})
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
 	userID, ok := r.Context().Value(middlewares.UserIDCtxKey).(uuid.UUID)
-	if !ok {
-		panic("Authenticated route called without jwt user id")
-	}
+	assert.True(ok, "Authenticated route called without jwt user id", r.Context().Value(middlewares.UserIDCtxKey), userID)
 
 	app := database.Appointment{
 		Id:           0,

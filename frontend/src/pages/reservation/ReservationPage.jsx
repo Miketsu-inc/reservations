@@ -5,8 +5,8 @@ import SelectorItem from "../../components/SelectorItem";
 
 const defaultReservation = {
   merchant_name: "Hair salon",
-  type_id: "",
-  location_id: "Kiraly utca",
+  type_name: "",
+  location_name: "Kiraly utca",
   from_date: "",
   to_date: "",
 };
@@ -40,7 +40,7 @@ export default function ReservationPage() {
       setErrorMessage("Please set a reservation date!");
     }
 
-    if (reservation.type_id === "") {
+    if (reservation.type_name === "") {
       setErrorMessage("Please set a reservation type!");
     }
 
@@ -60,7 +60,7 @@ export default function ReservationPage() {
   }
 
   function typeChangeHandler(value) {
-    setReservation((prev) => ({ ...prev, type_id: value }));
+    setReservation((prev) => ({ ...prev, type_name: value }));
   }
 
   return (

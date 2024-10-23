@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/server"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 func main() {
@@ -15,7 +16,5 @@ func main() {
 	server := server.NewServer()
 
 	err := server.ListenAndServe()
-	if err != nil {
-		panic(fmt.Sprintf("cannot start server: %s", err))
-	}
+	assert.Nil(err, fmt.Sprintf("cannot start server: %s", err))
 }
