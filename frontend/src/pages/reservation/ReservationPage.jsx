@@ -4,24 +4,14 @@ import Selector from "../../components/Selector";
 import SelectorItem from "../../components/SelectorItem";
 
 const defaultReservation = {
-  user: "Marci",
-  merchant: "Hair salon",
-  type: "",
-  location: "Kiraly utca",
+  merchant_name: "Hair salon",
+  type_id: "",
+  location_id: "Kiraly utca",
   from_date: "",
-  to_date: "2024-10-03T08:00Z",
+  to_date: "",
 };
 
-const reservationTypes = [
-  "Hair",
-  "Nail",
-  "Face",
-  "kjfgkljsdf",
-  "dfgjgsjh",
-  "fhgkjhg",
-  "fgjkjhfd",
-  "fjghkfj",
-];
+const reservationTypes = ["Hair", "Nail", "Face", "Body", "Feet"];
 
 export default function ReservationPage() {
   const [reservation, setReservation] = useState(defaultReservation);
@@ -31,20 +21,13 @@ export default function ReservationPage() {
   useEffect(() => {
     if (isSubmitting) {
       setIsSubmitting(false);
-      console.log(reservation);
+
       fetch("/api/v1/appointments", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",
         },
-        body: JSON.stringify({
-          user: reservation.user,
-          merchant: reservation.merchant,
-          type: reservation.type,
-          location: reservation.location,
-          from_date: reservation.from_date,
-          to_date: reservation.to_date,
-        }),
+        body: JSON.stringify(reservation),
       });
     }
   }, [isSubmitting, reservation]);
@@ -57,7 +40,7 @@ export default function ReservationPage() {
       setErrorMessage("Please set a reservation date!");
     }
 
-    if (reservation.type === "") {
+    if (reservation.type_id === "") {
       setErrorMessage("Please set a reservation type!");
     }
 
@@ -65,11 +48,19 @@ export default function ReservationPage() {
   }
 
   function dateChangeHandler(e) {
-    setReservation((prev) => ({ ...prev, from_date: e.target.value }));
+    const startTimestamp = Date.parse(e.target.value);
+    // add constant 30 minutes to start_date
+    const endDate = new Date(startTimestamp + 30 * 60000).toISOString();
+
+    setReservation((prev) => ({
+      ...prev,
+      from_date: e.target.value,
+      to_date: endDate,
+    }));
   }
 
   function typeChangeHandler(value) {
-    setReservation((prev) => ({ ...prev, type: value }));
+    setReservation((prev) => ({ ...prev, type_id: value }));
   }
 
   return (

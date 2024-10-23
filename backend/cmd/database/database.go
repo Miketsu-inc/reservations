@@ -29,7 +29,7 @@ type PostgreSQL interface {
 	// Insert a new Appointment to the database.
 	NewAppointment(context.Context, Appointment) error
 	// Get all Appointments made by a User.
-	GetAppointmentsByUser(context.Context, string) ([]Appointment, error)
+	GetAppointmentsByUser(context.Context, uuid.UUID) ([]Appointment, error)
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, string, string, string) ([]Appointment, error)
 
