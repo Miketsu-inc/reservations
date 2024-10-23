@@ -167,7 +167,7 @@ func (a *Auth) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
-	assert.Nil(err, err.Error())
+	assert.Nil(err, "JWT_EXPIRATION_TIME environment variable could not be found", err)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",

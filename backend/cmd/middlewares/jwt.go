@@ -44,7 +44,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 func CreateJWT(secret []byte, userID uuid.UUID) (string, error) {
 	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
-	assert.Nil(err, err.Error())
+	assert.Nil(err, "JWT_EXPIRATION_TIME environment variable could not be found", err)
 
 	expiration := time.Second * time.Duration(exp_time)
 

@@ -69,7 +69,7 @@ func New() PostgreSQL {
 	}
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
 	db, err := sql.Open("pgx", connStr)
-	assert.Nil(err, err.Error())
+	assert.Nil(err, "PostgreSQL database could not be openned", err)
 
 	dbInstance = &service{
 		db: db,
