@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
-import Input from "../../components/Input";
+import FloatingLabelInput from "../../components/FloatingLabelInput";
 import { MAX_INPUT_LENGTH } from "../../lib/constants";
 
 const defaultNameData = {
@@ -98,7 +98,7 @@ export default function NameForm({
       <p className="py-2 text-center">
         Enter your first and last name, which you will use over the application.
       </p>
-      <Input
+      <FloatingLabelInput
         styles=""
         ref={firstNameRef}
         type="text"
@@ -112,7 +112,7 @@ export default function NameForm({
         inputValidation={firstNameValidation}
         inputData={handleInputData}
       />
-      <Input
+      <FloatingLabelInput
         styles="mt-4"
         ref={lastNameRef}
         type="text"

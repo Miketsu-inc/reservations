@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
-import Input from "../../components/Input";
+import FloatingLabelInput from "../../components/FloatingLabelInput";
 import { MAX_INPUT_LENGTH } from "../../lib/constants";
 
 const defaultEmailData = {
@@ -53,7 +53,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
       <p className="py-2 text-center">
         Enter your email to get started with creating your account
       </p>
-      <Input
+      <FloatingLabelInput
         styles=""
         ref={emailRef}
         type="text"

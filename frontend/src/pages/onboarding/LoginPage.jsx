@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import GoogleIcon from "../../assets/icons/GoogleIcon";
 import Button from "../../components/Button";
-import Input from "../../components/Input";
+import FloatingLabelInput from "../../components/FloatingLabelInput";
 import {
   MAX_INPUT_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -148,7 +148,7 @@ export default function LoginPage() {
             <span className="pl-3">Error:</span> {serverError}
           </div>
         )}
-        <p className="mt-2 py-2 text-sm">Welcome back!</p>
+        <p className="text-sms mt-2 py-2">Welcome back!</p>
 
         <Button
           type="Button"
@@ -174,7 +174,7 @@ export default function LoginPage() {
           autoComplete="on"
           className="flex flex-col"
         >
-          <Input
+          <FloatingLabelInput
             ref={emailRef}
             styles="mt-4"
             type="text"
@@ -188,7 +188,7 @@ export default function LoginPage() {
             inputValidation={emailValidation}
             inputData={handleInputData}
           />
-          <Input
+          <FloatingLabelInput
             ref={passwordRef}
             styles="mt-4"
             type="password"
@@ -221,7 +221,7 @@ export default function LoginPage() {
           <p className="flex-1">If you don't have an account...</p>
           <a
             href="/signup"
-            className="font- whitespace-nowrap px-4 py-2 hover:underline"
+            className="whitespace-nowrap px-4 py-2 hover:underline"
           >
             Sign up
           </a>

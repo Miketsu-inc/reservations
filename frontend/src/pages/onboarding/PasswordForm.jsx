@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import Button from "../../components/Button";
-import Input from "../../components/Input";
+import FloatingLabelInput from "../../components/FloatingLabelInput";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "../../lib/constants";
 
 const defaultPasswordData = {
@@ -108,7 +108,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         Enter a password, which later you can use to login into your account.
         Please try to provide strong passwords
       </p>
-      <Input
+      <FloatingLabelInput
         styles=""
         ref={passwordRef}
         type="password"
@@ -122,7 +122,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         inputValidation={passwordValidation}
         inputData={handleInputData}
       />
-      <Input
+      <FloatingLabelInput
         styles="mt-4"
         ref={confirmPasswordRef}
         type="password"

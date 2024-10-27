@@ -13,6 +13,9 @@ export default function InputBase({
   onChange,
   onBlur,
   onFocus,
+  placeholder,
+  pattern,
+  required,
 }) {
   const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
@@ -25,15 +28,17 @@ export default function InputBase({
       <input
         className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill bg-transparent p-2
           outline-none dark:[color-scheme:dark]`}
-        // is this needed? wouldn't all non password inputs be text?
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}
         name={name}
         id={id}
         autoComplete={autoComplete}
+        pattern={pattern}
+        required={required}
         onChange={onChange}
         onBlur={onBlur}
         onFocus={onFocus}
+        placeholder={placeholder}
         ref={inputRef}
       />
       {isTypePassword ? (

@@ -10,7 +10,7 @@ export default function BackArrowIcon({ styles }) {
       viewBox="0 0 24 24"
     >
       <path
-        stroke="currentColor"
+        stroke="gray"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
