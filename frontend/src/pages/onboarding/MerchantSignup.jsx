@@ -21,7 +21,7 @@ export default function MerchantSignup() {
   const [MerchantData, setMerchantData] = useState(defaultMerchantData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { step, stepIndex, nextStep } = useMultiStepForm([
+  const { step, _, nextStep } = useMultiStepForm([
     <MerchantInfoForm
       key="companyInfoForm"
       sendInputData={merchantDataHandler}
