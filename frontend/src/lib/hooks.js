@@ -16,6 +16,7 @@ export function useMultiStepForm(steps) {
     stepIndex,
     step: steps[stepIndex],
     nextStep: next,
+    stepCount: steps.length,
   };
 }
 

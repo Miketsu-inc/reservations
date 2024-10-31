@@ -1,11 +1,6 @@
 import TickIcon from "../../assets/icons/TickIcon";
 
-export default function ProgressBarStep({
-  step,
-  stepName,
-  isActive,
-  isCompleted,
-}) {
+export default function ProgressBarStep({ step, isActive, isCompleted }) {
   return (
     <div
       className={
@@ -26,15 +21,6 @@ export default function ProgressBarStep({
       ) : (
         `${step}`
       )}
-      <span
-        className={
-          isActive
-            ? "absolute top-10 text-nowrap text-sm tracking-tight text-text_color/85"
-            : "absolute top-10 text-nowrap text-sm tracking-tight text-gray-500"
-        }
-      >
-        {stepName}
-      </span>
     </div>
   );
 }
