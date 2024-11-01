@@ -3,7 +3,7 @@ export default {
   content: [
     "./frontend/index.html",
     "./frontend/src/main.jsx",
-    "./frontend/src/assets/*.jsx",
+    "./frontend/src/assets/icons/*.jsx",
     "./frontend/src/pages/**/*.jsx",
     "./frontend/src/components/*.jsx",
   ],
