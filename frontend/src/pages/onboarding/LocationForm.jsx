@@ -10,7 +10,6 @@ const defaultFormData = {
 };
 export default function LocationForm({
   sendInputData,
-  isCompleted,
   isSubmitting,
   submitForm,
 }) {
@@ -32,7 +31,6 @@ export default function LocationForm({
       address: formData.address,
     });
     submitForm();
-    isCompleted(true);
   }
 
   function handleInputData(data) {
@@ -44,13 +42,15 @@ export default function LocationForm({
 
   return (
     <>
-      <h1 className="mt-10 text-2xl font-bold">Location</h1>
-      <p>Give us the location of your working space</p>
       <form
         noValidate
-        className="mt-10 flex w-full flex-col items-center justify-center px-8 *:w-full sm:px-10"
+        className="flex w-full flex-col items-center justify-center *:w-full"
         onSubmit={handleSubmit}
       >
+        <h1 className="text-center text-2xl font-bold">Location</h1>
+        <p className="text-center">
+          Give us the location of your working space
+        </p>
         <div className="flex w-full gap-4">
           <div className="flex-grow">
             <Input
@@ -113,7 +113,8 @@ export default function LocationForm({
         </div>
         <Button
           onCLick={""}
-          styles="p-2 w-5/6 mt-10 hover:bg-hvr_primary"
+          styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+            hover:bg-hvr_primary text-white"
           name=""
           type="submit"
           buttonText="Continue"

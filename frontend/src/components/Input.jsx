@@ -43,6 +43,7 @@ export default function Input({
         placeholder={placeholder}
         onChange={handleChange}
         required={true}
+        onBlur={() => {}}
       />
       {isEmpty && (
         <span className="text-sm text-red-600">

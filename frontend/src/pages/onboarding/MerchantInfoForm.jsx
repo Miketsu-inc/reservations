@@ -36,13 +36,17 @@ export default function MerchantInfoForm({ sendInputData, isCompleted }) {
   }
   return (
     <>
-      <h1 className="text-2xl font-semibold">Start signing up your company</h1>
-      <p className="mt-4">Something about the data the user gives or idk</p>
       <form
         noValidate
-        className="mt-10 flex w-full flex-col items-center justify-center px-8 *:w-full sm:px-10"
+        className="flex w-full flex-col items-center justify-center *:w-full"
         onSubmit={handleSubmit}
       >
+        <h1 className="text-center text-2xl font-semibold">
+          Start signing up your company
+        </h1>
+        <p className="mt-4 text-center">
+          Something about the data the user gives or idk
+        </p>
         <Input
           type="text"
           styles=""
@@ -83,7 +87,8 @@ export default function MerchantInfoForm({ sendInputData, isCompleted }) {
         />
         <Button
           onCLick={""}
-          styles="p-2 w-5/6 mt-10 hover:bg-hvr_primary"
+          styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+            hover:bg-hvr_primary text-white"
           name=""
           type="submit"
           buttonText="Continue"

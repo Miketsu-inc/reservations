@@ -8,9 +8,10 @@ const defaultFormData = {
   price: "",
 };
 
-export default function AppointmentForm({ sendInputData, isCompleted }) {
+export default function AppointmentForm({ sendInputData }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
+
   function handleSubmit(e) {
     e.preventDefault();
     const form = e.target;
@@ -24,7 +25,6 @@ export default function AppointmentForm({ sendInputData, isCompleted }) {
       duration: formData.duration,
       price: formData.price,
     });
-    isCompleted(true);
   }
 
   function handleInputData(data) {
@@ -36,13 +36,9 @@ export default function AppointmentForm({ sendInputData, isCompleted }) {
 
   return (
     <>
-      <h1 className="mt-10 text-xl font-bold">Appointemnt Info</h1>
-      <p className="px-6 text-center">
-        Give info about an appointment, which your client will apply for
-      </p>
       <form
         noValidate
-        className="mt-10 flex w-full flex-col items-center justify-center px-8 *:w-full sm:px-10"
+        className="mt-4 flex w-full flex-col items-center justify-center *:w-full"
         onSubmit={handleSubmit}
       >
         <Input
@@ -84,10 +80,11 @@ export default function AppointmentForm({ sendInputData, isCompleted }) {
 
         <Button
           onCLick={""}
-          styles="p-2 w-5/6 mt-10 hover:bg-hvr_primary"
+          styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+            hover:bg-hvr_primary text-white"
           name=""
           type="submit"
-          buttonText="Continue"
+          buttonText="Add Appointment"
         />
       </form>
     </>
