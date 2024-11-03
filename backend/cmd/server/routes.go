@@ -38,6 +38,7 @@ func staticFilesHandler(r *chi.Mux) {
 		"/dashboard",
 		"/reservations",
 		"/merchantsignup",
+		"/m/*",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
@@ -97,4 +98,10 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	}
 
 	r.Get("/info", merchantHandler.MerchantByName)
+
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.JWTMiddleware)
+
+		r.Post("/location", merchantHandler.NewLocation)
+	})
 }

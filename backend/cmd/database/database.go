@@ -54,6 +54,13 @@ type PostgreSQL interface {
 	NewMerchant(context.Context, Merchant) error
 	// Get a Merchant by the Merchant's url name
 	GetMerchantByUrlName(context.Context, string) (Merchant, error)
+	// Get a Merchant's owner id by the merchantId
+	GetMerchantIdByOwnerId(context.Context, uuid.UUID) (uuid.UUID, error)
+
+	// -- Location --
+
+	// Insert a new Location to the database
+	NewLocation(context.Context, Location) error
 }
 
 type service struct {

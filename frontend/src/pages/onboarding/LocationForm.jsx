@@ -28,7 +28,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
     if (isSubmitting) {
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/v1/auth/merchant/location", {
+          const response = await fetch("/api/v1/merchants/location", {
             method: "POST",
             headers: {
               Accept: "application/json",
