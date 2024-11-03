@@ -1,3 +1,4 @@
+import { useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Selector from "../../components/Selector";
@@ -17,6 +18,36 @@ export default function ReservationPage() {
   const [reservation, setReservation] = useState(defaultReservation);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const { merchantName } = useParams({ strict: false });
+  const [merchantEmail, setMerchantEmail] = useState("");
+
+  useEffect(() => {
+    async function fetchMerchantInfo(merchantName) {
+      try {
+        const response = await fetch(
+          `/api/v1/merchants/info?name=${merchantName}`,
+          {
+            method: "GET",
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          console.log(data.error);
+        } else {
+          setMerchantEmail(data.contact_email);
+        }
+      } catch (err) {
+        console.log("Error occured. Please try again by refreshing the page");
+      }
+    }
+
+    fetchMerchantInfo(merchantName);
+  }, []);
 
   useEffect(() => {
     if (isSubmitting) {
@@ -70,7 +101,7 @@ export default function ReservationPage() {
           <img src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"></img>
         </div>
         <div className="flex flex-col gap-2 px-4 pb-4">
-          <h1 className="text-center">Company name</h1>
+          <h1 className="text-center">{merchantName}</h1>
           <p className="text-justify">
             Short description about the core values of the company, maybe also
             what they belive in. How they do their buisness. What they would
@@ -78,6 +109,7 @@ export default function ReservationPage() {
             point. Should have used lorem ipsum
           </p>
           <p className="text-center">Open hours: 9:00-19:00</p>
+          <p className="text-center">Email: {merchantEmail}</p>
         </div>
       </div>
       <form method="POST" onSubmit={onSubmitHandler}>

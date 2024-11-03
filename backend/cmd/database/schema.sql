@@ -16,6 +16,7 @@ create table "User" (
 create table "Merchant" (
     ID              uuid            primary key unique not null,
     name            varchar(30)     not null,
+    url_name        varchar(30)     unique not null,
     owner_id        uuid            references "User" (ID) not null,
     contact_email   varchar(320)    not null,
     settings        json

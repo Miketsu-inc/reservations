@@ -8,6 +8,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Appointment struct {
@@ -24,13 +25,13 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var newApp NewAppointment
 
-	if err := utils.ParseJSON(r, &newApp); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+	if errors := validate.Struct(newApp); errors != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
-	if errors := utils.StructValidation(newApp); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := utils.ParseJSON(r, &newApp); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 

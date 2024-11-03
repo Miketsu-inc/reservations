@@ -42,10 +42,18 @@ type PostgreSQL interface {
 	GetUserById(context.Context, uuid.UUID) (User, error)
 	// Get a User's password by the User's email.
 	// Used for comparing password hashes on login.
-	//
-	// Can also be used for checking if an email exists
-	// by checking for the slq.ErrNoRows error.
 	GetUserPasswordByUserEmail(context.Context, string) (string, error)
+	// Check if an email exists in the database
+	IsEmailUnique(context.Context, string) bool
+	// Check if a phone number exists in the database
+	IsPhoneNumberUnique(context.Context, string) bool
+
+	// -- Merchant --
+
+	// Insert a new Merchant to the database
+	NewMerchant(context.Context, Merchant) error
+	// Get a Merchant by the Merchant's url name
+	GetMerchantByUrlName(context.Context, string) (Merchant, error)
 }
 
 type service struct {

@@ -21,14 +21,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	staticFilesHandler(r)
 
 	var rh = RouteHandlers{&s.db}
-	r.Route("/api/v1/auth", rh.AuthRoutes)
+	r.Route("/api/v1/auth/user", rh.userAuthRoutes)
+	r.Route("/api/v1/auth/merchant", rh.merchantAuthRoutes)
 
-	// routes which requires auth
-	r.Group(func(r chi.Router) {
-		r.Use(middlewares.JWTMiddleware)
-
-		r.Route("/api/v1/appointments", rh.appointmentRoutes)
-	})
+	r.Route("/api/v1/merchants", rh.merchantRoutes)
+	r.Route("/api/v1/appointments", rh.appointmentRoutes)
 
 	return r
 }
@@ -65,15 +62,39 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Post("/", appointmentHandler.Create)
-	r.Get("/calendar", appointmentHandler.GetEvents)
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.JWTMiddleware)
+
+		r.Post("/", appointmentHandler.Create)
+		r.Get("/calendar", appointmentHandler.GetEvents)
+	})
 }
 
-func (rh *RouteHandlers) AuthRoutes(r chi.Router) {
-	authHandler := &handlers.Auth{
+func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
+	userAuthHandler := &handlers.UserAuth{
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Post("/signup", authHandler.HandleSignup)
-	r.Post("/login", authHandler.HandleLogin)
+	r.Post("/signup", userAuthHandler.Signup)
+	r.Post("/login", userAuthHandler.Login)
+}
+
+func (rh *RouteHandlers) merchantAuthRoutes(r chi.Router) {
+	merchantAuthHandler := &handlers.MerchantAuth{
+		Postgresdb: *rh.Postgresdb,
+	}
+
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.JWTMiddleware)
+
+		r.Post("/signup", merchantAuthHandler.Signup)
+	})
+}
+
+func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
+	merchantHandler := &handlers.Merchant{
+		Postgresdb: *rh.Postgresdb,
+	}
+
+	r.Get("/info", merchantHandler.MerchantByName)
 }

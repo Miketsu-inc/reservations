@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/google/uuid"
 )
@@ -11,7 +13,7 @@ type User struct {
 	FirstName      string          `json:"first_name"`
 	LastName       string          `json:"last_name"`
 	Email          string          `json:"email"`
-	Phonenumber    string          `json:"phone_number"`
+	PhoneNumber    string          `json:"phone_number"`
 	PasswordHash   string          `json:"password_hash"`
 	SubscriptionId int             `json:"subscription_id"`
 	Settings       map[string]bool `json:"settings"`
@@ -23,7 +25,7 @@ func (s *service) NewUser(ctx context.Context, user User) error {
 	values ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.Phonenumber, user.PasswordHash, user.SubscriptionId, user.Settings)
+	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash, user.SubscriptionId, user.Settings)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 	`
 
 	var user User
-	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Phonenumber, &user.PasswordHash, &user.SubscriptionId, &user.Settings)
+	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash, &user.SubscriptionId, &user.Settings)
 	if err != nil {
 		return User{}, err
 	}
@@ -59,4 +61,24 @@ func (s *service) GetUserPasswordByUserEmail(ctx context.Context, email string) 
 	}
 
 	return password, nil
+}
+
+func (s *service) IsEmailUnique(ctx context.Context, email string) bool {
+	query := `
+	select 1 from "User"
+	where email = $1
+	`
+
+	err := s.db.QueryRowContext(ctx, query, email).Scan()
+	return errors.Is(sql.ErrNoRows, err)
+}
+
+func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) bool {
+	query := `
+	select 1 from "User"
+	where phone_number = $1
+	`
+
+	err := s.db.QueryRowContext(ctx, query, phoneNumber).Scan()
+	return errors.Is(sql.ErrNoRows, err)
 }

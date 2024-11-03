@@ -44,7 +44,7 @@ func (s *service) GetAppointmentsByUser(ctx context.Context, user_id uuid.UUID) 
 	var appointments []Appointment
 	for rows.Next() {
 		var app Appointment
-		if err := rows.Scan(&app.ClientId, &app.MerchantName, &app.TypeName, &app.LocationName, &app.FromDate, &app.ToDate); err != nil {
+		if err := rows.Scan(&app.Id, &app.ClientId, &app.MerchantName, &app.TypeName, &app.LocationName, &app.FromDate, &app.ToDate); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)
@@ -69,7 +69,7 @@ func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchant string
 
 	for rows.Next() {
 		var app Appointment
-		if err := rows.Scan(&app.ClientId, &app.MerchantName, &app.TypeName, &app.LocationName, &app.FromDate, &app.ToDate); err != nil {
+		if err := rows.Scan(&app.Id, &app.ClientId, &app.MerchantName, &app.TypeName, &app.LocationName, &app.FromDate, &app.ToDate); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)

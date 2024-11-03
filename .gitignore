@@ -20,3 +20,6 @@ frontend/src/routeTree.gen.ts
 .env
 backend/bin
 backend/tmp
+
+# go testdata
+backend/cmd/*/testdata
