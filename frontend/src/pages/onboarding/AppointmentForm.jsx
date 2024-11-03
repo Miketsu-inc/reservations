@@ -3,7 +3,7 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 
 const defaultFormData = {
-  appointment_type: "",
+  name: "",
   duration: "",
   price: "",
 };
@@ -21,7 +21,7 @@ export default function AppointmentForm({ sendInputData }) {
     }
 
     sendInputData({
-      appointment_type: formData.appointment_type,
+      name: formData.name,
       duration: formData.duration,
       price: formData.price,
     });
@@ -46,7 +46,7 @@ export default function AppointmentForm({ sendInputData }) {
           styles=""
           placeholder="Nail polish"
           pattern=".{0,255}"
-          name="appointment_type"
+          name="name"
           id="appointment_type"
           errorText="Inputs must be 256 character or less!"
           labelText="Appointment type"
