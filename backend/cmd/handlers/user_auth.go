@@ -42,13 +42,13 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	var login loginData
 
-	if errors := validate.Struct(login); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := utils.ParseJSON(r, &login); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
 		return
 	}
 
-	if err := utils.ParseJSON(r, &login); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
+	if errors := validate.Struct(login); errors != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
@@ -59,7 +59,7 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hashCompare(login.Password, password) {
-		utils.WriteJSON(w, http.StatusOK, map[string]string{"Response": "User logged in successfully"})
+		utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User logged in successfully"})
 	} else {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("incorrect email or password"))
 	}
@@ -75,13 +75,13 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	var signup signUpData
 
-	if errors := validate.Struct(signup); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := utils.ParseJSON(r, &signup); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
 		return
 	}
 
-	if err := utils.ParseJSON(r, &signup); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
+	if errors := validate.Struct(signup); errors != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
@@ -143,5 +143,5 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"Response": "User created successfully"})
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User created successfully"})
 }

@@ -23,13 +23,13 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	var signup signUpData
 
-	if errors := validate.Struct(signup); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := utils.ParseJSON(r, &signup); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
 		return
 	}
 
-	if err := utils.ParseJSON(r, &signup); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
+	if errors := validate.Struct(signup); errors != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
@@ -60,4 +60,6 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))
 		return
 	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Merchant created successfully"})
 }

@@ -25,13 +25,13 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var newApp NewAppointment
 
-	if errors := validate.Struct(newApp); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := utils.ParseJSON(r, &newApp); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := utils.ParseJSON(r, &newApp); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+	if errors := validate.Struct(newApp); errors != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
 		return
 	}
 
@@ -52,6 +52,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Appointment created successfully"})
 }
 
 func (a *Appointment) GetEvents(w http.ResponseWriter, r *http.Request) {
