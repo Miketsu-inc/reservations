@@ -47,7 +47,7 @@ export default function ReservationPage() {
     }
 
     fetchMerchantInfo(merchantName);
-  }, []);
+  });
 
   useEffect(() => {
     if (isSubmitting) {
