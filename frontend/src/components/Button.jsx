@@ -21,7 +21,7 @@ export default function Button({
       {isLoading ? (
         <div className="flex items-center justify-center">
           <span className="pl-5 pr-4">{buttonText}</span>
-          <LoaderIcon />
+          <LoaderIcon styles="-ml-1 mr-3 h-5 w-5" />
         </div>
       ) : children ? (
         <div className="flex items-center justify-center">

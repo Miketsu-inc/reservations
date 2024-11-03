@@ -1,5 +1,7 @@
-import Calendar from "./Calendar";
+import { lazy, Suspense } from "react";
+import Loading from "../../components/Loading";
 import SidePanel from "./SidePanel";
+const Calendar = lazy(() => import("./Calendar"));
 
 export default function DashboardPage() {
   return (
@@ -10,7 +12,9 @@ export default function DashboardPage() {
       />
       <div className="light min-h-screen p-4 sm:ml-64">
         <div className="rounded-lg bg-bg_color p-4">
-          <Calendar />
+          <Suspense fallback={<Loading />}>
+            <Calendar />
+          </Suspense>
         </div>
       </div>
     </div>
