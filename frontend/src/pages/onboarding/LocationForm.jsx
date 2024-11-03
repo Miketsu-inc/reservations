@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 
@@ -8,13 +8,10 @@ const defaultFormData = {
   city: "",
   address: "",
 };
-export default function LocationForm({
-  sendInputData,
-  isSubmitting,
-  submitForm,
-}) {
+export default function LocationForm({ isSubmitDone, isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -24,14 +21,38 @@ export default function LocationForm({
       return;
     }
 
-    sendInputData({
-      country: formData.country,
-      postal_code: formData.postal_code,
-      city: formData.city,
-      address: formData.address,
-    });
-    submitForm();
+    setIsSubmitting(true);
   }
+
+  useEffect(() => {
+    if (isSubmitting) {
+      const sendRequest = async () => {
+        try {
+          const response = await fetch("/api/v1/auth/merchant/location", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.error) {
+            console.log(result.error);
+            return;
+          } else {
+            isCompleted(true);
+            isSubmitDone(true);
+          }
+        } catch (err) {
+          console.error("Error messsage from server:", err.message);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      sendRequest();
+    }
+  }, [isSubmitting, formData, isCompleted, isSubmitDone]);
 
   function handleInputData(data) {
     setFormData((prevFormData) => ({
@@ -112,10 +133,8 @@ export default function LocationForm({
           />
         </div>
         <Button
-          onCLick={""}
           styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
-          name=""
           type="submit"
           buttonText="Continue"
           isLoading={isSubmitting}

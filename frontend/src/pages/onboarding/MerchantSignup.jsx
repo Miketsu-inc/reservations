@@ -1,78 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMultiStepForm } from "../../lib/hooks";
 import AppointmentsAdder from "./AppointmentsAdder";
 import LocationForm from "./LocationForm";
 import MerchantInfoForm from "./MerchantInfoForm";
 
-const defaultMerchantData = {
-  company_name: "",
-  owner: "",
-  contact_email: "",
-  country: "",
-  postal_code: "",
-  city: "",
-  address: "",
-};
-
 export default function MerchantSignup() {
-  const [MerchantData, setMerchantData] = useState(defaultMerchantData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
-
   const { step, _, nextStep } = useMultiStepForm([
-    <MerchantInfoForm
-      key="companyInfoForm"
-      sendInputData={merchantDataHandler}
-      isCompleted={isCompletedHandler}
-    />,
+    <MerchantInfoForm key="companyInfoForm" isCompleted={isCompletedHandler} />,
     <LocationForm
       key="locationForm"
-      sendInputData={merchantDataHandler}
-      submitForm={handleSubmit}
-      isSubmitting={isSubmitting}
+      isCompleted={isCompletedHandler}
+      isSubmitDone={setIsSubmitDone}
     />,
     <AppointmentsAdder key="appointmentsAdder" />,
   ]);
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/auth/merchantSignup", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(MerchantData),
-          });
-          const result = await response.json();
-          if (result.error) {
-            return;
-          } else {
-            nextStep();
-            setIsSubmitDone(true);
-          }
-        } catch (err) {
-          console.error("Error messsage from server:", err.message);
-          return;
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-      sendRequest();
-    }
-  }, [MerchantData, isSubmitting, nextStep]);
-
-  function handleSubmit() {
-    setIsSubmitting(true);
-  }
-
-  function merchantDataHandler(data) {
-    setMerchantData((prev) => {
-      return { ...prev, ...data };
-    });
-  }
   function isCompletedHandler(isCompleted) {
     if (isCompleted) {
       nextStep();

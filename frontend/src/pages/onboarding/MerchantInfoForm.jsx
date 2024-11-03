@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 
 const defaultFormData = {
-  company_name: "",
-  owner: "",
+  name: "",
   contact_email: "",
 };
 
-export default function MerchantInfoForm({ sendInputData, isCompleted }) {
+export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -19,14 +19,37 @@ export default function MerchantInfoForm({ sendInputData, isCompleted }) {
       setIsEmpty(true);
       return;
     }
-
-    sendInputData({
-      company_name: formData.company_name,
-      owner: formData.owner,
-      contact_email: formData.contact_email,
-    });
-    isCompleted(true);
+    setIsSubmitting(true);
   }
+
+  useEffect(() => {
+    if (isSubmitting) {
+      const sendRequest = async () => {
+        try {
+          const response = await fetch("/api/v1/auth/merchant/signup", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.error) {
+            console.log(result.error);
+            return;
+          } else {
+            isCompleted(true);
+          }
+        } catch (err) {
+          console.error("Error messsage from server:", err.message);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      sendRequest();
+    }
+  }, [isSubmitting, formData, isCompleted]);
 
   function handleInputData(data) {
     setFormData((prevAppData) => ({
@@ -52,23 +75,10 @@ export default function MerchantInfoForm({ sendInputData, isCompleted }) {
           styles=""
           placeholder="Global Serve kft"
           pattern=".{0,255}"
-          name="company_name"
+          name="name"
           id="company_name"
           errorText="Inputs must be 256 character or less!"
           labelText="Company Name"
-          inputData={handleInputData}
-          hasError={isEmpty}
-        />
-        <Input
-          type="text"
-          styles=""
-          placeholder="Marcell Mikes"
-          pattern=".{0,255}"
-          name="owner"
-          id="owner"
-          autoComplete="name"
-          errorText="Inputs must be 256 character or less!"
-          labelText="Owner"
           inputData={handleInputData}
           hasError={isEmpty}
         />
@@ -86,12 +96,11 @@ export default function MerchantInfoForm({ sendInputData, isCompleted }) {
           hasError={isEmpty}
         />
         <Button
-          onCLick={""}
           styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
-          name=""
           type="submit"
           buttonText="Continue"
+          isLoading={isSubmitting}
         />
       </form>
     </>

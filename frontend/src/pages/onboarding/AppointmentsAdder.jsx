@@ -13,7 +13,7 @@ export default function AppointmentsAdder() {
     if (isSubmitting) {
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/v1/auth/appointments/add", {
+          const response = await fetch("/api/v1/auth/merchant/appointments", {
             method: "POST",
             headers: {
               Accept: "application/json",
