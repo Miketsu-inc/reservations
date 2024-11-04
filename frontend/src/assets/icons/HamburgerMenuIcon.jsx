@@ -1,9 +1,8 @@
 export default function HamburgerMenuIcon({ styles }) {
   return (
     <svg
-      className={styles}
+      className={`${styles} fill-current`}
       aria-hidden="true"
-      fill="currentColor"
       viewBox="0 0 20 20"
       xmlns="http://www.w3.org/2000/svg"
     >

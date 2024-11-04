@@ -10,11 +10,9 @@ export default function EyeSlashIcon({ width, height, role, styles, onClick }) {
     <button className={`${styles}`} onKeyDown={handleKeyDown}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width={width === undefined ? "20" : width}
-        height={height === undefined ? "20" : height}
         //is role needed anymore?
         role={role === undefined ? "button" : role}
-        className="fill-text_color"
+        className="h-5 w-5 fill-text_color"
         onClick={onClick}
         viewBox="0 0 16 16"
         aria-label="hide-password button"
