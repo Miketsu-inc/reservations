@@ -1,4 +1,4 @@
-export default function EyeSlashIcon({ width, height, role, styles, onClick }) {
+export default function EyeSlashIcon({ role, styles, onClick }) {
   function handleKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();

@@ -1,4 +1,4 @@
-export default function EyeIcon({ width, height, role, styles, onClick }) {
+export default function EyeIcon({ role, styles, onClick }) {
   function handleKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
