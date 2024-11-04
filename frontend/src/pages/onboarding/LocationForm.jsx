@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import ServerError from "../../components/ServerError";
 
 const defaultFormData = {
   country: "",
@@ -12,6 +13,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState(undefined);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -38,14 +40,15 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           });
           const result = await response.json();
           if (result.error) {
-            console.log(result.error);
+            setServerError(result.error);
             return;
           } else {
+            setServerError(undefined);
             isCompleted(true);
             isSubmitDone(true);
           }
         } catch (err) {
-          console.error("Error messsage from server:", err.message);
+          setServerError("An error occurred. Please try again.");
         } finally {
           setIsSubmitting(false);
         }
@@ -72,6 +75,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
         <p className="text-center">
           Give us the location of your working space
         </p>
+        <ServerError styles="mt-4 mb-2" error={serverError} />
         <div className="flex w-full gap-4">
           <div className="flex-grow">
             <Input

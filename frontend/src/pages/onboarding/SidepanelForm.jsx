@@ -1,4 +1,5 @@
 import XIcon from "../../assets/icons/XIcon";
+import ServerError from "../../components/ServerError";
 import AppointmentForm from "./AppointmentForm";
 
 export default function AppointmentSidepanel({
@@ -26,15 +27,7 @@ export default function AppointmentSidepanel({
           styles="hover:bg-hvr_gray w-8 h-8 rounded-lg"
         />
       </div>
-      {formError && (
-        <div
-          className="mt-4 flex items-start gap-2 rounded-md border-[1px] border-red-800 bg-red-600/25
-            px-2 py-3 text-red-950 dark:border-red-800 dark:bg-red-700/15 dark:text-red-500"
-        >
-          {/* <ExclamationIcon styles="" /> */}
-          <span className="pl-3">Error:</span> {formError}
-        </div>
-      )}
+      <ServerError styles="mt-4" error={formError} />
       {isOpen && <AppointmentForm sendInputData={addAppointment} />}
     </div>
   );

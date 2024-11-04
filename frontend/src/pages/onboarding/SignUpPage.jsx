@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ServerError from "../../components/ServerError";
 import { useMultiStepForm } from "../../lib/hooks";
 import EmailForm from "./EmailForm";
 import NameForm from "./NameForm";
@@ -19,6 +20,7 @@ export default function SingUpPage() {
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
+  const [serverError, setServerError] = useState(undefined);
   const { step, stepIndex, nextStep, stepCount } = useMultiStepForm([
     <EmailForm
       key="emailForm"
@@ -49,7 +51,7 @@ export default function SingUpPage() {
       console.log(signUpData);
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/v1/auth/signup", {
+          const response = await fetch("/api/v1/auth/user/signup", {
             method: "POST",
             headers: {
               Accept: "application/json",
@@ -59,14 +61,14 @@ export default function SingUpPage() {
           });
           const result = await response.json();
           if (result.error) {
-            console.log(result);
+            setServerError(result.error);
             return;
           } else {
-            console.log(result);
+            setServerError(undefined);
             setIsSubmitDone(true);
           }
         } catch (err) {
-          console.error("Error messsage from server:", err.message);
+          setServerError("An error occurred. Please try again.");
         } finally {
           setIsSubmitting(false);
         }
@@ -102,7 +104,7 @@ export default function SingUpPage() {
           stepCount={stepCount}
           isSubmitDone={isSubmitDone}
         />
-
+        <ServerError styles="" error={serverError} />
         {isSubmitDone ? (
           <SubmissionCompleted text="You signed up successfully" />
         ) : (

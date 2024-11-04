@@ -1,7 +1,10 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import GoogleIcon from "../../assets/icons/GoogleIcon";
 import Button from "../../components/Button";
 import FloatingLabelInput from "../../components/FloatingLabelInput";
+import ServerError from "../../components/ServerError";
+
 import {
   MAX_INPUT_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -85,7 +88,7 @@ export default function LoginPage() {
     if (isSubmitting) {
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/v1/auth/login", {
+          const response = await fetch("/api/v1/auth/user/login", {
             method: "POST",
             headers: {
               Accept: "application/json",
@@ -105,7 +108,6 @@ export default function LoginPage() {
             setServerError(undefined);
           }
         } catch (err) {
-          console.log(err);
           setServerError("An error occurred. Please try again.");
         } finally {
           setIsSubmitting(false);
@@ -138,16 +140,7 @@ export default function LoginPage() {
           sm:rounded-md sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
-        {serverError && (
-          <div
-            className="mb-2 mt-4 flex items-start gap-2 rounded-md border-[1px] border-red-800
-              bg-red-600/25 px-2 py-3 text-red-950 dark:border-red-800 dark:bg-red-700/15
-              dark:text-red-500"
-          >
-            {/* <ExclamationIcon styles="" /> */}
-            <span className="pl-3">Error:</span> {serverError}
-          </div>
-        )}
+        <ServerError styles="mb-2 mt-4" error={serverError} />
         <p className="text-sms mt-2 py-2">Welcome back!</p>
 
         <Button
@@ -219,12 +212,12 @@ export default function LoginPage() {
         <hr className="mt-10 border-text_color" />
         <div className="mt-2 flex items-center justify-evenly pb-4 pt-8 text-sm sm:mt-2 sm:pt-8">
           <p className="flex-1">If you don't have an account...</p>
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="whitespace-nowrap px-4 py-2 hover:underline"
           >
             Sign up
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Selector from "../../components/Selector";
 import SelectorItem from "../../components/SelectorItem";
+import ServerError from "../../components/ServerError";
 
 const defaultReservation = {
   merchant_name: "Hair salon",
@@ -18,6 +19,7 @@ export default function ReservationPage() {
   const [reservation, setReservation] = useState(defaultReservation);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [serverError, setServerError] = useState(undefined);
   const { merchantName } = useParams({ strict: false });
   const [merchantEmail, setMerchantEmail] = useState("");
 
@@ -37,12 +39,15 @@ export default function ReservationPage() {
         const data = await response.json();
 
         if (data.error) {
-          console.log(data.error);
+          setServerError(data.error);
         } else {
+          setServerError(undefined);
           setMerchantEmail(data.contact_email);
         }
       } catch (err) {
-        console.log("Error occured. Please try again by refreshing the page");
+        setServerError(
+          "Error occured. Please try again by refreshing the page"
+        );
       }
     }
 
@@ -114,6 +119,7 @@ export default function ReservationPage() {
       </div>
       <form method="POST" onSubmit={onSubmitHandler}>
         <div className="flex flex-col gap-2 px-10 pt-10">
+          <ServerError styles="mt-4 mb-2" error={serverError} />
           <Selector
             defaultValue="Choose a reservation type"
             styles="text-base p-1 rounded-lg border-text_color border px-3"

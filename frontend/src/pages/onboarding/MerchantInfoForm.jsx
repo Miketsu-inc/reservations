@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import ServerError from "../../components/ServerError";
 
 const defaultFormData = {
   name: "",
@@ -11,6 +12,7 @@ export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState(undefined);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -36,13 +38,14 @@ export default function MerchantInfoForm({ isCompleted }) {
           });
           const result = await response.json();
           if (result.error) {
-            console.log(result.error);
+            setServerError(result.error);
             return;
           } else {
+            setServerError(undefined);
             isCompleted(true);
           }
         } catch (err) {
-          console.error("Error messsage from server:", err.message);
+          setServerError("An error occurred. Please try again.");
         } finally {
           setIsSubmitting(false);
         }
@@ -70,6 +73,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         <p className="mt-4 text-center">
           Something about the data the user gives or idk
         </p>
+        <ServerError styles="mt-4 mb-2" error={serverError} />
         <Input
           type="text"
           styles=""

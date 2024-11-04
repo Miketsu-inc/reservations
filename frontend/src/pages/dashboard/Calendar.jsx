@@ -4,6 +4,7 @@ import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { useCallback, useRef, useState } from "react";
+import ServerError from "../../components/ServerError";
 import { useClickOutside } from "../../lib/hooks";
 import CalendarModal from "./CalendarModal";
 
@@ -48,6 +49,7 @@ export default function Calendar() {
           setServerError(data.error);
           failureCallback(data.error);
         } else {
+          setServerError(undefined);
           const events = formatData(data);
           successCallback(events);
         }
@@ -57,7 +59,6 @@ export default function Calendar() {
         );
         failureCallback(err);
       } finally {
-        setServerError(undefined);
         setIsLoading(false);
       }
     },
@@ -70,92 +71,94 @@ export default function Calendar() {
   }
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="w-1/2">
-        {isLoading && <div>Loading the calendar</div>}
-        {serverError && <span className="text-red-600">{serverError}</span>}
+    <>
+      <ServerError styles="mt-4 mb-2" error={serverError} />
+      <div className="flex items-center justify-center">
+        <div className="w-1/2">
+          {isLoading && <div>Loading the calendar</div>}
+        </div>
+        <div className="bg-bg_color text-text_color">
+          <FullCalendar
+            plugins={[
+              dayGridPlugin,
+              interactionPlugin,
+              timeGridPlugin,
+              listPlugin,
+            ]}
+            weekNumberCalculation="ISO"
+            locale="hu"
+            timeZone="UTC"
+            editable={true}
+            eventDurationEditable={true}
+            selectable={true}
+            initialView="timeGridWeek"
+            weekNumbers={true}
+            navLinks={true}
+            height="auto"
+            events={fetchEvents}
+            eventClick={handleClick}
+            lazyFetching={true}
+            // views={{
+            //   dayGridMonth: {
+            //     fixedWeekCount: false,
+            //   },
+            //   timeGridWeek: {
+            //     titleFormat: {
+            //       year: "numeric",
+            //       month: "long",
+            //       day: "2-digit",
+            //     },
+            //     slotLabelFormat: {
+            //       hour: "numeric",
+            //       minute: "2-digit",
+            //     },
+            //     slotDuration: "00:15:00",
+            //     slotMinTime: "08:00:00",
+            //     slotMaxTime: "17:30:00",
+            //     nowIndicator: true,
+            //   },
+            //   timeGridDay: {
+            //     slotLabelFormat: {
+            //       hour: "numeric",
+            //       minute: "2-digit",
+            //     },
+            //     slotDuration: "00:15:00",
+            //     slotMinTime: "08:00:00",
+            //     slotMaxTime: "17:30:00",
+            //     nowIndicator: true,
+            //   },
+            // }}
+            // headerToolbar={{
+            //   left: "dayGridMonth,timeGridWeek,timeGridDay,list",
+            //   center: "title",
+            //   right: "today,prev,next",
+            // }}
+            // allDaySlot={false}
+            // eventTimeFormat={{
+            //   hour: "numeric",
+            //   minute: "2-digit",
+            //   second: "2-digit",
+            //   meridiem: false,
+            // }}
+            // buttonText={{
+            //   month: "hónap",
+            //   today: "ma",
+            //   week: "hét",
+            //   day: "nap",
+            //   list: "lista",
+            // }}
+          />
+        </div>
+        <span ref={modalRef}>
+          <CalendarModal
+            eventInfo={eventInfo}
+            isOpen={isModalOpen}
+            close={() => {
+              setIsModalOpen(false);
+            }}
+          />
+        </span>
       </div>
-      <div className="bg-bg_color text-text_color">
-        <FullCalendar
-          plugins={[
-            dayGridPlugin,
-            interactionPlugin,
-            timeGridPlugin,
-            listPlugin,
-          ]}
-          weekNumberCalculation="ISO"
-          locale="hu"
-          timeZone="UTC"
-          editable={true}
-          eventDurationEditable={true}
-          selectable={true}
-          initialView="timeGridWeek"
-          weekNumbers={true}
-          navLinks={true}
-          height="auto"
-          events={fetchEvents}
-          eventClick={handleClick}
-          lazyFetching={true}
-          // views={{
-          //   dayGridMonth: {
-          //     fixedWeekCount: false,
-          //   },
-          //   timeGridWeek: {
-          //     titleFormat: {
-          //       year: "numeric",
-          //       month: "long",
-          //       day: "2-digit",
-          //     },
-          //     slotLabelFormat: {
-          //       hour: "numeric",
-          //       minute: "2-digit",
-          //     },
-          //     slotDuration: "00:15:00",
-          //     slotMinTime: "08:00:00",
-          //     slotMaxTime: "17:30:00",
-          //     nowIndicator: true,
-          //   },
-          //   timeGridDay: {
-          //     slotLabelFormat: {
-          //       hour: "numeric",
-          //       minute: "2-digit",
-          //     },
-          //     slotDuration: "00:15:00",
-          //     slotMinTime: "08:00:00",
-          //     slotMaxTime: "17:30:00",
-          //     nowIndicator: true,
-          //   },
-          // }}
-          // headerToolbar={{
-          //   left: "dayGridMonth,timeGridWeek,timeGridDay,list",
-          //   center: "title",
-          //   right: "today,prev,next",
-          // }}
-          // allDaySlot={false}
-          // eventTimeFormat={{
-          //   hour: "numeric",
-          //   minute: "2-digit",
-          //   second: "2-digit",
-          //   meridiem: false,
-          // }}
-          // buttonText={{
-          //   month: "hónap",
-          //   today: "ma",
-          //   week: "hét",
-          //   day: "nap",
-          //   list: "lista",
-          // }}
-        />
-      </div>
-      <span ref={modalRef}>
-        <CalendarModal
-          eventInfo={eventInfo}
-          isOpen={isModalOpen}
-          close={() => {
-            setIsModalOpen(false);
-          }}
-        />
-      </span>
-    </div>
+    </>
   );
 }
