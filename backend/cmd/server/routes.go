@@ -36,9 +36,8 @@ func staticFilesHandler(r *chi.Mux) {
 		"/login",
 		"/signup",
 		"/dashboard",
-		"/reservations",
 		"/merchantsignup",
-		"/m/*",
+		"/m/{merchant_url}",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
