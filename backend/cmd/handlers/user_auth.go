@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -27,12 +26,23 @@ func hashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func hashCompare(password, hash string) bool {
+func hashCompare(password, hash string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if !errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		slog.Debug(err.Error())
+
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return fmt.Errorf("incorrect email or password")
+
+		} else if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+			return fmt.Errorf("password is too long")
+
+		} else {
+			// for debug purposes
+			return err
+		}
 	}
-	return err == nil
+
+	return nil
 }
 
 func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
@@ -58,11 +68,12 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if hashCompare(login.Password, password) {
-		utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User logged in successfully"})
-	} else {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("incorrect email or password"))
+	err = hashCompare(login.Password, password)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
 	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User logged in successfully"})
 }
 
 func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
