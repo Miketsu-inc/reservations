@@ -117,7 +117,6 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         ariaLabel="Password"
         autoComplete="new-password"
         labelText="Password"
-        labelHtmlFor="passwordInput"
         errorText={errorMessage.password}
         inputValidation={passwordValidation}
         inputData={handleInputData}
@@ -131,7 +130,6 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         ariaLabel="Confirm Password"
         autoComplete="new-password"
         labelText="Confirm Password"
-        labelHtmlFor="confirmPasswordInput"
         errorText={errorMessage.confirmPassword}
         inputValidation={confirmPasswordValidation}
         inputData={handleInputData}

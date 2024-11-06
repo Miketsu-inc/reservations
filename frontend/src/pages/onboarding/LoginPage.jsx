@@ -108,7 +108,7 @@ export default function LoginPage() {
             setServerError(undefined);
           }
         } catch (err) {
-          setServerError("An error occurred. Please try again.");
+          setServerError(err);
         } finally {
           setIsSubmitting(false);
         }
@@ -176,7 +176,6 @@ export default function LoginPage() {
             ariaLabel="Email"
             autoComplete="email"
             labelText="Email"
-            labelHtmlFor="emailInput"
             errorText={errorMessage.email}
             inputValidation={emailValidation}
             inputData={handleInputData}
@@ -190,7 +189,6 @@ export default function LoginPage() {
             ariaLabel="Password"
             autoComplete="password"
             labelText="Password"
-            labelHtmlFor="passwordInput"
             errorText={errorMessage.password}
             inputValidation={passwordValidation}
             inputData={handleInputData}

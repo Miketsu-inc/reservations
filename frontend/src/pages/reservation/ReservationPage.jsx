@@ -45,9 +45,7 @@ export default function ReservationPage() {
           setMerchantEmail(data.contact_email);
         }
       } catch (err) {
-        setServerError(
-          "Error occured. Please try again by refreshing the page"
-        );
+        setServerError(err);
       }
     }
 

@@ -62,7 +62,6 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         ariaLabel="Email"
         autoComplete="email"
         labelText="Email"
-        labelHtmlFor="emailInput"
         errorText={errorMessage}
         inputValidation={emailValidation}
         inputData={handleInputData}

@@ -63,7 +63,6 @@ export default function PhoneNumForm({ isCompleted, sendInputData }) {
         ariaLabel="phone number"
         autoComplete="tel"
         labelText="Enter your phone number"
-        labelHtmlFor="PhoneNumInput"
         errorText={errorMessage}
         inputValidation={PhoneNumValidation}
         inputData={handleInputData}

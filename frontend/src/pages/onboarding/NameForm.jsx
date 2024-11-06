@@ -107,7 +107,6 @@ export default function NameForm({
         ariaLabel="First Name"
         autoComplete="family-name"
         labelText="First Name"
-        labelHtmlFor="firstNameInput"
         errorText={errorMessage.firstname}
         inputValidation={firstNameValidation}
         inputData={handleInputData}
@@ -121,7 +120,6 @@ export default function NameForm({
         ariaLabel="last name"
         autoComplete="given-name"
         labelText="Last Name"
-        labelHtmlFor="lastNameInput"
         errorText={errorMessage.lastname}
         inputValidation={lastNameValidation}
         inputData={handleInputData}

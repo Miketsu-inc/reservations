@@ -54,9 +54,7 @@ export default function Calendar() {
           successCallback(events);
         }
       } catch (err) {
-        setServerError(
-          "Error occured. Please try again by refreshing the page"
-        );
+        setServerError(err);
         failureCallback(err);
       } finally {
         setIsLoading(false);

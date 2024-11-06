@@ -8,7 +8,6 @@ export default forwardRef(function FloatingLabelInput(
     type,
     autoComplete,
     labelText,
-    labelHtmlFor,
     styles,
     errorText,
     inputValidation,
@@ -96,7 +95,7 @@ export default forwardRef(function FloatingLabelInput(
  
             } pointer-events-none absolute transition-all peer-autofill:left-2
             peer-autofill:-translate-y-4 peer-autofill:text-sm`}
-          htmlFor={labelHtmlFor}
+          htmlFor={id}
         >
           {labelText}
         </label>

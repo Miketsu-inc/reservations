@@ -68,7 +68,7 @@ export default function SingUpPage() {
             setIsSubmitDone(true);
           }
         } catch (err) {
-          setServerError("An error occurred. Please try again.");
+          setServerError(err);
         } finally {
           setIsSubmitting(false);
         }

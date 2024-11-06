@@ -46,8 +46,7 @@ export default function AppointmentsAdder() {
   function addAppointment(newAppointemnt) {
     setApps((prevAppointments) => {
       const exists = prevAppointments.some(
-        (appointment) =>
-          appointment.appointment_type === newAppointemnt.appointment_type
+        (appointment) => appointment.name === newAppointemnt.name
       );
       if (exists) {
         setFormError("You cant add appointments with the same name");
@@ -83,10 +82,10 @@ export default function AppointmentsAdder() {
                 <div className="flex flex-row-reverse justify-between">
                   <XIcon
                     onClick={() => deleteAppointment(index)}
-                    styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg"
+                    styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg flex-shrink-0"
                   />
-                  <h3 className="mb-6 pl-5 pt-3 text-lg font-semibold text-text_color">
-                    {appointment.appointment_type}
+                  <h3 className="mb-6 truncate pl-5 pt-3 text-lg font-semibold text-text_color">
+                    {appointment.name}
                   </h3>
                 </div>
                 <div className="flex items-center justify-between px-5 pb-3">
