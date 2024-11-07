@@ -61,6 +61,9 @@ type PostgreSQL interface {
 
 	// Insert a new Location to the database
 	NewLocation(context.Context, Location) error
+
+	// Insert new services to the database
+	NewServices(context.Context, []Service) error
 }
 
 type service struct {

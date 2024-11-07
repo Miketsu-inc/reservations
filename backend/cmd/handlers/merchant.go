@@ -72,3 +72,51 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Location added to merchant successfully"})
 }
+
+func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
+	type newService struct {
+		Name     string `json:"name" validate:"required"`
+		Duration string `json:"duration" validate:"required"`
+		Price    string `json:"price" validate:"required"`
+	}
+
+	var services []newService
+
+	//might fail when there's only 1 service needs testing
+	if err := utils.ParseJSON(r, &services); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
+		return
+	}
+	for i := 0; i < len(services); i++ {
+		if errors := validate.Struct(services[i]); errors != nil {
+			utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+			return
+		}
+	}
+	userID, ok := r.Context().Value(middlewares.UserIDCtxKey).(uuid.UUID)
+	assert.True(ok, "Authenticated route called without jwt user id", r.Context().Value(middlewares.UserIDCtxKey), userID)
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
+		return
+	}
+
+	dbServices := make([]database.Service, len(services))
+	for i, svcs := range services {
+		dbServices[i] = database.Service{
+			Id:         0,
+			MerchantId: merchantId,
+			Name:       svcs.Name,
+			Duration:   svcs.Duration,
+			Price:      svcs.Price,
+		}
+	}
+
+	if err := m.Postgresdb.NewServices(r.Context(), dbServices); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting services: %s", err.Error()))
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Service added to merchant successfully"})
+
+}

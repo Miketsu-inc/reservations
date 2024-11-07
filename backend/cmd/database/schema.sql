@@ -34,7 +34,7 @@ create table "Appointment" (
     -- time_range      tstzrange       not null
 );
 
-create table "AppointmentType" (
+create table "Service" (
     ID              serial          primary key unique not null,
     merchant_id     uuid            references "Merchant" (ID) not null,
     name            varchar(30)     not null,
