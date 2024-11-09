@@ -1,4 +1,4 @@
-package middlewares
+package jwt
 
 import (
 	"context"
@@ -21,13 +21,22 @@ type contextKey struct {
 
 var UserIDCtxKey = &contextKey{"UserID"}
 
-func JWTMiddleware(next http.Handler) http.Handler {
+// Returns UserID from the request's context.
+// Should be only called in authenticated routes!
+func UserIDFromContext(ctx context.Context) uuid.UUID {
+	userID, ok := ctx.Value(UserIDCtxKey).(uuid.UUID)
+	assert.True(ok, "Authenticated route called without jwt user id", ctx.Value(UserIDCtxKey), userID)
+
+	return userID
+}
+
+func JwtMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		claims, err := verifyRequest(r, getTokenFromHeader, getTokenFromCookie)
 		if err != nil {
-			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf(err.Error()))
+			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
 			return
 		}
 
@@ -42,7 +51,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func CreateJWT(secret []byte, userID uuid.UUID) (string, error) {
+func New(secret []byte, userID uuid.UUID) (string, error) {
 	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
 	assert.Nil(err, "JWT_EXPIRATION_TIME environment variable could not be found", err)
 

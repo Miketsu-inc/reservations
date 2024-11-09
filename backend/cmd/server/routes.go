@@ -5,7 +5,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
-	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -63,7 +63,7 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.JWTMiddleware)
+		r.Use(jwt.JwtMiddleware)
 
 		r.Post("/", appointmentHandler.Create)
 		r.Get("/calendar", appointmentHandler.GetEvents)
@@ -85,7 +85,7 @@ func (rh *RouteHandlers) merchantAuthRoutes(r chi.Router) {
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.JWTMiddleware)
+		r.Use(jwt.JwtMiddleware)
 
 		r.Post("/signup", merchantAuthHandler.Signup)
 	})
@@ -99,7 +99,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	r.Get("/info", merchantHandler.MerchantByName)
 
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.JWTMiddleware)
+		r.Use(jwt.JwtMiddleware)
 
 		r.Post("/location", merchantHandler.NewLocation)
 	})

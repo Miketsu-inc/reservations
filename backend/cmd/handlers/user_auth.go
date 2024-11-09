@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
-	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -71,6 +71,7 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	err = hashCompare(login.Password, password)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
 	}
 
 	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User logged in successfully"})
@@ -133,7 +134,7 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := middlewares.CreateJWT([]byte(os.Getenv("JWT_SECRET")), userId)
+	token, err := jwt.New([]byte(os.Getenv("JWT_SECRET")), userId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error()))
 		return

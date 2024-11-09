@@ -17,11 +17,11 @@ type Location struct {
 
 func (s *service) NewLocation(ctx context.Context, location Location) error {
 	query := `
-	insert into "Location" (ID, merchant_id, country, city, postal_code, address)
-	values ($1, $2, $3, $4, $5, $6)
+	insert into "Location" (merchant_id, country, city, postal_code, address)
+	values ($1, $2, $3, $4, $5)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, location.Id, location.MerchantId, location.Country, location.City, location.PostalCode, location.Address)
+	_, err := s.db.ExecContext(ctx, query, location.MerchantId, location.Country, location.City, location.PostalCode, location.Address)
 	if err != nil {
 		return err
 	}

@@ -3,11 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
-	"github.com/miketsu-inc/reservations/backend/cmd/middlewares"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -35,8 +33,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value(middlewares.UserIDCtxKey).(uuid.UUID)
-	assert.True(ok, "Authenticated route called without jwt user id", r.Context().Value(middlewares.UserIDCtxKey), userID)
+	userID := jwt.UserIDFromContext(r.Context())
 
 	app := database.Appointment{
 		Id:           0,

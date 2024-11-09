@@ -18,10 +18,13 @@ func ParseJSON(r *http.Request, data any) error {
 	return json.NewDecoder(r.Body).Decode(data)
 }
 
-func WriteJSON(w http.ResponseWriter, status int, v any) error {
+func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Add("Content-type", "application/json")
 	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(v)
+
+	err := json.NewEncoder(w).Encode(v)
+	// for debug, let's see if we should handle this
+	assert.Nil(err, "Could not be encoded to json", v, err)
 }
 
 func WriteError(w http.ResponseWriter, status int, err error) {

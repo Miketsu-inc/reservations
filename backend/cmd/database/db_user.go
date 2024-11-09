@@ -70,7 +70,7 @@ func (s *service) IsEmailUnique(ctx context.Context, email string) bool {
 	`
 
 	err := s.db.QueryRowContext(ctx, query, email).Scan()
-	return errors.Is(sql.ErrNoRows, err)
+	return errors.Is(err, sql.ErrNoRows)
 }
 
 func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) bool {
@@ -80,5 +80,5 @@ func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) b
 	`
 
 	err := s.db.QueryRowContext(ctx, query, phoneNumber).Scan()
-	return errors.Is(sql.ErrNoRows, err)
+	return errors.Is(err, sql.ErrNoRows)
 }
