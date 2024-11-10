@@ -39,18 +39,16 @@ export default function Calendar() {
             method: "GET",
           }
         );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
-        const data = await response.json();
-        console.log(data);
-        if (data.error) {
-          setServerError(data.error);
-          failureCallback(data.error);
+        const result = await response.json();
+
+        if (!response.ok) {
+          setServerError(result.error.message);
+          failureCallback(result.error.message);
         } else {
           setServerError(undefined);
-          const events = formatData(data);
+
+          const events = formatData(result.data);
           successCallback(events);
         }
       } catch (err) {

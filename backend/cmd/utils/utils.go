@@ -1,35 +1,12 @@
 package utils
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
 	"net/smtp"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
-
-func ParseJSON(r *http.Request, data any) error {
-	if r.Body == nil {
-		return fmt.Errorf("missing request body")
-	}
-	return json.NewDecoder(r.Body).Decode(data)
-}
-
-func WriteJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Add("Content-type", "application/json")
-	w.WriteHeader(status)
-
-	err := json.NewEncoder(w).Encode(v)
-	// for debug, let's see if we should handle this
-	assert.Nil(err, "Could not be encoded to json", v, err)
-}
-
-func WriteError(w http.ResponseWriter, status int, err error) {
-	WriteJSON(w, status, map[string]string{"error": err.Error()})
-}
 
 func SendMail(email string) error {
 	from := os.Getenv("EMAIL_ADDRESS")

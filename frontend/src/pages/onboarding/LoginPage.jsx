@@ -99,12 +99,11 @@ export default function LoginPage() {
               password: loginData.password.value,
             }),
           });
-          const result = await response.json();
-          if (result.error) {
-            setServerError(result.error);
-            return;
+
+          if (!response.ok) {
+            const result = await response.json();
+            setServerError(result.error.message);
           } else {
-            console.log(result);
             setServerError(undefined);
           }
         } catch (err) {

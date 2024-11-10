@@ -1,5 +1,5 @@
 import { useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Selector from "../../components/Selector";
 import SelectorItem from "../../components/SelectorItem";
@@ -23,34 +23,31 @@ export default function ReservationPage() {
   const { merchantName } = useParams({ strict: false });
   const [merchantEmail, setMerchantEmail] = useState("");
 
-  useEffect(() => {
-    async function fetchMerchantInfo(merchantName) {
-      try {
-        const response = await fetch(
-          `/api/v1/merchants/info?name=${merchantName}`,
-          {
-            method: "GET",
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+  const fetchMerchantInfo = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/merchants/info?name=${merchantName}`,
+        {
+          method: "GET",
         }
+      );
 
-        const data = await response.json();
+      const result = await response.json();
 
-        if (data.error) {
-          setServerError(data.error);
-        } else {
-          setServerError(undefined);
-          setMerchantEmail(data.contact_email);
-        }
-      } catch (err) {
-        setServerError(err);
+      if (!response.ok) {
+        setServerError(result.error.message);
+      } else {
+        setServerError(undefined);
+        setMerchantEmail(result.data.contact_email);
       }
+    } catch (err) {
+      setServerError(err);
     }
+  }, [merchantName]);
 
-    fetchMerchantInfo(merchantName);
-  });
+  useEffect(() => {
+    fetchMerchantInfo();
+  }, [fetchMerchantInfo]);
 
   useEffect(() => {
     if (isSubmitting) {
@@ -61,7 +58,14 @@ export default function ReservationPage() {
         headers: {
           "Content-type": "application/json; charset=UTF-8",
         },
-        body: JSON.stringify(reservation),
+        // TEMP
+        body: JSON.stringify({
+          merchant_name: reservation.merchant_name,
+          service_id: 0,
+          location_id: 0,
+          from_date: reservation.from_date,
+          to_date: reservation.to_date,
+        }),
       });
     }
   }, [isSubmitting, reservation]);

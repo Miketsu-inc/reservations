@@ -9,11 +9,12 @@ export default function AppointmentsAdder() {
   const [fromError, setFormError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (isSubmitting) {
       const sendRequest = async () => {
         try {
-          const response = await fetch("/api/v1/auth/merchant/appointments", {
+          const response = await fetch("/api/v1/merchants/service", {
             method: "POST",
             headers: {
               Accept: "application/json",
@@ -21,8 +22,9 @@ export default function AppointmentsAdder() {
             },
             body: JSON.stringify(apps),
           });
-          const result = await response.json();
-          if (result.error) {
+
+          if (!response.ok) {
+            const _ = await response.json();
             return;
           }
         } catch (err) {

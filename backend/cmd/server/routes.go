@@ -102,5 +102,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 
 		r.Post("/location", merchantHandler.NewLocation)
+		r.Post("/service", merchantHandler.NewService)
 	})
 }

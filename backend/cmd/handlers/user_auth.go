@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -52,29 +52,22 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	var login loginData
 
-	if err := utils.ParseJSON(r, &login); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
-		return
-	}
-
-	if errors := validate.Struct(login); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := validate.ParseStruct(r, &login); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
 	password, err := u.Postgresdb.GetUserPasswordByUserEmail(r.Context(), login.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("incorrect email or password %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("incorrect email or password %s", err.Error()))
 		return
 	}
 
 	err = hashCompare(login.Password, password)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, err)
+		httputil.Error(w, http.StatusUnauthorized, err)
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User logged in successfully"})
 }
 
 func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
@@ -87,35 +80,30 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	var signup signUpData
 
-	if err := utils.ParseJSON(r, &signup); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during handling data: %s", err.Error()))
-		return
-	}
-
-	if errors := validate.Struct(signup); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := validate.ParseStruct(r, &signup); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
 	if !u.Postgresdb.IsEmailUnique(r.Context(), signup.Email) {
-		utils.WriteError(w, http.StatusConflict, fmt.Errorf("the email %s is already used", signup.Email))
+		httputil.Error(w, http.StatusConflict, fmt.Errorf("the email %s is already used", signup.Email))
 		return
 	}
 
 	if !u.Postgresdb.IsPhoneNumberUnique(r.Context(), signup.PhoneNumber) {
-		utils.WriteError(w, http.StatusConflict, fmt.Errorf("the phone number %s is already used", signup.PhoneNumber))
+		httputil.Error(w, http.StatusConflict, fmt.Errorf("the phone number %s is already used", signup.PhoneNumber))
 		return
 	}
 
 	hashedPassword, err := hashPassword(signup.Password)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("the password is too long"))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("the password is too long"))
 		return
 	}
 
 	userId, err := uuid.NewV7()
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
 		return
 	}
 
@@ -130,13 +118,13 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		Settings:       make(map[string]bool),
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user: %s", err.Error()))
 		return
 	}
 
 	token, err := jwt.New([]byte(os.Getenv("JWT_SECRET")), userId)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error()))
 		return
 	}
 
@@ -155,5 +143,5 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "User created successfully"})
+	w.WriteHeader(http.StatusCreated)
 }

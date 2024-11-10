@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
 
 type contextKey struct {
@@ -36,13 +36,13 @@ func JwtMiddleware(next http.Handler) http.Handler {
 
 		claims, err := verifyRequest(r, getTokenFromHeader, getTokenFromCookie)
 		if err != nil {
-			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
+			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
 			return
 		}
 
 		userID := getUserIdFromClaims(claims)
 		if userID == uuid.Nil {
-			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims"))
+			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims"))
 			return
 		}
 

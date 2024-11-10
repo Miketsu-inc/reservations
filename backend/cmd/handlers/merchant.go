@@ -7,7 +7,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -18,13 +18,19 @@ type Merchant struct {
 func (m *Merchant) MerchantByName(w http.ResponseWriter, r *http.Request) {
 	UrlName := r.URL.Query().Get("name")
 
-	merchant, err := m.Postgresdb.GetMerchantByUrlName(r.Context(), strings.ToLower(UrlName))
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error while retriving merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, merchant)
+	merchant, err := m.Postgresdb.GetMerchantById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving merchant by id: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, merchant)
 }
 
 func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +42,8 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 	}
 	var location newLocation
 
-	if err := utils.ParseJSON(r, &location); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
-		return
-	}
-
-	if errors := validate.Struct(location); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+	if err := validate.ParseStruct(r, &location); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -50,7 +51,7 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
 		return
 	}
 
@@ -63,11 +64,11 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 		Address:    location.Address,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding location to database: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding location to database: %s", err.Error()))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Location added to merchant successfully"})
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
@@ -78,24 +79,26 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	}
 	var services []newService
 
-	//might fail when there's only 1 service needs testing
-	if err := utils.ParseJSON(r, &services); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
+	// TODO: how should ParseStruct handle this?
+	// -----
+	if err := httputil.ParseJSON(r, &services); err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
 		return
 	}
 
 	for _, service := range services {
-		if errors := validate.Struct(service); errors != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
+		if err := validate.Struct(service); err != nil {
+			httputil.Error(w, http.StatusBadRequest, err)
 			return
 		}
 	}
+	// -----
 
 	userID := jwt.UserIDFromContext(r.Context())
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
 		return
 	}
 
@@ -111,9 +114,9 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := m.Postgresdb.NewServices(r.Context(), dbServices); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting services: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting services: %s", err.Error()))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Service added to merchant successfully"})
+	w.WriteHeader(http.StatusCreated)
 }

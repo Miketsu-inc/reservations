@@ -29,19 +29,19 @@ func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	return nil
 }
 
-func (s *service) GetMerchantByUrlName(ctx context.Context, UrlName string) (Merchant, error) {
+func (s *service) GetMerchantIdByUrlName(ctx context.Context, UrlName string) (uuid.UUID, error) {
 	query := `
-	select * from "Merchant"
+	select id from "Merchant"
 	where url_name = $1
 	`
 
-	var merchant Merchant
-	err := s.db.QueryRowContext(ctx, query, UrlName).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail, &merchant.Settings)
+	var merchantId uuid.UUID
+	err := s.db.QueryRowContext(ctx, query, UrlName).Scan(&merchantId)
 	if err != nil {
-		return Merchant{}, err
+		return uuid.Nil, err
 	}
 
-	return merchant, nil
+	return merchantId, nil
 }
 
 func (s *service) GetMerchantIdByOwnerId(ctx context.Context, ownerId uuid.UUID) (uuid.UUID, error) {
@@ -57,4 +57,19 @@ func (s *service) GetMerchantIdByOwnerId(ctx context.Context, ownerId uuid.UUID)
 	}
 
 	return merchantId, nil
+}
+
+func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Merchant, error) {
+	query := `
+	select * from "Merchant"
+	where id = $1
+	`
+
+	var merchant Merchant
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail, &merchant.Settings)
+	if err != nil {
+		return Merchant{}, err
+	}
+
+	return merchant, nil
 }

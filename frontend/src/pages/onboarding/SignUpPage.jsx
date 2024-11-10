@@ -48,7 +48,6 @@ export default function SingUpPage() {
 
   useEffect(() => {
     if (isSubmitting) {
-      console.log(signUpData);
       const sendRequest = async () => {
         try {
           const response = await fetch("/api/v1/auth/user/signup", {
@@ -59,10 +58,10 @@ export default function SingUpPage() {
             },
             body: JSON.stringify(signUpData),
           });
-          const result = await response.json();
-          if (result.error) {
-            setServerError(result.error);
-            return;
+
+          if (!response.ok) {
+            const result = await response.json();
+            setServerError(result.error.message);
           } else {
             setServerError(undefined);
             setIsSubmitDone(true);

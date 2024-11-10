@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -22,19 +22,13 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	var signup signUpData
 
-	if err := utils.ParseJSON(r, &signup); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
-		return
-	}
-
-	if errors := validate.Struct(signup); errors != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, map[string]map[string]string{"errors": errors})
-		return
+	if err := validate.ParseStruct(r, &signup); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 	}
 
 	urlName, err := validate.MerchantNameToUrlName(signup.Name)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error()))
 		return
 	}
 
@@ -42,7 +36,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 
 	merchantID, err := uuid.NewV7()
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating merchant id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating merchant id: %s", err.Error()))
 		return
 	}
 
@@ -55,9 +49,9 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		Settings:     make(map[string]bool),
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"success": "Merchant created successfully"})
+	w.WriteHeader(http.StatusCreated)
 }

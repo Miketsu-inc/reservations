@@ -32,7 +32,7 @@ type PostgreSQL interface {
 	// Get all Appointments made by a User.
 	GetAppointmentsByUser(context.Context, uuid.UUID) ([]Appointment, error)
 	// Get all Aappintments assigned to a Merchant.
-	GetAppointmentsByMerchant(context.Context, string, string, string) ([]Appointment, error)
+	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]Appointment, error)
 
 	// -- Auth --
 
@@ -52,15 +52,19 @@ type PostgreSQL interface {
 
 	// Insert a new Merchant to the database
 	NewMerchant(context.Context, Merchant) error
-	// Get a Merchant by the Merchant's url name
-	GetMerchantByUrlName(context.Context, string) (Merchant, error)
+	// Get a Merchant's id by the Merchant's url name
+	GetMerchantIdByUrlName(context.Context, string) (uuid.UUID, error)
 	// Get a Merchant's owner id by the merchantId
 	GetMerchantIdByOwnerId(context.Context, uuid.UUID) (uuid.UUID, error)
+	// Get a Merchant by it's user id
+	GetMerchantById(context.Context, uuid.UUID) (Merchant, error)
 
 	// -- Location --
 
 	// Insert a new Location to the database
 	NewLocation(context.Context, Location) error
+
+	// -- Serivce --
 
 	// Insert new services to the database
 	NewServices(context.Context, []Service) error

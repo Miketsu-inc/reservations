@@ -3,6 +3,7 @@ package validate
 import (
 	"fmt"
 	"html"
+	"net/http"
 	"reflect"
 	"regexp"
 	"slices"
@@ -11,18 +12,31 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
 
-func Struct(s interface{}) map[string]string {
+// Parse json from the request's body then validate the parsed struct and return nil or the first error
+func ParseStruct(r *http.Request, data any) error {
+	if err := httputil.ParseJSON(r, &data); err != nil {
+		return fmt.Errorf("unexpected error during json parsing: %s", err.Error())
+	}
+
+	if err := Struct(data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Validate a struct and return nil or the first error
+func Struct(s any) error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
 	err := validate.Struct(s)
 	if err != nil {
-
-		var errorMsg = make(map[string]string)
 
 		errors := err.(validator.ValidationErrors)
 		for _, err := range errors {
@@ -30,10 +44,8 @@ func Struct(s interface{}) map[string]string {
 			jsonTag, ok := getJsonTagForField(s, err.Field())
 			assert.True(ok, fmt.Sprintf("%s field does not have a json tag", err.Field()), err.Error())
 
-			errorMsg[jsonTag] = errorMessageForTag(err)
+			return fmt.Errorf("'%s': %s", jsonTag, errorMessageForTag(err))
 		}
-
-		return errorMsg
 	}
 
 	return nil
@@ -57,7 +69,7 @@ func errorMessageForTag(err validator.FieldError) string {
 	return err.Error()
 }
 
-func getJsonTagForField(s interface{}, fieldName string) (string, bool) {
+func getJsonTagForField(s any, fieldName string) (string, bool) {
 	t := reflect.TypeOf(s)
 	sf, ok := t.FieldByName(fieldName)
 	if !ok {
@@ -82,7 +94,7 @@ func MerchantNameToUrlName(s string) (string, error) {
 		return "", fmt.Errorf("urlName is empty after processing")
 	}
 
-	return result, nil
+	return strings.ToLower(result), nil
 }
 
 func replaceAccents(s string) (string, error) {
