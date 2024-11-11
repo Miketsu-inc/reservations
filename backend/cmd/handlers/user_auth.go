@@ -115,7 +115,7 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		PhoneNumber:    signup.PhoneNumber,
 		PasswordHash:   hashedPassword,
 		SubscriptionId: 0,
-		Settings:       make(map[string]bool),
+		// Settings:       make(map[string]bool),
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user: %s", err.Error()))

@@ -7,21 +7,21 @@ import (
 )
 
 type Merchant struct {
-	Id           uuid.UUID       `json:"ID"`
-	Name         string          `json:"name"`
-	UrlName      string          `json:"url_name"`
-	OwnerId      uuid.UUID       `json:"owner_id"`
-	ContactEmail string          `json:"contact_email"`
-	Settings     map[string]bool `json:"settings"`
+	Id           uuid.UUID `json:"ID"`
+	Name         string    `json:"name"`
+	UrlName      string    `json:"url_name"`
+	OwnerId      uuid.UUID `json:"owner_id"`
+	ContactEmail string    `json:"contact_email"`
+	// Settings     map[string]bool `json:"settings"`
 }
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, settings)
-	values ($1, $2, $3, $4, $5, $6)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email)
+	values ($1, $2, $3, $4, $5)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail, merchant.Settings)
+	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 	`
 
 	var merchant Merchant
-	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail, &merchant.Settings)
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail)
 	if err != nil {
 		return Merchant{}, err
 	}

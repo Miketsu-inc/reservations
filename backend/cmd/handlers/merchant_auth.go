@@ -46,7 +46,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		UrlName:      urlName,
 		OwnerId:      userID,
 		ContactEmail: signup.ContactEmail,
-		Settings:     make(map[string]bool),
+		// Settings:     make(map[string]bool),
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))

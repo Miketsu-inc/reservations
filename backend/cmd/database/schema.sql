@@ -9,8 +9,8 @@ create table "User" (
     password_hash   varchar(72)     not null,
     -- TODO
     -- trial_ended     boolean         not null,
-    subscription_id integer         references "Subscription" (ID),
-    settings        json
+    subscription_id integer         references "Subscription" (ID)
+    -- settings        jsonb
 );
 
 create table "Merchant" (
@@ -18,8 +18,8 @@ create table "Merchant" (
     name            varchar(30)     not null,
     url_name        varchar(30)     unique not null,
     owner_id        uuid            references "User" (ID) not null,
-    contact_email   varchar(320)    not null,
-    settings        json
+    contact_email   varchar(320)    not null
+    -- settings        jsonb
 );
 
 create table "Appointment" (
