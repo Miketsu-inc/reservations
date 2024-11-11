@@ -18,15 +18,16 @@ type Service struct {
 
 func (s *service) NewServices(ctx context.Context, services []Service) error {
 	query := `
-	insert into "Service" (ID, merchant_id, name, duration, price)
-	values 
+	insert into "Service" (merchant_id, name, duration, price)
+	values
 	`
+
 	values := []string{}
 	args := []interface{}{}
 	for i, service := range services {
 		//placeholder for values of each row
-		values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
-		args = append(args, service.Id, service.MerchantId, service.Name, service.Duration, service.Price)
+		values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4))
+		args = append(args, service.MerchantId, service.Name, service.Duration, service.Price)
 	}
 	query += strings.Join(values, ",")
 
