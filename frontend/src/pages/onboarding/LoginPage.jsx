@@ -152,7 +152,7 @@ export default function LoginPage() {
             dark:focus:border-hvr_secondary hover:bg-hvr_secondary/90 focus:bg-secondary"
           buttonText="Log in with Google"
         >
-          <GoogleIcon styles="dark:fill-secondary dark:group-hover:fill-hvr_secondary fill-text_color" />
+          <GoogleIcon styles="dark:fill-secondary dark:group-hover:fill-hvr_secondary fill-text_color mr-3" />
         </Button>
         <div className="mt-4 grid grid-cols-3 items-center">
           <hr className="border-text_color" />

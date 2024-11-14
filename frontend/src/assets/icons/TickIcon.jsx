@@ -1,7 +1,7 @@
 export default function TickIcon({ styles }) {
   return (
     <svg
-      className={`${styles} h-6 w-6`}
+      className={`${styles} fill-current`}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 16 16"
     >

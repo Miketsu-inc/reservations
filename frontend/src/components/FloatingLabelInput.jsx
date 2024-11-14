@@ -69,7 +69,7 @@ export default forwardRef(function FloatingLabelInput(
           } `}
       >
         <InputBase
-          styles="peer mt-1 pt-4"
+          styles="peer mt-1 pt-4 p-2"
           type={type}
           value={inputValue}
           name={name}

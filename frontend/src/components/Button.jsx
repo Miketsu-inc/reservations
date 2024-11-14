@@ -25,7 +25,7 @@ export default function Button({
         </div>
       ) : children ? (
         <div className="flex items-center justify-center">
-          <span className="pr-3">{children}</span>
+          <span className="">{children}</span>
           <span>{buttonText}</span>
         </div>
       ) : (

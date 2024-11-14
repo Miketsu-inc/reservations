@@ -64,7 +64,7 @@ export default function MerchantInfoForm({ isCompleted }) {
     <>
       <form
         noValidate
-        className="flex w-full flex-col items-center justify-center *:w-full"
+        className="flex w-full flex-col items-center justify-center gap-4 *:w-full"
         onSubmit={handleSubmit}
       >
         <h1 className="text-center text-2xl font-semibold">
@@ -76,7 +76,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         <ServerError styles="mt-4 mb-2" error={serverError} />
         <Input
           type="text"
-          styles=""
+          styles="p-2"
           placeholder="Global Serve kft"
           pattern=".{0,255}"
           name="name"
@@ -88,7 +88,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         />
         <Input
           type="email"
-          styles=""
+          styles="p-2"
           placeholder="mycompany@gmail.com"
           pattern=".{0,254}@.*"
           name="contact_email"

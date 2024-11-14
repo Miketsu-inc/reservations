@@ -68,7 +68,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
     <>
       <form
         noValidate
-        className="flex w-full flex-col items-center justify-center *:w-full"
+        className="flex w-full flex-col items-center justify-center gap-4 *:w-full"
         onSubmit={handleSubmit}
       >
         <h1 className="text-center text-2xl font-bold">Location</h1>
@@ -80,7 +80,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           <div className="flex-grow">
             <Input
               type="text"
-              styles="w-full"
+              styles="w-full p-2"
               placeholder="Hungary"
               pattern=".{0,255}"
               name="country"
@@ -95,7 +95,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           <div className="w-24">
             <Input
               type="text"
-              styles="w-fulls"
+              styles="w-full p-2"
               placeholder="2119"
               pattern="^[0-9]{0,255}$"
               name="postal_code"
@@ -111,7 +111,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
         <div className="grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2">
           <Input
             type="text"
-            styles="w-full"
+            styles="w-full p-2"
             placeholder="Budapest"
             pattern=".{0,255}"
             name="city"
@@ -124,7 +124,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           />
           <Input
             type="text"
-            styles="w-full"
+            styles="w-full p-2"
             placeholder="Állás utca 3"
             pattern=".{0,255}"
             name="address"

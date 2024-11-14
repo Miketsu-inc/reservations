@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import XIcon from "../../assets/icons/XIcon";
 import Button from "../../components/Button";
-import AppointmentSidepanel from "./SidepanelForm";
+import ServiceCard from "./ServiceCard";
+import SidepanelForm from "./SidepanelForm";
 
 export default function AppointmentsAdder() {
-  const [apps, setApps] = useState([]);
+  const [services, setServices] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [fromError, setFormError] = useState("");
-  const [submitError, setSubmitError] = useState("");
+  const [fromError, setFormError] = useState(undefined);
+  const [submitError, setSubmitError] = useState(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function AppointmentsAdder() {
               Accept: "application/json",
               "content-type": "application/json",
             },
-            body: JSON.stringify(apps),
+            body: JSON.stringify(services),
           });
 
           if (!response.ok) {
@@ -35,33 +35,43 @@ export default function AppointmentsAdder() {
       };
       sendRequest();
     }
-  }, [apps, isSubmitting]);
+  }, [services, isSubmitting]);
 
   function handleSubmit() {
-    if (apps.length === 0) {
+    if (services.length === 0) {
       setSubmitError("Please make at least one appointment");
       return;
     }
     setIsSubmitting(true);
   }
 
-  function addAppointment(newAppointemnt) {
-    setApps((prevAppointments) => {
-      const exists = prevAppointments.some(
-        (appointment) => appointment.name === newAppointemnt.name
+  function addService(newService) {
+    setServices((prevServices) => {
+      const exists = prevServices.some(
+        (service) => service.name === newService.name
       );
       if (exists) {
         setFormError("You cant add appointments with the same name");
-        return prevAppointments;
+        return prevServices;
       }
       setIsAdding(false);
-      setFormError("");
-      return [...prevAppointments, newAppointemnt];
+      setFormError(undefined);
+      return [...prevServices, newService];
     });
   }
 
-  function deleteAppointment(deleteIndex) {
-    setApps((prevApps) => prevApps.filter((_, index) => index !== deleteIndex));
+  function deleteService(deleteIndex) {
+    setServices((prevServices) =>
+      prevServices.filter((_, index) => index !== deleteIndex)
+    );
+  }
+
+  function handleEdit(index, newData) {
+    setServices(
+      services.map((service, i) =>
+        i === index ? { ...service, ...newData } : service
+      )
+    );
   }
 
   return (
@@ -70,44 +80,32 @@ export default function AppointmentsAdder() {
         <div
           className={`p-6 transition-all duration-300 ${isAdding ? "sm:mr-96 lg:pr-20 xl:pr-40" : ""}`}
         >
-          <h1 className="text-3xl">Your Appointments</h1>
+          <h1 className="text-3xl">Your Services</h1>
           <div
             className={`mt-6 grid w-full grid-cols-1 gap-6
               ${isAdding ? "sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-3 xl:grid-cols-4"}`}
           >
-            {apps.map((appointment, index) => (
-              <div
+            {services.map((service, index) => (
+              <ServiceCard
                 key={index}
-                className="rounded-lg bg-slate-200/70 shadow-md dark:border-[1px] dark:border-gray-600
-                  dark:bg-hvr_gray"
-              >
-                <div className="flex flex-row-reverse justify-between">
-                  <XIcon
-                    onClick={() => deleteAppointment(index)}
-                    styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg flex-shrink-0"
-                  />
-                  <h3 className="mb-6 truncate pl-5 pt-3 text-lg font-semibold text-text_color">
-                    {appointment.name}
-                  </h3>
-                </div>
-                <div className="flex items-center justify-between px-5 pb-3">
-                  <span className="text-sm tracking-tight text-gray-600 dark:text-gray-400">
-                    {appointment.duration} min
-                  </span>
-                  <span className="text-sm tracking-tight text-green-600 dark:text-green-400">
-                    {appointment.price} FT
-                  </span>
-                </div>
-              </div>
+                service={service}
+                index={index}
+                handleDelete={deleteService}
+                handleEdit={handleEdit}
+                exists={(newName, index) => {
+                  return services.some(
+                    (service, id) => service.name === newName && id !== index
+                  );
+                }}
+              />
             ))}
 
-            {/* Add New Appointment Button */}
             <button
               className="flex h-auto flex-col items-center justify-center gap-2 rounded-lg
                 bg-slate-200/70 p-3 hover:bg-slate-300/45 hover:shadow-lg dark:bg-hvr_gray
                 dark:hover:bg-gray-700"
               onClick={() => {
-                setSubmitError("");
+                setSubmitError(undefined);
                 setIsAdding(true);
               }}
             >
@@ -115,12 +113,12 @@ export default function AppointmentsAdder() {
                 <span className="text-text_color">+</span>
               </div>
               <span className="text-sm font-medium dark:text-gray-300">
-                Add Appointment
+                Add Service
               </span>
             </button>
           </div>
           <p className="mt-4 text-center text-sm">
-            You can also add and remove appointments later
+            You can also add, remove or edit services later
           </p>
           <div className="mt-4 flex w-full flex-col items-center justify-center">
             <Button
@@ -128,7 +126,7 @@ export default function AppointmentsAdder() {
               styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
                 hover:bg-hvr_primary text-white"
               onClick={handleSubmit}
-              buttonText="Save Appointments"
+              buttonText="Save Services"
               isLoading={isSubmitting}
             />
             {submitError && (
@@ -137,8 +135,8 @@ export default function AppointmentsAdder() {
           </div>
         </div>
       </div>
-      <AppointmentSidepanel
-        addAppointment={addAppointment}
+      <SidepanelForm
+        addService={addService}
         setIsAdding={setIsAdding}
         isOpen={isAdding}
         formError={fromError}

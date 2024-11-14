@@ -13,8 +13,10 @@ export default function Input({
   pattern,
   inputData,
   hasError,
+  value,
 }) {
-  const [inputValue, setInputValue] = useState("");
+  //will be value if value has value
+  const [inputValue, setInputValue] = useState(value || "");
 
   function handleChange(e) {
     const value = e.target.value;
@@ -28,13 +30,13 @@ export default function Input({
   const isEmpty = hasError && !inputValue;
 
   return (
-    <label htmlFor={id} className="mt-4 flex flex-col">
+    <label htmlFor={id} className="flex flex-col">
       <span>{labelText}</span>
       <InputBase
-        styles={`${styles} peer border-2 bg-transparent p-2 outline-none
+        styles={`${styles} peer border-2 bg-transparent outline-none
           invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600 mt-2
           invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
-          ${isEmpty ? "border-red-600 focus:border-red" : "border-text_color focus:border-primary"}`}
+          ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}
         type={type}
         name={name}
         id={id}
@@ -44,6 +46,7 @@ export default function Input({
         onChange={handleChange}
         required={true}
         onBlur={() => {}}
+        value={inputValue}
       />
       {isEmpty && (
         <span className="text-sm text-red-600">

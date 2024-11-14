@@ -28,6 +28,7 @@ export default function AppointmentForm({ sendInputData }) {
   }
 
   function handleInputData(data) {
+    setIsEmpty(false);
     setFormData((prevFormData) => ({
       ...prevFormData,
       [data.name]: data.value,
@@ -38,12 +39,12 @@ export default function AppointmentForm({ sendInputData }) {
     <>
       <form
         noValidate
-        className="mt-4 flex w-full flex-col items-center justify-center *:w-full"
+        className="mt-4 flex w-full flex-col items-center justify-center gap-4 *:w-full"
         onSubmit={handleSubmit}
       >
         <Input
           type="text"
-          styles=""
+          styles="p-2"
           placeholder="Nail polish"
           pattern=".{0,255}"
           name="name"
@@ -55,7 +56,7 @@ export default function AppointmentForm({ sendInputData }) {
         />
         <Input
           type="text"
-          styles=""
+          styles="p-2"
           placeholder="25"
           pattern="^[0-9]{0,255}$"
           name="duration"
@@ -67,7 +68,7 @@ export default function AppointmentForm({ sendInputData }) {
         />
         <Input
           type="text"
-          styles=""
+          styles="p-2"
           placeholder="3300"
           pattern="^[0-9]{0,255}$"
           name="price"
@@ -84,7 +85,7 @@ export default function AppointmentForm({ sendInputData }) {
             hover:bg-hvr_primary text-white"
           name=""
           type="submit"
-          buttonText="Add Appointment"
+          buttonText="Add Service"
         />
       </form>
     </>
