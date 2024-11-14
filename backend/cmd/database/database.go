@@ -58,6 +58,8 @@ type PostgreSQL interface {
 	GetMerchantIdByOwnerId(context.Context, uuid.UUID) (uuid.UUID, error)
 	// Get a Merchant by it's user id
 	GetMerchantById(context.Context, uuid.UUID) (Merchant, error)
+	// Get all publicly available merchant info that will be displayed
+	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 
 	// -- Location --
 

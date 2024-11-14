@@ -7,21 +7,19 @@ import ServerError from "../../components/ServerError";
 
 const defaultReservation = {
   merchant_name: "Hair salon",
-  type_name: "",
-  location_name: "Kiraly utca",
+  service_id: 0,
+  location_id: 0,
   from_date: "",
   to_date: "",
 };
 
-const reservationTypes = ["Hair", "Nail", "Face", "Body", "Feet"];
-
 export default function ReservationPage() {
   const [reservation, setReservation] = useState(defaultReservation);
+  const [services, setServices] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [serverError, setServerError] = useState(undefined);
   const { merchantName } = useParams({ strict: false });
-  const [merchantEmail, setMerchantEmail] = useState("");
 
   const fetchMerchantInfo = useCallback(async () => {
     try {
@@ -38,7 +36,21 @@ export default function ReservationPage() {
         setServerError(result.error.message);
       } else {
         setServerError(undefined);
-        setMerchantEmail(result.data.contact_email);
+
+        setReservation({
+          merchant_name: result.data.merchant_name,
+          service_id: 1,
+          location_id: result.data.location_id,
+          from_date: "",
+          to_date: "",
+        });
+
+        result.data.services.forEach((s) => {
+          setServices((prev) => ({
+            ...prev,
+            [s.name]: s.ID,
+          }));
+        });
       }
     } catch (err) {
       setServerError(err);
@@ -51,22 +63,28 @@ export default function ReservationPage() {
 
   useEffect(() => {
     if (isSubmitting) {
-      setIsSubmitting(false);
+      const sendRequest = async () => {
+        try {
+          const response = await fetch("/api/v1/appointments", {
+            method: "POST",
+            headers: {
+              "Content-type": "application/json; charset=UTF-8",
+            },
+            body: JSON.stringify(reservation),
+          });
 
-      fetch("/api/v1/appointments", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json; charset=UTF-8",
-        },
-        // TEMP
-        body: JSON.stringify({
-          merchant_name: reservation.merchant_name,
-          service_id: 0,
-          location_id: 0,
-          from_date: reservation.from_date,
-          to_date: reservation.to_date,
-        }),
-      });
+          if (!response.ok) {
+            const result = await response.json();
+            setErrorMessage(result.error.message);
+          }
+        } catch (err) {
+          setErrorMessage(err.message);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      sendRequest();
     }
   }, [isSubmitting, reservation]);
 
@@ -74,15 +92,19 @@ export default function ReservationPage() {
     e.preventDefault();
     setErrorMessage("");
 
+    let canSubmit = true;
+
     if (reservation.from_date === "") {
       setErrorMessage("Please set a reservation date!");
+      canSubmit = false;
     }
 
-    if (reservation.type_name === "") {
+    if (reservation.service_id === 0) {
       setErrorMessage("Please set a reservation type!");
+      canSubmit = false;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(canSubmit);
   }
 
   function dateChangeHandler(e) {
@@ -97,8 +119,8 @@ export default function ReservationPage() {
     }));
   }
 
-  function typeChangeHandler(value) {
-    setReservation((prev) => ({ ...prev, type_name: value }));
+  function serviceChangeHandler(value) {
+    setReservation((prev) => ({ ...prev, service_id: services[value] }));
   }
 
   return (
@@ -116,7 +138,7 @@ export default function ReservationPage() {
             point. Should have used lorem ipsum
           </p>
           <p className="text-center">Open hours: 9:00-19:00</p>
-          <p className="text-center">Email: {merchantEmail}</p>
+          <p className="text-center">Email: </p>
         </div>
       </div>
       <form method="POST" onSubmit={onSubmitHandler}>
@@ -126,11 +148,11 @@ export default function ReservationPage() {
             defaultValue="Choose a reservation type"
             styles="text-base p-1 rounded-lg border-text_color border px-3"
             dropdownStyles="rounded-md bg-layer_bg border border-gray-600 w-full translate-y-[2.9rem] absolute sm:h-32 h-28 md:h-44"
-            onSelect={typeChangeHandler}
+            onSelect={serviceChangeHandler}
           >
-            {reservationTypes.map((type, index) => (
-              <SelectorItem key={index} value={type} styles="text-base py-1">
-                {type}
+            {Object.entries(services).map(([service, id]) => (
+              <SelectorItem key={id} value={service} styles="text-base py-1">
+                {service}
               </SelectorItem>
             ))}
           </Selector>

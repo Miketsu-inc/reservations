@@ -20,17 +20,17 @@ func (m *Merchant) MerchantByName(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	merchant, err := m.Postgresdb.GetMerchantById(r.Context(), merchantId)
+	merchantInfo, err := m.Postgresdb.GetAllMerchantInfo(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving merchant by id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while accessing merchant info: %s", err.Error()))
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, merchant)
+	httputil.Success(w, http.StatusOK, merchantInfo)
 }
 
 func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {

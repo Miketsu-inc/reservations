@@ -73,3 +73,55 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 
 	return merchant, nil
 }
+
+type MerchantInfo struct {
+	Name         string `json:"merchant_name"`
+	UrlName      string `json:"url_name"`
+	ContactEmail string `json:"contact_email"`
+
+	LocationId int    `json:"location_id"`
+	Country    string `json:"country"`
+	City       string `json:"city"`
+	PostalCode string `json:"postal_code"`
+	Address    string `json:"address"`
+
+	Services []Service `json:"services"`
+}
+
+// this should and will be refactored
+func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error) {
+	query := `
+	select m.name, m.url_name, m.contact_email, l.id as location_id, l.country, l.city, l.postal_code, l.address from "Merchant" m
+	inner join "Location" l on m.id = l.merchant_id
+	`
+
+	var mi MerchantInfo
+	err := s.db.QueryRowContext(ctx, query).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
+	if err != nil {
+		return MerchantInfo{}, err
+	}
+
+	query = `
+	select * from "Service"
+	where merchant_id = $1
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	if err != nil {
+		return MerchantInfo{}, err
+	}
+	defer rows.Close()
+
+	var services []Service
+	for rows.Next() {
+		var s Service
+		if err := rows.Scan(&s.Id, &s.MerchantId, &s.Name, &s.Duration, &s.Price); err != nil {
+			return MerchantInfo{}, err
+		}
+
+		services = append(services, s)
+	}
+
+	mi.Services = services
+	return mi, nil
+}
