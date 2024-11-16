@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/Button";
+import ServerError from "../../components/ServerError";
 import ServiceCard from "./ServiceCard";
 import SidepanelForm from "./SidepanelForm";
 
-export default function AppointmentsAdder() {
+export default function AppointmentsAdder({ redirect }) {
   const [services, setServices] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [fromError, setFormError] = useState(undefined);
@@ -24,18 +25,20 @@ export default function AppointmentsAdder() {
           });
 
           if (!response.ok) {
-            const _ = await response.json();
-            return;
+            const result = await response.json();
+            setSubmitError(result.error.message);
+          } else {
+            redirect();
           }
         } catch (err) {
-          console.error("Error messsage from server:", err.message);
+          setSubmitError(err.message);
         } finally {
           setIsSubmitting(false);
         }
       };
       sendRequest();
     }
-  }, [services, isSubmitting]);
+  }, [services, isSubmitting, redirect]);
 
   function handleSubmit() {
     if (services.length === 0) {
@@ -80,6 +83,7 @@ export default function AppointmentsAdder() {
         <div
           className={`p-6 transition-all duration-300 ${isAdding ? "sm:mr-96 lg:pr-20 xl:pr-40" : ""}`}
         >
+          <ServerError error={submitError} styles="mb-4" />
           <h1 className="text-3xl">Your Services</h1>
           <div
             className={`mt-6 grid w-full grid-cols-1 gap-6
@@ -102,14 +106,14 @@ export default function AppointmentsAdder() {
 
             <button
               className="flex h-auto flex-col items-center justify-center gap-2 rounded-lg
-                bg-slate-200/70 p-3 hover:bg-slate-300/45 hover:shadow-lg dark:bg-hvr_gray
+                bg-slate-300/45 p-3 hover:bg-slate-300 hover:shadow-lg dark:bg-hvr_gray
                 dark:hover:bg-gray-700"
               onClick={() => {
                 setSubmitError(undefined);
                 setIsAdding(true);
               }}
             >
-              <div className="h-12 w-12 rounded-full bg-slate-300/45 p-3 dark:bg-gray-700">
+              <div className="h-12 w-12 rounded-full bg-slate-300 p-3 dark:bg-gray-700">
                 <span className="text-text_color">+</span>
               </div>
               <span className="text-sm font-medium dark:text-gray-300">
@@ -129,9 +133,6 @@ export default function AppointmentsAdder() {
               buttonText="Save Services"
               isLoading={isSubmitting}
             />
-            {submitError && (
-              <span className="mt-4 text-red-600">{submitError}</span>
-            )}
           </div>
         </div>
       </div>

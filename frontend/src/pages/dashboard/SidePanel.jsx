@@ -62,7 +62,7 @@ export default function SidePanel({ profileImage, profileText }) {
           />
           <hr className="my-4"></hr>
           <div className="flex flex-1 flex-col space-y-2 font-medium">
-            <SidePanelItem link="#" text="Dashboard">
+            <SidePanelItem link="/dashboard" text="Dashboard">
               <DashboardIcon styles="h-5 w-5" />
             </SidePanelItem>
             <SidePanelItem link="#" text="Calendar">
@@ -71,7 +71,7 @@ export default function SidePanel({ profileImage, profileText }) {
             <SidePanelItem link="#" text="Statistics" isPro={true}>
               <ChartIcon styles="h-5 w-5" />
             </SidePanelItem>
-            <SidePanelItem link="#" text="Settings">
+            <SidePanelItem link="/settings" text="Settings">
               <SettingsIcon styles="h-5 w-5" />
             </SidePanelItem>
             <span className="flex-1"></span>

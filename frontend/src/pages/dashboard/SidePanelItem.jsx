@@ -1,8 +1,10 @@
+import { Link } from "@tanstack/react-router";
+
 export default function SidePanelItem({ children, link, text, isPro }) {
   return (
     <div>
-      <a
-        href={link}
+      <Link
+        to={link}
         className="group flex items-center rounded-lg p-2 text-text_color hover:bg-hvr_gray"
       >
         <span
@@ -22,7 +24,7 @@ export default function SidePanelItem({ children, link, text, isPro }) {
         ) : (
           <></>
         )}
-      </a>
+      </Link>
     </div>
   );
 }

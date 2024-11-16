@@ -46,7 +46,7 @@ export default function ServiceCard({
 
   return (
     <div
-      className="rounded-lg bg-slate-200/70 shadow-md dark:border-2 dark:border-gray-500
+      className="rounded-lg bg-slate-300/45 shadow-md dark:border-2 dark:border-gray-500
         dark:bg-hvr_gray"
     >
       {!isEditing ? (
@@ -134,8 +134,8 @@ export default function ServiceCard({
 
           <div className="mb-1 mt-3 flex items-center justify-end gap-3">
             <Button
-              styles="text-xs bg-transparent rounded-md border-gray-500 border-[1px] py-[0.20rem]
-                tracking-tight pr-1"
+              styles="text-xs bg-transparent rounded-md dark:border-gray-500 hover:border-gray-700
+                border-[1px] py-[0.20rem] tracking-tight pr-2 border-gray-500"
               buttonText="Cancel"
               type="reset"
               onClick={handleCancel}
@@ -143,8 +143,9 @@ export default function ServiceCard({
               <XIcon styles="h-5 w-5" />
             </Button>
             <Button
-              styles="text-xs bg-transparent rounded-md border-gray-300 border-[1px] py-[0.20rem]
-                tracking-tight pr-1"
+              styles="text-xs rounded-md border-black dark:border-gray-300 border-[1px] s py-[0.20rem]
+                tracking-tight pr-2 bg-text_color text-white dark:text-text_color
+                dark:bg-transparent hover:bg-text_color/85"
               buttonText="Save"
               type="submit"
             >

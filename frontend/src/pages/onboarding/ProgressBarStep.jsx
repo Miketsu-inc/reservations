@@ -16,7 +16,7 @@ export default function ProgressBarStep({ step, isActive, isCompleted }) {
     >
       {isCompleted ? (
         <div>
-          <TickIcon styles="fill-white" />
+          <TickIcon styles="fill-white h-5 w-5" />
         </div>
       ) : (
         `${step}`

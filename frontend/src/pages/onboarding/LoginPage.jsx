@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import GoogleIcon from "../../assets/icons/GoogleIcon";
 import Button from "../../components/Button";
@@ -28,6 +28,7 @@ const defaultErrorMeassage = {
 };
 
 export default function LoginPage() {
+  const navigate = useNavigate({ from: "/login" });
   const emailRef = useRef();
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
@@ -104,6 +105,7 @@ export default function LoginPage() {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
+            navigate({ to: "/m/bwnet" });
             setServerError(undefined);
           }
         } catch (err) {
@@ -114,7 +116,7 @@ export default function LoginPage() {
       };
       sendRequest();
     }
-  }, [loginData, isSubmitting]);
+  }, [loginData, isSubmitting, navigate]);
 
   function formSubmitHandler(e) {
     e.preventDefault();

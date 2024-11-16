@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ServerError from "../../components/ServerError";
 import { useMultiStepForm } from "../../lib/hooks";
@@ -17,6 +18,7 @@ const defaultSignUpData = {
 };
 
 export default function SingUpPage() {
+  const navigate = useNavigate({ from: "/signup" });
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
@@ -65,6 +67,7 @@ export default function SingUpPage() {
           } else {
             setServerError(undefined);
             setIsSubmitDone(true);
+            navigate({ to: "/m/bwnet" });
           }
         } catch (err) {
           setServerError(err.message);
@@ -74,7 +77,7 @@ export default function SingUpPage() {
       };
       sendRequest();
     }
-  }, [signUpData, isSubmitting]);
+  }, [signUpData, isSubmitting, navigate]);
 
   function handleSubmit() {
     setIsSubmitting(true);
