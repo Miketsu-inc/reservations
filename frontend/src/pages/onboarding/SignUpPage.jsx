@@ -67,7 +67,7 @@ export default function SingUpPage() {
             setIsSubmitDone(true);
           }
         } catch (err) {
-          setServerError(err);
+          setServerError(err.message);
         } finally {
           setIsSubmitting(false);
         }

@@ -45,7 +45,7 @@ export default function MerchantInfoForm({ isCompleted }) {
             isCompleted(true);
           }
         } catch (err) {
-          setServerError(err);
+          setServerError(err.message);
         } finally {
           setIsSubmitting(false);
         }

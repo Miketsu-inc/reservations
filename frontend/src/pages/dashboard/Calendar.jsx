@@ -56,8 +56,8 @@ export default function Calendar() {
           }
         }
       } catch (err) {
-        setServerError(err);
-        failureCallback(err);
+        setServerError(err.message);
+        failureCallback(err.message);
       } finally {
         setIsLoading(false);
       }

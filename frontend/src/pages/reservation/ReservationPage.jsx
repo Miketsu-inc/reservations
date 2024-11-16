@@ -53,7 +53,7 @@ export default function ReservationPage() {
         });
       }
     } catch (err) {
-      setServerError(err);
+      setServerError(err.message);
     }
   }, [merchantName]);
 

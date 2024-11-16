@@ -107,7 +107,7 @@ export default function LoginPage() {
             setServerError(undefined);
           }
         } catch (err) {
-          setServerError(err);
+          setServerError(err.message);
         } finally {
           setIsSubmitting(false);
         }

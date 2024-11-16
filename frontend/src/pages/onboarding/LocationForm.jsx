@@ -48,7 +48,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
             isSubmitDone(true);
           }
         } catch (err) {
-          setServerError(err);
+          setServerError(err.message);
         } finally {
           setIsSubmitting(false);
         }
