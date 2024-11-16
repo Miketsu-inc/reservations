@@ -15,7 +15,7 @@ type Merchant struct {
 	Postgresdb database.PostgreSQL
 }
 
-func (m *Merchant) MerchantByName(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) InfoByName(w http.ResponseWriter, r *http.Request) {
 	UrlName := r.URL.Query().Get("name")
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))

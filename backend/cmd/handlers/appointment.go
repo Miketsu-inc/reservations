@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -55,18 +54,21 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (a *Appointment) GetEvents(w http.ResponseWriter, r *http.Request) {
+func (a *Appointment) GetAppointments(w http.ResponseWriter, r *http.Request) {
 	start := r.URL.Query().Get("start")
 	end := r.URL.Query().Get("end")
 
-	apps, err := a.Postgresdb.GetAppointmentsByMerchant(r.Context(), uuid.Nil, start, end)
+	userID := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, err)
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if len(apps) == 0 {
-		httputil.Error(w, http.StatusNotFound, fmt.Errorf("no appointments found for merchant: %s", "NOT IMPLEMENTED"))
+	apps, err := a.Postgresdb.GetAppointmentsByMerchant(r.Context(), merchantId, start, end)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 

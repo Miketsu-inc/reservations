@@ -66,7 +66,7 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 
 		r.Post("/", appointmentHandler.Create)
-		r.Get("/calendar", appointmentHandler.GetEvents)
+		r.Get("/calendar", appointmentHandler.GetAppointments)
 	})
 }
 
@@ -96,7 +96,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Get("/info", merchantHandler.MerchantByName)
+	r.Get("/info", merchantHandler.InfoByName)
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)

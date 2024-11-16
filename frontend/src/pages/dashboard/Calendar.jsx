@@ -18,12 +18,12 @@ export default function Calendar() {
 
   const formatData = (data) => {
     return data.map((event) => ({
-      id: event.location,
-      title: event.appointment_type,
+      id: event.id,
+      title: event.service_id,
       start: event.from_date,
       end: event.to_date,
       extendedProps: {
-        name: event.user,
+        name: event.client_id,
         //anything basically
       },
     }));
@@ -48,8 +48,12 @@ export default function Calendar() {
         } else {
           setServerError(undefined);
 
-          const events = formatData(result.data);
-          successCallback(events);
+          if (result.data !== null) {
+            const events = formatData(result.data);
+            successCallback(events);
+          } else {
+            failureCallback("No appointments found");
+          }
         }
       } catch (err) {
         setServerError(err);
