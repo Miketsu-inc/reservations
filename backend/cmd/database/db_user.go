@@ -2,6 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -66,7 +69,17 @@ func (s *service) IsEmailUnique(ctx context.Context, email string) error {
 	where email = $1
 	`
 
-	return s.db.QueryRowContext(ctx, query, email).Scan()
+	var em string
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&em)
+	if !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf("this email is already used: %s", email)
+	}
+
+	return nil
 }
 
 func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error {
@@ -75,5 +88,15 @@ func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) e
 	where phone_number = $1
 	`
 
-	return s.db.QueryRowContext(ctx, query, phoneNumber).Scan()
+	var pn string
+	err := s.db.QueryRowContext(ctx, query, phoneNumber).Scan(&pn)
+	if !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf("this phone number is already used: %s", phoneNumber)
+	}
+
+	return nil
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -87,20 +86,14 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := u.Postgresdb.IsEmailUnique(r.Context(), signup.Email)
-	if errors.Is(err, sql.ErrNoRows) {
-		httputil.Error(w, http.StatusConflict, fmt.Errorf("the email %s is already used", signup.Email))
-		return
-	} else if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during email checking: %s", err.Error()))
+	if err != nil {
+		httputil.Error(w, http.StatusConflict, err)
 		return
 	}
 
 	err = u.Postgresdb.IsPhoneNumberUnique(r.Context(), signup.PhoneNumber)
-	if errors.Is(err, sql.ErrNoRows) {
-		httputil.Error(w, http.StatusConflict, fmt.Errorf("the phone number %s is already used", signup.PhoneNumber))
-		return
-	} else if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during phone number checking: %s", err.Error()))
+	if err != nil {
+		httputil.Error(w, http.StatusConflict, err)
 		return
 	}
 
