@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import ServerError from "../../components/ServerError";
@@ -8,11 +8,19 @@ const defaultFormData = {
   contact_email: "",
 };
 
+const defaultMerchantUrl = {
+  valid: false,
+  url: undefined,
+};
+
+var keyUpTimer;
+
 export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState(undefined);
+  const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -54,11 +62,56 @@ export default function MerchantInfoForm({ isCompleted }) {
     }
   }, [isSubmitting, formData, isCompleted]);
 
+  const checkMerchantUrl = useCallback(async (merchantName) => {
+    if (merchantName !== "") {
+      try {
+        const response = await fetch("/api/v1/merchants/check-url", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            merchant_name: merchantName,
+          }),
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          setMerchantUrl({
+            valid: true,
+            url: result.data.merchant_url,
+          });
+        } else {
+          setMerchantUrl({
+            valid: false,
+            url: result.error.merchant_url,
+          });
+        }
+      } catch (err) {
+        setServerError(err.message);
+      }
+    } else {
+      setMerchantUrl({
+        valid: false,
+        url: "",
+      });
+    }
+  });
+
   function handleInputData(data) {
     setFormData((prevAppData) => ({
       ...prevAppData,
       [data.name]: data.value,
     }));
+
+    if (data.name === "name" && formData.name !== data.value) {
+      if (keyUpTimer) {
+        clearTimeout(keyUpTimer);
+      }
+
+      keyUpTimer = setTimeout(() => checkMerchantUrl(data.value), 1000);
+    }
   }
   return (
     <>
@@ -86,6 +139,17 @@ export default function MerchantInfoForm({ isCompleted }) {
           inputData={handleInputData}
           hasError={isEmpty}
         />
+        {merchantUrl.url && (
+          <p className="text-sm dark:text-gray-400">
+            {merchantUrl.valid ? (
+              <span>
+                Your URL will be: https://miketsu.com/m/{merchantUrl.url}.
+              </span>
+            ) : (
+              <span>The name '{merchantUrl.url}' is already taken.</span>
+            )}
+          </p>
+        )}
         <Input
           type="email"
           styles="p-2"

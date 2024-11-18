@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -145,4 +147,23 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 
 	mi.Services = services
 	return mi, nil
+}
+
+func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) error {
+	query := `
+	select 1 from "Merchant"
+	where url_name = $1
+	`
+
+	var url string
+	err := s.db.QueryRowContext(ctx, query, merchantUrl).Scan(&url)
+	if !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf("this merchant url is already used: %s", merchantUrl)
+	}
+
+	return nil
 }

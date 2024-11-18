@@ -120,3 +120,35 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (m *Merchant) CheckUrl(w http.ResponseWriter, r *http.Request) {
+	type merchantName struct {
+		Name string `json:"merchant_name"`
+	}
+	var mn merchantName
+
+	if err := validate.ParseStruct(r, &mn); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	urlName, err := validate.MerchantNameToUrlName(mn.Name)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.IsMerchantUrlUnique(r.Context(), urlName)
+	if err != nil {
+		httputil.WriteJSON(w, http.StatusConflict, map[string]map[string]string{"error": {"message": err.Error(), "merchant_url": urlName}})
+		return
+	}
+
+	merchantUrl := struct {
+		Url string `json:"merchant_url"`
+	}{
+		Url: urlName,
+	}
+
+	httputil.Success(w, http.StatusOK, merchantUrl)
+}

@@ -60,6 +60,8 @@ type PostgreSQL interface {
 	GetMerchantById(context.Context, uuid.UUID) (Merchant, error)
 	// Get all publicly available merchant info that will be displayed
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
+	// Check if a merchant url exists in the database
+	IsMerchantUrlUnique(context.Context, string) error
 
 	// -- Location --
 

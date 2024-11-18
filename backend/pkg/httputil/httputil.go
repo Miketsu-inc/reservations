@@ -27,7 +27,7 @@ func ParseJSON(r *http.Request, data any) error {
 func Error(w http.ResponseWriter, status int, err error) {
 	// for debug, this sould never happen
 	assert.NotNil(err, "cannot write nil error in response", err)
-	writeJSON(w, status, map[string]map[string]string{"error": {"message": err.Error()}})
+	WriteJSON(w, status, map[string]map[string]string{"error": {"message": err.Error()}})
 }
 
 // Send a json response with data
@@ -39,10 +39,10 @@ func Error(w http.ResponseWriter, status int, err error) {
 //			your data
 //	}
 func Success(w http.ResponseWriter, status int, v any) {
-	writeJSON(w, status, map[string]any{"data": v})
+	WriteJSON(w, status, map[string]any{"data": v})
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
+func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Add("Content-type", "application/json")
 	w.WriteHeader(status)
 

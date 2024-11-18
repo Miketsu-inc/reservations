@@ -103,5 +103,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 		r.Post("/location", merchantHandler.NewLocation)
 		r.Post("/service", merchantHandler.NewService)
+		r.Post("/check-url", merchantHandler.CheckUrl)
 	})
 }
