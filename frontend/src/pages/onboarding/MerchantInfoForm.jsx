@@ -97,7 +97,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         url: "",
       });
     }
-  });
+  }, []);
 
   function handleInputData(data) {
     setFormData((prevAppData) => ({
