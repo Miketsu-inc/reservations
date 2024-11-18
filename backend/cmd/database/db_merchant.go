@@ -2,26 +2,46 @@ package database
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 )
 
 type Merchant struct {
-	Id           uuid.UUID `json:"ID"`
-	Name         string    `json:"name"`
-	UrlName      string    `json:"url_name"`
-	OwnerId      uuid.UUID `json:"owner_id"`
-	ContactEmail string    `json:"contact_email"`
-	// Settings     map[string]bool `json:"settings"`
+	Id           uuid.UUID        `json:"ID"`
+	Name         string           `json:"name"`
+	UrlName      string           `json:"url_name"`
+	OwnerId      uuid.UUID        `json:"owner_id"`
+	ContactEmail string           `json:"contact_email"`
+	Settings     MerchantSettings `json:"settings"`
+}
+
+type MerchantSettings struct {
+	Test bool `json:"test"`
+}
+
+func (ms MerchantSettings) Value() (driver.Value, error) {
+	return json.Marshal(ms)
+}
+
+func (ms *MerchantSettings) Scan(value any) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("column value is not of type []byte")
+	}
+
+	return json.Unmarshal(b, &ms)
 }
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email)
-	values ($1, $2, $3, $4, $5)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, settings)
+	values ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail)
+	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail, merchant.Settings)
 	if err != nil {
 		return err
 	}
@@ -66,7 +86,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 	`
 
 	var merchant Merchant
-	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail)
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail, &merchant.Settings)
 	if err != nil {
 		return Merchant{}, err
 	}
@@ -93,10 +113,11 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	query := `
 	select m.name, m.url_name, m.contact_email, l.id as location_id, l.country, l.city, l.postal_code, l.address from "Merchant" m
 	inner join "Location" l on m.id = l.merchant_id
+	where m.id = $1
 	`
 
 	var mi MerchantInfo
-	err := s.db.QueryRowContext(ctx, query).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
 	if err != nil {
 		return MerchantInfo{}, err
 	}

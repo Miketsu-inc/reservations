@@ -14,7 +14,6 @@ type User struct {
 	PhoneNumber    string    `json:"phone_number"`
 	PasswordHash   string    `json:"password_hash"`
 	SubscriptionId int       `json:"subscription_id"`
-	// Settings       map[string]bool `json:"settings"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
