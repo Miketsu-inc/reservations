@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"github.com/google/uuid"
 )
@@ -63,22 +61,20 @@ func (s *service) GetUserPasswordByUserEmail(ctx context.Context, email string) 
 	return password, nil
 }
 
-func (s *service) IsEmailUnique(ctx context.Context, email string) bool {
+func (s *service) IsEmailUnique(ctx context.Context, email string) error {
 	query := `
 	select 1 from "User"
 	where email = $1
 	`
 
-	err := s.db.QueryRowContext(ctx, query, email).Scan()
-	return errors.Is(err, sql.ErrNoRows)
+	return s.db.QueryRowContext(ctx, query, email).Scan()
 }
 
-func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) bool {
+func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error {
 	query := `
 	select 1 from "User"
 	where phone_number = $1
 	`
 
-	err := s.db.QueryRowContext(ctx, query, phoneNumber).Scan()
-	return errors.Is(err, sql.ErrNoRows)
+	return s.db.QueryRowContext(ctx, query, phoneNumber).Scan()
 }

@@ -44,9 +44,9 @@ type PostgreSQL interface {
 	// Used for comparing password hashes on login.
 	GetUserPasswordByUserEmail(context.Context, string) (string, error)
 	// Check if an email exists in the database
-	IsEmailUnique(context.Context, string) bool
+	IsEmailUnique(context.Context, string) error
 	// Check if a phone number exists in the database
-	IsPhoneNumberUnique(context.Context, string) bool
+	IsPhoneNumberUnique(context.Context, string) error
 
 	// -- Merchant --
 
