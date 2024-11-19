@@ -77,6 +77,12 @@ func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
 
 	r.Post("/signup", userAuthHandler.Signup)
 	r.Post("/login", userAuthHandler.Login)
+
+	r.Group(func(r chi.Router) {
+		r.Use(jwt.JwtMiddleware)
+
+		r.Get("/", userAuthHandler.IsAuthenticated)
+	})
 }
 
 func (rh *RouteHandlers) merchantAuthRoutes(r chi.Router) {

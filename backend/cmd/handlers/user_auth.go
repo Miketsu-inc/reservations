@@ -147,3 +147,8 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+// The jwt auth middleware should always run before this as that is what verifies the user.
+func (u *UserAuth) IsAuthenticated(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
