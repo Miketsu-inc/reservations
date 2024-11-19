@@ -35,6 +35,7 @@ func staticFilesHandler(r *chi.Mux) {
 		"/",
 		"/login",
 		"/signup",
+		"/settings",
 		"/dashboard",
 		"/merchantsignup",
 		"/m/{merchant_url}",

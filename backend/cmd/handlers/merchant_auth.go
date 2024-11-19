@@ -32,6 +32,12 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = m.Postgresdb.IsMerchantUrlUnique(r.Context(), urlName)
+	if err != nil {
+		httputil.Error(w, http.StatusConflict, err)
+		return
+	}
+
 	userID := jwt.UserIDFromContext(r.Context())
 
 	merchantID, err := uuid.NewV7()

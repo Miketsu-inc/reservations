@@ -26,3 +26,10 @@ create-db:
 connect-db:
 	containerID=$(shell docker ps -q -f ancestor=postgres); \
 	docker exec -it $$containerID psql -U ${DB_USERNAME} ${DB_DATABASE}
+
+lint:
+	@npm run lint
+	@golangci-lint run
+
+test:
+	@go test ./backend/...

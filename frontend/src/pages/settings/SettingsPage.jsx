@@ -51,7 +51,7 @@ export default function SettingsPage() {
               <SelectorItem styles="pl-8" key="5" value="">
                 Change password
               </SelectorItem>
-              <SelectorItem styles="pl-8" key="5" value="">
+              <SelectorItem styles="pl-8" key="6" value="">
                 Add / remove services
               </SelectorItem>
             </Selector>

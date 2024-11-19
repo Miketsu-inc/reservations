@@ -25,7 +25,7 @@ create table "Appointment" (
     ID              serial          primary key unique not null,
     client_id       uuid            references "User" (ID) not null,
     merchant_id     uuid            references "Merchant" (ID) not null,
-    service_id      integer      references "Service" (ID) not null,
+    service_id      integer         references "Service" (ID) not null,
     location_id     integer         references "Location" (ID) not null,
     from_date       timestamptz     not null,
     to_date         timestamptz     not null

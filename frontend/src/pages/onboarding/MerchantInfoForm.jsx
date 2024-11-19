@@ -110,7 +110,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         clearTimeout(keyUpTimer);
       }
 
-      keyUpTimer = setTimeout(() => checkMerchantUrl(data.value), 1000);
+      keyUpTimer = setTimeout(() => checkMerchantUrl(data.value), 600);
     }
   }
   return (
@@ -143,10 +143,12 @@ export default function MerchantInfoForm({ isCompleted }) {
           <p className="text-sm dark:text-gray-400">
             {merchantUrl.valid ? (
               <span>
-                Your URL will be: https://miketsu.com/m/{merchantUrl.url}.
+                Your URL will be: https://miketsu.com/m/{merchantUrl.url}
               </span>
             ) : (
-              <span>The name '{merchantUrl.url}' is already taken.</span>
+              <span className="text-red-600">
+                The name '{merchantUrl.url}' is already taken.
+              </span>
             )}
           </p>
         )}

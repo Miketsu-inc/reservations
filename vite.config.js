@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => {
     return {
       plugins: [react(), TanStackRouterVite()],
       root: "frontend",
+      esbuild: {
+        pure: ["console.log", "console.warn"],
+      },
     };
   } else {
     return {
