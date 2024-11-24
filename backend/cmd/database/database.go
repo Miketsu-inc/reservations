@@ -34,19 +34,23 @@ type PostgreSQL interface {
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]Appointment, error)
 
-	// -- Auth --
+	// -- User --
 
 	// Insert a new User to the database.
 	NewUser(context.Context, User) error
 	// Get a User by user id.
 	GetUserById(context.Context, uuid.UUID) (User, error)
-	// Get a User's password by the User's email.
-	// Used for comparing password hashes on login.
-	GetUserPasswordByUserEmail(context.Context, string) (string, error)
-	// Check if an email exists in the database
+	// Get a User's password and id by the User's email.
+	// Used for comparing password hashes on login and setting jwt cookies.
+	GetUserPasswordAndIDByUserEmail(context.Context, string) (uuid.UUID, string, error)
+	// Check if an email exists in the database.
 	IsEmailUnique(context.Context, string) error
-	// Check if a phone number exists in the database
+	// Check if a phone number exists in the database.
 	IsPhoneNumberUnique(context.Context, string) error
+	// Increment User's refresh version and return it's value after the update.
+	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
+	// Get User's refresh version
+	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
 
 	// -- Merchant --
 

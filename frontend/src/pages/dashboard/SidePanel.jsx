@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarIcon from "../../assets/icons/CalendarIcon";
 import ChartIcon from "../../assets/icons/ChartIcon";
 import DashboardIcon from "../../assets/icons/DashboardIcon";
@@ -32,6 +32,20 @@ export default function SidePanel({ profileImage, profileText }) {
       setIsOpen(false);
     }
   }
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("api/v1/auth/user/logout", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
+    } catch (err) {
+      console.log(err.message);
+    }
+  }, []);
 
   return (
     <>
@@ -75,7 +89,7 @@ export default function SidePanel({ profileImage, profileText }) {
               <SettingsIcon styles="h-5 w-5" />
             </SidePanelItem>
             <span className="flex-1"></span>
-            <SidePanelItem link="#" text="Sign out">
+            <SidePanelItem link="#" text="Sign out" action={handleLogout}>
               <SignOutIcon styles="h-5 w-5" />
             </SidePanelItem>
           </div>

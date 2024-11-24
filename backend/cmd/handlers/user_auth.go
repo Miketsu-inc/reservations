@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
@@ -57,7 +59,7 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password, err := u.Postgresdb.GetUserPasswordByUserEmail(r.Context(), login.Email)
+	userID, password, err := u.Postgresdb.GetUserPasswordAndIDByUserEmail(r.Context(), login.Email)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("incorrect email or password %s", err.Error()))
 		return
@@ -66,6 +68,12 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	err = hashCompare(login.Password, password)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	err = u.newJwts(w, r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 }
@@ -103,47 +111,32 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := uuid.NewV7()
+	userID, err := uuid.NewV7()
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
 		return
 	}
 
 	err = u.Postgresdb.NewUser(r.Context(), database.User{
-		Id:             userId,
-		FirstName:      signup.FirstName,
-		LastName:       signup.LastName,
-		Email:          signup.Email,
-		PhoneNumber:    signup.PhoneNumber,
-		PasswordHash:   hashedPassword,
-		SubscriptionId: 0,
-		// Settings:       make(map[string]bool),
+		Id:                userID,
+		FirstName:         signup.FirstName,
+		LastName:          signup.LastName,
+		Email:             signup.Email,
+		PhoneNumber:       signup.PhoneNumber,
+		PasswordHash:      hashedPassword,
+		JwtRefreshVersion: 0,
+		Subscription:      0,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user: %s", err.Error()))
 		return
 	}
 
-	token, err := jwt.New([]byte(os.Getenv("JWT_SECRET")), userId)
+	err = u.newJwts(w, r.Context(), userID)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	exp_time, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_TIME"))
-	assert.Nil(err, "JWT_EXPIRATION_TIME environment variable could not be found", err)
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    token,
-		HttpOnly: true,
-		MaxAge:   exp_time,
-		Expires:  time.Now().UTC().Add(time.Hour * 24 * 30),
-		Path:     "/",
-		// needs to be true in production
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	})
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -151,4 +144,117 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 // The jwt auth middleware should always run before this as that is what verifies the user.
 func (u *UserAuth) IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     jwt.JwtRefreshCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Now().UTC(),
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     jwt.JwtAccessCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Now().UTC(),
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+// Creates and sets both the resfresh and access jwt cookies
+func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID) error {
+	refreshCookie, err := u.newJwtCookie(ctx, userID, jwt.RefreshToken)
+	if err != nil {
+		return fmt.Errorf("unexpected error when creating refresh jwt token: %s", err.Error())
+	}
+	http.SetCookie(w, refreshCookie)
+
+	accessCookie, err := u.newJwtCookie(ctx, userID, jwt.AccessToken)
+	if err != nil {
+		return fmt.Errorf("unexpected error when creating access jwt token: %s", err.Error())
+	}
+	http.SetCookie(w, accessCookie)
+
+	return nil
+}
+
+// Creates a new token and returns the cookie or an error
+func (u *UserAuth) newJwtCookie(ctx context.Context, userID uuid.UUID, tokenType jwt.JwtType) (*http.Cookie, error) {
+	var secretEnvVar string
+	var expMinEnvVar string
+	var cookieName string
+
+	switch tokenType {
+	case jwt.RefreshToken:
+		secretEnvVar = "JWT_REFRESH_SECRET"
+		expMinEnvVar = "JWT_REFRESH_EXP_MIN"
+
+		cookieName = jwt.JwtRefreshCookieName
+	case jwt.AccessToken:
+		secretEnvVar = "JWT_ACCESS_SECRET"
+		expMinEnvVar = "JWT_ACCESS_EXP_MIN"
+
+		cookieName = jwt.JwtAccessCookieName
+	default:
+		assert.Never("Jwt token type can be either refresh or access", tokenType)
+	}
+
+	secret := os.Getenv(secretEnvVar)
+	assert.True(secret != "", fmt.Sprintf("%s environment variable could not be found", secretEnvVar))
+
+	expMin, err := strconv.Atoi(os.Getenv(expMinEnvVar))
+	assert.Nil(err, fmt.Sprintf("%s environment variable could not be found", expMinEnvVar), err)
+
+	expMinDuration := time.Minute * time.Duration(expMin)
+
+	var claims jwtlib.MapClaims
+
+	switch tokenType {
+	case jwt.RefreshToken:
+		refreshVersion, err := u.Postgresdb.IncrementUserJwtRefreshVersion(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected error when incrementing refresh version: %s", err.Error())
+		}
+
+		claims = jwtlib.MapClaims{
+			"sub":             userID,
+			"exp":             time.Now().Add(expMinDuration).Unix(),
+			"refresh_version": refreshVersion,
+		}
+	case jwt.AccessToken:
+		claims = jwtlib.MapClaims{
+			"sub": userID,
+			"exp": time.Now().Add(expMinDuration).Unix(),
+		}
+	}
+
+	token, err := jwt.New([]byte(secret), claims)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
+	}
+
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    token,
+		HttpOnly: true,
+		MaxAge:   expMin * 60,
+		Expires:  time.Now().UTC().Add(expMinDuration),
+		Path:     "/",
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	return cookie, nil
 }
