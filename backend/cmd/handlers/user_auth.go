@@ -217,9 +217,9 @@ func (u *UserAuth) newJwtCookie(ctx context.Context, userID uuid.UUID, tokenType
 
 	switch tokenType {
 	case jwt.RefreshToken:
-		refreshVersion, err := u.Postgresdb.IncrementUserJwtRefreshVersion(ctx, userID)
+		refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
 		if err != nil {
-			return nil, fmt.Errorf("unexpected error when incrementing refresh version: %s", err.Error())
+			return nil, fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
 		}
 
 		claims = jwtlib.MapClaims{
