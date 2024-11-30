@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
@@ -191,30 +190,26 @@ func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uu
 
 // Creates a new token and returns the cookie or an error
 func (u *UserAuth) newJwtCookie(ctx context.Context, userID uuid.UUID, tokenType jwt.JwtType) (*http.Cookie, error) {
-	var secretEnvVar string
-	var expMinEnvVar string
+	var secret string
+	var expMin int
 	var cookieName string
+
+	cfg := config.LoadEnvVars()
 
 	switch tokenType {
 	case jwt.RefreshToken:
-		secretEnvVar = "JWT_REFRESH_SECRET"
-		expMinEnvVar = "JWT_REFRESH_EXP_MIN"
+		secret = cfg.JWT_REFRESH_SECRET
+		expMin = cfg.JWT_REFRESH_EXP_MIN
 
 		cookieName = jwt.JwtRefreshCookieName
 	case jwt.AccessToken:
-		secretEnvVar = "JWT_ACCESS_SECRET"
-		expMinEnvVar = "JWT_ACCESS_EXP_MIN"
+		secret = cfg.JWT_ACCESS_SECRET
+		expMin = cfg.JWT_ACCESS_EXP_MIN
 
 		cookieName = jwt.JwtAccessCookieName
 	default:
 		assert.Never("Jwt token type can be either refresh or access", tokenType)
 	}
-
-	secret := os.Getenv(secretEnvVar)
-	assert.True(secret != "", fmt.Sprintf("%s environment variable could not be found", secretEnvVar))
-
-	expMin, err := strconv.Atoi(os.Getenv(expMinEnvVar))
-	assert.Nil(err, fmt.Sprintf("%s environment variable could not be found", expMinEnvVar), err)
 
 	expMinDuration := time.Minute * time.Duration(expMin)
 

@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
@@ -83,12 +83,6 @@ type service struct {
 }
 
 var (
-	database   = os.Getenv("DB_DATABASE")
-	password   = os.Getenv("DB_PASSWORD")
-	username   = os.Getenv("DB_USERNAME")
-	port       = os.Getenv("DB_PORT")
-	host       = os.Getenv("DB_HOST")
-	schema     = os.Getenv("DB_SCHEMA")
 	dbInstance *service
 )
 
@@ -97,7 +91,10 @@ func New() PostgreSQL {
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
+
+	cfg := config.LoadEnvVars()
+
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", cfg.DB_USERNAME, cfg.DB_PASSWORD, cfg.DB_HOST, cfg.DB_PORT, cfg.DB_DATABASE, cfg.DB_SCHEMA)
 	db, err := sql.Open("pgx", connStr)
 	assert.Nil(err, "PostgreSQL database could not be openned", err)
 
@@ -163,6 +160,5 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	log.Printf("Disconnected from database: %s", database)
 	return s.db.Close()
 }

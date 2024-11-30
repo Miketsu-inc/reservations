@@ -2,21 +2,18 @@ package utils
 
 import (
 	"net/smtp"
-	"os"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 )
 
 func SendMail(email string) error {
-	from := os.Getenv("EMAIL_ADDRESS")
-	password := os.Getenv("EMAIL_PASSWORD")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-	assert.True(from != "", "EMAIL_ADDRESS environment variable could not be found")
-	assert.True(password != "", "EEMAIL_PASSWORD environment variable could not be found")
-	assert.True(smtpPort != "", "SMTP_HOST environment variable could not be found")
-	assert.True(smtpPort != "", "SMTP_PORT environment variable could not be found")
+	cfg := config.LoadEnvVars()
+
+	from := cfg.EMAIL_ADDRESS
+	password := cfg.EMAIL_PASSWORD
+	smtpHost := cfg.SMTP_HOST
+	smtpPort := cfg.SMTP_PORT
 
 	to := []string{email}
 

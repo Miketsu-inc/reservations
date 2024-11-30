@@ -6,12 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -120,13 +119,12 @@ func New(secret []byte, claims jwtlib.MapClaims) (string, error) {
 	return tokenString, nil
 }
 
+var cfg *config.Config = config.LoadEnvVars()
+
 // Create a new access token and set it in cookies
 func newAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
-	secret := os.Getenv("JWT_ACCESS_SECRET")
-	assert.True(secret != "", "JWT_ACCESS_SECRET environment variable could not be found")
-
-	expMin, err := strconv.Atoi(os.Getenv("JWT_ACCESS_EXP_MIN"))
-	assert.Nil(err, "JWT_ACCESS_EXP_MIN environment variable could not be found", err)
+	secret := cfg.JWT_ACCESS_SECRET
+	expMin := cfg.JWT_ACCESS_EXP_MIN
 
 	expMinDuration := time.Minute * time.Duration(expMin)
 
@@ -192,9 +190,9 @@ func verifyToken(tokenString string, tokenType JwtType) (jwtlib.MapClaims, error
 	token, err := jwtlib.ParseWithClaims(tokenString, jwtlib.MapClaims{}, func(token *jwtlib.Token) (interface{}, error) {
 		switch tokenType {
 		case AccessToken:
-			return []byte(os.Getenv("JWT_ACCESS_SECRET")), nil
+			return []byte(cfg.JWT_ACCESS_SECRET), nil
 		case RefreshToken:
-			return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+			return []byte(cfg.JWT_REFRESH_SECRET), nil
 		default:
 			assert.Never("Jwt token type can be either refresh or access", tokenType)
 			return "", fmt.Errorf("Jwt token type can be either refresh or access")
