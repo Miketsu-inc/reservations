@@ -7,12 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
@@ -41,6 +38,26 @@ func hashCompare(password, hash string) error {
 			// for debug purposes
 			return err
 		}
+	}
+
+	return nil
+}
+
+// Creates and sets both the resfresh and access jwt cookies
+func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID) error {
+	refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
+	}
+
+	err = jwt.NewRefreshToken(w, userID, refreshVersion)
+	if err != nil {
+		return fmt.Errorf("unexpected error when creating refresh jwt token: %s", err.Error())
+	}
+
+	err = jwt.NewAccessToken(w, userID)
+	if err != nil {
+		return fmt.Errorf("unexpected error when creating access jwt token: %s", err.Error())
 	}
 
 	return nil
@@ -145,7 +162,8 @@ func (u *UserAuth) IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
+// Deletes both the access and refresh jwt cookies
+func deleteJwts(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     jwt.JwtRefreshCookieName,
 		Value:    "",
@@ -171,85 +189,6 @@ func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Creates and sets both the resfresh and access jwt cookies
-func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID) error {
-	refreshCookie, err := u.newJwtCookie(ctx, userID, jwt.RefreshToken)
-	if err != nil {
-		return fmt.Errorf("unexpected error when creating refresh jwt token: %s", err.Error())
-	}
-	http.SetCookie(w, refreshCookie)
-
-	accessCookie, err := u.newJwtCookie(ctx, userID, jwt.AccessToken)
-	if err != nil {
-		return fmt.Errorf("unexpected error when creating access jwt token: %s", err.Error())
-	}
-	http.SetCookie(w, accessCookie)
-
-	return nil
-}
-
-// Creates a new token and returns the cookie or an error
-func (u *UserAuth) newJwtCookie(ctx context.Context, userID uuid.UUID, tokenType jwt.JwtType) (*http.Cookie, error) {
-	var secret string
-	var expMin int
-	var cookieName string
-
-	cfg := config.LoadEnvVars()
-
-	switch tokenType {
-	case jwt.RefreshToken:
-		secret = cfg.JWT_REFRESH_SECRET
-		expMin = cfg.JWT_REFRESH_EXP_MIN
-
-		cookieName = jwt.JwtRefreshCookieName
-	case jwt.AccessToken:
-		secret = cfg.JWT_ACCESS_SECRET
-		expMin = cfg.JWT_ACCESS_EXP_MIN
-
-		cookieName = jwt.JwtAccessCookieName
-	default:
-		assert.Never("Jwt token type can be either refresh or access", tokenType)
-	}
-
-	expMinDuration := time.Minute * time.Duration(expMin)
-
-	var claims jwtlib.MapClaims
-
-	switch tokenType {
-	case jwt.RefreshToken:
-		refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
-		if err != nil {
-			return nil, fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
-		}
-
-		claims = jwtlib.MapClaims{
-			"sub":             userID,
-			"exp":             time.Now().Add(expMinDuration).Unix(),
-			"refresh_version": refreshVersion,
-		}
-	case jwt.AccessToken:
-		claims = jwtlib.MapClaims{
-			"sub": userID,
-			"exp": time.Now().Add(expMinDuration).Unix(),
-		}
-	}
-
-	token, err := jwt.New([]byte(secret), claims)
-	if err != nil {
-		return nil, fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
-	}
-
-	cookie := &http.Cookie{
-		Name:     cookieName,
-		Value:    token,
-		HttpOnly: true,
-		MaxAge:   expMin * 60,
-		Expires:  time.Now().UTC().Add(expMinDuration),
-		Path:     "/",
-		// needs to be true in production
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	return cookie, nil
+func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
+	deleteJwts(w)
 }

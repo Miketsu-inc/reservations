@@ -49,7 +49,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 		// try to verify request with access token
 		claims, err := verifyRequest(r, AccessToken, getTokenFromCookie)
 		if err != nil {
-			// if access token could not be found in cookies it means it's expired
+			// if access token could not be found in cookies it means it's expired or did not exist
 			if !errors.Is(err, ErrJwtAccessNotFound) {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
 				return
@@ -88,7 +88,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			err = newAccessToken(w, userID)
+			err = NewAccessToken(w, userID)
 			if err != nil {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not create new access jwt"))
 				return
@@ -122,13 +122,12 @@ func New(secret []byte, claims jwtlib.MapClaims) (string, error) {
 var cfg *config.Config = config.LoadEnvVars()
 
 // Create a new access token and set it in cookies
-func newAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
-	secret := cfg.JWT_ACCESS_SECRET
+func NewAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
 	expMin := cfg.JWT_ACCESS_EXP_MIN
 
 	expMinDuration := time.Minute * time.Duration(expMin)
 
-	token, err := New([]byte(secret), jwtlib.MapClaims{
+	token, err := New([]byte(cfg.JWT_ACCESS_SECRET), jwtlib.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(expMinDuration).Unix(),
 	})
@@ -139,6 +138,37 @@ func newAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     JwtAccessCookieName,
+		Value:    token,
+		HttpOnly: true,
+		MaxAge:   expMin * 60,
+		Expires:  time.Now().UTC().Add(expMinDuration),
+		Path:     "/",
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return nil
+}
+
+// Create a new refresh token and set it in cookies
+func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, refreshVersion int) error {
+	expMin := cfg.JWT_REFRESH_EXP_MIN
+
+	expMinDuration := time.Minute * time.Duration(expMin)
+
+	token, err := New([]byte(cfg.JWT_REFRESH_SECRET), jwtlib.MapClaims{
+		"sub":             userID,
+		"exp":             time.Now().Add(expMinDuration).Unix(),
+		"refresh_version": refreshVersion,
+	})
+
+	if err != nil {
+		return fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     JwtRefreshCookieName,
 		Value:    token,
 		HttpOnly: true,
 		MaxAge:   expMin * 60,
