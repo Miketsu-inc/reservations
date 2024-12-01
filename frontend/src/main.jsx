@@ -5,8 +5,8 @@ import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
   routeTree,
-  defaultPreload: "intent",
-  defaultPreloadStaleTime: 1000,
+  // defaultPreload: "intent",
+  // defaultPreloadStaleTime: 1000,
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
