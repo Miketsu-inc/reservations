@@ -4,13 +4,14 @@ import Button from "../../components/Button";
 import Selector from "../../components/Selector";
 import SelectorItem from "../../components/SelectorItem";
 import ServerError from "../../components/ServerError";
+import SelectDateTime from "./SelectDateTime";
 
 const defaultReservation = {
   merchant_name: "Hair salon",
   service_id: 0,
   location_id: 0,
-  from_date: "",
-  to_date: "",
+  day: "",
+  from_hour: "",
 };
 
 export default function ReservationPage() {
@@ -94,8 +95,13 @@ export default function ReservationPage() {
 
     let canSubmit = true;
 
-    if (reservation.from_date === "") {
+    if (reservation.day === "") {
       setErrorMessage("Please set a reservation date!");
+      canSubmit = false;
+    }
+
+    if (reservation.from_hour === "") {
+      setErrorMessage("Please set a reservation date");
       canSubmit = false;
     }
 
@@ -105,18 +111,6 @@ export default function ReservationPage() {
     }
 
     setIsSubmitting(canSubmit);
-  }
-
-  function dateChangeHandler(e) {
-    const startTimestamp = Date.parse(e.target.value);
-    // add constant 30 minutes to start_date
-    const endDate = new Date(startTimestamp + 30 * 60000).toISOString();
-
-    setReservation((prev) => ({
-      ...prev,
-      from_date: e.target.value,
-      to_date: endDate,
-    }));
   }
 
   function serviceChangeHandler(value) {
@@ -156,13 +150,12 @@ export default function ReservationPage() {
               </SelectorItem>
             ))}
           </Selector>
-          <input
-            type="datetime-local"
-            onChange={dateChangeHandler}
-            className="mt-4 block w-full rounded-md border border-text_color bg-layer_bg px-4 py-2
-              text-base text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray
-              focus:outline-none dark:[color-scheme:dark]"
-          ></input>
+
+          <SelectDateTime
+            reservation={reservation}
+            setReservation={setReservation}
+          />
+
           <Button
             type="submit"
             styles="text-white dark:bg-transparent dark:border-2 border-secondary
