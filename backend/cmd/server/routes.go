@@ -77,6 +77,8 @@ func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
 	}
 
 	r.Post("/signup", userAuthHandler.Signup)
+	r.Post("/email", userAuthHandler.Email)
+	r.Post("/verify-email", userAuthHandler.VerifyEmail)
 	r.Post("/login", userAuthHandler.Login)
 
 	r.Group(func(r chi.Router) {

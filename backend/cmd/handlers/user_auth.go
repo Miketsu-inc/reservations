@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
@@ -150,5 +151,50 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 
 // The jwt auth middleware should always run before this as that is what verifies the user.
 func (u *UserAuth) IsAuthenticated(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (u *UserAuth) Email(w http.ResponseWriter, r *http.Request) {
+	type emailData struct {
+		Email string `json:"email" validate:"required,email"`
+	}
+	var data emailData
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err := u.Postgresdb.IsEmailUnique(r.Context(), data.Email)
+	if err != nil {
+		httputil.Error(w, http.StatusConflict, err)
+		return
+	}
+
+	if err := email.SendMail(data.Email, "http://localhost:5173/signup"); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error sending the verification email: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (u *UserAuth) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	type verifData struct {
+		Token string `json:"token" validate:"required"`
+	}
+
+	var data verifData
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := email.ValidateToken(data.Token); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
