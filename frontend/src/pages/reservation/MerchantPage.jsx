@@ -9,8 +9,7 @@ const defaultReservation = {
   merchant_name: "Hair salon",
   service_id: 0,
   location_id: 0,
-  day: "",
-  from_hour: "",
+  timeStamp: "",
 };
 
 const defaultMerchantInfo = {
@@ -67,7 +66,7 @@ export default function MerchantPage() {
             merchant_name: result.data.merchant_name,
             service_id: 1,
             location_id: result.data.location_id,
-            from_hour: "",
+            timeStamp: 0,
           });
 
           const shortLocation =
@@ -141,13 +140,8 @@ export default function MerchantPage() {
 
     console.log(reservation);
 
-    if (reservation.day === "") {
+    if (reservation.timeStamp === "") {
       setServerError("Please set a reservation date!");
-      canSubmit = false;
-    }
-
-    if (reservation.from_hour === "") {
-      setServerError("Please set a reservation date");
       canSubmit = false;
     }
 

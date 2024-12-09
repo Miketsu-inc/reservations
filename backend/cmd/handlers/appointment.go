@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
@@ -19,8 +20,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		MerchantName string `json:"merchant_name" validate:"required"`
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
-		FromDate     string `json:"from_date" validate:"required"`
-		ToDate       string `json:"to_date" validate:"required"`
+		TimeStamp    string `json:"timeStamp" validate:"required"`
 	}
 	var newApp NewAppointment
 
@@ -37,14 +37,34 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	service, err := a.Postgresdb.GetServiceById(r.Context(), newApp.ServiceId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no service found by this id: %s", err.Error()))
+		return
+	}
+
+	duration, err := time.ParseDuration(service.Duration)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("duration could not be parsed: %s", err.Error()))
+		return
+	}
+
+	timeStamp, err := time.Parse("2006-01-02T15:04:05-0700", newApp.TimeStamp)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to int: %s", err.Error()))
+		return
+	}
+
+	toDate := timeStamp.Add(duration)
+
 	app := database.Appointment{
 		Id:         0,
 		ClientId:   userID,
 		MerchantId: merchantId,
 		ServiceId:  newApp.ServiceId,
 		LocationId: newApp.LocationId,
-		FromDate:   newApp.FromDate,
-		ToDate:     newApp.ToDate,
+		FromDate:   timeStamp.String(),
+		ToDate:     toDate.String(),
 	}
 	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %v", err))

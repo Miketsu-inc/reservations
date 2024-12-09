@@ -76,6 +76,8 @@ type PostgreSQL interface {
 
 	// Insert new services to the database
 	NewServices(context.Context, []Service) error
+	// Get a Service by it's id
+	GetServiceById(context.Context, int) (Service, error)
 }
 
 type service struct {

@@ -38,3 +38,18 @@ func (s *service) NewServices(ctx context.Context, services []Service) error {
 
 	return nil
 }
+
+func (s *service) GetServiceById(ctx context.Context, serviceID int) (Service, error) {
+	query := `
+	select * from "Service"
+	where id = $1
+	`
+
+	var serv Service
+	err := s.db.QueryRowContext(ctx, query, serviceID).Scan(&serv.Id, &serv.MerchantId, &serv.Name, &serv.Duration, &serv.Price)
+	if err != nil {
+		return Service{}, err
+	}
+
+	return serv, nil
+}

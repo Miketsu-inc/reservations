@@ -15,15 +15,20 @@ export default function SelectDateTime({
   function dayChangeHandler(e) {
     const fromTimeStamp = Date.parse(e.target.value);
     const isoString = new Date(fromTimeStamp).toISOString();
-    const day = isoString.split("-")[2].split("T")[0];
 
-    setSelectedDay(day);
+    setSelectedDay(isoString);
   }
 
   function reservationClickHandler() {
+    const date = new Date(selectedDay);
+
+    const [hours, minutes] = selectedHour.split(":").map(Number);
+    date.setUTCHours(hours, minutes, 0, 0);
+
+    const timeStamp = date.toISOString();
+
     sendDateTime({
-      day: selectedDay,
-      from_hour: selectedHour,
+      timeStamp: timeStamp,
     });
   }
 
@@ -36,8 +41,9 @@ export default function SelectDateTime({
       <button onClick={backArrowClick}>
         <BackArrowIcon />
       </button>
+      <p className="pt-5 text-xl">Pick a date</p>
       <form method="POST" onSubmit={submit}>
-        <div className="flex flex-col gap-2 pt-5 lg:pt-10">
+        <div className="flex flex-col gap-6 pt-5 lg:pt-10">
           <input
             type="date"
             onChange={dayChangeHandler}
