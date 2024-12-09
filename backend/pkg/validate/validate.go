@@ -71,6 +71,16 @@ func errorMessageForTag(err validator.FieldError) string {
 
 func getJsonTagForField(s any, fieldName string) (string, bool) {
 	t := reflect.TypeOf(s)
+
+	// Dereference the pointer
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.Struct {
+		return "", false
+	}
+
 	sf, ok := t.FieldByName(fieldName)
 	if !ok {
 		return "", false
