@@ -73,9 +73,9 @@ export default function AvailableTimes({
     <>
       {day && (
         <div className="flex flex-col gap-3">
-          <h3 className="text-lg font-bold">Morning</h3>
+          <p className="text-lg font-bold">Morning</p>
           {availableTimes.morning.length > 0 ? (
-            <div className="grid w-full grid-cols-2 gap-3 rounded-md px-4 sm:grid-cols-5">
+            <div className="grid w-full grid-cols-2 gap-3 rounded-md sm:grid-cols-5">
               {availableTimes.morning.map((hour, index) => (
                 <button
                   key={`morning-${index}`}
@@ -95,9 +95,9 @@ export default function AvailableTimes({
             </p>
           )}
 
-          <h3 className="text-lg font-bold">Afternoon</h3>
+          <p className="text-lg font-bold">Afternoon</p>
           {availableTimes.afternoon.length > 0 ? (
-            <div className="grid w-full grid-cols-2 gap-3 rounded-md px-4 sm:grid-cols-5">
+            <div className="grid w-full grid-cols-2 gap-3 rounded-md sm:grid-cols-5">
               {availableTimes.afternoon.map((hour, index) => (
                 <button
                   key={`afternoon-${index}`}

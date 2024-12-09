@@ -1,4 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarIcon from "../../assets/icons/CalendarIcon";
 import ChartIcon from "../../assets/icons/ChartIcon";
@@ -11,7 +10,6 @@ import SidePanelItem from "./SidePanelItem";
 import SidePanelProfile from "./SidePanelProfile";
 
 export default function SidePanel({ profileImage, profileText }) {
-  const navigate = useNavigate();
   const windowSize = useWindowSize();
   const [isOpen, setIsOpen] = useState(windowSize !== "sm" ? true : false);
   const sidePanelRef = useRef();
@@ -37,23 +35,17 @@ export default function SidePanel({ profileImage, profileText }) {
 
   const handleLogout = useCallback(async () => {
     try {
-      const response = await fetch("api/v1/auth/user/logout", {
+      await fetch("api/v1/auth/user/logout", {
         method: "GET",
         headers: {
           Accept: "application/json",
           "content-type": "application/json",
         },
       });
-
-      if (response.ok) {
-        navigate({ to: "/" });
-      } else {
-        console.log(response);
-      }
     } catch (err) {
       console.log(err.message);
     }
-  }, [navigate]);
+  }, []);
 
   return (
     <>
@@ -97,7 +89,7 @@ export default function SidePanel({ profileImage, profileText }) {
               <SettingsIcon styles="h-5 w-5" />
             </SidePanelItem>
             <span className="flex-1"></span>
-            <SidePanelItem link="#" text="Sign out" action={handleLogout}>
+            <SidePanelItem link="/" text="Sign out" action={handleLogout}>
               <SignOutIcon styles="h-5 w-5" />
             </SidePanelItem>
           </div>
