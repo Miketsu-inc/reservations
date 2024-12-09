@@ -1,116 +1,17 @@
-import { useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import ServerError from "../../components/ServerError";
 import ReservationSection from "./ReservationSection";
 import ServiceItem from "./ServiceItem";
 
-const defaultReservation = {
-  merchant_name: "Hair salon",
-  service_id: 0,
-  location_id: 0,
-  day: "",
-  from_hour: "",
-};
-
-const defaultMerchantInfo = {
-  merchantName: "",
-  shortLocation: "",
-  contact_email: "",
-  shortDescription: "",
-  parkingInfo: "",
-  aboutUs: "",
-  annoucement: "",
-  services: [],
-};
-
-export default function ReservationPage() {
-  const [reservation, setReservation] = useState(defaultReservation);
-  const [merchantInfo, setMerchantInfo] = useState(defaultMerchantInfo);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
-  const { merchantName } = useParams({ strict: false });
-
-  useEffect(() => {
-    async function fetchMerchantInfo() {
-      try {
-        const response = await fetch(
-          `/api/v1/merchants/info?name=${merchantName}`,
-          {
-            method: "GET",
-          }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          setServerError(result.error.message);
-        } else {
-          setServerError(undefined);
-
-          setReservation({
-            merchant_name: result.data.merchant_name,
-            service_id: 1,
-            location_id: result.data.location_id,
-            from_date: "",
-            to_date: "",
-          });
-
-          const shortLocation =
-            result.data.address +
-            ", " +
-            result.data.city +
-            " " +
-            result.data.postal_code;
-
-          setMerchantInfo({
-            merchantName: result.data.merchant_name,
-            contact_email: result.data.contact_email,
-            shortLocation: shortLocation,
-            services: result.data.services,
-          });
-        }
-      } catch (err) {
-        setServerError(err.message);
-      }
-    }
-
-    fetchMerchantInfo();
-  }, [merchantName]);
-
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/appointments", {
-            method: "POST",
-            headers: {
-              "Content-type": "application/json; charset=UTF-8",
-            },
-            body: JSON.stringify(reservation),
-          });
-
-          if (!response.ok) {
-            const result = await response.json();
-            setServerError(result.error.message);
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-
-      sendRequest();
-    }
-  }, [isSubmitting, reservation]);
-
+export default function MerchantInfo({ data, sendServiceId, isCompleted }) {
   function serviceClickHandler(id) {
-    console.log(id);
+    sendServiceId({
+      service_id: id,
+    });
+
+    isCompleted();
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-10">
-      <ServerError styles="my-4" error={serverError} />
+    <>
       <div className="flex flex-col-reverse gap-4 py-5 lg:h-96 lg:flex-row lg:gap-14 lg:py-10">
         <div className="flex flex-col gap-6 md:flex-row lg:w-1/3 lg:flex-col">
           <div className="flex w-full flex-row">
@@ -122,9 +23,9 @@ export default function ReservationPage() {
             </div>
             <div className="flex flex-col justify-center pl-5 lg:gap-2">
               <h1 className="text-2xl font-bold lg:text-4xl">
-                {merchantInfo.merchantName}
+                {data.merchantName}
               </h1>
-              <p className="text-sm">{merchantInfo.shortLocation}</p>
+              <p className="text-sm">{data.shortLocation}</p>
             </div>
           </div>
           <div className="flex w-full flex-col gap-2 md:items-end lg:items-start">
@@ -143,7 +44,7 @@ export default function ReservationPage() {
       <div className="flex flex-col gap-10 pt-5 lg:flex-row lg:pt-10">
         <div className="lg:w-2/3">
           <p className="pb-5 text-lg font-bold">Services</p>
-          {merchantInfo.services.map((service) => (
+          {data.services.map((service) => (
             <ServiceItem
               key={service.ID}
               id={service.ID}
@@ -195,23 +96,20 @@ export default function ReservationPage() {
               </div>
             </div>
           </ReservationSection>
-          <ReservationSection name="Location" show={merchantInfo.shortLocation}>
-            <p>{merchantInfo.shortLocation}</p>
+          <ReservationSection name="Location" show={data.shortLocation}>
+            <p>{data.shortLocation}</p>
           </ReservationSection>
-          <ReservationSection name="Parking" show={merchantInfo.parkingInfo}>
-            <p>{merchantInfo.parkingInfo}</p>
+          <ReservationSection name="Parking" show={data.parkingInfo}>
+            <p>{data.parkingInfo}</p>
           </ReservationSection>
-          <ReservationSection
-            name="Contact us"
-            show={merchantInfo.contact_email}
-          >
-            <p>Email: {merchantInfo.contact_email}</p>
+          <ReservationSection name="Contact us" show={data.contact_email}>
+            <p>Email: {data.contact_email}</p>
             <p>Facebook: </p>
             <p>Instagram: </p>
             <p>Phone: </p>
           </ReservationSection>
         </div>
       </div>
-    </div>
+    </>
   );
 }

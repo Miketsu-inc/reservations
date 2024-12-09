@@ -12,11 +12,19 @@ export function useMultiStepForm(steps) {
     });
   }
 
+  function previous() {
+    setStepIndex((i) => {
+      if (i <= 0) return i;
+      return i - 1;
+    });
+  }
+
   return {
     stepIndex,
     step: steps[stepIndex],
     nextStep: next,
     stepCount: steps.length,
+    previousStep: previous,
   };
 }
 

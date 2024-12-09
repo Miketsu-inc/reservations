@@ -1,135 +1,70 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import BackArrowIcon from "../../assets/icons/BackArrowIcon";
+import Button from "../../components/Button";
+import AvailableTimes from "./AvailableTimes";
 
-export default function SelectDateTIme({ reservation, setReservation }) {
-  const [freeHours, setFreeHours] = useState({ morning: [], afternoon: [] });
+export default function SelectDateTime({
+  data,
+  backArrowClick,
+  sendDateTime,
+  submit,
+}) {
+  const [selectedDay, setSelectedDay] = useState();
+  const [selectedHour, setSelectedHour] = useState();
 
-  const fetchHours = useCallback(async () => {
-    // try {
-    //   const response = await fetch(
-    //     `/api/v1/merchants/info?merchant=${merchantName}&service=${reservation.service_id}&day=${reservation.day}&location=${reservation.location_id}`,
-    //     {
-    //       method: "GET",
-    //     }
-    //   );
+  function dayChangeHandler(e) {
+    const fromTimeStamp = Date.parse(e.target.value);
+    const isoString = new Date(fromTimeStamp).toISOString();
+    const day = isoString.split("-")[2].split("T")[0];
 
-    //   const result = await response.json();
-
-    //   if (!response.ok) {
-    //     setServerError(result.error.message);
-    //   } else {
-    //     setServerError(undefined);
-
-    //     setFreeHours(result.data)
-    //   }
-    // } catch (err) {
-    //   setServerError(err.message);
-    // }
-    const mockHours = {
-      morning: [
-        "08:30",
-        "09:00",
-        "09:30",
-        "10:00",
-        "10:30",
-        "11:00",
-        "11:30",
-        "12:00",
-      ],
-      afternoon: [
-        "12:30",
-        "13:00",
-        "13:30",
-        "14:00",
-        "14:30",
-        "15:00",
-        "15:30",
-        "16:00",
-      ],
-    };
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    setFreeHours(mockHours);
-  }, []);
-
-  useEffect(() => {
-    if (reservation.day !== "" && reservation.service_id != 0) {
-      fetchHours();
-    }
-  }, [reservation, fetchHours]);
-
-  function hourChangeHandler(e) {
-    const hour = e.target.value;
-    setReservation((prev) => ({ ...prev, from_hour: hour }));
+    setSelectedDay(day);
   }
 
-  function dayChnageHandler(e) {
-    const fromTimeStamp = Date.parse(e.target.value);
-    const day = new Date(fromTimeStamp).toISOString();
+  function reservationClickHandler() {
+    sendDateTime({
+      day: selectedDay,
+      from_hour: selectedHour,
+    });
+  }
 
-    setReservation((prev) => ({
-      ...prev,
-      day: day,
-    }));
+  function selectedHourHandler(hour) {
+    setSelectedHour(hour);
   }
 
   return (
     <>
-      <input
-        type="date"
-        onChange={dayChnageHandler}
-        className="mt-4 block w-full rounded-md border border-text_color bg-layer_bg px-4 py-2
-          text-base text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray
-          focus:outline-none dark:[color-scheme:dark]"
-      />
-
-      {reservation.day && (
-        <div className="flex flex-col gap-3">
-          <h3 className="text-lg font-bold">Morning</h3>
-          {freeHours.morning.length > 0 ? (
-            <div className="grid w-full grid-cols-3 gap-3 rounded-md px-4 sm:grid-cols-5">
-              {freeHours.morning.map((hour, index) => (
-                <button
-                  key={`morning-${index}`}
-                  className={`cursor-pointer rounded-md bg-accent/90 py-1 font-bold text-black transition-all
-                    hover:bg-accent/80
-                    ${reservation.from_hour === hour ? "ring-2 ring-blue-500" : ""}`}
-                  onClick={hourChangeHandler}
-                  value={hour}
-                  type="button"
-                >
-                  {hour}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-md flex items-center justify-center font-bold">
-              No available morning hours for this day
-            </p>
-          )}
-
-          <h3 className="text-lg font-bold">Afternoon</h3>
-          {freeHours.afternoon.length > 0 ? (
-            <div className="grid w-full grid-cols-3 gap-3 rounded-md px-4 sm:grid-cols-5">
-              {freeHours.afternoon.map((hour, index) => (
-                <button
-                  key={`afternoon-${index}`}
-                  className={`cursor-pointer rounded-md bg-accent/90 py-1 font-bold text-black transition-all
-                    hover:bg-accent/80
-                    ${reservation.from_hour === hour ? "ring-2 ring-blue-500" : ""}`}
-                  onClick={hourChangeHandler}
-                  value={hour}
-                  type="button"
-                >
-                  {hour}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-md flex items-center justify-center font-bold">
-              No available afternoon hours for this day
-            </p>
-          )}
+      <button onClick={backArrowClick}>
+        <BackArrowIcon />
+      </button>
+      <form method="POST" onSubmit={submit}>
+        <div className="flex flex-col gap-2 pt-5 lg:pt-10">
+          <input
+            type="date"
+            onChange={dayChangeHandler}
+            className="mt-4 block w-full rounded-md border border-text_color bg-layer_bg px-4 py-2
+              text-base text-text_color shadow-sm hover:bg-hvr_gray focus:bg-hvr_gray
+              focus:outline-none dark:[color-scheme:dark]"
+          />
+          <AvailableTimes
+            day={selectedDay}
+            serviceId={data.service_id}
+            locationId={data.location_id}
+            selectHour={selectedHourHandler}
+            clickedHour={selectedHour}
+          />
+          <Button
+            onClick={reservationClickHandler}
+            type="submit"
+            styles="text-white dark:bg-transparent dark:border-2 border-secondary
+              dark:text-secondary dark:hover:border-hvr_secondary
+              dark:hover:text-hvr_secondary mt-6 font-semibold border-primary
+              hover:bg-hvr_primary dark:focus:outline-none dark:focus:border-hvr_secondary
+              dark:focus:text-hvr_secondary"
+          >
+            Reserve
+          </Button>
         </div>
-      )}
+      </form>
     </>
   );
 }
