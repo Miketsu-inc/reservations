@@ -167,3 +167,22 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 
 	return nil
 }
+
+func (s *service) GetDurationAndLocation(ctx context.Context, merchant_id uuid.UUID, service_id string) (int, int, error) {
+	query := `
+	select s.duration, l.id as location_id from "Service" s
+	inner join "Location" l
+	on s.merchant_id = l.merchant_id
+	where s.merchant_id = $1 and s.id = $2`
+
+	var duration int
+	var location_id int
+
+	err := s.db.QueryRowContext(ctx, query, merchant_id, service_id).Scan(&duration, &location_id)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return duration, location_id, nil
+
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
@@ -151,4 +152,36 @@ func (m *Merchant) CheckUrl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, merchantUrl)
+}
+
+func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
+	UrlName := r.URL.Query().Get("name")
+	UrlService_id := r.URL.Query().Get("service_id")
+	UrlDay := r.URL.Query().Get("day")
+
+	day, err := time.Parse("2006-01-02", UrlDay)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid day format: %s", err.Error()))
+		return
+	}
+
+	merchant_id, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		return
+	}
+
+	duration, location_id, err := m.Postgresdb.GetDurationAndLocation(r.Context(), merchant_id, UrlService_id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service duration: %s", err.Error()))
+		return
+	}
+
+	availableSlots, err := m.Postgresdb.GetAvailableTimes(r.Context(), merchant_id, duration, location_id, day)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, availableSlots)
 }

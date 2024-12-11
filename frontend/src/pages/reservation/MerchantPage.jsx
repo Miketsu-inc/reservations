@@ -64,7 +64,7 @@ export default function MerchantPage() {
 
           setReservation({
             merchant_name: result.data.merchant_name,
-            service_id: 1,
+            service_id: 0,
             location_id: result.data.location_id,
             timeStamp: 0,
           });

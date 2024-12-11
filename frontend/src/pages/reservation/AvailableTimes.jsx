@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const defaultAvailableTimes = {
   morning: [],
@@ -8,62 +8,57 @@ const defaultAvailableTimes = {
 export default function AvailableTimes({
   day,
   serviceId,
-  locationId,
   selectHour,
   clickedHour,
+  merchant_name,
+  setServerError,
 }) {
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
 
+  function convertTimes(times) {
+    const morning = times.filter((time) => {
+      const hour = parseInt(time.split(":")[0]);
+      return hour < 12;
+    });
+
+    const afternoon = times.filter((time) => {
+      const hour = parseInt(time.split(":")[0]);
+      return hour >= 12;
+    });
+
+    setAvailableTimes({ morning, afternoon });
+  }
+
+  const fetchHours = useCallback(
+    async (day, serviceId, merchant_name) => {
+      try {
+        const response = await fetch(
+          `/api/v1/merchants/times?name=${merchant_name}&service_id=${serviceId}&day=${day}`,
+          {
+            method: "GET",
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          setServerError(result.error.message);
+        } else {
+          setServerError(undefined);
+          convertTimes(result.data);
+        }
+      } catch (err) {
+        setServerError(err.message);
+      }
+    },
+    [setServerError]
+  );
+
   useEffect(() => {
-    async function fetchHours() {
-      // try {
-      //   const response = await fetch(
-      //     `/api/v1/merchants/info?merchant=${merchantName}&service=${reservation.service_id}&day=${reservation.day}&location=${reservation.location_id}`,
-      //     {
-      //       method: "GET",
-      //     }
-      //   );
-
-      //   const result = await response.json();
-
-      //   if (!response.ok) {
-      //     setServerError(result.error.message);
-      //   } else {
-      //     setServerError(undefined);
-
-      //     setFreeHours(result.data)
-      //   }
-      // } catch (err) {
-      //   setServerError(err.message);
-      // }
-      const mockHours = {
-        morning: [
-          "08:30",
-          "09:00",
-          "09:30",
-          "10:00",
-          "10:30",
-          "11:00",
-          "11:30",
-          "12:00",
-        ],
-        afternoon: [
-          "12:30",
-          "13:00",
-          "13:30",
-          "14:00",
-          "14:30",
-          "15:00",
-          "15:30",
-          "16:00",
-        ],
-      };
-
-      setAvailableTimes(mockHours);
+    if (day !== undefined) {
+      fetchHours(day, serviceId, merchant_name);
     }
-
-    fetchHours();
-  }, [day, serviceId, locationId]);
+  }, [day, serviceId, merchant_name, fetchHours]);
 
   function hourClickHandler(e) {
     selectHour(e.target.value);

@@ -106,6 +106,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	}
 
 	r.Get("/info", merchantHandler.InfoByName)
+	r.Get("/times", merchantHandler.GetHours)
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)

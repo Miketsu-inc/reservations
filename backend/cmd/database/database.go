@@ -33,6 +33,8 @@ type PostgreSQL interface {
 	GetAppointmentsByUser(context.Context, uuid.UUID) ([]Appointment, error)
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]Appointment, error)
+	// Get all available times for reservations
+	GetAvailableTimes(context.Context, uuid.UUID, int, int, time.Time) ([]string, error)
 
 	// -- User --
 
@@ -66,7 +68,8 @@ type PostgreSQL interface {
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 	// Check if a merchant url exists in the database
 	IsMerchantUrlUnique(context.Context, string) error
-
+	// Get duration a location id given the merchant and the service
+	GetDurationAndLocation(context.Context, uuid.UUID, string) (int, int, error)
 	// -- Location --
 
 	// Insert a new Location to the database

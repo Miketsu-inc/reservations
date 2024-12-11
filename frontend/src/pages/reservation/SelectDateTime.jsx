@@ -1,6 +1,7 @@
 import { useState } from "react";
 import BackArrowIcon from "../../assets/icons/BackArrowIcon";
 import Button from "../../components/Button";
+import ServerError from "../../components/ServerError";
 import AvailableTimes from "./AvailableTimes";
 
 export default function SelectDateTime({
@@ -11,12 +12,12 @@ export default function SelectDateTime({
 }) {
   const [selectedDay, setSelectedDay] = useState();
   const [selectedHour, setSelectedHour] = useState();
+  const [serverError, setServerError] = useState(undefined);
 
   function dayChangeHandler(e) {
     const day = e.target.value;
     setSelectedDay(day);
   }
-
   function reservationClickHandler() {
     const date = new Date(selectedDay);
 
@@ -24,7 +25,6 @@ export default function SelectDateTime({
     date.setUTCHours(hours, minutes, 0, 0);
 
     const timeStamp = date.toISOString();
-
     sendDateTime({
       timeStamp: timeStamp,
     });
@@ -39,7 +39,8 @@ export default function SelectDateTime({
       <button onClick={backArrowClick}>
         <BackArrowIcon />
       </button>
-      <p className="pt-5 text-xl">Pick a date</p>
+      <p className="py-5 text-xl">Pick a date</p>
+      <ServerError error={serverError} />
       <form method="POST" onSubmit={submit}>
         <div className="flex flex-col gap-6 pt-5 lg:pt-10">
           <input
@@ -52,9 +53,10 @@ export default function SelectDateTime({
           <AvailableTimes
             day={selectedDay}
             serviceId={data.service_id}
-            locationId={data.location_id}
+            merchant_name={data.merchant_name}
             selectHour={selectedHourHandler}
             clickedHour={selectedHour}
+            setServerError={setServerError}
           />
           <Button
             onClick={reservationClickHandler}
