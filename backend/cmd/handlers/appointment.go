@@ -43,19 +43,23 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration, err := time.ParseDuration(service.Duration)
+	duration, err := time.ParseDuration(service.Duration + "m")
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("duration could not be parsed: %s", err.Error()))
 		return
 	}
 
-	timeStamp, err := time.Parse("2006-01-02T15:04:05-0700", newApp.TimeStamp)
+	timeStamp, err := time.Parse(time.RFC3339, newApp.TimeStamp)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to int: %s", err.Error()))
 		return
 	}
 
+	const postgresTimeFormat = "2006-01-02T15:04:05-0700"
+
 	toDate := timeStamp.Add(duration)
+	from_date := timeStamp.Format(postgresTimeFormat)
+	to_date := toDate.Format(postgresTimeFormat)
 
 	app := database.Appointment{
 		Id:         0,
@@ -63,8 +67,8 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		MerchantId: merchantId,
 		ServiceId:  newApp.ServiceId,
 		LocationId: newApp.LocationId,
-		FromDate:   timeStamp.String(),
-		ToDate:     toDate.String(),
+		FromDate:   from_date,
+		ToDate:     to_date,
 	}
 	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %v", err))

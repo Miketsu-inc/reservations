@@ -13,10 +13,8 @@ export default function SelectDateTime({
   const [selectedHour, setSelectedHour] = useState();
 
   function dayChangeHandler(e) {
-    const fromTimeStamp = Date.parse(e.target.value);
-    const isoString = new Date(fromTimeStamp).toISOString();
-
-    setSelectedDay(isoString);
+    const day = e.target.value;
+    setSelectedDay(day);
   }
 
   function reservationClickHandler() {
