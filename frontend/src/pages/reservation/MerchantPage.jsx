@@ -41,6 +41,7 @@ export default function MerchantPage() {
       data={reservation}
       backArrowClick={backArrowHandler}
       sendDateTime={reservationDataHandler}
+      isSubmitting={isSubmitting}
       key="SelectDateTime"
     />,
   ]);

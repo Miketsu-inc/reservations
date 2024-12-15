@@ -8,15 +8,16 @@ export default function Button({
   onClick,
   buttonText,
   isLoading,
+  disabled,
 }) {
   return (
     <button
       onClick={onClick}
       className={`${styles} rounded-lg bg-primary py-2 font-medium shadow-md
-        ${isLoading ? "opacity-50 transition-opacity" : ""}`}
+        ${isLoading || disabled ? "opacity-50 transition-opacity" : ""} `}
       name={name}
       type={type}
-      disabled={isLoading ? true : false}
+      disabled={isLoading || disabled}
     >
       {isLoading ? (
         <div className="flex items-center justify-center">

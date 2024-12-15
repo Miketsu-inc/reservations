@@ -65,32 +65,32 @@ export default function MerchantInfo({ data, sendServiceId, isCompleted }) {
             </p>
           </ReservationSection>
           <ReservationSection name="Opening hours" show={true}>
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-3">
+            <div className="flex flex-col gap-2 *:grid *:grid-cols-3">
+              <div>
                 <p>Monday</p>
                 <p>Closed</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Tuesday</p>
                 <p>Closed</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Wednesday</p>
                 <p>Closed</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Thursday</p>
                 <p>16:00 - 22:00</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Friday</p>
                 <p>14:00 - 23:45</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Saturday</p>
                 <p>14:00 - 23:45</p>
               </div>
-              <div className="grid grid-cols-3">
+              <div>
                 <p>Sunday</p>
                 <p>Closed</p>
               </div>
