@@ -1,6 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
-import DashboardPage from '../../../pages/dashboard/DashboardPage'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/_authenticated/_sidepanel/dashboard')({
+export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
   component: DashboardPage,
-})
+});
+
+function DashboardPage() {
+  return <p className="text-text_color">Dashboard page</p>;
+}

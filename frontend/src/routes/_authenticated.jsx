@@ -1,6 +1,6 @@
+import Loading from "@components/Loading";
+import { isAuthenticated } from "@lib/lib";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import Loading from "../components/Loading";
-import { isAuthenticated } from "../lib/lib";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {

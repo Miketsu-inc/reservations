@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./frontend/src",
+    "paths": {
+      "@components/*": ["./components/*"],
+      "@icons/*": ["./assets/icons/*"],
+      "@lib/*": ["./lib/*"]
+    }
+  }
+}
