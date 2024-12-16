@@ -1,3 +1,4 @@
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useCallback, useEffect, useState } from "react";
 
 const defaultAvailableTimes = {
@@ -42,6 +43,7 @@ export default function AvailableTimes({
         const result = await response.json();
 
         if (!response.ok) {
+          invalidateLocalSotrageAuth(response.status);
           setServerError(result.error.message);
         } else {
           setServerError(undefined);

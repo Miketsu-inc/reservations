@@ -3,6 +3,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useCallback, useRef, useState } from "react";
 import ServerError from "../../../../../components/ServerError";
 import { useClickOutside } from "../../../../../lib/hooks";
@@ -43,6 +44,7 @@ export default function Calendar() {
         const result = await response.json();
 
         if (!response.ok) {
+          invalidateLocalSotrageAuth(response.status);
           setServerError(result.error.message);
           failureCallback(result.error.message);
         } else {

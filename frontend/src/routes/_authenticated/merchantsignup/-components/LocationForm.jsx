@@ -1,6 +1,7 @@
 import Button from "@components/Button";
 import Input from "@components/Input";
 import ServerError from "@components/ServerError";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useEffect, useState } from "react";
 
 const defaultFormData = {
@@ -40,6 +41,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           });
 
           if (!response.ok) {
+            invalidateLocalSotrageAuth(response.status);
             const result = await response.json();
             setServerError(result.error.message);
           } else {

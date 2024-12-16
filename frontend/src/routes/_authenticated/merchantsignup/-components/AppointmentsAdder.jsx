@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useEffect, useState } from "react";
 import ServiceCard from "./ServiceCard";
 import SidepanelForm from "./SidepanelForm";
@@ -25,6 +26,7 @@ export default function AppointmentsAdder({ redirect }) {
           });
 
           if (!response.ok) {
+            invalidateLocalSotrageAuth(response.status);
             const result = await response.json();
             setSubmitError(result.error.message);
           } else {

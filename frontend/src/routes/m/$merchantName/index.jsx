@@ -1,5 +1,6 @@
 import ServerError from "@components/ServerError";
 import { useMultiStepForm } from "@lib/hooks";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import MerchantInfo from "./-components/MerchantInfo";
@@ -109,6 +110,7 @@ function MerchantPage() {
           });
 
           if (!response.ok) {
+            invalidateLocalSotrageAuth(response.status);
             const result = await response.json();
             setServerError(result.error.message);
           }
