@@ -34,7 +34,7 @@ type PostgreSQL interface {
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]Appointment, error)
 	// Get all available times for reservations
-	GetAvailableTimes(context.Context, uuid.UUID, int, int, time.Time) ([]string, error)
+	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
 
 	// -- User --
 

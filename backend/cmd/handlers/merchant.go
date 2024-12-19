@@ -177,11 +177,64 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableSlots, err := m.Postgresdb.GetAvailableTimes(r.Context(), merchant_id, duration, location_id, day)
+	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchant_id, location_id, day)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
 		return
 	}
 
+	availableSlots := calculateAvailableTimes(reservedTimes, duration, day)
+
 	httputil.Success(w, http.StatusOK, availableSlots)
+}
+
+type FormattedAvailableTimes struct {
+	Morning   []string `json:"morning"`
+	Afternoon []string `json:"afternoon"`
+}
+
+func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, day time.Time) FormattedAvailableTimes {
+	year, month, day_ := day.Date()
+	location := day.Location()
+
+	businessStart := time.Date(year, month, day_, 8, 0, 0, 0, location)
+	businessEnd := time.Date(year, month, day_, 17, 0, 0, 0, location)
+
+	duration := time.Duration(serviceDuration) * time.Minute
+	current := businessStart
+
+	morning := []string{}
+	afternoon := []string{}
+	for current.Add(duration).Before(businessEnd) || current.Add(duration).Equal(businessEnd) {
+		timeEnd := current.Add(duration)
+		available := true
+
+		for _, appt := range reserved {
+			if timeEnd.After(appt.From_date) && current.Before(appt.To_date) {
+				current = appt.To_date
+				timeEnd = current.Add(duration)
+				available = false
+				break
+			}
+		}
+
+		if available && timeEnd.Before(businessEnd) || timeEnd.Equal(businessEnd) {
+			formattedTime := fmt.Sprintf("%02d:%02d", current.Hour(), current.Minute())
+
+			if current.Hour() < 12 {
+				morning = append(morning, formattedTime)
+			} else if current.Hour() >= 12 {
+				afternoon = append(afternoon, formattedTime)
+			}
+
+			current = timeEnd
+		}
+	}
+
+	availableTimes := FormattedAvailableTimes{
+		Morning:   morning,
+		Afternoon: afternoon,
+	}
+
+	return availableTimes
 }

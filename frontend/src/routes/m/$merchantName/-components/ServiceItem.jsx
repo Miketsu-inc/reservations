@@ -1,16 +1,4 @@
-import Button from "@components/Button";
-
-export default function ServiceItem({
-  id,
-  name,
-  description,
-  price,
-  serviceClick,
-}) {
-  function onClickHandler() {
-    serviceClick(id);
-  }
-
+export default function ServiceItem({ children, name, description, price }) {
   return (
     <>
       <div className="flex w-full flex-row items-center gap-5 py-4">
@@ -21,14 +9,7 @@ export default function ServiceItem({
         <p className="ml-auto w-full text-right">
           {parseFloat(price).toLocaleString()} HUF
         </p>
-        <div className="ml-auto text-right">
-          <Button
-            styles="p-4"
-            name="Reserve"
-            buttonText="Reserve"
-            onClick={onClickHandler}
-          />
-        </div>
+        <div className="ml-auto text-right">{children}</div>
       </div>
       <hr className="border-gray-500" />
     </>
