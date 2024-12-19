@@ -36,7 +36,7 @@ export default function SidePanel({ profileImage, profileText }) {
   const handleLogout = useCallback(async () => {
     try {
       await fetch("api/v1/auth/user/logout", {
-        method: "GET",
+        method: "POST",
         headers: {
           Accept: "application/json",
           "content-type": "application/json",

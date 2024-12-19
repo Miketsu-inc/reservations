@@ -13,6 +13,10 @@ async function fetchHours(day, serviceId, merchantName) {
     `/api/v1/merchants/times?name=${merchantName}&service_id=${serviceId}&day=${day}`,
     {
       method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
     }
   );
 

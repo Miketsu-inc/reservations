@@ -84,6 +84,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 			// check if refresh version matches in the resfresh token and database
 			// if they match a new access token can be issued
 			if dbRefreshVersion != tokenRefreshVersion {
+				DeleteJwts(w)
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("refresh token version does not match"))
 				return
 			}
@@ -180,6 +181,33 @@ func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, refreshVersion int
 	})
 
 	return nil
+}
+
+// Deletes both the access and refresh jwt cookies
+func DeleteJwts(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     JwtRefreshCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Now().UTC(),
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     JwtAccessCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Now().UTC(),
+		// needs to be true in production
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 func getUserIdFromClaims(claims jwtlib.MapClaims) uuid.UUID {

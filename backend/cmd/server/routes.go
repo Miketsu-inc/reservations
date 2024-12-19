@@ -84,7 +84,8 @@ func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 
 		r.Get("/", userAuthHandler.IsAuthenticated)
-		r.Get("/logout", userAuthHandler.Logout)
+		r.Post("/logout", userAuthHandler.Logout)
+		r.Post("/logout/all", userAuthHandler.LogoutAllDevices)
 	})
 }
 

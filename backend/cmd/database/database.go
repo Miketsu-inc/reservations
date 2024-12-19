@@ -49,8 +49,8 @@ type PostgreSQL interface {
 	IsEmailUnique(context.Context, string) error
 	// Check if a phone number exists in the database.
 	IsPhoneNumberUnique(context.Context, string) error
-	// Increment User's refresh version and return it's value after the update.
-	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
+	// Increment User's refresh version, logging out the User.
+	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) error
 	// Get User's refresh version
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
 

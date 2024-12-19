@@ -103,21 +103,19 @@ func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) e
 	return nil
 }
 
-func (s *service) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {
+func (s *service) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) error {
 	query := `
 	update "User"
 	set jwt_refresh_version = jwt_refresh_version + 1
 	where id = $1
-	returning jwt_refresh_version
 	`
 
-	var refreshVersion int
-	err := s.db.QueryRowContext(ctx, query, userID).Scan(&refreshVersion)
+	_, err := s.db.ExecContext(ctx, query, userID)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return refreshVersion, nil
+	return nil
 }
 
 func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {

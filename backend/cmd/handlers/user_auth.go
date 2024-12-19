@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
@@ -162,33 +161,18 @@ func (u *UserAuth) IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Deletes both the access and refresh jwt cookies
-func deleteJwts(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     jwt.JwtRefreshCookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-		Expires:  time.Now().UTC(),
-		// needs to be true in production
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     jwt.JwtAccessCookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-		Expires:  time.Now().UTC(),
-		// needs to be true in production
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	})
+func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
+	jwt.DeleteJwts(w)
 }
 
-func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
-	deleteJwts(w)
+func (u *UserAuth) LogoutAllDevices(w http.ResponseWriter, r *http.Request) {
+	userID := jwt.UserIDFromContext(r.Context())
+
+	err := u.Postgresdb.IncrementUserJwtRefreshVersion(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	jwt.DeleteJwts(w)
 }

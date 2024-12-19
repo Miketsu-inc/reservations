@@ -1,14 +1,41 @@
+import Button from "@components/Button";
 import Selector from "@components/Selector";
 import SelectorItem from "@components/SelectorItem";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import SettingsIcon from "@icons/SettingsIcon";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const navigate = Route.useNavigate();
+
+  const logOutOnAllDevices = useCallback(async () => {
+    const response = await fetch("api/v1/auth/user/logout/all", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    });
+
+    let result = await response;
+    if (!response.ok) {
+      result = result.json();
+      console.log(result.error.message);
+    }
+
+    invalidateLocalSotrageAuth(401);
+    navigate({
+      from: Route.fullPath,
+      to: "/",
+    });
+  }, [navigate]);
+
   return (
     <div className="bg-bg_color pt-6 text-text_color dark:bg-layer_bg">
       <h1 className="mt-3 flex justify-between px-4 pb-2 text-left text-2xl font-bold">
@@ -75,6 +102,14 @@ function SettingsPage() {
           <span>Notifications</span>
           <BackArrowIcon styles="rotate-180" />
         </button>
+        <h2 className="mt-8 pb-4 text-left text-gray-600 dark:text-gray-300">
+          Danger zone
+        </h2>
+        <Button
+          styles="bg-red-700"
+          buttonText="Log out on all devices"
+          onClick={logOutOnAllDevices}
+        />
       </div>
     </div>
   );
