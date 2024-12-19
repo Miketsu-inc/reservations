@@ -2,8 +2,8 @@ import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
@@ -27,10 +27,9 @@ async function fetchHours(day, serviceId, merchantName) {
 
 export const Route = createFileRoute("/m/$merchantName/booking")({
   component: SelectDateTime,
-  loaderDeps: ({ search: { serviceId } }) => ({ serviceId }),
-  loader: ({ params, deps: { serviceId } }) => {
-    const today = new Date().toISOString().split("T")[0];
-    return fetchHours(today, serviceId, params.merchantName);
+  loaderDeps: ({ search: { serviceId, day } }) => ({ serviceId, day }),
+  loader: ({ params, deps: { serviceId, day } }) => {
+    return fetchHours(day, serviceId, params.merchantName);
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -44,16 +43,13 @@ const defaultAvailableTimes = {
 
 function SelectDateTime() {
   const { merchantName } = Route.useParams();
-  const { serviceId } = Route.useSearch();
+  const { serviceId, day } = Route.useSearch();
   const loaderData = Route.useLoaderData();
-  const isInitialRender = useRef(true);
+  const router = useRouter();
   const [selectedHour, setSelectedHour] = useState();
   const [serverError, setServerError] = useState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
-  const [selectedDay, setSelectedDay] = useState(
-    new Date().toISOString().split("T")[0]
-  );
   const [reservation, setReservation] = useState({
     merchant_name: merchantName,
     service_id: serviceId,
@@ -66,25 +62,6 @@ function SelectDateTime() {
       setAvailableTimes(loaderData);
     }
   }, [loaderData]);
-
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
-
-    async function fetchData() {
-      try {
-        const result = await fetchHours(selectedDay, serviceId, merchantName);
-        setAvailableTimes(result);
-      } catch (err) {
-        setAvailableTimes(defaultAvailableTimes);
-        setServerError(err.message);
-      }
-    }
-
-    fetchData();
-  }, [selectedDay, serviceId, merchantName]);
 
   useEffect(() => {
     if (isSubmitting) {
@@ -100,6 +77,17 @@ function SelectDateTime() {
 
           if (!response.ok) {
             invalidateLocalSotrageAuth(response.status);
+
+            if (response.status === 401) {
+              router.navigate({
+                from: Route.fullPath,
+                to: "/login",
+                search: {
+                  redirect: router.history.location.href,
+                },
+              });
+            }
+
             const result = await response.json();
             setServerError(result.error.message);
           }
@@ -112,11 +100,11 @@ function SelectDateTime() {
 
       sendRequest();
     }
-  }, [isSubmitting, reservation]);
+  }, [isSubmitting, reservation, router]);
 
   function onSubmitHandler(e) {
     e.preventDefault();
-    const date = new Date(selectedDay);
+    const date = new Date(day);
 
     const [hours, minutes] = selectedHour.split(":").map(Number);
     date.setUTCHours(hours, minutes, 0, 0);
@@ -139,8 +127,10 @@ function SelectDateTime() {
   }
 
   function dayChangeHandler(date) {
-    setSelectedDay(date.toISOString().split("T")[0]);
-    setSelectedHour(undefined);
+    setSelectedHour();
+    router.navigate({
+      search: (prev) => ({ ...prev, day: date.toISOString().split("T")[0] }),
+    });
   }
 
   function selectedHourHandler(e) {
@@ -165,7 +155,7 @@ function SelectDateTime() {
                 <DayPicker
                   mode="single"
                   timeZone="UTC"
-                  selected={selectedDay}
+                  selected={day}
                   onSelect={dayChangeHandler}
                 />
               </div>
@@ -204,9 +194,9 @@ function SelectDateTime() {
                     <p>Location:</p>
                     <p>{reservation.location_id}</p>
                   </div>
-                  <div className={`${selectedDay ? "" : "invisible"}`}>
+                  <div className={`${day ? "" : "invisible"}`}>
                     <p>Date:</p>
-                    <p>{selectedDay}</p>
+                    <p>{day}</p>
                   </div>
                   <div className={`${selectedHour ? "" : "invisible"}`}>
                     <p>Time:</p>
@@ -217,7 +207,7 @@ function SelectDateTime() {
               <div className="md:pt-28">
                 <Button
                   type="submit"
-                  disabled={selectedDay && selectedHour ? false : true}
+                  disabled={day && selectedHour ? false : true}
                   isLoading={isSubmitting}
                   buttonText="Reserve"
                   styles="w-full text-white dark:bg-transparent dark:border-2 border-secondary

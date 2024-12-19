@@ -8,7 +8,7 @@ import {
   MIN_PASSWORD_LENGTH,
 } from "@lib/constants";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 const defaultLoginData = {
@@ -32,7 +32,8 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const navigate = useNavigate({ from: "/login" });
+  const router = useRouter();
+  const search = Route.useSearch();
   const emailRef = useRef();
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
@@ -110,7 +111,7 @@ function LoginPage() {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
-            navigate({ to: "/m/bwnet" });
+            router.history.push(search.redirect);
             setServerError(undefined);
           }
         } catch (err) {
@@ -121,7 +122,7 @@ function LoginPage() {
       };
       sendRequest();
     }
-  }, [loginData, isSubmitting, navigate]);
+  }, [loginData, isSubmitting, router, search]);
 
   function formSubmitHandler(e) {
     e.preventDefault();
