@@ -8,9 +8,9 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
-async function fetchHours(day, serviceId, merchantName) {
+async function fetchHours(merchantName, locationId, serviceId, day) {
   const response = await fetch(
-    `/api/v1/merchants/times?name=${merchantName}&service_id=${serviceId}&day=${day}`,
+    `/api/v1/merchants/times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
     {
       method: "GET",
       headers: {
@@ -31,9 +31,13 @@ async function fetchHours(day, serviceId, merchantName) {
 
 export const Route = createFileRoute("/m/$merchantName/booking")({
   component: SelectDateTime,
-  loaderDeps: ({ search: { serviceId, day } }) => ({ serviceId, day }),
-  loader: ({ params, deps: { serviceId, day } }) => {
-    return fetchHours(day, serviceId, params.merchantName);
+  loaderDeps: ({ search: { locationId, serviceId, day } }) => ({
+    locationId,
+    serviceId,
+    day,
+  }),
+  loader: ({ params, deps: { locationId, serviceId, day } }) => {
+    return fetchHours(params.merchantName, locationId, serviceId, day);
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -47,19 +51,13 @@ const defaultAvailableTimes = {
 
 function SelectDateTime() {
   const { merchantName } = Route.useParams();
-  const { serviceId, day } = Route.useSearch();
+  const { locationId, serviceId, day } = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const router = useRouter();
   const [selectedHour, setSelectedHour] = useState();
   const [serverError, setServerError] = useState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
-  const [reservation, setReservation] = useState({
-    merchant_name: merchantName,
-    service_id: serviceId,
-    location_id: 1,
-    timeStamp: "",
-  });
 
   useEffect(() => {
     if (loaderData) {
@@ -67,67 +65,51 @@ function SelectDateTime() {
     }
   }, [loaderData]);
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/appointments", {
-            method: "POST",
-            headers: {
-              "Content-type": "application/json; charset=UTF-8",
-            },
-            body: JSON.stringify(reservation),
-          });
-
-          if (!response.ok) {
-            invalidateLocalSotrageAuth(response.status);
-
-            if (response.status === 401) {
-              router.navigate({
-                from: Route.fullPath,
-                to: "/login",
-                search: {
-                  redirect: router.history.location.href,
-                },
-              });
-            }
-
-            const result = await response.json();
-            setServerError(result.error.message);
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-
-      sendRequest();
-    }
-  }, [isSubmitting, reservation, router]);
-
-  function onSubmitHandler(e) {
+  async function onSubmitHandler(e) {
     e.preventDefault();
     const date = new Date(day);
 
     const [hours, minutes] = selectedHour.split(":").map(Number);
     date.setUTCHours(hours, minutes, 0, 0);
-
     const timeStamp = date.toISOString();
 
-    setReservation((prev) => ({
-      ...prev,
-      timeStamp: timeStamp,
-    }));
+    setIsSubmitting(true);
 
-    let canSubmit = true;
+    try {
+      const response = await fetch("/api/v1/appointments", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+        body: JSON.stringify({
+          merchant_name: merchantName,
+          service_id: serviceId,
+          location_id: locationId,
+          timeStamp: timeStamp,
+        }),
+      });
 
-    if (timeStamp === "") {
-      setServerError("Please set a reservation date!");
-      canSubmit = false;
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+
+        if (response.status === 401) {
+          router.navigate({
+            from: Route.fullPath,
+            to: "/login",
+            search: {
+              redirect: router.history.location.href,
+            },
+          });
+        }
+
+        const result = await response.json();
+        setServerError(result.error.message);
+      }
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(canSubmit);
   }
 
   function dayChangeHandler(date) {
@@ -188,15 +170,15 @@ function SelectDateTime() {
                 <div className="text-lg *:grid *:grid-cols-2">
                   <div>
                     <p>Merchant:</p>
-                    <p>{reservation.merchant_name}</p>
+                    <p>{merchantName}</p>
                   </div>
                   <div>
                     <p>Service:</p>
-                    <p>{reservation.service_id}</p>
+                    <p>{serviceId}</p>
                   </div>
                   <div>
                     <p>Location:</p>
-                    <p>{reservation.location_id}</p>
+                    <p>{locationId}</p>
                   </div>
                   <div className={`${day ? "" : "invisible"}`}>
                     <p>Date:</p>

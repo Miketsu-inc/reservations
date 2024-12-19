@@ -31,9 +31,9 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 
 	userID := jwt.UserIDFromContext(r.Context())
 
-	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), newApp.MerchantName)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found by this name: %s", err.Error()))
 		return
 	}
 

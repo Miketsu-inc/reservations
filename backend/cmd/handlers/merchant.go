@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -155,29 +156,40 @@ func (m *Merchant) CheckUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
-	UrlName := r.URL.Query().Get("name")
-	UrlService_id := r.URL.Query().Get("service_id")
-	UrlDay := r.URL.Query().Get("day")
+	urlName := r.URL.Query().Get("name")
 
-	day, err := time.Parse("2006-01-02", UrlDay)
+	urlDay := r.URL.Query().Get("day")
+	day, err := time.Parse("2006-01-02", urlDay)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid day format: %s", err.Error()))
 		return
 	}
 
-	merchant_id, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))
+	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("serviceId should be a number: %s", err.Error()))
+		return
+	}
+
+	urlLocationId, err := strconv.Atoi(r.URL.Query().Get("locationId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("locationId should be a number: %s", err.Error()))
+		return
+	}
+
+	merchant_id, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	duration, location_id, err := m.Postgresdb.GetDurationAndLocation(r.Context(), merchant_id, UrlService_id)
+	duration, err := m.Postgresdb.GetServiceDurationById(r.Context(), urlServiceId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service duration: %s", err.Error()))
 		return
 	}
 
-	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchant_id, location_id, day)
+	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchant_id, urlLocationId, day)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
 		return

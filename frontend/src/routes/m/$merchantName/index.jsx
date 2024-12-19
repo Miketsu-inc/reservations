@@ -30,6 +30,7 @@ export const Route = createFileRoute("/m/$merchantName/")({
 
 const defaultMerchantInfo = {
   merchant_name: "",
+  location_id: 0,
   short_location: "",
   contact_email: "",
   short_description: "",
@@ -54,6 +55,7 @@ function MerchantPage() {
 
       setMerchantInfo({
         merchant_name: loaderData.merchant_name,
+        location_id: loaderData.location_id,
         contact_email: loaderData.contact_email,
         short_location: shortLocation,
         services: loaderData.services,
@@ -107,6 +109,7 @@ function MerchantPage() {
                 from={Route.fullPath}
                 to="booking"
                 search={{
+                  locationId: merchantInfo.location_id,
                   serviceId: service.ID,
                   day: new Date().toISOString().split("T")[0],
                 }}

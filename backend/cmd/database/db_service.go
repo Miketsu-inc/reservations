@@ -53,3 +53,18 @@ func (s *service) GetServiceById(ctx context.Context, serviceID int) (Service, e
 
 	return serv, nil
 }
+
+func (s *service) GetServiceDurationById(ctx context.Context, serviceID int) (int, error) {
+	query := `
+	select duration from "Service"
+	where id = $1
+	`
+
+	var duration int
+	err := s.db.QueryRowContext(ctx, query, serviceID).Scan(&duration)
+	if err != nil {
+		return 0, err
+	}
+
+	return duration, nil
+}

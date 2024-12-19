@@ -68,8 +68,7 @@ type PostgreSQL interface {
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 	// Check if a merchant url exists in the database
 	IsMerchantUrlUnique(context.Context, string) error
-	// Get duration a location id given the merchant and the service
-	GetDurationAndLocation(context.Context, uuid.UUID, string) (int, int, error)
+
 	// -- Location --
 
 	// Insert a new Location to the database
@@ -81,6 +80,8 @@ type PostgreSQL interface {
 	NewServices(context.Context, []Service) error
 	// Get a Service by it's id
 	GetServiceById(context.Context, int) (Service, error)
+	// Get a Service duration by it's id
+	GetServiceDurationById(context.Context, int) (int, error)
 }
 
 type service struct {
