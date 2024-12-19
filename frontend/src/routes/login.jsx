@@ -111,8 +111,13 @@ function LoginPage() {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
-            router.history.push(search.redirect);
-            setServerError(undefined);
+            setServerError();
+
+            if (search.redirect) {
+              router.history.push(search.redirect);
+            } else {
+              router.navigate({ from: Route.fullPath, to: "/" });
+            }
           }
         } catch (err) {
           setServerError(err.message);
@@ -218,7 +223,11 @@ function LoginPage() {
         <div className="mt-2 flex items-center justify-evenly pb-4 pt-8 text-sm sm:mt-2 sm:pt-8">
           <p className="flex-1">If you don't have an account...</p>
           <Link
+            from={Route.fullPath}
             to="/signup"
+            search={{
+              redirect: search.redirect,
+            }}
             className="whitespace-nowrap px-4 py-2 hover:underline"
           >
             Sign up

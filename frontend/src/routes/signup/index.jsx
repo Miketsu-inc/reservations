@@ -1,7 +1,7 @@
 import ProgressBar from "@components/ProgressBar";
 import ServerError from "@components/ServerError";
 import { useMultiStepForm } from "@lib/hooks";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import EmailForm from "./-components/EmailForm";
 import NameForm from "./-components/NameForm";
@@ -22,7 +22,8 @@ export const Route = createFileRoute("/signup/")({
 });
 
 function SingUpPage() {
-  const navigate = useNavigate({ from: "/signup" });
+  const router = useRouter();
+  const search = Route.useSearch();
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
@@ -69,9 +70,14 @@ function SingUpPage() {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
-            setServerError(undefined);
+            setServerError();
             setIsSubmitDone(true);
-            navigate({ to: "/m/bwnet" });
+
+            if (search.redirect) {
+              router.history.push(search.redirect);
+            } else {
+              router.navigate({ from: Route.fullPath, to: "/" });
+            }
           }
         } catch (err) {
           setServerError(err.message);
@@ -81,7 +87,7 @@ function SingUpPage() {
       };
       sendRequest();
     }
-  }, [signUpData, isSubmitting, navigate]);
+  }, [signUpData, isSubmitting, router, search]);
 
   function handleSubmit() {
     setIsSubmitting(true);
