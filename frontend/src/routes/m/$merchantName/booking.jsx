@@ -8,6 +8,9 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
+const today = new Date();
+const disabledDays = [{ before: today }];
+
 async function fetchHours(merchantName, locationId, serviceId, day) {
   const response = await fetch(
     `/api/v1/merchants/times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
@@ -135,18 +138,19 @@ function SelectDateTime() {
         <ServerError error={serverError} />
         <form method="POST" onSubmit={onSubmitHandler}>
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
-            <div className="flex flex-col gap-6 md:w-1/2">
-              <p className="py-5 text-xl">Pick a date</p>
+            <div className="mb-6 flex flex-col gap-6 md:w-1/2">
+              <p className="text-xl sm:py-5">Pick a date</p>
               <div className="self-center md:self-auto">
                 <DayPicker
                   mode="single"
                   timeZone="UTC"
                   selected={day}
                   onSelect={dayChangeHandler}
+                  disabled={disabledDays}
                 />
               </div>
               <hr className="border-gray-500" />
-              <p className="py-5 text-xl">Pick a Time</p>
+              <p className="text-xl sm:py-5">Pick a Time</p>
               <div className="flex flex-col gap-3">
                 <p className="text-lg font-bold">Morning</p>
                 <AvailableTimeSection
@@ -190,17 +194,17 @@ function SelectDateTime() {
                   </div>
                 </div>
               </div>
-              <div className="md:pt-28">
+              <div
+                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-10 py-3 dark:bg-layer_bg md:static
+                  md:pb-0 md:pt-28"
+              >
                 <Button
                   type="submit"
                   disabled={day && selectedHour ? false : true}
                   isLoading={isSubmitting}
                   buttonText="Reserve"
-                  styles="w-full text-white dark:bg-transparent dark:border-2 border-secondary
-                    dark:text-secondary dark:hover:border-hvr_secondary
-                    dark:hover:text-hvr_secondary font-semibold border-primary hover:bg-hvr_primary
-                    dark:focus:outline-none dark:focus:border-hvr_secondary
-                    dark:focus:text-hvr_secondary"
+                  styles="w-full font-semibold focus-visible:outline-1 bg-primary hover:bg-hvr_primary
+                    text-white"
                 ></Button>
               </div>
             </div>
