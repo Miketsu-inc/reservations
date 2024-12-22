@@ -143,7 +143,7 @@ export default function ServiceCard({
               <XIcon styles="h-5 w-5" />
             </Button>
             <Button
-              styles="text-xs rounded-md border-black dark:border-gray-300 border-[1px] s py-[0.20rem]
+              styles="text-xs rounded-md border-black dark:border-gray-300 border-[1px] py-[0.20rem]
                 tracking-tight pr-2 bg-text_color text-white dark:text-text_color
                 dark:bg-transparent hover:bg-text_color/85"
               buttonText="Save"

@@ -29,7 +29,9 @@ create table "Appointment" (
     service_id              integer         references "Service" (ID) not null,
     location_id             integer         references "Location" (ID) not null,
     from_date               timestamptz     not null,
-    to_date                 timestamptz     not null
+    to_date                 timestamptz     not null,
+    user_comment            text            default null,
+    merchant_comment        text            default null
     -- TODO Possible future alternative
     -- time_range      tstzrange       not null
 );

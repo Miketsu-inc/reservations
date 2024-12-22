@@ -9,23 +9,38 @@ import ServerError from "../../../../../components/ServerError";
 import { useClickOutside } from "../../../../../lib/hooks";
 import CalendarModal from "./CalendarModal";
 
+const defaultEventInfo = {
+  extendedProps: {
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    user_comment: "",
+    merchant_comment: "",
+    price: "",
+  },
+};
+
 export default function Calendar() {
   const modalRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
+  const [serverError, setServerError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [eventInfo, setEventInfo] = useState({});
+  const [eventInfo, setEventInfo] = useState(defaultEventInfo);
   useClickOutside(modalRef, () => setIsModalOpen(false));
 
   const formatData = (data) => {
     return data.map((event) => ({
       id: event.id,
-      title: event.service_id,
+      title: event.service_name,
       start: event.from_date,
       end: event.to_date,
       extendedProps: {
-        name: event.client_id,
-        //anything basically
+        first_name: event.first_name,
+        last_name: event.last_name,
+        phone_number: event.phone_number,
+        user_comment: event.user_comment,
+        merchant_comment: event.merchant_comment,
+        price: event.price,
       },
     }));
   };
@@ -153,11 +168,13 @@ export default function Calendar() {
         </div>
         <span ref={modalRef}>
           <CalendarModal
+ref={modalRef}
             eventInfo={eventInfo}
             isOpen={isModalOpen}
             close={() => {
               setIsModalOpen(false);
             }}
+error={setServerError}
           />
         </span>
       </div>

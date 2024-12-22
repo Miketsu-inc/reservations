@@ -114,7 +114,7 @@ function MerchantPage() {
                   day: new Date().toISOString().split("T")[0],
                 }}
               >
-                <Button styles="p-4" name="Reserve" buttonText="Reserve" />
+                <Button styles="p-2" name="Reserve" buttonText="Reserve" />
               </Link>
             </ServiceItem>
           ))}

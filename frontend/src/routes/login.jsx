@@ -162,7 +162,8 @@ function LoginPage() {
             dark:border dark:border-secondary dark:hover:border-hvr_secondary
             dark:text-secondary text-text_color dark:hover:text-hvr_secondary
             dark:focus:outline-none dark:focus:text-hvr_secondary
-            dark:focus:border-hvr_secondary hover:bg-hvr_secondary/90 focus:bg-secondary"
+            dark:focus:border-hvr_secondary hover:bg-hvr_secondary/90 focus:bg-secondary
+            py-2"
           buttonText="Log in with Google"
         >
           <GoogleIcon styles="dark:fill-secondary dark:group-hover:fill-hvr_secondary fill-text_color mr-3" />
@@ -214,7 +215,7 @@ function LoginPage() {
           <Button
             name="login"
             type="submit"
-            styles="mt-4 focus-visible:outline-1 hover:bg-hvr_primary text-white"
+            styles="mt-4 focus-visible:outline-1 hover:bg-hvr_primary text-white py-2"
             buttonText="Login"
             isLoading={isSubmitting}
           />

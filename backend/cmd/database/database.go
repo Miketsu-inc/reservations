@@ -32,9 +32,11 @@ type PostgreSQL interface {
 	// Get all Appointments made by a User.
 	GetAppointmentsByUser(context.Context, uuid.UUID) ([]Appointment, error)
 	// Get all Aappintments assigned to a Merchant.
-	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]Appointment, error)
+	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
+	//Update merchant comment field
+	UpdateMerchantCommentById(context.Context, string, string) error
 
 	// -- User --
 

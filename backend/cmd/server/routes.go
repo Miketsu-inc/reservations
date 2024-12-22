@@ -69,6 +69,7 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 
 		r.Post("/", appointmentHandler.Create)
 		r.Get("/calendar", appointmentHandler.GetAppointments)
+		r.Post("/modal", appointmentHandler.UpdateMerchantComment)
 	})
 }
 

@@ -1,6 +1,7 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import BackArrowIcon from "@icons/BackArrowIcon";
+import MessageIcon from "@icons/MessageIcon";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -8,8 +9,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
-const today = new Date();
-const disabledDays = [{ before: today }];
+const disabledDays = [{ before: new Date() }];
 
 async function fetchHours(merchantName, locationId, serviceId, day) {
   const response = await fetch(
@@ -61,6 +61,7 @@ function SelectDateTime() {
   const [serverError, setServerError] = useState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
+  const [userComment, setUserComment] = useState("");
 
   useEffect(() => {
     if (loaderData) {
@@ -89,6 +90,7 @@ function SelectDateTime() {
           service_id: serviceId,
           location_id: locationId,
           timeStamp: timeStamp,
+          user_comment: userComment,
         }),
       });
 
@@ -138,7 +140,7 @@ function SelectDateTime() {
         <ServerError error={serverError} />
         <form method="POST" onSubmit={onSubmitHandler}>
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
-            <div className="mb-6 flex flex-col gap-6 md:w-1/2">
+            <div className="flex flex-col gap-6 md:w-1/2">
               <p className="text-xl sm:py-5">Pick a date</p>
               <div className="self-center md:self-auto">
                 <DayPicker
@@ -194,9 +196,25 @@ function SelectDateTime() {
                   </div>
                 </div>
               </div>
+              <div className="mb-20 mt-2 flex w-full flex-col gap-3 md:mb-0 md:mt-4">
+                <div className="flex items-center gap-3">
+                  <MessageIcon styles="fill-current" />
+                  <span>Add comment to your appointment (optional)</span>
+                </div>
+                <textarea
+                  value={userComment}
+                  onChange={(e) => {
+                    setUserComment(e.target.value);
+                  }}
+                  className="max-h-20 min-h-10 w-full rounded-md border border-gray-400 bg-transparent p-2
+                    text-sm outline-none placeholder:text-sm focus:border-text_color md:max-h-32
+                    md:w-4/5"
+                  placeholder="Add comment your merchant might want to know..."
+                />
+              </div>
               <div
                 className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-10 py-3 dark:bg-layer_bg md:static
-                  md:pb-0 md:pt-28"
+                  md:pb-0 md:pr-32 md:pt-10"
               >
                 <Button
                   type="submit"
@@ -204,7 +222,7 @@ function SelectDateTime() {
                   isLoading={isSubmitting}
                   buttonText="Reserve"
                   styles="w-full font-semibold focus-visible:outline-1 bg-primary hover:bg-hvr_primary
-                    text-white"
+                    text-white py-2"
                 ></Button>
               </div>
             </div>

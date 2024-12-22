@@ -76,7 +76,7 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
       <div className="flex items-center justify-center">
         <Button
           styles="mt-6 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
-            text-white"
+            text-white py-2"
           type="button"
           onClick={handleClick}
           buttonText="Verify"

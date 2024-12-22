@@ -21,6 +21,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
+		UserComment  string `json:"user_comment"`
 	}
 	var newApp NewAppointment
 
@@ -62,13 +63,15 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	to_date := toDate.Format(postgresTimeFormat)
 
 	app := database.Appointment{
-		Id:         0,
-		ClientId:   userID,
-		MerchantId: merchantId,
-		ServiceId:  newApp.ServiceId,
-		LocationId: newApp.LocationId,
-		FromDate:   from_date,
-		ToDate:     to_date,
+		Id:              0,
+		ClientId:        userID,
+		MerchantId:      merchantId,
+		ServiceId:       newApp.ServiceId,
+		LocationId:      newApp.LocationId,
+		FromDate:        from_date,
+		ToDate:          to_date,
+		UserComment:     newApp.UserComment,
+		MerchantComment: "",
 	}
 	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %v", err))
@@ -97,4 +100,25 @@ func (a *Appointment) GetAppointments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, apps)
+}
+
+func (a *Appointment) UpdateMerchantComment(w http.ResponseWriter, r *http.Request) {
+	type newComment struct {
+		Id              string `json:"id" validate:"required"`
+		MerchantComment string `json:"merchant_comment" validate:"required"`
+	}
+
+	var data newComment
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := a.Postgresdb.UpdateMerchantCommentById(r.Context(), data.Id, data.MerchantComment); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

@@ -1,7 +1,7 @@
 export default function XIcon({ styles, onClick }) {
   return (
     <svg
-      className={`${styles} bi bi-x fill-current`}
+      className={`${styles}`}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 16 16"
       aria-hidden="true"
