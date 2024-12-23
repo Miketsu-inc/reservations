@@ -11,18 +11,18 @@ import CalendarModal from "./CalendarModal";
 
 const defaultEventInfo = {
   extendedProps: {
+    appointment_id: 0,
     first_name: "",
     last_name: "",
     phone_number: "",
     user_comment: "",
     merchant_comment: "",
-    price: "",
+    price: 0,
   },
 };
 
 export default function Calendar() {
   const modalRef = useRef();
-  const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
@@ -35,6 +35,7 @@ export default function Calendar() {
       start: event.from_date,
       end: event.to_date,
       extendedProps: {
+        appointment_id: event.id,
         first_name: event.first_name,
         last_name: event.last_name,
         phone_number: event.phone_number,
@@ -47,7 +48,6 @@ export default function Calendar() {
 
   const fetchEvents = useCallback(
     async (fetchInfo, successCallback, failureCallback) => {
-      setIsLoading(true);
       try {
         const response = await fetch(
           `/api/v1/appointments/calendar?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`,
@@ -75,8 +75,6 @@ export default function Calendar() {
       } catch (err) {
         setServerError(err.message);
         failureCallback(err.message);
-      } finally {
-        setIsLoading(false);
       }
     },
     []
@@ -91,9 +89,6 @@ export default function Calendar() {
     <>
       <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="flex items-center justify-center">
-        <div className="w-1/2">
-          {isLoading && <div>Loading the calendar</div>}
-        </div>
         <div className="bg-bg_color text-text_color">
           <FullCalendar
             plugins={[
@@ -168,13 +163,13 @@ export default function Calendar() {
         </div>
         <span ref={modalRef}>
           <CalendarModal
-ref={modalRef}
+            ref={modalRef}
             eventInfo={eventInfo}
             isOpen={isModalOpen}
             close={() => {
               setIsModalOpen(false);
             }}
-error={setServerError}
+            setError={setServerError}
           />
         </span>
       </div>

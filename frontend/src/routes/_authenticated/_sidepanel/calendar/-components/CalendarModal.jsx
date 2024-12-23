@@ -4,11 +4,11 @@ import ClockIcon from "@icons/ClockIcon";
 import MessageIcon from "@icons/MessageIcon";
 import PersonIcon from "@icons/PesonIcon";
 import PhoneIcon from "@icons/PhoneIcon";
+import XIcon from "@icons/XIcon";
 import { forwardRef, useEffect, useState } from "react";
-import XIcon from "../../../../../assets/icons/XIcon";
 
 export default forwardRef(function CalendarModal(
-  { eventInfo, isOpen, close, error },
+  { eventInfo, isOpen, close, setError },
   ref
 ) {
   const [isSaved, setIsSaved] = useState(false);
@@ -22,39 +22,43 @@ export default forwardRef(function CalendarModal(
 
   useEffect(() => {
     if (
-      isSaved &&
-      merchantComment != eventInfo.extendedProps.merchant_comment
+      !isSaved ||
+      merchantComment === eventInfo.extendedProps.merchant_comment
     ) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/appointments/modal", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              id: eventInfo.id,
-              merchant_comment: merchantComment,
-            }),
-          });
-
-          if (!response.ok) {
-            const result = await response.json();
-            error(result.error.message);
-          } else {
-            eventInfo.setExtendedProp("merchant_comment", merchantComment);
-            error("");
-          }
-        } catch (err) {
-          error(err.message);
-        } finally {
-          setIsSaved(false);
-        }
-      };
-      sendRequest();
+      setIsSaved(false);
+      return;
     }
-  }, [merchantComment, isSaved, error, eventInfo]);
+
+    const sendRequest = async () => {
+      try {
+        const response = await fetch("/api/v1/appointments/modal", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            id: eventInfo.extendedProps.appointment_id,
+            merchant_comment: merchantComment,
+          }),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          setError(result.error.message);
+        } else {
+          eventInfo.setExtendedProp("merchant_comment", merchantComment);
+          setError("");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsSaved(false);
+      }
+    };
+
+    sendRequest();
+  }, [merchantComment, isSaved, setError, eventInfo]);
 
   return (
     isOpen && (
@@ -93,8 +97,8 @@ export default forwardRef(function CalendarModal(
                       minute: "2-digit",
                       hour12: false,
                       timeZone: "UTC",
-                    })}{" "}
-                    -{" "}
+                    })}
+                    {" - "}
                     {new Date(eventInfo.end).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -113,8 +117,7 @@ export default forwardRef(function CalendarModal(
               <div className="flex gap-3">
                 <PersonIcon styles="fill-gray-600" />
                 <span className="font-medium text-black">
-                  {eventInfo.extendedProps.last_name}{" "}
-                  {eventInfo.extendedProps.first_name}
+                  {`${eventInfo.extendedProps.last_name} ${eventInfo.extendedProps.first_name}`}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -152,20 +155,20 @@ export default forwardRef(function CalendarModal(
                   setMerchantComment(e.target.value);
                 }}
                 placeholder="Add notes about this appointment only you can see..."
-                className="max-h-48 min-h-20 w-full rounded-lg border border-gray-300 bg-white px-2 py-2
-                  text-sm text-blue-950 outline-none focus:border-blue-600"
+                className="max-h-48 min-h-20 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm
+                  text-blue-950 outline-none focus:border-blue-600"
               />
-              <div className="flex items-center justify-end pb-2 pr-2">
-                <Button
-                  styles="bg-transparent text-sm text-blue-700 border border-blue-700 py-1 px-2
-                    hover:border-blue-900 hover:text-blue-900"
-                  buttonText="Save"
-                  onClick={() => {
-                    setIsSaved(true);
-                  }}
-                  type="button"
-                />
-              </div>
+            </div>
+            <div className="flex items-center justify-end pt-2">
+              <Button
+                styles="bg-transparent text-sm text-blue-700 border border-blue-700 py-2 px-4
+                  hover:border-blue-900 hover:text-blue-900"
+                buttonText="Save"
+                onClick={() => {
+                  setIsSaved(true);
+                }}
+                type="button"
+              />
             </div>
           </div>
         </div>

@@ -103,9 +103,11 @@ func (a *Appointment) GetAppointments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Appointment) UpdateMerchantComment(w http.ResponseWriter, r *http.Request) {
+	// validate:"required" on MerchantComment would fail
+	// if an empty string arrives as a comment
 	type newComment struct {
-		Id              string `json:"id" validate:"required"`
-		MerchantComment string `json:"merchant_comment" validate:"required"`
+		Id              int    `json:"id" validate:"required"`
+		MerchantComment string `json:"merchant_comment"`
 	}
 
 	var data newComment

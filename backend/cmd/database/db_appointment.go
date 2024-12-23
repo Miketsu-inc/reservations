@@ -32,11 +32,11 @@ func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
 	return nil
 }
 
-func (s *service) UpdateMerchantCommentById(ctx context.Context, app_id string, merchant_comment string) error {
+func (s *service) UpdateMerchantCommentById(ctx context.Context, appointmentId int, merchant_comment string) error {
 	query := `
 	update "Appointment" set merchant_comment = $1 where id = $2
 	`
-	_, err := s.db.ExecContext(ctx, query, merchant_comment, app_id)
+	_, err := s.db.ExecContext(ctx, query, merchant_comment, appointmentId)
 	if err != nil {
 		return err
 	}
@@ -82,14 +82,13 @@ type AppointmentDetails struct {
 }
 
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
-	//
 	query := `
-		select a.id , a.from_date, a.to_date, a.user_comment, a.merchant_comment,
-		s.name as service_name, s.price, u.first_name, u.last_name, u.phone_number
-		from "Appointment" a
-		join "Service" s on a.service_id = s.id
-		join "User" u on a.client_id = u.id
-		where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3`
+	select a.id , a.from_date, a.to_date, a.user_comment, a.merchant_comment,
+	s.name as service_name, s.price, u.first_name, u.last_name, u.phone_number
+	from "Appointment" a
+	join "Service" s on a.service_id = s.id
+	join "User" u on a.client_id = u.id
+	where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3`
 
 	rows, err := s.db.QueryContext(ctx, query, merchantId, start, end)
 	if err != nil {
@@ -117,7 +116,7 @@ type AppointmentTime struct {
 
 func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]AppointmentTime, error) {
 	query := `
-    select  from_date AT TIME ZONE 'UTC' AS from_date_utc, to_date AT TIME ZONE 'UTC' AS to_date_utc from "Appointment"
+    select from_date AT TIME ZONE 'UTC' AS from_date_utc, to_date AT TIME ZONE 'UTC' AS to_date_utc from "Appointment"
     where merchant_id = $1 and location_id = $2 and DATE(from_date) = $3
     ORDER BY from_date`
 
