@@ -28,3 +28,18 @@ func (s *service) NewLocation(ctx context.Context, location Location) error {
 
 	return nil
 }
+
+func (s *service) GetLocationById(ctx context.Context, locationId int) (Location, error) {
+	query := `
+	select * from "Location"
+	where id = $1
+	`
+
+	var location Location
+	err := s.db.QueryRowContext(ctx, query, locationId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City, &location.PostalCode, &location.Address)
+	if err != nil {
+		return Location{}, err
+	}
+
+	return location, nil
+}

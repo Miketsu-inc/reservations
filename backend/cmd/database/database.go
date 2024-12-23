@@ -36,7 +36,7 @@ type PostgreSQL interface {
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
 	//Update merchant comment field
-	UpdateMerchantCommentById(context.Context, string, string) error
+	UpdateMerchantCommentById(context.Context, int, string) error
 
 	// -- User --
 
@@ -75,6 +75,8 @@ type PostgreSQL interface {
 
 	// Insert a new Location to the database
 	NewLocation(context.Context, Location) error
+	// Get location by it's id
+	GetLocationById(context.Context, int) (Location, error)
 
 	// -- Serivce --
 
@@ -82,8 +84,6 @@ type PostgreSQL interface {
 	NewServices(context.Context, []Service) error
 	// Get a Service by it's id
 	GetServiceById(context.Context, int) (Service, error)
-	// Get a Service duration by it's id
-	GetServiceDurationById(context.Context, int) (int, error)
 }
 
 type service struct {

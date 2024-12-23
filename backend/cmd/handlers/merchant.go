@@ -9,6 +9,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -177,23 +178,42 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	merchant_id, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	duration, err := m.Postgresdb.GetServiceDurationById(r.Context(), urlServiceId)
+	service, err := m.Postgresdb.GetServiceById(r.Context(), urlServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service duration: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
 		return
 	}
 
-	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchant_id, urlLocationId, day)
+	if service.MerchantId != merchantId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this serivce id does not belong to this merchant"))
+		return
+	}
+
+	location, err := m.Postgresdb.GetLocationById(r.Context(), urlLocationId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving location: %s", err.Error()))
+		return
+	}
+
+	if location.MerchantId != merchantId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this location id does not belong to this merchant"))
+		return
+	}
+
+	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchantId, urlLocationId, day)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
 		return
 	}
+
+	duration, err := strconv.Atoi(service.Duration)
+	assert.Nil(err, "Service duration from database could not be converted to int", service.Duration, duration)
 
 	availableSlots := calculateAvailableTimes(reservedTimes, duration, day)
 
