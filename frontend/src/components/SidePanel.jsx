@@ -1,11 +1,11 @@
+import CalendarIcon from "@icons/CalendarIcon";
+import ChartIcon from "@icons/ChartIcon";
+import DashboardIcon from "@icons/DashboardIcon";
+import HamburgerMenuIcon from "@icons/HamburgerMenuIcon";
+import SettingsIcon from "@icons/SettingsIcon";
+import SignOutIcon from "@icons/SignOutIcon";
+import { useClickOutside, useWindowSize } from "@lib/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
-import CalendarIcon from "../assets/icons/CalendarIcon";
-import ChartIcon from "../assets/icons/ChartIcon";
-import DashboardIcon from "../assets/icons/DashboardIcon";
-import HamburgerMenuIcon from "../assets/icons/HamburgerMenuIcon";
-import SettingsIcon from "../assets/icons/SettingsIcon";
-import SignOutIcon from "../assets/icons/SignOutIcon";
-import { useClickOutside, useWindowSize } from "../lib/hooks";
 import SidePanelItem from "./SidePanelItem";
 import SidePanelProfile from "./SidePanelProfile";
 

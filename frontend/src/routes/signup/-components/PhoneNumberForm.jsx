@@ -1,6 +1,5 @@
 import Button from "@components/Button";
 import FloatingLabelInput from "@components/FloatingLabelInput";
-import { MAX_INPUT_LENGTH } from "@lib/constants";
 import { useRef, useState } from "react";
 
 const defaultPhoneNumData = {
@@ -18,11 +17,16 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
   );
 
   function PhoneNumValidation(phoneNum) {
-    if (phoneNum.length > MAX_INPUT_LENGTH) {
-      setErrorMessage(`Inputs must be ${MAX_INPUT_LENGTH} characters or less!`);
+    if (phoneNum.length > 12) {
+      setErrorMessage("Inputs must be 12 characters or less!");
       return false;
     }
-    //more validation?
+
+    if (phoneNum[0] !== "+") {
+      setErrorMessage("Phone number should start with a '+' character!");
+      return false;
+    }
+
     return phoneNum;
   }
 
@@ -55,12 +59,10 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
         appointment
       </p>
       <FloatingLabelInput
-        styles=""
         ref={phoneNumRef}
         type="tel"
         name="phoneNum"
         id="PhoneNumInput"
-        ariaLabel="phone number"
         autoComplete="tel"
         labelText="Enter your phone number"
         errorText={errorMessage}

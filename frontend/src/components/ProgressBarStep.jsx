@@ -1,4 +1,4 @@
-import TickIcon from "../assets/icons/TickIcon";
+import TickIcon from "@icons/TickIcon";
 
 export default function ProgressBarStep({ step, isActive, isCompleted }) {
   return (

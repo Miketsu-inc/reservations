@@ -8,8 +8,8 @@ import SidepanelForm from "./SidepanelForm";
 export default function AppointmentsAdder({ redirect }) {
   const [services, setServices] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [fromError, setFormError] = useState(undefined);
-  const [submitError, setSubmitError] = useState(undefined);
+  const [fromError, setFormError] = useState();
+  const [submitError, setSubmitError] = useState();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function AppointmentsAdder({ redirect }) {
         return prevServices;
       }
       setIsAdding(false);
-      setFormError(undefined);
+      setFormError("");
       return [...prevServices, newService];
     });
   }
@@ -111,7 +111,7 @@ export default function AppointmentsAdder({ redirect }) {
                 bg-slate-300/45 p-3 hover:bg-slate-300 hover:shadow-lg dark:bg-hvr_gray
                 dark:hover:bg-gray-700"
               onClick={() => {
-                setSubmitError(undefined);
+                setSubmitError("");
                 setIsAdding(true);
               }}
             >

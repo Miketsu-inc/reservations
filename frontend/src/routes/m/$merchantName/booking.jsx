@@ -202,6 +202,7 @@ function SelectDateTime() {
                   <span>Add comment to your appointment (optional)</span>
                 </div>
                 <textarea
+                  name="appointment comment"
                   value={userComment}
                   onChange={(e) => {
                     setUserComment(e.target.value);

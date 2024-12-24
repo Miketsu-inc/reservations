@@ -54,12 +54,10 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         Enter your email to get started with creating your account
       </p>
       <FloatingLabelInput
-        styles=""
         ref={emailRef}
         type="text"
         name="email"
         id="emailInput"
-        ariaLabel="Email"
         autoComplete="email"
         labelText="Email"
         errorText={errorMessage}
@@ -67,9 +65,8 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         inputData={handleInputData}
       />
       <p className="px-1 pt-4 text-center text-sm tracking-tight">
-        After giving your email you'll get a
-        <span className="underline"> verification email</span>. Please check
-        your inbox and verify your email.
+        After giving your email you'll get a <u>verification email</u>. Please
+        check your inbox and verify your email.
       </p>
       <div className="flex items-center justify-center">
         <Button

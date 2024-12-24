@@ -15,17 +15,17 @@ export default function ServiceCard({
   const [tempData, setTempData] = useState(service);
   const [isEditing, setIsEditing] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
-  const [error, setError] = useState(undefined);
+  const [error, setError] = useState("");
 
   function handleChange(data) {
     setIsEmpty(false);
     setTempData((prevData) => ({ ...prevData, [data.name]: data.value }));
-    setError(undefined);
+    setError("");
   }
 
   function handleCancel() {
     setTempData(service);
-    setError(undefined);
+    setError("");
     setIsEditing(false);
   }
 

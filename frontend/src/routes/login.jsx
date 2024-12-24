@@ -38,7 +38,7 @@ function LoginPage() {
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
+  const [serverError, setServerError] = useState();
   const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
 
   function handleInputData(data) {
@@ -148,8 +148,8 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="flex min-h-screen w-full max-w-md flex-col px-10 sm:h-auto sm:min-h-0
-          sm:rounded-md sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
+        className="flex w-full max-w-md flex-col px-10 sm:h-auto sm:min-h-0 sm:rounded-xl
+          sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
         <ServerError styles="mb-2 mt-4" error={serverError} />
@@ -176,7 +176,6 @@ function LoginPage() {
         <form
           onSubmit={formSubmitHandler}
           method="POST"
-          action=""
           autoComplete="on"
           className="flex flex-col"
         >
@@ -186,7 +185,6 @@ function LoginPage() {
             type="text"
             name="email"
             id="emailInput"
-            ariaLabel="Email"
             autoComplete="email"
             labelText="Email"
             errorText={errorMessage.email}
@@ -199,8 +197,7 @@ function LoginPage() {
             type="password"
             name="password"
             id="passwordInput"
-            ariaLabel="Password"
-            autoComplete="password"
+            autoComplete="current-password"
             labelText="Password"
             errorText={errorMessage.password}
             inputValidation={passwordValidation}

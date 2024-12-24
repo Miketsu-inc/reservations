@@ -14,7 +14,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
+  const [serverError, setServerError] = useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -45,7 +45,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
-            setServerError(undefined);
+            setServerError("");
             isCompleted(true);
             isSubmitDone(true);
           }

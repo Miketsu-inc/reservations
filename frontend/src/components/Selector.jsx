@@ -1,6 +1,6 @@
+import BackArrowIcon from "@icons/BackArrowIcon";
+import { useClickOutside } from "@lib/hooks";
 import { Children, cloneElement, useRef, useState } from "react";
-import BackArrowIcon from "../assets/icons/BackArrowIcon";
-import { useClickOutside } from "../lib/hooks";
 
 export default function Selector({
   children,
@@ -33,7 +33,7 @@ export default function Selector({
           setShowOptions(!showOptions);
         }}
       >
-        <div className={"flex w-full flex-nowrap justify-between gap-1 p-1"}>
+        <div className="flex w-full flex-nowrap justify-between gap-1 p-1">
           <span className="overflow-hidden text-nowrap">{value}</span>
           <BackArrowIcon styles="-rotate-90 w-5 h-5" />
         </div>

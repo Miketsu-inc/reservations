@@ -11,7 +11,7 @@ const defaultFormData = {
 
 const defaultMerchantUrl = {
   valid: false,
-  url: undefined,
+  url: "",
 };
 
 var keyUpTimer;
@@ -20,7 +20,7 @@ export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
+  const [serverError, setServerError] = useState("");
   const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
 
   function handleSubmit(e) {
@@ -51,7 +51,7 @@ export default function MerchantInfoForm({ isCompleted }) {
             const result = await response.json();
             setServerError(result.error.message);
           } else {
-            setServerError(undefined);
+            setServerError("");
             isCompleted(true);
           }
         } catch (err) {
@@ -142,19 +142,17 @@ export default function MerchantInfoForm({ isCompleted }) {
           inputData={handleInputData}
           hasError={isEmpty}
         />
-        {merchantUrl.url && (
-          <p className="text-sm dark:text-gray-400">
-            {merchantUrl.valid ? (
-              <span>
-                Your URL will be: https://miketsu.com/m/{merchantUrl.url}
-              </span>
-            ) : (
-              <span className="text-red-600">
-                The name '{merchantUrl.url}' is already taken.
-              </span>
-            )}
-          </p>
-        )}
+        <p
+          className={`${merchantUrl.url ? "" : "invisible"} text-sm dark:text-gray-400`}
+        >
+          <span
+            className={`${merchantUrl.valid ? "text-text_color" : "text-red-600"}`}
+          >
+            {merchantUrl.valid
+              ? `Your URL will be: https://miketsu.com/m/${merchantUrl.url}`
+              : `The name '${merchantUrl.url}' is already taken.`}
+          </span>
+        </p>
         <Input
           type="email"
           styles="p-2"

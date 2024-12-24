@@ -1,12 +1,12 @@
+import ServerError from "@components/ServerError";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { useClickOutside } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useCallback, useRef, useState } from "react";
-import ServerError from "../../../../../components/ServerError";
-import { useClickOutside } from "../../../../../lib/hooks";
 import CalendarModal from "./CalendarModal";
 
 const defaultEventInfo = {
@@ -23,7 +23,7 @@ const defaultEventInfo = {
 
 export default function Calendar() {
   const modalRef = useRef();
-  const [serverError, setServerError] = useState("");
+  const [serverError, setServerError] = useState();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
   useClickOutside(modalRef, () => setIsModalOpen(false));
@@ -63,7 +63,7 @@ export default function Calendar() {
           setServerError(result.error.message);
           failureCallback(result.error.message);
         } else {
-          setServerError(undefined);
+          setServerError("");
 
           if (result.data !== null) {
             const events = formatData(result.data);

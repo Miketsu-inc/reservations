@@ -39,8 +39,8 @@ function MerchantSignup() {
       <div
         className={`${
           !isSubmitDone
-            ? `flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
-              sm:rounded-3xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg`
+            ? `flex w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
+              sm:rounded-xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg`
             : ""
           } `}
       >

@@ -109,12 +109,10 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         Please try to provide strong passwords
       </p>
       <FloatingLabelInput
-        styles=""
         ref={passwordRef}
         type="password"
         name="password"
         id="passwordInput"
-        ariaLabel="Password"
         autoComplete="new-password"
         labelText="Password"
         errorText={errorMessage.password}
@@ -127,7 +125,6 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         type="password"
         name="confirmPassword"
         id="confirmPasswordInput"
-        ariaLabel="Confirm Password"
         autoComplete="new-password"
         labelText="Confirm Password"
         errorText={errorMessage.confirmPassword}

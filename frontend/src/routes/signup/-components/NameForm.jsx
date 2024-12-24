@@ -99,12 +99,10 @@ export default function NameForm({
         Enter your first and last name, which you will use over the application.
       </p>
       <FloatingLabelInput
-        styles=""
         ref={firstNameRef}
         type="text"
         name="firstName"
         id="firstNameInput"
-        ariaLabel="First Name"
         autoComplete="family-name"
         labelText="First Name"
         errorText={errorMessage.firstname}
@@ -117,7 +115,6 @@ export default function NameForm({
         type="text"
         name="lastName"
         id="lastNameInput"
-        ariaLabel="last name"
         autoComplete="given-name"
         labelText="Last Name"
         errorText={errorMessage.lastname}

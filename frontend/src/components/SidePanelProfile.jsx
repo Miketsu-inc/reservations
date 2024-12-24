@@ -1,4 +1,4 @@
-import BackArrowIcon from "../assets/icons/BackArrowIcon";
+import BackArrowIcon from "@icons/BackArrowIcon";
 
 export default function SidePanelProfile({ image, text, closeSidePanel }) {
   return (

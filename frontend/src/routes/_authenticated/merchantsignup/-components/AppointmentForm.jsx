@@ -80,10 +80,9 @@ export default function AppointmentForm({ sendInputData }) {
         />
 
         <Button
-          onCLick={""}
           styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
-          name=""
+          name="add service"
           type="submit"
           buttonText="Add Service"
         />

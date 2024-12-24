@@ -1,6 +1,6 @@
+import Loading from "@components/Loading";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
-import Loading from "../../../../components/Loading";
 import Calendar from "./-components/Calendar";
 
 export const Route = createLazyFileRoute(

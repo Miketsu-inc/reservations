@@ -66,7 +66,6 @@ function SettingsPage() {
           <Selector
             defaultValue="Organization data"
             styles="p-2 px-4 bg-bg_color dark:bg-layer_bg mt-1"
-            dropdownStyles=""
           >
             <SelectorItem styles="pl-8" key="3" value="">
               Email

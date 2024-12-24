@@ -27,7 +27,7 @@ function SingUpPage() {
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
-  const [serverError, setServerError] = useState(undefined);
+  const [serverError, setServerError] = useState("");
   const { step, stepIndex, nextStep, stepCount } = useMultiStepForm([
     <EmailForm
       key="emailForm"
@@ -108,15 +108,15 @@ function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="flex min-h-screen w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
-          sm:rounded-3xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg"
+        className="flex w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
+          sm:rounded-xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg"
       >
         <ProgressBar
           currentStep={stepIndex}
           stepCount={stepCount}
           isSubmitDone={isSubmitDone}
         />
-        <ServerError styles="" error={serverError} />
+        <ServerError error={serverError} />
         {isSubmitDone ? (
           <SubmissionCompleted text="You signed up successfully" />
         ) : (

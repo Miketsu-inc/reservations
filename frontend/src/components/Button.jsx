@@ -1,4 +1,4 @@
-import LoaderIcon from "../assets/icons/LoaderIcon";
+import LoaderIcon from "@icons/LoaderIcon";
 
 export default function Button({
   children,
@@ -26,7 +26,7 @@ export default function Button({
         </div>
       ) : children ? (
         <div className="flex items-center justify-center">
-          <span className="">{children}</span>
+          <span>{children}</span>
           <span>{buttonText}</span>
         </div>
       ) : (
