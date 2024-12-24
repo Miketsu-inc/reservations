@@ -161,17 +161,16 @@ export default function Calendar() {
             // }}
           />
         </div>
-        <span ref={modalRef}>
+        {isModalOpen && (
           <CalendarModal
             ref={modalRef}
             eventInfo={eventInfo}
-            isOpen={isModalOpen}
             close={() => {
               setIsModalOpen(false);
             }}
             setError={setServerError}
           />
-        </span>
+        )}
       </div>
     </>
   );
