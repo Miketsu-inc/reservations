@@ -19,6 +19,10 @@ create table "Merchant" (
     url_name                varchar(30)     unique not null,
     owner_id                uuid            references "User" (ID) not null,
     contact_email           varchar(320)    not null,
+    introduction            varchar(150),
+    announcement            varchar(200),
+    about_us                text,
+    parking_info            text,
     settings                jsonb
 );
 

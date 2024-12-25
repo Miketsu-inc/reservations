@@ -52,6 +52,11 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		UrlName:      urlName,
 		OwnerId:      userID,
 		ContactEmail: signup.ContactEmail,
+		Intoduction:  "",
+		Annoucement:  "",
+		AboutUs:      "",
+		ParkingInfo:  "",
+		PaymentInfo:  "",
 		Settings:     database.MerchantSettings{},
 	})
 	if err != nil {

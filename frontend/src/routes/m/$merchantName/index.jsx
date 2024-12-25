@@ -31,12 +31,13 @@ export const Route = createFileRoute("/m/$merchantName/")({
 const defaultMerchantInfo = {
   merchant_name: "",
   location_id: 0,
-  short_location: "",
   contact_email: "",
-  short_description: "",
-  parking_info: "",
-  about_us: "",
+  short_location: "",
+  introduction: "",
   annoucement: "",
+  about_us: "",
+  parking_info: "",
+  payment_info: "",
   services: [],
 };
 
@@ -58,6 +59,11 @@ function MerchantPage() {
         location_id: loaderData.location_id,
         contact_email: loaderData.contact_email,
         short_location: shortLocation,
+        introduction: loaderData.introduction,
+        annoucement: loaderData.annoucement,
+        about_us: loaderData.about_us,
+        parking_info: loaderData.parking_info,
+        payment_info: loaderData.payment_info,
         services: loaderData.services,
       });
     }
@@ -82,8 +88,8 @@ function MerchantPage() {
             </div>
           </div>
           <div className="flex w-full flex-col gap-2 md:items-end lg:items-start">
-            <p className="text-justify">Hair stylist open on somedays</p>
-            <p className="text-justify">An annoucement</p>
+            <p className="text-justify">{merchantInfo.introduction}</p>
+            <p className="text-justify">{merchantInfo.annoucement}</p>
           </div>
         </div>
         <div className="h-40 sm:h-52 md:h-72 lg:h-full lg:max-h-full lg:w-2/3">
@@ -120,13 +126,8 @@ function MerchantPage() {
           ))}
         </div>
         <div className="flex flex-col gap-6 lg:w-1/3">
-          <ReservationSection name="About us" show={true}>
-            <p>
-              Short description about the core values of the company, maybe also
-              what they belive in. How they do their buisness. What they would
-              like to achive in the future. I'm basically just bullshiting at
-              this point. Should have used lorem ipsum
-            </p>
+          <ReservationSection name="About us" show={merchantInfo.about_us}>
+            <p>{merchantInfo.about_us}</p>
           </ReservationSection>
           <ReservationSection name="Opening hours" show={true}>
             <div className="flex flex-col gap-2 *:grid *:grid-cols-3">
@@ -160,8 +161,14 @@ function MerchantPage() {
               </div>
             </div>
           </ReservationSection>
-          <ReservationSection name="Location" show={merchantInfo.shortLocation}>
-            <p>{merchantInfo.shortLocation}</p>
+          <ReservationSection name="Payment" show={merchantInfo.payment_info}>
+            <p>{merchantInfo.payment_info}</p>
+          </ReservationSection>
+          <ReservationSection
+            name="Location"
+            show={merchantInfo.short_location}
+          >
+            <p>{merchantInfo.short_location}</p>
           </ReservationSection>
           <ReservationSection name="Parking" show={merchantInfo.parking_info}>
             <p>{merchantInfo.parking_info}</p>
