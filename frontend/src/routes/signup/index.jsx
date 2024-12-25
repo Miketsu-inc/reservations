@@ -2,7 +2,7 @@ import ProgressBar from "@components/ProgressBar";
 import ServerError from "@components/ServerError";
 import { useMultiStepForm } from "@lib/hooks";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import EmailForm from "./-components/EmailForm";
 import NameForm from "./-components/NameForm";
 import PasswordForm from "./-components/PasswordForm";
@@ -25,7 +25,7 @@ function SingUpPage() {
   const router = useRouter();
   const search = Route.useSearch();
   const [signUpData, setSignUpData] = useState(defaultSignUpData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const [serverError, setServerError] = useState("");
   const { step, stepIndex, nextStep, stepCount } = useMultiStepForm([
@@ -49,48 +49,40 @@ function SingUpPage() {
       sendInputData={signUpDataHandler}
       SubmitForm={handleSubmit}
       isCompleted={isCompletedHandler}
-      isSubmitting={isSubmitting}
+      isLoading={isLoading}
     />,
   ]);
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/auth/user/signup", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(signUpData),
-          });
+  async function handleSubmit() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/v1/auth/user/signup", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(signUpData),
+      });
 
-          if (!response.ok) {
-            const result = await response.json();
-            setServerError(result.error.message);
-          } else {
-            setServerError();
-            setIsSubmitDone(true);
+      if (!response.ok) {
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        setServerError();
+        setIsSubmitDone(true);
 
-            if (search.redirect) {
-              router.history.push(search.redirect);
-            } else {
-              router.navigate({ from: Route.fullPath, to: "/" });
-            }
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
+        if (search.redirect) {
+          router.history.push(search.redirect);
+        } else {
+          router.navigate({ from: Route.fullPath, to: "/" });
         }
-      };
-      sendRequest();
+      }
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-  }, [signUpData, isSubmitting, router, search]);
-
-  function handleSubmit() {
-    setIsSubmitting(true);
   }
 
   function signUpDataHandler(data) {

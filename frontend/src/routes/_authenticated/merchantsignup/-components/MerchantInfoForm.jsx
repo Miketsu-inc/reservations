@@ -2,7 +2,7 @@ import Button from "@components/Button";
 import Input from "@components/Input";
 import ServerError from "@components/ServerError";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 const defaultFormData = {
   name: "",
@@ -19,50 +19,44 @@ var keyUpTimer;
 export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const form = e.target;
+
     if (!form.checkValidity()) {
       setIsEmpty(true);
       return;
     }
-    setIsSubmitting(true);
-  }
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/auth/merchant/signup", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(formData),
-          });
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/v1/auth/merchant/signup", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-          if (!response.ok) {
-            invalidateLocalSotrageAuth(response.status);
-            const result = await response.json();
-            setServerError(result.error.message);
-          } else {
-            setServerError("");
-            isCompleted(true);
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-      sendRequest();
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        setServerError("");
+        isCompleted(true);
+      }
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isSubmitting, formData, isCompleted]);
+  }
 
   const checkMerchantUrl = useCallback(async (merchantName) => {
     if (merchantName !== "") {
@@ -171,7 +165,7 @@ export default function MerchantInfoForm({ isCompleted }) {
             hover:bg-hvr_primary text-white"
           type="submit"
           buttonText="Continue"
-          isLoading={isSubmitting}
+          isLoading={isLoading}
         />
       </form>
     </>

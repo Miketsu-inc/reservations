@@ -9,7 +9,7 @@ import {
 } from "@lib/constants";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 const defaultLoginData = {
   email: {
@@ -37,7 +37,7 @@ function LoginPage() {
   const emailRef = useRef();
   const passwordRef = useRef();
   const [loginData, setLoginData] = useState(defaultLoginData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState();
   const [errorMessage, setErrorMessage] = useState(defaultErrorMeassage);
 
@@ -50,6 +50,7 @@ function LoginPage() {
       },
     }));
   }
+
   function updateErrors(key, message) {
     setErrorMessage((prevErrorMessage) => ({
       ...prevErrorMessage,
@@ -65,10 +66,12 @@ function LoginPage() {
       );
       return false;
     }
+
     if (!email.includes("@")) {
       updateErrors("email", "Please enter a valid email");
       return false;
     }
+
     return true;
   }
 
@@ -80,6 +83,7 @@ function LoginPage() {
       );
       return false;
     }
+
     if (password.length > MAX_PASSWORD_LENGTH) {
       updateErrors(
         "password",
@@ -87,64 +91,56 @@ function LoginPage() {
       );
       return false;
     }
+
     return true;
   }
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/auth/user/login", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              email: loginData.email.value,
-              password: loginData.password.value,
-            }),
-          });
-
-          if (!response.ok) {
-            invalidateLocalSotrageAuth(response.status);
-            const result = await response.json();
-            setServerError(result.error.message);
-          } else {
-            setServerError();
-
-            if (search.redirect) {
-              router.history.push(search.redirect);
-            } else {
-              router.navigate({ from: Route.fullPath, to: "/" });
-            }
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-      sendRequest();
-    }
-  }, [loginData, isSubmitting, router, search]);
-
-  function formSubmitHandler(e) {
+  async function formSubmitHandler(e) {
     e.preventDefault();
-    let hasError = false;
 
     if (!loginData.email.isValid) {
       emailRef.current.triggerValidationError();
-      hasError = true;
+      return;
     }
     if (!loginData.password.isValid) {
       passwordRef.current.triggerValidationError();
-      hasError = true;
+      return;
     }
-    if (!hasError) {
-      setIsSubmitting(true);
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/v1/auth/user/login", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginData.email.value,
+          password: loginData.password.value,
+        }),
+      });
+
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        setServerError();
+
+        if (search.redirect) {
+          router.history.push(search.redirect);
+        } else {
+          router.navigate({ from: Route.fullPath, to: "/" });
+        }
+      }
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }
+
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
@@ -214,7 +210,7 @@ function LoginPage() {
             type="submit"
             styles="mt-4 focus-visible:outline-1 hover:bg-hvr_primary text-white py-2"
             buttonText="Login"
-            isLoading={isSubmitting}
+            isLoading={isLoading}
           />
         </form>
         <hr className="mt-10 border-text_color" />

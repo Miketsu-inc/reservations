@@ -1,7 +1,7 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ServiceCard from "./ServiceCard";
 import SidepanelForm from "./SidepanelForm";
 
@@ -10,44 +10,37 @@ export default function AppointmentsAdder({ redirect }) {
   const [isAdding, setIsAdding] = useState(false);
   const [fromError, setFormError] = useState();
   const [submitError, setSubmitError] = useState();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/merchants/service", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(services),
-          });
-
-          if (!response.ok) {
-            invalidateLocalSotrageAuth(response.status);
-            const result = await response.json();
-            setSubmitError(result.error.message);
-          } else {
-            redirect();
-          }
-        } catch (err) {
-          setSubmitError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-      sendRequest();
-    }
-  }, [services, isSubmitting, redirect]);
-
-  function handleSubmit() {
+  async function handleSubmit() {
     if (services.length === 0) {
       setSubmitError("Please make at least one appointment");
       return;
     }
-    setIsSubmitting(true);
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/v1/merchants/service", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(services),
+      });
+
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setSubmitError(result.error.message);
+      } else {
+        redirect();
+      }
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function addService(newService) {
@@ -55,12 +48,15 @@ export default function AppointmentsAdder({ redirect }) {
       const exists = prevServices.some(
         (service) => service.name === newService.name
       );
+
       if (exists) {
         setFormError("You cant add appointments with the same name");
         return prevServices;
       }
+
       setIsAdding(false);
       setFormError("");
+
       return [...prevServices, newService];
     });
   }
@@ -133,7 +129,7 @@ export default function AppointmentsAdder({ redirect }) {
                 hover:bg-hvr_primary text-white"
               onClick={handleSubmit}
               buttonText="Save Services"
-              isLoading={isSubmitting}
+              isLoading={isLoading}
             />
           </div>
         </div>

@@ -22,7 +22,7 @@ const defaultErrorMeassage = {
 export default function NameForm({
   isCompleted,
   sendInputData,
-  isSubmitting,
+  isLoading,
   SubmitForm,
 }) {
   const firstNameRef = useRef();
@@ -127,7 +127,7 @@ export default function NameForm({
             hover:bg-hvr_primary text-white py-2"
           type="button"
           onClick={handleClick}
-          isLoading={isSubmitting}
+          isLoading={isLoading}
           buttonText="Finish"
         ></Button>
       </div>

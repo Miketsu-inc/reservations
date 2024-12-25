@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/merchantsignup/")({
 });
 
 function MerchantSignup() {
-  const navigate = useNavigate({ from: "/merchantsignup" });
+  const navigate = useNavigate({ from: Route.fullPath });
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const { step, _, nextStep } = useMultiStepForm([
     <MerchantInfoForm key="companyInfoForm" isCompleted={isCompletedHandler} />,

@@ -2,7 +2,7 @@ import Button from "@components/Button";
 import Input from "@components/Input";
 import ServerError from "@components/ServerError";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const defaultFormData = {
   country: "",
@@ -13,51 +13,44 @@ const defaultFormData = {
 export default function LocationForm({ isSubmitDone, isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const form = e.target;
+
     if (!form.checkValidity()) {
       setIsEmpty(true);
       return;
     }
 
-    setIsSubmitting(true);
-  }
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/v1/merchants/location", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-  useEffect(() => {
-    if (isSubmitting) {
-      const sendRequest = async () => {
-        try {
-          const response = await fetch("/api/v1/merchants/location", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(formData),
-          });
-
-          if (!response.ok) {
-            invalidateLocalSotrageAuth(response.status);
-            const result = await response.json();
-            setServerError(result.error.message);
-          } else {
-            setServerError("");
-            isCompleted(true);
-            isSubmitDone(true);
-          }
-        } catch (err) {
-          setServerError(err.message);
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-      sendRequest();
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        setServerError("");
+        isCompleted(true);
+        isSubmitDone(true);
+      }
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isSubmitting, formData, isCompleted, isSubmitDone]);
+  }
 
   function handleInputData(data) {
     setFormData((prevFormData) => ({
@@ -143,7 +136,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
             hover:bg-hvr_primary text-white"
           type="submit"
           buttonText="Continue"
-          isLoading={isSubmitting}
+          isLoading={isLoading}
         />
       </form>
     </>
