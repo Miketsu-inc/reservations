@@ -48,11 +48,12 @@ export default forwardRef(function CalendarModal(
   }
 
   function merchantCommentChangeHandler(e) {
+    setMerchantComment(e.target.value);
+
     if (e.target.value === eventInfo.extendedProps.merchant_comment) {
       SetHasUnsavedChanges(false);
     } else {
       SetHasUnsavedChanges(true);
-      setMerchantComment(e.target.value);
     }
   }
 
