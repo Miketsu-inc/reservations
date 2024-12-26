@@ -95,10 +95,10 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 
 func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	type signUpData struct {
-		FirstName   string `json:"firstName" validate:"required"`
-		LastName    string `json:"lastName" validate:"required"`
+		FirstName   string `json:"first_name" validate:"required"`
+		LastName    string `json:"last_name" validate:"required"`
 		Email       string `json:"email" validate:"required,email"`
-		PhoneNumber string `json:"phoneNum" validate:"required,e164"`
+		PhoneNumber string `json:"phone_number" validate:"required,e164"`
 		Password    string `json:"password" validate:"required,ascii"`
 	}
 	var signup signUpData

@@ -19,12 +19,7 @@ const defaultErrorMeassage = {
   lastname: "Please enter your last name",
 };
 
-export default function NameForm({
-  isCompleted,
-  sendInputData,
-  isLoading,
-  SubmitForm,
-}) {
+export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);
@@ -83,11 +78,7 @@ export default function NameForm({
     }
 
     if (!hasError) {
-      sendInputData({
-        firstName: nameData.firstName.value,
-        lastName: nameData.lastName.value,
-      });
-      SubmitForm();
+      SubmitForm(nameData.firstName.value, nameData.lastName.value);
       isCompleted(true);
     }
   }

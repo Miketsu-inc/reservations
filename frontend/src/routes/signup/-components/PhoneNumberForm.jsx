@@ -3,7 +3,7 @@ import FloatingLabelInput from "@components/FloatingLabelInput";
 import { useRef, useState } from "react";
 
 const defaultPhoneNumData = {
-  phoneNum: {
+  phone_number: {
     value: "",
     isValid: false,
   },
@@ -16,18 +16,18 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
     "Please enter your phone number!"
   );
 
-  function PhoneNumValidation(phoneNum) {
-    if (phoneNum.length > 12) {
+  function PhoneNumValidation(phone_number) {
+    if (phone_number.length > 12) {
       setErrorMessage("Inputs must be 12 characters or less!");
       return false;
     }
 
-    if (phoneNum[0] !== "+") {
+    if (phone_number[0] !== "+") {
       setErrorMessage("Phone number should start with a '+' character!");
       return false;
     }
 
-    return phoneNum;
+    return phone_number;
   }
 
   function handleInputData(data) {
@@ -41,11 +41,11 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
   }
 
   function handleClick() {
-    if (!phoneNumData.phoneNum.isValid) {
+    if (!phoneNumData.phone_number.isValid) {
       phoneNumRef.current.triggerValidationError();
     } else {
       sendInputData({
-        phoneNum: phoneNumData.phoneNum.value,
+        phone_number: phoneNumData.phone_number.value,
       });
       isCompleted(true);
     }
@@ -61,7 +61,7 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
       <FloatingLabelInput
         ref={phoneNumRef}
         type="tel"
-        name="phoneNum"
+        name="phone_number"
         id="PhoneNumInput"
         autoComplete="tel"
         labelText="Enter your phone number"

@@ -10,10 +10,10 @@ import PhoneNumberForm from "./-components/PhoneNumberForm";
 import SubmissionCompleted from "./-components/SubmissionCompleted";
 
 const defaultSignUpData = {
-  firstName: "",
-  lastName: "",
+  first_name: "",
+  last_name: "",
   email: "",
-  phoneNum: "",
+  phone_number: "",
   password: "",
 };
 
@@ -46,14 +46,13 @@ function SingUpPage() {
     />,
     <NameForm
       key="nameForm"
-      sendInputData={signUpDataHandler}
-      SubmitForm={handleSubmit}
+            SubmitForm={handleSubmit}
       isCompleted={isCompletedHandler}
       isLoading={isLoading}
     />,
   ]);
 
-  async function handleSubmit() {
+  async function handleSubmit(firstName, lastName) {
     setIsLoading(true);
     try {
       const response = await fetch("/api/v1/auth/user/signup", {
@@ -62,7 +61,13 @@ function SingUpPage() {
           Accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify(signUpData),
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: signUpData.email,
+          password: signUpData.password,
+          phone_number: signUpData.phone_number,
+        }),
       });
 
       if (!response.ok) {
