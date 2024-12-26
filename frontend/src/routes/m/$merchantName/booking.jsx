@@ -129,7 +129,7 @@ function SelectDateTime() {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-10">
+    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-8">
       <div className="py-5">
         <Link from={Route.fullPath} to="..">
           <button className="inline-flex gap-1 hover:underline">
@@ -214,7 +214,7 @@ function SelectDateTime() {
                 />
               </div>
               <div
-                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-10 py-3 dark:bg-layer_bg md:static
+                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 dark:bg-layer_bg md:static
                   md:pb-0 md:pr-32 md:pt-10"
               >
                 <Button

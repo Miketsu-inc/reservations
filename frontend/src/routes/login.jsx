@@ -144,7 +144,7 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="flex w-full max-w-md flex-col px-10 sm:h-auto sm:min-h-0 sm:rounded-xl
+        className="flex w-full max-w-md flex-col px-8 sm:h-auto sm:min-h-0 sm:rounded-xl
           sm:bg-layer_bg sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>

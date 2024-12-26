@@ -65,7 +65,8 @@ export default function ServiceCard({
                 onClick={() => {
                   handleDelete(index);
                 }}
-                styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg flex-shrink-0 cursor-pointer"
+                styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg fill-current flex-shrink-0
+                  cursor-pointer"
               />
             </div>
             <h3 className="mb-6 truncate pl-5 pt-3 text-lg font-semibold text-text_color">
@@ -77,7 +78,7 @@ export default function ServiceCard({
               {service.duration} min
             </span>
             <span className="text-sm tracking-tight text-green-600 dark:text-green-400">
-              {service.price} FT
+              {parseFloat(service.price).toLocaleString()} HUF
             </span>
           </div>
         </>
@@ -140,7 +141,7 @@ export default function ServiceCard({
               type="reset"
               onClick={handleCancel}
             >
-              <XIcon styles="h-5 w-5" />
+              <XIcon styles="h-5 w-5 fill-current" />
             </Button>
             <Button
               styles="text-xs rounded-md border-black dark:border-gray-300 border-[1px] py-[0.20rem]

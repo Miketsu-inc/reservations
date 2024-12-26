@@ -117,7 +117,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         className="flex w-full flex-col items-center justify-center gap-4 *:w-full"
         onSubmit={handleSubmit}
       >
-        <h1 className="text-center text-2xl font-semibold">
+        <h1 className="mb-8 text-center text-xl font-semibold sm:mb-4">
           Start signing up your company
         </h1>
         <p className="mt-4 text-center">
@@ -149,7 +149,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         </p>
         <Input
           type="email"
-          styles="p-2"
+          styles="p-2 mt-2"
           placeholder="mycompany@gmail.com"
           pattern=".{0,254}@.*"
           name="contact_email"
@@ -161,7 +161,7 @@ export default function MerchantInfoForm({ isCompleted }) {
           hasError={isEmpty}
         />
         <Button
-          styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+          styles="py-2 sm:mt-10 mt-14 font-semibold focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
           type="submit"
           buttonText="Continue"

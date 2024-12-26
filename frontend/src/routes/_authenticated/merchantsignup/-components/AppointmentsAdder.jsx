@@ -79,10 +79,10 @@ export default function AppointmentsAdder({ redirect }) {
     <>
       <div className="relative">
         <div
-          className={`p-6 transition-all duration-300 ${isAdding ? "sm:mr-96 lg:pr-20 xl:pr-40" : ""}`}
+          className={`transition-all duration-300 ${isAdding ? "sm:mr-96 lg:pr-20 xl:pr-40" : ""}`}
         >
           <ServerError error={submitError} styles="mb-4" />
-          <h1 className="text-3xl">Your Services</h1>
+          <h1 className="mb-14 mt-4 text-2xl">Your Services</h1>
           <div
             className={`mt-6 grid w-full grid-cols-1 gap-6
               ${isAdding ? "sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-3 xl:grid-cols-4"}`}
@@ -119,13 +119,13 @@ export default function AppointmentsAdder({ redirect }) {
               </span>
             </button>
           </div>
-          <p className="mt-4 text-center text-sm">
+          <p className="mt-5 text-center text-sm">
             You can also add, remove or edit services later
           </p>
           <div className="mt-4 flex w-full flex-col items-center justify-center">
             <Button
               type="submit"
-              styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+              styles="p-2 w-full mt-10 font-semibold focus-visible:outline-1 bg-primary
                 hover:bg-hvr_primary text-white"
               onClick={handleSubmit}
               buttonText="Save Services"

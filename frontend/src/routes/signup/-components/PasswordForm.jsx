@@ -103,16 +103,14 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Password</h2>
-      <p className="py-2 text-center">
-        Enter a password, which later you can use to login into your account.
-        Please try to provide strong passwords
-      </p>
+      <h2 className="mb-8 text-center text-xl font-semibold">Password</h2>
       <FloatingLabelInput
+        styles=""
         ref={passwordRef}
         type="password"
         name="password"
         id="passwordInput"
+        ariaLabel="Password"
         autoComplete="new-password"
         labelText="Password"
         errorText={errorMessage.password}
@@ -125,16 +123,17 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         type="password"
         name="confirmPassword"
         id="confirmPasswordInput"
+        ariaLabel="Confirm Password"
         autoComplete="new-password"
         labelText="Confirm Password"
         errorText={errorMessage.confirmPassword}
         inputValidation={confirmPasswordValidation}
         inputData={handleInputData}
       />
-      <div className="mt-4 flex items-center justify-center">
+      <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="mt-10 w-full font-semibold mt-4 focus-visible:outline-1 bg-primary
-            hover:bg-hvr_primary text-white py-2"
+          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
+            py-2"
           type="button"
           onClick={handleClick}
           buttonText="Continue"

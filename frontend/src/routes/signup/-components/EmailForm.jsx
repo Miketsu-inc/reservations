@@ -49,8 +49,8 @@ export default function EmailForm({ isCompleted, sendInputData }) {
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Email</h2>
-      <p className="py-2 text-center">
+      <h2 className="mt-2 text-center text-xl font-semibold">Email</h2>
+      <p className="mb-8 py-2 text-center text-gray-300">
         Enter your email to get started with creating your account
       </p>
       <FloatingLabelInput
@@ -64,17 +64,13 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         inputValidation={emailValidation}
         inputData={handleInputData}
       />
-      <p className="px-1 pt-4 text-center text-sm tracking-tight">
-        After giving your email you'll get a <u>verification email</u>. Please
-        check your inbox and verify your email.
-      </p>
-      <div className="flex items-center justify-center">
+      <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="mt-6 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
-            text-white py-2"
+          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
+            py-2"
           type="button"
           onClick={handleClick}
-          buttonText="Verify email"
+          buttonText="Continue"
         />
       </div>
     </>

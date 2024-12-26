@@ -66,11 +66,10 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
         className="flex w-full flex-col items-center justify-center gap-4 *:w-full"
         onSubmit={handleSubmit}
       >
-        <h1 className="text-center text-2xl font-bold">Location</h1>
-        <p className="text-center">
-          Give us the location of your working space
-        </p>
-        <ServerError styles="mt-4 mb-2" error={serverError} />
+        <h1 className="mb-4 text-center text-xl font-semibold sm:mb-6">
+Location
+</h1>
+                <ServerError styles="mt-4 mb-2" error={serverError} />
         <div className="flex w-full gap-4">
           <div className="flex-grow">
             <Input
@@ -103,7 +102,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:mt-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:mt-6 sm:grid-cols-2">
           <Input
             type="text"
             styles="w-full p-2"
@@ -132,7 +131,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
           />
         </div>
         <Button
-          styles="p-2 w-5/6 mt-10 font-semibold focus-visible:outline-1 bg-primary
+          styles="p-2 sm:mt-10 mt-8 font-semibold focus-visible:outline-1 bg-primary
             hover:bg-hvr_primary text-white"
           type="submit"
           buttonText="Continue"

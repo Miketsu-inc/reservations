@@ -25,7 +25,7 @@ export default function SidepanelForm({
             setIsAdding(false);
             setFormError("");
           }}
-          styles="hover:bg-hvr_gray w-8 h-8 rounded-lg"
+          styles="hover:bg-hvr_gray w-8 h-8 rounded-lg fill-current"
         />
       </div>
       <ServerError styles="mt-4" error={formError} />

@@ -46,7 +46,7 @@ function SingUpPage() {
     />,
     <NameForm
       key="nameForm"
-            SubmitForm={handleSubmit}
+      SubmitForm={handleSubmit}
       isCompleted={isCompletedHandler}
       isLoading={isLoading}
     />,
@@ -105,15 +105,15 @@ function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="flex w-full max-w-md flex-col px-10 shadow-sm sm:h-4/5 sm:min-h-1.5
-          sm:rounded-xl sm:bg-layer_bg sm:pb-16 sm:pt-6 sm:shadow-lg"
+        className="flex w-full max-w-md flex-col px-8 shadow-sm sm:rounded-xl sm:bg-layer_bg
+          sm:pb-16 sm:pt-6 sm:shadow-lg"
       >
         <ProgressBar
           currentStep={stepIndex}
           stepCount={stepCount}
           isSubmitDone={isSubmitDone}
         />
-        <ServerError error={serverError} />
+        <ServerError error={serverError} styles="mb-4" />
         {isSubmitDone ? (
           <SubmissionCompleted text="You signed up successfully" />
         ) : (

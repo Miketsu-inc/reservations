@@ -85,10 +85,7 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
 
   return (
     <>
-      <h2 className="mt-8 py-2 text-center text-xl sm:mt-4">Username</h2>
-      <p className="py-2 text-center">
-        Enter your first and last name, which you will use over the application.
-      </p>
+      <h2 className="mb-8 text-center text-xl font-semibold">Username</h2>
       <FloatingLabelInput
         ref={firstNameRef}
         type="text"
@@ -112,14 +109,14 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />
-      <div className="mt-4 flex items-center justify-center">
+      <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="mt-6 w-full font-semibold mt-4 focus-visible:outline-1 bg-primary
-            hover:bg-hvr_primary text-white py-2"
+          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
+            py-2"
           type="button"
           onClick={handleClick}
           isLoading={isLoading}
-          buttonText="Finish"
+          buttonText="Submit"
         ></Button>
       </div>
     </>

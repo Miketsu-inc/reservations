@@ -70,7 +70,7 @@ function MerchantPage() {
   }, [loaderData]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-10">
+    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-8">
       <div className="flex flex-col-reverse gap-4 py-5 lg:h-96 lg:flex-row lg:gap-14 lg:py-10">
         <div className="flex flex-col gap-6 md:flex-row lg:w-1/3 lg:flex-col">
           <div className="flex w-full flex-row">

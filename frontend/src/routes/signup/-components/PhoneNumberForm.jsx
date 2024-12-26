@@ -53,10 +53,9 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
 
   return (
     <>
-      <h1 className="mt-4 text-center text-xl font-semibold">Phone number</h1>
-      <p className="py-2 text-center">
-        Enter your phone number to receive reminder notifications about your
-        appointment
+      <h1 className="mt-2 text-center text-xl font-semibold">Phone number</h1>
+      <p className="mb-8 py-2 text-center text-gray-300">
+        Enter your phone number to receive notifications about your appointments
       </p>
       <FloatingLabelInput
         ref={phoneNumRef}
@@ -69,19 +68,13 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
         inputValidation={PhoneNumValidation}
         inputData={handleInputData}
       />
-
-      <p className="mt-4 px-2 pt-3 text-center text-sm tracking-tight">
-        After giving your number, you'll receive a{" "}
-        <span className="text-nowrap underline"> verification code</span>.
-        Please check your messages and verify your phone number.
-      </p>
-      <div className="flex items-center justify-center">
+      <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="mt-6 w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary
-            text-white py-2"
+          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
+            py-2"
           type="button"
           onClick={handleClick}
-          buttonText="Verify"
+          buttonText="Continue"
         />
       </div>
     </>
