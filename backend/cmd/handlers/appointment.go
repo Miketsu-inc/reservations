@@ -34,13 +34,29 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), newApp.MerchantName)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found by this name: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching merchant by this name: %s", err.Error()))
 		return
 	}
 
 	service, err := a.Postgresdb.GetServiceById(r.Context(), newApp.ServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no service found by this id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
+		return
+	}
+
+	if service.MerchantId != merchantId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this serivce id does not belong to this merchant"))
+		return
+	}
+
+	location, err := a.Postgresdb.GetLocationById(r.Context(), newApp.LocationId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
+		return
+	}
+
+	if location.MerchantId != merchantId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this location id does not belong to this merchant"))
 		return
 	}
 
@@ -74,7 +90,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		MerchantComment: "",
 	}
 	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %v", err))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return
 	}
 
@@ -117,7 +133,15 @@ func (a *Appointment) UpdateMerchantComment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := a.Postgresdb.UpdateMerchantCommentById(r.Context(), data.Id, data.MerchantComment); err != nil {
+	userID := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching for the merchant by this owner id: %s", err.Error()))
+		return
+	}
+
+	if err := a.Postgresdb.UpdateMerchantCommentById(r.Context(), merchantId, data.Id, data.MerchantComment); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
