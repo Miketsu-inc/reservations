@@ -32,7 +32,7 @@ async function fetchHours(merchantName, locationId, serviceId, day) {
   }
 }
 
-export const Route = createFileRoute("/m/$merchantName/booking")({
+export const Route = createFileRoute("/m/$merchantName/booking/")({
   component: SelectDateTime,
   loaderDeps: ({ search: { locationId, serviceId, day } }) => ({
     locationId,
@@ -59,7 +59,7 @@ function SelectDateTime() {
   const router = useRouter();
   const [selectedHour, setSelectedHour] = useState();
   const [serverError, setServerError] = useState();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
   const [userComment, setUserComment] = useState("");
 
@@ -77,7 +77,7 @@ function SelectDateTime() {
     date.setUTCHours(hours, minutes, 0, 0);
     const timeStamp = date.toISOString();
 
-    setIsSubmitting(true);
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/v1/appointments/new", {
@@ -109,11 +109,16 @@ function SelectDateTime() {
 
         const result = await response.json();
         setServerError(result.error.message);
+      } else {
+        router.navigate({
+          from: Route.fullPath,
+          to: "completed",
+        });
       }
     } catch (err) {
       setServerError(err.message);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   }
 
@@ -170,7 +175,7 @@ function SelectDateTime() {
                 />
               </div>
             </div>
-            <div className="pt-8 md:flex md:w-1/2 md:flex-col md:pt-0">
+            <div className="pt-8 md:flex md:w-1/2 md:flex-col md:pr-14 md:pt-0">
               <div className="hidden md:flex md:flex-col md:gap-6">
                 <p className="py-5 text-xl">Summary</p>
                 <div className="text-lg *:grid *:grid-cols-2">
@@ -208,19 +213,18 @@ function SelectDateTime() {
                     setUserComment(e.target.value);
                   }}
                   className="max-h-20 min-h-10 w-full rounded-md border border-gray-400 bg-transparent p-2
-                    text-sm outline-none placeholder:text-sm focus:border-text_color md:max-h-32
-                    md:w-4/5"
+                    text-sm outline-none placeholder:text-sm focus:border-text_color md:max-h-32"
                   placeholder="Add comment your merchant might want to know..."
                 />
               </div>
               <div
                 className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 dark:bg-layer_bg md:static
-                  md:pb-0 md:pr-32 md:pt-10"
+                  md:px-0 md:pt-10"
               >
                 <Button
                   type="submit"
                   disabled={day && selectedHour ? false : true}
-                  isLoading={isSubmitting}
+                  isLoading={isLoading}
                   buttonText="Reserve"
                   styles="w-full font-semibold focus-visible:outline-1 bg-primary hover:bg-hvr_primary
                     text-white py-2"
