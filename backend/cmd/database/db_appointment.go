@@ -32,11 +32,12 @@ func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
 	return nil
 }
 
-func (s *service) UpdateMerchantCommentById(ctx context.Context, appointmentId int, merchant_comment string) error {
+func (s *service) UpdateMerchantCommentById(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_comment string) error {
 	query := `
-	update "Appointment" set merchant_comment = $1 where id = $2
+	update "Appointment" set merchant_comment = $1
+	where id = $2 and merchant_id = $3
 	`
-	_, err := s.db.ExecContext(ctx, query, merchant_comment, appointmentId)
+	_, err := s.db.ExecContext(ctx, query, merchant_comment, appointmentId, merchantId)
 	if err != nil {
 		return err
 	}
