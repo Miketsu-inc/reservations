@@ -22,8 +22,8 @@ export default forwardRef(function CalendarModal(
     }
 
     try {
-      const response = await fetch("/api/v1/appointments/modal", {
-        method: "POST",
+      const response = await fetch("/api/v1/appointments/merchant-comment", {
+        method: "PATCH",
         headers: {
           Accept: "application/json",
           "content-type": "application/json",

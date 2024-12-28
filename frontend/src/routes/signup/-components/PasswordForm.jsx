@@ -105,12 +105,10 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
     <>
       <h2 className="mb-8 text-center text-xl font-semibold">Password</h2>
       <FloatingLabelInput
-        styles=""
         ref={passwordRef}
         type="password"
         name="password"
         id="passwordInput"
-        ariaLabel="Password"
         autoComplete="new-password"
         labelText="Password"
         errorText={errorMessage.password}
@@ -123,7 +121,6 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         type="password"
         name="confirmPassword"
         id="confirmPasswordInput"
-        ariaLabel="Confirm Password"
         autoComplete="new-password"
         labelText="Confirm Password"
         errorText={errorMessage.confirmPassword}

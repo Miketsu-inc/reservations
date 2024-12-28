@@ -13,7 +13,7 @@ const disabledDays = [{ before: new Date() }];
 
 async function fetchHours(merchantName, locationId, serviceId, day) {
   const response = await fetch(
-    `/api/v1/merchants/times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
+    `/api/v1/merchants/available-times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
     {
       method: "GET",
       headers: {
@@ -80,7 +80,7 @@ function SelectDateTime() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/v1/appointments", {
+      const response = await fetch("/api/v1/appointments/new", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",

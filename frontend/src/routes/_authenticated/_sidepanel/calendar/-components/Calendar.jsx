@@ -50,7 +50,7 @@ export default function Calendar() {
     async (fetchInfo, successCallback, failureCallback) => {
       try {
         const response = await fetch(
-          `/api/v1/appointments/calendar?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`,
+          `/api/v1/appointments/all?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`,
           {
             method: "GET",
           }

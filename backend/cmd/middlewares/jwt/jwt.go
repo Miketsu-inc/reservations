@@ -49,8 +49,9 @@ func JwtMiddleware(next http.Handler) http.Handler {
 		// try to verify request with access token
 		claims, err := verifyRequest(r, AccessToken, getTokenFromCookie)
 		if err != nil {
-			// if access token could not be found in cookies it means it's expired or did not exist
-			if !errors.Is(err, ErrJwtAccessNotFound) {
+			// if access token could not be found in cookies it means it's either expired or did not exist
+			// if it is found but invalid unauthorized status can be returned
+			if !errors.Is(err, ErrJwtNotFound) {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
 				return
 			}
@@ -267,7 +268,7 @@ func verifyToken(tokenString string, tokenType JwtType) (jwtlib.MapClaims, error
 	return nil, fmt.Errorf("invalid token")
 }
 
-var ErrJwtAccessNotFound = errors.New("jwt access token could not be found")
+var ErrJwtNotFound = errors.New("jwt token could not be found")
 
 // check if a token is sent with the request
 func verifyRequest(r *http.Request, tokenType JwtType, findTokenFns ...func(r *http.Request, tokenType JwtType) string) (jwtlib.MapClaims, error) {
@@ -280,7 +281,7 @@ func verifyRequest(r *http.Request, tokenType JwtType, findTokenFns ...func(r *h
 		}
 	}
 	if tokenString == "" {
-		return nil, ErrJwtAccessNotFound
+		return nil, ErrJwtNotFound
 	}
 
 	return verifyToken(tokenString, tokenType)
@@ -306,15 +307,3 @@ func getTokenFromCookie(r *http.Request, tokenType JwtType) string {
 
 	return cookie.Value
 }
-
-// Commented as idk how it should be done when having a refresh and access token
-
-// Rerive token from "Authorization" request header: "Authorization: BEARER T".
-// func getTokenFromHeader(r *http.Request) string {
-// 	bearer := r.Header.Get("Authorization")
-// 	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
-// 		return bearer[7:]
-// 	}
-
-// 	return ""
-// }

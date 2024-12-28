@@ -195,17 +195,6 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location, err := m.Postgresdb.GetLocationById(r.Context(), urlLocationId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving location: %s", err.Error()))
-		return
-	}
-
-	if location.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this location id does not belong to this merchant"))
-		return
-	}
-
 	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchantId, urlLocationId, day)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))

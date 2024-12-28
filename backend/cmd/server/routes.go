@@ -67,9 +67,9 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 
-		r.Post("/", appointmentHandler.Create)
-		r.Get("/calendar", appointmentHandler.GetAppointments)
-		r.Post("/modal", appointmentHandler.UpdateMerchantComment)
+		r.Post("/new", appointmentHandler.Create)
+		r.Get("/all", appointmentHandler.GetAppointments)
+		r.Patch("/merchant-comment", appointmentHandler.UpdateMerchantComment)
 	})
 }
 
@@ -108,7 +108,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	}
 
 	r.Get("/info", merchantHandler.InfoByName)
-	r.Get("/times", merchantHandler.GetHours)
+	r.Get("/available-times", merchantHandler.GetHours)
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
