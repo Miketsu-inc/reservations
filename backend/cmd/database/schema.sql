@@ -18,9 +18,10 @@ create table if not exists "Merchant" (
     owner_id                uuid            references "User" (ID) not null,
     contact_email           varchar(320)    not null,
     introduction            varchar(150),
-    announcement            varchar(200),
+    annoucement             varchar(200),
     about_us                text,
     parking_info            text,
+    payment_info            text,
     settings                jsonb
 );
 
@@ -29,8 +30,7 @@ create table if not exists "Service" (
     merchant_id             uuid            references "Merchant" (ID) not null,
     name                    varchar(30)     not null,
     duration                integer         not null,
-    price                   bigint          not null,
-    blocking                boolean         not null
+    price                   bigint          not null
 );
 
 create table if not exists "Location" (
