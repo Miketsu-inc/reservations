@@ -10,7 +10,7 @@ const defaultFormData = {
   city: "",
   address: "",
 };
-export default function LocationForm({ isSubmitDone, isCompleted }) {
+export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +41,7 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        redirect();
         setServerError("");
         isCompleted(true);
         isSubmitDone(true);

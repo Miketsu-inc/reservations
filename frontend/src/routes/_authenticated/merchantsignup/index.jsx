@@ -1,7 +1,6 @@
 import { useMultiStepForm } from "@lib/hooks";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import AppointmentsAdder from "./-components/AppointmentsAdder";
 import LocationForm from "./-components/LocationForm";
 import MerchantInfoForm from "./-components/MerchantInfoForm";
 
@@ -18,11 +17,12 @@ function MerchantSignup() {
       key="locationForm"
       isCompleted={isCompletedHandler}
       isSubmitDone={setIsSubmitDone}
-    />,
-    <AppointmentsAdder
-      key="appointmentsAdder"
       redirect={() => navigate({ to: "/dashboard" })}
     />,
+    // <AppointmentsAdder
+    //   key="appointmentsAdder"
+    //   redirect={() => navigate({ to: "/dashboard" })}
+    // />,
   ]);
 
   function isCompletedHandler(isCompleted) {
