@@ -84,6 +84,8 @@ type PostgreSQL interface {
 	NewServices(context.Context, []Service) error
 	// Get a Service by it's id
 	GetServiceById(context.Context, int) (Service, error)
+	// Get all services for a merchant by it's id
+	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicService, error)
 }
 
 type service struct {

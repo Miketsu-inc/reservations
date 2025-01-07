@@ -259,3 +259,20 @@ func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuratio
 
 	return availableTimes
 }
+
+func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
+	}
+
+	httputil.Success(w, http.StatusOK, services)
+}

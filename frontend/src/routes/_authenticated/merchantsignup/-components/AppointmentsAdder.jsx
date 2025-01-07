@@ -20,7 +20,7 @@ export default function AppointmentsAdder({ redirect }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/merchants/service", {
+      const response = await fetch("/api/v1/merchants/services", {
         method: "POST",
         headers: {
           Accept: "application/json",

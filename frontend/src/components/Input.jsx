@@ -31,10 +31,10 @@ export default function Input({
 
   return (
     <label htmlFor={id} className="flex flex-col">
-      <span>{labelText}</span>
+      {labelText && <span className="pb-1">{labelText}</span>}
       <InputBase
         styles={`${styles} peer border-2 bg-transparent outline-none
-          invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600 mt-2
+          invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600
           invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
           ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}
         type={type}
@@ -53,12 +53,14 @@ export default function Input({
           Please fill out this field!
         </span>
       )}
-      <span
-        className="hidden text-sm text-red-600
-          peer-[&:not(:placeholder-shown):not(:focus):invalid]:block"
-      >
-        {errorText}
-      </span>
+      {errorText && (
+        <span
+          className="hidden text-sm text-red-600
+            peer-[&:not(:placeholder-shown):not(:focus):invalid]:block"
+        >
+          {errorText}
+        </span>
+      )}
     </label>
   );
 }

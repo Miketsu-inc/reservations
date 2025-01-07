@@ -67,9 +67,9 @@ export default function LocationForm({ isSubmitDone, isCompleted }) {
         onSubmit={handleSubmit}
       >
         <h1 className="mb-4 text-center text-xl font-semibold sm:mb-6">
-Location
-</h1>
-                <ServerError styles="mt-4 mb-2" error={serverError} />
+          Location
+        </h1>
+        <ServerError styles="mt-4 mb-2" error={serverError} />
         <div className="flex w-full gap-4">
           <div className="flex-grow">
             <Input

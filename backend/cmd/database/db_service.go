@@ -53,3 +53,34 @@ func (s *service) GetServiceById(ctx context.Context, serviceID int) (Service, e
 
 	return serv, nil
 }
+
+type PublicService struct {
+	Id       int    `json:"ID"`
+	Name     string `json:"name"`
+	Duration string `json:"duration"`
+	Price    string `json:"price"`
+}
+
+func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicService, error) {
+	query := `
+	select id, name, duration, price from "Service"
+	where merchant_id = $1
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	if err != nil {
+		return []PublicService{}, err
+	}
+	defer rows.Close()
+
+	var services []PublicService
+	for rows.Next() {
+		var serv PublicService
+		if err := rows.Scan(&serv.Id, &serv.Name, &serv.Duration, &serv.Price); err != nil {
+			return []PublicService{}, err
+		}
+		services = append(services, serv)
+	}
+
+	return services, nil
+}
