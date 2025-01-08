@@ -3,6 +3,7 @@ import Loading from "@components/Loading";
 import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import NewServiceModal from "./-components/NewServiceModal";
@@ -11,6 +12,10 @@ import ServicesTable from "./-components/ServicesTable";
 async function fetchServices() {
   const response = await fetch(`/api/v1/merchants/services`, {
     method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
   });
 
   const result = await response.json();
@@ -34,6 +39,33 @@ function ServicesPage() {
   const loaderData = Route.useLoaderData();
   const [showModal, setShowModal] = useState(false);
   const [searchText, setSearchText] = useState();
+  const [serverError, setServerError] = useState();
+
+  async function deleteHandler(selected) {
+    try {
+      const response = await fetch(
+        `/api/v1/merchants/services/${selected.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        router.invalidate();
+        setServerError();
+      }
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
 
   return (
     <div className="flex h-screen justify-center px-4">
@@ -43,6 +75,7 @@ function ServicesPage() {
         onSuccess={() => router.invalidate()}
       />
       <div className="w-full md:w-3/4">
+        <ServerError error={serverError} />
         <p className="text-xl">Services</p>
         <div className="flex flex-row justify-between py-2">
           <SearchInput
@@ -59,7 +92,11 @@ function ServicesPage() {
         </div>
         <div className="h-2/3">
           <Suspense fallback={<Loading />}>
-            <ServicesTable searchText={searchText} servicesData={loaderData} />
+            <ServicesTable
+              onDelete={deleteHandler}
+              searchText={searchText}
+              servicesData={loaderData}
+            />
           </Suspense>
         </div>
       </div>

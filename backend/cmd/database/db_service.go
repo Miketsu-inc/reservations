@@ -109,3 +109,17 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 
 	return services, nil
 }
+
+func (s *service) DeleteServiceById(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
+	query := `
+	delete from "Service"
+	where merchant_id = $1 and ID = $2
+	`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, serviceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

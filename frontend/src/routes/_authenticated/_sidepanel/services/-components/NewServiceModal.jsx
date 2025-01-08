@@ -92,7 +92,7 @@ export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
     >
       <form id="newServiceForm" onSubmit={submitHandler} className="m-2 mx-3">
         <div className="flex flex-col">
-          <div className="my-1 flex flex-row justify-between">
+          <div className="my-1 flex flex-row items-center justify-between">
             <p className="text-lg md:text-xl">New service</p>
             <XIcon
               styles="h-8 w-8 md:h-9 md:w-9 fill-text_color cursor-pointer"
