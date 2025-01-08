@@ -1,10 +1,10 @@
 import Button from "@components/Button";
 import Loading from "@components/Loading";
+import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
-import SearchInput from "../-components/SearchInput";
 import NewServiceModal from "./-components/NewServiceModal";
 import ServicesTable from "./-components/ServicesTable";
 

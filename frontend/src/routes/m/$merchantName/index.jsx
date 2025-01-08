@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -44,6 +45,7 @@ const defaultMerchantInfo = {
 function MerchantPage() {
   const [merchantInfo, setMerchantInfo] = useState(defaultMerchantInfo);
   const loaderData = Route.useLoaderData();
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     if (loaderData) {
@@ -68,6 +70,12 @@ function MerchantPage() {
       });
     }
   }, [loaderData]);
+
+  const filteredServices = merchantInfo.services.filter(
+    (service) =>
+      service.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-8">
@@ -102,14 +110,18 @@ function MerchantPage() {
       <hr className="border-gray-500" />
       <div className="flex flex-col gap-10 pt-5 lg:flex-row lg:pt-10">
         <div className="lg:w-2/3">
-          <p className="pb-5 text-lg font-bold">Services</p>
-          {merchantInfo.services.map((service) => (
+          <p className="pb-8 text-lg font-bold">Services</p>
+          <SearchInput
+            searchText={searchText}
+            onChange={(text) => setSearchText(text)}
+          />
+          {filteredServices.map((service) => (
             <ServiceItem
               key={service.ID}
               id={service.ID}
               name={service.name}
               price={service.price}
-              description="Exmaple description of an item in services. I'm really trying to test wether the length will cause any errors. Or how will it look. Ok it's time to stop yapping"
+              description={service.description}
             >
               <Link
                 from={Route.fullPath}
