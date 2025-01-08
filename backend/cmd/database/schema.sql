@@ -29,8 +29,11 @@ create table if not exists "Service" (
     ID                      serial          primary key unique not null,
     merchant_id             uuid            references "Merchant" (ID) not null,
     name                    varchar(30)     not null,
+    description             varchar(200),
+    color                   char(7)         not null,
     duration                integer         not null,
-    price                   bigint          not null
+    price                   bigint          not null,
+    cost                    bigint          not null
 );
 
 create table if not exists "Location" (

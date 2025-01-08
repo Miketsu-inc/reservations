@@ -80,8 +80,8 @@ type PostgreSQL interface {
 
 	// -- Serivce --
 
-	// Insert new services to the database
-	NewServices(context.Context, []Service) error
+	// Insert a new service to the database
+	NewService(context.Context, Service) error
 	// Get a Service by it's id
 	GetServiceById(context.Context, int) (Service, error)
 	// Get all services for a merchant by it's id

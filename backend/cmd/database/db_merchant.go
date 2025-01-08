@@ -119,7 +119,7 @@ type MerchantInfo struct {
 	PostalCode string `json:"postal_code"`
 	Address    string `json:"address"`
 
-	Services []Service `json:"services"`
+	Services []PublicService `json:"services"`
 }
 
 // this should and will be refactored
@@ -139,7 +139,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	}
 
 	query = `
-	select * from "Service"
+	select id, name, description, color, duration, price, cost from "Service"
 	where merchant_id = $1
 	`
 
@@ -149,17 +149,24 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	}
 	defer rows.Close()
 
-	var services []Service
+	var services []PublicService
 	for rows.Next() {
-		var s Service
-		if err := rows.Scan(&s.Id, &s.MerchantId, &s.Name, &s.Duration, &s.Price); err != nil {
+		var serv PublicService
+		if err := rows.Scan(&serv.Id, &serv.Name, &serv.Description, &serv.Color, &serv.Duration, &serv.Price, &serv.Cost); err != nil {
 			return MerchantInfo{}, err
 		}
 
-		services = append(services, s)
+		services = append(services, serv)
 	}
 
-	mi.Services = services
+	// if services array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(services) == 0 {
+		mi.Services = []PublicService{}
+	} else {
+		mi.Services = services
+	}
+
 	return mi, nil
 }
 

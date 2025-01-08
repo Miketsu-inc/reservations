@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
@@ -60,7 +61,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration, err := time.ParseDuration(service.Duration + "m")
+	duration, err := time.ParseDuration(strconv.Itoa(service.Duration) + "m")
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("duration could not be parsed: %s", err.Error()))
 		return

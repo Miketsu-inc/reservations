@@ -52,8 +52,10 @@ export function useWindowSize() {
 export function useClickOutside(ref, callback) {
   useEffect(() => {
     function clickOutsideHandler(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
-        callback();
+      if (ref.current) {
+        if (!ref.current.contains(e.target) || e.target === ref.current) {
+          callback();
+        }
       }
     }
 

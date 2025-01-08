@@ -9,7 +9,6 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -76,26 +75,19 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	type newService struct {
-		Name     string `json:"name" validate:"required"`
-		Duration string `json:"duration" validate:"required"`
-		Price    string `json:"price" validate:"required"`
+		Name        string `json:"name" validate:"required"`
+		Description string `json:"description"`
+		Color       string `json:"color" validate:"required,hexcolor"`
+		Duration    int    `json:"duration" validate:"required,min=1,max=1440"`
+		Price       int    `json:"price" validate:"required,min=0,max=1000000"`
+		Cost        int    `json:"cost" validate:"min=0,max=1000000"`
 	}
-	var services []newService
+	var service newService
 
-	// TODO: how should ParseStruct handle this?
-	// -----
-	if err := httputil.ParseJSON(r, &services); err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("unexpected error during json parsing: %s", err.Error()))
+	if err := validate.ParseStruct(r, &service); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
-
-	for _, service := range services {
-		if err := validate.Struct(service); err != nil {
-			httputil.Error(w, http.StatusBadRequest, err)
-			return
-		}
-	}
-	// -----
 
 	userID := jwt.UserIDFromContext(r.Context())
 
@@ -105,19 +97,17 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbServices := make([]database.Service, len(services))
-	for i, svcs := range services {
-		dbServices[i] = database.Service{
-			Id:         0,
-			MerchantId: merchantId,
-			Name:       svcs.Name,
-			Duration:   svcs.Duration,
-			Price:      svcs.Price,
-		}
-	}
-
-	if err := m.Postgresdb.NewServices(r.Context(), dbServices); err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting services: %s", err.Error()))
+	if err := m.Postgresdb.NewService(r.Context(), database.Service{
+		Id:          0,
+		MerchantId:  merchantId,
+		Name:        service.Name,
+		Description: service.Description,
+		Color:       service.Color,
+		Duration:    service.Duration,
+		Price:       service.Price,
+		Cost:        service.Cost,
+	}); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
 	}
 
@@ -201,10 +191,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration, err := strconv.Atoi(service.Duration)
-	assert.Nil(err, "Service duration from database could not be converted to int", service.Duration, duration)
-
-	availableSlots := calculateAvailableTimes(reservedTimes, duration, day)
+	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, day)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }

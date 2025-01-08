@@ -8,7 +8,7 @@ export default function SearchInput({ searchText, onChange }) {
         <SearchIcon styles="!h-4 !w-4" />
       </div>
       <Input
-        styles="p-2 ps-9 w-44 md:w-full text-sm"
+        styles="p-2 !ps-9 w-44 md:w-full text-sm"
         name="search"
         type="search"
         pattern=".{0,255}"

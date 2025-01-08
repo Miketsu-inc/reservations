@@ -1,4 +1,3 @@
-import { useState } from "react";
 import InputBase from "./InputBase";
 
 export default function Input({
@@ -14,26 +13,24 @@ export default function Input({
   inputData,
   hasError,
   value,
+  required,
+  min,
+  max,
 }) {
-  //will be value if value has value
-  const [inputValue, setInputValue] = useState(value || "");
-
   function handleChange(e) {
-    const value = e.target.value;
-    setInputValue(value);
     inputData({
       name: name,
       value: e.target.value,
     });
   }
 
-  const isEmpty = hasError && !inputValue;
+  const isEmpty = hasError && !value;
 
   return (
     <label htmlFor={id} className="flex flex-col">
       {labelText && <span className="pb-1">{labelText}</span>}
       <InputBase
-        styles={`${styles} peer border-2 bg-transparent outline-none
+        styles={`${styles} ps-1 peer border-2 bg-transparent outline-none
           invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600
           invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
           ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}
@@ -44,9 +41,11 @@ export default function Input({
         pattern={pattern}
         placeholder={placeholder}
         onChange={handleChange}
-        required={true}
+        required={required === undefined ? true : required}
         onBlur={() => {}}
-        value={inputValue}
+        value={value}
+        min={min}
+        max={max}
       />
       {isEmpty && (
         <span className="text-sm text-red-600">
