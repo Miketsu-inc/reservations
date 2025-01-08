@@ -1,5 +1,8 @@
 import {
-  AllCommunityModule,
+  ClientSideRowModelModule,
+  ColumnAutoSizeModule,
+  QuickFilterModule,
+  RowSelectionModule,
   colorSchemeDarkBlue,
   themeAlpine,
 } from "ag-grid-community";
@@ -51,7 +54,12 @@ export default function ServicesTable({ searchText, servicesData }) {
       <AgGridReact
         theme={themeAlpine.withPart(colorSchemeDarkBlue)}
         quickFilterText={searchText}
-        modules={[AllCommunityModule]}
+        modules={[
+          ClientSideRowModelModule,
+          RowSelectionModule,
+          QuickFilterModule,
+          ColumnAutoSizeModule,
+        ]}
         rowData={servicesData}
         autoSizeStrategy={{
           type: "fitCellContents",
