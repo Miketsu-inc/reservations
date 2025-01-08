@@ -12,7 +12,7 @@ export default {
     "./frontend/src/routes/**/**/**/*.jsx",
     "./frontend/src/routes/**/**/**/**/*.jsx",
   ],
-  darkMode: "class",
+  darkMode: "selector",
   theme: {
     fontFamily: {
       sans: ["Onest", "sans-serif"],
