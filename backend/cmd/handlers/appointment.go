@@ -79,7 +79,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	from_date := timeStamp.Format(postgresTimeFormat)
 	to_date := toDate.Format(postgresTimeFormat)
 
-	app := database.Appointment{
+	if err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:              0,
 		ClientId:        userID,
 		MerchantId:      merchantId,
@@ -89,8 +89,9 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ToDate:          to_date,
 		UserComment:     newApp.UserComment,
 		MerchantComment: "",
-	}
-	if err := a.Postgresdb.NewAppointment(r.Context(), app); err != nil {
+		PriceThen:       service.Price,
+		CostThen:        service.Cost,
+	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return
 	}

@@ -54,5 +54,7 @@ create table if not exists "Appointment" (
     from_date               timestamptz     not null,
     to_date                 timestamptz     not null,
     user_comment            text,
-    merchant_comment        text
+    merchant_comment        text,
+    price_then              bigint          not null,
+    cost_then               bigint
 );
