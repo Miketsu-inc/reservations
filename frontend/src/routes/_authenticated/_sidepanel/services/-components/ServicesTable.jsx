@@ -3,7 +3,6 @@ import {
   CellStyleModule,
   ClientSideRowModelModule,
   colorSchemeDarkBlue,
-  ColumnAutoSizeModule,
   QuickFilterModule,
   themeAlpine,
 } from "ag-grid-community";
@@ -16,57 +15,66 @@ function currencyFormatter(params) {
   return params.value.toLocaleString();
 }
 
-const defaultSelected = {
-  id: 0,
-  rowId: "",
-};
-
-export default function ServicesTable({ onDelete, searchText, servicesData }) {
-  const [selected, setSelected] = useState(defaultSelected);
+export default function ServicesTable({
+  onDelete,
+  onEdit,
+  searchText,
+  servicesData,
+}) {
+  const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showModal, setShowModal] = useState(false);
 
-  const columns = [
-    { field: "name", flex: 1 },
+  const columnDef = [
+    { field: "id", hide: true, sort: "asc" },
+    { field: "name", flex: 1, minWidth: 70 },
     {
       field: "color",
       cellRenderer: ({ data }) => {
-        return (
-          <TableColorPicker
-            value={data.color}
-            onChange={(e) => console.log(e)}
-          />
-        );
+        return <TableColorPicker key={data.id} value={data.color} />;
       },
+      sortable: false,
+      minWidth: 90,
+      maxWidth: 90,
     },
-    { field: "description", flex: 2 },
-    { field: "duration", cellClass: "text-right" },
+    { field: "description", flex: 2, minWidth: 125 },
+    {
+      field: "duration",
+      headerName: "Duration (min)",
+      cellClass: "text-right",
+      maxWidth: 150,
+    },
     {
       field: "price",
       headerName: "Price (HUF)",
       valueFormatter: currencyFormatter,
       cellClass: "text-right",
+      maxWidth: 150,
     },
     {
       field: "cost",
       headerName: "Cost (HUF)",
       valueFormatter: currencyFormatter,
       cellClass: "text-right",
+      maxWidth: 150,
     },
     {
       field: "actions",
       headerName: "",
-      cellRenderer: ({ data, node }) => {
+      cellRenderer: (params) => {
         return (
           <TableActions
-            data={{ id: data.ID, rowId: node.id }}
-            onEdit={(data) => console.log(data)}
-            onDelete={(data) => {
-              setSelected(data), setShowModal(true);
+            key={params.data.id}
+            onEdit={() => onEdit(servicesData[params.node.sourceRowIndex])}
+            onDelete={() => {
+              setSelected({ id: params.data.id, name: params.data.name });
+              setShowModal(true);
             }}
           />
         );
       },
       resizable: false,
+      sortable: false,
+      maxWidth: 100,
     },
   ];
 
@@ -79,7 +87,10 @@ export default function ServicesTable({ onDelete, searchText, servicesData }) {
         headerText="Confirmation"
       >
         <div className="py-4">
-          <p>Are you sure you want to delete this service?</p>
+          <p>
+            Are you sure you want to delete this service?
+            <span className="font-bold"> {selected.name}</span>
+          </p>
           <p className="text-red-500">
             This is a permanent action and cannot be reverted!
           </p>
@@ -88,20 +99,11 @@ export default function ServicesTable({ onDelete, searchText, servicesData }) {
       <AgGridReact
         theme={themeAlpine.withPart(colorSchemeDarkBlue)}
         quickFilterText={searchText}
-        modules={[
-          ClientSideRowModelModule,
-          QuickFilterModule,
-          ColumnAutoSizeModule,
-          CellStyleModule,
-        ]}
+        modules={[ClientSideRowModelModule, QuickFilterModule, CellStyleModule]}
         rowData={servicesData}
-        autoSizeStrategy={{
-          type: "fitCellContents",
-          colIds: ["name", "color", "duration", "price", "cost", "actions"],
-        }}
-        editType={"fullRow"}
-        columnDefs={columns}
+        columnDefs={columnDef}
         defaultColDef={{ sortable: true }}
+        getRowId={(params) => String(params.data.id)}
       />
     </div>
   );

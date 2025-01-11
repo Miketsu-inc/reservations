@@ -117,8 +117,8 @@ function MerchantPage() {
           />
           {filteredServices.map((service) => (
             <ServiceItem
-              key={service.ID}
-              id={service.ID}
+              key={service.id}
+              id={service.id}
               name={service.name}
               price={service.price}
               description={service.description}
@@ -128,7 +128,7 @@ function MerchantPage() {
                 to="booking"
                 search={{
                   locationId: merchantInfo.location_id,
-                  serviceId: service.ID,
+                  serviceId: service.id,
                   day: new Date().toISOString().split("T")[0],
                 }}
               >

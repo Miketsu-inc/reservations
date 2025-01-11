@@ -88,6 +88,8 @@ type PostgreSQL interface {
 	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicService, error)
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
+	// Update a Service by it's id
+	UpdateServiceById(context.Context, Service) error
 }
 
 type service struct {

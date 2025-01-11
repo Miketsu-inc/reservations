@@ -71,7 +71,7 @@ func (s *service) GetServiceById(ctx context.Context, serviceID int) (Service, e
 }
 
 type PublicService struct {
-	Id          int    `json:"ID"`
+	Id          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Color       string `json:"color"`
@@ -117,6 +117,21 @@ func (s *service) DeleteServiceById(ctx context.Context, merchantId uuid.UUID, s
 	`
 
 	_, err := s.db.ExecContext(ctx, query, merchantId, serviceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdateServiceById(ctx context.Context, serv Service) error {
+	query := `
+	update "Service"
+	set name = $3, description = $4, color = $5, duration = $6, price = $7, cost = $8
+	where ID = $1 and merchant_id = $2
+	`
+
+	_, err := s.db.ExecContext(ctx, query, serv.Id, serv.MerchantId, serv.Name, serv.Description, serv.Color, serv.Duration, serv.Price, serv.Cost)
 	if err != nil {
 		return err
 	}

@@ -119,5 +119,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Get("/services", merchantHandler.GetServices)
 		r.Post("/services", merchantHandler.NewService)
 		r.Delete("/services/{id}", merchantHandler.DeleteService)
+		r.Put("/services/{id}", merchantHandler.UpdateService)
 	})
 }

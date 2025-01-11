@@ -6,7 +6,7 @@ import PlusIcon from "@icons/PlusIcon";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
-import NewServiceModal from "./-components/NewServiceModal";
+import ServiceModal from "./-components/ServiceModal";
 import ServicesTable from "./-components/ServicesTable";
 
 async function fetchServices() {
@@ -38,6 +38,7 @@ function ServicesPage() {
   const router = useRouter();
   const loaderData = Route.useLoaderData();
   const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState();
   const [searchText, setSearchText] = useState();
   const [serverError, setServerError] = useState();
 
@@ -67,12 +68,54 @@ function ServicesPage() {
     }
   }
 
+  async function modalHandler(service) {
+    if (!service) return;
+
+    let url = "";
+    let method = "";
+
+    // means that the service was already added and now should be modified
+    if (service.id != null) {
+      url = `/api/v1/merchants/services/${service.id}`;
+      method = "PUT";
+    } else {
+      // for correct json sending
+      delete service.id;
+      url = "/api/v1/merchants/services";
+      method = "POST";
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(service),
+      });
+
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        setServerError();
+        router.invalidate();
+        setModalData();
+      }
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
+
   return (
     <div className="flex h-screen justify-center px-4">
-      <NewServiceModal
+      <ServiceModal
+        data={modalData}
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onSuccess={() => router.invalidate()}
+        onSubmit={modalHandler}
       />
       <div className="w-full md:w-3/4">
         <ServerError error={serverError} />
@@ -83,7 +126,14 @@ function ServicesPage() {
             onChange={(text) => setSearchText(text)}
           />
           <Button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              // the first condition is necessary for it to not cause an error
+              // in case of a new serive
+              if (modalData && modalData.id) {
+                setModalData();
+              }
+              setShowModal(true);
+            }}
             styles="p-2 text-sm"
             buttonText="New Service"
           >
@@ -94,6 +144,10 @@ function ServicesPage() {
           <Suspense fallback={<Loading />}>
             <ServicesTable
               onDelete={deleteHandler}
+              onEdit={(service) => {
+                setModalData(service);
+                setShowModal(true);
+              }}
               searchText={searchText}
               servicesData={loaderData}
             />
