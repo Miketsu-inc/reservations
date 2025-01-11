@@ -2,7 +2,7 @@ import Button from "@components/Button";
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
 import MessageIcon from "@icons/MessageIcon";
-import PersonIcon from "@icons/PesonIcon";
+import PersonIcon from "@icons/PersonIcon";
 import PhoneIcon from "@icons/PhoneIcon";
 import XIcon from "@icons/XIcon";
 import { forwardRef, useState } from "react";
