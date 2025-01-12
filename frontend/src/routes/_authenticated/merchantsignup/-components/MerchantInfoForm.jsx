@@ -161,8 +161,7 @@ export default function MerchantInfoForm({ isCompleted }) {
           hasError={isEmpty}
         />
         <Button
-          styles="py-2 sm:mt-10 mt-14 font-semibold focus-visible:outline-1 bg-primary
-            hover:bg-hvr_primary text-white"
+          styles="py-2 sm:mt-10 mt-14"
           type="submit"
           buttonText="Continue"
           isLoading={isLoading}

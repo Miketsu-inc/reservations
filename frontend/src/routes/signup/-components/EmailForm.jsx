@@ -66,7 +66,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
       />
       <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="w-full font-semibold py-2"
+          styles="w-full py-2"
           type="button"
           onClick={handleClick}
           buttonText="Continue"

@@ -129,8 +129,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
       />
       <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
-            py-2"
+          styles="w-full py-2"
           type="button"
           onClick={handleClick}
           buttonText="Continue"
