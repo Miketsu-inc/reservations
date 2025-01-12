@@ -89,7 +89,7 @@ export default function Calendar() {
     <>
       <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="flex items-center justify-center">
-        <div className="bg-bg_color text-text_color">
+        <div className="light bg-bg_color text-text_color">
           <FullCalendar
             plugins={[
               dayGridPlugin,
