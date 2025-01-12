@@ -3,7 +3,6 @@ import {
   ColumnAutoSizeModule,
   QuickFilterModule,
   RowSelectionModule,
-  colorSchemeDarkBlue,
   themeAlpine,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
@@ -52,7 +51,7 @@ export default function ServicesTable({ searchText, servicesData }) {
   return (
     <div className="h-full w-full">
       <AgGridReact
-        theme={themeAlpine.withPart(colorSchemeDarkBlue)}
+        theme={themeAlpine}
         quickFilterText={searchText}
         modules={[
           ClientSideRowModelModule,

@@ -1,7 +1,7 @@
 export default function ServicesIcon({ styles }) {
   return (
     <svg
-      className={`${styles} h-5 w-5`}
+      className={`${styles} h-5 w-5 fill-none`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
