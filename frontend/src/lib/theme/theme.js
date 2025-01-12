@@ -29,6 +29,7 @@ function applySavedTheme() {
 }
 
 // Toggle theme manually and save preference
+// eslint-disable-next-line no-unused-vars
 function toggleTheme() {
   if (document.documentElement.classList.contains("dark")) {
     document.documentElement.classList.remove("dark");
