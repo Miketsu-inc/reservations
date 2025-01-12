@@ -4,12 +4,15 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { useClickOutside } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import CalendarModal from "./CalendarModal";
 
 const defaultEventInfo = {
+  id: 0,
+  title: "",
+  start: new Date(),
+  end: new Date(),
   extendedProps: {
     appointment_id: 0,
     first_name: "",
@@ -22,11 +25,9 @@ const defaultEventInfo = {
 };
 
 export default function Calendar() {
-  const modalRef = useRef();
   const [serverError, setServerError] = useState();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
-  useClickOutside(modalRef, () => setIsModalOpen(false));
 
   const formatData = (data) => {
     return data.map((event) => ({
@@ -161,16 +162,14 @@ export default function Calendar() {
             // }}
           />
         </div>
-        {isModalOpen && (
-          <CalendarModal
-            ref={modalRef}
-            eventInfo={eventInfo}
-            close={() => {
-              setIsModalOpen(false);
-            }}
-            setError={setServerError}
-          />
-        )}
+        <CalendarModal
+          eventInfo={eventInfo}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+          }}
+          setError={setServerError}
+        />
       </div>
     </>
   );

@@ -1,8 +1,8 @@
 import Button from "@components/Button";
 import Input from "@components/Input";
+import Modal from "@components/Modal";
 import XIcon from "@icons/XIcon";
-import { useClickOutside } from "@lib/hooks";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 // html inputs always return strings regardless of the input type
 // null id indicates that this service shall be added as new
@@ -17,13 +17,7 @@ const defaultServiceData = {
 };
 
 export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
-  const modalRef = useRef();
   const [serviceData, setServiceData] = useState(defaultServiceData);
-  useClickOutside(modalRef, onClose);
-
-  useEffect(() => {
-    isOpen ? modalRef.current.showModal() : modalRef.current.close();
-  }, [isOpen]);
 
   useEffect(() => {
     setServiceData(data || defaultServiceData);
@@ -79,11 +73,7 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <dialog
-      className="w-full rounded-lg bg-layer_bg text-text_color shadow-md shadow-layer_bg
-        transition-all backdrop:bg-black backdrop:bg-opacity-35 md:w-fit"
-      ref={modalRef}
-    >
+    <Modal isOpen={isOpen} onClose={onClose}>
       <form id="newServiceForm" onSubmit={submitHandler} className="m-2 mx-3">
         <div className="flex flex-col">
           <div className="my-1 flex flex-row items-center justify-between">
@@ -194,6 +184,6 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
           </div>
         </div>
       </form>
-    </dialog>
+    </Modal>
   );
 }
