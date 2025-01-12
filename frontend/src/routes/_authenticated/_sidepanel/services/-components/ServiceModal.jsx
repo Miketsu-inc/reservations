@@ -1,31 +1,27 @@
 import Button from "@components/Button";
 import Input from "@components/Input";
-import ServerError from "@components/ServerError";
+import Modal from "@components/Modal";
 import XIcon from "@icons/XIcon";
-import { useClickOutside } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { useEffect, useRef, useState } from "react";
-import TableColorPicker from "./TableColorPicker";
+import { useEffect, useState } from "react";
 
 // html inputs always return strings regardless of the input type
+// null id indicates that this service shall be added as new
 const defaultServiceData = {
+  id: null,
   name: "",
   description: "",
-  colorPicker: "#2334b8",
+  color: "#2334b8",
   duration: "",
   price: "",
   cost: "",
 };
 
-export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
-  const modalRef = useRef();
-  const [serverError, setServerError] = useState();
+export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
   const [serviceData, setServiceData] = useState(defaultServiceData);
-  useClickOutside(modalRef, onClose);
 
   useEffect(() => {
-    isOpen ? modalRef.current.showModal() : modalRef.current.close();
-  }, [isOpen]);
+    setServiceData(data || defaultServiceData);
+  }, [data]);
 
   async function submitHandler(e) {
     e.preventDefault();
@@ -34,36 +30,28 @@ export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    try {
-      const response = await fetch("/api/v1/merchants/services", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          name: serviceData.name,
-          description: serviceData.description,
-          color: serviceData.colorPicker,
-          duration: parseInt(serviceData.duration),
-          price: parseInt(serviceData.price),
-          cost: parseInt(serviceData.cost) || 0,
-        }),
-      });
-
-      if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        setServerError();
-        setServiceData(defaultServiceData);
-        onSuccess();
-        onClose();
+    let didChange = false;
+    for (var key in serviceData) {
+      if (serviceData[key] !== data[key]) {
+        didChange = true;
       }
-    } catch (err) {
-      setServerError(err.message);
     }
+
+    if (didChange) {
+      onSubmit({
+        id: serviceData.id,
+        name: serviceData.name,
+        description: serviceData.description,
+        color: serviceData.color,
+        duration: parseInt(serviceData.duration),
+        price: parseInt(serviceData.price),
+        cost: parseInt(serviceData.cost) || 0,
+      });
+    } else {
+      onSubmit();
+    }
+
+    onClose();
   }
 
   function onChangeHandler(e) {
@@ -85,21 +73,16 @@ export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
   }
 
   return (
-    <dialog
-      className="w-full rounded-lg bg-layer_bg text-text_color shadow-md shadow-layer_bg
-        transition-all backdrop:bg-black backdrop:bg-opacity-35 md:w-fit"
-      ref={modalRef}
-    >
+    <Modal isOpen={isOpen} onClose={onClose}>
       <form id="newServiceForm" onSubmit={submitHandler} className="m-2 mx-3">
         <div className="flex flex-col">
-          <div className="my-1 flex flex-row justify-between">
+          <div className="my-1 flex flex-row items-center justify-between">
             <p className="text-lg md:text-xl">New service</p>
             <XIcon
               styles="h-8 w-8 md:h-9 md:w-9 fill-text_color cursor-pointer"
               onClick={onClose}
             />
           </div>
-          <ServerError error={serverError} />
           <hr className="py-2 md:py-3" />
         </div>
         <div className="flex flex-col gap-6 pb-1 md:flex-row md:gap-8">
@@ -118,9 +101,13 @@ export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
               />
             </div>
             <div className="flex h-8 flex-row items-center gap-6">
-              <label htmlFor="colorPicker">Color</label>
-              <TableColorPicker
-                value={serviceData.colorPicker}
+              <label htmlFor="color">Color</label>
+              <input
+                id="color"
+                className="h-full cursor-pointer bg-transparent"
+                name="color"
+                type="color"
+                value={serviceData.color}
                 onChange={onChangeHandler}
               />
             </div>
@@ -191,12 +178,12 @@ export default function NewServiceModal({ isOpen, onClose, onSuccess }) {
                 type="submit"
                 name="add service"
                 styles="py-2 px-4"
-                buttonText="Add"
+                buttonText="Submit"
               />
             </div>
           </div>
         </div>
       </form>
-    </dialog>
+    </Modal>
   );
 }

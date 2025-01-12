@@ -1,12 +1,12 @@
-export default function TableColorPicker({ value, onChange }) {
+export default function TableColorPicker({ value }) {
   return (
     <input
+      disabled={true}
       id="colorPicker"
-      className="h-full cursor-pointer bg-transparent"
+      className="h-full bg-transparent"
       name="colorPicker"
       type="color"
       value={value}
-      onChange={onChange}
     />
   );
 }
