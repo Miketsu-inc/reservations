@@ -84,8 +84,8 @@ export default forwardRef(function FloatingLabelInput(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `left-2 text-lg text-gray-400 peer-focus:left-2 peer-focus:-translate-y-4
-                peer-focus:text-sm peer-focus:text-primary`
+              ? `left-2 text-lg text-gray-500 peer-focus:left-2 peer-focus:-translate-y-4
+                peer-focus:text-sm peer-focus:text-primary dark:text-gray-400`
               : `${
                 isValid
                     ? `peer-focus:left-2 peer-focus:-translate-y-4 peer-focus:text-sm

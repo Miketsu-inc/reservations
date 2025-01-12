@@ -219,15 +219,14 @@ function SelectDateTime() {
               </div>
               <div
                 className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 dark:bg-layer_bg md:static
-                  md:px-0 md:pt-10"
+                  md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent"
               >
                 <Button
                   type="submit"
                   disabled={day && selectedHour ? false : true}
                   isLoading={isLoading}
                   buttonText="Reserve"
-                  styles="w-full font-semibold focus-visible:outline-1 bg-primary hover:bg-hvr_primary
-                    text-white py-2"
+                  styles="w-full py-2"
                 ></Button>
               </div>
             </div>
