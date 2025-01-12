@@ -16,7 +16,7 @@ export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
               className={
                 currentStep > i
                   ? "flex-auto border-t-4 border-green-700 transition-all duration-700 ease-in"
-                  : "flex-auto border-t-4 border-gray-600"
+                  : "flex-auto border-t-4 border-gray-400 dark:border-gray-600"
               }
             ></div>
           ) : (
