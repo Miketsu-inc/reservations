@@ -13,7 +13,8 @@ export default function Button({
   return (
     <button
       onClick={onClick}
-      className={`${styles} rounded-lg bg-primary font-medium shadow-md
+      className={`${styles} rounded-lg bg-primary font-semibold text-white shadow-md
+        hover:bg-hvr_primary focus-visible:outline-1
         ${isLoading || disabled ? "opacity-50 transition-opacity" : ""} `}
       name={name}
       type={type}

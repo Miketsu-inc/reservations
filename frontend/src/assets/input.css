@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: 66, 90, 190;
+  --hvr-primary: 56, 77, 163;
+  --secondary: 210, 151, 190;
+  --hvr-secondary: 189, 136, 171;
+  --accent: 226, 201, 102;
+  --bg-color: 245, 246, 251;
+  --layer-bg: 236, 238, 248;
+  --text-color: 12, 14, 28;
+  --hvr-gray: 209, 213, 219;
+}
+
+/* TEMP until the calendar is styled properly in dark mode */
 .light {
   --primary: 66, 90, 190;
   --hvr-primary: 56, 77, 163;
@@ -11,7 +24,7 @@
   --bg-color: 245, 246, 251;
   --layer-bg: 236, 238, 248;
   --text-color: 12, 14, 28;
-  --hvr-gray: 209 213 219;
+  --hvr-gray: 209, 213, 219;
 }
 
 .dark {

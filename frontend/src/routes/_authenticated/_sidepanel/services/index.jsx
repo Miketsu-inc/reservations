@@ -137,7 +137,7 @@ function ServicesPage() {
             styles="p-2 text-sm"
             buttonText="New Service"
           >
-            <PlusIcon styles="w-4 h-4 md:w-5 md:h-5 mr-1" />
+            <PlusIcon styles="w-4 h-4 md:w-5 md:h-5 mr-1 text-white" />
           </Button>
         </div>
         <div className="h-2/3">

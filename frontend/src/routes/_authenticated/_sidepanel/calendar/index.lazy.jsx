@@ -11,10 +11,8 @@ export const Route = createLazyFileRoute(
 
 function CalendarPage() {
   return (
-    <span className="light">
-      <Suspense fallback={<Loading />}>
-        <Calendar />
-      </Suspense>
-    </span>
+    <Suspense fallback={<Loading />}>
+      <Calendar />
+    </Suspense>
   );
 }

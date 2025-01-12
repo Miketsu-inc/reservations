@@ -2,7 +2,6 @@ import ConfirmModal from "@components/ConfirmModal";
 import {
   CellStyleModule,
   ClientSideRowModelModule,
-  colorSchemeDarkBlue,
   QuickFilterModule,
   themeAlpine,
 } from "ag-grid-community";
@@ -97,7 +96,7 @@ export default function ServicesTable({
         </div>
       </ConfirmModal>
       <AgGridReact
-        theme={themeAlpine.withPart(colorSchemeDarkBlue)}
+        theme={themeAlpine}
         quickFilterText={searchText}
         modules={[ClientSideRowModelModule, QuickFilterModule, CellStyleModule]}
         rowData={servicesData}

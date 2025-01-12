@@ -132,8 +132,7 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
           />
         </div>
         <Button
-          styles="p-2 sm:mt-10 mt-8 font-semibold focus-visible:outline-1 bg-primary
-            hover:bg-hvr_primary text-white"
+          styles="p-2 sm:mt-10 mt-8"
           type="submit"
           buttonText="Continue"
           isLoading={isLoading}

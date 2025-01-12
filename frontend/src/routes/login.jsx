@@ -154,15 +154,13 @@ function LoginPage() {
         <Button
           type="Button"
           name="Goolge button"
-          styles="group flex justify-center items-center my-2 dark:bg-transparent bg-secondary
-            dark:border dark:border-secondary dark:hover:border-hvr_secondary
-            dark:text-secondary text-text_color dark:hover:text-hvr_secondary
-            dark:focus:outline-none dark:focus:text-hvr_secondary
-            dark:focus:border-hvr_secondary hover:bg-hvr_secondary/90 focus:bg-secondary
-            py-2"
+          styles="group flex justify-center items-center my-2 bg-transparent border
+            border-secondary hover:border-hvr_secondary text-secondary
+            hover:text-hvr_secondary focus:outline-none focus:text-hvr_secondary
+            focus:border-hvr_secondary hover:bg-transparent focus:bg-secondary py-2"
           buttonText="Log in with Google"
         >
-          <GoogleIcon styles="dark:fill-secondary dark:group-hover:fill-hvr_secondary fill-text_color mr-3" />
+          <GoogleIcon styles="group-hover:fill-hvr_secondary fill-secondary mr-3" />
         </Button>
         <div className="mt-4 grid grid-cols-3 items-center">
           <hr className="border-text_color" />
@@ -208,7 +206,7 @@ function LoginPage() {
           <Button
             name="login"
             type="submit"
-            styles="mt-4 focus-visible:outline-1 hover:bg-hvr_primary text-white py-2"
+            styles="mt-4 text-white py-2"
             buttonText="Login"
             isLoading={isLoading}
           />

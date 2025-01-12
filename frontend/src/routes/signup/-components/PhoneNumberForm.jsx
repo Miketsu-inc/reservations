@@ -54,7 +54,7 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
   return (
     <>
       <h1 className="mt-2 text-center text-xl font-semibold">Phone number</h1>
-      <p className="mb-8 py-2 text-center text-gray-300">
+      <p className="mb-8 py-2 text-center text-gray-600 dark:text-gray-300">
         Enter your phone number to receive notifications about your appointments
       </p>
       <FloatingLabelInput
@@ -70,8 +70,7 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
       />
       <div className="mt-10 flex items-center justify-center">
         <Button
-          styles="w-full font-semibold focus-visible:outline-1 hover:bg-hvr_primary text-white
-            py-2"
+          styles="w-full py-2"
           type="button"
           onClick={handleClick}
           buttonText="Continue"
