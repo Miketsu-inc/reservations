@@ -80,6 +80,7 @@ type AppointmentDetails struct {
 	UserComment     string `json:"user_comment"`
 	MerchantComment string `json:"merchant_comment"`
 	ServiceName     string `json:"service_name"`
+	ServiceColor    string `json:"service_color"`
 	Price           int    `json:"price"`
 	Cost            int    `json:"cost"`
 	FirstName       string `json:"first_name"`
@@ -90,7 +91,7 @@ type AppointmentDetails struct {
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
 	query := `
 	select a.id, a.from_date, a.to_date, a.user_comment, a.merchant_comment, a.price_then, a.cost_then,
-	s.name as service_name, u.first_name, u.last_name, u.phone_number
+	s.name as service_name, s.color as serivce_color, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.client_id = u.id
@@ -107,7 +108,7 @@ func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid
 	for rows.Next() {
 		var app AppointmentDetails
 		if err := rows.Scan(&app.ID, &app.FromDate, &app.ToDate, &app.UserComment, &app.MerchantComment, &app.Price, &app.Cost,
-			&app.ServiceName, &app.FirstName, &app.LastName, &app.PhoneNumber); err != nil {
+			&app.ServiceName, &app.ServiceColor, &app.FirstName, &app.LastName, &app.PhoneNumber); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)

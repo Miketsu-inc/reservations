@@ -8,6 +8,17 @@ import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useCallback, useState } from "react";
 import CalendarModal from "./CalendarModal";
 
+function getContrastColor(color) {
+  const hex = color.replace("#", "");
+
+  const red = parseInt(hex.substring(0, 2), 16);
+  const green = parseInt(hex.substring(2, 4), 16);
+  const blue = parseInt(hex.substring(4, 6), 16);
+
+  const brightness = red * 0.289 + green * 0.587 + blue * 0.114;
+  return brightness > 186 ? "#000000" : "#ffffff";
+}
+
 const defaultEventInfo = {
   id: 0,
   title: "",
@@ -35,6 +46,8 @@ export default function Calendar() {
       title: event.service_name,
       start: event.from_date,
       end: event.to_date,
+      color: event.service_color,
+      textColor: getContrastColor(event.service_color),
       extendedProps: {
         appointment_id: event.id,
         first_name: event.first_name,
