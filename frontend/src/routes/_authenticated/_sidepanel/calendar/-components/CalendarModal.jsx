@@ -6,7 +6,7 @@ import MessageIcon from "@icons/MessageIcon";
 import PersonIcon from "@icons/PersonIcon";
 import PhoneIcon from "@icons/PhoneIcon";
 import XIcon from "@icons/XIcon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function CalendarModal({
   eventInfo,
@@ -14,18 +14,18 @@ export default function CalendarModal({
   onClose,
   setError,
 }) {
-  const [merchantComment, setMerchantComment] = useState(
-    eventInfo.extendedProps.merchant_comment
-  );
+  const [merchantComment, setMerchantComment] = useState("");
   const [hasUnsavedChanges, SetHasUnsavedChanges] = useState(false);
   // startEditable is false when the end date is higher than the current date
   const disabled = !eventInfo.startEditable;
 
-  async function saveButtonHandler() {
-    if (merchantComment === eventInfo.extendedProps.merchant_comment) {
-      return;
-    }
+  console.log(merchantComment);
 
+  useEffect(() => {
+    setMerchantComment(eventInfo.extendedProps.merchant_comment);
+  }, [eventInfo]);
+
+  async function saveButtonHandler() {
     try {
       const response = await fetch("/api/v1/appointments/merchant-comment", {
         method: "PATCH",
@@ -148,6 +148,7 @@ export default function CalendarModal({
               <span>Your Notes</span>
             </div>
             <textarea
+              id="merchant_comment"
               name="merchant comment"
               value={merchantComment}
               onChange={merchantCommentChangeHandler}
