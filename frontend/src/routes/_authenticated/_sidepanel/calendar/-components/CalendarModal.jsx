@@ -19,8 +19,6 @@ export default function CalendarModal({
   // startEditable is false when the end date is higher than the current date
   const disabled = !eventInfo.startEditable;
 
-  console.log(merchantComment);
-
   useEffect(() => {
     setMerchantComment(eventInfo.extendedProps.merchant_comment);
   }, [eventInfo]);
