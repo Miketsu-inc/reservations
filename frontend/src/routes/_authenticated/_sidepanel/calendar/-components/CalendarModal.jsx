@@ -18,6 +18,8 @@ export default function CalendarModal({
     eventInfo.extendedProps.merchant_comment
   );
   const [hasUnsavedChanges, SetHasUnsavedChanges] = useState(false);
+  // startEditable is false when the end date is higher than the current date
+  const disabled = !eventInfo.startEditable;
 
   async function saveButtonHandler() {
     if (merchantComment === eventInfo.extendedProps.merchant_comment) {
@@ -149,6 +151,7 @@ export default function CalendarModal({
               name="merchant comment"
               value={merchantComment}
               onChange={merchantCommentChangeHandler}
+              disabled={disabled}
               placeholder="Add notes about this appointment only you can see..."
               className="max-h-48 min-h-20 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm
                 text-blue-950 outline-none focus:border-blue-600"
@@ -157,14 +160,14 @@ export default function CalendarModal({
           <div className="flex items-center justify-end pt-2">
             <Button
               styles={`${
-                !hasUnsavedChanges
+                !hasUnsavedChanges || disabled
                   ? ""
                   : `hover:border-blue-600 hover:text-blue-600 dark:hover:border-blue-400
                     dark:hover:text-blue-400`
-                } bg-transparent text-sm text-blue-400 dark:text-blue-600 border border-blue-400
-                dark:border-blue-600 py-2 px-2 hover:bg-transparent min-w-16`}
-              buttonText={hasUnsavedChanges ? "Save" : "Saved"}
-              disabled={!hasUnsavedChanges}
+                } bg-transparent text-sm !text-blue-400 dark:text-blue-600 border
+                border-blue-400 dark:border-blue-600 py-2 px-2 hover:bg-transparent min-w-16`}
+              buttonText={hasUnsavedChanges && !disabled ? "Save" : "Saved"}
+              disabled={!hasUnsavedChanges || disabled}
               onClick={saveButtonHandler}
               type="button"
             />

@@ -24,6 +24,7 @@ const defaultEventInfo = {
   title: "",
   start: new Date(),
   end: new Date(),
+  startEditable: true,
   extendedProps: {
     appointment_id: 0,
     first_name: "",
@@ -48,6 +49,8 @@ export default function Calendar() {
       end: event.to_date,
       color: event.service_color,
       textColor: getContrastColor(event.service_color),
+      durationEditable: false,
+      startEditable: new Date(event.to_date) > new Date() ? true : false,
       extendedProps: {
         appointment_id: event.id,
         first_name: event.first_name,
@@ -94,11 +97,6 @@ export default function Calendar() {
     []
   );
 
-  function handleClick(e) {
-    setEventInfo(e.event);
-    setIsModalOpen(true);
-  }
-
   return (
     <>
       <ServerError styles="mt-4 mb-2" error={serverError} />
@@ -122,7 +120,10 @@ export default function Calendar() {
             navLinks={true}
             height="auto"
             events={fetchEvents}
-            eventClick={handleClick}
+            eventClick={(e) => {
+              setEventInfo(e.event);
+              setIsModalOpen(true);
+            }}
             lazyFetching={true}
             // views={{
             //   dayGridMonth: {
