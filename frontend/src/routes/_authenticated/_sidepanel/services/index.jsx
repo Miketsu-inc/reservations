@@ -39,7 +39,7 @@ function ServicesPage() {
   const loaderData = Route.useLoaderData();
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState();
-  const [searchText, setSearchText] = useState();
+  const [searchText, setSearchText] = useState("");
   const [serverError, setServerError] = useState();
 
   async function deleteHandler(selected) {
@@ -120,7 +120,7 @@ function ServicesPage() {
       <div className="w-full md:w-3/4">
         <ServerError error={serverError} />
         <p className="text-xl">Services</p>
-        <div className="flex flex-row justify-between py-2">
+        <div className="flex flex-col justify-between gap-2 py-2 sm:flex-row sm:gap-0">
           <SearchInput
             searchText={searchText}
             onChange={(text) => setSearchText(text)}
@@ -134,7 +134,7 @@ function ServicesPage() {
               }
               setShowModal(true);
             }}
-            styles="p-2 text-sm"
+            styles="p-2 text-sm w-fit"
             buttonText="New Service"
           >
             <PlusIcon styles="w-4 h-4 md:w-5 md:h-5 mr-1 text-white" />

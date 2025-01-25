@@ -1,7 +1,9 @@
 import ConfirmModal from "@components/ConfirmModal";
+import { useWindowSize } from "@lib/hooks";
 import {
   CellStyleModule,
   ClientSideRowModelModule,
+  ColumnAutoSizeModule,
   QuickFilterModule,
   themeAlpine,
 } from "ag-grid-community";
@@ -20,12 +22,17 @@ export default function ServicesTable({
   searchText,
   servicesData,
 }) {
+  const windowSize = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isSmallScreen =
+    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const columnDef = [
     { field: "id", hide: true, sort: "asc" },
-    { field: "name", flex: 1, minWidth: 70 },
+    { field: "name", flex: 1, ...(isSmallScreen ? { minWidth: 120 } : {}) },
     {
       field: "color",
       cellRenderer: ({ data }) => {
@@ -35,26 +42,27 @@ export default function ServicesTable({
       minWidth: 90,
       maxWidth: 90,
     },
-    { field: "description", flex: 2, minWidth: 125 },
+    {
+      field: "description",
+      flex: 2,
+      ...(isSmallScreen ? { minWidth: 180 } : {}),
+    },
     {
       field: "duration",
       headerName: "Duration (min)",
       cellClass: "text-right",
-      maxWidth: 150,
     },
     {
       field: "price",
       headerName: "Price (HUF)",
       valueFormatter: currencyFormatter,
       cellClass: "text-right",
-      maxWidth: 150,
     },
     {
       field: "cost",
       headerName: "Cost (HUF)",
       valueFormatter: currencyFormatter,
       cellClass: "text-right",
-      maxWidth: 150,
     },
     {
       field: "actions",
@@ -73,7 +81,6 @@ export default function ServicesTable({
       },
       resizable: false,
       sortable: false,
-      maxWidth: 100,
     },
   ];
 
@@ -95,15 +102,32 @@ export default function ServicesTable({
           </p>
         </div>
       </ConfirmModal>
-      <AgGridReact
-        theme={themeAlpine}
-        quickFilterText={searchText}
-        modules={[ClientSideRowModelModule, QuickFilterModule, CellStyleModule]}
-        rowData={servicesData}
-        columnDefs={columnDef}
-        defaultColDef={{ sortable: true }}
-        getRowId={(params) => String(params.data.id)}
-      />
+      <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
+        <AgGridReact
+          theme={themeAlpine}
+          quickFilterText={searchText}
+          modules={[
+            ClientSideRowModelModule,
+            QuickFilterModule,
+            CellStyleModule,
+            ColumnAutoSizeModule,
+          ]}
+          rowData={servicesData}
+          columnDefs={columnDef}
+          defaultColDef={{ sortable: true, suppressMovable: true }}
+          getRowId={(params) => String(params.data.id)}
+          onFirstDataRendered={(params) => {
+            params.api.autoSizeColumns([
+              "duration",
+              "price",
+              "cost",
+              "actions",
+            ]);
+          }}
+          onGridReady={() => setIsLoading(false)}
+          suppressColumnVirtualisation={true}
+        />
+      </div>
     </div>
   );
 }
