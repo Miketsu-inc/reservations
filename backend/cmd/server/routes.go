@@ -37,9 +37,12 @@ func staticFilesHandler(r *chi.Mux) {
 		"/signup",
 		"/calendar",
 		"/settings",
+		"/services",
 		"/dashboard",
 		"/merchantsignup",
 		"/m/{merchant_url}",
+		"/m/{merchant_url}/booking",
+		"/m/{merchant_url}/booking/completed",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
@@ -52,6 +55,10 @@ func staticFilesHandler(r *chi.Mux) {
 
 	r.Get("/assets/*", func(w http.ResponseWriter, r *http.Request) {
 		http.StripPrefix("/assets/", http.FileServerFS(assets)).ServeHTTP(w, r)
+	})
+
+	r.Get("/theme.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, dist, "theme.js")
 	})
 }
 

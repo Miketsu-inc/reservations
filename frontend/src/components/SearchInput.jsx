@@ -13,6 +13,7 @@ export default function SearchInput({ searchText, onChange }) {
         type="search"
         pattern=".{0,255}"
         value={searchText}
+        required={false}
         placeholder="Search"
         inputData={(data) => {
           onChange(data.value);

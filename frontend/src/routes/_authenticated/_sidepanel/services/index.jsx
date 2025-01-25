@@ -5,9 +5,10 @@ import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Suspense, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import ServiceModal from "./-components/ServiceModal";
-import ServicesTable from "./-components/ServicesTable";
+
+const ServicesTable = lazy(() => import("./-components/ServicesTable"));
 
 async function fetchServices() {
   const response = await fetch(`/api/v1/merchants/services`, {
