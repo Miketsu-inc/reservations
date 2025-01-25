@@ -1,30 +1,14 @@
-// Detect system theme changes and apply the appropriate class
-function applySystemTheme() {
-  const systemPrefersDark = window.matchMedia(
-    "(prefers-color-scheme: dark)"
-  ).matches;
-
-  if (systemPrefersDark) {
+function applyTheme() {
+  if (
+    localStorage.theme === "dark" ||
+    (!("theme" in localStorage) &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
     document.documentElement.classList.add("dark");
     document.documentElement.setAttribute("data-ag-theme-mode", "dark");
   } else {
     document.documentElement.classList.remove("dark");
     document.documentElement.setAttribute("data-ag-theme-mode", "light");
-  }
-}
-
-// Apply the theme based on user's preference or system preference
-function applySavedTheme() {
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "dark") {
-    document.documentElement.classList.add("dark");
-    document.documentElement.setAttribute("data-ag-theme-mode", "dark");
-  } else if (savedTheme === "light") {
-    document.documentElement.classList.remove("dark");
-    document.documentElement.setAttribute("data-ag-theme-mode", "light");
-  } else {
-    // If no preference is saved, fall back to the system preference
-    applySystemTheme();
   }
 }
 
@@ -45,7 +29,7 @@ function toggleTheme() {
 // Watch for changes to system theme
 window
   .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", applySystemTheme);
+  .addEventListener("change", applyTheme);
 
 // Apply the theme when the page loads
-applySavedTheme();
+applyTheme();
