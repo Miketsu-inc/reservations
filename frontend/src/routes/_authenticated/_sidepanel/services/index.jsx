@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
 function ServicesPage() {
   const router = useRouter();
   const loaderData = Route.useLoaderData();
-  const [showModal, setShowModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [modalData, setModalData] = useState();
   const [serverError, setServerError] = useState();
 
@@ -64,8 +64,6 @@ function ServicesPage() {
   }
 
   async function modalHandler(service) {
-    if (!service) return;
-
     let url = "";
     let method = "";
 
@@ -108,8 +106,8 @@ function ServicesPage() {
     <div className="flex h-screen justify-center px-4">
       <ServiceModal
         data={modalData}
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        isOpen={showServiceModal}
+        onClose={() => setShowServiceModal(false)}
         onSubmit={modalHandler}
       />
       <div className="w-full md:w-3/4">
@@ -123,11 +121,11 @@ function ServicesPage() {
             if (modalData && modalData.id) {
               setModalData();
             }
-            setShowModal(true);
+            setShowServiceModal(true);
           }}
           onEdit={(service) => {
             setModalData(service);
-            setShowModal(true);
+            setShowServiceModal(true);
           }}
           onDelete={deleteHandler}
         />

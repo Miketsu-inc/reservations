@@ -1,4 +1,4 @@
-import ConfirmModal from "@components/ConfirmModal";
+import DeleteModal from "@components/DeleteModal";
 import Loading from "@components/Loading";
 import { useWindowSize } from "@lib/hooks";
 import { lazy, Suspense, useState } from "react";
@@ -19,7 +19,7 @@ export default function ServicesTable({
 }) {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
-  const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const isSmallScreen =
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
@@ -68,7 +68,7 @@ export default function ServicesTable({
             onEdit={() => onEdit(servicesData[params.node.sourceRowIndex])}
             onDelete={() => {
               setSelected({ id: params.data.id, name: params.data.name });
-              setShowModal(true);
+              setShowDeleteModal(true);
             }}
           />
         );
@@ -80,22 +80,12 @@ export default function ServicesTable({
 
   return (
     <div className="h-full w-full">
-      <ConfirmModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSubmit={() => onDelete(selected)}
-        headerText="Delete service"
-      >
-        <div className="py-4">
-          <p>
-            Are you sure you want to delete
-            <span className="font-bold"> {selected.name}</span>?
-          </p>
-          <p className="text-red-500">
-            This is a permanent action and cannot be reverted!
-          </p>
-        </div>
-      </ConfirmModal>
+      <DeleteModal
+        itemName={selected.name}
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={() => onDelete(selected)}
+      ></DeleteModal>
       <Suspense fallback={<Loading />}>
         <Table
           rowData={servicesData}

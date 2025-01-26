@@ -31,10 +31,17 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
     }
 
     let didChange = false;
-    for (var key in serviceData) {
-      if (serviceData[key] !== data[key]) {
-        didChange = true;
+
+    // if received data is empty and checkValidity passed
+    // onSubmit can get triggered
+    if (data) {
+      for (var key in serviceData) {
+        if (serviceData[key] !== data[key]) {
+          didChange = true;
+        }
       }
+    } else {
+      didChange = true;
     }
 
     if (didChange) {
@@ -47,8 +54,6 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
         price: parseInt(serviceData.price),
         cost: parseInt(serviceData.cost) || 0,
       });
-    } else {
-      onSubmit();
     }
 
     onClose();

@@ -26,7 +26,7 @@ export default function Table({
   const resetView = useCallback(() => {
     tableRef.current.api.resetColumnState();
     tableRef.current.api.autoSizeColumns(columnsToAutoSize);
-  }, []);
+  }, [columnsToAutoSize]);
 
   return (
     <div className="h-full w-full">
