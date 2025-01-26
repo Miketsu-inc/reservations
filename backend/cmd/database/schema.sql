@@ -47,7 +47,7 @@ create table if not exists "Location" (
 
 create table if not exists "Appointment" (
     ID                      serial          primary key unique not null,
-    client_id               uuid            references "User" (ID) not null,
+    user_id                 uuid            references "User" (ID) not null,
     merchant_id             uuid            references "Merchant" (ID) not null,
     service_id              integer         references "Service" (ID) not null,
     location_id             integer         references "Location" (ID) not null,

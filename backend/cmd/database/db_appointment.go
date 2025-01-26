@@ -9,7 +9,7 @@ import (
 
 type Appointment struct {
 	Id              int       `json:"ID"`
-	ClientId        uuid.UUID `json:"client_id"`
+	UserId          uuid.UUID `json:"user_id"`
 	MerchantId      uuid.UUID `json:"merchant_id"`
 	ServiceId       int       `json:"service_id"`
 	LocationId      int       `json:"location_id"`
@@ -23,11 +23,11 @@ type Appointment struct {
 
 func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
 	query := `
-	insert into "Appointment" (client_id, merchant_id, service_id, location_id, from_date, to_date, user_comment, merchant_comment, price_then, cost_then)
+	insert into "Appointment" (user_id, merchant_id, service_id, location_id, from_date, to_date, user_comment, merchant_comment, price_then, cost_then)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, app.ClientId, app.MerchantId, app.ServiceId, app.LocationId, app.FromDate, app.ToDate,
+	_, err := s.db.ExecContext(ctx, query, app.UserId, app.MerchantId, app.ServiceId, app.LocationId, app.FromDate, app.ToDate,
 		app.UserComment, app.MerchantComment, app.PriceThen, app.CostThen)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (s *service) GetAppointmentsByUser(ctx context.Context, user_id uuid.UUID) 
 	var appointments []Appointment
 	for rows.Next() {
 		var app Appointment
-		if err := rows.Scan(&app.Id, &app.ClientId, &app.MerchantId, &app.ServiceId, &app.LocationId, &app.FromDate, &app.ToDate,
+		if err := rows.Scan(&app.Id, &app.UserId, &app.MerchantId, &app.ServiceId, &app.LocationId, &app.FromDate, &app.ToDate,
 			&app.UserComment, &app.MerchantComment, &app.PriceThen, &app.CostThen); err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid
 	s.name as service_name, s.color as serivce_color, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
-	join "User" u on a.client_id = u.id
+	join "User" u on a.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3`
 
 	rows, err := s.db.QueryContext(ctx, query, merchantId, start, end)

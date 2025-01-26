@@ -81,7 +81,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:              0,
-		ClientId:        userID,
+		UserId:          userID,
 		MerchantId:      merchantId,
 		ServiceId:       newApp.ServiceId,
 		LocationId:      newApp.LocationId,
