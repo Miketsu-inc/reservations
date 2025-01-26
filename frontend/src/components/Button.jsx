@@ -9,13 +9,23 @@ export default function Button({
   buttonText,
   isLoading,
   disabled,
+  variant = "primary",
 }) {
+  const variants = {
+    primary: "bg-primary hover:bg-hvr_primary text-white shadow-md",
+    secondary:
+      "bg-transparent text-primary hover:text-hvr_primary border-2 border-primary hover:border-hvr_primary",
+    tertiary:
+      "bg-transparent hover:bg-gray-300 dark:hover:bg-gray-800 text-text_color shadow-none border-2 border-gray-300 dark:border-gray-800",
+    danger:
+      "dark:hover:bg-red-800 dark:bg-red-700 bg-red-500 hover:bg-red-600 text-white shadow-md",
+  };
+
   return (
     <button
       onClick={onClick}
-      className={`${styles} rounded-lg bg-primary font-semibold text-white shadow-md
-        hover:bg-hvr_primary focus-visible:outline-1
-        ${isLoading || disabled ? "opacity-50 transition-opacity" : ""} `}
+      className={`${styles} ${variants[variant]} rounded-lg font-semibold focus-visible:outline-1
+        ${isLoading || disabled ? "opacity-50 transition-opacity" : ""}`}
       name={name}
       type={type}
       disabled={isLoading || disabled}

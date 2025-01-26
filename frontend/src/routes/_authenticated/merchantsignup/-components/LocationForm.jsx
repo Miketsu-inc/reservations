@@ -132,6 +132,7 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
           />
         </div>
         <Button
+          variant="primary"
           styles="p-2 sm:mt-10 mt-8"
           type="submit"
           buttonText="Continue"

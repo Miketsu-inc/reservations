@@ -1,11 +1,11 @@
 import Button from "@components/Button";
+import CloseButton from "@components/CloseButton";
 import Modal from "@components/Modal";
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
 import MessageIcon from "@icons/MessageIcon";
 import PersonIcon from "@icons/PersonIcon";
 import PhoneIcon from "@icons/PhoneIcon";
-import XIcon from "@icons/XIcon";
 import { useEffect, useState } from "react";
 
 export default function CalendarModal({
@@ -71,11 +71,7 @@ export default function CalendarModal({
               {String(eventInfo.start.getMonth() + 1).padStart(2, "0")}-
               {String(eventInfo.start.getDate()).padStart(2, "0")}
             </div>
-            <XIcon
-              styles="hover:bg-hvr_gray w-8 h-8 rounded-lg fill-gray-500 cursor-pointer
-                dark:fill-white"
-              onClick={onClose}
-            />
+            <CloseButton onClick={onClose} />
           </div>
           <div
             className="mb-2 mt-1 flex flex-col gap-3 rounded-lg bg-primary/70 p-3 font-semibold

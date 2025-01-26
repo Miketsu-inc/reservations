@@ -111,6 +111,7 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
       />
       <div className="mt-10 flex items-center justify-center">
         <Button
+          variant="primary"
           styles="w-full py-2"
           type="button"
           onClick={handleClick}

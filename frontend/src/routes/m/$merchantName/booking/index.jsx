@@ -218,10 +218,11 @@ function SelectDateTime() {
                 />
               </div>
               <div
-                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 dark:bg-layer_bg md:static
-                  md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent"
+                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 md:static md:bg-transparent
+                  md:px-0 md:pt-10 dark:bg-layer_bg dark:md:bg-transparent"
               >
                 <Button
+                  variant="primary"
                   type="submit"
                   disabled={day && selectedHour ? false : true}
                   isLoading={isLoading}

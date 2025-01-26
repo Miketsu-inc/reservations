@@ -37,11 +37,13 @@ export default function Table({
         />
         <div className="flex flex-row justify-between sm:gap-3">
           <Button
+            variant="primary"
             onClick={resetView}
             styles="p-2 text-sm w-fit"
             buttonText="Reset view"
           />
           <Button
+            variant="primary"
             onClick={onNewItem}
             styles="p-2 text-sm w-fit"
             buttonText={`New ${itemName}`}

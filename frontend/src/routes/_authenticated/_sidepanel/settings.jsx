@@ -105,7 +105,8 @@ function SettingsPage() {
           Danger zone
         </h2>
         <Button
-          styles="hover:bg-red-800 bg-red-700 py-2"
+          variant="danger"
+          styles="py-2"
           buttonText="Log out on all devices"
           onClick={logOutOnAllDevices}
         />

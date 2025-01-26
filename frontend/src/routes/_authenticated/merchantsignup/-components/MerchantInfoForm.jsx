@@ -161,6 +161,7 @@ export default function MerchantInfoForm({ isCompleted }) {
           hasError={isEmpty}
         />
         <Button
+          variant="primary"
           styles="py-2 sm:mt-10 mt-14"
           type="submit"
           buttonText="Continue"

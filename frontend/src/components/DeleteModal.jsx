@@ -26,15 +26,16 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
         </div>
         <div className="flex flex-row items-center justify-end gap-4">
           <Button
+            variant="tertiary"
             name="cancel"
-            styles="py-2 px-3 bg-transparent font-normal !text-text_color hover:bg-transparent
-              shadow-none"
+            styles="py-2 px-3"
             buttonText="Cancel"
             onClick={onClose}
           />
           <Button
+            variant="danger"
             name="delete"
-            styles="py-2 px-3 dark:hover:bg-red-800 dark:bg-red-700 bg-red-500 hover:bg-red-600"
+            styles="py-2 px-3"
             buttonText="Delete"
             onClick={(e) => {
               onDelete(e), onClose();

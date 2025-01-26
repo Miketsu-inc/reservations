@@ -1,7 +1,7 @@
 import Button from "@components/Button";
+import CloseButton from "@components/CloseButton";
 import Input from "@components/Input";
 import Modal from "@components/Modal";
-import XIcon from "@icons/XIcon";
 import { useEffect, useState } from "react";
 
 // html inputs always return strings regardless of the input type
@@ -83,10 +83,7 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
         <div className="flex flex-col">
           <div className="my-1 flex flex-row items-center justify-between">
             <p className="text-lg md:text-xl">Service</p>
-            <XIcon
-              styles="h-8 w-8 md:h-9 md:w-9 fill-text_color cursor-pointer"
-              onClick={onClose}
-            />
+            <CloseButton onClick={onClose} />
           </div>
           <hr className="py-2 md:py-3" />
         </div>
@@ -180,6 +177,7 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
             </div>
             <div className="text-right">
               <Button
+                variant="primary"
                 type="submit"
                 name="add service"
                 styles="py-2 px-4"

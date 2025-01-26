@@ -162,7 +162,7 @@ function LoginPage() {
         >
           <GoogleIcon styles="group-hover:fill-hvr_secondary fill-secondary mr-3" />
         </Button>
-        <div className="mt-4 grid grid-cols-3 items-center">
+        <div className="my-4 grid grid-cols-3 items-center">
           <hr className="border-text_color" />
           <p className="text-center text-sm">OR</p>
           <hr className="border-text_color" />
@@ -171,11 +171,10 @@ function LoginPage() {
           onSubmit={formSubmitHandler}
           method="POST"
           autoComplete="on"
-          className="flex flex-col"
+          className="flex flex-col gap-4"
         >
           <FloatingLabelInput
             ref={emailRef}
-            styles="mt-4"
             type="text"
             name="email"
             id="emailInput"
@@ -187,7 +186,6 @@ function LoginPage() {
           />
           <FloatingLabelInput
             ref={passwordRef}
-            styles="mt-4"
             type="password"
             name="password"
             id="passwordInput"
@@ -199,14 +197,15 @@ function LoginPage() {
           />
           <a
             href="#"
-            className="mt-3 text-right text-sm hover:underline focus:underline focus:outline-none"
+            className="text-right text-sm hover:underline focus:underline focus:outline-none"
           >
             Forgot your password?
           </a>
           <Button
+            variant="primary"
             name="login"
             type="submit"
-            styles="mt-4 text-white py-2"
+            styles="py-2"
             buttonText="Login"
             isLoading={isLoading}
           />
