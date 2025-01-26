@@ -1,14 +1,9 @@
-import Button from "@components/Button";
-import Loading from "@components/Loading";
-import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
-import PlusIcon from "@icons/PlusIcon";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import ServiceModal from "./-components/ServiceModal";
-
-const ServicesTable = lazy(() => import("./-components/ServicesTable"));
+import ServicesTable from "./-components/ServicesTable";
 
 async function fetchServices() {
   const response = await fetch(`/api/v1/merchants/services`, {
@@ -40,7 +35,6 @@ function ServicesPage() {
   const loaderData = Route.useLoaderData();
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState();
-  const [searchText, setSearchText] = useState("");
   const [serverError, setServerError] = useState();
 
   async function deleteHandler(selected) {
@@ -121,39 +115,22 @@ function ServicesPage() {
       <div className="w-full md:w-3/4">
         <ServerError error={serverError} />
         <p className="text-xl">Services</p>
-        <div className="flex flex-col justify-between gap-2 py-2 sm:flex-row sm:gap-0">
-          <SearchInput
-            searchText={searchText}
-            onChange={(text) => setSearchText(text)}
-          />
-          <Button
-            onClick={() => {
-              // the first condition is necessary for it to not cause an error
-              // in case of a new serive
-              if (modalData && modalData.id) {
-                setModalData();
-              }
-              setShowModal(true);
-            }}
-            styles="p-2 text-sm w-fit"
-            buttonText="New Service"
-          >
-            <PlusIcon styles="w-4 h-4 md:w-5 md:h-5 mr-1 text-white" />
-          </Button>
-        </div>
-        <div className="h-2/3">
-          <Suspense fallback={<Loading />}>
-            <ServicesTable
-              onDelete={deleteHandler}
-              onEdit={(service) => {
-                setModalData(service);
-                setShowModal(true);
-              }}
-              searchText={searchText}
-              servicesData={loaderData}
-            />
-          </Suspense>
-        </div>
+        <ServicesTable
+          servicesData={loaderData}
+          onNewItem={() => {
+            // the first condition is necessary for it to not cause an error
+            // in case of a new item
+            if (modalData && modalData.id) {
+              setModalData();
+            }
+            setShowModal(true);
+          }}
+          onEdit={(service) => {
+            setModalData(service);
+            setShowModal(true);
+          }}
+          onDelete={deleteHandler}
+        />
       </div>
     </div>
   );

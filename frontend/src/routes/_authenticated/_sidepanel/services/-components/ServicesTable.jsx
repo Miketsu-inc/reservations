@@ -1,31 +1,25 @@
 import ConfirmModal from "@components/ConfirmModal";
+import Loading from "@components/Loading";
 import { useWindowSize } from "@lib/hooks";
-import {
-  CellStyleModule,
-  ClientSideRowModelModule,
-  ColumnAutoSizeModule,
-  QuickFilterModule,
-  themeAlpine,
-} from "ag-grid-community";
-import { AgGridReact } from "ag-grid-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import TableActions from "../../-components/TableActions";
 import TableColorPicker from "./TableColorPicker";
+
+const Table = lazy(() => import("@components/Table"));
 
 function currencyFormatter(params) {
   return params.value.toLocaleString();
 }
 
 export default function ServicesTable({
+  servicesData,
   onDelete,
   onEdit,
-  searchText,
-  servicesData,
+  onNewItem,
 }) {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   const isSmallScreen =
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
@@ -90,44 +84,27 @@ export default function ServicesTable({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={() => onDelete(selected)}
-        headerText="Confirmation"
+        headerText="Delete service"
       >
         <div className="py-4">
           <p>
-            Are you sure you want to delete this service?
-            <span className="font-bold"> {selected.name}</span>
+            Are you sure you want to delete
+            <span className="font-bold"> {selected.name}</span>?
           </p>
           <p className="text-red-500">
             This is a permanent action and cannot be reverted!
           </p>
         </div>
       </ConfirmModal>
-      <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
-        <AgGridReact
-          theme={themeAlpine}
-          quickFilterText={searchText}
-          modules={[
-            ClientSideRowModelModule,
-            QuickFilterModule,
-            CellStyleModule,
-            ColumnAutoSizeModule,
-          ]}
+      <Suspense fallback={<Loading />}>
+        <Table
           rowData={servicesData}
-          columnDefs={columnDef}
-          defaultColDef={{ sortable: true, suppressMovable: true }}
-          getRowId={(params) => String(params.data.id)}
-          onFirstDataRendered={(params) => {
-            params.api.autoSizeColumns([
-              "duration",
-              "price",
-              "cost",
-              "actions",
-            ]);
-          }}
-          onGridReady={() => setIsLoading(false)}
-          suppressColumnVirtualisation={true}
+          columnDef={columnDef}
+          columnsToAutoSize={["duration", "price", "cost", "actions"]}
+          itemName="service"
+          onNewItem={onNewItem}
         />
-      </div>
+      </Suspense>
     </div>
   );
 }

@@ -12,12 +12,14 @@ import SidePanelProfile from "./SidePanelProfile";
 
 export default function SidePanel({ profileImage, profileText }) {
   const windowSize = useWindowSize();
-  const [isOpen, setIsOpen] = useState(windowSize !== "sm" ? true : false);
+  const [isOpen, setIsOpen] = useState(
+    windowSize !== "sm" && windowSize !== "md" ? true : false
+  );
   const sidePanelRef = useRef();
   useClickOutside(sidePanelRef, closeSidePanelHandler);
 
   useEffect(() => {
-    if (windowSize === "sm") {
+    if (windowSize === "sm" || windowSize === "md") {
       setIsOpen(false);
     } else {
       setIsOpen(true);
@@ -29,7 +31,7 @@ export default function SidePanel({ profileImage, profileText }) {
   }
 
   function closeSidePanelHandler() {
-    if (windowSize === "sm") {
+    if (windowSize === "sm" || windowSize === "md") {
       setIsOpen(false);
     }
   }
@@ -54,8 +56,8 @@ export default function SidePanel({ profileImage, profileText }) {
         aria-controls="sidepanel"
         type="button"
         className="ms-3 mt-2 inline-flex items-center rounded-lg p-2 text-sm text-text_color
-          hover:bg-hvr_gray focus:outline-none focus:ring-2 focus:ring-gray-200
-          dark:focus:ring-gray-600 sm:hidden"
+          hover:bg-hvr_gray focus:outline-none focus:ring-2 focus:ring-gray-200 md:hidden
+          dark:focus:ring-gray-600"
         onClick={sidePanelClickHandler}
       >
         <span className="sr-only">Open sidepanel</span>
@@ -64,7 +66,7 @@ export default function SidePanel({ profileImage, profileText }) {
       <aside
         ref={sidePanelRef}
         id="sidepanel"
-        className={`${isOpen ? "sm:translate-x-0" : "-translate-x-full"} fixed left-0 top-0 z-40
+        className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"} fixed left-0 top-0 z-40
           h-screen w-64 overflow-y-auto transition-transform`}
         aria-label="Sidepanel"
       >

@@ -12,7 +12,7 @@ function DashboardLayout() {
         profileImage="https://dummyimage.com/40x40/000/fff.png&text=logo"
         profileText="Company name"
       />
-      <div className="min-h-screen sm:ml-64">
+      <div className="min-h-screen md:ml-64">
         <div className="rounded-lg bg-bg_color">
           <Outlet />
         </div>
