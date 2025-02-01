@@ -85,7 +85,12 @@ function CalendarPage() {
   return (
     <div>
       <Suspense fallback={<Loading />}>
-        <Calendar router={router} view={search.view} eventData={loaderData} />
+        <Calendar
+          router={router}
+          view={search.view}
+          start={search.start}
+          eventData={loaderData}
+        />
       </Suspense>
     </div>
   );

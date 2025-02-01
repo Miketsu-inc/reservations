@@ -47,13 +47,13 @@ describe("isDurationValid", () => {
   });
 
   it("timeGridDay a day", () => {
-    expect(isDurationValid("timeGridDay", "2025-01-31", "2025-01-31")).toBe(
+    expect(isDurationValid("timeGridDay", "2025-01-31", "2025-02-01")).toBe(
       true
     );
   });
 
   it("timeGridDay more than a day", () => {
-    expect(isDurationValid("timeGridDay", "2025-01-31", "2025-02-01")).toBe(
+    expect(isDurationValid("timeGridDay", "2025-01-31", "2025-02-02")).toBe(
       false
     );
   });

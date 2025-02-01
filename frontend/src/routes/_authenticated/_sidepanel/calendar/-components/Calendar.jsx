@@ -62,7 +62,7 @@ const defaultEventInfo = {
   },
 };
 
-export default function Calendar({ router, view, eventData }) {
+export default function Calendar({ router, view, start, eventData }) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
@@ -73,8 +73,6 @@ export default function Calendar({ router, view, eventData }) {
     (api) => {
       const start = formatToDateString(api.view.currentStart);
       const end = isoToDateString(api.view.currentEnd.toISOString());
-      console.log(start);
-      console.log(end);
 
       router.navigate({
         search: () => ({ view: api.view.type, start: start, end: end }),
@@ -202,6 +200,7 @@ export default function Calendar({ router, view, eventData }) {
             eventDurationEditable={true}
             selectable={true}
             initialView={view ? view : "timeGridWeek"}
+            initialDate={start ? start : undefined}
             height="100%"
             headerToolbar={false}
             events={formatData(eventData)}

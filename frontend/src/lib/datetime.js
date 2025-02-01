@@ -50,7 +50,11 @@ export function calculateStartEndTime(view) {
       break;
     case "timeGridDay":
       start = now;
-      end = now;
+      end = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + 1
+      );
       break;
   }
 
@@ -109,7 +113,7 @@ export function isDurationValid(view, startStr, endStr) {
         new Date(
           start.getFullYear(),
           start.getMonth(),
-          start.getDate()
+          start.getDate() + 1
         ).getTime()
       );
 
