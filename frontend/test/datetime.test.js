@@ -29,19 +29,19 @@ describe("isDurationValid", () => {
   });
 
   it("timeGridWeek a week", () => {
-    expect(isDurationValid("timeGridWeek", "2025-01-27", "2025-02-02")).toBe(
+    expect(isDurationValid("timeGridWeek", "2025-01-27", "2025-02-03")).toBe(
       true
     );
   });
 
   it("timeGridWeek more than a week", () => {
-    expect(isDurationValid("timeGridWeek", "2025-01-27", "2025-02-03")).toBe(
+    expect(isDurationValid("timeGridWeek", "2025-01-27", "2025-02-04")).toBe(
       false
     );
   });
 
   it("timeGridWeek less than a week", () => {
-    expect(isDurationValid("timeGridWeek", "2025-01-31", "2025-02-02")).toBe(
+    expect(isDurationValid("timeGridWeek", "2025-01-31", "2025-02-03")).toBe(
       false
     );
   });
