@@ -33,3 +33,4 @@ lint:
 
 test:
 	@go test ./backend/...
+	@npm run test

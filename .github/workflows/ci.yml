@@ -47,9 +47,8 @@ jobs:
       - name: Node build
         run: npm run build
 
-      # TODO
-      # - name: Node test
-      #   run: npm test
+      - name: Node test
+        run: npm run test
 
       - name: Go build
         run: go build -o backend/bin/reservations backend/cmd/main.go
