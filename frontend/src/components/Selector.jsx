@@ -35,7 +35,7 @@ export default function Selector({
       >
         <div className="flex w-full flex-nowrap justify-between gap-1 p-1">
           <span className="overflow-hidden text-nowrap">{value}</span>
-          <BackArrowIcon styles="-rotate-90 w-5 h-5" />
+          <BackArrowIcon styles="-rotate-90 w-5 h-5 stroke-gray-500" />
         </div>
       </button>
       <ul

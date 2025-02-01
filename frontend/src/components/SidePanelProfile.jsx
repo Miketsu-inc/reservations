@@ -9,7 +9,7 @@ export default function SidePanelProfile({ image, text, closeSidePanel }) {
         className="basis-1/8 ml-auto rounded-md hover:bg-hvr_gray sm:hidden"
         onClick={closeSidePanel}
       >
-        <BackArrowIcon styles="h-6 w-6" />
+        <BackArrowIcon styles="h-6 w-6 stroke-gray-500" />
       </span>
     </div>
   );

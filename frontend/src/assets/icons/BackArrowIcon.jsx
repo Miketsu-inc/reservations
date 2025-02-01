@@ -1,7 +1,7 @@
 export default function BackArrowIcon({ styles }) {
   return (
     <svg
-      className={`${styles} h-6 w-6 fill-none stroke-gray-500`}
+      className={`${styles} fill-none`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"

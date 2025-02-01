@@ -92,14 +92,14 @@ function SettingsPage() {
             text-left dark:bg-layer_bg"
         >
           <span>Terms and privacy policy</span>
-          <BackArrowIcon styles="rotate-180" />
+          <BackArrowIcon styles="h-6 w-6 rotate-180 stroke-gray-500" />
         </button>
         <button
           className="mb-6 mt-1 flex w-full justify-between gap-2 rounded-b-md bg-bg_color p-2 py-3
             text-left dark:bg-layer_bg"
         >
           <span>Notifications</span>
-          <BackArrowIcon styles="rotate-180" />
+          <BackArrowIcon styles="h-6 w-6 rotate-180 stroke-gray-500" />
         </button>
         <h2 className="mt-8 pb-4 text-left text-gray-600 dark:text-gray-300">
           Danger zone
