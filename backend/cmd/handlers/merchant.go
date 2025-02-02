@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -338,6 +339,140 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		Cost:        serv.Cost,
 	})
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting service for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating service for merchant: %s", err.Error()))
+	}
+}
+
+func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving customers for merchant: %s", err.Error()))
+	}
+
+	httputil.Success(w, http.StatusOK, customers)
+}
+
+func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
+	type newCustomer struct {
+		FirstName string `json:"first_name" validate:"required"`
+		LastName  string `json:"last_name" validate:"required"`
+	}
+	var customer newCustomer
+
+	if err := validate.ParseStruct(r, &customer); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	customerId, err := uuid.NewV7()
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	if err := m.Postgresdb.NewCustomer(r.Context(), merchantId, database.Customer{
+		Id:        customerId,
+		FirstName: customer.FirstName,
+		LastName:  customer.LastName,
+		IsDummy:   true,
+	}); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id provided"))
+		return
+	}
+
+	customerId, err := uuid.Parse(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting customer id to uuid: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.DeleteCustomerById(r.Context(), customerId, merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting customer for merchant: %s", err.Error()))
+	}
+}
+
+func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
+	type Customer struct {
+		Id        uuid.UUID `json:"id" validate:"required"`
+		FirstName string    `json:"first_name" validate:"required"`
+		LastName  string    `json:"last_name" validate:"required"`
+	}
+	var customer Customer
+
+	if err := validate.ParseStruct(r, &customer); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	customerId, err := uuid.Parse(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting customer id to uuid: %s", err.Error()))
+		return
+	}
+
+	if customerId != customer.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id provided"))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.UpdateCustomerById(r.Context(), merchantId, database.Customer{
+		Id:        customer.Id,
+		FirstName: customer.FirstName,
+		LastName:  customer.LastName,
+		IsDummy:   true,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating customer for merchant: %s", err.Error()))
 	}
 }

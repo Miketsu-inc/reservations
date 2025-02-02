@@ -90,6 +90,17 @@ type PostgreSQL interface {
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service by it's id
 	UpdateServiceById(context.Context, Service) error
+
+	// -- Customer --
+
+	// Get all customers for a mechant by it's id
+	GetCustomersByMerchantId(context.Context, uuid.UUID) ([]PublicCustomer, error)
+	// Insert a new customer to the database
+	NewCustomer(context.Context, uuid.UUID, Customer) error
+	// Delete customer by it's id
+	DeleteCustomerById(context.Context, uuid.UUID, uuid.UUID) error
+	// Update customer by it's id
+	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
 }
 
 type service struct {

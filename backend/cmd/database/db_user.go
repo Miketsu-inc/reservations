@@ -18,15 +18,18 @@ type User struct {
 	PasswordHash      string    `json:"password_hash"`
 	JwtRefreshVersion int       `json:"jwt_refresh_version"`
 	Subscription      int       `json:"subscription"`
+	IsDummy           bool      `json:"is_dummy"`
+	AddedBy           uuid.UUID `json:"added_by"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
 	query := `
-	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, subscription)
-	values ($1, $2, $3, $4, $5, $6, $7, $8)
+	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, subscription, is_dummy, added_by)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash, user.JwtRefreshVersion, user.Subscription)
+	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
+		user.JwtRefreshVersion, user.Subscription, user.IsDummy, user.AddedBy)
 	if err != nil {
 		return err
 	}
@@ -41,7 +44,8 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 	`
 
 	var user User
-	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash, &user.JwtRefreshVersion, &user.Subscription)
+	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
+		&user.JwtRefreshVersion, &user.Subscription, &user.IsDummy, &user.AddedBy)
 	if err != nil {
 		return User{}, err
 	}
@@ -131,4 +135,54 @@ func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID
 	}
 
 	return refreshVersion, nil
+}
+
+type Customer struct {
+	Id        uuid.UUID `json:"id"`
+	FirstName string    `json:"fist_name"`
+	LastName  string    `json:"last_name"`
+	IsDummy   bool      `json:"is_dummy"`
+}
+
+func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
+	query := `
+	insert into "User" (id, first_name, last_name, is_dummy, added_by)
+	values ($1, $2, $3, $4, $5)
+	`
+
+	_, err := s.db.ExecContext(ctx, query, customer.Id, customer.FirstName, customer.LastName, customer.IsDummy, merchantId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
+	query := `
+	delete from "User"
+	where is_dummy = true and id = $1 and added_by = $2
+	`
+
+	_, err := s.db.ExecContext(ctx, query, customerId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
+	query := `
+	update "User"
+	set first_name = $3, last_name = $4
+	where is_dummy = true and id = $2 and added_by = $1
+	`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

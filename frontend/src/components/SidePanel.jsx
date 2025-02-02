@@ -2,6 +2,7 @@ import CalendarIcon from "@icons/CalendarIcon";
 import ChartIcon from "@icons/ChartIcon";
 import DashboardIcon from "@icons/DashboardIcon";
 import HamburgerMenuIcon from "@icons/HamburgerMenuIcon";
+import PersonIcon from "@icons/PersonIcon";
 import ServicesIcon from "@icons/ServicesIcon";
 import SettingsIcon from "@icons/SettingsIcon";
 import SignOutIcon from "@icons/SignOutIcon";
@@ -87,6 +88,9 @@ export default function SidePanel({ profileImage, profileText }) {
             </SidePanelItem>
             <SidePanelItem link="/services" text="Services">
               <ServicesIcon styles="h-5 w-5" />
+            </SidePanelItem>
+            <SidePanelItem link="/customers" text="Customers">
+              <PersonIcon styles="h-5 w-5 fill-current" />
             </SidePanelItem>
             <SidePanelItem link="#" text="Statistics" isPro={true}>
               <ChartIcon styles="h-5 w-5" />

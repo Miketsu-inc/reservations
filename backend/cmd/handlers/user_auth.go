@@ -141,6 +141,8 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		PasswordHash:      hashedPassword,
 		JwtRefreshVersion: 0,
 		Subscription:      0,
+		IsDummy:           false,
+		AddedBy:           uuid.Nil,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error when creating user: %s", err.Error()))

@@ -188,3 +188,45 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 
 	return nil
 }
+
+type PublicCustomer struct {
+	Id             uuid.UUID `json:"id"`
+	FirstName      string    `json:"first_name"`
+	LastName       string    `json:"last_name"`
+	IsDummy        bool      `json:"is_dummy"`
+	TimesBooked    int       `json:"times_booked"`
+	TimesCancelled int       `json:"times_cancelled"`
+}
+
+func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
+	query := `
+	select u.id, u.first_name, u.last_name, u.is_dummy, count(a.id) as times_booked, 0 as times_cancelled
+	from "User" u
+	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
+	where u.is_dummy = true or a.id is not null
+	group by u.id;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	if err != nil {
+		return []PublicCustomer{}, err
+	}
+	defer rows.Close()
+
+	var customers []PublicCustomer
+	for rows.Next() {
+		var cust PublicCustomer
+		if err := rows.Scan(&cust.Id, &cust.FirstName, &cust.LastName, &cust.IsDummy, &cust.TimesBooked, &cust.TimesCancelled); err != nil {
+			return []PublicCustomer{}, err
+		}
+		customers = append(customers, cust)
+	}
+
+	// if customers array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(customers) == 0 {
+		customers = []PublicCustomer{}
+	}
+
+	return customers, nil
+}

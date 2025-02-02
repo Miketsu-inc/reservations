@@ -1,0 +1,116 @@
+import Button from "@components/Button";
+import CloseButton from "@components/CloseButton";
+import Input from "@components/Input";
+import Modal from "@components/Modal";
+import { useEffect, useState } from "react";
+
+// html inputs always return strings regardless of the input type
+// null id indicates that this customer shall be added as new
+const defaultCustomerData = {
+  id: null,
+  first_name: "",
+  last_name: "",
+};
+
+export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
+  const [customerData, setCustomerData] = useState(defaultCustomerData);
+
+  useEffect(() => {
+    setCustomerData(data || defaultCustomerData);
+  }, [data]);
+
+  async function submitHandler(e) {
+    e.preventDefault();
+
+    if (!e.target.checkValidity()) {
+      return;
+    }
+
+    let didChange = false;
+
+    // if received data is empty and checkValidity passed
+    // onSubmit can get triggered
+    if (data) {
+      for (var key in customerData) {
+        if (customerData[key] !== data[key]) {
+          didChange = true;
+        }
+      }
+    } else {
+      didChange = true;
+    }
+
+    if (didChange) {
+      onSubmit({
+        id: customerData.id,
+        first_name: customerData.first_name,
+        last_name: customerData.last_name,
+      });
+    }
+
+    onClose();
+  }
+
+  function onChangeHandler(e) {
+    let name = e.name;
+    let value = e.value;
+
+    setCustomerData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <form className="m-2 mx-3" id="CustomerForm" onSubmit={submitHandler}>
+        <div className="flex flex-col">
+          <div className="my-1 flex flex-row items-center justify-between">
+            <p className="text-lg md:text-xl">Customer</p>
+            <CloseButton onClick={onClose} />
+          </div>
+          <hr className="py-2 md:py-3" />
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 md:w-72">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="first_name">First name</label>
+              <Input
+                styles="p-2"
+                id="first_name"
+                name="first_name"
+                type="text"
+                hasError={false}
+                placeholder="First name"
+                value={customerData.first_name}
+                inputData={onChangeHandler}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="last_name">Last name</label>
+              <Input
+                styles="p-2"
+                id="last_name"
+                name="last_name"
+                type="text"
+                hasError={false}
+                placeholder="Last name"
+                value={customerData.last_name}
+                inputData={onChangeHandler}
+              />
+            </div>
+          </div>
+          <div className="text-right">
+            <Button
+              variant="primary"
+              type="submit"
+              name="add service"
+              styles="py-2 px-4"
+              buttonText="Submit"
+            />
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}

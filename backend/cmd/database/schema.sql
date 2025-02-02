@@ -4,11 +4,13 @@ create table if not exists "User" (
     ID                      uuid            primary key unique not null,
     first_name              varchar(30)     not null,
     last_name               varchar(30)     not null,
-    email                   varchar(320)    not null,
-    phone_number            varchar(30)     not null,
-    password_hash           varchar(72)     not null,
-    jwt_refresh_version     integer         not null,
-    subscription            integer         not null
+    email                   varchar(320),
+    phone_number            varchar(30),
+    password_hash           varchar(72),
+    jwt_refresh_version     integer,
+    subscription            integer
+    is_dummy                boolean         not null,
+    added_by                uuid
 );
 
 create table if not exists "Merchant" (
