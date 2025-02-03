@@ -18,7 +18,7 @@ type Merchant struct {
 	OwnerId      uuid.UUID        `json:"owner_id"`
 	ContactEmail string           `json:"contact_email"`
 	Intoduction  string           `json:"introduction"`
-	Annoucement  string           `json:"annoucement"`
+	Announcement string           `json:"announcement"`
 	AboutUs      string           `json:"about_us"`
 	ParkingInfo  string           `json:"parking_info"`
 	PaymentInfo  string           `json:"payment_info"`
@@ -44,12 +44,12 @@ func (ms *MerchantSettings) Scan(value any) error {
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, annoucement, about_us, parking_info, payment_info, settings)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info, settings)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
-		merchant.Intoduction, merchant.Annoucement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Settings)
+		merchant.Intoduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Settings)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 
 	var merchant Merchant
 	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail,
-		&merchant.Intoduction, &merchant.Annoucement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Settings)
+		&merchant.Intoduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Settings)
 	if err != nil {
 		return Merchant{}, err
 	}
@@ -108,7 +108,7 @@ type MerchantInfo struct {
 	UrlName      string `json:"url_name"`
 	ContactEmail string `json:"contact_email"`
 	Intoduction  string `json:"introduction"`
-	Annoucement  string `json:"annoucement"`
+	Announcement string `json:"announcement"`
 	AboutUs      string `json:"about_us"`
 	ParkingInfo  string `json:"parking_info"`
 	PaymentInfo  string `json:"payment_info"`
@@ -125,14 +125,14 @@ type MerchantInfo struct {
 // this should and will be refactored
 func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error) {
 	query := `
-	select m.name, m.url_name, m.contact_email, m.introduction, m.annoucement, m.about_us, m.parking_info, m.payment_info,
+	select m.name, m.url_name, m.contact_email, m.introduction, m.announcement, m.about_us, m.parking_info, m.payment_info,
 		l.id as location_id, l.country, l.city, l.postal_code, l.address from "Merchant" m
 	inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1
 	`
 
 	var mi MerchantInfo
-	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Intoduction, &mi.Annoucement,
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Intoduction, &mi.Announcement,
 		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
 	if err != nil {
 		return MerchantInfo{}, err

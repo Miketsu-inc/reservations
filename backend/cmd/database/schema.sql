@@ -20,7 +20,7 @@ create table if not exists "Merchant" (
     owner_id                uuid            references "User" (ID) not null,
     contact_email           varchar(320)    not null,
     introduction            varchar(150),
-    annoucement             varchar(200),
+    announcement             varchar(200),
     about_us                text,
     parking_info            text,
     payment_info            text,

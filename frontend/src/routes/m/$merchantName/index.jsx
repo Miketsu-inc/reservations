@@ -35,7 +35,7 @@ const defaultMerchantInfo = {
   contact_email: "",
   short_location: "",
   introduction: "",
-  annoucement: "",
+  announcement: "",
   about_us: "",
   parking_info: "",
   payment_info: "",
@@ -62,7 +62,7 @@ function MerchantPage() {
         contact_email: loaderData.contact_email,
         short_location: shortLocation,
         introduction: loaderData.introduction,
-        annoucement: loaderData.annoucement,
+        announcement: loaderData.announcement,
         about_us: loaderData.about_us,
         parking_info: loaderData.parking_info,
         payment_info: loaderData.payment_info,
@@ -97,7 +97,7 @@ function MerchantPage() {
           </div>
           <div className="flex w-full flex-col gap-2 md:items-end lg:items-start">
             <p className="text-justify">{merchantInfo.introduction}</p>
-            <p className="text-justify">{merchantInfo.annoucement}</p>
+            <p className="text-justify">{merchantInfo.announcement}</p>
           </div>
         </div>
         <div className="h-40 sm:h-52 md:h-72 lg:h-full lg:max-h-full lg:w-2/3">
