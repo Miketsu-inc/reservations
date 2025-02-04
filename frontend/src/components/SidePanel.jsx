@@ -95,7 +95,7 @@ export default function SidePanel({ profileImage, profileText }) {
             <SidePanelItem link="#" text="Statistics" isPro={true}>
               <ChartIcon styles="h-5 w-5" />
             </SidePanelItem>
-            <SidePanelItem link="/settings" text="Settings">
+            <SidePanelItem link="/settings/profile" text="Settings">
               <SettingsIcon styles="h-5 w-5" />
             </SidePanelItem>
             <span className="flex-1"></span>
