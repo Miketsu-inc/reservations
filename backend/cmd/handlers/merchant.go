@@ -37,6 +37,25 @@ func (m *Merchant) InfoByName(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, merchantInfo)
 }
 
+func (m *Merchant) MerchantSettingsInfoByOwner(w http.ResponseWriter, r *http.Request) {
+	userID := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	settingsInfo, err := m.Postgresdb.GetMerchantSettingsInfo(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while accessing settings merchant info: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, settingsInfo)
+
+}
+
 func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 	type newLocation struct {
 		Country    string `json:"country" validate:"required"`
@@ -475,4 +494,34 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating customer for merchant: %s", err.Error()))
 	}
+}
+
+func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) {
+	type MerchantFileds struct {
+		Introduction string `json:"introduction"`
+		Announcement string `json:"announcement"`
+		AboutUs      string `json:"about_us"`
+		ParkingInfo  string `json:"parking_info"`
+		PaymentInfo  string `json:"payment_info"`
+	}
+	var data MerchantFileds
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data.Introduction, data.Announcement, data.AboutUs, data.PaymentInfo, data.ParkingInfo)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error()))
+	}
+
 }

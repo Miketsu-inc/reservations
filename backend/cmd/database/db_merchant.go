@@ -230,3 +230,52 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 
 	return customers, nil
 }
+
+type MerchantSettingsInfo struct {
+	Name         string `json:"merchant_name"`
+	ContactEmail string `json:"contact_email"`
+	Introduction string `json:"introduction"`
+	Announcement string `json:"announcement"`
+	AboutUs      string `json:"about_us"`
+	ParkingInfo  string `json:"parking_info"`
+	PaymentInfo  string `json:"payment_info"`
+
+	LocationId int    `json:"location_id"`
+	Country    string `json:"country"`
+	City       string `json:"city"`
+	PostalCode string `json:"postal_code"`
+	Address    string `json:"address"`
+}
+
+func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error) {
+
+	query := `
+	select m.name, m.contact_email, m.introduction, m.announcement, 
+		   m.about_us, m.parking_info, m.payment_info, 
+	       l.id as location_id, l.country, l.city, l.postal_code, l.address
+	from "Merchant" m inner join "Location" l on m.id = l.merchant_id 
+	where m.id = $1;`
+
+	var msi MerchantSettingsInfo
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&msi.Name, &msi.ContactEmail, &msi.Introduction, &msi.Announcement,
+		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address)
+	if err != nil {
+		return MerchantSettingsInfo{}, err
+	}
+
+	return msi, nil
+}
+
+func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, introduction, announcement, aboutUs, paymentInfo, parkingInfo string) error {
+	query := `
+	update "Merchant" 
+	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
+	where id = $1`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, introduction, announcement, aboutUs, paymentInfo, parkingInfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

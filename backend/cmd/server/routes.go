@@ -123,6 +123,8 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
+		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
+		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
 
 		r.Post("/location", merchantHandler.NewLocation)
 		r.Post("/check-url", merchantHandler.CheckUrl)

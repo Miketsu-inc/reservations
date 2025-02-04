@@ -70,6 +70,10 @@ type PostgreSQL interface {
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 	// Check if a merchant url exists in the database
 	IsMerchantUrlUnique(context.Context, string) error
+	// Get all necessary information for merchant settings page
+	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
+	// Update the field used in the reservation page
+	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string) error
 
 	// -- Location --
 
