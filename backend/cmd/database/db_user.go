@@ -138,19 +138,21 @@ func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID
 }
 
 type Customer struct {
-	Id        uuid.UUID `json:"id"`
-	FirstName string    `json:"fist_name"`
-	LastName  string    `json:"last_name"`
-	IsDummy   bool      `json:"is_dummy"`
+	Id          uuid.UUID `json:"id"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+	Email       string    `json:"email"`
+	PhoneNumber string    `json:"phone_number"`
+	IsDummy     bool      `json:"is_dummy"`
 }
 
 func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
 	query := `
-	insert into "User" (id, first_name, last_name, is_dummy, added_by)
-	values ($1, $2, $3, $4, $5)
+	insert into "User" (id, first_name, last_name, email, phone_number, is_dummy, added_by)
+	values ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, customer.Id, customer.FirstName, customer.LastName, customer.IsDummy, merchantId)
+	_, err := s.db.ExecContext(ctx, query, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber, customer.IsDummy, merchantId)
 	if err != nil {
 		return err
 	}
@@ -175,11 +177,11 @@ func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, 
 func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
 	query := `
 	update "User"
-	set first_name = $3, last_name = $4
+	set first_name = $3, last_name = $4, email = $5, phone_number = $6
 	where is_dummy = true and id = $2 and added_by = $1
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName)
+	_, err := s.db.ExecContext(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber)
 	if err != nil {
 		return err
 	}

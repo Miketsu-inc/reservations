@@ -10,6 +10,8 @@ const defaultCustomerData = {
   id: null,
   first_name: "",
   last_name: "",
+  email: "",
+  phone_number: "",
 };
 
 export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
@@ -45,6 +47,8 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
         id: customerData.id,
         first_name: customerData.first_name,
         last_name: customerData.last_name,
+        email: customerData.email,
+        phone_number: customerData.phone_number,
       });
     }
 
@@ -96,6 +100,34 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
                 hasError={false}
                 placeholder="Last name"
                 value={customerData.last_name}
+                inputData={onChangeHandler}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="email">Email</label>
+              <Input
+                styles="p-2"
+                id="email"
+                name="email"
+                type="email"
+                hasError={false}
+                placeholder="customer@gmail.com"
+                required={false}
+                value={customerData.email}
+                inputData={onChangeHandler}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="phone_number">Phone number</label>
+              <Input
+                styles="p-2"
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                hasError={false}
+                placeholder="+36201234567"
+                required={false}
+                value={customerData.phone_number}
                 inputData={onChangeHandler}
               />
             </div>

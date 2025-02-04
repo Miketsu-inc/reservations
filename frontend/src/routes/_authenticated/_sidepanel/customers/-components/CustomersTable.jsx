@@ -24,7 +24,7 @@ export default function CustomersTable({
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const columnDef = [
-    { field: "id", hide: true, sort: "asc" },
+    { field: "id", hide: true },
     {
       field: "first_name",
       headerName: "First name",
@@ -38,9 +38,20 @@ export default function CustomersTable({
       ...(isSmallScreen ? { minWidth: 120 } : {}),
     },
     {
+      field: "email",
+      headerName: "Email",
+      ...(isSmallScreen ? { minWidth: 120 } : {}),
+    },
+    {
+      field: "phone_number",
+      headerName: "Phone number",
+      ...(isSmallScreen ? { minWidth: 120 } : {}),
+    },
+    {
       field: "times_booked",
       headerName: "Times booked",
       cellClass: "text-right",
+      sort: "desc",
     },
     {
       field: "times_cancelled",
@@ -50,8 +61,6 @@ export default function CustomersTable({
     {
       field: "is_dummy",
       headerName: "Add by me",
-      flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
     },
     {
       field: "actions",
@@ -76,6 +85,8 @@ export default function CustomersTable({
       },
       resizable: false,
       sortable: false,
+      minWidth: 90,
+      maxWidth: 90,
     },
   ];
 
@@ -93,12 +104,11 @@ export default function CustomersTable({
           columnDef={columnDef}
           itemName="customer"
           columnsToAutoSize={[
-            "first_name",
-            "last_name",
+            "email",
+            "phone_number",
             "times_booked",
             "times_cancelled",
             "is_dummy",
-            "actions",
           ]}
           onNewItem={onNewItem}
         />

@@ -280,6 +280,7 @@ func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
 	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
+		return
 	}
 
 	httputil.Success(w, http.StatusOK, services)
@@ -310,6 +311,7 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 	err = m.Postgresdb.DeleteServiceById(r.Context(), merchantId, serviceId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting service for merchant: %s", err.Error()))
+		return
 	}
 }
 
@@ -359,6 +361,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating service for merchant: %s", err.Error()))
+		return
 	}
 }
 
@@ -374,6 +377,7 @@ func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving customers for merchant: %s", err.Error()))
+		return
 	}
 
 	httputil.Success(w, http.StatusOK, customers)
@@ -381,8 +385,10 @@ func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 	type newCustomer struct {
-		FirstName string `json:"first_name" validate:"required"`
-		LastName  string `json:"last_name" validate:"required"`
+		FirstName   string `json:"first_name" validate:"required"`
+		LastName    string `json:"last_name" validate:"required"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phone_number"`
 	}
 	var customer newCustomer
 
@@ -406,10 +412,12 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := m.Postgresdb.NewCustomer(r.Context(), merchantId, database.Customer{
-		Id:        customerId,
-		FirstName: customer.FirstName,
-		LastName:  customer.LastName,
-		IsDummy:   true,
+		Id:          customerId,
+		FirstName:   customer.FirstName,
+		LastName:    customer.LastName,
+		Email:       customer.Email,
+		PhoneNumber: customer.PhoneNumber,
+		IsDummy:     true,
 	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
 		return
@@ -443,14 +451,17 @@ func (m *Merchant) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	err = m.Postgresdb.DeleteCustomerById(r.Context(), customerId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting customer for merchant: %s", err.Error()))
+		return
 	}
 }
 
 func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	type Customer struct {
-		Id        uuid.UUID `json:"id" validate:"required"`
-		FirstName string    `json:"first_name" validate:"required"`
-		LastName  string    `json:"last_name" validate:"required"`
+		Id          uuid.UUID `json:"id" validate:"required,uuid"`
+		FirstName   string    `json:"first_name" validate:"required"`
+		LastName    string    `json:"last_name" validate:"required"`
+		Email       string    `json:"email"`
+		PhoneNumber string    `json:"phone_number"`
 	}
 	var customer Customer
 
@@ -486,13 +497,16 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = m.Postgresdb.UpdateCustomerById(r.Context(), merchantId, database.Customer{
-		Id:        customer.Id,
-		FirstName: customer.FirstName,
-		LastName:  customer.LastName,
-		IsDummy:   true,
+		Id:          customer.Id,
+		FirstName:   customer.FirstName,
+		LastName:    customer.LastName,
+		Email:       customer.Email,
+		PhoneNumber: customer.PhoneNumber,
+		IsDummy:     true,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating customer for merchant: %s", err.Error()))
+		return
 	}
 }
 
@@ -522,6 +536,6 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data.Introduction, data.Announcement, data.AboutUs, data.PaymentInfo, data.ParkingInfo)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error()))
+		return
 	}
-
 }

@@ -190,17 +190,14 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 }
 
 type PublicCustomer struct {
-	Id             uuid.UUID `json:"id"`
-	FirstName      string    `json:"first_name"`
-	LastName       string    `json:"last_name"`
-	IsDummy        bool      `json:"is_dummy"`
-	TimesBooked    int       `json:"times_booked"`
-	TimesCancelled int       `json:"times_cancelled"`
+	Customer
+	TimesBooked    int `json:"times_booked"`
+	TimesCancelled int `json:"times_cancelled"`
 }
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select u.id, u.first_name, u.last_name, u.is_dummy, count(a.id) as times_booked, 0 as times_cancelled
+	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, count(a.id) as times_booked, 0 as times_cancelled
 	from "User" u
 	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
 	where u.is_dummy = true or a.id is not null
@@ -216,7 +213,7 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 	var customers []PublicCustomer
 	for rows.Next() {
 		var cust PublicCustomer
-		if err := rows.Scan(&cust.Id, &cust.FirstName, &cust.LastName, &cust.IsDummy, &cust.TimesBooked, &cust.TimesCancelled); err != nil {
+		if err := rows.Scan(&cust.Id, &cust.FirstName, &cust.LastName, &cust.Email, &cust.PhoneNumber, &cust.IsDummy, &cust.TimesBooked, &cust.TimesCancelled); err != nil {
 			return []PublicCustomer{}, err
 		}
 		customers = append(customers, cust)
@@ -250,10 +247,10 @@ type MerchantSettingsInfo struct {
 func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error) {
 
 	query := `
-	select m.name, m.contact_email, m.introduction, m.announcement, 
-		   m.about_us, m.parking_info, m.payment_info, 
+	select m.name, m.contact_email, m.introduction, m.announcement,
+		   m.about_us, m.parking_info, m.payment_info,
 	       l.id as location_id, l.country, l.city, l.postal_code, l.address
-	from "Merchant" m inner join "Location" l on m.id = l.merchant_id 
+	from "Merchant" m inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1;`
 
 	var msi MerchantSettingsInfo
@@ -268,7 +265,7 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 
 func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, introduction, announcement, aboutUs, paymentInfo, parkingInfo string) error {
 	query := `
-	update "Merchant" 
+	update "Merchant"
 	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
 	where id = $1`
 

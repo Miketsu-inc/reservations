@@ -23,6 +23,9 @@ export default function Table({
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // you should only autosize columns which does not have a flex field
+  // as with that the autosize will get applied instead of flex
+  // making the table potentially not fill it's grid
   const resetView = useCallback(() => {
     tableRef.current.api.resetColumnState();
     tableRef.current.api.autoSizeColumns(columnsToAutoSize);
@@ -73,6 +76,8 @@ export default function Table({
               params.api.autoSizeColumns(columnsToAutoSize);
             }}
             onGridReady={() => setIsLoading(false)}
+            // suppressColumnVirtualisation is needed for autosizing to work on mobile
+            // if disabled only columns in view will get autosized
             suppressColumnVirtualisation={true}
           />
         </div>
