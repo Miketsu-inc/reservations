@@ -52,7 +52,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		UrlName:      urlName,
 		OwnerId:      userID,
 		ContactEmail: signup.ContactEmail,
-		Intoduction:  "",
+		Introduction: "",
 		Announcement: "",
 		AboutUs:      "",
 		ParkingInfo:  "",

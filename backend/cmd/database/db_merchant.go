@@ -17,7 +17,7 @@ type Merchant struct {
 	UrlName      string           `json:"url_name"`
 	OwnerId      uuid.UUID        `json:"owner_id"`
 	ContactEmail string           `json:"contact_email"`
-	Intoduction  string           `json:"introduction"`
+	Introduction string           `json:"introduction"`
 	Announcement string           `json:"announcement"`
 	AboutUs      string           `json:"about_us"`
 	ParkingInfo  string           `json:"parking_info"`
@@ -49,7 +49,7 @@ func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	`
 
 	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
-		merchant.Intoduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Settings)
+		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Settings)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 
 	var merchant Merchant
 	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail,
-		&merchant.Intoduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Settings)
+		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Settings)
 	if err != nil {
 		return Merchant{}, err
 	}
@@ -107,7 +107,7 @@ type MerchantInfo struct {
 	Name         string `json:"merchant_name"`
 	UrlName      string `json:"url_name"`
 	ContactEmail string `json:"contact_email"`
-	Intoduction  string `json:"introduction"`
+	Introduction string `json:"introduction"`
 	Announcement string `json:"announcement"`
 	AboutUs      string `json:"about_us"`
 	ParkingInfo  string `json:"parking_info"`
@@ -132,7 +132,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	`
 
 	var mi MerchantInfo
-	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Intoduction, &mi.Announcement,
+	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Introduction, &mi.Announcement,
 		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
 	if err != nil {
 		return MerchantInfo{}, err
