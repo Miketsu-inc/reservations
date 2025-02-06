@@ -1,7 +1,7 @@
 export default function CreditCardIcon({ styles }) {
   return (
     <svg
-      className={`${styles} h-6 w-6 fill-none stroke-black stroke-2 dark:stroke-current`}
+      className={`${styles} fill-none stroke-current stroke-2`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"

@@ -9,16 +9,16 @@ export default function SettingsNavigation() {
     <nav className="">
       <ul className="flex flex-col items-start justify-center">
         <NavigationItem label="Profile" path="/settings/profile">
-          <PersonIcon styles="dark:fill-gray-400 fill-gray-600" />
+          <PersonIcon styles="h-6 w-6" />
         </NavigationItem>
         <NavigationItem label="Merchant" path="/settings/merchant">
-          <Briefcase styles="dark:stroke-gray-400 stroke-gray-600" />
+          <Briefcase styles="h-6 w-6" />
         </NavigationItem>
         <NavigationItem label="Calendar" path="/settings/calendar">
-          <CalendarIcon styles="dark:stroke-gray-400 stroke-gray-600 h-6 w-6" />
+          <CalendarIcon styles="h-6 w-6" />
         </NavigationItem>
         <NavigationItem label="Billing" path="/settings/billing">
-          <CreditCardIcon styles="dark:stroke-gray-400 stroke-gray-600" />
+          <CreditCardIcon styles="h-6 w-6" />
         </NavigationItem>
       </ul>
     </nav>

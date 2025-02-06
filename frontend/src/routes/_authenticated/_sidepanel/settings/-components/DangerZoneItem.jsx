@@ -11,8 +11,8 @@ export default function DangerZoneItem({ title, description, buttonText }) {
         <span className="text-text_color/70">{description}</span>
       </div>
       <Button
-        variant="tertiary"
-        styles="py-1 px-2 w-min text-nowrap ring-1 ring-red-600"
+        variant="danger"
+        styles="py-1 px-2 w-fit"
         buttonText={buttonText}
       />
     </div>

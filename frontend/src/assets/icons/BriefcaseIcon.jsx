@@ -1,7 +1,7 @@
 export default function Briefcase({ styles }) {
   return (
     <svg
-      className={`${styles} h-5 w-5 fill-none stroke-black stroke-2 dark:stroke-current`}
+      className={`${styles} fill-none stroke-current stroke-2`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
