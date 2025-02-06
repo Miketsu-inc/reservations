@@ -57,7 +57,7 @@ export default function SidePanel({ profileImage, profileText }) {
         aria-controls="sidepanel"
         type="button"
         className="ms-3 mt-2 inline-flex items-center rounded-lg p-2 text-sm text-text_color
-          hover:bg-hvr_gray focus:outline-none focus:ring-2 focus:ring-gray-200 md:hidden
+          hover:bg-hvr_gray focus:outline-hidden focus:ring-2 focus:ring-gray-200 md:hidden
           dark:focus:ring-gray-600"
         onClick={sidePanelClickHandler}
       >

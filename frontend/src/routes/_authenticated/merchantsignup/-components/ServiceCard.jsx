@@ -55,7 +55,7 @@ export default function ServiceCard({
             <div className="flex gap-1">
               <div className="h-min p-1 hover:bg-gray-300/20">
                 <EditIcon
-                  styles="w-4 h-4 flex-shrink-0 cursor-pointer"
+                  styles="w-4 h-4 shrink-0 cursor-pointer"
                   onClick={() => {
                     setIsEditing(true);
                   }}
@@ -65,7 +65,7 @@ export default function ServiceCard({
                 onClick={() => {
                   handleDelete(index);
                 }}
-                styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg fill-current flex-shrink-0
+                styles="hover:bg-red-600/50 w-6 h-6 rounded-tr-lg fill-current shrink-0
                   cursor-pointer"
               />
             </div>
@@ -92,7 +92,7 @@ export default function ServiceCard({
           <Input
             id="card_name"
             styles={`focus:border-gray-400 border-b-2 border-x-0 border-t-0 border-gray-700
-              bg-transparent pl-1 text-lg font-semibold text-text_color outline-none p-0`}
+              bg-transparent pl-1 text-lg font-semibold text-text_color outline-hidden p-0`}
             type="text"
             value={tempData.name}
             name="name"
@@ -107,7 +107,7 @@ export default function ServiceCard({
           <Input
             id="card_duration"
             styles="focus:border-gray-400 border-b-2 border-x-0 border-t-0 border-gray-700
-              bg-transparent pl-1 text-sm tracking-tight text-gray-400 outline-none p-0"
+              bg-transparent pl-1 text-sm tracking-tight text-gray-400 outline-hidden p-0"
             type="text"
             value={tempData.duration}
             name="duration"
@@ -121,7 +121,7 @@ export default function ServiceCard({
           <Input
             id="card_price"
             styles="border-b-2 border-x-0 border-t-0 border-gray-700 bg-transparent pl-1 text-sm
-              tracking-tight text-green-600 outline-none focus:border-gray-400
+              tracking-tight text-green-600 outline-hidden focus:border-gray-400
               dark:text-green-400 p-0"
             type="text"
             placeholder="Price (FT)"

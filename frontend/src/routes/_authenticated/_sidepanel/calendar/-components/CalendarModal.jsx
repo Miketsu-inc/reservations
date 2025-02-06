@@ -74,7 +74,7 @@ export default function CalendarModal({
             <CloseButton onClick={onClose} />
           </div>
           <div
-            className="mb-2 mt-1 flex flex-col gap-3 rounded-lg bg-primary/70 p-3 font-semibold
+            className="bg-primary/70 mt-1 mb-2 flex flex-col gap-3 rounded-lg p-3 font-semibold
               text-white"
           >
             {eventInfo.title}
@@ -107,7 +107,7 @@ export default function CalendarModal({
               bg-gray-200 p-3"
           >
             <div className="flex gap-3">
-              <PersonIcon styles="fill-gray-600" />
+              <PersonIcon styles="fill-gray-600 w-5 h-5" />
               <span className="font-medium text-black">
                 {`${eventInfo.extendedProps.last_name} ${eventInfo.extendedProps.first_name}`}
               </span>
@@ -149,7 +149,7 @@ export default function CalendarModal({
               disabled={disabled}
               placeholder="Add notes about this appointment only you can see..."
               className="max-h-48 min-h-20 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm
-                text-blue-950 outline-none focus:border-blue-600"
+                text-blue-950 outline-hidden focus:border-blue-600"
             />
           </div>
           <div className="flex items-center justify-end pt-2">

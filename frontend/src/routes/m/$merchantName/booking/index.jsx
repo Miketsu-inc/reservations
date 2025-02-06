@@ -134,7 +134,7 @@ function SelectDateTime() {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-screen-xl bg-layer_bg px-8">
+    <div className="bg-layer_bg mx-auto min-h-screen max-w-7xl px-8">
       <div className="py-5">
         <Link from={Route.fullPath} to="..">
           <button className="inline-flex gap-1 hover:underline">
@@ -175,7 +175,7 @@ function SelectDateTime() {
                 />
               </div>
             </div>
-            <div className="pt-8 md:flex md:w-1/2 md:flex-col md:pr-14 md:pt-0">
+            <div className="pt-8 md:flex md:w-1/2 md:flex-col md:pt-0 md:pr-14">
               <div className="hidden md:flex md:flex-col md:gap-6">
                 <p className="py-5 text-xl">Summary</p>
                 <div className="text-lg *:grid *:grid-cols-2">
@@ -201,7 +201,7 @@ function SelectDateTime() {
                   </div>
                 </div>
               </div>
-              <div className="mb-20 mt-2 flex w-full flex-col gap-3 md:mb-0 md:mt-4">
+              <div className="mt-2 mb-20 flex w-full flex-col gap-3 md:mt-4 md:mb-0">
                 <div className="flex items-center gap-3">
                   <MessageIcon styles="fill-current" />
                   <span>Add comment to your appointment (optional)</span>
@@ -212,14 +212,15 @@ function SelectDateTime() {
                   onChange={(e) => {
                     setUserComment(e.target.value);
                   }}
-                  className="max-h-20 min-h-10 w-full rounded-md border border-gray-400 bg-transparent p-2
-                    text-sm outline-none placeholder:text-sm focus:border-text_color md:max-h-32"
+                  className="focus:border-text_color max-h-20 min-h-10 w-full rounded-md border
+                    border-gray-400 bg-transparent p-2 text-sm outline-hidden placeholder:text-sm
+                    md:max-h-32"
                   placeholder="Add comment your merchant might want to know..."
                 />
               </div>
               <div
-                className="fixed bottom-0 left-0 right-0 bg-hvr_gray px-8 py-3 md:static md:bg-transparent
-                  md:px-0 md:pt-10 dark:bg-layer_bg dark:md:bg-transparent"
+                className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0 left-0 px-8 py-3 md:static
+                  md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent"
               >
                 <Button
                   variant="primary"

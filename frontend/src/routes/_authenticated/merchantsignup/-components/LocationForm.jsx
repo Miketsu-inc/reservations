@@ -72,7 +72,7 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
         </h1>
         <ServerError styles="mt-4 mb-2" error={serverError} />
         <div className="flex w-full gap-4">
-          <div className="flex-grow">
+          <div className="grow">
             <Input
               type="text"
               styles="w-full p-2"

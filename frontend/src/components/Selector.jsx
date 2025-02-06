@@ -26,7 +26,7 @@ export default function Selector({
       className="relative flex w-full flex-col transition-all"
     >
       <button
-        className={`relative inline-flex w-full flex-shrink-0 items-center ${styles}
+        className={`relative inline-flex w-full shrink-0 items-center ${styles}
           ${showOptions ? "border-[1px] border-gray-600 bg-hvr_gray" : ""}`}
         type="button"
         onClick={() => {

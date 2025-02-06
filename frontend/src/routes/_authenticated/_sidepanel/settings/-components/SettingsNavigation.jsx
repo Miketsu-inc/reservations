@@ -9,7 +9,7 @@ export default function SettingsNavigation() {
     <nav className="">
       <ul className="flex flex-col items-start justify-center">
         <NavigationItem label="Profile" path="/settings/profile">
-          <PersonIcon styles="h-6 w-6" />
+          <PersonIcon styles="h-6 w-6 fill-current" />
         </NavigationItem>
         <NavigationItem label="Merchant" path="/settings/merchant">
           <Briefcase styles="h-6 w-6" />

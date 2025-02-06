@@ -156,7 +156,7 @@ function LoginPage() {
           name="Goolge button"
           styles="group flex justify-center items-center my-2 bg-transparent border
             border-secondary hover:border-hvr_secondary !text-secondary !font-normal
-            *:hover:text-hvr_secondary focus:outline-none *:focus:text-hvr_secondary
+            hover:*:text-hvr_secondary focus:outline-hidden focus:*:text-hvr_secondary
             focus:border-hvr_secondary hover:bg-transparent py-2"
           buttonText="Log in with Google"
         >
@@ -197,7 +197,7 @@ function LoginPage() {
           />
           <a
             href="#"
-            className="text-right text-sm hover:underline focus:underline focus:outline-none"
+            className="text-right text-sm hover:underline focus:underline focus:outline-hidden"
           >
             Forgot your password?
           </a>

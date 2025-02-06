@@ -183,7 +183,7 @@ export default function Calendar({ router, view, start, eventData }) {
           </div>
         </div>
       </div>
-      <div className="flex flex-grow items-center justify-center">
+      <div className="flex grow items-center justify-center">
         <div className="light h-full w-full bg-bg_color text-text_color">
           <FullCalendar
             ref={calendarRef}

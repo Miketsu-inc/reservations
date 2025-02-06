@@ -120,7 +120,7 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
                 name="description"
                 placeholder="About this service..."
                 className="max-h-20 min-h-20 w-full rounded-lg border border-gray-300 bg-bg_color p-2
-                  text-sm outline-none focus:border-primary md:max-h-32 md:min-h-32"
+                  text-sm outline-hidden focus:border-primary md:max-h-32 md:min-h-32"
                 value={serviceData.description}
                 onChange={onChangeHandler}
               />

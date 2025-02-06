@@ -4,7 +4,7 @@ run:
 	@make -j 4 tailwindcss vite air db
 
 build:
-	@npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
+	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
 	@npm run build
 	@go build -o backend/bin/reservations backend/cmd/main.go
 
@@ -15,7 +15,7 @@ air:
 	@air
 
 tailwindcss:
-	@npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
+	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
 
 db:
 	@docker start postgresdb

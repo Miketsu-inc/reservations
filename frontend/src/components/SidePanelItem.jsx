@@ -8,7 +8,7 @@ export default function SidePanelItem({ children, link, text, isPro, action }) {
         className="group flex items-center rounded-lg p-2 text-text_color hover:bg-hvr_gray"
       >
         <span
-          className="flex-shrink-0 text-gray-500 transition duration-75 group-hover:text-text_color
+          className="shrink-0 text-gray-500 transition duration-75 group-hover:text-text_color
             dark:text-gray-400"
         >
           {children}

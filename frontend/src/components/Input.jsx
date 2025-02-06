@@ -30,7 +30,7 @@ export default function Input({
     <label htmlFor={id} className="flex flex-col">
       {labelText && <span className="pb-1">{labelText}</span>}
       <InputBase
-        styles={`${styles} ps-1 peer border-2 bg-transparent outline-none
+        styles={`${styles} ps-1 peer border-2 bg-transparent outline-hidden
           invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600
           invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
           ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}

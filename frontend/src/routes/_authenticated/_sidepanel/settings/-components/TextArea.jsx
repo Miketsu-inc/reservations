@@ -21,7 +21,7 @@ export default function TextArea({
         {label}
         <textarea
           className={`${styles} w-full overflow-auto rounded-lg border border-gray-400 bg-hvr_gray/50
-            px-3 py-2 font-normal outline-none focus:border-2 focus:border-primary
+            px-3 py-2 font-normal outline-hidden focus:border-2 focus:border-primary
             focus:bg-transparent md:resize dark:[color-scheme:dark]`}
           name={name}
           id={id}
