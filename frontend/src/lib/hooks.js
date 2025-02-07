@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { ToastContext } from "@components/ToastProvider";
+import { useContext, useEffect, useState } from "react";
 import "./autofill/detect-autofill";
 import { getBreakPoint } from "./utils";
 
@@ -86,4 +87,8 @@ export function useAutofill(ref, callback) {
     input.addEventListener("onautocomplete", onAutofill);
     return () => input.removeEventListener("onautocomplete", onAutofill);
   }, [ref, callback]);
+}
+
+export function useToast() {
+  return useContext(ToastContext);
 }

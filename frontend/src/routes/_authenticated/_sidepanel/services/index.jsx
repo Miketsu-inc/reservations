@@ -1,4 +1,5 @@
 import ServerError from "@components/ServerError";
+import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -36,6 +37,7 @@ function ServicesPage() {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [modalData, setModalData] = useState();
   const [serverError, setServerError] = useState();
+  const { showToast } = useToast();
 
   async function deleteHandler(selected) {
     try {
@@ -57,6 +59,10 @@ function ServicesPage() {
       } else {
         router.invalidate();
         setServerError();
+        showToast({
+          message: "Service deleted successfully",
+          variant: "success",
+        });
       }
     } catch (err) {
       setServerError(err.message);

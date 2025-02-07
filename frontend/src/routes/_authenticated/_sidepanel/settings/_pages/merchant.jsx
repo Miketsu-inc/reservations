@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
+import { useToast } from "@lib/hooks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import DangerZoneItem from "../-components/DangerZoneItem";
@@ -52,6 +53,7 @@ function MerchantPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [serverError, setServerError] = useState("");
   const loaderData = Route.useLoaderData();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (loaderData) {
@@ -115,6 +117,10 @@ function MerchantPage() {
       } else {
         setOriginalData(merchantInfo);
         setServerError("");
+        showToast({
+          message: "Merchant updated successfully!",
+          variant: "success",
+        });
       }
     } catch (err) {
       setServerError(err.message);
@@ -186,7 +192,7 @@ function MerchantPage() {
         <div className="my-2 font-semibold">Working hours</div>
 
         <div className="flex flex-col gap-3">
-          <span className="text-sm text-text_color/70 md:w-2/3">
+          <span className="text-text_color/70 text-sm md:w-2/3">
             All of the fields on this page are optional and can be deleted at
             any time, and by filling them out, you're giving us consent to share
             this data wherever your user profile appears.
