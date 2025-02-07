@@ -24,9 +24,8 @@ export default function Button({
   return (
     <button
       onClick={onClick}
-      className={`${styles} ${variants[variant]} cursor-pointer rounded-lg font-semibold
-        focus-visible:outline-1
-        ${isLoading || disabled ? "opacity-50 transition-opacity" : ""}`}
+      className={`${styles} ${variants[variant]} rounded-lg font-semibold focus-visible:outline-1
+        ${isLoading || disabled ? "opacity-50 transition-opacity" : "cursor-pointer"}`}
       name={name}
       type={type}
       disabled={isLoading || disabled}

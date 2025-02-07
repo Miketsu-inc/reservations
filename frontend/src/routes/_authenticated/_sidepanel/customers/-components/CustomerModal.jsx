@@ -52,6 +52,7 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
       });
     }
 
+    setCustomerData(defaultCustomerData);
     onClose();
   }
 
