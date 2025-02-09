@@ -108,10 +108,11 @@ function ServicesPage() {
         });
         setServerError();
         router.invalidate();
-        setModalData();
       }
     } catch (err) {
       setServerError(err.message);
+    } finally {
+      setModalData();
     }
   }
 

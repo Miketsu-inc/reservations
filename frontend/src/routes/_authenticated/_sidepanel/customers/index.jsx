@@ -111,10 +111,11 @@ function CustomersPage() {
         });
         setServerError();
         router.invalidate();
-        setCustomerModalData();
       }
     } catch (err) {
       setServerError(err.message);
+    } finally {
+      setCustomerModalData();
     }
   }
 

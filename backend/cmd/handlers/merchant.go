@@ -387,8 +387,8 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 	type newCustomer struct {
 		FirstName   string `json:"first_name" validate:"required"`
 		LastName    string `json:"last_name" validate:"required"`
-		Email       string `json:"email"`
-		PhoneNumber string `json:"phone_number"`
+		Email       string `json:"email" validate:"omitempty,email"`
+		PhoneNumber string `json:"phone_number" validate:"omitempty,e164"`
 	}
 	var customer newCustomer
 
@@ -460,8 +460,8 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 		Id          uuid.UUID `json:"id" validate:"required,uuid"`
 		FirstName   string    `json:"first_name" validate:"required"`
 		LastName    string    `json:"last_name" validate:"required"`
-		Email       string    `json:"email"`
-		PhoneNumber string    `json:"phone_number"`
+		Email       string    `json:"email" validate:"omitempty,email"`
+		PhoneNumber string    `json:"phone_number" validate:"omitempty,e164"`
 	}
 	var customer Customer
 
