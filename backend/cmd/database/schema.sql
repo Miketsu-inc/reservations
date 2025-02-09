@@ -23,8 +23,7 @@ create table if not exists "Merchant" (
     announcement             varchar(200),
     about_us                text,
     parking_info            text,
-    payment_info            text,
-    settings                jsonb
+    payment_info            text
 );
 
 create table if not exists "Service" (
@@ -59,4 +58,15 @@ create table if not exists "Appointment" (
     merchant_comment        text,
     price_then              bigint          not null,
     cost_then               bigint
+);
+
+
+
+create table if not exists "Preferences" (
+    ID                      serial           primary key unique not null,
+    merchant_id             uuid             references "Merchant" (ID) not null,
+    first_day_of_week       varchar(10)      default "Monday" check (first_day_of_week in ("Monday", "Sunday")),
+    time_format             varchar(10)      default "24-hour" check (time_format in ("12-hour", "24-hour")),
+    calendar_view           varchar(10)      default "week" check (calendar_view_computer in ("month", "week", "day", "list")),
+    calendar_view_mobile    varchar(10)      default "day" check (calendar_view_mobile in ("month", "week", "day", "list"))
 );

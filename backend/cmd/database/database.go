@@ -105,6 +105,15 @@ type PostgreSQL interface {
 	DeleteCustomerById(context.Context, uuid.UUID, uuid.UUID) error
 	// Update customer by it's id
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
+
+	// -- Preferences --
+
+	//Create default preferences for merchant
+	CreatePreferences(context.Context, uuid.UUID) error
+	// Get all preferences for a merchant by it's id
+	GetPreferencesByMerchantId(context.Context, uuid.UUID) (PreferenceData, error)
+	// Update preferences for a merchant
+	UpdatePreferences(context.Context, uuid.UUID, PreferenceData) error
 }
 
 type service struct {

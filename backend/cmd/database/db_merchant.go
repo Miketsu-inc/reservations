@@ -3,8 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -12,44 +10,26 @@ import (
 )
 
 type Merchant struct {
-	Id           uuid.UUID        `json:"ID"`
-	Name         string           `json:"name"`
-	UrlName      string           `json:"url_name"`
-	OwnerId      uuid.UUID        `json:"owner_id"`
-	ContactEmail string           `json:"contact_email"`
-	Introduction string           `json:"introduction"`
-	Announcement string           `json:"announcement"`
-	AboutUs      string           `json:"about_us"`
-	ParkingInfo  string           `json:"parking_info"`
-	PaymentInfo  string           `json:"payment_info"`
-	Settings     MerchantSettings `json:"settings"`
-}
-
-type MerchantSettings struct {
-	Test bool `json:"test"`
-}
-
-func (ms MerchantSettings) Value() (driver.Value, error) {
-	return json.Marshal(ms)
-}
-
-func (ms *MerchantSettings) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("column value is not of type []byte")
-	}
-
-	return json.Unmarshal(b, &ms)
+	Id           uuid.UUID `json:"ID"`
+	Name         string    `json:"name"`
+	UrlName      string    `json:"url_name"`
+	OwnerId      uuid.UUID `json:"owner_id"`
+	ContactEmail string    `json:"contact_email"`
+	Introduction string    `json:"introduction"`
+	Announcement string    `json:"announcement"`
+	AboutUs      string    `json:"about_us"`
+	ParkingInfo  string    `json:"parking_info"`
+	PaymentInfo  string    `json:"payment_info"`
 }
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info, settings)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := s.db.ExecContext(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
-		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Settings)
+		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo)
 	if err != nil {
 		return err
 	}
@@ -95,7 +75,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 
 	var merchant Merchant
 	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail,
-		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Settings)
+		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo)
 	if err != nil {
 		return Merchant{}, err
 	}
@@ -267,7 +247,7 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	query := `
 	update "Merchant"
 	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
-	where id = $1`
+	where id = $1;`
 
 	_, err := s.db.ExecContext(ctx, query, merchantId, introduction, announcement, aboutUs, paymentInfo, parkingInfo)
 	if err != nil {
