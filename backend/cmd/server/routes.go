@@ -126,6 +126,9 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
 		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
 
+		r.Get("/preferences", merchantHandler.GetPreferences)
+		r.Patch("/preferences", merchantHandler.UpdatePreferences)
+
 		r.Post("/location", merchantHandler.NewLocation)
 		r.Post("/check-url", merchantHandler.CheckUrl)
 

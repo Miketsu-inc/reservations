@@ -539,3 +539,45 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
+
+func (m *Merchant) GetPreferences(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	preferences, err := m.Postgresdb.GetPreferencesByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while accessing merchant preferences: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, preferences)
+}
+
+func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
+	var p database.PreferenceData
+
+	if err := validate.ParseStruct(r, &p); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.UpdatePreferences(r.Context(), merchantId, p)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating preferences: %s", err.Error()))
+		return
+	}
+
+}
