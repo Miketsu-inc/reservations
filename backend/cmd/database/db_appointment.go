@@ -145,3 +145,19 @@ func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, l
 
 	return bookedApps, nil
 }
+
+func (s *service) TransferDummyAppointments(ctx context.Context, merchantId uuid.UUID, fromUser uuid.UUID, toUser uuid.UUID) error {
+	query := `
+	update "Appointment" a
+	set user_id = $3
+	from "User" u
+	where a.user_id = u.id and a.merchant_id = $1 and a.user_id = $2 and u.is_dummy = true
+	`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, fromUser, toUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

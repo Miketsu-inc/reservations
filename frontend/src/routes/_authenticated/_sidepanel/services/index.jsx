@@ -99,6 +99,13 @@ function ServicesPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        showToast({
+          message:
+            method === "POST"
+              ? "Service added successfully"
+              : "Service modified successfully",
+          variant: "success",
+        });
         setServerError();
         router.invalidate();
         setModalData();

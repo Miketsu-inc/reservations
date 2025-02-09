@@ -581,3 +581,34 @@ func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func (m *Merchant) TransferCustomerApps(w http.ResponseWriter, r *http.Request) {
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+
+	from, err := uuid.Parse(fromStr)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error when parsing 'from' as uuid: %s", err.Error()))
+		return
+	}
+
+	to, err := uuid.Parse(toStr)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error when parsing 'to' as uuid: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.TransferDummyAppointments(r.Context(), merchantId, from, to)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while transfering appointments: %s", err.Error()))
+		return
+	}
+}

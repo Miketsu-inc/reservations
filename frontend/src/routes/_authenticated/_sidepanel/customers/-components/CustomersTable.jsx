@@ -1,8 +1,10 @@
 import DeleteModal from "@components/DeleteModal";
 import Loading from "@components/Loading";
+import EditIcon from "@icons/EditIcon";
+import TransferIcon from "@icons/TransferIcon";
+import TrashBinIcon from "@icons/TrashBinIcon";
 import { useWindowSize } from "@lib/hooks";
 import { lazy, Suspense, useState } from "react";
-import TableActions from "../../-components/TableActions";
 
 const Table = lazy(() => import("@components/Table"));
 
@@ -10,6 +12,7 @@ export default function CustomersTable({
   customersData,
   onDelete,
   onEdit,
+  onTransfer,
   onNewItem,
 }) {
   const windowSize = useWindowSize();
@@ -66,27 +69,55 @@ export default function CustomersTable({
       field: "actions",
       headerName: "",
       cellRenderer: (params) => {
-        if (params.data.is_dummy) {
-          return (
-            <TableActions
-              key={params.data.id}
-              onEdit={() => onEdit(customersData[params.node.sourceRowIndex])}
-              onDelete={() => {
-                setSelected({
-                  id: params.data.id,
-                  first_name: params.data.first_name,
-                  last_name: params.data.last_name,
-                });
-                setShowDeleteModal(true);
-              }}
-            />
-          );
-        }
+        return (
+          <div
+            key={params.data.id}
+            className="flex h-full flex-row items-center justify-center"
+          >
+            {params.data.is_dummy ? (
+              <>
+                {params.data.times_booked || params.data.times_cancelled ? (
+                  <button
+                    className="cursor-pointer"
+                    onClick={() => onTransfer(params.node.sourceRowIndex)}
+                  >
+                    <TransferIcon styles="w-5 h-5 mx-1" />
+                  </button>
+                ) : (
+                  <></>
+                )}
+                <button
+                  className="cursor-pointer"
+                  onClick={() =>
+                    onEdit(customersData[params.node.sourceRowIndex])
+                  }
+                >
+                  <EditIcon styles="w-4 h-4 mx-1" />
+                </button>
+                <button
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setSelected({
+                      id: params.data.id,
+                      first_name: params.data.first_name,
+                      last_name: params.data.last_name,
+                    });
+                    setShowDeleteModal(true);
+                  }}
+                >
+                  <TrashBinIcon styles="w-5 h-5 text-white mx-1" />
+                </button>
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
+        );
       },
       resizable: false,
       sortable: false,
-      minWidth: 90,
-      maxWidth: 90,
+      minWidth: 120,
+      maxWidth: 120,
     },
   ];
 

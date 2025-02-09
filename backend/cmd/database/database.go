@@ -37,6 +37,8 @@ type PostgreSQL interface {
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
 	// Update merchant comment field by it's and the merchant's id
 	UpdateMerchantCommentById(context.Context, uuid.UUID, int, string) error
+	// Transfer dummy user appointments
+	TransferDummyAppointments(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
 
 	// -- User --
 

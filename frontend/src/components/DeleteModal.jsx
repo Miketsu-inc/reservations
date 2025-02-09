@@ -18,7 +18,7 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
           <div className="w-4/5 py-4 text-center">
             <p className="text-gray-700 dark:text-gray-300">
               You are about to delete
-              <span className="font-bold text-text_color"> {itemName}</span>.
+              <span className="text-text_color font-bold"> {itemName}</span>.
               <br />
               This is a permanent action which cannot be reverted!
             </p>
@@ -38,7 +38,8 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
             styles="py-2 px-3"
             buttonText="Delete"
             onClick={(e) => {
-              onDelete(e), onClose();
+              onDelete(e);
+              onClose();
             }}
           />
         </div>
