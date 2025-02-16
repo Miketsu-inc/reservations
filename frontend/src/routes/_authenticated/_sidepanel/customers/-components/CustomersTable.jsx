@@ -1,5 +1,7 @@
 import DeleteModal from "@components/DeleteModal";
 import Loading from "@components/Loading";
+import ApproveIcon from "@icons/ApproveIcon";
+import BanIcon from "@icons/BanIcon";
 import EditIcon from "@icons/EditIcon";
 import TransferIcon from "@icons/TransferIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
@@ -14,6 +16,7 @@ export default function CustomersTable({
   onEdit,
   onTransfer,
   onNewItem,
+  onBlackList,
 }) {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({
@@ -23,8 +26,7 @@ export default function CustomersTable({
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const isSmallScreen =
-    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
+  const isSmallScreen = windowSize !== "xl" || windowSize !== "2xl";
 
   const columnDef = [
     { field: "id", hide: true },
@@ -109,7 +111,24 @@ export default function CustomersTable({
                 </button>
               </>
             ) : (
-              <></>
+              // the handler will decide to blacklist or to delete from blacklist
+              <>
+                {params.data.is_blacklisted ? (
+                  <button
+                    className="cursor-pointer"
+                    onClick={() => onBlackList(params.data)}
+                  >
+                    <ApproveIcon styles="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    className="cursor-pointer"
+                    onClick={() => onBlackList(params.data)}
+                  >
+                    <BanIcon styles="w-5 h-5" />
+                  </button>
+                )}
+              </>
             )}
           </div>
         );
@@ -128,7 +147,7 @@ export default function CustomersTable({
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onDelete={() => onDelete(selected)}
-      ></DeleteModal>
+      />
       <Suspense fallback={<Loading />}>
         <Table
           rowData={customersData}

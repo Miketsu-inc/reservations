@@ -39,6 +39,12 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = a.Postgresdb.IsUserBlacklisted(r.Context(), merchantId, userID)
+	if err != nil {
+		httputil.Error(w, http.StatusForbidden, err)
+		return
+	}
+
 	service, err := a.Postgresdb.GetServiceById(r.Context(), newApp.ServiceId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))

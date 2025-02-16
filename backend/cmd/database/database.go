@@ -57,6 +57,8 @@ type PostgreSQL interface {
 	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) error
 	// Get User's refresh version
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
+	// Check if the user is blacklisted
+	IsUserBlacklisted(context.Context, uuid.UUID, uuid.UUID) error
 
 	// -- Merchant --
 
@@ -107,10 +109,14 @@ type PostgreSQL interface {
 	DeleteCustomerById(context.Context, uuid.UUID, uuid.UUID) error
 	// Update customer by it's id
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
+	// Add customer to the blacklist
+	AddCustomerToBlacklist(context.Context, uuid.UUID, uuid.UUID) error
+	// Remove customer from the blacklist
+	RemoveCustomerFromBlacklist(context.Context, uuid.UUID, uuid.UUID) error
 
 	// -- Preferences --
 
-	//Create default preferences for merchant
+	// Create default preferences for merchant
 	CreatePreferences(context.Context, uuid.UUID) error
 	// Get all preferences for a merchant by it's id
 	GetPreferencesByMerchantId(context.Context, uuid.UUID) (PreferenceData, error)

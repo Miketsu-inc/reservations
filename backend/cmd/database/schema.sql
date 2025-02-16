@@ -8,7 +8,7 @@ create table if not exists "User" (
     phone_number            varchar(30),
     password_hash           varchar(72),
     jwt_refresh_version     integer,
-    subscription            integer
+    subscription            integer,
     is_dummy                boolean         not null,
     added_by                uuid
 );
@@ -67,4 +67,10 @@ create table if not exists "Preferences" (
     time_format             varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')),
     calendar_view           varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')),
     calendar_view_mobile    varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list'))
+);
+
+create table if not exists "Blacklist" (
+    ID                      serial           primary key unique not null,
+    merchant_id             uuid             references "Merchant" (ID) not null,
+    user_id                 uuid             references "User" (ID) not null
 );

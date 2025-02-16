@@ -171,20 +171,23 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 
 type PublicCustomer struct {
 	Customer
-	TimesBooked    int `json:"times_booked"`
-	TimesCancelled int `json:"times_cancelled"`
+	IsBlacklisted  bool `json:"is_blacklisted"`
+	TimesBooked    int  `json:"times_booked"`
+	TimesCancelled int  `json:"times_cancelled"`
 }
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, count(a.id) as times_booked, 0 as times_cancelled
+	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
+		count(a.id) as times_booked, 0 as times_cancelled
 	from "User" u
 	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
+	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $2
 	where u.is_dummy = true or a.id is not null
-	group by u.id;
+	group by u.id, b.user_id;
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	rows, err := s.db.QueryContext(ctx, query, merchantId, merchantId)
 	if err != nil {
 		return []PublicCustomer{}, err
 	}
@@ -193,7 +196,8 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 	var customers []PublicCustomer
 	for rows.Next() {
 		var cust PublicCustomer
-		if err := rows.Scan(&cust.Id, &cust.FirstName, &cust.LastName, &cust.Email, &cust.PhoneNumber, &cust.IsDummy, &cust.TimesBooked, &cust.TimesCancelled); err != nil {
+		if err := rows.Scan(&cust.Id, &cust.FirstName, &cust.LastName, &cust.Email, &cust.PhoneNumber, &cust.IsDummy, &cust.IsBlacklisted,
+			&cust.TimesBooked, &cust.TimesCancelled); err != nil {
 			return []PublicCustomer{}, err
 		}
 		customers = append(customers, cust)

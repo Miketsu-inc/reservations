@@ -3,6 +3,7 @@ import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import BlacklistModal from "./-components/BlacklistModal";
 import CustomerModal from "./-components/CustomerModal";
 import CustomersTable from "./-components/CustomersTable";
 import TransferAppsModal from "./-components/TransferAppsModal";
@@ -39,6 +40,8 @@ function CustomersPage() {
   const [customerModalData, setCustomerModalData] = useState();
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferModalData, setTransferModalData] = useState();
+  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
 
@@ -150,6 +153,43 @@ function CustomersPage() {
     }
   }
 
+  async function blacklistHandler(data) {
+    try {
+      const response = await fetch(
+        `/api/v1/merchants/customers/blacklist/${data.id}`,
+        {
+          method: data.method,
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        invalidateLocalSotrageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        if (data.method === "POST") {
+          showToast({
+            message: "Customer blacklisted successfully",
+            variant: "success",
+          });
+        } else if (data.method === "DELETE") {
+          showToast({
+            message: "Customer removed from blacklist successfully",
+            variant: "success",
+          });
+        }
+        router.invalidate();
+        setServerError();
+      }
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
+
   return (
     <div className="flex h-screen justify-center px-4">
       <CustomerModal
@@ -163,6 +203,19 @@ function CustomersPage() {
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
         onSubmit={transferHandler}
+      />
+      <BlacklistModal
+        data={blacklistModalData}
+        isOpen={showBlacklistModal}
+        onClose={() => setShowBlacklistModal(false)}
+        // both adding to and removing from blacklist goes through the same modal and handler
+        // so the customer.is_blacklisted field determines the action
+        onSubmit={(customer) =>
+          blacklistHandler({
+            method: customer.is_blacklisted ? "DELETE" : "POST",
+            id: customer.id,
+          })
+        }
       />
       <div className="w-full md:w-3/4">
         <ServerError error={serverError} />
@@ -186,6 +239,10 @@ function CustomersPage() {
             setShowCustomerModal(true);
           }}
           onDelete={deleteHandler}
+          onBlackList={(customer) => {
+            setBlacklistModalData(customer);
+            setShowBlacklistModal(true);
+          }}
         />
       </div>
     </div>

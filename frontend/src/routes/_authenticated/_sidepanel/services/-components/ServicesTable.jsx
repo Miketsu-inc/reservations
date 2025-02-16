@@ -21,8 +21,7 @@ export default function ServicesTable({
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const isSmallScreen =
-    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
+  const isSmallScreen = windowSize !== "xl" || windowSize !== "2xl";
 
   const columnDef = [
     { field: "id", hide: true, sort: "asc" },

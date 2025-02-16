@@ -188,3 +188,50 @@ func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, 
 
 	return nil
 }
+
+func (s *service) AddCustomerToBlacklist(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) error {
+	query := `
+	insert into "Blacklist" (merchant_id, user_id)
+	values ($1, $2)
+	`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, customerId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) RemoveCustomerFromBlacklist(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) error {
+	query := `
+	delete from "Blacklist"
+	where merchant_id = $1 and user_id = $2
+	`
+
+	_, err := s.db.ExecContext(ctx, query, merchantId, customerId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) IsUserBlacklisted(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) error {
+	query := `
+	select 1 from "Blacklist"
+	where merchant_id = $1 and user_id = $2
+	`
+
+	var st string
+	err := s.db.QueryRowContext(ctx, query, merchantId, userId).Scan(&st)
+	if !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf("please contact the merchant by email or phone to book an appointment")
+	}
+
+	return nil
+}

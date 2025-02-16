@@ -142,5 +142,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Delete("/customers/{id}", merchantHandler.DeleteCustomer)
 		r.Put("/customers/{id}", merchantHandler.UpdateCustomer)
 		r.Put("/customers/transfer", merchantHandler.TransferCustomerApps)
+		r.Post("/customers/blacklist/{id}", merchantHandler.BlacklistCustomer)
+		r.Delete("/customers/blacklist/{id}", merchantHandler.UnBlacklistCustomer)
 	})
 }
