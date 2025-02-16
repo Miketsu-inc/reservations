@@ -7,6 +7,7 @@ import TransferIcon from "@icons/TransferIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { useWindowSize } from "@lib/hooks";
 import { lazy, Suspense, useState } from "react";
+import BookingRing from "./BookingRing";
 
 const Table = lazy(() => import("@components/Table"));
 
@@ -53,15 +54,30 @@ export default function CustomersTable({
       ...(isSmallScreen ? { minWidth: 120 } : {}),
     },
     {
-      field: "times_booked",
-      headerName: "Times booked",
-      cellClass: "text-right",
-      sort: "desc",
+      field: "booking_history",
+      headerName: "Booking history",
+      cellRenderer: (params) => {
+        return (
+          <div className="flex flex-row items-center justify-center gap-2">
+            <p>
+              {params.data.times_booked} / {params.data.times_cancelled}
+            </p>
+            {params.data.times_booked || params.data.times_cancelled ? (
+              <BookingRing
+                booked={params.data.times_booked}
+                cancelled={params.data.times_cancelled}
+              />
+            ) : (
+              <></>
+            )}
+          </div>
+        );
+      },
     },
     {
-      field: "times_cancelled",
-      headerName: "Times cancelled",
-      cellClass: "text-right",
+      field: "times_booked",
+      sort: "desc",
+      hide: true,
     },
     {
       field: "is_dummy",
@@ -156,8 +172,7 @@ export default function CustomersTable({
           columnsToAutoSize={[
             "email",
             "phone_number",
-            "times_booked",
-            "times_cancelled",
+            "booking_history",
             "is_dummy",
           ]}
           onNewItem={onNewItem}
