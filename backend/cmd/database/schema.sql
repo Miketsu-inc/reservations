@@ -63,10 +63,13 @@ create table if not exists "Appointment" (
 create table if not exists "Preferences" (
     ID                      serial           primary key unique not null,
     merchant_id             uuid             references "Merchant" (ID) not null,
-    first_day_of_week       varchar(10)      default 'Monday' check (first_day_of_week in ('Monday', 'Sunday')),
-    time_format             varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')),
-    calendar_view           varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')),
-    calendar_view_mobile    varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list'))
+    first_day_of_week       varchar(10)      default 'Monday' check (first_day_of_week in ('Monday', 'Sunday')) not null,
+    time_format             varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')) not null,
+    calendar_view           varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')) not null,
+    calendar_view_mobile    varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list')) not null,
+    start_hour              time             default '08:00:00' not null, 
+    end_hour                time             default '17:00:00' not null, 
+    time_frequency          time             default '00:15:00' not null 
 );
 
 create table if not exists "Blacklist" (

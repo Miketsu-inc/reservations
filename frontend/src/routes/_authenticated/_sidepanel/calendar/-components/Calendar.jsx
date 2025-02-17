@@ -62,7 +62,13 @@ const defaultEventInfo = {
   },
 };
 
-export default function Calendar({ router, view, start, eventData }) {
+export default function Calendar({
+  router,
+  view,
+  start,
+  eventData,
+  preferences,
+}) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
@@ -128,20 +134,20 @@ export default function Calendar({ router, view, start, eventData }) {
     <div className="flex h-screen flex-col">
       <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="py-2 md:flex md:flex-row md:gap-2">
-        <p className="whitespace-nowrap py-2 text-xl md:text-3xl">
+        <p className="py-2 text-xl whitespace-nowrap md:text-3xl">
           {calendarTitle}
         </p>
         <div className="flex w-full flex-row justify-between">
           <div className="flex flex-row">
             <button
-              className="rounded-lg hover:bg-hvr_gray"
+              className="hover:bg-hvr_gray rounded-lg"
               type="button"
               onClick={() => navButtonHandler("prev")}
             >
               <BackArrowIcon styles="w-6 h-6 md:w-8 md:h-8 stroke-current" />
             </button>
             <button
-              className="rounded-lg hover:bg-hvr_gray"
+              className="hover:bg-hvr_gray rounded-lg"
               type="button"
               onClick={() => navButtonHandler("next")}
             >
@@ -184,7 +190,7 @@ export default function Calendar({ router, view, start, eventData }) {
         </div>
       </div>
       <div className="flex grow items-center justify-center">
-        <div className="light h-full w-full bg-bg_color text-text_color">
+        <div className="light bg-bg_color text-text_color h-full w-full">
           <FullCalendar
             ref={calendarRef}
             plugins={[
@@ -208,6 +214,7 @@ export default function Calendar({ router, view, start, eventData }) {
               setEventInfo(e.event);
               setIsModalOpen(true);
             }}
+            firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
             lazyFetching={true}
             views={{
               dayGridMonth: {
@@ -222,20 +229,22 @@ export default function Calendar({ router, view, start, eventData }) {
                 slotLabelFormat: {
                   hour: "numeric",
                   minute: "2-digit",
+                  hour12: preferences.time_format === "12-hour",
                 },
-                slotDuration: "00:15:00",
-                slotMinTime: "08:00:00",
-                slotMaxTime: "17:00:00",
+                slotDuration: preferences.time_frequency,
+                slotMinTime: preferences.start_hour,
+                slotMaxTime: preferences.end_hour,
                 nowIndicator: true,
               },
               timeGridDay: {
                 slotLabelFormat: {
                   hour: "numeric",
                   minute: "2-digit",
+                  hour12: preferences.time_format === "12-hour",
                 },
-                slotDuration: "00:15:00",
-                slotMinTime: "08:00:00",
-                slotMaxTime: "17:00:00",
+                slotDuration: preferences.time_frequency,
+                slotMinTime: preferences.start_hour,
+                slotMaxTime: preferences.end_hour,
                 nowIndicator: true,
               },
             }}
@@ -245,6 +254,7 @@ export default function Calendar({ router, view, start, eventData }) {
               minute: "2-digit",
               second: "2-digit",
               meridiem: false,
+              hour12: preferences.time_format === "12-hour",
             }}
           />
         </div>

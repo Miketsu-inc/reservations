@@ -30,9 +30,33 @@ async function fetchEvents(start, end) {
   }
 }
 
+function getStoredPreferences() {
+  const storedPreferences = localStorage.getItem("Preferences");
+  return storedPreferences ? JSON.parse(storedPreferences) : {};
+}
+
+function mapCalendarView(view, mobile_view) {
+  const viewMapping = {
+    month: "dayGridMonth",
+    week: "timeGridWeek",
+    day: "timeGridDay",
+    list: "listWeek",
+  };
+  if (window.innerWidth < 640) {
+    return viewMapping[mobile_view];
+  }
+  return viewMapping[view];
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   component: CalendarPage,
   validateSearch: (search) => {
+    const preferences = getStoredPreferences();
+    const CalendarView = mapCalendarView(
+      preferences.calendar_view,
+      preferences.calendar_view_mobile
+    );
+
     const view = [
       "dayGridMonth",
       "timeGridWeek",
@@ -40,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
       "listWeek",
     ].includes(search.view)
       ? search.view
-      : "timeGridWeek";
+      : CalendarView;
 
     let start, end;
 
@@ -81,6 +105,7 @@ function CalendarPage() {
   const search = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const router = useRouter();
+  const preferences = getStoredPreferences();
 
   return (
     <div>
@@ -90,6 +115,7 @@ function CalendarPage() {
           view={search.view}
           start={search.start}
           eventData={loaderData}
+          preferences={preferences}
         />
       </Suspense>
     </div>

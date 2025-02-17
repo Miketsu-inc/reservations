@@ -6,26 +6,6 @@ import { useEffect, useState } from "react";
 import RadioInputGroup from "../-components/RadioInputGroup";
 import SectionHeader from "../-components/SectionHeader";
 
-async function fetchPreferences() {
-  const response = await fetch(`/api/v1/merchants/preferences`, {
-    method: "GET",
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-const defaultPreferences = {
-  first_day_of_week: "",
-  time_format: "",
-  calendar_view: "",
-  calendar_view_mobile: "",
-};
-
 const calendarViewOptions = [
   { value: "month", label: "Month View" },
   { value: "week", label: "Week View" },
@@ -33,58 +13,57 @@ const calendarViewOptions = [
   { value: "list", label: "List View" },
 ];
 
+const TimeFrequencyOptions = [
+  { value: "00:10:00", label: "10 minute" },
+  { value: "00:15:00", label: "15 minute" },
+  { value: "00:30:00", label: "30 minute" },
+  { value: "00:45:00", label: "45 minute" },
+  { value: "01:00:00", label: "1 hour" },
+];
+
+const defaultPreferences = {
+  first_day_of_week: "",
+  time_format: "",
+  calendar_view: "",
+  calendar_view_mobile: "",
+  start_hour: "",
+  end_hour: "",
+  time_frequency: "",
+};
+
+function convertTimeToMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
 function hasChanges(changedData, originalData) {
   return JSON.stringify(changedData) !== JSON.stringify(originalData);
+}
+
+function getStoredPreferences() {
+  const storedPreferences = localStorage.getItem("Preferences");
+  return storedPreferences ? JSON.parse(storedPreferences) : defaultPreferences;
 }
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/calendar"
 )({
   component: CalendarPage,
-  loader: () => fetchPreferences(),
-  errorComponent: ({ error }) => {
-    return <ServerError error={error.message} />;
-  },
 });
 
 function CalendarPage() {
-  const [preferences, setPreferences] = useState(defaultPreferences);
-  const [originalPref, setOriginalPref] = useState(defaultPreferences);
-  const loaderData = Route.useLoaderData();
+  const [preferences, setPreferences] = useState(getStoredPreferences);
+  const [changedPreferences, setChangedPreferences] = useState(preferences);
   const [serverError, setServerError] = useState("");
   const { showToast } = useToast();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (loaderData) {
-      setPreferences(loaderData);
-      setOriginalPref(loaderData);
-    }
-  }, [loaderData]);
-
-  useEffect(() => {
-    setHasUnsavedChanges(hasChanges(preferences, originalPref));
-  }, [preferences, originalPref]);
-
-  function handleSelect(e, type) {
-    const value = e.target.value;
-
-    if (type === "desktop") {
-      setPreferences((prev) => ({
-        ...prev,
-        calendar_view: value,
-      }));
-    } else if (type === "mobile") {
-      setPreferences((prev) => ({
-        ...prev,
-        calendar_view_mobile: value,
-      }));
-    }
-  }
+    setHasUnsavedChanges(hasChanges(changedPreferences, preferences));
+  }, [preferences, changedPreferences]);
 
   async function updateHandler() {
-    //if
-
     try {
       const response = await fetch("/api/v1/merchants/preferences", {
         method: "PATCH",
@@ -92,14 +71,15 @@ function CalendarPage() {
           Accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(changedPreferences),
       });
 
       if (!response.ok) {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        setOriginalPref(preferences);
+        setPreferences(changedPreferences);
+        localStorage.setItem("Preferences", JSON.stringify(changedPreferences));
         setServerError("");
         showToast({
           message: "Calendar preferences updated successfully!",
@@ -111,11 +91,30 @@ function CalendarPage() {
     }
   }
 
-  function handleRadioChange(key, value) {
-    setPreferences((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  function handleInputChange(key, value) {
+    setChangedPreferences((prev) => {
+      if (key === "start_hour" || key === "end_hour") {
+        const newTime = convertTimeToMinutes(value);
+        const startTime =
+          key === "start_hour"
+            ? newTime
+            : convertTimeToMinutes(prev.start_hour);
+        const endTime =
+          key === "end_hour" ? newTime : convertTimeToMinutes(prev.end_hour);
+
+        if (startTime >= endTime) {
+          if (key === "start_hour") {
+            setErrorMessage("Start time must be before end time");
+          } else {
+            setErrorMessage("End time must be after start time");
+          }
+          return prev;
+        }
+      }
+      setErrorMessage("");
+
+      return { ...prev, [key]: value };
+    });
   }
 
   return (
@@ -125,8 +124,8 @@ function CalendarPage() {
         <RadioInputGroup
           title="First day of the week"
           name="firstDayOfWeek"
-          value={preferences.first_day_of_week}
-          onChange={(value) => handleRadioChange("first_day_of_week", value)}
+          value={changedPreferences.first_day_of_week}
+          onChange={(value) => handleInputChange("first_day_of_week", value)}
           options={[
             { value: "Monday", label: "Monday" },
             { value: "Sunday", label: "Sunday" },
@@ -136,8 +135,8 @@ function CalendarPage() {
         <RadioInputGroup
           title="Time Format"
           name="timeFormat"
-          value={preferences.time_format}
-          onChange={(value) => handleRadioChange("time_format", value)}
+          value={changedPreferences.time_format}
+          onChange={(value) => handleInputChange("time_format", value)}
           options={[
             { value: "24-hour", label: "24-Hour Format" },
             { value: "12-hour", label: "12-Hour Format" },
@@ -145,17 +144,17 @@ function CalendarPage() {
           description="Select how time is displayed in your calendar. The 24-hour format is common in Europe, while the 12-hour AM/PM format is standard in the U.S."
         />
       </div>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <label
           htmlFor="desktop-view"
-          className="mb-2 flex flex-col gap-2 font-semibold"
+          className="flex flex-col gap-2 font-semibold"
         >
           Desktop Default View
           <select
             id="desktop-view"
-            value={preferences.calendar_view}
-            onChange={(e) => handleSelect(e, "desktop")}
-            className="bg-hvr_gray rounded-lg border p-2 md:w-2/3 dark:[color-scheme:dark]"
+            value={changedPreferences.calendar_view}
+            onChange={(e) => handleInputChange("calendar_view", e.target.value)}
+            className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
           >
             {calendarViewOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -166,14 +165,16 @@ function CalendarPage() {
         </label>
         <label
           htmlFor="mobile-view"
-          className="mb-2 flex flex-col gap-2 font-semibold"
+          className="flex flex-col gap-2 font-semibold"
         >
           Mobile Default View
           <select
             id="mobile-view"
-            value={preferences.calendar_view_mobile}
-            onChange={(e) => handleSelect(e, "mobile")}
-            className="bg-hvr_gray rounded-lg border p-2 md:w-2/3 dark:[color-scheme:dark]"
+            value={changedPreferences.calendar_view_mobile}
+            onChange={(e) =>
+              handleInputChange("calendar_view_mobile", e.target.value)
+            }
+            className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
           >
             {calendarViewOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -183,6 +184,55 @@ function CalendarPage() {
           </select>
         </label>
       </div>
+
+      <div className="flex justify-between gap-10 md:flex-row">
+        <label
+          htmlFor="start-hour"
+          className="flex w-full flex-col gap-2 font-semibold"
+        >
+          Starting hour
+          <input
+            type="time"
+            id="start-hour"
+            value={changedPreferences.start_hour}
+            onChange={(e) => handleInputChange("start_hour", e.target.value)}
+            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:[color-scheme:dark]"
+            step="1800"
+          />
+        </label>
+        <label
+          htmlFor="end-hour"
+          className="flex w-full flex-col gap-2 font-semibold"
+        >
+          Ending hour
+          <input
+            type="time"
+            id="end-hour"
+            value={changedPreferences.end_hour}
+            onChange={(e) => handleInputChange("end_hour", e.target.value)}
+            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:[color-scheme:dark]"
+            step="1800"
+          />
+        </label>
+      </div>
+      {errorMessage && (
+        <div className="text-sm text-red-500">{errorMessage}</div>
+      )}
+      <label htmlFor="time-slot" className="flex flex-col gap-2 font-semibold">
+        Time slot frequency
+        <select
+          id="time-slot"
+          value={changedPreferences.time_frequency}
+          onChange={(e) => handleInputChange("time_frequency", e.target.value)}
+          className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
+        >
+          {TimeFrequencyOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="flex flex-col gap-3">
         <span className="text-text_color/70 text-sm md:w-2/3">
           Update your calendar preferences below. All fields are optional, and
