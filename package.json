@@ -24,7 +24,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.0.4",
+    "@tailwindcss/cli": "^4.0.7",
     "@tanstack/eslint-plugin-router": "^1.70.0",
     "@tanstack/router-plugin": "^1.73.1",
     "@types/react": "^18.3.3",
@@ -38,7 +38,7 @@
     "prettier-plugin-classnames": "^0.7.6",
     "prettier-plugin-merge": "^0.7.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "tailwindcss": "^4.0.4",
+    "tailwindcss": "^4.0.7",
     "vite": "^5.3.1",
     "vitest": "^3.0.4"
   }
