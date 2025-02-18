@@ -1,4 +1,8 @@
-import { isDurationValid } from "@lib/datetime";
+import {
+  formatToDateString,
+  getMonthFromCalendarStart,
+  isDurationValid,
+} from "@lib/datetime";
 import { describe, expect, it } from "vitest";
 
 describe("isDurationValid", () => {
@@ -55,6 +59,30 @@ describe("isDurationValid", () => {
   it("timeGridDay more than a day", () => {
     expect(isDurationValid("timeGridDay", "2025-01-31", "2025-02-02")).toBe(
       false
+    );
+  });
+});
+
+describe("getMonthFromCalendarStart", () => {
+  // months indexing starts with 0 in js 0 ---> January
+  it("date before start", () => {
+    expect(getMonthFromCalendarStart("2025-01-27")).toBe(
+      formatToDateString(new Date(2025, 1, 1))
+    );
+    expect(getMonthFromCalendarStart("2025-03-31")).toBe(
+      formatToDateString(new Date(2025, 3, 1))
+    );
+    expect(getMonthFromCalendarStart("2025-05-26")).toBe(
+      formatToDateString(new Date(2025, 5, 1))
+    );
+  });
+
+  it("date at start", () => {
+    expect(getMonthFromCalendarStart("2025-09-01")).toBe(
+      formatToDateString(new Date(2025, 8, 1))
+    );
+    expect(getMonthFromCalendarStart("2025-12-01")).toBe(
+      formatToDateString(new Date(2025, 11, 1))
     );
   });
 });

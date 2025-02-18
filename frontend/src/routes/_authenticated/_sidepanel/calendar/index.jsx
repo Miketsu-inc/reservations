@@ -1,5 +1,6 @@
 import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
+import { SCREEN_SM } from "@lib/constants";
 import { calculateStartEndTime, isDurationValid } from "@lib/datetime";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -42,7 +43,8 @@ function mapCalendarView(view, mobile_view) {
     day: "timeGridDay",
     list: "listWeek",
   };
-  if (window.innerWidth < 640) {
+
+  if (window.innerWidth < SCREEN_SM) {
     return viewMapping[mobile_view];
   }
   return viewMapping[view];
@@ -52,7 +54,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   component: CalendarPage,
   validateSearch: (search) => {
     const preferences = getStoredPreferences();
-    const CalendarView = mapCalendarView(
+    const calendarView = mapCalendarView(
       preferences.calendar_view,
       preferences.calendar_view_mobile
     );
@@ -64,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
       "listWeek",
     ].includes(search.view)
       ? search.view
-      : CalendarView;
+      : calendarView;
 
     let start, end;
 

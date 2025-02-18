@@ -6,7 +6,7 @@ import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import BackArrowIcon from "@icons/BackArrowIcon";
-import { formatToDateString, isoToDateString } from "@lib/datetime";
+import { formatToDateString, getMonthFromCalendarStart } from "@lib/datetime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarModal from "./CalendarModal";
 
@@ -77,8 +77,8 @@ export default function Calendar({
 
   const datesChanged = useCallback(
     (api) => {
-      const start = formatToDateString(api.view.currentStart);
-      const end = isoToDateString(api.view.currentEnd.toISOString());
+      const start = formatToDateString(api.view.activeStart);
+      const end = formatToDateString(api.view.activeEnd);
 
       router.navigate({
         search: () => ({ view: api.view.type, start: start, end: end }),
@@ -206,7 +206,14 @@ export default function Calendar({
             eventDurationEditable={true}
             selectable={true}
             initialView={view ? view : "timeGridWeek"}
-            initialDate={start ? start : undefined}
+            // dayGridMonth dates do not start and end with the current month's dates
+            initialDate={
+              view === "dayGridMonth"
+                ? getMonthFromCalendarStart(start)
+                : start
+                  ? start
+                  : undefined
+            }
             height="100%"
             headerToolbar={false}
             events={formatData(eventData)}

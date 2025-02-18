@@ -17,22 +17,27 @@ export function calculateStartEndTime(view) {
   let start, end;
 
   switch (view) {
-    case "dayGridMonth":
+    case "dayGridMonth": {
       // This will need a correction if the user's calendar
       // starts with Sunday instead of Monday
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       start = new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        1 - (start.getDay() - 1)
+        monthStart.getFullYear(),
+        monthStart.getMonth(),
+        1 - (monthStart.getDay() - 1)
       );
-      end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+      const monthEnd = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0
+      );
       end = new Date(
-        end.getFullYear(),
-        end.getMonth(),
-        end.getDate() + (7 - end.getDay())
+        monthEnd.getFullYear(),
+        monthEnd.getMonth(),
+        monthEnd.getDate() + (7 - monthEnd.getDay())
       );
       break;
+    }
     case "timeGridWeek":
     case "listWeek":
       // This will need a correction if the user's calendar
@@ -120,4 +125,16 @@ export function isDurationValid(view, startStr, endStr) {
     default:
       return false;
   }
+}
+
+export function getMonthFromCalendarStart(dateStr) {
+  const date = new Date(dateStr);
+
+  if (date.getDate() === 1 && date.getDay() === 1) {
+    return formatToDateString(date);
+  }
+
+  return formatToDateString(
+    new Date(date.getFullYear(), date.getMonth() + 1, 1)
+  );
 }
