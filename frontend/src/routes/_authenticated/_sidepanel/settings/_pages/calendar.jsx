@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { createFileRoute } from "@tanstack/react-router";
@@ -150,38 +151,28 @@ function CalendarPage() {
           className="flex flex-col gap-2 font-semibold"
         >
           Desktop Default View
-          <select
-            id="desktop-view"
+          <Select
+            options={calendarViewOptions}
             value={changedPreferences.calendar_view}
-            onChange={(e) => handleInputChange("calendar_view", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
-          >
-            {calendarViewOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onSelect={(value) => handleInputChange("calendar_view", value)}
+            placeholder=""
+            styles="font-normal md:w-2/3"
+          />
         </label>
         <label
           htmlFor="mobile-view"
           className="flex flex-col gap-2 font-semibold"
         >
           Mobile Default View
-          <select
-            id="mobile-view"
+          <Select
+            options={calendarViewOptions}
             value={changedPreferences.calendar_view_mobile}
-            onChange={(e) =>
-              handleInputChange("calendar_view_mobile", e.target.value)
+            onSelect={(value) =>
+              handleInputChange("calendar_view_mobile", value)
             }
-            className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
-          >
-            {calendarViewOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            placeholder=""
+            styles="font-normal md:w-2/3"
+          />
         </label>
       </div>
 
@@ -220,18 +211,13 @@ function CalendarPage() {
       )}
       <label htmlFor="time-slot" className="flex flex-col gap-2 font-semibold">
         Time slot frequency
-        <select
-          id="time-slot"
+        <Select
+          options={TimeFrequencyOptions}
           value={changedPreferences.time_frequency}
-          onChange={(e) => handleInputChange("time_frequency", e.target.value)}
-          className="bg-hvr_gray rounded-lg border p-2 font-normal md:w-2/3 dark:[color-scheme:dark]"
-        >
-          {TimeFrequencyOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onSelect={(value) => handleInputChange("time_frequency", value)}
+          placeholder=""
+          styles="font-normal md:w-2/3"
+        />
       </label>
       <div className="flex flex-col gap-3">
         <span className="text-text_color/70 text-sm md:w-2/3">
