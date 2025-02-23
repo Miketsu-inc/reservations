@@ -1,5 +1,5 @@
 import { useState } from "react";
-import DropdownBase from "./DropDownBase";
+import DropdownBase from "./DropdownBase";
 import SearchInput from "./SearchInput";
 
 export default function ComboBox({

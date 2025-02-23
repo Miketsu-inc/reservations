@@ -1,4 +1,4 @@
-import DropdownBase from "./DropDownBase";
+import DropdownBase from "./DropdownBase";
 
 export default function Select({
   options,
