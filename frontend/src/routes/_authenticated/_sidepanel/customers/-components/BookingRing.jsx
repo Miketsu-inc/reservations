@@ -9,7 +9,7 @@ export default function BookingRing({ booked, cancelled }) {
   return (
     <svg className="h-5 w-5 -rotate-90" viewBox="0 0 32 32">
       <circle
-        className={`fill-none stroke-green-600 stroke-[${strokeWidth}]`}
+        className={"fill-none stroke-green-600 stroke-[7]"}
         cx="16"
         cy="16"
         r={radius}
@@ -17,7 +17,7 @@ export default function BookingRing({ booked, cancelled }) {
         strokeDashoffset="0"
       />
       <circle
-        className={`fill-none stroke-red-600 stroke-[${strokeWidth}]`}
+        className={"fill-none stroke-red-600 stroke-[7]"}
         cx="16"
         cy="16"
         r={radius}

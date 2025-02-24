@@ -133,7 +133,7 @@ export default function Calendar({
   return (
     <div className="flex h-screen flex-col">
       <ServerError styles="mt-4 mb-2" error={serverError} />
-      <div className="py-2 md:flex md:flex-row md:gap-2">
+      <div className="pb-2 md:flex md:flex-row md:gap-2">
         <p className="py-2 text-xl whitespace-nowrap md:text-3xl">
           {calendarTitle}
         </p>

@@ -5,6 +5,7 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/billing"
 )({
   component: BillingPage,
+  loader: () => ({ crumb: "Billing" }),
 });
 
 function BillingPage() {

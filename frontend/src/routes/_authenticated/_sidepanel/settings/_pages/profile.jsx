@@ -1,17 +1,20 @@
 import Button from "@components/Button";
+import ServerError from "@components/ServerError";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import SectionHeader from "../-components/SectionHeader";
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/profile"
 )({
   component: ProfilePage,
+  loader: () => ({ crumb: "Profile" }),
 });
 
 function ProfilePage() {
   const navigate = Route.useNavigate();
+  const [serverError, setServerError] = useState();
 
   const logOutOnAllDevices = useCallback(async () => {
     const response = await fetch("api/v1/auth/user/logout/all", {
@@ -22,10 +25,9 @@ function ProfilePage() {
       },
     });
 
-    let result = await response;
     if (!response.ok) {
-      result = result.json();
-      console.log(result.error.message);
+      const result = await response.json();
+      setServerError(result.error.message);
     }
 
     invalidateLocalSotrageAuth(401);
@@ -37,6 +39,7 @@ function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ServerError error={serverError} />
       <div className="flex flex-col">
         <SectionHeader title="Change Password" styles="" />
       </div>

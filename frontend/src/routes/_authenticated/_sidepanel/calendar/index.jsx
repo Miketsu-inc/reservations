@@ -94,9 +94,13 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
     start,
     end,
   }),
+  loader: async ({ deps: { start, end } }) => {
+    const events = await fetchEvents(start, end);
 
-  loader: ({ deps: { start, end } }) => {
-    return fetchEvents(start, end);
+    return {
+      crumb: "Calendar",
+      events: events,
+    };
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -116,7 +120,7 @@ function CalendarPage() {
           router={router}
           view={search.view}
           start={search.start}
-          eventData={loaderData}
+          eventData={loaderData.events}
           preferences={preferences}
         />
       </Suspense>

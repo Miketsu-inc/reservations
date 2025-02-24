@@ -17,6 +17,7 @@ async function fetchServices() {
 
   const result = await response.json();
   if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -25,7 +26,14 @@ async function fetchServices() {
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
   component: ServicesPage,
-  loader: () => fetchServices(),
+  loader: async () => {
+    const services = await fetchServices();
+
+    return {
+      crumb: "Services",
+      services: services,
+    };
+  },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
@@ -117,18 +125,18 @@ function ServicesPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center px-4">
+    <div className="flex h-screen justify-center">
       <ServiceModal
         data={modalData}
         isOpen={showServiceModal}
         onClose={() => setShowServiceModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="w-full md:w-3/4">
+      <div className="w-full">
         <ServerError error={serverError} />
         <p className="text-xl">Services</p>
         <ServicesTable
-          servicesData={loaderData}
+          servicesData={loaderData.services}
           onNewItem={() => {
             // the first condition is necessary for it to not cause an error
             // in case of a new item

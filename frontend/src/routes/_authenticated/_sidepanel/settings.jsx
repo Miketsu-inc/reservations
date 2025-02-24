@@ -5,6 +5,9 @@ import SettingsNavigation from "./settings/-components/SettingsNavigation";
 export const Route = createFileRoute("/_authenticated/_sidepanel/settings")({
   component: SettingsLayout,
   //   loader: () => ({ redirect: "/_authenticated/_sidepanel/settings/profile" }),
+  loader: () => ({
+    crumb: "Settings",
+  }),
 });
 
 function SettingsLayout() {

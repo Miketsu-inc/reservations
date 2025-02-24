@@ -19,6 +19,7 @@ async function fetchCustomers() {
 
   const result = await response.json();
   if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -27,7 +28,14 @@ async function fetchCustomers() {
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/customers/")({
   component: CustomersPage,
-  loader: () => fetchCustomers(),
+  loader: async () => {
+    const customers = await fetchCustomers();
+
+    return {
+      crumb: "Customers",
+      customers: customers,
+    };
+  },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
@@ -191,7 +199,7 @@ function CustomersPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center px-4">
+    <div className="flex h-screen justify-center">
       <CustomerModal
         data={customerModalData}
         isOpen={showCustomerModal}
@@ -217,11 +225,11 @@ function CustomersPage() {
           })
         }
       />
-      <div className="w-full md:w-3/4">
+      <div className="w-full">
         <ServerError error={serverError} />
         <p className="text-xl">Customers</p>
         <CustomersTable
-          customersData={loaderData}
+          customersData={loaderData.customers}
           onNewItem={() => {
             // the first condition is necessary for it to not cause an error
             // in case of a new item
@@ -231,7 +239,10 @@ function CustomersPage() {
             setShowCustomerModal(true);
           }}
           onTransfer={(index) => {
-            setTransferModalData({ fromIndex: index, customers: loaderData });
+            setTransferModalData({
+              fromIndex: index,
+              customers: loaderData.customers,
+            });
             setShowTransferModal(true);
           }}
           onEdit={(customer) => {

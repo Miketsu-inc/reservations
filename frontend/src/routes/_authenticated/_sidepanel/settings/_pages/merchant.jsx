@@ -1,6 +1,7 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import DangerZoneItem from "../-components/DangerZoneItem";
@@ -15,6 +16,7 @@ async function fetchMerchantData() {
 
   const result = await response.json();
   if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -41,7 +43,14 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/merchant"
 )({
   component: MerchantPage,
-  loader: () => fetchMerchantData(),
+  loader: async () => {
+    const merchantData = await fetchMerchantData();
+
+    return {
+      crumb: "Merchant",
+      ...merchantData,
+    };
+  },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },

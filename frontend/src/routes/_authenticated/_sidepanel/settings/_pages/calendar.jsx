@@ -50,6 +50,7 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/calendar"
 )({
   component: CalendarPage,
+  loader: () => ({ crumb: "Calendar" }),
 });
 
 function CalendarPage() {
