@@ -1,10 +1,12 @@
 import Button from "@components/Button";
+import ComboBox from "@components/ComboBox";
 import Modal from "@components/Modal";
 import TransferIcon from "@icons/TransferIcon";
 import { useState } from "react";
 
 export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
   const [showError, setShowError] = useState(false);
+  const [toCustomer, setToCustomer] = useState("");
 
   // filter out dummy customers and the one being transferred from
   const filteredCustomers = data?.customers.filter(
@@ -13,12 +15,15 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
       customer.is_dummy === false
   );
 
+  const options = filteredCustomers?.map((customer) => ({
+    value: customer.id,
+    label: `${customer.first_name} ${customer.last_name}`,
+  }));
+
   function submitHandler(e) {
     e.preventDefault();
 
-    const to = e.target.toCustomer.value;
-
-    if (to === "default") {
+    if (!toCustomer) {
       setShowError("Please select a customer!");
       return;
     }
@@ -26,7 +31,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
     setShowError("");
     onSubmit({
       from: data.customers[data.fromIndex].id,
-      to: to,
+      to: toCustomer,
     });
     onClose();
   }
@@ -48,20 +53,14 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
               data?.customers[data.fromIndex].last_name}
           </p>
           <TransferIcon styles="w-7 h-7" />
-          <select
-            id="toCustomer"
-            className="bg-bg_color text-text_color font-semibold"
-            defaultValue="default"
-          >
-            <option value="default" disabled={true} hidden={true}>
-              A customer
-            </option>
-            {filteredCustomers?.map((customer) => (
-              <option value={customer.id} key={customer.id}>
-                {customer.first_name + " " + customer.last_name}
-              </option>
-            ))}
-          </select>
+          <ComboBox
+            options={options}
+            value={toCustomer}
+            placeholder="Search customers"
+            onSelect={(value) => setToCustomer(value)}
+            styles="w-52"
+            maxVisibleItems={5}
+          />
         </div>
         <p
           className={`${showError ? "visible" : "invisible"} text-center text-red-500`}
@@ -87,6 +86,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
             type="button"
             onClick={() => {
               setShowError("");
+              setToCustomer("");
               onClose();
             }}
           />

@@ -16,6 +16,7 @@ export default function Input({
   required,
   min,
   max,
+  autoFocus,
 }) {
   function handleChange(e) {
     inputData({
@@ -46,6 +47,7 @@ export default function Input({
         value={value}
         min={min}
         max={max}
+        autoFocus={autoFocus}
       />
       {isEmpty && (
         <span className="text-sm text-red-600">

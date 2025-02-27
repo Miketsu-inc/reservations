@@ -1,7 +1,12 @@
 import Input from "@components/Input";
 import SearchIcon from "@icons/SearchIcon";
 
-export default function SearchInput({ searchText, onChange, styles }) {
+export default function SearchInput({
+  searchText,
+  onChange,
+  styles,
+  autoFocus,
+}) {
   return (
     <div className="relative">
       <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
@@ -19,6 +24,7 @@ export default function SearchInput({ searchText, onChange, styles }) {
           onChange(data.value);
         }}
         hasError={false}
+        autoFocus={autoFocus}
       />
     </div>
   );

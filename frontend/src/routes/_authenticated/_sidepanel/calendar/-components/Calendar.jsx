@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -9,6 +10,13 @@ import BackArrowIcon from "@icons/BackArrowIcon";
 import { formatToDateString, getMonthFromCalendarStart } from "@lib/datetime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarModal from "./CalendarModal";
+
+const calendarViewOptions = [
+  { value: "dayGridMonth", label: "Month" },
+  { value: "timeGridWeek", label: "Week" },
+  { value: "timeGridDay", label: "Day" },
+  { value: "listWeek", label: "List" },
+];
 
 function getContrastColor(color) {
   const hex = color.replace("#", "");
@@ -74,6 +82,7 @@ export default function Calendar({
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
   const [serverError, setServerError] = useState();
   const calendarRef = useRef();
+  const [calendarView, setCalendarView] = useState(view);
 
   const datesChanged = useCallback(
     (api) => {
@@ -123,6 +132,7 @@ export default function Calendar({
     api.changeView(view);
 
     datesChanged(api);
+    setCalendarView(view);
   }
 
   useEffect(() => {
@@ -137,7 +147,7 @@ export default function Calendar({
         <p className="py-2 text-xl whitespace-nowrap md:text-3xl">
           {calendarTitle}
         </p>
-        <div className="flex w-full flex-row justify-between">
+        <div className="flex w-full flex-row items-center justify-between">
           <div className="flex flex-row">
             <button
               className="hover:bg-hvr_gray rounded-lg"
@@ -160,33 +170,14 @@ export default function Calendar({
               onClick={todayButtonHandler}
             />
           </div>
-          <div className="flex flex-row gap-1">
-            <Button
-              id="month"
-              variant="primary"
-              styles="p-2"
-              buttonText="month"
-              onClick={() => changeViewHandler("dayGridMonth")}
-            />
-            <Button
-              variant="primary"
-              styles="p-2"
-              buttonText="week"
-              onClick={() => changeViewHandler("timeGridWeek")}
-            />
-            <Button
-              variant="primary"
-              styles="p-2"
-              buttonText="day"
-              onClick={() => changeViewHandler("timeGridDay")}
-            />
-            <Button
-              variant="primary"
-              styles="p-2"
-              buttonText="list"
-              onClick={() => changeViewHandler("listWeek")}
-            />
-          </div>
+
+          <Select
+            options={calendarViewOptions}
+            value={calendarView}
+            onSelect={(value) => changeViewHandler(value)}
+            styles="w-36"
+            placeholder="Choose the wiev"
+          />
         </div>
       </div>
       <div className="flex grow items-center justify-center">

@@ -18,6 +18,7 @@ export default function InputBase({
   required,
   min,
   max,
+  autoFocus = false,
 }) {
   const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
@@ -43,6 +44,7 @@ export default function InputBase({
         placeholder={placeholder}
         min={min}
         max={max}
+        autoFocus={autoFocus}
         ref={inputRef}
       />
       {isTypePassword ? (

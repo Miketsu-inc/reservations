@@ -9,7 +9,7 @@ export default function DropdownBase({
   onSelect,
   placeholder,
   styles,
-  maxVisibleItems = 7, //if the item is scrolled to the center only odd numbers are good
+  maxVisibleItems = 7,
   extraContent,
   onClose,
 }) {
@@ -21,8 +21,8 @@ export default function DropdownBase({
   const dropDownListRef = useRef(null);
   const listElementRef = useRef(null);
 
-  const selectedIndex = options.findIndex((option) => option.value === value);
-  const selectedOption = options[selectedIndex];
+  const selectedIndex = options?.findIndex((option) => option.value === value);
+  const selectedOption = options?.[selectedIndex];
 
   useClickOutside(containerRef, () => {
     handleClose();
@@ -36,7 +36,6 @@ export default function DropdownBase({
   function handleClose() {
     setIsOpen(false);
     onClose?.();
-    console.log(isOpen);
   }
 
   function handleKeyDown(e) {
@@ -61,7 +60,7 @@ export default function DropdownBase({
   }
 
   useEffect(() => {
-    if (isOpen && selectedIndex > -1 && dropDownListRef.current) {
+    if (isOpen && selectedIndex > -1 && dropDownListRef.current?.children) {
       dropDownListRef.current.children[selectedIndex].scrollIntoView({
         block: "nearest", //when center scrolling weird shit happens
         behavior: "smooth",
@@ -70,7 +69,11 @@ export default function DropdownBase({
   }, [isOpen, selectedIndex]);
 
   useEffect(() => {
-    if (isOpen && isUsingKeyboard && dropDownListRef.current) {
+    if (
+      isOpen &&
+      isUsingKeyboard &&
+      dropDownListRef.current?.children[highlightedIndex]
+    ) {
       dropDownListRef.current.children[highlightedIndex].scrollIntoView({
         block: "nearest",
       });
@@ -99,21 +102,21 @@ export default function DropdownBase({
       >
         <div className="flex items-center justify-between">
           <span
-            className={selectedOption ? "text-text_color" : "text-gray-500"}
+            className={`${selectedOption ? "text-text_color" : "text-gray-500"} min-h-6 flex-1 truncate`}
           >
             {!selectedOption ? (
               placeholder
             ) : selectedOption.icon ? (
               <span className="flex items-center gap-2">
-                {selectedOption.icon}
-                {selectedOption.label}
+                <span className="shrink-0">{selectedOption.icon}</span>
+                <span className="truncate">{selectedOption.label}</span>
               </span>
             ) : (
               selectedOption.label
             )}
           </span>
           <BackArrowIcon
-            styles={`dark:stroke-gray-300 stroke-gray-500 transition-transform -rotate-90
+            styles={`dark:stroke-gray-300 stroke-gray-500 transition-transform -rotate-90 shrink-0
               ${isOpen ? "rotate-90" : ""} h-5 w-5`}
           />
         </div>
@@ -161,16 +164,20 @@ export default function DropdownBase({
                     }}
                     key={index}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm px-4 py-1 text-gray-700
+                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-3 pl-4 text-gray-700
                       select-none`}
+                    role="option"
+                    aria-selected={isSelected}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {option.icon && <span>{option.icon}</span>}
-                        {option.label}
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        {option.icon && (
+                          <span className="shrink-0">{option.icon}</span>
+                        )}
+                        <span className="truncate">{option.label}</span>
                       </div>
                       {isSelected && (
-                        <TickIcon styles="h-6 w-6 fill-text_color" />
+                        <TickIcon styles="h-6 w-6 fill-text_color shrink-0" />
                       )}
                     </div>
                   </li>
