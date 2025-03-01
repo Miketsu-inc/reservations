@@ -10,7 +10,7 @@ export default function NavigationItem({ path, label, children }) {
             "border-l-4 border-primary font-bold bg-hvr_gray/60 text-text_color!",
         }}
         className="hover:bg-hvr_gray/60 flex items-center gap-2 rounded-md px-3 py-2 text-gray-600
-          dark:text-gray-400"
+          *:shrink-0 dark:text-gray-400"
       >
         {children}
         {label}

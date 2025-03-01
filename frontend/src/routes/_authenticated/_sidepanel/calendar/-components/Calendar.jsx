@@ -144,39 +144,37 @@ export default function Calendar({
     <div className="flex h-screen flex-col">
       <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="pb-2 md:flex md:flex-row md:gap-2">
-        <p className="py-2 text-xl whitespace-nowrap md:text-3xl">
+        <p className="py-2 text-2xl whitespace-nowrap md:text-3xl">
           {calendarTitle}
         </p>
         <div className="flex w-full flex-row items-center justify-between">
           <div className="flex flex-row">
             <button
-              className="hover:bg-hvr_gray rounded-lg"
+              className="hover:bg-hvr_gray cursor-pointer rounded-lg"
               type="button"
               onClick={() => navButtonHandler("prev")}
             >
-              <BackArrowIcon styles="w-6 h-6 md:w-8 md:h-8 stroke-current" />
+              <BackArrowIcon styles="w-8 h-8 stroke-current" />
             </button>
             <button
-              className="hover:bg-hvr_gray rounded-lg"
+              className="hover:bg-hvr_gray cursor-pointer rounded-lg"
               type="button"
               onClick={() => navButtonHandler("next")}
             >
-              <BackArrowIcon styles="w-6 h-6 md:w-8 md:h-8 stroke-current rotate-180" />
+              <BackArrowIcon styles="w-8 h-8 stroke-current rotate-180" />
             </button>
             <Button
               variant="primary"
-              styles="p-1 md:p-2"
+              styles="p-2"
               buttonText="today"
               onClick={todayButtonHandler}
             />
           </div>
-
           <Select
             options={calendarViewOptions}
             value={calendarView}
             onSelect={(value) => changeViewHandler(value)}
             styles="w-36"
-            placeholder="Choose the wiev"
           />
         </div>
       </div>

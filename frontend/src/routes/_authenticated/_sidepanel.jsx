@@ -77,9 +77,6 @@ function SidePanelLayout() {
       label: "Statistics",
       icon: <ChartIcon styles="h-5 w-5" />,
       isPro: true,
-      onClick: () => {
-        console.log("test");
-      },
     },
     {
       href: "/settings/profile",
@@ -119,7 +116,7 @@ function SidePanelLayout() {
       {isOpen && isWindowSmall && (
         <div
           onClick={closeSidePanelHandler}
-          className={`fixed inset-0 z-40 bg-black transition-opacity duration-1000
+          className={`fixed inset-0 z-40 bg-black transition-opacity duration-1000 ease-in-out
           ${isOpen ? "opacity-60" : "pointer-events-none opacity-0"}`}
         ></div>
       )}
@@ -187,10 +184,14 @@ function SidePanelLayout() {
         </div>
       </aside>
       <div
-        className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen flex-col md:px-4`}
+        className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen flex-col
+          transition-all duration-300 md:px-4`}
       >
         {!isWindowSmall && (
-          <div className="flex flex-row items-center gap-2 py-3 text-sm text-gray-800 dark:text-gray-300">
+          <div
+            className="flex flex-row items-center gap-2 py-3 text-sm text-gray-800 transition-opacity
+              dark:text-gray-300"
+          >
             <button
               className="cursor-pointer"
               onClick={() => setIsCollapsed(!isCollapsed)}

@@ -77,3 +77,15 @@
 .toast-enter-top {
   animation: slideDown 0.5s ease-out forwards;
 }
+
+/*
+  temporary fix for calendar not resizing when sidepanel is collapsed
+  this should be fixed in the upcoming version 7
+*/
+.fc-col-header,
+.fc-daygrid-body,
+.fc-scrollgrid-sync-table,
+.fc-timegrid-body,
+.fc-timegrid-body table {
+  width: 100% !important;
+}
