@@ -12,19 +12,22 @@ export function isoToDateString(dateStr) {
   return dateStr.split("T")[0];
 }
 
-export function calculateStartEndTime(view) {
+export function calculateStartEndTime(view, firstDayOfWeek) {
+  if (!firstDayOfWeek) {
+    firstDayOfWeek = "Monday";
+  }
+
   const now = new Date();
+  const offset = firstDayOfWeek === "Monday" ? 1 : 0;
   let start, end;
 
   switch (view) {
     case "dayGridMonth": {
-      // This will need a correction if the user's calendar
-      // starts with Sunday instead of Monday
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       start = new Date(
         monthStart.getFullYear(),
         monthStart.getMonth(),
-        1 - (monthStart.getDay() - 1)
+        offset - (monthStart.getDay() - 1)
       );
       const monthEnd = new Date(
         monthStart.getFullYear(),
@@ -34,22 +37,33 @@ export function calculateStartEndTime(view) {
       end = new Date(
         monthEnd.getFullYear(),
         monthEnd.getMonth(),
-        monthEnd.getDate() + (7 - monthEnd.getDay())
+        monthEnd.getDate() + (7 - monthEnd.getDay() + offset)
       );
       break;
     }
     case "timeGridWeek":
     case "listWeek":
-      // This will need a correction if the user's calendar
-      // starts with Sunday instead of Monday
       if (now.getDay() === 0) {
-        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
+        if (firstDayOfWeek === "Monday") {
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          start = new Date(
+            end.getFullYear(),
+            end.getMonth(),
+            end.getDate() - 7
+          );
+        } else if (firstDayOfWeek === "Sunday") {
+          start = now;
+          end = new Date(
+            start.getFullYear(),
+            start.getMonth(),
+            start.getDate() + 7
+          );
+        }
       } else {
         start = new Date(
           now.getFullYear(),
           now.getMonth(),
-          now.getDate() + 1 - now.getDay()
+          now.getDate() + offset - now.getDay()
         );
         end = new Date(
           start.getFullYear(),
@@ -87,46 +101,20 @@ export function isDurationValid(view, startStr, endStr) {
 
   if (isNaN(start) || isNaN(end)) return false;
 
+  const diff = end.getTime() - start.getTime();
+  if (diff < 0) return false;
+
+  const days = diff / (1000 * 60 * 60 * 24);
+
   switch (view) {
-    // A week tolerance due to how the calendar displays dates
-    // and this function can not known it ahead of time
-    case "dayGridMonth": {
-      const expectedPlusWeek = new Date(
-        start.getFullYear(),
-        start.getMonth() + 1,
-        start.getDate() + 7
-      );
-
-      const expectedMinusWeek = new Date(
-        start.getFullYear(),
-        start.getMonth() + 1,
-        start.getDate() - 7
-      );
-
-      return (
-        end.getTime() >= expectedMinusWeek && end.getTime() <= expectedPlusWeek
-      );
-    }
+    // The maximum number of weeks displayed in the calendar in a month is 6
+    case "dayGridMonth":
+      return days >= 28 && days <= 42;
     case "timeGridWeek":
     case "listWeek":
-      return (
-        end.getTime() ===
-        new Date(
-          start.getFullYear(),
-          start.getMonth(),
-          start.getDate() + 7
-        ).getTime()
-      );
+      return days === 7;
     case "timeGridDay":
-      return (
-        end.getTime() ===
-        new Date(
-          start.getFullYear(),
-          start.getMonth(),
-          start.getDate() + 1
-        ).getTime()
-      );
-
+      return days === 1;
     default:
       return false;
   }
@@ -135,18 +123,10 @@ export function isDurationValid(view, startStr, endStr) {
 export function getMonthFromCalendarStart(dateStr) {
   const date = new Date(dateStr);
 
-  // This will need a correction if the user's calendar
-  // starts with Sunday instead of Monday
-  if (date.getDate() === 1 && date.getDay() === 1) {
-    return formatToDateString(date);
-  }
-
   if (date.getDate() <= 7) {
     return formatToDateString(date);
   }
 
-  // This will need a correction if the user's calendar
-  // starts with Sunday instead of Monday
   return formatToDateString(
     new Date(date.getFullYear(), date.getMonth() + 1, 1)
   );

@@ -91,6 +91,7 @@ export default function Calendar({
 
       router.navigate({
         search: () => ({ view: api.view.type, start: start, end: end }),
+        replace: true,
       });
       setCalendarTitle(api.view.title);
     },
@@ -148,7 +149,7 @@ export default function Calendar({
   useEffect(() => {
     const api = calendarRef.current.getApi();
     setCalendarTitle(api.view.title);
-  }, [calendarRef, setCalendarTitle]);
+  }, []);
 
   return (
     <div className="flex h-screen flex-col">
@@ -208,7 +209,7 @@ export default function Calendar({
             eventDurationEditable={true}
             selectable={true}
             initialView={view ? view : "timeGridWeek"}
-            // dayGridMonth dates do not start and end with the current month's dates
+            // dayGridMonth dates do not start or end with the current month's dates
             initialDate={
               view === "dayGridMonth"
                 ? getMonthFromCalendarStart(start)

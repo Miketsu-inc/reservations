@@ -29,3 +29,8 @@ export function invalidateLocalSotrageAuth(responseCode) {
     localStorage.setItem("loggedIn", false);
   }
 }
+
+export function getStoredPreferences() {
+  const storedPreferences = localStorage.getItem("Preferences");
+  return storedPreferences ? JSON.parse(storedPreferences) : {};
+}

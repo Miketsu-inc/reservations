@@ -2,7 +2,7 @@ import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { SCREEN_SM } from "@lib/constants";
 import { calculateStartEndTime, isDurationValid } from "@lib/datetime";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { getStoredPreferences, invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
@@ -31,11 +31,6 @@ async function fetchEvents(start, end) {
   }
 }
 
-function getStoredPreferences() {
-  const storedPreferences = localStorage.getItem("Preferences");
-  return storedPreferences ? JSON.parse(storedPreferences) : {};
-}
-
 function mapCalendarView(view, mobile_view) {
   const viewMapping = {
     month: "dayGridMonth",
@@ -53,11 +48,15 @@ function mapCalendarView(view, mobile_view) {
 export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   component: CalendarPage,
   validateSearch: (search) => {
+    let defaultView = "timeGridWeek";
+
     const preferences = getStoredPreferences();
-    const calendarView = mapCalendarView(
-      preferences.calendar_view,
-      preferences.calendar_view_mobile
-    );
+    if (preferences?.calendar_view) {
+      defaultView = mapCalendarView(
+        preferences.calendar_view,
+        preferences.calendar_view_mobile
+      );
+    }
 
     const view = [
       "dayGridMonth",
@@ -66,19 +65,16 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
       "listWeek",
     ].includes(search.view)
       ? search.view
-      : calendarView;
+      : defaultView;
 
-    let start, end;
+    let start = search.start;
+    let end = search.end;
 
-    if (
-      search.start &&
-      search.end &&
-      isDurationValid(view, search.start, search.end)
-    ) {
-      start = search.start;
-      end = search.end;
-    } else {
-      const calculated = calculateStartEndTime(view);
+    if (!start && !end && !isDurationValid(view, start, end)) {
+      const calculated = calculateStartEndTime(
+        view,
+        preferences?.first_day_of_week
+      );
       start = calculated.start;
       end = calculated.end;
     }
