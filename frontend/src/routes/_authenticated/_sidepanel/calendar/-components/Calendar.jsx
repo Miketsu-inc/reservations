@@ -8,6 +8,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import { formatToDateString, getMonthFromCalendarStart } from "@lib/datetime";
+import { useWindowSize } from "@lib/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarModal from "./CalendarModal";
 
@@ -83,6 +84,9 @@ export default function Calendar({
   const [serverError, setServerError] = useState();
   const calendarRef = useRef();
   const [calendarView, setCalendarView] = useState(view);
+  const windowSize = useWindowSize();
+
+  const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
   const datesChanged = useCallback(
     (api) => {
@@ -152,7 +156,7 @@ export default function Calendar({
   }, []);
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-[85svh] flex-col md:h-fit md:max-h-[90svh]">
       <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="flex flex-col pb-2 md:flex-row md:gap-2">
         <div className="flex w-full flex-col justify-between md:flex-row md:items-center">
@@ -161,7 +165,11 @@ export default function Calendar({
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
             <div className="flex flex-row items-center gap-2">
-              <input className="w-5" type="date" onChange={changeDateHandler} />
+              <input
+                className="w-5 dark:[color-scheme:dark]"
+                type="date"
+                onChange={changeDateHandler}
+              />
               <button
                 className="hover:bg-hvr_gray cursor-pointer rounded-lg"
                 type="button"
@@ -192,91 +200,92 @@ export default function Calendar({
           </div>
         </div>
       </div>
-      <div className="flex grow items-center justify-center">
-        <div className="light bg-bg_color text-text_color h-full w-full">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[
-              dayGridPlugin,
-              interactionPlugin,
-              timeGridPlugin,
-              listPlugin,
-            ]}
-            weekNumberCalculation="ISO"
-            locale="hu"
-            timeZone="UTC"
-            editable={true}
-            eventDurationEditable={true}
-            selectable={true}
-            initialView={view ? view : "timeGridWeek"}
-            // dayGridMonth dates do not start or end with the current month's dates
-            initialDate={
-              view === "dayGridMonth"
-                ? getMonthFromCalendarStart(start)
-                : start
-                  ? start
-                  : undefined
-            }
-            height="100%"
-            headerToolbar={false}
-            events={formatData(eventData)}
-            eventClick={(e) => {
-              setEventInfo(e.event);
-              setIsModalOpen(true);
-            }}
-            firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
-            lazyFetching={true}
-            views={{
-              dayGridMonth: {
-                fixedWeekCount: false,
-              },
-              timeGridWeek: {
-                titleFormat: {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                },
-                slotLabelFormat: {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: preferences.time_format === "12-hour",
-                },
-                slotDuration: preferences.time_frequency,
-                slotMinTime: preferences.start_hour,
-                slotMaxTime: preferences.end_hour,
-                nowIndicator: true,
-              },
-              timeGridDay: {
-                slotLabelFormat: {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: preferences.time_format === "12-hour",
-                },
-                slotDuration: preferences.time_frequency,
-                slotMinTime: preferences.start_hour,
-                slotMaxTime: preferences.end_hour,
-                nowIndicator: true,
-              },
-            }}
-            allDaySlot={false}
-            eventTimeFormat={{
-              hour: "numeric",
-              minute: "2-digit",
-              second: "2-digit",
-              meridiem: false,
-              hour12: preferences.time_format === "12-hour",
-            }}
-          />
-        </div>
-        <CalendarModal
-          eventInfo={eventInfo}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
+      <div className="light bg-bg_color text-text_color max-h-full w-full overflow-auto">
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[
+            dayGridPlugin,
+            interactionPlugin,
+            timeGridPlugin,
+            listPlugin,
+          ]}
+          locale="hu"
+          timeZone="UTC"
+          editable={true}
+          eventDurationEditable={true}
+          selectable={true}
+          initialView={view ? view : "timeGridWeek"}
+          // dayGridMonth dates do not start or end with the current month's dates
+          initialDate={
+            view === "dayGridMonth"
+              ? getMonthFromCalendarStart(start)
+              : start
+                ? start
+                : undefined
+          }
+          height="auto"
+          headerToolbar={false}
+          events={formatData(eventData)}
+          eventClick={(e) => {
+            setEventInfo(e.event);
+            setIsModalOpen(true);
           }}
-          setError={setServerError}
+          firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
+          lazyFetching={true}
+          slotLabelFormat={{
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: preferences.time_format === "12-hour",
+          }}
+          slotDuration={preferences.time_frequency}
+          slotMinTime={preferences.start_hour}
+          slotMaxTime={preferences.end_hour}
+          nowIndicator={true}
+          titleFormat={{
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }}
+          titleRangeSeparator=" - "
+          fixedWeekCount={false}
+          allDaySlot={false}
+          dayHeaderFormat={{
+            weekday: "short",
+            day: isWindowSmall ? undefined : "numeric",
+            omitCommas: true,
+          }}
+          eventTimeFormat={{
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: preferences.time_format === "12-hour",
+          }}
+          views={{
+            dayGridMonth: {
+              titleFormat: {
+                year: "numeric",
+                month: "long",
+              },
+              displayEventTime: false,
+            },
+            timeGridWeek: {
+              displayEventTime: isWindowSmall ? false : undefined,
+            },
+            timeGridDay: {
+              dayHeaderFormat: {
+                weekday: "long",
+              },
+            },
+          }}
         />
       </div>
+      <CalendarModal
+        eventInfo={eventInfo}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+        setError={setServerError}
+      />
     </div>
   );
 }

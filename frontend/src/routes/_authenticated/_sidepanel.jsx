@@ -123,8 +123,8 @@ function SidePanelLayout() {
       <aside
         id="sidepanel"
         className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
-          ${isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-50 h-screen
-          overflow-hidden transition-all duration-300`}
+          ${isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-50 h-dvh overflow-hidden
+          transition-all duration-300`}
         aria-label="Sidepanel"
       >
         <div className="bg-layer_bg flex h-full flex-col px-3 py-4">
