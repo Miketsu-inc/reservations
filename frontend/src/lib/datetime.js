@@ -42,16 +42,21 @@ export function calculateStartEndTime(view) {
     case "listWeek":
       // This will need a correction if the user's calendar
       // starts with Sunday instead of Monday
-      start = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - now.getDay() + 1
-      );
-      end = new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        start.getDate() + 7
-      );
+      if (now.getDay() === 0) {
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
+      } else {
+        start = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() + 1 - now.getDay()
+        );
+        end = new Date(
+          start.getFullYear(),
+          start.getMonth(),
+          start.getDate() + 7
+        );
+      }
       break;
     case "timeGridDay":
       start = now;
@@ -130,10 +135,18 @@ export function isDurationValid(view, startStr, endStr) {
 export function getMonthFromCalendarStart(dateStr) {
   const date = new Date(dateStr);
 
+  // This will need a correction if the user's calendar
+  // starts with Sunday instead of Monday
   if (date.getDate() === 1 && date.getDay() === 1) {
     return formatToDateString(date);
   }
 
+  if (date.getDate() <= 7) {
+    return formatToDateString(date);
+  }
+
+  // This will need a correction if the user's calendar
+  // starts with Sunday instead of Monday
   return formatToDateString(
     new Date(date.getFullYear(), date.getMonth() + 1, 1)
   );

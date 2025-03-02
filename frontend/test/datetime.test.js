@@ -78,6 +78,9 @@ describe("getMonthFromCalendarStart", () => {
   });
 
   it("date at start", () => {
+    expect(getMonthFromCalendarStart("2025-03-01")).toBe(
+      formatToDateString(new Date(2025, 2, 1))
+    );
     expect(getMonthFromCalendarStart("2025-09-01")).toBe(
       formatToDateString(new Date(2025, 8, 1))
     );

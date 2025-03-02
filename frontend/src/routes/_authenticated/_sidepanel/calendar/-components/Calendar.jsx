@@ -135,6 +135,16 @@ export default function Calendar({
     setCalendarView(view);
   }
 
+  function changeDateHandler(e) {
+    const date = e.target.value;
+    if (!date) return;
+
+    const api = calendarRef.current.getApi();
+
+    api.gotoDate(date);
+    datesChanged(api);
+  }
+
   useEffect(() => {
     const api = calendarRef.current.getApi();
     setCalendarTitle(api.view.title);
@@ -143,39 +153,42 @@ export default function Calendar({
   return (
     <div className="flex h-screen flex-col">
       <ServerError styles="mt-4 mb-2" error={serverError} />
-      <div className="pb-2 md:flex md:flex-row md:gap-2">
-        <p className="py-2 text-2xl whitespace-nowrap md:text-3xl">
-          {calendarTitle}
-        </p>
-        <div className="flex w-full flex-row items-center justify-between">
-          <div className="flex flex-row">
-            <button
-              className="hover:bg-hvr_gray cursor-pointer rounded-lg"
-              type="button"
-              onClick={() => navButtonHandler("prev")}
-            >
-              <BackArrowIcon styles="w-8 h-8 stroke-current" />
-            </button>
-            <button
-              className="hover:bg-hvr_gray cursor-pointer rounded-lg"
-              type="button"
-              onClick={() => navButtonHandler("next")}
-            >
-              <BackArrowIcon styles="w-8 h-8 stroke-current rotate-180" />
-            </button>
-            <Button
-              variant="primary"
-              styles="p-2"
-              buttonText="today"
-              onClick={todayButtonHandler}
+      <div className="flex flex-col pb-2 md:flex-row md:gap-2">
+        <div className="flex w-full flex-col justify-between md:flex-row md:items-center">
+          <p className="py-2 text-2xl whitespace-nowrap md:text-3xl">
+            {calendarTitle}
+          </p>
+          <div className="flex flex-row items-center justify-between gap-2">
+            <div className="flex flex-row items-center gap-2">
+              <input className="w-5" type="date" onChange={changeDateHandler} />
+              <button
+                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                type="button"
+                onClick={() => navButtonHandler("prev")}
+              >
+                <BackArrowIcon styles="w-8 h-8 stroke-current" />
+              </button>
+              <Button
+                variant="primary"
+                styles="p-2"
+                buttonText="today"
+                onClick={todayButtonHandler}
+              />
+              <button
+                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                type="button"
+                onClick={() => navButtonHandler("next")}
+              >
+                <BackArrowIcon styles="w-8 h-8 stroke-current rotate-180" />
+              </button>
+            </div>
+            <Select
+              options={calendarViewOptions}
+              value={calendarView}
+              onSelect={(value) => changeViewHandler(value)}
+              styles="w-28"
             />
           </div>
-          <Select
-            options={calendarViewOptions}
-            value={calendarView}
-            onSelect={(value) => changeViewHandler(value)}
-            styles="w-36"
-          />
         </div>
       </div>
       <div className="flex grow items-center justify-center">
