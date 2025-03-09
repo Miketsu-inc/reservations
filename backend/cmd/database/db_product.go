@@ -67,10 +67,10 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
 	    returning ID
 	),
 	valid_services as (
-    	select s.id as service_id 
+    	select s.id as service_id
     	from unnest($7::bigint[]) as input_id
     	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1  
+    	where s.merchant_id = $1
 	)
 	insert into "ServiceProduct" (product_id, service_id)
 	select inserted_product.id, valid_services.service_id
@@ -91,13 +91,14 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 	if err != nil {
 		return err
 	}
+	// nolint: errcheck
 	defer tx.Rollback()
 
 	productUpdateQuery := `
-	update "Product" 
+	update "Product"
 	set name = $3, description = $4, price = $5, stock_quantity = $6, usage_per_unit = $7
 	where merchant_id = $1 and id = $2
-`
+	`
 	_, err = tx.ExecContext(ctx, productUpdateQuery, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.StockQuantity, newProduct.UsagePerUnit)
 	if err != nil {
 		return fmt.Errorf("failed to update product: %v", err)
@@ -105,16 +106,16 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 
 	insertServiceQuery := `
 	with valid_services as (
-    	select s.id as service_id 
+    	select s.id as service_id
     	from unnest($3::bigint[]) as input_id
     	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1  
+    	where s.merchant_id = $1
 	)
-	insert into "ServiceProduct" (product_id, service_id) 
-	select $2, service_id 
-	from valid_services 
+	insert into "ServiceProduct" (product_id, service_id)
+	select $2, service_id
+	from valid_services
 	on conflict (product_id, service_id) do nothing;
-`
+	`
 
 	_, err = tx.ExecContext(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, intSliceToPgArray(newProduct.ServiceIds))
 	if err != nil {
@@ -123,19 +124,19 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 
 	deleteServiceQuery := `
 	with valid_services as (
-    	select s.id as service_id 
+    	select s.id as service_id
     	from unnest($3::bigint[]) as input_id
     	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1  
+    	where s.merchant_id = $1
 	)
-	delete from "ServiceProduct" 
-	where product_id = $2 
+	delete from "ServiceProduct"
+	where product_id = $2
 	and not exists (
-		select 1 
-		from valid_services 
+		select 1
+		from valid_services
 		where valid_services.service_id = "ServiceProduct".service_id
 	);
-`
+	`
 	_, err = tx.ExecContext(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, intSliceToPgArray(newProduct.ServiceIds))
 	if err != nil {
 		return fmt.Errorf("failed to delete outdated service associations: %v", err)
@@ -178,11 +179,11 @@ type PublicProduct struct {
 }
 
 func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]PublicProduct, error) {
-	query := `select 
-	p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids 
+	query := `select
+	p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
-	where p.merchant_id = $1 
+	where p.merchant_id = $1
 	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit;`
 
 	rows, err := s.db.QueryContext(ctx, query, merchantId)
