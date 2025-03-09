@@ -77,3 +77,19 @@ create table if not exists "Blacklist" (
     merchant_id             uuid             references "Merchant" (ID) not null,
     user_id                 uuid             references "User" (ID) not null
 );
+
+create table if not exists "Product" (
+    ID                  serial          primary key unique not null,
+    merchant_id         uuid            references "Merchant" (ID) not null,
+    name                varchar(50)     not null,
+    description         text,
+    price               bigint          not null, -- Price per unit
+    stock_quantity      integer         not null,-- Number of bottles, packeges
+    usage_per_unit      integer         not null  -- How many uses one unit lasts for
+);
+
+create table if not exists "ServiceProduct" (
+    service_id       integer references "Service" (ID) not null,
+    product_id       integer references "Product" (ID) not null,
+    primary key (service_id, product_id)
+);

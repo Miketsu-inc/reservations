@@ -122,6 +122,17 @@ type PostgreSQL interface {
 	GetPreferencesByMerchantId(context.Context, uuid.UUID) (PreferenceData, error)
 	// Update preferences for a merchant
 	UpdatePreferences(context.Context, uuid.UUID, PreferenceData) error
+
+	// -- Products --
+
+	// Insert a new product into the database
+	NewProduct(context.Context, Product) error
+	// Get all products for a merchant by it's id
+	GetProductsByMerchant(context.Context, uuid.UUID) ([]PublicProduct, error)
+	// Delete a Product by it's id
+	DeleteProductById(context.Context, uuid.UUID, int) error
+	// Updateing properties of product by a it's id
+	UpdateProduct(context.Context, Product) error
 }
 
 type service struct {

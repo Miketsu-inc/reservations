@@ -9,6 +9,7 @@ export default function ComboBox({
   placeholder,
   styles,
   maxVisibleItems = 7,
+  emptyText,
 }) {
   const [searchText, setSearchText] = useState("");
 
@@ -34,6 +35,7 @@ export default function ComboBox({
         />
       }
       onClose={() => setSearchText("")}
+      emptyText={emptyText}
     />
   );
 }

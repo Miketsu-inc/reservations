@@ -12,6 +12,7 @@ export default function DropdownBase({
   maxVisibleItems = 7,
   extraContent,
   onClose,
+emptyText,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
@@ -45,7 +46,7 @@ export default function DropdownBase({
       if (!isOpen) {
         handleOpen();
       } else if (isOpen && highlightedIndex !== null) {
-        onSelect(options[highlightedIndex].value);
+        onSelect(options[highlightedIndex]);
         handleClose();
       }
     } else if (e.key === "ArrowUp" && isOpen) {
@@ -148,7 +149,7 @@ export default function DropdownBase({
           >
             {options.length === 0 ? (
               <li className="px-4 py-6 text-center text-gray-500 select-none dark:text-gray-400">
-                No results found
+{emptyText || "No results found"}
               </li>
             ) : (
               options.map((option, index) => {
@@ -159,12 +160,12 @@ export default function DropdownBase({
                   <li
                     ref={index === 0 ? listElementRef : null}
                     onClick={() => {
-                      onSelect(option.value);
+                      onSelect(option);
                       handleClose();
                     }}
                     key={index}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-3 pl-4 text-gray-700
+                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-3 pl-3 text-gray-700
                       select-none`}
                     role="option"
                     aria-selected={isSelected}
@@ -172,7 +173,9 @@ export default function DropdownBase({
                     <div className="flex w-full items-center justify-between">
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         {option.icon && (
-                          <span className="shrink-0">{option.icon}</span>
+                          <span className="flex shrink-0 items-center justify-center">
+{option.icon}
+</span>
                         )}
                         <span className="truncate">{option.label}</span>
                       </div>

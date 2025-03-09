@@ -7,6 +7,7 @@ export default function Select({
   placeholder,
   styles,
   maxVisibleItems = 7,
+  emptyText,
 }) {
   return (
     <DropdownBase
@@ -16,6 +17,7 @@ export default function Select({
       placeholder={placeholder}
       styles={styles}
       maxVisibleItems={maxVisibleItems}
+      emptyText={emptyText}
     />
   );
 }

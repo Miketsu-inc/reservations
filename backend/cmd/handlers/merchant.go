@@ -670,3 +670,180 @@ func (m *Merchant) UnBlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
+	type newProduct struct {
+		Name          string `json:"name" validate:"required"`
+		Description   string `json:"description"`
+		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
+		StockQuantity int    `json:"stock_quantity" validate:"required,min=0,max=10000"`
+		UsagePerUnit  int    `json:"usage_per_unit" validate:"min=0,max=10000"`
+		ServiceIds    []int  `json:"service_ids"`
+	}
+	var product newProduct
+
+	if err := validate.ParseStruct(r, &product); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userID := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
+		return
+	}
+
+	if err := m.Postgresdb.NewProduct(r.Context(), database.Product{
+		Id:            0,
+		MerchantId:    merchantId,
+		Name:          product.Name,
+		Description:   product.Description,
+		Price:         product.Price,
+		StockQuantity: product.StockQuantity,
+		UsagePerUnit:  product.UsagePerUnit,
+		ServiceIds:    product.ServiceIds,
+	}); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting product for merchant: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) GetProducts(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving products for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, products)
+}
+
+func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid product id provided"))
+		return
+	}
+
+	productId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.DeleteProductById(r.Context(), merchantId, productId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting product for merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+
+	var prod database.PublicProduct
+
+	if err := validate.ParseStruct(r, &prod); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid product id provided"))
+		return
+	}
+
+	productId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		return
+	}
+
+	if productId != prod.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid product id provided"))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.UpdateProduct(r.Context(), database.Product{
+		Id:            prod.Id,
+		MerchantId:    merchantId,
+		Name:          prod.Name,
+		Description:   prod.Description,
+		Price:         prod.Price,
+		StockQuantity: prod.StockQuantity,
+		UsagePerUnit:  prod.UsagePerUnit,
+		ServiceIds:    prod.ServiceIds,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating product for merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) GetProductTableInfo(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving products for merchant: %s", err.Error()))
+		return
+	}
+
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
+		return
+	}
+
+	filteredServices := make([]map[string]interface{}, len(services))
+	for i, service := range services {
+		filteredServices[i] = map[string]interface{}{
+			"Id":    service.Id,
+			"Name":  service.Name,
+			"Color": service.Color,
+		}
+	}
+
+	response := map[string]interface{}{
+		"products": products,
+		"services": filteredServices,
+	}
+
+	httputil.Success(w, http.StatusOK, response)
+}

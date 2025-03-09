@@ -57,7 +57,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
             options={options}
             value={toCustomer}
             placeholder="Search customers"
-            onSelect={(value) => setToCustomer(value)}
+            onSelect={(option) => setToCustomer(option.value)}
             styles="w-52"
             maxVisibleItems={5}
           />

@@ -153,7 +153,9 @@ function CalendarPage() {
           <Select
             options={calendarViewOptions}
             value={changedPreferences.calendar_view}
-            onSelect={(value) => handleInputChange("calendar_view", value)}
+            onSelect={(option) =>
+              handleInputChange("calendar_view", option.value)
+            }
             placeholder=""
             styles="font-normal md:w-2/3"
           />
@@ -166,8 +168,8 @@ function CalendarPage() {
           <Select
             options={calendarViewOptions}
             value={changedPreferences.calendar_view_mobile}
-            onSelect={(value) =>
-              handleInputChange("calendar_view_mobile", value)
+            onSelect={(option) =>
+              handleInputChange("calendar_view_mobile", option.value)
             }
             placeholder=""
             styles="font-normal md:w-2/3"
@@ -213,7 +215,9 @@ function CalendarPage() {
         <Select
           options={TimeFrequencyOptions}
           value={changedPreferences.time_frequency}
-          onSelect={(value) => handleInputChange("time_frequency", value)}
+          onSelect={(option) =>
+            handleInputChange("time_frequency", option.value)
+          }
           placeholder=""
           styles="font-normal md:w-2/3"
         />

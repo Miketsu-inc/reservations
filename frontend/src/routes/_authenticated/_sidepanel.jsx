@@ -4,6 +4,7 @@ import ChartIcon from "@icons/ChartIcon";
 import CustomersIcon from "@icons/CustomersIcon";
 import DashboardIcon from "@icons/DashboardIcon";
 import HamburgerMenuIcon from "@icons/HamburgerMenuIcon";
+import ProductIcon from "@icons/ProductIcon";
 import ServicesIcon from "@icons/ServicesIcon";
 import SettingsIcon from "@icons/SettingsIcon";
 import SidePanelToggleIcon from "@icons/SidePanelToggleIcon";
@@ -71,6 +72,11 @@ function SidePanelLayout() {
       href: "/customers",
       label: "Customers",
       icon: <CustomersIcon styles="h-5 w-5" />,
+    },
+    {
+      href: "/products",
+      label: "Products",
+      icon: <ProductIcon styles="h-5 w-5" />,
     },
     {
       href: "#",
