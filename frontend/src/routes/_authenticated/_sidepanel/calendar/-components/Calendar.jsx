@@ -234,7 +234,7 @@ export default function Calendar({
           lazyFetching={true}
           slotLabelFormat={{
             hour: "numeric",
-            minute: "2-digit",
+            minute: "numeric",
             hour12: preferences.time_format === "12-hour",
           }}
           slotDuration={preferences.time_frequency}
@@ -249,6 +249,7 @@ export default function Calendar({
           titleRangeSeparator=" - "
           fixedWeekCount={false}
           allDaySlot={false}
+          displayEventEnd={false}
           dayHeaderFormat={{
             weekday: "short",
             day: isWindowSmall ? undefined : "numeric",
@@ -274,6 +275,9 @@ export default function Calendar({
               dayHeaderFormat: {
                 weekday: "long",
               },
+            },
+            listWeek: {
+              displayEventEnd: true,
             },
           }}
         />

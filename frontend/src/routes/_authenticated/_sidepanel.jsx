@@ -106,7 +106,7 @@ function SidePanelLayout() {
             <button
               aria-controls="sidepanel"
               type="button"
-              className="text-text_color hover:bg-hvr_gray rounded-lg text-sm focus:ring-2"
+              className="text-text_color hover:bg-hvr_gray rounded-lg text-sm"
               onClick={() => setIsOpen(true)}
             >
               <span className="sr-only">Open sidepanel</span>

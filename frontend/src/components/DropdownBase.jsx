@@ -12,7 +12,7 @@ export default function DropdownBase({
   maxVisibleItems = 7,
   extraContent,
   onClose,
-emptyText,
+  emptyText,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
@@ -149,7 +149,7 @@ emptyText,
           >
             {options.length === 0 ? (
               <li className="px-4 py-6 text-center text-gray-500 select-none dark:text-gray-400">
-{emptyText || "No results found"}
+                {emptyText || "No results found"}
               </li>
             ) : (
               options.map((option, index) => {
@@ -174,8 +174,8 @@ emptyText,
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         {option.icon && (
                           <span className="flex shrink-0 items-center justify-center">
-{option.icon}
-</span>
+                            {option.icon}
+                          </span>
                         )}
                         <span className="truncate">{option.label}</span>
                       </div>
