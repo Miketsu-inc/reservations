@@ -53,49 +53,52 @@ export default function DatePicker({
           </div>
         </button>
         {showCalendar && (
-          <div
-            className="absolute z-10 w-fit rounded-md border border-gray-300 bg-white shadow-lg
-              dark:border-gray-500 dark:bg-neutral-950"
-          >
-            <DayPicker
-              mode="single"
-              showOutsideDays={true}
-              weekStartsOn={
-                firstDayOfWeek === "Monday"
-                  ? 1
-                  : firstDayOfWeek === "Sunday"
-                    ? 0
-                    : undefined
-              }
-              selected={selectedDate}
-              disabled={{ before: disabledBefore }}
-              onSelect={(date) => {
-                SetSelectedDate(date);
-                onSelect(date);
-              }}
-              classNames={{
-                month: "space-y-4 pb-2",
-                month_caption: "flex justify-center items-center w-full pt-3",
-                caption_label: "font-medium",
-                nav: "absolute flex items-center justify-between w-full p-2",
-                button_previous: "rounded-md hover:bg-hvr_gray cursor-pointer",
-                button_next: "rounded-md hover:bg-hvr_gray cursor-pointer",
-                weekdays: "flex px-2",
-                weekday:
-                  "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
-                week: "flex w-full mt-2 px-2",
-                day: "h-9 w-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
-                selected:
-                  "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
-                today: "bg-hvr_gray",
-                outside: "text-gray-500",
-                disabled:
-                  "hover:bg-transparent text-gray-300! dark:text-gray-800!",
-                hidden: "invisible",
-                chevron:
-                  "w-5 h-5 m-1 fill-gray-500 dark:fill-gray-300 hover:fill-text_color",
-              }}
-            />
+          <div className="relative top-1.5">
+            <div
+              className="absolute z-10 w-fit rounded-md border border-gray-300 bg-white shadow-lg
+                dark:border-gray-500 dark:bg-neutral-950"
+            >
+              <DayPicker
+                mode="single"
+                showOutsideDays={true}
+                weekStartsOn={
+                  firstDayOfWeek === "Monday"
+                    ? 1
+                    : firstDayOfWeek === "Sunday"
+                      ? 0
+                      : undefined
+                }
+                selected={selectedDate}
+                disabled={{ before: disabledBefore }}
+                onSelect={(date) => {
+                  SetSelectedDate(date);
+                  onSelect(date);
+                }}
+                classNames={{
+                  month: "space-y-4 pb-2",
+                  month_caption: "flex justify-center items-center w-full pt-3",
+                  caption_label: "font-medium",
+                  nav: "absolute flex items-center justify-between w-full p-2",
+                  button_previous:
+                    "rounded-md hover:bg-hvr_gray cursor-pointer",
+                  button_next: "rounded-md hover:bg-hvr_gray cursor-pointer",
+                  weekdays: "flex px-2",
+                  weekday:
+                    "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
+                  week: "flex w-full mt-2 px-2",
+                  day: "h-9 w-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
+                  selected:
+                    "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
+                  today: "bg-hvr_gray",
+                  outside: "text-gray-500",
+                  disabled:
+                    "hover:bg-transparent text-gray-300! dark:text-gray-800!",
+                  hidden: "invisible",
+                  chevron:
+                    "w-5 h-5 m-1 fill-gray-500 dark:fill-gray-300 hover:fill-text_color",
+                }}
+              />
+            </div>
           </div>
         )}
       </div>

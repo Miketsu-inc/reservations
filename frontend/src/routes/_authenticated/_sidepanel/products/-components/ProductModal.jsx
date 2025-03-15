@@ -163,8 +163,19 @@ export default function ProductModal({
           </div>
           <div className="flex flex-col gap-4 md:w-96 md:justify-between">
             <div className="flex flex-col gap-2 md:gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="">Connect the product to services</label>
+                <MultipleSelect
+                  options={selectData || []}
+                  initialItems={productData.service_ids}
+                  onAddition={handleAddition}
+                  onDeletion={handleDeletion}
+                  styles="w-full"
+                  setDefault={submitted}
+                />
+              </div>
               <Input
-                styles="p-2 md:w-80"
+                styles="p-2"
                 id="stock_quntity"
                 labelText="In Stock Quantity"
                 name="stock_quantity"
@@ -177,7 +188,7 @@ export default function ProductModal({
                 inputData={onChangeHandler}
               />
               <Input
-                styles="p-2 md:w-80"
+                styles="p-2"
                 id="usage_per_unit"
                 labelText="Usage Per Unit"
                 name="usage_per_unit"
@@ -189,17 +200,6 @@ export default function ProductModal({
                 value={productData.usage_per_unit}
                 inputData={onChangeHandler}
               />
-              <div className="flex flex-col gap-1">
-                <label className="">Connect the product to services</label>
-                <MultipleSelect
-                  options={selectData || []}
-                  initialItems={productData.service_ids}
-                  onAddition={handleAddition}
-                  onDeletion={handleDeletion}
-                  styles="w-full"
-                  setDefault={submitted}
-                />
-              </div>
             </div>
             <div className="text-right">
               <Button

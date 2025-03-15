@@ -135,17 +135,16 @@ function SidePanelLayout() {
       >
         <div className="bg-layer_bg flex h-full flex-col px-3 py-4">
           <div className="flex flex-row items-center gap-3">
-            <img
-              className="rounded-full"
-              src="https://dummyimage.com/40x40/d156c3/000000.jpg"
-            />
-            {!isCollapsed && (
-              <span
-                className={`whitespace-nowrap transition-opacity duration-300
-                ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}
-              >
-                Company name
-              </span>
+            {isCollapsed ? (
+              <img
+                className="rounded-full"
+                src="https://dummyimage.com/40x40/d156c3/000000.jpg"
+              />
+            ) : (
+              <img
+                className="rounded-lg"
+                src="https://dummyimage.com/160x40/d156c3/000000.jpg"
+              />
             )}
           </div>
           <ol className="flex flex-1 flex-col space-y-1 pt-5 font-medium">
@@ -169,7 +168,7 @@ function SidePanelLayout() {
                     <>
                       <span
                         className={`${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3 flex-1
-                        whitespace-nowrap transition-all duration-300`}
+                        whitespace-nowrap transition-opacity duration-300`}
                       >
                         {item.label}
                       </span>
@@ -191,7 +190,7 @@ function SidePanelLayout() {
       </aside>
       <div
         className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen flex-col
-          transition-all duration-300 md:px-4`}
+          transition-[margin] duration-300 md:px-4`}
       >
         {!isWindowSmall && (
           <div
