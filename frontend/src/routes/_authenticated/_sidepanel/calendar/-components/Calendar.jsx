@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import DatePicker from "@components/DatePicker";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -140,13 +141,11 @@ export default function Calendar({
     setCalendarView(view);
   }
 
-  function changeDateHandler(e) {
-    const date = e.target.value;
-    if (!date) return;
-
+  function changeDateHandler(date) {
     const api = calendarRef.current.getApi();
+    const dateStr = formatToDateString(date);
 
-    api.gotoDate(date);
+    api.gotoDate(dateStr);
     datesChanged(api);
   }
 
@@ -165,10 +164,12 @@ export default function Calendar({
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
             <div className="flex flex-row items-center gap-2">
-              <input
-                className="w-5 dark:[color-scheme:dark]"
-                type="date"
-                onChange={changeDateHandler}
+              <DatePicker
+                styles="w-fit"
+                hideText={true}
+                firstDayOfWeek={preferences.first_day_of_week}
+                clearAfterClose={true}
+                onSelect={changeDateHandler}
               />
               <button
                 className="hover:bg-hvr_gray cursor-pointer rounded-lg"

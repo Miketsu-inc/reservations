@@ -14,14 +14,19 @@ export default function DatePicker({
   styles,
   defaultDate,
   palaceHolderText,
-  hideText = false,
   disabledBefore,
+  hideText = false,
+  clearAfterClose = false,
+  firstDayOfWeek = "Monday",
   onSelect,
 }) {
   const datePickerRef = useRef();
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, SetSelectedDate] = useState(defaultDate);
-  useClickOutside(datePickerRef, () => setShowCalendar(false));
+  useClickOutside(datePickerRef, () => {
+    setShowCalendar(false);
+    if (clearAfterClose) SetSelectedDate();
+  });
 
   return (
     <>
@@ -31,7 +36,10 @@ export default function DatePicker({
             text-left text-gray-900 focus:outline-none dark:border-gray-500
             dark:bg-neutral-950 dark:focus:border-white"
           type="button"
-          onClick={() => setShowCalendar(!showCalendar)}
+          onClick={() => {
+            setShowCalendar(!showCalendar);
+            if (clearAfterClose) SetSelectedDate();
+          }}
         >
           <div className="flex items-center justify-between">
             {!hideText && (
@@ -46,12 +54,19 @@ export default function DatePicker({
         </button>
         {showCalendar && (
           <div
-            className="relative top-1.5 z-10 w-fit rounded-md border border-gray-300 bg-white shadow-lg
+            className="absolute z-10 w-fit rounded-md border border-gray-300 bg-white shadow-lg
               dark:border-gray-500 dark:bg-neutral-950"
           >
             <DayPicker
               mode="single"
               showOutsideDays={true}
+              weekStartsOn={
+                firstDayOfWeek === "Monday"
+                  ? 1
+                  : firstDayOfWeek === "Sunday"
+                    ? 0
+                    : undefined
+              }
               selected={selectedDate}
               disabled={{ before: disabledBefore }}
               onSelect={(date) => {
