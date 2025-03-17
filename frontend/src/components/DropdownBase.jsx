@@ -3,6 +3,8 @@ import TickIcon from "@icons/TickIcon";
 import { useClickOutside } from "@lib/hooks";
 import { useEffect, useRef, useState } from "react";
 
+const itemHeight = 34;
+
 export default function DropdownBase({
   options,
   value,
@@ -16,11 +18,9 @@ export default function DropdownBase({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
-  const [itemHeight, setItemHeight] = useState(0);
   const [isUsingKeyboard, setIsUsingKeyboard] = useState(false);
   const containerRef = useRef(null);
   const dropDownListRef = useRef(null);
-  const listElementRef = useRef(null);
 
   const selectedIndex = options?.findIndex((option) => option.value === value);
   const selectedOption = options?.[selectedIndex];
@@ -81,13 +81,6 @@ export default function DropdownBase({
     }
   }, [highlightedIndex, isUsingKeyboard, isOpen]);
 
-  useEffect(() => {
-    if (isOpen && listElementRef.current) {
-      const height = listElementRef.current.getBoundingClientRect().height;
-      setItemHeight(height);
-    }
-  }, [isOpen]);
-
   return (
     <div
       className={`${styles} relative`}
@@ -96,7 +89,7 @@ export default function DropdownBase({
     >
       <button
         onClick={() => (isOpen ? handleClose() : handleOpen())}
-        className="focus:border-text_color w-full rounded-md border border-gray-400 px-4 py-2
+        className="focus:border-text_color w-full rounded-md border border-gray-400 py-2 pr-3 pl-4
           text-left text-gray-900 focus:outline-none dark:border-gray-500
           dark:bg-neutral-950 dark:focus:border-white"
         type="button"
@@ -158,14 +151,13 @@ export default function DropdownBase({
 
                 return (
                   <li
-                    ref={index === 0 ? listElementRef : null}
                     onClick={() => {
                       onSelect(option);
                       handleClose();
                     }}
                     key={index}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-3 pl-3 text-gray-700
+                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-2 pl-3 text-gray-700
                       select-none`}
                     role="option"
                     aria-selected={isSelected}
