@@ -4,10 +4,21 @@ import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import BusinessHours from "../-components/BusinessHours";
 import DangerZoneItem from "../-components/DangerZoneItem";
 import ImageUploader from "../-components/ImageUploader";
 import SectionHeader from "../-components/SectionHeader";
 import TextArea from "../-components/TextArea";
+
+const daysOfWeek = {
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+  7: "Sunday",
+};
 
 async function fetchMerchantData() {
   const response = await fetch(`/api/v1/merchants/settings-info`, {
@@ -27,6 +38,32 @@ function hasChanges(changedData, originalData) {
   return JSON.stringify(changedData) !== JSON.stringify(originalData);
 }
 
+function validateBusinessHours(hours) {
+  for (const day in hours) {
+    const periods = hours[day];
+
+    if (periods.length === 0) continue;
+
+    // Sort time periods by start time
+    const sortedPeriods = [...periods].sort((a, b) =>
+      a.start_time.localeCompare(b.start_time)
+    );
+
+    for (let i = 0; i < sortedPeriods.length; i++) {
+      const { start_time, end_time } = sortedPeriods[i];
+
+      if (start_time >= end_time) {
+        return `Invalid time range on ${daysOfWeek[day]}. Start time must be before end time.`;
+      }
+
+      if (i > 0 && sortedPeriods[i - 1].end_time > start_time) {
+        return `Overlapping hours on ${daysOfWeek[day]}. PLease make sure to correct it`;
+      }
+    }
+  }
+  return "";
+}
+
 const defaultMerchantInfo = {
   merchant_name: "",
   location_id: 0,
@@ -37,6 +74,7 @@ const defaultMerchantInfo = {
   about_us: "",
   parking_info: "",
   payment_info: "",
+  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
 };
 
 export const Route = createFileRoute(
@@ -57,37 +95,28 @@ export const Route = createFileRoute(
 });
 
 function MerchantPage() {
-  const [merchantInfo, setMerchantInfo] = useState(defaultMerchantInfo);
-  const [originalData, setOriginalData] = useState(defaultMerchantInfo);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [serverError, setServerError] = useState("");
   const loaderData = Route.useLoaderData();
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    if (loaderData) {
-      const shortLocation =
-        loaderData.address +
-        ", " +
-        loaderData.city +
-        " " +
-        loaderData.postal_code;
-
-      const merchantData = {
+  const initialMerchantInfo = loaderData
+    ? {
         merchant_name: loaderData.merchant_name,
         location_id: loaderData.location_id,
         contact_email: loaderData.contact_email,
-        short_location: shortLocation,
+        short_location: `${loaderData.address}, ${loaderData.city} ${loaderData.postal_code}`,
         introduction: loaderData.introduction,
         announcement: loaderData.announcement,
         about_us: loaderData.about_us,
         parking_info: loaderData.parking_info,
         payment_info: loaderData.payment_info,
-      };
-      setMerchantInfo(merchantData);
-      setOriginalData(merchantData);
-    }
-  }, [loaderData]);
+        business_hours: loaderData.business_hours,
+      }
+    : defaultMerchantInfo;
+
+  const [merchantInfo, setMerchantInfo] = useState(initialMerchantInfo);
+  const [originalData, setOriginalData] = useState(initialMerchantInfo);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const { showToast } = useToast();
 
   function handleInputData(data) {
     setMerchantInfo((prevFormData) => ({
@@ -96,13 +125,20 @@ function MerchantPage() {
     }));
   }
 
-  // needed because inside the handleInputData it couldn!t detect copy pasting
+  useEffect(() => {
+    const validationError = validateBusinessHours(merchantInfo.business_hours);
+    setErrorMessage(validationError);
+  }, [merchantInfo.business_hours]);
+
+  // needed because inside the handleInputData it couldn't detect copy pasting
   useEffect(() => {
     setHasUnsavedChanges(hasChanges(merchantInfo, originalData));
   }, [merchantInfo, originalData]);
 
   async function updateButtonHandler() {
-    if (!hasUnsavedChanges) return;
+    if (errorMessage || !hasUnsavedChanges) {
+      return;
+    }
 
     try {
       const response = await fetch("/api/v1/merchants/reservation-fields", {
@@ -117,6 +153,7 @@ function MerchantPage() {
           about_us: merchantInfo.about_us,
           payment_info: merchantInfo.payment_info,
           parking_info: merchantInfo.parking_info,
+          business_hours: merchantInfo.business_hours,
         }),
       });
 
@@ -198,7 +235,24 @@ function MerchantPage() {
         />
 
         <div className="my-2 font-semibold">Currency (I have no idea yet)</div>
-        <div className="my-2 font-semibold">Working hours</div>
+        <div className="my-2 flex flex-col gap-3">
+          <div className="font-semibold">Business hours</div>
+          <p className="text-text_color/70">
+            Set your business hours to let your customers know when you're
+            available.
+          </p>
+          <BusinessHours
+            data={merchantInfo.business_hours}
+            setBusinessHours={(updater) => {
+              const updatedHours = updater(merchantInfo.business_hours);
+              setMerchantInfo((prev) => ({
+                ...prev,
+                business_hours: updatedHours,
+              }));
+            }}
+          />
+          {errorMessage && <span className="text-red-500">{errorMessage}</span>}
+        </div>
 
         <div className="flex flex-col gap-3">
           <span className="text-text_color/70 text-sm md:w-2/3">

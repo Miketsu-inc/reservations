@@ -40,7 +40,18 @@ const defaultMerchantInfo = {
   parking_info: "",
   payment_info: "",
   services: [],
+  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
 };
+
+const days = [
+  "Monday",
+  "Thuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 function MerchantPage() {
   const [merchantInfo, setMerchantInfo] = useState(defaultMerchantInfo);
@@ -67,6 +78,7 @@ function MerchantPage() {
         parking_info: loaderData.parking_info,
         payment_info: loaderData.payment_info,
         services: loaderData.services,
+        business_hours: loaderData.business_hours,
       });
     }
   }, [loaderData]);
@@ -147,35 +159,24 @@ function MerchantPage() {
             <p>{merchantInfo.about_us}</p>
           </ReservationSection>
           <ReservationSection name="Opening hours" show={true}>
-            <div className="flex flex-col gap-2 *:grid *:grid-cols-3">
-              <div>
-                <p>Monday</p>
-                <p>Closed</p>
-              </div>
-              <div>
-                <p>Tuesday</p>
-                <p>Closed</p>
-              </div>
-              <div>
-                <p>Wednesday</p>
-                <p>Closed</p>
-              </div>
-              <div>
-                <p>Thursday</p>
-                <p>16:00 - 22:00</p>
-              </div>
-              <div>
-                <p>Friday</p>
-                <p>14:00 - 23:45</p>
-              </div>
-              <div>
-                <p>Saturday</p>
-                <p>14:00 - 23:45</p>
-              </div>
-              <div>
-                <p>Sunday</p>
-                <p>Closed</p>
-              </div>
+            <div className="flex flex-col gap-2">
+              {Object.entries(merchantInfo.business_hours).map(
+                ([dayIndex, slots]) => (
+                  <div key={dayIndex} className="flex justify-between">
+                    <p className="w-1/3">{days[dayIndex - 1]}</p>
+                    <p className="w-2/3">
+                      {slots.length > 0
+                        ? slots
+                            .map(
+                              (slot) =>
+                                `${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}`
+                            )
+                            .join(" & ")
+                        : "Closed"}
+                    </p>
+                  </div>
+                )
+              )}
             </div>
           </ReservationSection>
           <ReservationSection name="Payment" show={merchantInfo.payment_info}>

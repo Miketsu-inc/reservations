@@ -2,12 +2,10 @@ package database
 
 import (
 	"context"
-	"strconv"
-
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 )
 
 type Product struct {
@@ -19,43 +17,6 @@ type Product struct {
 	StockQuantity int       `json:"stock_quantity"`
 	UsagePerUnit  int       `json:"usage_per_unit"`
 	ServiceIds    []int     `json:"service_ids"`
-}
-
-// Convert Go []int slice to PostgreSQL array string
-func intSliceToPgArray(ints []int) string {
-	if len(ints) == 0 {
-		return "{}"
-	}
-
-	strInts := make([]string, len(ints))
-	for i, num := range ints {
-		strInts[i] = fmt.Sprintf("%d", num)
-	}
-
-	return "{" + strings.Join(strInts, ",") + "}"
-}
-
-// convert the PostgresSql array into []int  (array format: {1, NULL, 3, NULL, 5} )
-func parsePgArray(arrayStr string) ([]int, error) {
-	if arrayStr == "NULL" || arrayStr == "{}" {
-		return []int{}, nil
-	}
-
-	trimmed := arrayStr[1 : len(arrayStr)-1]
-	elements := strings.Split(trimmed, ",")
-
-	result := make([]int, 0, len(elements))
-	for _, elem := range elements {
-		if elem == "NULL" {
-			continue
-		}
-		val, err := strconv.Atoi(elem)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, val)
-	}
-	return result, nil
 }
 
 func (s *service) NewProduct(ctx context.Context, prod Product) error {
@@ -77,7 +38,7 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
 	from inserted_product, valid_services;
 	`
 
-	_, err := s.db.ExecContext(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.StockQuantity, prod.UsagePerUnit, intSliceToPgArray(prod.ServiceIds))
+	_, err := s.db.ExecContext(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.StockQuantity, prod.UsagePerUnit, utils.IntSliceToPgArray(prod.ServiceIds))
 	if err != nil {
 		return err
 	}
@@ -117,7 +78,7 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 	on conflict (product_id, service_id) do nothing;
 	`
 
-	_, err = tx.ExecContext(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, intSliceToPgArray(newProduct.ServiceIds))
+	_, err = tx.ExecContext(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, utils.IntSliceToPgArray(newProduct.ServiceIds))
 	if err != nil {
 		return fmt.Errorf("failed to insert new service links: %v", err)
 	}
@@ -137,7 +98,7 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 		where valid_services.service_id = "ServiceProduct".service_id
 	);
 	`
-	_, err = tx.ExecContext(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, intSliceToPgArray(newProduct.ServiceIds))
+	_, err = tx.ExecContext(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, utils.IntSliceToPgArray(newProduct.ServiceIds))
 	if err != nil {
 		return fmt.Errorf("failed to delete outdated service associations: %v", err)
 	}
@@ -199,7 +160,7 @@ func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUI
 		if err := rows.Scan(&prod.Id, &prod.Name, &prod.Description, &prod.Price, &prod.StockQuantity, &prod.UsagePerUnit, &serviceIdsStr); err != nil {
 			return []PublicProduct{}, err
 		}
-		prod.ServiceIds, err = parsePgArray(serviceIdsStr)
+		prod.ServiceIds, err = utils.ParsePgArrayToInt(serviceIdsStr)
 		if err != nil {
 			return []PublicProduct{}, err
 		}

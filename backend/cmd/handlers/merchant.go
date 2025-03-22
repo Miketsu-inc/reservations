@@ -512,11 +512,12 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) {
 	type MerchantFileds struct {
-		Introduction string `json:"introduction"`
-		Announcement string `json:"announcement"`
-		AboutUs      string `json:"about_us"`
-		ParkingInfo  string `json:"parking_info"`
-		PaymentInfo  string `json:"payment_info"`
+		Introduction  string                       `json:"introduction"`
+		Announcement  string                       `json:"announcement"`
+		AboutUs       string                       `json:"about_us"`
+		ParkingInfo   string                       `json:"parking_info"`
+		PaymentInfo   string                       `json:"payment_info"`
+		BusinessHours map[int][]database.TimeSlots `json:"business_hours"`
 	}
 	var data MerchantFileds
 
@@ -533,7 +534,7 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data.Introduction, data.Announcement, data.AboutUs, data.PaymentInfo, data.ParkingInfo)
+	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data.Introduction, data.Announcement, data.AboutUs, data.PaymentInfo, data.ParkingInfo, data.BusinessHours)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error()))
 		return

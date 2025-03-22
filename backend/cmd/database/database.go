@@ -77,7 +77,7 @@ type PostgreSQL interface {
 	// Get all necessary information for merchant settings page
 	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
 	// Update the field used in the reservation page
-	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string) error
+	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string, map[int][]TimeSlots) error
 
 	// -- Location --
 
