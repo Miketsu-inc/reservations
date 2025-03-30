@@ -51,7 +51,7 @@ export default function Table({
             styles="p-2 text-sm w-fit"
             buttonText={`New ${itemName}`}
           >
-            <PlusIcon styles="w-4 h-4 md:w-5 md:h-5 mr-1 text-white" />
+            <PlusIcon styles="size-4 md:size-5 mr-1 text-white" />
           </Button>
         </div>
       </div>

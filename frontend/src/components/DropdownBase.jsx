@@ -117,7 +117,7 @@ export default function DropdownBase({
       </button>
       {isOpen && (
         <div
-          className={`z-10 ${
+          className={`z-50 ${
           window.innerHeight -
               containerRef.current.getBoundingClientRect().bottom <
             itemHeight * maxVisibleItems + (extraContent ? 48 : 0) // height of the search input

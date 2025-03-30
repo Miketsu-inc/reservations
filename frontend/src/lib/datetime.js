@@ -131,3 +131,59 @@ export function getMonthFromCalendarStart(dateStr) {
     new Date(date.getFullYear(), date.getMonth() + 1, 1)
   );
 }
+
+export function getDaySuffix(day) {
+  if (day >= 11 && day <= 13) return `${day}th`; // Special case for 11th, 12th, 13th
+
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+}
+
+export function timeStringFromDate(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+}
+
+export function dayNameFromDate(date) {
+  return date.toLocaleDateString([], { weekday: "long" });
+}
+
+export function combineDateTimeLocal(date, timeStr) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const [hours, minutes] = timeStr.split(":").map(Number);
+
+  return new Date(year, month, day, hours, minutes);
+}
+
+export function addTimeToDate(date, hours = 0, minutes = 0) {
+  const newDate = new Date(date);
+
+  newDate.setHours(newDate.getHours() + hours);
+  newDate.setMinutes(newDate.getMinutes() + minutes);
+
+  return newDate;
+}
+
+export function toISOStringWithLocalTime(date) {
+  const timezoneOffset = date.getTimezoneOffset();
+
+  // Adjust the date to remove the timezone offset
+  const adjustedDate = new Date(date.getTime() - timezoneOffset * 60000);
+
+  return adjustedDate.toISOString();
+}

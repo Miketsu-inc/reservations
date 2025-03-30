@@ -4,10 +4,11 @@ import { useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 
 function formatDate(date) {
-  const strs = date.toDateString().split(" ");
-  strs.splice(0, 1);
-  strs[1] = strs[1] + ",";
-  return strs.join(" ");
+  return date.toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function DatePicker({
@@ -15,9 +16,12 @@ export default function DatePicker({
   defaultDate,
   palaceHolderText,
   disabledBefore,
+  disabled = false,
   hideText = false,
   clearAfterClose = false,
   firstDayOfWeek = "Monday",
+  preventUnselect = false,
+  resetOnUnselect = true,
   onSelect,
 }) {
   const datePickerRef = useRef();
@@ -32,9 +36,9 @@ export default function DatePicker({
     <>
       <div ref={datePickerRef} className={`${styles}`}>
         <button
-          className="focus:border-text_color w-full rounded-md border border-gray-400 px-3 py-2
-            text-left text-gray-900 focus:outline-none dark:border-gray-500
-            dark:bg-neutral-950 dark:focus:border-white"
+          className={`${!disabled ? "focus:border-text_color dark:focus:border-white" : ""} w-full
+            rounded-md border border-gray-400 px-3 py-2 text-left text-gray-900
+            focus:outline-none dark:border-gray-500 dark:bg-neutral-950`}
           type="button"
           onClick={() => {
             setShowCalendar(!showCalendar);
@@ -52,10 +56,10 @@ export default function DatePicker({
             <DatePickerIcon styles="stroke-text_color shrink-0 h-4 w-4" />
           </div>
         </button>
-        {showCalendar && (
+        {showCalendar && !disabled && (
           <div className="relative top-1.5">
             <div
-              className="absolute z-10 w-fit rounded-md border border-gray-300 bg-white shadow-lg
+              className="absolute z-50 w-fit rounded-md border border-gray-300 bg-white shadow-lg
                 dark:border-gray-500 dark:bg-neutral-950"
             >
               <DayPicker
@@ -70,7 +74,22 @@ export default function DatePicker({
                 }
                 selected={selectedDate}
                 disabled={{ before: disabledBefore }}
+                modifiers={{
+                  disabled_selected:
+                    disabledBefore?.getTime() > selectedDate?.getTime()
+                      ? selectedDate
+                      : undefined,
+                }}
+                modifiersClassNames={{
+                  disabled_selected:
+                    "rounded-md bg-primary/80 focus:bg-primary/80! hover:bg-primary/80! hover:text-white text-white",
+                }}
                 onSelect={(date) => {
+                  if (!date) {
+                    if (preventUnselect) return;
+                    if (resetOnUnselect) date = defaultDate;
+                  }
+
                   SetSelectedDate(date);
                   onSelect(date);
                 }}

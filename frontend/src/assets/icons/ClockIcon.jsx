@@ -2,7 +2,7 @@ export default function ClockIcon({ styles }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className={`${styles} h-4 w-4`}
+      className={`${styles}`}
       viewBox="0 0 16 16"
     >
       <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />

@@ -56,43 +56,43 @@ function SidePanelLayout() {
     {
       href: "/dashboard",
       label: "Dashboard",
-      icon: <DashboardIcon styles="h-5 w-5" />,
+      icon: <DashboardIcon styles="size-5" />,
     },
     {
       href: "/calendar",
       label: "Calendar",
-      icon: <CalendarIcon styles="h-5 w-5" />,
+      icon: <CalendarIcon styles="size-5" />,
     },
     {
       href: "/services",
       label: "Services",
-      icon: <ServicesIcon styles="h-5 w-5" />,
+      icon: <ServicesIcon styles="size-5" />,
     },
     {
       href: "/customers",
       label: "Customers",
-      icon: <CustomersIcon styles="h-5 w-5" />,
+      icon: <CustomersIcon styles="size-5" />,
     },
     {
       href: "/products",
       label: "Products",
-      icon: <ProductIcon styles="h-5 w-5" />,
+      icon: <ProductIcon styles="size-5" />,
     },
     {
       href: "#",
       label: "Statistics",
-      icon: <ChartIcon styles="h-5 w-5" />,
+      icon: <ChartIcon styles="size-5" />,
       isPro: true,
     },
     {
       href: "/settings/profile",
       label: "Settings",
-      icon: <SettingsIcon styles="h-5 w-5" />,
+      icon: <SettingsIcon styles="size-5" />,
     },
     {
       href: "/",
       label: "Sign out",
-      icon: <SignOutIcon styles="h-5 w-5" />,
+      icon: <SignOutIcon styles="size-5" />,
       onClick: handleLogout,
     },
   ];
@@ -101,7 +101,7 @@ function SidePanelLayout() {
     <div className="h-screen overflow-y-auto">
       {/* sticky will have to be replaced with fixed when navlinks are removed */}
       {isWindowSmall && (
-        <nav className="bg-layer_bg sticky top-0 z-40 w-full">
+        <nav className="bg-layer_bg sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center justify-between px-4 py-2">
             <button
               aria-controls="sidepanel"
@@ -122,30 +122,26 @@ function SidePanelLayout() {
       {isOpen && isWindowSmall && (
         <div
           onClick={closeSidePanelHandler}
-          className={`fixed inset-0 z-40 bg-black transition-opacity duration-1000 ease-in-out
+          className={`fixed inset-0 z-20 bg-black transition-opacity duration-1000 ease-in-out
           ${isOpen ? "opacity-60" : "pointer-events-none opacity-0"}`}
         ></div>
       )}
       <aside
         id="sidepanel"
         className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
-          ${isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-50 h-dvh overflow-hidden
+          ${isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-30 h-dvh overflow-hidden
           transition-all duration-300`}
         aria-label="Sidepanel"
       >
         <div className="bg-layer_bg flex h-full flex-col px-3 py-4">
-          <div className="flex flex-row items-center gap-3">
-            {isCollapsed ? (
-              <img
-                className="rounded-full"
-                src="https://dummyimage.com/40x40/d156c3/000000.jpg"
-              />
-            ) : (
-              <img
-                className="rounded-lg"
-                src="https://dummyimage.com/160x40/d156c3/000000.jpg"
-              />
-            )}
+          <div
+            className={`${isCollapsed ? "w-10" : "w-40"} flex h-10 flex-row items-center gap-3
+              transition-normal duration-300 ease-in-out`}
+          >
+            <img
+              className="h-full rounded-lg object-cover"
+              src="https://dummyimage.com/160x40/d156c3/000000.jpg"
+            />
           </div>
           <ol className="flex flex-1 flex-col space-y-1 pt-5 font-medium">
             {navigation.map((item, index) => (

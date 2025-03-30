@@ -1,9 +1,12 @@
-export default function ServicesIcon({ styles }) {
+export default function RefreshIcon({ styles }) {
   return (
     <svg
-      className={`${styles} fill-none`}
+      className={`${styles}`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="none"
       viewBox="0 0 24 24"
     >
       <path
@@ -11,7 +14,7 @@ export default function ServicesIcon({ styles }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-        d="M11 9h6m-6 3h6m-6 3h6M6.996 9h.01m-.01 3h.01m-.01 3h.01M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+        d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"
       />
     </svg>
   );

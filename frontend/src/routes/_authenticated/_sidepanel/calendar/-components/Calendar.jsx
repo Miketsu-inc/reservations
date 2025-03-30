@@ -1,7 +1,6 @@
 import Button from "@components/Button";
 import DatePicker from "@components/DatePicker";
 import Select from "@components/Select";
-import ServerError from "@components/ServerError";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
@@ -36,7 +35,7 @@ function formatData(data) {
 
   return data.map((event) => ({
     id: event.id,
-    title: event.service_name,
+    title: event.first_name + " " + event.last_name,
     start: event.from_date,
     end: event.to_date,
     color: event.service_color,
@@ -44,12 +43,15 @@ function formatData(data) {
     durationEditable: false,
     startEditable: new Date(event.to_date) > new Date() ? true : false,
     extendedProps: {
+      // this is a number unlike the normal 'id' which get's converted to a string
       appointment_id: event.id,
       first_name: event.first_name,
       last_name: event.last_name,
       phone_number: event.phone_number,
-      user_comment: event.user_comment,
-      merchant_comment: event.merchant_comment,
+      user_note: event.user_note,
+      merchant_note: event.merchant_note,
+      service_name: event.service_name,
+      service_duration: event.service_duration,
       price: event.price,
     },
   }));
@@ -66,8 +68,8 @@ const defaultEventInfo = {
     first_name: "",
     last_name: "",
     phone_number: "",
-    user_comment: "",
-    merchant_comment: "",
+    user_note: "",
+    merchant_note: "",
     price: 0,
   },
 };
@@ -82,12 +84,12 @@ export default function Calendar({
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
-  const [serverError, setServerError] = useState();
   const calendarRef = useRef();
   const [calendarView, setCalendarView] = useState(view);
   const windowSize = useWindowSize();
 
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const isWindowSmall =
+    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const datesChanged = useCallback(
     (api) => {
@@ -156,7 +158,6 @@ export default function Calendar({
 
   return (
     <div className="flex h-[85svh] flex-col md:h-fit md:max-h-[90svh]">
-      <ServerError styles="mt-4 mb-2" error={serverError} />
       <div className="flex flex-col pb-2 md:flex-row md:gap-2">
         <div className="flex w-full flex-col justify-between md:flex-row md:items-center">
           <p className="py-2 text-2xl whitespace-nowrap md:text-3xl">
@@ -180,7 +181,7 @@ export default function Calendar({
               </button>
               <Button
                 variant="primary"
-                styles="p-2"
+                styles="p-2 text-sm"
                 buttonText="today"
                 onClick={todayButtonHandler}
               />
@@ -267,15 +268,13 @@ export default function Calendar({
                 year: "numeric",
                 month: "long",
               },
-              displayEventTime: false,
-            },
-            timeGridWeek: {
-              displayEventTime: isWindowSmall ? false : undefined,
+              displayEventEnd: false,
             },
             timeGridDay: {
               dayHeaderFormat: {
                 weekday: "long",
               },
+              displayEventTime: false,
             },
             listWeek: {
               displayEventEnd: true,
@@ -289,7 +288,8 @@ export default function Calendar({
         onClose={() => {
           setIsModalOpen(false);
         }}
-        setError={setServerError}
+        onDeleted={() => router.invalidate()}
+        onEdit={() => router.invalidate()}
       />
     </div>
   );

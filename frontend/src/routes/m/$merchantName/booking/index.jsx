@@ -61,7 +61,7 @@ function SelectDateTime() {
   const [serverError, setServerError] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
-  const [userComment, setUserComment] = useState("");
+  const [userNote, setUserNote] = useState("");
 
   useEffect(() => {
     if (loaderData) {
@@ -90,7 +90,7 @@ function SelectDateTime() {
           service_id: serviceId,
           location_id: locationId,
           timeStamp: timeStamp,
-          user_comment: userComment,
+          user_note: userNote,
         }),
       });
 
@@ -137,7 +137,7 @@ function SelectDateTime() {
     <div className="bg-layer_bg mx-auto min-h-screen max-w-7xl px-8">
       <div className="py-5">
         <Link from={Route.fullPath} to="..">
-          <button className="inline-flex gap-1 hover:underline">
+          <button className="inline-flex cursor-pointer gap-1 hover:underline">
             <BackArrowIcon styles="h-6 w-6 stroke-gray-500" />
             Back
           </button>
@@ -203,19 +203,19 @@ function SelectDateTime() {
               </div>
               <div className="mt-2 mb-20 flex w-full flex-col gap-3 md:mt-4 md:mb-0">
                 <div className="flex items-center gap-3">
-                  <MessageIcon styles="fill-current" />
-                  <span>Add comment to your appointment (optional)</span>
+                  <MessageIcon styles="size-4 fill-current" />
+                  <span>Add a note to your appointment (optional)</span>
                 </div>
                 <textarea
-                  name="appointment comment"
-                  value={userComment}
+                  name="appointment note"
+                  value={userNote}
                   onChange={(e) => {
-                    setUserComment(e.target.value);
+                    setUserNote(e.target.value);
                   }}
                   className="focus:border-text_color max-h-20 min-h-10 w-full rounded-md border
                     border-gray-400 bg-transparent p-2 text-sm outline-hidden placeholder:text-sm
                     md:max-h-32"
-                  placeholder="Add comment your merchant might want to know..."
+                  placeholder="Add your note here..."
                 />
               </div>
               <div

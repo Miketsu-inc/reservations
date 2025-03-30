@@ -79,9 +79,11 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 
+		r.Delete("/{id}", appointmentHandler.CancelAppointmentByMerchant)
+		r.Patch("/{id}", appointmentHandler.UpdateAppointmentData)
+
 		r.Post("/new", appointmentHandler.Create)
 		r.Get("/all", appointmentHandler.GetAppointments)
-		r.Patch("/merchant-comment", appointmentHandler.UpdateMerchantComment)
 	})
 }
 

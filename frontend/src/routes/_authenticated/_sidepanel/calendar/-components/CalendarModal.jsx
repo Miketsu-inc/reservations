@@ -1,31 +1,80 @@
 import Button from "@components/Button";
 import CloseButton from "@components/CloseButton";
+import DatePicker from "@components/DatePicker";
 import Modal from "@components/Modal";
 import CalendarIcon from "@icons/CalendarIcon";
-import ClockIcon from "@icons/ClockIcon";
-import MessageIcon from "@icons/MessageIcon";
-import PersonIcon from "@icons/PersonIcon";
-import PhoneIcon from "@icons/PhoneIcon";
+import {
+  addTimeToDate,
+  combineDateTimeLocal,
+  timeStringFromDate,
+  toISOStringWithLocalTime,
+} from "@lib/datetime";
+import { useToast } from "@lib/hooks";
 import { useEffect, useState } from "react";
+import AppointmentInfoSection from "./AppointmentInfoSection";
+import DeleteAppsModal from "./DeleteAppsModal";
+import NotesSection from "./NotesSection";
+import RecurSection from "./RecurSection";
 
 export default function CalendarModal({
   eventInfo,
   isOpen,
   onClose,
-  setError,
+  onDeleted,
+  onEdit,
 }) {
-  const [merchantComment, setMerchantComment] = useState("");
+  const [recurData, setRecurData] = useState({
+    isRecurring: false,
+    frequency: "weekly",
+    endDate: new Date(
+      eventInfo.start.getFullYear(),
+      eventInfo.start.getMonth() + 1,
+      eventInfo.start.getDate()
+    ),
+  });
+  const [merchantNote, setMerchantNote] = useState("");
   const [hasUnsavedChanges, SetHasUnsavedChanges] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [eventDatetime, setEventDatetime] = useState({
+    date: eventInfo.start,
+    start_time: timeStringFromDate(eventInfo.start),
+  });
+
+  const { showToast } = useToast();
+
   // startEditable is false when the end date is higher than the current date
   const disabled = !eventInfo.startEditable;
 
   useEffect(() => {
-    setMerchantComment(eventInfo.extendedProps.merchant_comment);
+    setMerchantNote(eventInfo.extendedProps.merchant_note);
+    setEventDatetime({
+      date: eventInfo.start,
+      start_time: timeStringFromDate(eventInfo.start),
+    });
   }, [eventInfo]);
 
+  function updateRecurData(data) {
+    setRecurData((prev) => ({ ...prev, ...data }));
+  }
+
+  function updateMerchantNote(note) {
+    setMerchantNote(note);
+
+    if (note === eventInfo.extendedProps.merchant_note) {
+      SetHasUnsavedChanges(false);
+    } else {
+      SetHasUnsavedChanges(true);
+    }
+  }
+
   async function saveButtonHandler() {
+    const start_date = combineDateTimeLocal(
+      eventDatetime.date,
+      eventDatetime.start_time
+    );
+
     try {
-      const response = await fetch("/api/v1/appointments/merchant-comment", {
+      const response = await fetch(`/api/v1/appointments/${eventInfo.id}`, {
         method: "PATCH",
         headers: {
           Accept: "application/json",
@@ -33,142 +82,147 @@ export default function CalendarModal({
         },
         body: JSON.stringify({
           id: eventInfo.extendedProps.appointment_id,
-          merchant_comment: merchantComment,
+          merchant_note: merchantNote,
+          from_date: toISOStringWithLocalTime(start_date),
+          to_date: toISOStringWithLocalTime(
+            addTimeToDate(
+              start_date,
+              0,
+              eventInfo.extendedProps.service_duration
+            )
+          ),
         }),
       });
 
       if (!response.ok) {
         const result = await response.json();
-        setError(result.error.message);
+        showToast({ message: result.error.message, variant: "error" });
       } else {
-        eventInfo.setExtendedProp("merchant_comment", merchantComment);
+        eventInfo.setExtendedProp("merchant_note", merchantNote);
         SetHasUnsavedChanges(false);
-        setError("");
+        showToast({
+          message: "Successfully updated the appointment",
+          variant: "success",
+        });
+
+        onEdit();
+        onClose();
       }
     } catch (err) {
-      setError(err.message);
-    }
-  }
-
-  function merchantCommentChangeHandler(e) {
-    setMerchantComment(e.target.value);
-
-    if (e.target.value === eventInfo.extendedProps.merchant_comment) {
-      SetHasUnsavedChanges(false);
-    } else {
-      SetHasUnsavedChanges(true);
+      showToast({ message: err.message, variant: "error" });
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="h-auto w-full md:w-96">
-        <div className="flex flex-col gap-2 p-3">
-          <div className="flex items-start justify-between border-b-2 border-gray-300 pb-1">
-            <div className="flex items-center gap-3 text-xl">
-              <CalendarIcon styles="h-7 w-7 stroke-gray-700 dark:stroke-white" />
-              {eventInfo.start.getFullYear()}-
-              {String(eventInfo.start.getMonth() + 1).padStart(2, "0")}-
-              {String(eventInfo.start.getDate()).padStart(2, "0")}
-            </div>
-            <CloseButton onClick={onClose} />
-          </div>
-          <div
-            className="bg-primary/70 mt-1 mb-2 flex flex-col gap-3 rounded-lg p-3 font-semibold
-              text-white"
-          >
-            {eventInfo.title}
-            <div className="flex justify-between pr-2 text-sm text-gray-200">
-              <div className="flex items-center gap-3">
-                <ClockIcon styles="fill-white" />
-                <span className="text-center">
-                  {new Date(eventInfo.start).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                    timeZone: "UTC",
-                  })}
-                  {" - "}
-                  {new Date(eventInfo.end).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                    timeZone: "UTC",
-                  })}
-                </span>
+    <>
+      <DeleteAppsModal
+        event={eventInfo}
+        isOpen={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        onDeleted={() => {
+          onDeleted();
+          onClose();
+        }}
+      />
+      <Modal
+        suspendCloseOnClickOutside={cancelModalOpen}
+        isOpen={isOpen}
+        onClose={onClose}
+      >
+        <div className="h-auto w-full md:w-96">
+          <div className="flex flex-col gap-2 p-3">
+            <div className="flex items-start justify-between pb-1">
+              <div className="flex items-center gap-3 text-xl">
+                <CalendarIcon styles="size-7 stroke-gray-700 dark:stroke-white" />
+                <p>Appointment</p>
               </div>
-              <span>
-                {parseFloat(eventInfo.extendedProps.price).toLocaleString()} HUF
-              </span>
+              <CloseButton onClick={onClose} />
             </div>
-          </div>
-          <div
-            className="mb-2 flex items-center justify-between rounded-lg border-l-4 border-blue-500
-              bg-gray-200 p-3"
-          >
-            <div className="flex gap-3">
-              <PersonIcon styles="fill-gray-600 w-5 h-5" />
-              <span className="font-medium text-black">
-                {`${eventInfo.extendedProps.last_name} ${eventInfo.extendedProps.first_name}`}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <PhoneIcon styles="fill-gray-600" />
-              <span className="font-[0.6rem] text-gray-600">
-                {eventInfo.extendedProps.phone_number}
-              </span>
-            </div>
-          </div>
-          {/* Customer Note */}
-          {eventInfo.extendedProps.user_comment && (
-            <div className="mb-2 rounded-lg border border-gray-300 bg-gray-200 p-3">
-              <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
-                <MessageIcon styles="fill-gray-600" />
-                <span>Customer Note</span>
-              </div>
-              <p
-                className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm
-                  text-gray-700"
-              >
-                {eventInfo.extendedProps.user_comment}
-              </p>
-            </div>
-          )}
+            <AppointmentInfoSection event={eventInfo} />
+            <div className="px-1">
+              <div className="flex flex-row items-center justify-between">
+                <div className="flex flex-col gap-1">
+                  <p>Date</p>
+                  <DatePicker
+                    styles="w-48"
+                    defaultDate={eventDatetime.date}
+                    disabledBefore={new Date()}
+                    disabled={disabled}
+                    onSelect={(date) => {
+                      setEventDatetime((prev) => ({ ...prev, date: date }));
 
-          {/* Merchant Note */}
-          <div className="space-y-2 rounded-lg border border-blue-300 bg-blue-100 px-3 pt-3">
-            <div className="flex items-center gap-2 text-sm text-blue-950">
-              <MessageIcon styles="fill-blue-950" />
-              <span>Your Notes</span>
+                      if (date.getTime() !== eventInfo.start.getTime()) {
+                        SetHasUnsavedChanges(true);
+                      } else {
+                        SetHasUnsavedChanges(false);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p>Start time</p>
+                  <input
+                    className="h-10 w-32 dark:[color-scheme:dark]"
+                    type="time"
+                    value={eventDatetime.start_time}
+                    disabled={disabled}
+                    onChange={(e) => {
+                      setEventDatetime((prev) => ({
+                        ...prev,
+                        start_time: e.target.value,
+                      }));
+
+                      if (
+                        e.target.value !== timeStringFromDate(eventInfo.start)
+                      ) {
+                        SetHasUnsavedChanges(true);
+                      } else {
+                        SetHasUnsavedChanges(false);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-            <textarea
-              id="merchant_comment"
-              name="merchant comment"
-              value={merchantComment}
-              onChange={merchantCommentChangeHandler}
+            <RecurSection
+              event={eventInfo}
+              recurData={recurData}
+              updateRecurData={updateRecurData}
               disabled={disabled}
-              placeholder="Add notes about this appointment only you can see..."
-              className="max-h-48 min-h-20 w-full rounded-lg border border-gray-300 bg-white p-2 text-sm
-                text-blue-950 outline-hidden focus:border-blue-600"
             />
-          </div>
-          <div className="flex items-center justify-end pt-2">
-            <Button
-              styles={`${
-                !hasUnsavedChanges || disabled
-                  ? ""
-                  : `hover:border-blue-600 hover:text-blue-600 dark:hover:border-blue-400
-                    dark:hover:text-blue-400`
-                } bg-transparent text-sm !text-blue-400 dark:text-blue-600 border
-                border-blue-400 dark:border-blue-600 py-2 px-2 hover:bg-transparent min-w-16`}
-              buttonText={hasUnsavedChanges && !disabled ? "Save" : "Saved"}
-              disabled={!hasUnsavedChanges || disabled}
-              onClick={saveButtonHandler}
-              type="button"
+            <NotesSection
+              event={eventInfo}
+              merchantNote={merchantNote}
+              updateMerchantNote={updateMerchantNote}
+              disabled={disabled}
             />
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                styles="p-2"
+                buttonText="Delete"
+                variant="danger"
+                type="button"
+                onClick={() => setCancelModalOpen(true)}
+              />
+              <Button
+                styles="p-2"
+                buttonText="Cancel"
+                variant="tertiary"
+                type="button"
+                onClick={onClose}
+              />
+              <Button
+                styles="p-2"
+                variant="primary"
+                buttonText={hasUnsavedChanges && !disabled ? "Save" : "Saved"}
+                disabled={!hasUnsavedChanges || disabled}
+                onClick={saveButtonHandler}
+                type="button"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+    </>
   );
 }

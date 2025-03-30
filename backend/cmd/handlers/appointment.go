@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -22,7 +23,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
-		UserComment  string `json:"user_comment"`
+		UserNote     string `json:"user_note"`
 	}
 	var newApp NewAppointment
 
@@ -75,7 +76,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 
 	timeStamp, err := time.Parse(time.RFC3339, newApp.TimeStamp)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to int: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to time: %s", err.Error()))
 		return
 	}
 
@@ -86,17 +87,17 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	to_date := toDate.Format(postgresTimeFormat)
 
 	if err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
-		Id:              0,
-		UserId:          userID,
-		MerchantId:      merchantId,
-		ServiceId:       newApp.ServiceId,
-		LocationId:      newApp.LocationId,
-		FromDate:        from_date,
-		ToDate:          to_date,
-		UserComment:     newApp.UserComment,
-		MerchantComment: "",
-		PriceThen:       service.Price,
-		CostThen:        service.Cost,
+		Id:           0,
+		UserId:       userID,
+		MerchantId:   merchantId,
+		ServiceId:    newApp.ServiceId,
+		LocationId:   newApp.LocationId,
+		FromDate:     from_date,
+		ToDate:       to_date,
+		UserNote:     newApp.UserNote,
+		MerchantNote: "",
+		PriceThen:    service.Price,
+		CostThen:     service.Cost,
 	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return
@@ -126,17 +127,59 @@ func (a *Appointment) GetAppointments(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, apps)
 }
 
-func (a *Appointment) UpdateMerchantComment(w http.ResponseWriter, r *http.Request) {
-	// validate:"required" on MerchantComment would fail
-	// if an empty string arrives as a comment
-	type newComment struct {
-		Id              int    `json:"id" validate:"required"`
-		MerchantComment string `json:"merchant_comment"`
+func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http.Request) {
+	type cancelAppointmentData struct {
+		CancellationReason string `json:"cancellation_reason"`
 	}
 
-	var data newComment
+	urlId := chi.URLParam(r, "id")
 
-	if err := validate.ParseStruct(r, &data); err != nil {
+	if urlId == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
+		return
+	}
+
+	appId, err := strconv.Atoi(urlId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting appointment id to int: %s", err.Error()))
+		return
+	}
+
+	var cancelData cancelAppointmentData
+
+	if err := validate.ParseStruct(r, &cancelData); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = a.Postgresdb.CancelAppointmentByMerchant(r.Context(), merchantId, appId, cancelData.CancellationReason)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling appointment by merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Request) {
+	// validate:"required" on MerchantNote would fail
+	// if an empty string arrives as a note
+	type appointmentData struct {
+		Id           int    `json:"id" validate:"required"`
+		MerchantNote string `json:"merchant_note"`
+		FromDate     string `json:"from_date" validate:"required"`
+		ToDate       string `json:"to_date" validate:"required"`
+	}
+
+	var appData appointmentData
+
+	if err := validate.ParseStruct(r, &appData); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
@@ -149,10 +192,25 @@ func (a *Appointment) UpdateMerchantComment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := a.Postgresdb.UpdateMerchantCommentById(r.Context(), merchantId, data.Id, data.MerchantComment); err != nil {
-		httputil.Error(w, http.StatusInternalServerError, err)
+	fromDate, err := time.Parse(time.RFC3339, appData.FromDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("from_date could not be converted to time: %s", err.Error()))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	toDate, err := time.Parse(time.RFC3339, appData.ToDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("to_date could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	const postgresTimeFormat = "2006-01-02T15:04:05-0700"
+
+	formattedFromDate := fromDate.Format(postgresTimeFormat)
+	formattedToDate := toDate.Format(postgresTimeFormat)
+
+	if err := a.Postgresdb.UpdateAppointmentData(r.Context(), merchantId, appData.Id, appData.MerchantNote, formattedFromDate, formattedToDate); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
 }

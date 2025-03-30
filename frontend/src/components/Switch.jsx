@@ -4,6 +4,7 @@ export default function Switch({
   size = "medium",
   defaultValue = false,
   variant = "default",
+  disabled = false,
   onSwitch,
 }) {
   const [isOn, setIsOn] = useState(defaultValue);
@@ -13,8 +14,10 @@ export default function Switch({
       aria-checked={isOn}
       role="switch"
       onClick={() => {
-        setIsOn(!isOn);
-        onSwitch();
+        if (!disabled) {
+          setIsOn(!isOn);
+          onSwitch();
+        }
       }}
       className={`${isOn ? `${variant === "monochrome" ? "bg-black dark:bg-white" : "bg-primary"}` : "bg-gray-300 dark:bg-gray-800"}
         ${size === "small" ? "pr-4" : size === "medium" ? "pr-5" : size === "large" ? "pr-6" : ""}
