@@ -1,6 +1,6 @@
 import { useState } from "react";
-import DropdownBase from "./DropdownBase";
 import SearchInput from "./SearchInput";
+import Select from "./Select";
 
 export default function ComboBox({
   options,
@@ -18,7 +18,7 @@ export default function ComboBox({
   );
 
   return (
-    <DropdownBase
+    <Select
       options={filteredOptions}
       value={value}
       onSelect={onSelect}

@@ -1,7 +1,7 @@
 import DatePickerIcon from "@icons/DatePickerIcon";
 import { useClickOutside } from "@lib/hooks";
 import { useRef, useState } from "react";
-import { DayPicker } from "react-day-picker";
+import SmallCalendar from "./SmallCalendar";
 
 function formatDate(date) {
   return date.toLocaleDateString([], {
@@ -62,60 +62,25 @@ export default function DatePicker({
               className="absolute z-50 w-fit rounded-md border border-gray-300 bg-white shadow-lg
                 dark:border-gray-500 dark:bg-neutral-950"
             >
-              <DayPicker
-                mode="single"
-                showOutsideDays={true}
-                weekStartsOn={
-                  firstDayOfWeek === "Monday"
-                    ? 1
-                    : firstDayOfWeek === "Sunday"
-                      ? 0
-                      : undefined
-                }
-                selected={selectedDate}
-                disabled={{ before: disabledBefore }}
-                modifiers={{
-                  disabled_selected:
-                    disabledBefore?.getTime() > selectedDate?.getTime()
-                      ? selectedDate
-                      : undefined,
-                }}
-                modifiersClassNames={{
-                  disabled_selected:
-                    "rounded-md bg-primary/80 focus:bg-primary/80! hover:bg-primary/80! hover:text-white text-white",
-                }}
+              <SmallCalendar
+                value={selectedDate}
                 onSelect={(date) => {
                   if (!date) {
                     if (preventUnselect) return;
                     if (resetOnUnselect) date = defaultDate;
+                    console.log(date);
                   }
 
                   SetSelectedDate(date);
                   onSelect(date);
                 }}
-                classNames={{
-                  month: "space-y-4 pb-2",
-                  month_caption: "flex justify-center items-center w-full pt-3",
-                  caption_label: "font-medium",
-                  nav: "absolute flex items-center justify-between w-full p-2",
-                  button_previous:
-                    "rounded-md hover:bg-hvr_gray cursor-pointer",
-                  button_next: "rounded-md hover:bg-hvr_gray cursor-pointer",
-                  weekdays: "flex px-2",
-                  weekday:
-                    "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
-                  week: "flex w-full mt-2 px-2",
-                  day: "h-9 w-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
-                  selected:
-                    "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
-                  today: "bg-hvr_gray",
-                  outside: "text-gray-500",
-                  disabled:
-                    "hover:bg-transparent text-gray-300! dark:text-gray-800!",
-                  hidden: "invisible",
-                  chevron:
-                    "w-5 h-5 m-1 fill-gray-500 dark:fill-gray-300 hover:fill-text_color",
-                }}
+                firstDayOfWeek={firstDayOfWeek}
+                disabled={{ before: disabledBefore }}
+                disabledSelectedModifier={
+                  disabledBefore?.getTime() > selectedDate?.getTime()
+                    ? selectedDate
+                    : undefined
+                }
               />
             </div>
           </div>

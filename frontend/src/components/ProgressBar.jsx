@@ -1,9 +1,9 @@
+import TickIcon from "@icons/TickIcon";
 import { Fragment } from "react";
-import ProgressBarStep from "./ProgressBarStep";
 
 export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
   return (
-    <div className="mb-8 mt-6 flex items-center justify-center sm:mt-4">
+    <div className="mt-6 mb-8 flex items-center justify-center sm:mt-4">
       {[...Array(stepCount)].map((_, i) => (
         <Fragment key={i}>
           <ProgressBarStep
@@ -24,6 +24,31 @@ export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
           )}
         </Fragment>
       ))}
+    </div>
+  );
+}
+
+function ProgressBarStep({ step, isActive, isCompleted }) {
+  return (
+    <div
+      className={
+        isCompleted
+          ? `relative flex h-8 w-8 items-center justify-center rounded-full border-[3px]
+            border-green-700 bg-green-700 p-4 transition-all duration-500 ease-in`
+          : isActive
+            ? `border-primary/70 relative flex h-8 w-8 items-center justify-center rounded-full
+              border-[3px] p-4 transition-all duration-700 ease-in`
+            : `relative flex h-8 w-8 items-center justify-center rounded-full border-[3px]
+              border-gray-400 p-4 dark:border-gray-600`
+      }
+    >
+      {isCompleted ? (
+        <div>
+          <TickIcon styles="fill-white h-5 w-5" />
+        </div>
+      ) : (
+        `${step}`
+      )}
     </div>
   );
 }
