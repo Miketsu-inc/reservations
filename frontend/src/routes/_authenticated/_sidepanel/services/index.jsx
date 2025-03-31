@@ -107,6 +107,9 @@ function ServicesPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        router.invalidate();
+        setServerError();
+
         showToast({
           message:
             method === "POST"
@@ -114,8 +117,6 @@ function ServicesPage() {
               : "Service modified successfully",
           variant: "success",
         });
-        setServerError();
-        router.invalidate();
       }
     } catch (err) {
       setServerError(err.message);

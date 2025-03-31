@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,30 +16,8 @@ type Service struct {
 	Duration    int       `json:"duration"`
 	Price       int       `json:"price"`
 	Cost        int       `json:"cost"`
+	DeletedOn   string    `json:"deleted_on"`
 }
-
-// func (s *service) NewServices(ctx context.Context, services []Service) error {
-// 	query := `
-// 	insert into "Service" (merchant_id, name, duration, price)
-// 	values
-// 	`
-
-// 	values := []string{}
-// 	args := []interface{}{}
-// 	for i, service := range services {
-// 		//placeholder for values of each row
-// 		values = append(values, fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4))
-// 		args = append(args, service.MerchantId, service.Name, service.Duration, service.Price)
-// 	}
-// 	query += strings.Join(values, ",")
-
-// 	_, err := s.db.ExecContext(ctx, query, args...)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
 
 func (s *service) NewService(ctx context.Context, serv Service) error {
 	query := `
@@ -62,7 +41,7 @@ func (s *service) GetServiceById(ctx context.Context, serviceID int) (Service, e
 
 	var serv Service
 	err := s.db.QueryRowContext(ctx, query, serviceID).Scan(&serv.Id, &serv.MerchantId, &serv.Name, &serv.Description, &serv.Color,
-		&serv.Duration, &serv.Price, &serv.Cost)
+		&serv.Duration, &serv.Price, &serv.Cost, &serv.DeletedOn)
 	if err != nil {
 		return Service{}, err
 	}
@@ -83,7 +62,7 @@ type PublicService struct {
 func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicService, error) {
 	query := `
 	select id, name, description, color, duration, price, cost from "Service"
-	where merchant_id = $1
+	where merchant_id = $1 and deleted_on is null
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, merchantId)
@@ -112,11 +91,12 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 
 func (s *service) DeleteServiceById(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
 	query := `
-	delete from "Service"
-	where merchant_id = $1 and ID = $2
+	update "Service"
+	set deleted_on = $1
+	where merchant_id = $2 and ID = $3
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, serviceId)
+	_, err := s.db.ExecContext(ctx, query, time.Now().UTC(), merchantId, serviceId)
 	if err != nil {
 		return err
 	}
@@ -128,7 +108,7 @@ func (s *service) UpdateServiceById(ctx context.Context, serv Service) error {
 	query := `
 	update "Service"
 	set name = $3, description = $4, color = $5, duration = $6, price = $7, cost = $8
-	where ID = $1 and merchant_id = $2
+	where ID = $1 and merchant_id = $2 and deleted_on is null
 	`
 
 	_, err := s.db.ExecContext(ctx, query, serv.Id, serv.MerchantId, serv.Name, serv.Description, serv.Color, serv.Duration, serv.Price, serv.Cost)

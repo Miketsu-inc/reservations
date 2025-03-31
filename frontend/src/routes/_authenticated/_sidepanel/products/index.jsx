@@ -104,6 +104,7 @@ function ProductsPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        router.invalidate();
         showToast({
           message:
             method === "POST"
@@ -120,6 +121,7 @@ function ProductsPage() {
       setModalData();
     }
   }
+
   return (
     <div className="flex h-screen justify-center">
       <ProductModal

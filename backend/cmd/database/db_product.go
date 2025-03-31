@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
@@ -17,6 +18,7 @@ type Product struct {
 	StockQuantity int       `json:"stock_quantity"`
 	UsagePerUnit  int       `json:"usage_per_unit"`
 	ServiceIds    []int     `json:"service_ids"`
+	DeletedOn     string    `json:"deleted_on"`
 }
 
 func (s *service) NewProduct(ctx context.Context, prod Product) error {
@@ -31,7 +33,7 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
     	select s.id as service_id
     	from unnest($7::bigint[]) as input_id
     	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1
+    	where s.merchant_id = $1 and s.deleted_on is null
 	)
 	insert into "ServiceProduct" (product_id, service_id)
 	select inserted_product.id, valid_services.service_id
@@ -58,7 +60,7 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 	productUpdateQuery := `
 	update "Product"
 	set name = $3, description = $4, price = $5, stock_quantity = $6, usage_per_unit = $7
-	where merchant_id = $1 and id = $2
+	where merchant_id = $1 and id = $2 and deleted_on is null
 	`
 	_, err = tx.ExecContext(ctx, productUpdateQuery, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.StockQuantity, newProduct.UsagePerUnit)
 	if err != nil {
@@ -113,15 +115,16 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 func (s *service) DeleteProductById(ctx context.Context, merchantId uuid.UUID, productId int) error {
 	query := `
 		with deleted as (
-			delete from "Product"
-			where merchant_id = $1 AND id = $2
+			update "Product"
+			set deleted_on = $1
+			where merchant_id = $2 AND id = $3
 			returning id
 		)
 		delete from "ServiceProduct"
 		where product_id in (select id from deleted);
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, productId)
+	_, err := s.db.ExecContext(ctx, query, time.Now().UTC(), merchantId, productId)
 	if err != nil {
 		return err
 	}
@@ -144,7 +147,7 @@ func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUI
 	p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
-	where p.merchant_id = $1
+	where p.merchant_id = $1 and deleted_on is null
 	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit;`
 
 	rows, err := s.db.QueryContext(ctx, query, merchantId)

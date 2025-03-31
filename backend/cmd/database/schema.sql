@@ -34,7 +34,8 @@ create table if not exists "Service" (
     color                    char(7)         not null,
     duration                 integer         not null,
     price                    bigint          not null,
-    cost                     bigint          not null
+    cost                     bigint          not null,
+    deleted_on               timestamptz
 );
 
 create table if not exists "Location" (
@@ -60,7 +61,8 @@ create table if not exists "Appointment" (
     cost_then                bigint,
     cancelled_by_user_on     timestamptz,
     cancelled_by_merchant_on timestamptz,
-    cancellation_reason      text
+    cancellation_reason      text,
+    transferred_to           uuid
 );
 
 create table if not exists "Preferences" (
@@ -88,7 +90,8 @@ create table if not exists "Product" (
     description              text,
     price                    bigint          not null,
     stock_quantity           integer         not null,
-    usage_per_unit           integer         not null
+    usage_per_unit           integer         not null,
+    deleted_on               timestamptz
 );
 
 create table if not exists "ServiceProduct" (

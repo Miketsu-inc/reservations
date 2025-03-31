@@ -22,6 +22,7 @@ type Appointment struct {
 	CancelledByUserOn     string    `json:"cancelled_by_user_on"`
 	CancelledByMerchantOn string    `json:"cancelled_by_merchant_on"`
 	CancellationReason    string    `json:"cancellation_reason"`
+	TransferredTo         uuid.UUID `json:"transferred_to"`
 }
 
 func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
@@ -41,7 +42,7 @@ func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
 func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_note string, from_date string, to_date string) error {
 	query := `
 	update "Appointment" set merchant_note = $1, from_date = $2, to_date = $3
-	where id = $4 and merchant_id = $5
+	where id = $4 and merchant_id = $5 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
 	`
 	_, err := s.db.ExecContext(ctx, query, merchant_note, from_date, to_date, appointmentId, merchantId)
 	if err != nil {
@@ -67,7 +68,8 @@ func (s *service) GetAppointmentsByUser(ctx context.Context, user_id uuid.UUID) 
 	for rows.Next() {
 		var app Appointment
 		if err := rows.Scan(&app.Id, &app.UserId, &app.MerchantId, &app.ServiceId, &app.LocationId, &app.FromDate, &app.ToDate,
-			&app.UserNote, &app.MerchantNote, &app.PriceThen, &app.CostThen); err != nil {
+			&app.UserNote, &app.MerchantNote, &app.PriceThen, &app.CostThen, &app.CancelledByUserOn, &app.CancelledByMerchantOn,
+			&app.CancellationReason, &app.TransferredTo); err != nil {
 			return nil, err
 		}
 		appointments = append(appointments, app)
@@ -153,7 +155,7 @@ func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, l
 func (s *service) TransferDummyAppointments(ctx context.Context, merchantId uuid.UUID, fromUser uuid.UUID, toUser uuid.UUID) error {
 	query := `
 	update "Appointment" a
-	set user_id = $3
+	set transferred_to = $3
 	from "User" u
 	where a.user_id = u.id and a.merchant_id = $1 and a.user_id = $2 and u.is_dummy = true
 	`
@@ -170,7 +172,7 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	query := `
 	update "Appointment"
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
-	where merchant_id = $3 and id = $4
+	where merchant_id = $3 and id = $4 and cancelled_by_user_on is null
 	`
 
 	_, err := s.db.ExecContext(ctx, query, time.Now().UTC(), cancellationReason, merchantId, appointmentId)

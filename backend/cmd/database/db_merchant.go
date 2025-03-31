@@ -121,33 +121,9 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 		return MerchantInfo{}, err
 	}
 
-	query = `
-	select id, name, description, color, duration, price, cost from "Service"
-	where merchant_id = $1
-	`
-
-	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	mi.Services, err = s.GetServicesByMerchantId(ctx, merchantId)
 	if err != nil {
 		return MerchantInfo{}, err
-	}
-	defer rows.Close()
-
-	var services []PublicService
-	for rows.Next() {
-		var serv PublicService
-		if err := rows.Scan(&serv.Id, &serv.Name, &serv.Description, &serv.Color, &serv.Duration, &serv.Price, &serv.Cost); err != nil {
-			return MerchantInfo{}, err
-		}
-
-		services = append(services, serv)
-	}
-
-	// if services array is empty the encoded json field will be null
-	// unless an empty slice is supplied to it
-	if len(services) == 0 {
-		mi.Services = []PublicService{}
-	} else {
-		mi.Services = services
 	}
 
 	query = `
@@ -155,7 +131,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	where merchant_id = $1
 	order by day_of_week, start_time;`
 
-	rows, err = s.db.QueryContext(ctx, query, merchantId)
+	rows, err := s.db.QueryContext(ctx, query, merchantId)
 	if err != nil {
 		return MerchantInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)
 	}
@@ -349,8 +325,8 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	}
 
 	deleteQuery := `
-    delete from "BusinessHours" 
-    where merchant_id = $1 
+    delete from "BusinessHours"
+    where merchant_id = $1
     and (day_of_week, start_time, end_time) not in (
         select unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
     );`
@@ -363,7 +339,7 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	// 2. Insert new rows (avoiding duplicates)
 	insertQuery := `
     insert into "BusinessHours" (merchant_id, day_of_week, start_time, end_time)
-    select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[]) 
+    select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
     on conflict (merchant_id, day_of_week, start_time, end_time) do nothing;`
 
 	_, err = tx.ExecContext(ctx, insertQuery, merchantId, utils.IntSliceToPgArray(days), utils.TimeStringToPgArray(starts), utils.TimeStringToPgArray(ends))
