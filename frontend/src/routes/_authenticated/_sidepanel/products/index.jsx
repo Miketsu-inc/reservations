@@ -7,7 +7,7 @@ import ProductModal from "./-components/ProductModal";
 import ProductsTable from "./-components/ProductsTable";
 
 async function fetchTableData() {
-  const response = await fetch(`/api/v1/merchants/products/table-info`, {
+  const response = await fetch(`/api/v1/merchants/products`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -104,7 +104,6 @@ function ProductsPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        router.invalidate();
         showToast({
           message:
             method === "POST"

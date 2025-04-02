@@ -160,14 +160,22 @@ func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUI
 	for rows.Next() {
 		var prod PublicProduct
 		var serviceIdsStr string
+
 		if err := rows.Scan(&prod.Id, &prod.Name, &prod.Description, &prod.Price, &prod.StockQuantity, &prod.UsagePerUnit, &serviceIdsStr); err != nil {
 			return []PublicProduct{}, err
 		}
 		prod.ServiceIds, err = utils.ParsePgArrayToInt(serviceIdsStr)
+
 		if err != nil {
 			return []PublicProduct{}, err
 		}
 		products = append(products, prod)
+	}
+
+	// if products array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(products) == 0 {
+		products = []PublicProduct{}
 	}
 
 	return products, nil

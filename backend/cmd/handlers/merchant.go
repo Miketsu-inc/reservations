@@ -100,7 +100,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description"`
 		Color       string `json:"color" validate:"required,hexcolor"`
 		Duration    int    `json:"duration" validate:"required,min=1,max=1440"`
-		Price       int    `json:"price" validate:"required,min=0,max=1000000"`
+		Price       int    `json:"price" validate:"min=0,max=1000000"`
 		Cost        int    `json:"cost" validate:"min=0,max=1000000"`
 	}
 	var service newService
@@ -728,7 +728,27 @@ func (m *Merchant) GetProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, products)
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
+		return
+	}
+
+	filteredServices := make([]map[string]interface{}, len(services))
+	for i, service := range services {
+		filteredServices[i] = map[string]interface{}{
+			"Id":    service.Id,
+			"Name":  service.Name,
+			"Color": service.Color,
+		}
+	}
+
+	response := map[string]interface{}{
+		"products": products,
+		"services": filteredServices,
+	}
+
+	httputil.Success(w, http.StatusOK, response)
 }
 
 func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -809,42 +829,4 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating product for merchant: %s", err.Error()))
 		return
 	}
-}
-
-func (m *Merchant) GetProductTableInfo(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
-
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving products for merchant: %s", err.Error()))
-		return
-	}
-
-	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
-		return
-	}
-
-	filteredServices := make([]map[string]interface{}, len(services))
-	for i, service := range services {
-		filteredServices[i] = map[string]interface{}{
-			"Id":    service.Id,
-			"Name":  service.Name,
-			"Color": service.Color,
-		}
-	}
-
-	response := map[string]interface{}{
-		"products": products,
-		"services": filteredServices,
-	}
-
-	httputil.Success(w, http.StatusOK, response)
 }

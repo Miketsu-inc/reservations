@@ -152,6 +152,5 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Post("/products", merchantHandler.NewProduct)
 		r.Delete("/products/{id}", merchantHandler.DeleteProduct)
 		r.Put("/products/{id}", merchantHandler.UpdateProduct)
-		r.Get("/products/table-info", merchantHandler.GetProductTableInfo)
 	})
 }
