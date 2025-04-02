@@ -230,7 +230,7 @@ export default function Calendar({
           events={formatData(eventData)}
           eventClick={(e) => {
             setEventInfo(e.event);
-            setIsModalOpen(true);
+            setTimeout(() => setIsModalOpen(true), 0);
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
           lazyFetching={true}

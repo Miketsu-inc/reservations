@@ -225,7 +225,7 @@ function CustomersPage() {
           })
         }
       />
-      <div className="w-full">
+      <div className="flex w-full flex-col gap-5">
         <ServerError error={serverError} />
         <p className="text-xl">Customers</p>
         <CustomersTable

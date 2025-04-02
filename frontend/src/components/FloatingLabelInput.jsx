@@ -60,7 +60,7 @@ export default forwardRef(function FloatingLabelInput(
   return (
     <>
       <div
-        className={`relative flex w-full items-center border-2 ${styles} ${
+        className={`relative flex w-full items-center rounded-lg border-2 ${styles} ${
           errorTriggered || (!isEmpty && !isValid)
             ? "border-red-600"
             : isInputFocused
@@ -84,12 +84,12 @@ export default forwardRef(function FloatingLabelInput(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `left-2 text-lg text-gray-500 peer-focus:left-2 peer-focus:-translate-y-4
-                peer-focus:text-sm peer-focus:text-primary dark:text-gray-400`
+              ? `peer-focus:text-primary left-2 text-lg text-gray-500 peer-focus:left-2
+                peer-focus:-translate-y-4 peer-focus:text-sm dark:text-gray-400`
               : `${
                 isValid
-                    ? `peer-focus:left-2 peer-focus:-translate-y-4 peer-focus:text-sm
-                      peer-focus:text-primary`
+                    ? `peer-focus:text-primary peer-focus:left-2 peer-focus:-translate-y-4
+                      peer-focus:text-sm`
                     : "text-red-600"
                 } left-2 -translate-y-4 text-sm`
  
@@ -101,7 +101,7 @@ export default forwardRef(function FloatingLabelInput(
         </label>
       </div>
       {(!isValid && !isEmpty) || errorTriggered ? (
-        <span className="text-nowrap text-sm text-red-600">{errorText}</span>
+        <span className="text-sm text-nowrap text-red-600">{errorText}</span>
       ) : (
         <></>
       )}

@@ -133,7 +133,7 @@ function ServicesPage() {
         onClose={() => setShowServiceModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="w-full">
+      <div className="flex w-full flex-col gap-5">
         <ServerError error={serverError} />
         <p className="text-xl">Services</p>
         <ServicesTable

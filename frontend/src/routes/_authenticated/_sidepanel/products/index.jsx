@@ -131,7 +131,7 @@ function ProductsPage() {
         onSubmit={modalHandler}
         serviceData={loaderData.data.services}
       />
-      <div className="w-full">
+      <div className="flex w-full flex-col gap-5">
         <ServerError error={serverError} />
         <p className="text-xl">Products</p>
         <ProductsTable
