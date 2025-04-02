@@ -24,7 +24,7 @@ export default function NotesSection({
             onClick={() => setAreNotesHidden(!areNotesHidden)}
           >
             <BackArrowIcon
-              styles={`${areNotesHidden ? "rotate-90" : "-rotate-90"} size-5 stroke-text_color
+              styles={`${areNotesHidden ? "-rotate-90" : "rotate-90"} size-5 stroke-text_color
                 transition-transform duration-200`}
             />
           </button>

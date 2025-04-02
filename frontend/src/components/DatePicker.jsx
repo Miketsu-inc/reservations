@@ -68,7 +68,6 @@ export default function DatePicker({
                   if (!date) {
                     if (preventUnselect) return;
                     if (resetOnUnselect) date = defaultDate;
-                    console.log(date);
                   }
 
                   SetSelectedDate(date);

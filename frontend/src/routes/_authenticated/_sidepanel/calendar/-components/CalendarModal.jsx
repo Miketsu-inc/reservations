@@ -51,6 +51,15 @@ export default function CalendarModal({
       date: eventInfo.start,
       start_time: timeStringFromDate(eventInfo.start),
     });
+    setRecurData({
+      isRecurring: false,
+      frequency: "weekly",
+      endDate: new Date(
+        eventInfo.start.getFullYear(),
+        eventInfo.start.getMonth() + 1,
+        eventInfo.start.getDate()
+      ),
+    });
   }, [eventInfo]);
 
   function updateRecurData(data) {
@@ -145,7 +154,7 @@ export default function CalendarModal({
                   <p>Date</p>
                   <DatePicker
                     styles="w-48"
-                    defaultDate={eventDatetime.date}
+                    defaultDate={eventInfo.start}
                     disabledBefore={new Date()}
                     disabled={disabled}
                     onSelect={(date) => {

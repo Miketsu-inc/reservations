@@ -16,7 +16,7 @@ type Service struct {
 	Duration    int       `json:"duration"`
 	Price       int       `json:"price"`
 	Cost        int       `json:"cost"`
-	DeletedOn   string    `json:"deleted_on"`
+	DeletedOn   *string   `json:"deleted_on"`
 }
 
 func (s *service) NewService(ctx context.Context, serv Service) error {

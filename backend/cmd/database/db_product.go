@@ -18,7 +18,7 @@ type Product struct {
 	StockQuantity int       `json:"stock_quantity"`
 	UsagePerUnit  int       `json:"usage_per_unit"`
 	ServiceIds    []int     `json:"service_ids"`
-	DeletedOn     string    `json:"deleted_on"`
+	DeletedOn     *string   `json:"deleted_on"`
 }
 
 func (s *service) NewProduct(ctx context.Context, prod Product) error {
