@@ -3,6 +3,7 @@ import { isMatch, Link, useMatches } from "@tanstack/react-router";
 
 export default function Breadcrumbs() {
   const matches = useMatches();
+  const lastMatch = matches[matches.length - 1];
 
   const matchesWithCrumbs = matches.filter((match) =>
     isMatch(match, "loaderData.crumb")
@@ -22,7 +23,11 @@ export default function Breadcrumbs() {
             className="hover:text-text_color inline-flex items-center gap-2"
             key={index}
           >
-            <Link to={item.href}>{item.label}</Link>
+            {lastMatch?.pathname === item.href ? (
+              <span>{item.label}</span>
+            ) : (
+              <Link to={item.href}>{item.label}</Link>
+            )}
             {index < items.length - 1 && (
               <BackArrowIcon styles="rotate-180 w-4 h-4 stroke-current" />
             )}
