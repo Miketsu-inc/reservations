@@ -101,11 +101,11 @@ create table if not exists "ServiceProduct" (
 );
 
 create table if not exists "BusinessHours" (
-    ID                       serial                primary key unique not null,
-    merchant_id              uuid                  references "Merchant" (ID) not null,
-    day_of_week              smallint              check (day_of_week BETWEEN 1 AND 7) not null,
-    start_time               time                  not null,
-    end_time                 time                  not null,
+    ID                       serial          primary key unique not null,
+    merchant_id              uuid            references "Merchant" (ID) not null,
+    day_of_week              smallint        check (day_of_week BETWEEN 0 AND 6) not null,
+    start_time               time            not null,
+    end_time                 time            not null,
 
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
 );

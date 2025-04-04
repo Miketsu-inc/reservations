@@ -80,6 +80,7 @@ export default function Calendar({
   start,
   eventData,
   preferences,
+  businessHours,
 }) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -280,6 +281,7 @@ export default function Calendar({
               displayEventEnd: true,
             },
           }}
+          businessHours={businessHours}
         />
       </div>
       <CalendarModal

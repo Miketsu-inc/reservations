@@ -40,17 +40,17 @@ const defaultMerchantInfo = {
   parking_info: "",
   payment_info: "",
   services: [],
-  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
+  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
 };
 
 const days = [
+  "Sunday",
   "Monday",
   "Thuesday",
   "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
-  "Sunday",
 ];
 
 function MerchantPage() {
@@ -160,12 +160,13 @@ function MerchantPage() {
           </ReservationSection>
           <ReservationSection name="Opening hours" show={true}>
             <div className="flex flex-col gap-2">
-              {Object.entries(merchantInfo.business_hours).map(
-                ([dayIndex, slots]) => (
+              {[1, 2, 3, 4, 5, 6, 0].map((dayIndex) => {
+                const slots = merchantInfo.business_hours[dayIndex];
+                return (
                   <div key={dayIndex} className="flex justify-between">
-                    <p className="w-1/3">{days[dayIndex - 1]}</p>
+                    <p className="w-1/3">{days[dayIndex]}</p>
                     <p className="w-2/3">
-                      {slots.length > 0
+                      {slots?.length > 0
                         ? slots
                             .map(
                               (slot) =>
@@ -175,8 +176,8 @@ function MerchantPage() {
                         : "Closed"}
                     </p>
                   </div>
-                )
-              )}
+                );
+              })}
             </div>
           </ReservationSection>
           <ReservationSection name="Payment" show={merchantInfo.payment_info}>

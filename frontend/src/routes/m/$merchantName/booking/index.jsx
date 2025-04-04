@@ -9,8 +9,6 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
-const disabledDays = [{ before: new Date() }];
-
 async function fetchHours(merchantName, locationId, serviceId, day) {
   const response = await fetch(
     `/api/v1/merchants/available-times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
@@ -32,6 +30,27 @@ async function fetchHours(merchantName, locationId, serviceId, day) {
   }
 }
 
+async function fetchClosedDays(merchantName) {
+  const response = await fetch(
+    `/api/v1/merchants/business-hours/closed?name=${merchantName}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "constent-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
 export const Route = createFileRoute("/m/$merchantName/booking/")({
   component: SelectDateTime,
   loaderDeps: ({ search: { locationId, serviceId, day } }) => ({
@@ -39,8 +58,19 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
     serviceId,
     day,
   }),
-  loader: ({ params, deps: { locationId, serviceId, day } }) => {
-    return fetchHours(params.merchantName, locationId, serviceId, day);
+  loader: async ({ params, deps: { locationId, serviceId, day } }) => {
+    const availableTimes = await fetchHours(
+      params.merchantName,
+      locationId,
+      serviceId,
+      day
+    );
+    const closedDays = await fetchClosedDays(params.merchantName);
+
+    return {
+      availableTimes,
+      closedDays,
+    };
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -62,10 +92,11 @@ function SelectDateTime() {
   const [isLoading, setIsLoading] = useState(false);
   const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
   const [userNote, setUserNote] = useState("");
+  const closedDays = loaderData.closedDays;
 
   useEffect(() => {
-    if (loaderData) {
-      setAvailableTimes(loaderData);
+    if (loaderData.availableTimes) {
+      setAvailableTimes(loaderData.availableTimes);
     }
   }, [loaderData]);
 
@@ -153,7 +184,7 @@ function SelectDateTime() {
                   timeZone="UTC"
                   selected={day}
                   onSelect={dayChangeHandler}
-                  disabled={disabledDays}
+                  disabled={[{ dayOfWeek: closedDays }, { before: new Date() }]}
                 />
               </div>
               <hr className="border-gray-500" />

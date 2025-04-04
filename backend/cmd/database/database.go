@@ -80,6 +80,8 @@ type PostgreSQL interface {
 	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
 	// Update the field used in the reservation page
 	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string, map[int][]TimeSlots) error
+// Get business hours for merchant including only the first start aand last ending time
+	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlots, error)
 
 	// -- Location --
 

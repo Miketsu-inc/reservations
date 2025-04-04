@@ -17,7 +17,7 @@ const daysOfWeek = {
   4: "Thursday",
   5: "Friday",
   6: "Saturday",
-  7: "Sunday",
+  0: "Sunday",
 };
 
 async function fetchMerchantData() {
@@ -74,7 +74,7 @@ const defaultMerchantInfo = {
   about_us: "",
   parking_info: "",
   payment_info: "",
-  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
+  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
 };
 
 export const Route = createFileRoute(

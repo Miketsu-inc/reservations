@@ -140,7 +140,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 
 	mi.BusinessHours = make(map[int][]TimeSlots)
 
-	for day := 1; day <= 7; day++ {
+	for day := 0; day <= 6; day++ {
 		mi.BusinessHours[day] = []TimeSlots{}
 	}
 
@@ -274,7 +274,7 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 
 	msi.BusinessHours = make(map[int][]TimeSlots)
 
-	for day := 1; day <= 7; day++ {
+	for day := 0; day <= 6; day++ {
 		msi.BusinessHours[day] = []TimeSlots{}
 	}
 
@@ -352,4 +352,39 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	}
 
 	return nil
+}
+
+
+func (s *service) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int]TimeSlots, error) {
+	query := `
+	select day_of_week, min(start_time) as start_time,
+	max(end_time) as end_time from "BusinessHours"
+	where merchant_id = $1
+	group by day_of_week
+	order by day_of_week;`
+
+	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	result := make(map[int]TimeSlots)
+	for rows.Next() {
+		var day int
+		var startTime, endTime string
+
+		err := rows.Scan(&day, &startTime, &endTime)
+		if err != nil {
+			return nil, err
+		}
+
+		result[day] = TimeSlots{
+			StartTime: startTime,
+			EndTime:   endTime,
+		}
+
+	}
+	return result, nil
 }

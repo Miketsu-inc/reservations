@@ -2,9 +2,10 @@ import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { SCREEN_SM } from "@lib/constants";
 import { calculateStartEndTime, isDurationValid } from "@lib/datetime";
+import { useToast } from "@lib/hooks";
 import { getStoredPreferences, invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
@@ -108,6 +109,38 @@ function CalendarPage() {
   const loaderData = Route.useLoaderData();
   const router = useRouter();
   const preferences = getStoredPreferences();
+  const [businessHours, setBusinessHours] = useState();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    async function fetchBusinessHours() {
+      const response = await fetch(`/api/v1/merchants/business-hours`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "constent-type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        showToast({
+          message: "error fetching business hours",
+          variant: "error",
+        });
+      } else {
+        const transformedBusinessHours = Object.entries(result.data).map(
+          ([day, times]) => ({
+            daysOfWeek: [parseInt(day)],
+            startTime: times.start_time.slice(0, 5),
+            endTime: times.end_time.slice(0, 5),
+          })
+        );
+        setBusinessHours(transformedBusinessHours);
+      }
+    }
+    fetchBusinessHours();
+  }, [showToast]);
 
   return (
     <div>
@@ -118,6 +151,7 @@ function CalendarPage() {
           start={search.start}
           eventData={loaderData.events}
           preferences={preferences}
+          businessHours={businessHours}
         />
       </Suspense>
     </div>

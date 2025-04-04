@@ -123,6 +123,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 	r.Get("/info", merchantHandler.InfoByName)
 	r.Get("/available-times", merchantHandler.GetHours)
+	r.Get("/business-hours/closed", merchantHandler.GetClosedDays)
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
@@ -152,5 +153,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Post("/products", merchantHandler.NewProduct)
 		r.Delete("/products/{id}", merchantHandler.DeleteProduct)
 		r.Put("/products/{id}", merchantHandler.UpdateProduct)
+		r.Get("/business-hours", merchantHandler.GetBusinessHours)
 	})
 }

@@ -830,3 +830,47 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (m *Merchant) GetClosedDays(w http.ResponseWriter, r *http.Request) {
+	urlName := r.URL.Query().Get("name")
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		return
+	}
+
+	businessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
+		return
+	}
+
+	closedDays := []int{}
+
+	for i := 0; i <= 6; i++ {
+		if _, ok := businessHours[i]; !ok {
+			closedDays = append(closedDays, i)
+		}
+	}
+
+	httputil.Success(w, http.StatusOK, closedDays)
+}
+
+func (m *Merchant) GetBusinessHours(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	buseinessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, buseinessHours)
+}
