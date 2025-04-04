@@ -24,12 +24,14 @@ const days = {
   4: "Thursday",
   5: "Friday",
   6: "Saturday",
-  7: "Sunday",
+  0: "Sunday",
 };
 
+const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+
 export default function BusinessHours({ data, setBusinessHours }) {
-  const bhArray = Object.keys(days).map((day) => ({
-    day: parseInt(day),
+  const bhArray = dayOrder.map((day) => ({
+    day: day,
     isOpen: data[day]?.length > 0,
     timeSlots: data[day],
   }));
@@ -69,10 +71,23 @@ export default function BusinessHours({ data, setBusinessHours }) {
     setBusinessHours((prevHours) => {
       const newHours = { ...prevHours };
       newHours[day] = [...newHours[day]];
-      newHours[day][timeSlotIndex] = {
-        ...newHours[day][timeSlotIndex],
-        [field]: value,
-      };
+
+      let updatedSlot = { ...newHours[day][timeSlotIndex], [field]: value };
+
+      if (field === "start_time") {
+        const newStartTime = value;
+        const currentEndTime = newHours[day][timeSlotIndex].end_time;
+
+        if (!currentEndTime || currentEndTime <= newStartTime) {
+          const nextValidTime = timeOptions.find(
+            (option) => option.value > newStartTime
+          )?.value;
+
+          updatedSlot.end_time = nextValidTime;
+        }
+      }
+
+      newHours[day][timeSlotIndex] = updatedSlot;
       return newHours;
     });
   }
@@ -109,7 +124,9 @@ export default function BusinessHours({ data, setBusinessHours }) {
               day.timeSlots.map((timeSlot, timeSlotIndex) => (
                 <div key={timeSlotIndex} className="flex items-center gap-4">
                   <Select
-                    options={timeOptions}
+                    options={timeOptions.filter(
+                      (option) => option.value !== "23:30:00"
+                    )}
                     value={timeSlot.start_time}
                     onSelect={(option) =>
                       updateTime(
@@ -124,7 +141,9 @@ export default function BusinessHours({ data, setBusinessHours }) {
                   />
                   <span className="text-gray-500">to</span>
                   <Select
-                    options={timeOptions}
+                    options={timeOptions.filter(
+                      (option) => option.value > timeSlot.start_time
+                    )}
                     value={timeSlot.end_time}
                     onSelect={(option) =>
                       updateTime(
@@ -140,14 +159,16 @@ export default function BusinessHours({ data, setBusinessHours }) {
                   {timeSlotIndex === 0 ? (
                     <button
                       onClick={() => addTimePeriod(day.day)}
-                      className="cursor-pointer rounded-full border border-gray-500 p-1"
+                      className={`${day.timeSlots.length >= 2 ? "border-text_color/50 text-text_color/50" : "border-text_color text-text_color"}
+                        cursor-pointer rounded-full border p-1 transition-colors`}
+                      disabled={day.timeSlots.length >= 2}
                     >
-                      <PlusIcon styles="h-4 w-4 text-text_color" />
+                      <PlusIcon styles="h-4 w-4" />
                     </button>
                   ) : (
                     <button
                       onClick={() => removeTimePeriod(day.day, timeSlotIndex)}
-                      className="cursor-pointer rounded-full border border-gray-500 p-1"
+                      className="border-text_color cursor-pointer rounded-full border p-1"
                     >
                       <TrashBinIcon styles="h-4 w-4" />
                     </button>

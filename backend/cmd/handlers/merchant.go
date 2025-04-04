@@ -212,7 +212,15 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, day)
+	dayOfWeek := int(day.Weekday())
+
+	businessHours, err := m.Postgresdb.GetBusinessHoursByDay(r.Context(), merchantId, dayOfWeek)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while gettin business hours for the day: %s", err.Error()))
+		return
+	}
+
+	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, businessHours, day)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -222,41 +230,56 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, day time.Time) FormattedAvailableTimes {
+func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, businessHours []database.TimeSlots, day time.Time) FormattedAvailableTimes {
 	year, month, day_ := day.Date()
 	location := day.Location()
-
-	businessStart := time.Date(year, month, day_, 8, 0, 0, 0, location)
-	businessEnd := time.Date(year, month, day_, 17, 0, 0, 0, location)
-
 	duration := time.Duration(serviceDuration) * time.Minute
-	current := businessStart
 
 	morning := []string{}
 	afternoon := []string{}
-	for current.Add(duration).Before(businessEnd) || current.Add(duration).Equal(businessEnd) {
-		timeEnd := current.Add(duration)
-		available := true
 
-		for _, appt := range reserved {
-			if timeEnd.After(appt.From_date) && current.Before(appt.To_date) {
-				current = appt.To_date
-				timeEnd = current.Add(duration)
-				available = false
-				break
+	now := time.Now().In(location)
+
+	isToday := now.Year() == year && now.YearDay() == time.Date(year, month, day_, 0, 0, 0, 0, location).YearDay()
+
+	for _, slot := range businessHours {
+		startTime, _ := time.Parse("15:04:05", slot.StartTime)
+		endTime, _ := time.Parse("15:04:05", slot.EndTime)
+
+		businessStart := time.Date(year, month, day_, startTime.Hour(), startTime.Minute(), 0, 0, location)
+		businessEnd := time.Date(year, month, day_, endTime.Hour(), endTime.Minute(), 0, 0, location)
+
+		current := businessStart
+
+		for current.Add(duration).Before(businessEnd) || current.Add(duration).Equal(businessEnd) {
+			timeEnd := current.Add(duration)
+			available := true
+
+			for _, appt := range reserved {
+				if timeEnd.After(appt.From_date) && current.Before(appt.To_date) {
+					current = appt.To_date
+					timeEnd = current.Add(duration)
+					available = false
+					break
+				}
 			}
-		}
 
-		if available && timeEnd.Before(businessEnd) || timeEnd.Equal(businessEnd) {
-			formattedTime := fmt.Sprintf("%02d:%02d", current.Hour(), current.Minute())
-
-			if current.Hour() < 12 {
-				morning = append(morning, formattedTime)
-			} else if current.Hour() >= 12 {
-				afternoon = append(afternoon, formattedTime)
+			if isToday && current.Before(now) {
+				current = timeEnd
+				continue
 			}
 
-			current = timeEnd
+			if available && timeEnd.Before(businessEnd) || timeEnd.Equal(businessEnd) {
+				formattedTime := fmt.Sprintf("%02d:%02d", current.Hour(), current.Minute())
+
+				if current.Hour() < 12 {
+					morning = append(morning, formattedTime)
+				} else if current.Hour() >= 12 {
+					afternoon = append(afternoon, formattedTime)
+				}
+
+				current = timeEnd
+			}
 		}
 	}
 

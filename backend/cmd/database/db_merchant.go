@@ -354,6 +354,33 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	return nil
 }
 
+func (s *service) GetBusinessHoursByDay(ctx context.Context, merchantId uuid.UUID, dayOfWeek int) ([]TimeSlots, error) {
+	query := `
+	select start_time, end_time from "BusinessHours"
+	where merchant_id = $1 and day_of_week = $2
+	order by start_time`
+
+	rows, err := s.db.QueryContext(ctx, query, merchantId, dayOfWeek)
+	if err != nil {
+		return []TimeSlots{}, err
+	}
+
+	defer rows.Close()
+
+	bHours := []TimeSlots{}
+
+	for rows.Next() {
+		var ts TimeSlots
+
+		err := rows.Scan(&ts.StartTime, &ts.EndTime)
+		if err != nil {
+			return []TimeSlots{}, err
+		}
+		bHours = append(bHours, ts)
+	}
+
+	return bHours, nil
+}
 
 func (s *service) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int]TimeSlots, error) {
 	query := `
