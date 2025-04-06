@@ -6,6 +6,7 @@ export default function SmallCalendar({
   onSelect,
   firstDayOfWeek,
   disabledSelectedModifier,
+disabledTodayStyling = true,
 }) {
   return (
     <DayPicker
@@ -42,7 +43,7 @@ export default function SmallCalendar({
         day: "h-9 w-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
-        today: "bg-hvr_gray",
+        today: !disabledTodayStyling ? "bg-hvr_gray" : "",
         outside: "text-gray-500",
         disabled: "hover:bg-transparent text-gray-300! dark:text-gray-800!",
         hidden: "invisible",

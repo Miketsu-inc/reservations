@@ -1,11 +1,12 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
+import SmallCalendar from "@components/SmallCalendar";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import MessageIcon from "@icons/MessageIcon";
+import { formatToDateString } from "@lib/datetime";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
@@ -156,7 +157,7 @@ function SelectDateTime() {
   function dayChangeHandler(date) {
     setSelectedHour();
     router.navigate({
-      search: (prev) => ({ ...prev, day: date.toISOString().split("T")[0] }),
+      search: (prev) => ({ ...prev, day: formatToDateString(date) }),
     });
   }
 
@@ -178,13 +179,15 @@ function SelectDateTime() {
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
             <div className="flex flex-col gap-6 md:w-1/2">
               <p className="text-xl sm:py-5">Pick a date</p>
-              <div className="self-center md:self-auto">
-                <DayPicker
-                  mode="single"
-                  timeZone="UTC"
-                  selected={day}
+              <div
+                className="flex items-center justify-center self-center bg-white shadow-lg
+                  dark:bg-neutral-950"
+              >
+                <SmallCalendar
+                  value={day}
                   onSelect={dayChangeHandler}
                   disabled={[{ dayOfWeek: closedDays }, { before: new Date() }]}
+                  disabledTodayStyling={true}
                 />
               </div>
               <hr className="border-gray-500" />

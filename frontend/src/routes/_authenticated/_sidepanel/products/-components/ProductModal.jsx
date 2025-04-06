@@ -161,7 +161,7 @@ export default function ProductModal({
               />
             </div>
           </div>
-          <div className="flex flex-col gap-4 md:w-96 md:justify-between">
+          <div className="flex w-96 flex-col gap-4 md:justify-between">
             <div className="flex flex-col gap-2 md:gap-4">
               <div className="flex flex-col gap-1">
                 <label className="">Connect the product to services</label>
