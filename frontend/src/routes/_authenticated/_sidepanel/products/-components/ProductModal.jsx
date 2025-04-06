@@ -166,7 +166,7 @@ export default function ProductModal({
               <div className="flex flex-col gap-1">
                 <label className="">Connect the product to services</label>
                 <MultipleSelect
-                  options={selectData || []}
+                  options={selectData}
                   initialItems={productData.service_ids}
                   onAddition={handleAddition}
                   onDeletion={handleDeletion}
