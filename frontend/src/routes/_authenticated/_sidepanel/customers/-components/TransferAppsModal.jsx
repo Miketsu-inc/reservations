@@ -44,7 +44,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
         onClose();
       }}
     >
-      <form onSubmit={submitHandler} className="m-3 md:m-4 md:w-md">
+      <form onSubmit={submitHandler} className="m-3 sm:w-md">
         <p className="pb-6 text-xl">Transfer appointments</p>
         <div className="flex items-center justify-center gap-2 py-2">
           <p className="text-lg font-semibold">

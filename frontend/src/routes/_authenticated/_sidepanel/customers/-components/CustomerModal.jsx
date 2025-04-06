@@ -68,16 +68,20 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form className="m-2 mx-3" id="CustomerForm" onSubmit={submitHandler}>
+      <form
+        className="m-2 mx-3 w-72"
+        id="CustomerForm"
+        onSubmit={submitHandler}
+      >
         <div className="flex flex-col">
           <div className="my-1 flex flex-row items-center justify-between">
-            <p className="text-lg md:text-xl">Customer</p>
+            <p className="text-xl">Customer</p>
             <CloseButton onClick={onClose} />
           </div>
-          <hr className="py-2 md:py-3" />
+          <hr className="py-3" />
         </div>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 md:w-72">
+          <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <label htmlFor="first_name">First name</label>
               <Input

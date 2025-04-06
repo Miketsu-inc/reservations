@@ -144,11 +144,11 @@ function ServicesPage() {
             if (modalData && modalData.id) {
               setModalData();
             }
-            setShowServiceModal(true);
+            setTimeout(() => setShowServiceModal(true), 0);
           }}
           onEdit={(service) => {
             setModalData(service);
-            setShowServiceModal(true);
+            setTimeout(() => setShowServiceModal(true), 0);
           }}
           onDelete={deleteHandler}
         />

@@ -236,23 +236,23 @@ function CustomersPage() {
             if (customerModalData && customerModalData.id) {
               setCustomerModalData();
             }
-            setShowCustomerModal(true);
+            setTimeout(() => setShowCustomerModal(true), 0);
           }}
           onTransfer={(index) => {
             setTransferModalData({
               fromIndex: index,
               customers: loaderData.customers,
             });
-            setShowTransferModal(true);
+            setTimeout(() => setShowTransferModal(true), 0);
           }}
           onEdit={(customer) => {
             setCustomerModalData(customer);
-            setShowCustomerModal(true);
+            setTimeout(() => setShowCustomerModal(true), 0);
           }}
           onDelete={deleteHandler}
           onBlackList={(customer) => {
             setBlacklistModalData(customer);
-            setShowBlacklistModal(true);
+            setTimeout(() => setShowBlacklistModal(true), 0);
           }}
         />
       </div>

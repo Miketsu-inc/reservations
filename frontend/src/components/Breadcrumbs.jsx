@@ -24,7 +24,7 @@ export default function Breadcrumbs() {
             key={index}
           >
             {lastMatch?.pathname === item.href ? (
-              <span>{item.label}</span>
+              <span className="cursor-pointer">{item.label}</span>
             ) : (
               <Link to={item.href}>{item.label}</Link>
             )}

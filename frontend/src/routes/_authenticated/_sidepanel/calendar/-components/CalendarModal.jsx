@@ -138,7 +138,7 @@ export default function CalendarModal({
         isOpen={isOpen}
         onClose={onClose}
       >
-        <div className="h-auto w-full md:w-96">
+        <div className="h-auto w-full">
           <div className="flex flex-col gap-2 p-3">
             <div className="flex items-start justify-between pb-1">
               <div className="flex items-center gap-3 text-xl">

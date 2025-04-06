@@ -81,20 +81,22 @@ export default function MultipleSelect({
           className="mt-1 flex gap-2 overflow-x-auto scroll-smooth rounded-lg pb-2 outline-none
             md:max-h-24 md:flex-wrap md:overflow-y-auto dark:[color-scheme:dark]"
         >
-          {selectedItems.map((item) => (
-            <div
-              key={item.value}
-              className="bg-hvr_gray flex max-w-44 items-center gap-2 rounded-full px-3 py-1 text-sm
-                md:max-w-36"
-            >
-              {item.icon && item.icon}
-              <span className="text-text_color truncate">{item.label}</span>
-              <XIcon
-                styles="h-5 w-5 fill-text_color cursor-pointer"
-                onClick={() => handleRemove(item)}
-              />
-            </div>
-          ))}
+          {selectedItems.map((item) =>
+            item?.value ? (
+              <div
+                key={item.value}
+                className="bg-hvr_gray flex max-w-44 items-center gap-2 rounded-full px-3 py-1 text-sm
+                  md:max-w-36"
+              >
+                {item.icon && item.icon}
+                <span className="text-text_color truncate">{item.label}</span>
+                <XIcon
+                  styles="h-5 w-5 fill-text_color cursor-pointer"
+                  onClick={() => handleRemove(item)}
+                />
+              </div>
+            ) : undefined
+          )}
         </div>
       )}
     </div>

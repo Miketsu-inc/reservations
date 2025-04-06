@@ -41,10 +41,7 @@ export default function DeleteAppsModal({ event, isOpen, onClose, onDeleted }) {
 
   return (
     <Modal zindex={50} isOpen={isOpen} onClose={onClose}>
-      <form
-        onSubmit={deleteAppointmentHandler}
-        className="h-auto w-full p-2 md:w-80"
-      >
+      <form onSubmit={deleteAppointmentHandler} className="h-auto w-80 p-2">
         <div className="flex flex-col gap-4">
           <p className="text-lg">Delete appointment</p>
           <div className="flex flex-col gap-1 px-1">

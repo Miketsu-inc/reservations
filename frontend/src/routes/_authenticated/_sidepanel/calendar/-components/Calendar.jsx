@@ -11,6 +11,7 @@ import { formatToDateString, getMonthFromCalendarStart } from "@lib/datetime";
 import { useWindowSize } from "@lib/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarModal from "./CalendarModal";
+import DragConfirmationModal from "./DragConfirmationModal";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -82,12 +83,21 @@ export default function Calendar({
   preferences,
   businessHours,
 }) {
+  const [events, setEvents] = useState(formatData(eventData));
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventInfo, setEventInfo] = useState(defaultEventInfo);
-  const calendarRef = useRef();
+  const [dragModalOpen, setDragModalOpen] = useState(false);
+  const [dragModalData, setDragModalData] = useState({
+    event: {},
+    old_event: {},
+    revert: {},
+  });
+
   const [calendarView, setCalendarView] = useState(view);
+
   const windowSize = useWindowSize();
+  const calendarRef = useRef();
 
   const isWindowSmall =
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
@@ -156,6 +166,10 @@ export default function Calendar({
     const api = calendarRef.current.getApi();
     setCalendarTitle(api.view.title);
   }, []);
+
+  useEffect(() => {
+    setEvents(formatData(eventData));
+  }, [eventData]);
 
   return (
     <div className="flex h-[85svh] flex-col md:h-fit md:max-h-[90svh]">
@@ -228,7 +242,7 @@ export default function Calendar({
           }
           height="auto"
           headerToolbar={false}
-          events={formatData(eventData)}
+          events={events}
           eventClick={(e) => {
             setEventInfo(e.event);
             setTimeout(() => setIsModalOpen(true), 0);
@@ -253,6 +267,22 @@ export default function Calendar({
           fixedWeekCount={false}
           allDaySlot={false}
           displayEventEnd={false}
+          snapDuration={{ minutes: 5 }}
+          eventDrop={(e) => {
+            setDragModalData({
+              event: e.event,
+              old_event: e.oldEvent,
+              revert: e.revert,
+            });
+            setTimeout(() => setDragModalOpen(true), 0);
+          }}
+          eventAllow={(dropInfo) => {
+            if (dropInfo.start.getTime() < Date.now()) {
+              return false;
+            } else {
+              return true;
+            }
+          }}
           dayHeaderFormat={{
             weekday: "short",
             day: isWindowSmall ? undefined : "numeric",
@@ -292,6 +322,18 @@ export default function Calendar({
         }}
         onDeleted={() => router.invalidate()}
         onEdit={() => router.invalidate()}
+      />
+      <DragConfirmationModal
+        isOpen={dragModalOpen}
+        eventData={dragModalData}
+        onClose={() => {
+          dragModalData.revert();
+          setDragModalOpen(false);
+        }}
+        onMoved={() => {
+          router.invalidate();
+          setDragModalOpen(false);
+        }}
       />
     </div>
   );

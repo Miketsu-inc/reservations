@@ -142,11 +142,11 @@ function ProductsPage() {
             if (modalData && modalData.id) {
               setModalData();
             }
-            setShowProductModal(true);
+            setTimeout(() => setShowProductModal(true), 0);
           }}
           onEdit={(product) => {
             setModalData(product);
-            setShowProductModal(true);
+            setTimeout(() => setShowProductModal(true), 0);
           }}
           onDelete={deleteHandler}
         />

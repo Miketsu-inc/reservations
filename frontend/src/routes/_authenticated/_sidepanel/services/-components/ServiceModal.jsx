@@ -80,7 +80,11 @@ export default function ServiceModal({ data, isOpen, onClose, onSubmit }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form id="ServiceForm" onSubmit={submitHandler} className="m-2 mx-3">
+      <form
+        id="ServiceForm"
+        onSubmit={submitHandler}
+        className="m-2 mx-3 min-w-80"
+      >
         <div className="flex flex-col">
           <div className="my-1 flex flex-row items-center justify-between">
             <p className="text-lg md:text-xl">Service</p>

@@ -50,9 +50,9 @@ export default function Modal({
               role="dialog"
               aria-modal="true"
               tabIndex={-1}
-              className={`${styles} bg-layer_bg text-text_color w-full rounded-lg shadow-md
-              shadow-gray-400 transition-all focus:outline-none md:w-fit dark:border
-              dark:border-gray-600 dark:shadow-xs dark:shadow-gray-800`}
+              className={`${styles} bg-layer_bg text-text_color w-fit rounded-lg shadow-md shadow-gray-400
+              transition-all focus:outline-none dark:border dark:border-gray-600
+              dark:shadow-xs dark:shadow-gray-800`}
               ref={modalRef}
             >
               {children}

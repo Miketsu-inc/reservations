@@ -4,7 +4,7 @@ import Modal from "@components/Modal";
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="m-3 md:m-4 md:w-md">
+      <div className="m-3 sm:w-md md:m-4">
         <p className="pb-6 text-xl">
           {data?.is_blacklisted
             ? "Remove customer from blacklist"
