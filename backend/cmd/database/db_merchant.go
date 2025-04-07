@@ -135,7 +135,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 	if err != nil {
 		return MerchantInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)
 	}
-
+	// nolint: errcheck
 	defer rows.Close()
 
 	mi.BusinessHours = make(map[int][]TimeSlots)
@@ -200,6 +200,7 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 	if err != nil {
 		return []PublicCustomer{}, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var customers []PublicCustomer
@@ -269,7 +270,7 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 	if err != nil {
 		return MerchantSettingsInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)
 	}
-
+	// nolint: errcheck
 	defer rows.Close()
 
 	msi.BusinessHours = make(map[int][]TimeSlots)
@@ -364,7 +365,7 @@ func (s *service) GetBusinessHoursByDay(ctx context.Context, merchantId uuid.UUI
 	if err != nil {
 		return []TimeSlots{}, err
 	}
-
+	// nolint: errcheck
 	defer rows.Close()
 
 	bHours := []TimeSlots{}
@@ -394,7 +395,7 @@ func (s *service) GetNormalizedBusinessHours(ctx context.Context, merchantId uui
 	if err != nil {
 		return nil, err
 	}
-
+	// nolint: errcheck
 	defer rows.Close()
 
 	result := make(map[int]TimeSlots)

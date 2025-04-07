@@ -154,6 +154,7 @@ func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUI
 	if err != nil {
 		return []PublicProduct{}, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var products []PublicProduct

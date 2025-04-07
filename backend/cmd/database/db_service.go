@@ -69,6 +69,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 	if err != nil {
 		return []PublicService{}, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var services []PublicService

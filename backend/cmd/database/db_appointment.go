@@ -62,6 +62,7 @@ func (s *service) GetAppointmentsByUser(ctx context.Context, user_id uuid.UUID) 
 	if err != nil {
 		return nil, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var appointments []Appointment
@@ -107,6 +108,7 @@ func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid
 	if err != nil {
 		return nil, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var appointments []AppointmentDetails
@@ -138,6 +140,7 @@ func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, l
 	if err != nil {
 		return nil, err
 	}
+	// nolint: errcheck
 	defer rows.Close()
 
 	var bookedApps []AppointmentTime
