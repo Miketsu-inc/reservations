@@ -43,7 +43,7 @@
       // http://stackoverflow.com/questions/23349191
       throw new Error("Could not prevent default");
     }
-  } catch (e) {
+  } catch (_) {
     var CustomEvent = function (event, params) {
       var evt, origPrevent;
 
@@ -79,7 +79,7 @@
               return true;
             },
           });
-        } catch (e) {
+        } catch (_) {
           this.defaultPrevented = true;
         }
       };
