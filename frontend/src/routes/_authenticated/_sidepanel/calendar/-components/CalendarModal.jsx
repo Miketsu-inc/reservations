@@ -134,6 +134,7 @@ export default function CalendarModal({
         }}
       />
       <Modal
+        styles="w-full sm:w-fit"
         suspendCloseOnClickOutside={cancelModalOpen}
         isOpen={isOpen}
         onClose={onClose}
@@ -153,7 +154,7 @@ export default function CalendarModal({
                 <div className="flex flex-col gap-1">
                   <p>Date</p>
                   <DatePicker
-                    styles="w-48"
+                    styles="sm:w-40 w-36"
                     defaultDate={eventInfo.start}
                     disabledBefore={new Date()}
                     disabled={disabled}

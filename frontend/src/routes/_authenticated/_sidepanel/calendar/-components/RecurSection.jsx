@@ -67,7 +67,7 @@ export default function RecurSection({
                 overflow-hidden while transitioning or reworking the dropdowns */}
       <div
         className={`${recurData.isRecurring ? "max-h-52 p-2 opacity-100" : "max-h-0 overflow-hidden p-0 opacity-0"}
-          flex flex-col gap-3 transition-all duration-300`}
+          flex flex-col gap-3 transition-all duration-300 sm:w-86`}
       >
         <p className="max-w-5/6 text-sm">
           {`Recurs ${recurFreqText(event.start, recurData.frequency)} at ${timeStringFromDate(event.start)} - ${timeStringFromDate(event.end)}
