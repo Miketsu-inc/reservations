@@ -2,20 +2,29 @@ import Select from "@components/Select";
 import Switch from "@components/Switch";
 import PlusIcon from "@icons/PlusIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
+import { getStoredPreferences } from "@lib/lib";
 
-const generateTimeOptions = () => {
+const generateTimeOptions = (time_format) => {
   const options = [];
+
   for (let hour = 0; hour < 24; hour++) {
     for (let minute of [0, 30]) {
-      const label = `${hour}:${minute === 0 ? "00" : "30"}`;
       const value = `${hour.toString().padStart(2, "0")}:${minute === 0 ? "00" : "30"}:00`;
+
+      let label;
+      if (time_format === "12-hour") {
+        const period = hour >= 12 ? "PM" : "AM";
+        const hour12 = hour % 12 || 12;
+        label = `${hour12}:${minute === 0 ? "00" : "30"} ${period}`;
+      } else {
+        label = `${hour}:${minute === 0 ? "00" : "30"}`;
+      }
+
       options.push({ label, value });
     }
   }
   return options;
 };
-
-const timeOptions = generateTimeOptions();
 
 const days = {
   1: "Monday",
@@ -27,9 +36,14 @@ const days = {
   0: "Sunday",
 };
 
-const dayOrder = [1, 2, 3, 4, 5, 6, 0];
-
 export default function BusinessHours({ data, setBusinessHours }) {
+  const preferences = getStoredPreferences();
+  const timeOptions = generateTimeOptions(preferences.time_format);
+  const dayOrder =
+    preferences.first_day_of_week === "Sunday"
+      ? [0, 1, 2, 3, 4, 5, 6]
+      : [1, 2, 3, 4, 5, 6, 0];
+
   const bhArray = dayOrder.map((day) => ({
     day: day,
     isOpen: data[day]?.length > 0,
@@ -94,14 +108,15 @@ export default function BusinessHours({ data, setBusinessHours }) {
 
   return (
     <div
-      className="flex max-w-xl flex-col gap-4 rounded border border-gray-300 p-4
+      className="flex max-w-xl flex-col gap-4 rounded border border-gray-300 px-3 py-4 sm:px-4
         dark:border-gray-500"
     >
       {bhArray.map((day) => (
         <div
           key={day.day}
-          className="flex flex-col items-start gap-3 border-b border-b-gray-300 pb-3 last:border-b-0
-            last:pb-0 lg:flex-row lg:gap-6 dark:border-b-gray-500"
+          className={`flex flex-col items-start ${day.isOpen ? "gap-3" : "gap-0 pb-5"} border-b
+          border-b-gray-300 pb-3 last:border-b-0 last:pb-0 lg:flex-row lg:gap-6
+          dark:border-b-gray-500`}
         >
           <div className="flex items-center gap-10 md:mt-2 md:gap-20">
             <label className="inline-flex cursor-pointer items-center gap-3">
@@ -122,7 +137,7 @@ export default function BusinessHours({ data, setBusinessHours }) {
           <div className="flex w-full flex-1 flex-col gap-4">
             {day.isOpen &&
               day.timeSlots.map((timeSlot, timeSlotIndex) => (
-                <div key={timeSlotIndex} className="flex items-center gap-4">
+                <div key={timeSlotIndex} className="flex items-center gap-3">
                   <Select
                     options={timeOptions.filter(
                       (option) => option.value !== "23:30:00"

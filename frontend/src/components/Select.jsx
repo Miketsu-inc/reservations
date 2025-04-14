@@ -89,7 +89,7 @@ export default function Select({
     >
       <button
         onClick={() => (isOpen ? handleClose() : handleOpen())}
-        className="focus:border-text_color w-full rounded-md border border-gray-400 py-2 pr-3 pl-4
+        className="focus:border-text_color w-full rounded-md border border-gray-400 py-2 pr-2 pl-3
           text-left text-gray-900 focus:outline-none dark:border-gray-500
           dark:bg-neutral-950 dark:focus:border-white"
         type="button"
@@ -157,7 +157,7 @@ export default function Select({
                     }}
                     key={index}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-2 pl-3 text-gray-700
+                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700
                       select-none`}
                     role="option"
                     aria-selected={isSelected}
