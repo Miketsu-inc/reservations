@@ -216,11 +216,23 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 
 	businessHours, err := m.Postgresdb.GetBusinessHoursByDay(r.Context(), merchantId, dayOfWeek)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while gettin business hours for the day: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours for the day: %s", err.Error()))
 		return
 	}
 
-	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, businessHours, day)
+	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, day, businessHours, merchantTz)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -230,55 +242,60 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, businessHours []database.TimeSlots, day time.Time) FormattedAvailableTimes {
-	year, month, day_ := day.Date()
-	location := day.Location()
+func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, bookingDay time.Time, businessHours []database.TimeSlots, merchantTz *time.Location) FormattedAvailableTimes {
+	year, month, day := bookingDay.Date()
 	duration := time.Duration(serviceDuration) * time.Minute
 
 	morning := []string{}
 	afternoon := []string{}
 
-	now := time.Now().In(location)
-
-	isToday := now.Year() == year && now.YearDay() == time.Date(year, month, day_, 0, 0, 0, 0, location).YearDay()
+	now := time.Now().In(merchantTz)
+	isToday := bookingDay.Format("2006-01-02") == time.Now().Format("2006-01-02")
 
 	for _, slot := range businessHours {
 		startTime, _ := time.Parse("15:04:05", slot.StartTime)
 		endTime, _ := time.Parse("15:04:05", slot.EndTime)
 
-		businessStart := time.Date(year, month, day_, startTime.Hour(), startTime.Minute(), 0, 0, location)
-		businessEnd := time.Date(year, month, day_, endTime.Hour(), endTime.Minute(), 0, 0, location)
+		// buisness hours are NOT an absolute point in time,
+		// their timezone should be in the same timzone as the merchant is in
+		// for golang before/after to work correctly
+		businessStart := time.Date(year, month, day, startTime.Hour(), startTime.Minute(), 0, 0, merchantTz)
+		businessEnd := time.Date(year, month, day, endTime.Hour(), endTime.Minute(), 0, 0, merchantTz)
 
-		current := businessStart
+		appStart := businessStart
+		appEnd := appStart.Add(duration)
 
-		for current.Add(duration).Before(businessEnd) || current.Add(duration).Equal(businessEnd) {
-			timeEnd := current.Add(duration)
+		for appEnd.Before(businessEnd) || appEnd.Equal(businessEnd) {
+
 			available := true
 
 			for _, appt := range reserved {
-				if timeEnd.After(appt.From_date) && current.Before(appt.To_date) {
-					current = appt.To_date
-					timeEnd = current.Add(duration)
+				if appEnd.After(appt.From_date) && appStart.Before(appt.To_date) {
+					appStart = appt.To_date
+					appEnd = appStart.Add(duration)
+
 					available = false
 					break
 				}
 			}
 
-			if isToday && current.Before(now) {
-				current = timeEnd
+			if isToday && appStart.Before(now) {
+				appStart = appEnd
+				appEnd = appStart.Add(duration)
 				continue
 			}
 
-			if available && timeEnd.Before(businessEnd) || timeEnd.Equal(businessEnd) {
-				formattedTime := fmt.Sprintf("%02d:%02d", current.Hour(), current.Minute())
+			if available && (appEnd.Before(businessEnd) || appEnd.Equal(businessEnd)) {
+				formattedTime := fmt.Sprintf("%02d:%02d", appStart.Hour(), appStart.Minute())
 
-				if current.Hour() < 12 {
+				if appStart.Hour() < 12 {
 					morning = append(morning, formattedTime)
-				} else if current.Hour() >= 12 {
+				} else if appStart.Hour() >= 12 {
 					afternoon = append(afternoon, formattedTime)
 				}
 
-				current = timeEnd
+				appStart = appEnd
+				appEnd = appStart.Add(duration)
 			}
 		}
 	}

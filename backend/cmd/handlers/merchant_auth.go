@@ -19,6 +19,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	type signUpData struct {
 		Name         string `json:"name" validate:"required"`
 		ContactEmail string `json:"contact_email" validate:"required,email"`
+		Timezone     string `json:"timezone" validate:"required,timezone"`
 	}
 	var signup signUpData
 
@@ -57,6 +58,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		AboutUs:      "",
 		ParkingInfo:  "",
 		PaymentInfo:  "",
+		Timezone:     signup.Timezone,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))

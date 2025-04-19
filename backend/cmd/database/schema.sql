@@ -1,5 +1,8 @@
 -- When modifying this always modify structs in the backend/database as well
 
+alter database reservations set timezone to 'UTC';
+select pg_reload_conf();
+
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
     first_name               varchar(30)     not null,
@@ -23,7 +26,8 @@ create table if not exists "Merchant" (
     announcement             varchar(200),
     about_us                 text,
     parking_info             text,
-    payment_info             text
+    payment_info             text,
+    timezone                 text
 );
 
 create table if not exists "Service" (

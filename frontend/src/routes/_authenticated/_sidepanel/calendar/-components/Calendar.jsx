@@ -227,7 +227,6 @@ export default function Calendar({
             listPlugin,
           ]}
           locale="hu"
-          timeZone="UTC"
           editable={true}
           eventDurationEditable={true}
           selectable={true}

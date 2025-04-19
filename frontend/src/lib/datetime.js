@@ -1,3 +1,5 @@
+import { getStoredPreferences } from "./lib";
+
 export function formatToDateString(date) {
   return (
     date.getFullYear() +
@@ -148,11 +150,18 @@ export function getDaySuffix(day) {
 }
 
 export function timeStringFromDate(date) {
+  const preferences = getStoredPreferences();
+  const hour12 =
+    preferences?.time_format === "12-hour"
+      ? true
+      : preferences?.time_format === "24-hour"
+        ? false
+        : undefined;
+
   return date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
+    hour12: hour12,
   });
 }
 
@@ -177,13 +186,4 @@ export function addTimeToDate(date, hours = 0, minutes = 0) {
   newDate.setMinutes(newDate.getMinutes() + minutes);
 
   return newDate;
-}
-
-export function toISOStringWithLocalTime(date) {
-  const timezoneOffset = date.getTimezoneOffset();
-
-  // Adjust the date to remove the timezone offset
-  const adjustedDate = new Date(date.getTime() - timezoneOffset * 60000);
-
-  return adjustedDate.toISOString();
 }

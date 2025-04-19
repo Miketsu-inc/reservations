@@ -23,6 +23,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
+		UserTz       string `json:"user_tz" validate:"required,timezone"`
 		UserNote     string `json:"user_note"`
 	}
 	var newApp NewAppointment

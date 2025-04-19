@@ -72,12 +72,12 @@ export default function DragConfirmationModal({
           <div className="flex flex-col items-center gap-2">
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
-              <p>{dateFormatter(eventData.event.start)}</p>
+              <p>{dateFormatter(eventData.old_event.start)}</p>
             </div>
             <p>to</p>
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
-              <p>{dateFormatter(eventData.old_event.start)}</p>
+              <p>{dateFormatter(eventData.event.start)}</p>
             </div>
           </div>
         </div>

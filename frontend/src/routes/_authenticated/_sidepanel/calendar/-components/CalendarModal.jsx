@@ -7,7 +7,6 @@ import {
   addTimeToDate,
   combineDateTimeLocal,
   timeStringFromDate,
-  toISOStringWithLocalTime,
 } from "@lib/datetime";
 import { useToast } from "@lib/hooks";
 import { useEffect, useState } from "react";
@@ -37,7 +36,7 @@ export default function CalendarModal({
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [eventDatetime, setEventDatetime] = useState({
     date: eventInfo.start,
-    start_time: timeStringFromDate(eventInfo.start),
+    start_time: timeStringFromDate(eventInfo.start).split(" ")[0],
   });
 
   const { showToast } = useToast();
@@ -49,7 +48,7 @@ export default function CalendarModal({
     setMerchantNote(eventInfo.extendedProps.merchant_note);
     setEventDatetime({
       date: eventInfo.start,
-      start_time: timeStringFromDate(eventInfo.start),
+      start_time: timeStringFromDate(eventInfo.start).split(" ")[0],
     });
     setRecurData({
       isRecurring: false,
@@ -92,14 +91,12 @@ export default function CalendarModal({
         body: JSON.stringify({
           id: eventInfo.extendedProps.appointment_id,
           merchant_note: merchantNote,
-          from_date: toISOStringWithLocalTime(start_date),
-          to_date: toISOStringWithLocalTime(
-            addTimeToDate(
-              start_date,
-              0,
-              eventInfo.extendedProps.service_duration
-            )
-          ),
+          from_date: start_date.toISOString(),
+          to_date: addTimeToDate(
+            start_date,
+            0,
+            eventInfo.extendedProps.service_duration
+          ).toISOString(),
         }),
       });
 
@@ -183,7 +180,8 @@ export default function CalendarModal({
                       }));
 
                       if (
-                        e.target.value !== timeStringFromDate(eventInfo.start)
+                        e.target.value !==
+                        timeStringFromDate(eventInfo.start).split(" ")[0]
                       ) {
                         SetHasUnsavedChanges(true);
                       } else {

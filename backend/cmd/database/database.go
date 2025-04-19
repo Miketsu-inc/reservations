@@ -84,6 +84,8 @@ type PostgreSQL interface {
 	GetBusinessHoursByDay(context.Context, uuid.UUID, int) ([]TimeSlots, error)
 	// Get business hours for merchant including only the first start aand last ending time
 	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlots, error)
+	// Get the merchant's timezone by it's id
+	GetMerchantTimezoneById(context.Context, uuid.UUID) (string, error)
 
 	// -- Location --
 

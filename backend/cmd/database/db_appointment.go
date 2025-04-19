@@ -132,7 +132,7 @@ type AppointmentTime struct {
 
 func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]AppointmentTime, error) {
 	query := `
-    select from_date AT TIME ZONE 'UTC' AS from_date_utc, to_date AT TIME ZONE 'UTC' AS to_date_utc from "Appointment"
+    select from_date, to_date from "Appointment"
     where merchant_id = $1 and location_id = $2 and DATE(from_date) = $3 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
     ORDER BY from_date`
 

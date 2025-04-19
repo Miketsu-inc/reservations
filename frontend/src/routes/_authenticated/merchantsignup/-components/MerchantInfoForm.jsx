@@ -40,7 +40,11 @@ export default function MerchantInfoForm({ isCompleted }) {
           Accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          contact_email: formData.contact_email,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
 
       if (!response.ok) {

@@ -78,11 +78,6 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
   },
 });
 
-const defaultAvailableTimes = {
-  morning: [],
-  afternoon: [],
-};
-
 function SelectDateTime() {
   const { merchantName } = Route.useParams();
   const { locationId, serviceId, day } = Route.useSearch();
@@ -91,7 +86,10 @@ function SelectDateTime() {
   const [selectedHour, setSelectedHour] = useState();
   const [serverError, setServerError] = useState();
   const [isLoading, setIsLoading] = useState(false);
-  const [availableTimes, setAvailableTimes] = useState(defaultAvailableTimes);
+  const [availableTimes, setAvailableTimes] = useState({
+    morning: [],
+    afternoon: [],
+  });
   const [userNote, setUserNote] = useState("");
   const closedDays = loaderData.closedDays;
 
@@ -106,7 +104,7 @@ function SelectDateTime() {
     const date = new Date(day);
 
     const [hours, minutes] = selectedHour.split(":").map(Number);
-    date.setUTCHours(hours, minutes, 0, 0);
+    date.setHours(hours, minutes, 0, 0);
     const timeStamp = date.toISOString();
 
     setIsLoading(true);
@@ -122,6 +120,7 @@ function SelectDateTime() {
           service_id: serviceId,
           location_id: locationId,
           timeStamp: timeStamp,
+          user_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
           user_note: userNote,
         }),
       });
