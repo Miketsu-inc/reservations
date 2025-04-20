@@ -76,9 +76,9 @@ create table if not exists "Preferences" (
     time_format              varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')) not null,
     calendar_view            varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')) not null,
     calendar_view_mobile     varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list')) not null,
-    start_hour               time             default '08:00:00' not null,
-    end_hour                 time             default '17:00:00' not null,
-    time_frequency           time             default '00:15:00' not null
+    start_hour               time(0)          default '08:00:00' not null,
+    end_hour                 time(0)          default '17:00:00' not null,
+    time_frequency           time(0)          default '00:15:00' not null
 );
 
 create table if not exists "Blacklist" (
@@ -108,8 +108,8 @@ create table if not exists "BusinessHours" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
     day_of_week              smallint        check (day_of_week BETWEEN 0 AND 6) not null,
-    start_time               time            not null,
-    end_time                 time            not null,
+    start_time               time(0)         not null,
+    end_time                 time(0)         not null,
 
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
 );

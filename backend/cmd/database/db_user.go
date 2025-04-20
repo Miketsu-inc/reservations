@@ -2,24 +2,24 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type User struct {
-	Id                uuid.UUID `json:"ID"`
-	FirstName         string    `json:"first_name"`
-	LastName          string    `json:"last_name"`
-	Email             string    `json:"email"`
-	PhoneNumber       string    `json:"phone_number"`
-	PasswordHash      string    `json:"password_hash"`
-	JwtRefreshVersion int       `json:"jwt_refresh_version"`
-	Subscription      int       `json:"subscription"`
-	IsDummy           bool      `json:"is_dummy"`
-	AddedBy           uuid.UUID `json:"added_by"`
+	Id                uuid.UUID `json:"ID" db:"id"`
+	FirstName         string    `json:"first_name" db:"first_name"`
+	LastName          string    `json:"last_name" db:"last_name"`
+	Email             string    `json:"email" db:"email"`
+	PhoneNumber       string    `json:"phone_number" db:"phone_number"`
+	PasswordHash      string    `json:"password_hash" db:"password_hash"`
+	JwtRefreshVersion int       `json:"jwt_refresh_version" db:"jwt_refresh_version"`
+	Subscription      int       `json:"subscription" db:"subscription"`
+	IsDummy           bool      `json:"is_dummy" db:"is_dummy"`
+	AddedBy           uuid.UUID `json:"added_by" db:"added_by"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
@@ -28,7 +28,7 @@ func (s *service) NewUser(ctx context.Context, user User) error {
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
+	_, err := s.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
 		user.JwtRefreshVersion, user.Subscription, user.IsDummy, user.AddedBy)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 	`
 
 	var user User
-	err := s.db.QueryRowContext(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
+	err := s.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
 		&user.JwtRefreshVersion, &user.Subscription, &user.IsDummy, &user.AddedBy)
 	if err != nil {
 		return User{}, err
@@ -61,7 +61,7 @@ func (s *service) GetUserPasswordAndIDByUserEmail(ctx context.Context, email str
 
 	var userID uuid.UUID
 	var password string
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&userID, &password)
+	err := s.db.QueryRow(ctx, query, email).Scan(&userID, &password)
 	if err != nil {
 		return uuid.Nil, "", err
 	}
@@ -76,8 +76,8 @@ func (s *service) IsEmailUnique(ctx context.Context, email string) error {
 	`
 
 	var em string
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&em)
-	if !errors.Is(err, sql.ErrNoRows) {
+	err := s.db.QueryRow(ctx, query, email).Scan(&em)
+	if !errors.Is(err, pgx.ErrNoRows) {
 		if err != nil {
 			return err
 		}
@@ -95,8 +95,8 @@ func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) e
 	`
 
 	var pn string
-	err := s.db.QueryRowContext(ctx, query, phoneNumber).Scan(&pn)
-	if !errors.Is(err, sql.ErrNoRows) {
+	err := s.db.QueryRow(ctx, query, phoneNumber).Scan(&pn)
+	if !errors.Is(err, pgx.ErrNoRows) {
 		if err != nil {
 			return err
 		}
@@ -114,7 +114,7 @@ func (s *service) IncrementUserJwtRefreshVersion(ctx context.Context, userID uui
 	where id = $1
 	`
 
-	_, err := s.db.ExecContext(ctx, query, userID)
+	_, err := s.db.Exec(ctx, query, userID)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID
 	`
 
 	var refreshVersion int
-	err := s.db.QueryRowContext(ctx, query, userID).Scan(&refreshVersion)
+	err := s.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
 	if err != nil {
 		return 0, err
 	}
@@ -138,12 +138,12 @@ func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID
 }
 
 type Customer struct {
-	Id          uuid.UUID `json:"id"`
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
-	Email       string    `json:"email"`
-	PhoneNumber string    `json:"phone_number"`
-	IsDummy     bool      `json:"is_dummy"`
+	Id          uuid.UUID `json:"id" db:"id"`
+	FirstName   string    `json:"first_name" db:"first_name"`
+	LastName    string    `json:"last_name" db:"last_name"`
+	Email       string    `json:"email" db:"email"`
+	PhoneNumber string    `json:"phone_number" db:"phone_number"`
+	IsDummy     bool      `json:"is_dummy" db:"is_dummy"`
 }
 
 func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
@@ -152,7 +152,7 @@ func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, custome
 	values ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber, customer.IsDummy, merchantId)
+	_, err := s.db.Exec(ctx, query, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber, customer.IsDummy, merchantId)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, 
 	where is_dummy = true and id = $1 and added_by = $2
 	`
 
-	_, err := s.db.ExecContext(ctx, query, customerId, merchantId)
+	_, err := s.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, 
 	where is_dummy = true and id = $2 and added_by = $1
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber)
+	_, err := s.db.Exec(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (s *service) AddCustomerToBlacklist(ctx context.Context, merchantId uuid.UU
 	values ($1, $2)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, customerId)
+	_, err := s.db.Exec(ctx, query, merchantId, customerId)
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func (s *service) RemoveCustomerFromBlacklist(ctx context.Context, merchantId uu
 	where merchant_id = $1 and user_id = $2
 	`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, customerId)
+	_, err := s.db.Exec(ctx, query, merchantId, customerId)
 	if err != nil {
 		return err
 	}
@@ -224,8 +224,8 @@ func (s *service) IsUserBlacklisted(ctx context.Context, merchantId uuid.UUID, u
 	`
 
 	var st string
-	err := s.db.QueryRowContext(ctx, query, merchantId, userId).Scan(&st)
-	if !errors.Is(err, sql.ErrNoRows) {
+	err := s.db.QueryRow(ctx, query, merchantId, userId).Scan(&st)
+	if !errors.Is(err, pgx.ErrNoRows) {
 		if err != nil {
 			return err
 		}

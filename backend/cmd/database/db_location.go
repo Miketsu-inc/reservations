@@ -21,7 +21,7 @@ func (s *service) NewLocation(ctx context.Context, location Location) error {
 	values ($1, $2, $3, $4, $5)
 	`
 
-	_, err := s.db.ExecContext(ctx, query, location.MerchantId, location.Country, location.City, location.PostalCode, location.Address)
+	_, err := s.db.Exec(ctx, query, location.MerchantId, location.Country, location.City, location.PostalCode, location.Address)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,8 @@ func (s *service) GetLocationById(ctx context.Context, locationId int) (Location
 	`
 
 	var location Location
-	err := s.db.QueryRowContext(ctx, query, locationId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City, &location.PostalCode, &location.Address)
+	err := s.db.QueryRow(ctx, query, locationId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City,
+		&location.PostalCode, &location.Address)
 	if err != nil {
 		return Location{}, err
 	}

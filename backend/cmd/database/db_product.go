@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/jackc/pgx/v5"
 )
 
 type Product struct {
@@ -17,7 +17,7 @@ type Product struct {
 	Price         int       `json:"price"`
 	StockQuantity int       `json:"stock_quantity"`
 	UsagePerUnit  int       `json:"usage_per_unit"`
-	ServiceIds    []int     `json:"service_ids"`
+	ServiceIds    []*int    `json:"service_ids"`
 	DeletedOn     *string   `json:"deleted_on"`
 }
 
@@ -40,7 +40,7 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
 	from inserted_product, valid_services;
 	`
 
-	_, err := s.db.ExecContext(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.StockQuantity, prod.UsagePerUnit, utils.IntSliceToPgArray(prod.ServiceIds))
+	_, err := s.db.Exec(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.StockQuantity, prod.UsagePerUnit, prod.ServiceIds)
 	if err != nil {
 		return err
 	}
@@ -50,19 +50,19 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
 
 func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	// nolint: errcheck
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
 	productUpdateQuery := `
 	update "Product"
 	set name = $3, description = $4, price = $5, stock_quantity = $6, usage_per_unit = $7
 	where merchant_id = $1 and id = $2 and deleted_on is null
 	`
-	_, err = tx.ExecContext(ctx, productUpdateQuery, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.StockQuantity, newProduct.UsagePerUnit)
+	_, err = tx.Exec(ctx, productUpdateQuery, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.StockQuantity, newProduct.UsagePerUnit)
 	if err != nil {
 		return fmt.Errorf("failed to update product: %v", err)
 	}
@@ -80,7 +80,7 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 	on conflict (product_id, service_id) do nothing;
 	`
 
-	_, err = tx.ExecContext(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, utils.IntSliceToPgArray(newProduct.ServiceIds))
+	_, err = tx.Exec(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, newProduct.ServiceIds)
 	if err != nil {
 		return fmt.Errorf("failed to insert new service links: %v", err)
 	}
@@ -100,12 +100,12 @@ func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 		where valid_services.service_id = "ServiceProduct".service_id
 	);
 	`
-	_, err = tx.ExecContext(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, utils.IntSliceToPgArray(newProduct.ServiceIds))
+	_, err = tx.Exec(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, newProduct.ServiceIds)
 	if err != nil {
 		return fmt.Errorf("failed to delete outdated service associations: %v", err)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 
@@ -124,7 +124,7 @@ func (s *service) DeleteProductById(ctx context.Context, merchantId uuid.UUID, p
 		where product_id in (select id from deleted);
 	`
 
-	_, err := s.db.ExecContext(ctx, query, time.Now().UTC(), merchantId, productId)
+	_, err := s.db.Exec(ctx, query, time.Now().UTC(), merchantId, productId)
 	if err != nil {
 		return err
 	}
@@ -133,15 +133,16 @@ func (s *service) DeleteProductById(ctx context.Context, merchantId uuid.UUID, p
 }
 
 type PublicProduct struct {
-	Id            int    `json:"id"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Price         int    `json:"price"`
-	StockQuantity int    `json:"stock_quantity"`
-	UsagePerUnit  int    `json:"usage_per_unit"`
-	ServiceIds    []int  `json:"service_ids"`
+	Id            int    `json:"id" db:"id"`
+	Name          string `json:"name" db:"name"`
+	Description   string `json:"description" db:"description"`
+	Price         int    `json:"price" db:"price"`
+	StockQuantity int    `json:"stock_quantity" db:"stock_quantity"`
+	UsagePerUnit  int    `json:"usage_per_unit" db:"usage_per_unit"`
+	ServiceIds    []*int `json:"service_ids" db:"service_ids"`
 }
 
+// TODO: this should use pgx helpers
 func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]PublicProduct, error) {
 	query := `select
 	p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
@@ -150,27 +151,19 @@ func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUI
 	where p.merchant_id = $1 and deleted_on is null
 	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit;`
 
-	rows, err := s.db.QueryContext(ctx, query, merchantId)
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (PublicProduct, error) {
+		var product PublicProduct
+		err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.UsagePerUnit, &product.ServiceIds)
+
+		if product.ServiceIds[0] == nil {
+			product.ServiceIds = []*int{}
+		}
+
+		return product, err
+	})
 	if err != nil {
 		return []PublicProduct{}, err
-	}
-	// nolint: errcheck
-	defer rows.Close()
-
-	var products []PublicProduct
-	for rows.Next() {
-		var prod PublicProduct
-		var serviceIdsStr string
-
-		if err := rows.Scan(&prod.Id, &prod.Name, &prod.Description, &prod.Price, &prod.StockQuantity, &prod.UsagePerUnit, &serviceIdsStr); err != nil {
-			return []PublicProduct{}, err
-		}
-		prod.ServiceIds, err = utils.ParsePgArrayToInt(serviceIdsStr)
-
-		if err != nil {
-			return []PublicProduct{}, err
-		}
-		products = append(products, prod)
 	}
 
 	// if products array is empty the encoded json field will be null

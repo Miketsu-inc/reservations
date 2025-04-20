@@ -139,6 +139,7 @@ function CalendarPage() {
         setBusinessHours(transformedBusinessHours);
       }
     }
+
     fetchBusinessHours();
   }, [showToast]);
 

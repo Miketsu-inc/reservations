@@ -242,7 +242,7 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, bookingDay time.Time, businessHours []database.TimeSlots, merchantTz *time.Location) FormattedAvailableTimes {
+func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, bookingDay time.Time, businessHours []database.TimeSlot, merchantTz *time.Location) FormattedAvailableTimes {
 	year, month, day := bookingDay.Date()
 	duration := time.Duration(serviceDuration) * time.Minute
 
@@ -552,12 +552,12 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) {
 	type MerchantFileds struct {
-		Introduction  string                       `json:"introduction"`
-		Announcement  string                       `json:"announcement"`
-		AboutUs       string                       `json:"about_us"`
-		ParkingInfo   string                       `json:"parking_info"`
-		PaymentInfo   string                       `json:"payment_info"`
-		BusinessHours map[int][]database.TimeSlots `json:"business_hours"`
+		Introduction  string                      `json:"introduction"`
+		Announcement  string                      `json:"announcement"`
+		AboutUs       string                      `json:"about_us"`
+		ParkingInfo   string                      `json:"parking_info"`
+		PaymentInfo   string                      `json:"payment_info"`
+		BusinessHours map[int][]database.TimeSlot `json:"business_hours"`
 	}
 	var data MerchantFileds
 
@@ -719,7 +719,7 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
 		StockQuantity int    `json:"stock_quantity" validate:"required,min=0,max=10000"`
 		UsagePerUnit  int    `json:"usage_per_unit" validate:"min=0,max=10000"`
-		ServiceIds    []int  `json:"service_ids"`
+		ServiceIds    []*int `json:"service_ids"`
 	}
 	var product newProduct
 

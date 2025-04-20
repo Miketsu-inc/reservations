@@ -19,11 +19,10 @@ type Preferences struct {
 }
 
 func (s *service) CreatePreferences(ctx context.Context, merchantId uuid.UUID) error {
-
 	query := `
 	insert into "Preferences" (merchant_id) values ($1)`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId)
+	_, err := s.db.Exec(ctx, query, merchantId)
 	if err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func (s *service) GetPreferencesByMerchantId(ctx context.Context, merchantId uui
 	where merchant_id = $1`
 
 	var p PreferenceData
-	err := s.db.QueryRowContext(ctx, query, merchantId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.CalendarViewMobile, &p.StartHour, &p.EndHour, &p.TimeFrequency)
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.CalendarViewMobile, &p.StartHour, &p.EndHour, &p.TimeFrequency)
 	if err != nil {
 		return PreferenceData{}, err
 	}
@@ -61,7 +60,7 @@ func (s *service) UpdatePreferences(ctx context.Context, merchantId uuid.UUID, p
 	set first_day_of_week = $2, time_format = $3, calendar_view = $4, calendar_view_mobile = $5, start_hour = $6, end_hour = $7, time_frequency = $8
 	where merchant_id = $1;`
 
-	_, err := s.db.ExecContext(ctx, query, merchantId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.CalendarViewMobile, p.StartHour, p.EndHour, p.TimeFrequency)
+	_, err := s.db.Exec(ctx, query, merchantId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.CalendarViewMobile, p.StartHour, p.EndHour, p.TimeFrequency)
 	if err != nil {
 		return err
 	}
