@@ -2,8 +2,6 @@
 
 ## Setting up the development environment
 
-> Please note every command in the Makefile was designed to run on a linux system with bash. There can be commands which do not work in Windows or MacOS
-
 Required binaries
 
 - [Nodejs](https://nodejs.org/en)
