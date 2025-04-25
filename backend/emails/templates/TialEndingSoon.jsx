@@ -15,6 +15,10 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
+import React from "react";
+import ReactDom from "react-dom";
+
+void (React, ReactDom);
 
 export default function TrialEndingSoonEmail({ manageLink }) {
   return (
@@ -29,11 +33,11 @@ export default function TrialEndingSoonEmail({ manageLink }) {
           >
             <Section>
               <Row className="m-0 mt-3">
-                <Column className="w-12" align="left">
+                <Column className="w-16" align="left">
                   <Img
                     src="https://dummyimage.com/40x40/d156c3/000000.jpg"
                     alt="App Logo"
-                    className="w-12"
+                    className="w-14"
                     style={{ borderRadius: "40px" }}
                   />
                 </Column>
