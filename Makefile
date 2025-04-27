@@ -7,6 +7,7 @@ run:
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
+	@make email-build
 	@npm run build
 	@make go-build
 
@@ -15,7 +16,7 @@ vite:
 
 ifeq ($(OS),Windows_NT)
 air:
-	@air -build.cmd "go build -o backend/bin/reservations.exe backend/cmd/main.go" -build.bin "./backend/bin/reservations.exe"
+	@air -build.cmd "go build -o backend/bin/reservations.exe backend/cmd/main.go" -build.bin "backend\bin\reservations.exe"
 
 go-build:
 	@go build -o backend/bin/reservations.exe backend/cmd/main.go
@@ -31,6 +32,12 @@ endif
 
 tailwindcss:
 	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
+
+email:
+	@npx email dev --dir "backend/emails/templates"
+
+email-build:
+	@npx email export --dir "backend/emails/templates" --outDir "backend/out" --pretty
 
 db:
 	@docker start postgresdb

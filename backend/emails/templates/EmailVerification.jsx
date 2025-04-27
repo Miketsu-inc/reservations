@@ -6,7 +6,6 @@ import {
   Heading,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Row,
@@ -15,9 +14,10 @@ import {
   Text,
 } from "@react-email/components";
 import React from "react";
-import ReactDom from "react-dom";
+import Footer from "../components/Footer";
+import LogoHeader from "../components/LogoHeader";
 
-void (React, ReactDom);
+void React;
 
 export default function EmailVerification() {
   const code = "141592";
@@ -32,23 +32,7 @@ export default function EmailVerification() {
             className="mx-auto max-w-md bg-white p-4"
             style={{ borderRadius: "6px" }}
           >
-            <Section>
-              <Row className="m-0 mt-4">
-                <Column className="w-16" align="left">
-                  <Img
-                    src="https://dummyimage.com/40x40/d156c3/000000.jpg"
-                    alt="App Logo"
-                    className="w-14"
-                    style={{ borderRadius: "40px" }}
-                  />
-                </Column>
-                <Column align="left" className="pl-3">
-                  <Text className="m-0 text-[16px] font-medium text-[#333333]">
-                    Company Name
-                  </Text>
-                </Column>
-              </Row>
-            </Section>
+            <LogoHeader />
             <Section className="py-4">
               <Heading className="mb-2 text-center text-2xl font-bold text-gray-800">
                 Erősitsd meg az email címed
@@ -94,36 +78,7 @@ export default function EmailVerification() {
               </Text>
               <Hr className="mt-2" style={{ border: "1px solid #e5e7b" }} />
             </Section>
-            <Section className="px-5 pt-5 text-gray-500">
-              <Text className="m-0 text-center text-[12px]">
-                © {new Date().getFullYear()} Cég Neve
-              </Text>
-              <Text className="m-0 text-center text-[12px]">
-                123 Utca Neve, Város, IR 12345
-              </Text>
-              <Text className="mt-2 text-center text-[12px]">
-                <Link
-                  href="https://company.com/privacy"
-                  className="text-gray-500"
-                >
-                  <u>Privacy Policy</u>
-                </Link>
-                {" • "}
-                <Link
-                  href="https://company.com/terms"
-                  className="text-gray-500"
-                >
-                  <u>Terms of Service</u>
-                </Link>
-                {" • "}
-                <Link
-                  href="https://company.com/unsubscribe"
-                  className="text-gray-500"
-                >
-                  <u>Unsubscribe</u>
-                </Link>
-              </Text>
-            </Section>
+            <Footer />
           </Container>
         </Body>
       </Html>
