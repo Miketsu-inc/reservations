@@ -37,7 +37,7 @@ email:
 	@npx email dev --dir "backend/emails/templates"
 
 email-build:
-	@npx email export --dir "backend/emails/templates" --outDir "backend/out" --pretty
+	@npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty
 
 db:
 	@docker start postgresdb

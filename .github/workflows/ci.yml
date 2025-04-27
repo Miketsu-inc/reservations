@@ -51,7 +51,7 @@ jobs:
         run: npm run test
 
       - name: Email build
-        run: npx email export --dir "backend/emails/templates" --outDir "backend/out" --pretty
+        run: npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty
 
       - name: Go build
         run: go build -o backend/bin/reservations backend/cmd/main.go

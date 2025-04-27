@@ -25,4 +25,4 @@ backend/tmp
 backend/cmd/*/testdata
 
 # generated html email templates
-backend/out 
+backend/emails/out 
