@@ -35,10 +35,7 @@ JWT_ACCESS_EXP_MIN
 JWT_REFRESH_SECRET
 JWT_REFRESH_EXP_MIN
 
-EMAIL_ADDRESS
-EMAIL_PASSWORD
-SMTP_HOST
-SMTP_PORT
+RESEND_API_TEST
 ```
 
 Create a PostgreSQL database in docker using the create-db command.
