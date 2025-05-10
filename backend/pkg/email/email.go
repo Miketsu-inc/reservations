@@ -22,7 +22,7 @@ var cfg *config.Config = config.LoadEnvVars()
 func init() {
 	templateFS := emails.TemplateFS()
 
-	fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
+err := fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
@@ -36,6 +36,7 @@ func init() {
 		}
 		return nil
 	})
+assert.Nil(err, fmt.Sprintf("Error walking through templates: %v", err))
 }
 
 func executeTemplate(name string, data interface{}) (bytes.Buffer, error) {
