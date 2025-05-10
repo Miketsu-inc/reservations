@@ -24,10 +24,7 @@ type Config struct {
 	JWT_REFRESH_SECRET  string
 	JWT_REFRESH_EXP_MIN int
 
-	EMAIL_ADDRESS  string
-	EMAIL_PASSWORD string
-	SMTP_HOST      string
-	SMTP_PORT      string
+	RESEND_API_TEST string
 }
 
 var instance *Config
@@ -71,17 +68,8 @@ func LoadEnvVars() *Config {
 		jwt_refresh_exp_min, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_EXP_MIN"))
 		assert.True(jwt_refresh_exp_min != 0, "JWT_REFRESH_EXP_MIN environment variable could not be found")
 
-		email_address := os.Getenv("EMAIL_ADDRESS")
-		assert.True(email_address != "", "EMAIL_ADDRESS environment variable could not be found")
-
-		email_password := os.Getenv("EMAIL_PASSWORD")
-		assert.True(email_password != "", "EMAIL_PASSWORD environment variable could not be found")
-
-		smtp_host := os.Getenv("SMTP_HOST")
-		assert.True(smtp_host != "", "SMTP_HOST environment variable could not be found")
-
-		smtp_port := os.Getenv("SMTP_PORT")
-		assert.True(smtp_port != "", "SMTP_PORT environment variable could not be found")
+		resend_api_test := os.Getenv("RESEND_API_TEST")
+		assert.True(resend_api_test != "", "RESEND_API_TEST enviroment variable could not be found")
 
 		instance = &Config{
 			PORT:                port,
@@ -96,10 +84,7 @@ func LoadEnvVars() *Config {
 			JWT_ACCESS_EXP_MIN:  jwt_access_exp_min,
 			JWT_REFRESH_SECRET:  jwt_refresh_secret,
 			JWT_REFRESH_EXP_MIN: jwt_refresh_exp_min,
-			EMAIL_ADDRESS:       email_address,
-			EMAIL_PASSWORD:      email_password,
-			SMTP_HOST:           smtp_host,
-			SMTP_PORT:           smtp_port,
+			RESEND_API_TEST:     resend_api_test,
 		}
 	})
 	return instance
