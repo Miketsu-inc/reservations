@@ -199,7 +199,7 @@ function CustomersPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center">
+    <div className="flex h-screen justify-center px-4 py-2 md:px-0 md:py-0">
       <CustomerModal
         data={customerModalData}
         isOpen={showCustomerModal}
@@ -225,36 +225,38 @@ function CustomersPage() {
           })
         }
       />
-      <div className="flex w-full flex-col gap-5">
-        <ServerError error={serverError} />
+      <div className="flex w-full flex-col gap-5 py-4">
         <p className="text-xl">Customers</p>
-        <CustomersTable
-          customersData={loaderData.customers}
-          onNewItem={() => {
-            // the first condition is necessary for it to not cause an error
-            // in case of a new item
-            if (customerModalData && customerModalData.id) {
-              setCustomerModalData();
-            }
-            setTimeout(() => setShowCustomerModal(true), 0);
-          }}
-          onTransfer={(index) => {
-            setTransferModalData({
-              fromIndex: index,
-              customers: loaderData.customers,
-            });
-            setTimeout(() => setShowTransferModal(true), 0);
-          }}
-          onEdit={(customer) => {
-            setCustomerModalData(customer);
-            setTimeout(() => setShowCustomerModal(true), 0);
-          }}
-          onDelete={deleteHandler}
-          onBlackList={(customer) => {
-            setBlacklistModalData(customer);
-            setTimeout(() => setShowBlacklistModal(true), 0);
-          }}
-        />
+        <ServerError error={serverError} />
+        <div className="h-2/3 w-full">
+          <CustomersTable
+            customersData={loaderData.customers}
+            onNewItem={() => {
+              // the first condition is necessary for it to not cause an error
+              // in case of a new item
+              if (customerModalData && customerModalData.id) {
+                setCustomerModalData();
+              }
+              setTimeout(() => setShowCustomerModal(true), 0);
+            }}
+            onTransfer={(index) => {
+              setTransferModalData({
+                fromIndex: index,
+                customers: loaderData.customers,
+              });
+              setTimeout(() => setShowTransferModal(true), 0);
+            }}
+            onEdit={(customer) => {
+              setCustomerModalData(customer);
+              setTimeout(() => setShowCustomerModal(true), 0);
+            }}
+            onDelete={deleteHandler}
+            onBlackList={(customer) => {
+              setBlacklistModalData(customer);
+              setTimeout(() => setShowBlacklistModal(true), 0);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

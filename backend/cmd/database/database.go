@@ -83,6 +83,8 @@ type PostgreSQL interface {
 	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlot, error)
 	// Get the merchant's timezone by it's id
 	GetMerchantTimezoneById(context.Context, uuid.UUID) (string, error)
+	// Get the dashboard data by the merchant's id for a period of days
+	GetDashboardData(context.Context, uuid.UUID, time.Time, int) (DashboardData, error)
 
 	// -- Location --
 

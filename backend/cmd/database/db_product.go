@@ -144,12 +144,12 @@ type PublicProduct struct {
 
 // TODO: this should use pgx helpers
 func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]PublicProduct, error) {
-	query := `select
-	p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
+	query := `
+	select p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
 	where p.merchant_id = $1 and deleted_on is null
-	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit;`
+	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit`
 
 	rows, _ := s.db.Query(ctx, query, merchantId)
 	products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (PublicProduct, error) {

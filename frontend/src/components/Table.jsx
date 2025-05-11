@@ -32,8 +32,8 @@ export default function Table({
   }, [columnsToAutoSize]);
 
   return (
-    <div className="h-full w-full">
-      <div className="flex flex-col-reverse justify-between gap-2 py-2 sm:flex-row sm:gap-0">
+    <div className="md:bg-layer_bg flex h-full w-full flex-1 flex-col md:rounded-lg md:px-4 md:py-4">
+      <div className="flex flex-col-reverse justify-between gap-2 pb-2 sm:flex-row sm:gap-0">
         <SearchInput
           searchText={searchText}
           onChange={(text) => setSearchText(text)}
@@ -55,32 +55,30 @@ export default function Table({
           </Button>
         </div>
       </div>
-      <div className="h-2/3">
-        <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
-          <AgGridReact
-            ref={tableRef}
-            theme={themeAlpine}
-            quickFilterText={searchText}
-            modules={[
-              ClientSideRowModelModule,
-              QuickFilterModule,
-              CellStyleModule,
-              ColumnApiModule,
-              ColumnAutoSizeModule,
-            ]}
-            rowData={rowData}
-            columnDefs={columnDef}
-            defaultColDef={{ sortable: true, suppressMovable: true }}
-            getRowId={(params) => String(params.data.id)}
-            onFirstDataRendered={(params) => {
-              params.api.autoSizeColumns(columnsToAutoSize);
-            }}
-            onGridReady={() => setIsLoading(false)}
-            // suppressColumnVirtualisation is needed for autosizing to work on mobile
-            // if disabled only columns in view will get autosized
-            suppressColumnVirtualisation={true}
-          />
-        </div>
+      <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
+        <AgGridReact
+          ref={tableRef}
+          theme={themeAlpine}
+          quickFilterText={searchText}
+          modules={[
+            ClientSideRowModelModule,
+            QuickFilterModule,
+            CellStyleModule,
+            ColumnApiModule,
+            ColumnAutoSizeModule,
+          ]}
+          rowData={rowData}
+          columnDefs={columnDef}
+          defaultColDef={{ sortable: true, suppressMovable: true }}
+          getRowId={(params) => String(params.data.id)}
+          onFirstDataRendered={(params) => {
+            params.api.autoSizeColumns(columnsToAutoSize);
+          }}
+          onGridReady={() => setIsLoading(false)}
+          // suppressColumnVirtualisation is needed for autosizing to work on mobile
+          // if disabled only columns in view will get autosized
+          suppressColumnVirtualisation={true}
+        />
       </div>
     </div>
   );

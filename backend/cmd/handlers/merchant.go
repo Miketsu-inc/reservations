@@ -914,3 +914,43 @@ func (m *Merchant) GetBusinessHours(w http.ResponseWriter, r *http.Request) {
 
 	httputil.Success(w, http.StatusOK, buseinessHours)
 }
+
+func (m *Merchant) GetDashboardData(w http.ResponseWriter, r *http.Request) {
+	dateStr := r.URL.Query().Get("date")
+	periodStr := r.URL.Query().Get("period")
+
+	date, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to date: %s", err.Error()))
+		return
+	}
+
+	period, err := strconv.Atoi(periodStr)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("period could not be converted to int: %s", err.Error()))
+		return
+	}
+
+	if period != 7 && period != 30 {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid period: %d", period))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	fmt.Println(merchantId)
+
+	dashboardData, err := m.Postgresdb.GetDashboardData(r.Context(), merchantId, date, period)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving dashboard data: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, dashboardData)
+}

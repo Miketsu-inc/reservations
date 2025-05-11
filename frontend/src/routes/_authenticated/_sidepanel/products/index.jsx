@@ -122,7 +122,7 @@ function ProductsPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center">
+    <div className="flex h-screen justify-center px-4 py-2 md:px-0 md:py-0">
       <ProductModal
         data={modalData}
         isOpen={showProductModal}
@@ -130,26 +130,28 @@ function ProductsPage() {
         onSubmit={modalHandler}
         serviceData={loaderData.data.services}
       />
-      <div className="flex w-full flex-col gap-5">
-        <ServerError error={serverError} />
+      <div className="flex w-full flex-col gap-5 py-4">
         <p className="text-xl">Products</p>
-        <ProductsTable
-          products={loaderData.data.products}
-          serviceData={loaderData.data.services}
-          onNewItem={() => {
-            // the first condition is necessary for it to not cause an error
-            // in case of a new item
-            if (modalData && modalData.id) {
-              setModalData();
-            }
-            setTimeout(() => setShowProductModal(true), 0);
-          }}
-          onEdit={(product) => {
-            setModalData(product);
-            setTimeout(() => setShowProductModal(true), 0);
-          }}
-          onDelete={deleteHandler}
-        />
+        <ServerError error={serverError} />
+        <div className="h-2/3 w-full">
+          <ProductsTable
+            products={loaderData.data.products}
+            serviceData={loaderData.data.services}
+            onNewItem={() => {
+              // the first condition is necessary for it to not cause an error
+              // in case of a new item
+              if (modalData && modalData.id) {
+                setModalData();
+              }
+              setTimeout(() => setShowProductModal(true), 0);
+            }}
+            onEdit={(product) => {
+              setModalData(product);
+              setTimeout(() => setShowProductModal(true), 0);
+            }}
+            onDelete={deleteHandler}
+          />
+        </div>
       </div>
     </div>
   );

@@ -172,10 +172,10 @@ export default function Calendar({
   }, [eventData]);
 
   return (
-    <div className="flex h-[85svh] flex-col md:h-fit md:max-h-[90svh]">
-      <div className="flex flex-col pb-2 md:flex-row md:gap-2">
+    <div className="flex h-[85svh] flex-col px-4 py-2 md:h-fit md:max-h-[90svh] md:px-0 md:py-0">
+      <div className="flex flex-col py-4 md:flex-row md:gap-2">
         <div className="flex w-full flex-col justify-between md:flex-row md:items-center">
-          <p className="py-2 text-2xl whitespace-nowrap md:text-3xl">
+          <p className="text-2xl whitespace-nowrap md:text-3xl">
             {calendarTitle}
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
@@ -192,7 +192,7 @@ export default function Calendar({
                 type="button"
                 onClick={() => navButtonHandler("prev")}
               >
-                <BackArrowIcon styles="w-8 h-8 stroke-current" />
+                <BackArrowIcon styles="size-8 stroke-current" />
               </button>
               <Button
                 variant="primary"
@@ -205,7 +205,7 @@ export default function Calendar({
                 type="button"
                 onClick={() => navButtonHandler("next")}
               >
-                <BackArrowIcon styles="w-8 h-8 stroke-current rotate-180" />
+                <BackArrowIcon styles="size-8 stroke-current rotate-180" />
               </button>
             </div>
             <Select
@@ -217,7 +217,7 @@ export default function Calendar({
           </div>
         </div>
       </div>
-      <div className="light bg-bg_color text-text_color max-h-full w-full overflow-auto">
+      <div className="light bg-bg_color text-text_color max-h-full w-full overflow-auto rounded-lg">
         <FullCalendar
           ref={calendarRef}
           plugins={[

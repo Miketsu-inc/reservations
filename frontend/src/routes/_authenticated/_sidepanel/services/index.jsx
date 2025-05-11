@@ -126,32 +126,34 @@ function ServicesPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center">
+    <div className="flex h-screen justify-center px-4 py-2 md:px-0 md:py-0">
       <ServiceModal
         data={modalData}
         isOpen={showServiceModal}
         onClose={() => setShowServiceModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="flex w-full flex-col gap-5">
-        <ServerError error={serverError} />
+      <div className="flex w-full flex-col gap-5 py-4">
         <p className="text-xl">Services</p>
-        <ServicesTable
-          servicesData={loaderData.services}
-          onNewItem={() => {
-            // the first condition is necessary for it to not cause an error
-            // in case of a new item
-            if (modalData && modalData.id) {
-              setModalData();
-            }
-            setTimeout(() => setShowServiceModal(true), 0);
-          }}
-          onEdit={(service) => {
-            setModalData(service);
-            setTimeout(() => setShowServiceModal(true), 0);
-          }}
-          onDelete={deleteHandler}
-        />
+        <ServerError error={serverError} />
+        <div className="h-2/3 w-full">
+          <ServicesTable
+            servicesData={loaderData.services}
+            onNewItem={() => {
+              // the first condition is necessary for it to not cause an error
+              // in case of a new item
+              if (modalData && modalData.id) {
+                setModalData();
+              }
+              setTimeout(() => setShowServiceModal(true), 0);
+            }}
+            onEdit={(service) => {
+              setModalData(service);
+              setTimeout(() => setShowServiceModal(true), 0);
+            }}
+            onDelete={deleteHandler}
+          />
+        </div>
       </div>
     </div>
   );

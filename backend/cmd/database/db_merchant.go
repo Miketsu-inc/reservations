@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -402,4 +403,211 @@ func (s *service) GetMerchantTimezoneById(ctx context.Context, merchantId uuid.U
 	}
 
 	return timzone, nil
+}
+
+type LowStockProduct struct {
+	Id            int    `json:"id" db:"id"`
+	Name          string `json:"name" db:"name"`
+	StockQuantity int    `json:"stock_quantity" db:"stock_quantity"`
+	UsagePerUnit  int    `json:"usage_per_unit" db:"usage_per_unit"`
+}
+
+type DashboardData struct {
+	UpcomingAppointments []AppointmentDetails `json:"upcoming_appointments"`
+	LatestBookings       []AppointmentDetails `json:"latest_bookings"`
+	LowStockProducts     []LowStockProduct    `json:"low_stock_products"`
+	Statistics           DashboardStatistics  `json:"statistics"`
+}
+
+func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, date time.Time, period int) (DashboardData, error) {
+	var dd DashboardData
+
+	utcDate := date.UTC()
+	currPeriodStart := utcDate.AddDate(0, 0, -period)
+	prevPeriodStart := currPeriodStart.AddDate(0, 0, -period)
+
+	// UpcomingAppointments
+	query := `
+	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	s.name as service_name, s.color as service_color, s.duration as service_duration, u.first_name, u.last_name, u.phone_number
+	from "Appointment" a
+	join "Service" s on a.service_id = s.id
+	join "User" u on a.user_id = u.id
+	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
+	order by a.from_date
+	limit 5`
+
+	var err error
+	rows, _ := s.db.Query(ctx, query, merchantId, utcDate)
+	dd.UpcomingAppointments, err = pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentDetails])
+	if err != nil {
+		return DashboardData{}, err
+	}
+
+	// LatestBookings
+	query2 := `
+	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	s.name as service_name, s.color as service_color, s.duration as service_duration, u.first_name, u.last_name, u.phone_number
+	from "Appointment" a
+	join "Service" s on a.service_id = s.id
+	join "User" u on a.user_id = u.id
+	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
+	order by a.id desc
+	limit 5`
+
+	rows, _ = s.db.Query(ctx, query2, merchantId, utcDate)
+	dd.LatestBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentDetails])
+	if err != nil {
+		return DashboardData{}, err
+	}
+
+	// LowStockProducts
+	query3 := `
+	select p.id, p.name, p.stock_quantity, p.usage_per_unit
+	from "Product" p
+	where p.merchant_id = $1 and p.stock_quantity < 5 and deleted_on is null
+	order by p.stock_quantity
+	`
+
+	rows, _ = s.db.Query(ctx, query3, merchantId)
+	dd.LowStockProducts, err = pgx.CollectRows(rows, pgx.RowToStructByName[LowStockProduct])
+	if err != nil {
+		return DashboardData{}, err
+	}
+
+	dd.Statistics, err = s.getDashboardStatistics(ctx, merchantId, utcDate, currPeriodStart, prevPeriodStart)
+	if err != nil {
+		return DashboardData{}, err
+	}
+
+	return dd, nil
+}
+
+type RevenueStat struct {
+	Revenue int `json:"revenue"`
+	Day     int `json:"day"`
+}
+
+type DashboardStatistics struct {
+	Revenue               []RevenueStat `json:"revenue"`
+	RevenueSum            int           `json:"revenue_sum"`
+	RevenueChange         int           `json:"revenue_change"`
+	Appointments          int           `json:"appointments"`
+	AppointmentsChange    int           `json:"appointments_change"`
+	Cancellations         int           `json:"cancellations"`
+	CancellationsChange   int           `json:"cancellations_change"`
+	AverageDuration       int           `json:"average_duration"`
+	AverageDurationChange int           `json:"average_duration_change"`
+}
+
+func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UUID, date, currPeriodStart, prevPeriodStart time.Time) (DashboardStatistics, error) {
+	query := `
+	WITH base AS (
+    SELECT
+        from_date::date AS day,
+        price_then,
+        EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
+        cancelled_by_user_on is not null as cancelled_by_user,
+        (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
+    FROM "Appointment"
+    WHERE merchant_id = $1
+	),
+	current AS (
+		SELECT
+			day,
+			SUM(price_then) AS revenue,
+			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
+			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
+			AVG(duration) FILTER (WHERE NOT cancelled) AS avg_duration
+		FROM base
+		WHERE day >= $2 AND day < $3
+		GROUP BY day
+	),
+	current_totals AS (
+		SELECT
+			COALESCE(SUM(revenue), 0) AS revenue_sum,
+			COALESCE(SUM(appointments), 0) AS appointments,
+			COALESCE(SUM(cancellations), 0) AS cancellations,
+			COALESCE(CAST(AVG(avg_duration) AS INTEGER), 0) AS average_duration
+		FROM current
+	),
+	previous AS (
+		SELECT
+			COALESCE(SUM(price_then), 0) AS revenue_sum,
+			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
+			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
+			CAST(AVG(duration) FILTER (WHERE NOT cancelled) AS INTEGER) AS average_duration
+		FROM base
+		WHERE day >= $4 AND day < $5
+	)
+	SELECT
+		ct.revenue_sum, p.revenue_sum,
+		ct.appointments, p.appointments,
+		ct.cancellations, p.cancellations,
+		COALESCE(ct.average_duration, 0), COALESCE(p.average_duration, 0)
+	FROM current_totals ct, previous p;
+	`
+
+	var stats DashboardStatistics
+
+	var (
+		currRevenue, prevRevenue             int
+		currAppointments, prevAppointments   int
+		currCancellations, prevCancellations int
+		currAvgDuration, prevAvgDuration     int
+	)
+
+	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date, prevPeriodStart, currPeriodStart).Scan(
+		&currRevenue, &prevRevenue,
+		&currAppointments, &prevAppointments,
+		&currCancellations, &prevCancellations,
+		&currAvgDuration, &prevAvgDuration,
+	)
+	if err != nil {
+		return DashboardStatistics{}, err
+	}
+
+	stats.RevenueSum = currRevenue
+	stats.Appointments = currAppointments
+	stats.Cancellations = currCancellations
+	stats.AverageDuration = currAvgDuration
+
+	stats.RevenueChange = utils.CalculatePercentChange(prevRevenue, currRevenue)
+	stats.AppointmentsChange = utils.CalculatePercentChange(prevAppointments, currAppointments)
+	stats.CancellationsChange = utils.CalculatePercentChange(prevCancellations, currCancellations)
+	stats.AverageDurationChange = utils.CalculatePercentChange(prevAvgDuration, currAvgDuration)
+
+	query2 := `
+	SELECT
+		EXTRACT(DAY FROM d.day)::int AS day,
+		COALESCE(SUM(a.price_then), 0)::int AS revenue
+	FROM generate_series($2::date, $3::date, interval '1 day') AS d(day)
+	LEFT JOIN "Appointment" a ON date(a.from_date) = d.day
+		AND a.cancelled_by_user_on IS NULL
+		AND a.cancelled_by_merchant_on IS NULL
+		AND a.merchant_id = $1
+	GROUP BY d.day
+	ORDER BY d.day;
+	`
+
+	rows, err := s.db.Query(ctx, query2, merchantId, currPeriodStart, date)
+	if err != nil {
+		return DashboardStatistics{}, err
+	}
+	// nolint:errcheck
+	defer rows.Close()
+
+	for rows.Next() {
+		var day int
+		var revenue int
+		if err := rows.Scan(&day, &revenue); err != nil {
+			return stats, err
+		}
+		stats.Revenue = append(stats.Revenue, RevenueStat{
+			Revenue: revenue,
+			Day:     day,
+		})
+	}
+
+	return stats, nil
 }

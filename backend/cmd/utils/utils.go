@@ -58,3 +58,13 @@ func ParsePgArrayToInt(arrayStr string) ([]int, error) {
 	}
 	return result, nil
 }
+
+func CalculatePercentChange(previous int, current int) int {
+	if previous == 0 {
+		if current > 0 {
+			return 100
+		}
+		return 0
+	}
+	return int(float64(current-previous) / float64(previous) * 100)
+}

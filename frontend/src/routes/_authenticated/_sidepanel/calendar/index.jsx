@@ -144,17 +144,15 @@ function CalendarPage() {
   }, [showToast]);
 
   return (
-    <div>
-      <Suspense fallback={<Loading />}>
-        <Calendar
-          router={router}
-          view={search.view}
-          start={search.start}
-          eventData={loaderData.events}
-          preferences={preferences}
-          businessHours={businessHours}
-        />
-      </Suspense>
-    </div>
+    <Suspense fallback={<Loading />}>
+      <Calendar
+        router={router}
+        view={search.view}
+        start={search.start}
+        eventData={loaderData.events}
+        preferences={preferences}
+        businessHours={businessHours}
+      />
+    </Suspense>
   );
 }

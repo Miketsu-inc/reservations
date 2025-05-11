@@ -1,4 +1,10 @@
-import { SCREEN_LG, SCREEN_MD, SCREEN_SM, SCREEN_XL } from "./constants";
+import {
+  SCREEN_2XL,
+  SCREEN_LG,
+  SCREEN_MD,
+  SCREEN_SM,
+  SCREEN_XL,
+} from "./constants";
 
 export function getBreakPoint(windowSize) {
   if (windowSize <= SCREEN_SM) {
@@ -9,7 +15,9 @@ export function getBreakPoint(windowSize) {
     return "lg";
   } else if (windowSize > SCREEN_LG && windowSize <= SCREEN_XL) {
     return "xl";
-  } else if (windowSize > SCREEN_XL) {
+  } else if (windowSize > SCREEN_XL && windowSize <= SCREEN_2XL) {
     return "2xl";
+  } else if (windowSize > SCREEN_2XL) {
+    return "3xl";
   }
 }

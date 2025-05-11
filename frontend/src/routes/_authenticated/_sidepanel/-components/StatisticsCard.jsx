@@ -1,0 +1,19 @@
+import InfoIcon from "@icons/InfoIcon";
+import StatisticsChangeIndicator from "./StatisticsChangeIndicator";
+
+export default function StatisticsCard({ title, text, percent }) {
+  return (
+    <div className="bg-layer_bg h-full flex-1 rounded-lg p-4 shadow-sm">
+      <div className="flex h-full flex-col gap-3">
+        <div className="flex flex-row items-center gap-1">
+          <span className="text-sm whitespace-nowrap">{title}</span>
+          <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-lg font-semibold">{text}</span>
+          <StatisticsChangeIndicator styles="text-xs" percent={percent} />
+        </div>
+      </div>
+    </div>
+  );
+}

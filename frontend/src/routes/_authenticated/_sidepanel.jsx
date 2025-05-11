@@ -38,13 +38,17 @@ function SidePanelLayout() {
   }, []);
 
   useEffect(() => {
-    if (isWindowSmall) {
+    if (windowSize === "sm" || windowSize === "md") {
       setIsOpen(false);
       setIsCollapsed(false);
+    } else if (windowSize === "lg") {
+      setIsOpen(true);
+      setIsCollapsed(true);
     } else {
       setIsOpen(true);
+      setIsCollapsed(false);
     }
-  }, [isWindowSmall, setIsOpen, setIsCollapsed]);
+  }, [windowSize]);
 
   function closeSidePanelHandler() {
     if (isWindowSmall) {
@@ -203,7 +207,7 @@ function SidePanelLayout() {
             <Breadcrumbs />
           </div>
         )}
-        <div className="bg-layer_bg rounded-lg px-4 py-2">
+        <div>
           <Outlet />
         </div>
       </div>
