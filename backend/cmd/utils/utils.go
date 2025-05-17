@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -67,4 +68,8 @@ func CalculatePercentChange(previous int, current int) int {
 		return 0
 	}
 	return int(float64(current-previous) / float64(previous) * 100)
+}
+
+func TruncateToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }

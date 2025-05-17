@@ -413,6 +413,8 @@ type LowStockProduct struct {
 }
 
 type DashboardData struct {
+	PeriodStart          time.Time            `json:"period_start"`
+	PeriodEnd            time.Time            `json:"period_end"`
 	UpcomingAppointments []AppointmentDetails `json:"upcoming_appointments"`
 	LatestBookings       []AppointmentDetails `json:"latest_bookings"`
 	LowStockProducts     []LowStockProduct    `json:"low_stock_products"`
@@ -425,6 +427,9 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	utcDate := date.UTC()
 	currPeriodStart := utcDate.AddDate(0, 0, -period)
 	prevPeriodStart := currPeriodStart.AddDate(0, 0, -period)
+
+	dd.PeriodStart = utils.TruncateToDay(currPeriodStart)
+	dd.PeriodEnd = utils.TruncateToDay(utcDate)
 
 	// UpcomingAppointments
 	query := `
@@ -484,8 +489,8 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 }
 
 type RevenueStat struct {
-	Revenue int `json:"revenue"`
-	Day     int `json:"day"`
+	Value int       `json:"value" db:"value"`
+	Day   time.Time `json:"day" db:"day"`
 }
 
 type DashboardStatistics struct {
@@ -579,34 +584,19 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 
 	query2 := `
 	SELECT
-		EXTRACT(DAY FROM d.day)::int AS day,
-		COALESCE(SUM(a.price_then), 0)::int AS revenue
-	FROM generate_series($2::date, $3::date, interval '1 day') AS d(day)
-	LEFT JOIN "Appointment" a ON date(a.from_date) = d.day
-		AND a.cancelled_by_user_on IS NULL
-		AND a.cancelled_by_merchant_on IS NULL
-		AND a.merchant_id = $1
-	GROUP BY d.day
-	ORDER BY d.day;
+		DATE(from_date) AS day,
+		COALESCE(SUM(price_then), 0)::int AS value
+	FROM "Appointment"
+	WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
+	AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
+	GROUP BY day
+	ORDER BY day
 	`
 
-	rows, err := s.db.Query(ctx, query2, merchantId, currPeriodStart, date)
+	rows, _ := s.db.Query(ctx, query2, merchantId, currPeriodStart, date)
+	stats.Revenue, err = pgx.CollectRows(rows, pgx.RowToStructByName[RevenueStat])
 	if err != nil {
 		return DashboardStatistics{}, err
-	}
-	// nolint:errcheck
-	defer rows.Close()
-
-	for rows.Next() {
-		var day int
-		var revenue int
-		if err := rows.Scan(&day, &revenue); err != nil {
-			return stats, err
-		}
-		stats.Revenue = append(stats.Revenue, RevenueStat{
-			Revenue: revenue,
-			Day:     day,
-		})
 	}
 
 	return stats, nil

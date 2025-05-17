@@ -2,7 +2,7 @@ import AreaChart from "@components/AreaChart";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { fillStatisticsWithDate, invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import AppointmentsList from "./-components/AppointmentsList";
@@ -131,7 +131,13 @@ function DashboardPage() {
               <div className="flex flex-row items-center gap-2 pl-4">
                 <p>Revenue</p>
               </div>
-              <AreaChart data={loaderData.data.statistics.revenue} />
+              <AreaChart
+                data={fillStatisticsWithDate(
+                  loaderData.data.statistics.revenue,
+                  loaderData.data.period_start,
+                  loaderData.data.period_end
+                )}
+              />
             </div>
           </div>
           <div className="flex flex-1 flex-col gap-2">

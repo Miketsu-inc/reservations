@@ -25,7 +25,7 @@ export default function AreaChart({ data }) {
         <Tooltip />
         <Area
           type="monotone"
-          dataKey="revenue"
+          dataKey="value"
           stroke="#8884d8"
           fillOpacity={1}
           fill="url(#colorUv)"
