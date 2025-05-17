@@ -8,7 +8,6 @@ import { useState } from "react";
 import AppointmentsList from "./-components/AppointmentsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import StatisticsCard from "./-components/StatisticsCard";
-import StatisticsChangeIndicator from "./-components/StatisticsChangeIndicator";
 import DeleteAppsModal from "./calendar/-components/DeleteAppsModal";
 
 async function fetchDashboardData(period) {
@@ -131,7 +130,6 @@ function DashboardPage() {
             <div className="bg-layer_bg flex h-80 flex-col gap-2 rounded-lg py-4 shadow-sm">
               <div className="flex flex-row items-center gap-2 pl-4">
                 <p>Revenue</p>
-                <StatisticsChangeIndicator styles="text-xs" percent={33} />
               </div>
               <AreaChart data={loaderData.data.statistics.revenue} />
             </div>

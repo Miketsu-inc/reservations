@@ -944,8 +944,6 @@ func (m *Merchant) GetDashboardData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(merchantId)
-
 	dashboardData, err := m.Postgresdb.GetDashboardData(r.Context(), merchantId, date, period)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving dashboard data: %s", err.Error()))

@@ -7,8 +7,8 @@ run:
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
-	@make email-build
 	@npm run build
+	@make email-build
 	@make go-build
 
 vite:
