@@ -1,4 +1,3 @@
-import AreaChart from "@components/AreaChart";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
@@ -7,6 +6,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import AppointmentsList from "./-components/AppointmentsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
+import RevenueChart from "./-components/RevenueChart";
 import StatisticsCard from "./-components/StatisticsCard";
 import DeleteAppsModal from "./calendar/-components/DeleteAppsModal";
 
@@ -127,11 +127,8 @@ function DashboardPage() {
                 <></>
               )}
             </div>
-            <div className="bg-layer_bg flex h-80 flex-col gap-2 rounded-lg py-4 shadow-sm">
-              <div className="flex flex-row items-center gap-2 pl-4">
-                <p>Revenue</p>
-              </div>
-              <AreaChart
+            <div className="bg-layer_bg flex h-80 flex-col gap-2 rounded-lg p-4 shadow-sm">
+              <RevenueChart
                 data={fillStatisticsWithDate(
                   loaderData.data.statistics.revenue,
                   loaderData.data.period_start,

@@ -71,7 +71,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             <div className="flex flex-row items-center gap-3">
               <span className="text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">
-                <ClockIcon styles="size-3 stroke-gray-500 dark:stroke-gray-400" />
+                <ClockIcon styles="size-3 fill-gray-500 dark:fill-gray-400" />
                 <span className="text-sm">{`${timeStringFromDate(new Date(appointment.from_date))} - ${timeStringFromDate(new Date(appointment.to_date))}`}</span>
               </div>
             </div>

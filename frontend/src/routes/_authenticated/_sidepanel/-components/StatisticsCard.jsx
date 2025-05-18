@@ -10,7 +10,7 @@ export default function StatisticsCard({ title, text, percent }) {
           <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
         </div>
         <div className="flex flex-col">
-          <span className="text-lg font-semibold">{text}</span>
+          <span className="text-lg font-medium">{text}</span>
           <StatisticsChangeIndicator styles="text-xs" percent={percent} />
         </div>
       </div>

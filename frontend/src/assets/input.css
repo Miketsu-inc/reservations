@@ -89,3 +89,16 @@
 .fc-timegrid-body table {
   width: 100% !important;
 }
+
+/*
+  remove focus outline which appears when clicking on a chart
+*/
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+}
+
+.recharts-wrapper svg:focus {
+  outline: none;
+  stroke: none;
+}
