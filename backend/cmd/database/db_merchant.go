@@ -424,9 +424,10 @@ type DashboardData struct {
 func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, date time.Time, period int) (DashboardData, error) {
 	var dd DashboardData
 
+	// -1 because the last is the current day
 	utcDate := date.UTC()
-	currPeriodStart := utcDate.AddDate(0, 0, -period)
-	prevPeriodStart := currPeriodStart.AddDate(0, 0, -period)
+	currPeriodStart := utcDate.AddDate(0, 0, -(period - 1))
+	prevPeriodStart := currPeriodStart.AddDate(0, 0, -(period - 1))
 
 	dd.PeriodStart = utils.TruncateToDay(currPeriodStart)
 	dd.PeriodEnd = utils.TruncateToDay(utcDate)
@@ -520,7 +521,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	current AS (
 		SELECT
 			day,
-			SUM(price_then) AS revenue,
+			SUM(price_then) FILTER (WHERE NOT cancelled) AS revenue,
 			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			AVG(duration) FILTER (WHERE NOT cancelled) AS avg_duration
@@ -538,7 +539,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	),
 	previous AS (
 		SELECT
-			COALESCE(SUM(price_then), 0) AS revenue_sum,
+			COALESCE(SUM(price_then) FILTER (WHERE NOT cancelled), 0) AS revenue_sum,
 			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			CAST(AVG(duration) FILTER (WHERE NOT cancelled) AS INTEGER) AS average_duration
