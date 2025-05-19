@@ -270,8 +270,11 @@ func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuratio
 			available := true
 
 			for _, appt := range reserved {
-				if appEnd.After(appt.From_date) && appStart.Before(appt.To_date) {
-					appStart = appt.To_date
+				reservedFromDate := appt.From_date.In(merchantTz)
+				reservedToDate := appt.To_date.In(merchantTz)
+
+				if appEnd.After(reservedFromDate) && appStart.Before(reservedToDate) {
+					appStart = reservedToDate
 					appEnd = appStart.Add(duration)
 
 					available = false
