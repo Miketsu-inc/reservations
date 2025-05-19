@@ -24,20 +24,22 @@ type Appointment struct {
 	CancelledByMerchantOn string    `json:"cancelled_by_merchant_on" db:"cancelled_by_merchant_on"`
 	CancellationReason    string    `json:"cancellation_reason" db:"cancellation_reason"`
 	TransferredTo         uuid.UUID `json:"transferred_to" db:"transferred_to"`
+	EmailId               uuid.UUID `json:"email_id" db:"email_id"`
 }
 
-func (s *service) NewAppointment(ctx context.Context, app Appointment) error {
+func (s *service) NewAppointment(ctx context.Context, app Appointment) (int, error) {
 	query := `
 	insert into "Appointment" (user_id, merchant_id, service_id, location_id, from_date, to_date, user_note, merchant_note, price_then, cost_then)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	`
+	returning id`
 
-	_, err := s.db.Exec(ctx, query, app.UserId, app.MerchantId, app.ServiceId, app.LocationId, app.FromDate, app.ToDate,
-		app.UserNote, app.MerchantNote, app.PriceThen, app.CostThen)
+	var id int
+	err := s.db.QueryRow(ctx, query, app.UserId, app.MerchantId, app.ServiceId, app.LocationId, app.FromDate, app.ToDate, app.UserNote, app.MerchantNote, app.PriceThen, app.CostThen).Scan(&id)
+
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
 func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_note string, from_date string, to_date string) error {
@@ -136,4 +138,48 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	}
 
 	return nil
+}
+
+func (s *service) UpdateEmailIdForAppointment(ctx context.Context, appointmentId int, emailId string) error {
+	emailUUID, err := uuid.Parse(emailId)
+	if err != nil {
+		return err
+	}
+
+	query := `
+	update "Appointment" set email_id = $1 where ID = $2`
+
+	_, err = s.db.Exec(ctx, query, emailUUID, appointmentId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type AppointmentEmailData struct {
+	FromDate      time.Time `json:"from_date" db:"from_date"`
+	ToDate        time.Time `json:"to_date" db:"to_date"`
+	ServiceName   string    `json:"service_name" db:"service_name"`
+	ShortLocation string    `json:"short_location" db:"short_location"`
+	UserEmail     string    `json:"user_email" db:"user_email"`
+	EmailId       uuid.UUID `json:"email_id" db:"email_id"`
+}
+
+func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId int) (AppointmentEmailData, error) {
+	query := `
+	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, 
+	l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location from "Appointment" a
+	join "Service" s on s.id = a.service_id
+	join "User" u on u.id = a.user_id
+	join "Location" l on l.id = location_id
+	where a.id = $1`
+
+	var data AppointmentEmailData
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.ShortLocation)
+	if err != nil {
+		return AppointmentEmailData{}, err
+	}
+
+	return data, nil
 }

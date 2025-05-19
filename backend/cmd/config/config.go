@@ -25,6 +25,7 @@ type Config struct {
 	JWT_REFRESH_EXP_MIN int
 
 	RESEND_API_TEST string
+	ENABLE_EMAILS   bool
 }
 
 var instance *Config
@@ -71,6 +72,9 @@ func LoadEnvVars() *Config {
 		resend_api_test := os.Getenv("RESEND_API_TEST")
 		assert.True(resend_api_test != "", "RESEND_API_TEST enviroment variable could not be found")
 
+		enable_emails, err := strconv.ParseBool(os.Getenv("ENABLE_EMAILS"))
+		assert.True(err == nil, "ENABLE_EMAILS enviroment variable could not be found")
+
 		instance = &Config{
 			PORT:                port,
 			APP_ENV:             app_env,
@@ -85,6 +89,7 @@ func LoadEnvVars() *Config {
 			JWT_REFRESH_SECRET:  jwt_refresh_secret,
 			JWT_REFRESH_EXP_MIN: jwt_refresh_exp_min,
 			RESEND_API_TEST:     resend_api_test,
+			ENABLE_EMAILS:       enable_emails,
 		}
 	})
 	return instance

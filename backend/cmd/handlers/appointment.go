@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -87,7 +89,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	from_date := timeStamp.Format(postgresTimeFormat)
 	to_date := toDate.Format(postgresTimeFormat)
 
-	if err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
+	appointmentId, err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:           0,
 		UserId:       userID,
 		MerchantId:   merchantId,
@@ -99,9 +101,60 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		MerchantNote: "",
 		PriceThen:    service.Price,
 		CostThen:     service.Cost,
-	}); err != nil {
+	})
+	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return
+	}
+
+	userInfo, err := a.Postgresdb.GetUserById(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not get email for the user: %s", err.Error()))
+		return
+	}
+
+	userLocation, err := time.LoadLocation(newApp.UserTz)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid timezone: %s", err.Error()))
+		return
+	}
+
+	timeStampUserTZ := timeStamp.In(userLocation)
+	toDateUserTZ := toDate.In(userLocation)
+
+	emailData := email.AppointmentConfirmationData{
+		Time:        timeStampUserTZ.Format("15:04") + " - " + toDateUserTZ.Format("15:04"),
+		Date:        timeStampUserTZ.Format("2006-01-02"),
+		Location:    location.PostalCode + " " + location.City + " " + location.Address,
+		ServiceName: service.Name,
+		TimeZone:    newApp.UserTz,
+		ModifyLink:  fmt.Sprintf("http://localhost:5173/settings/profile"),
+	}
+
+	err = email.AppointmentConfirmation(r.Context(), userInfo.Email, emailData)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the appointment: %s", err.Error()))
+		return
+	}
+
+	hoursUntilAppointment := time.Until(timeStamp).Hours()
+
+	if hoursUntilAppointment >= 24 {
+
+		reminderDate := timeStamp.Add(-24 * time.Hour)
+		email_id, err := email.AppointmentReminder(r.Context(), userInfo.Email, emailData, reminderDate)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+			return
+		}
+
+		if email_id != "" {
+			err = a.Postgresdb.UpdateEmailIdForAppointment(r.Context(), appointmentId, email_id)
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+				return
+			}
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -165,6 +218,49 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling appointment by merchant: %s", err.Error()))
 		return
+	}
+
+	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	emailData, err := a.Postgresdb.GetAppointmentDataForEmail(r.Context(), appId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
+		return
+	}
+
+	toDateMerchantTz := emailData.ToDate.In(merchantTz)
+	fromDateMerchantTz := emailData.FromDate.In(merchantTz)
+
+	err = email.AppointmentCancellation(r.Context(), emailData.UserEmail, email.AppointmentCancellationData{
+		Time:               fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
+		Date:               fromDateMerchantTz.Format("2006-01-02"),
+		Location:           emailData.ShortLocation,
+		ServiceName:        emailData.ServiceName,
+		TimeZone:           merchantTz.String(),
+		Reason:             cancelData.CancellationReason,
+		NewAppointmentLink: "http://localhost:5173/settings/profile",
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while sending cancellation email: %s", err.Error()))
+		return
+	}
+
+	if emailData.EmailId != uuid.Nil {
+		err = email.Cancel(emailData.EmailId.String())
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the scheduled email for the appointment: %s", err.Error()))
+			return
+		}
 	}
 }
 

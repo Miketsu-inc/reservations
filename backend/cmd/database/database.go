@@ -27,7 +27,7 @@ type PostgreSQL interface {
 	// -- Appointment --
 
 	// Insert a new Appointment to the database.
-	NewAppointment(context.Context, Appointment) error
+	NewAppointment(context.Context, Appointment) (int, error)
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
 	// Get all available times for reservations
@@ -38,6 +38,10 @@ type PostgreSQL interface {
 	TransferDummyAppointments(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
 	// Cancel appointment by merchant
 	CancelAppointmentByMerchant(context.Context, uuid.UUID, int, string) error
+	// Update the email id for an appointment
+	UpdateEmailIdForAppointment(context.Context, int, string) error
+	//Get appointment info for email sending
+	GetAppointmentDataForEmail(context.Context, int) (AppointmentEmailData, error)
 
 	// -- User --
 

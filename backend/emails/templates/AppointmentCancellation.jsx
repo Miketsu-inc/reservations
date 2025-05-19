@@ -20,14 +20,6 @@ import LogoHeader from "../components/LogoHeader";
 void React;
 
 export default function AppointmentCancellation() {
-  const date = "Szerda, Április 23";
-  const time = "14:30 - 15:15";
-  const serviceName = "Hajvágás és styling";
-  const location = "Szépség Szalon, Fő utca 45, Budapest";
-  const timeZone = "GMT +2 (Central European Summer Time)";
-  const cancellationReason =
-    "A szakember váratlanul megbetegedett, ezért nem tudja ellátni a szolgáltatást a megadott időpontban.";
-
   return (
     <Tailwind>
       <Html>
@@ -61,7 +53,7 @@ export default function AppointmentCancellation() {
               <Row>
                 <Column>
                   <Text className="m-0 text-xs font-medium tracking-wide text-gray-700 uppercase">
-                    {date}
+                    {"{{ .Date }}"}
                   </Text>
                 </Column>
                 <Column className="w-[100px]" align="right">
@@ -75,18 +67,22 @@ export default function AppointmentCancellation() {
                 </Column>
               </Row>
 
-              <Text className="mb-4 text-2xl font-bold text-black">{time}</Text>
-
-              <Text className="text-sm">
-                <span className="font-semibold">Időzóna:</span> {timeZone}
+              <Text className="mb-4 text-2xl font-bold text-black">
+                {"{{ .Time }}"}
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Szolgáltatás:</span>{" "}
-                {serviceName}
+                <span className="font-semibold">Időzóna: </span>
+                {"{{ .TimeZone }}"}
+              </Text>
+
+              <Text className="text-sm">
+                <span className="font-semibold">Szolgáltatás: </span>
+                {"{{ .ServiceType }}"}
               </Text>
               <Text className="text-sm">
-                <span className="font-semibold">Helyszín:</span> {location}
+                <span className="font-semibold">Helyszín: </span>
+                {"{{ .Location }}"}
               </Text>
             </Section>
 
@@ -100,7 +96,7 @@ export default function AppointmentCancellation() {
               <Text className="m-0 mb-[8px] text-sm font-semibold">
                 A lemondás oka:
               </Text>
-              <Text className="m-0 text-sm">{cancellationReason}</Text>
+              <Text className="m-0 text-sm"> {"{{  .Reason }}"} </Text>
             </Section>
 
             <Text className="mb-6 text-sm">
@@ -111,7 +107,7 @@ export default function AppointmentCancellation() {
 
             <Section className="my-8 text-center">
               <Button
-                href="https://example.com/manage"
+                href="{{ .NewAppointmentLink }}"
                 className="bg-blue-600 px-4 py-3 text-center text-[14px] font-medium text-white"
                 style={{
                   boxSizing: "border-box",

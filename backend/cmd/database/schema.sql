@@ -66,7 +66,8 @@ create table if not exists "Appointment" (
     cancelled_by_user_on     timestamptz,
     cancelled_by_merchant_on timestamptz,
     cancellation_reason      text,
-    transferred_to           uuid
+    transferred_to           uuid,
+    email_id                 uuid  
 );
 
 create table if not exists "Preferences" (

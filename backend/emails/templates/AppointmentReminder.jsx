@@ -18,12 +18,6 @@ import LogoHeader from "../components/LogoHeader";
 void React;
 
 export default function AppointmentReminder() {
-  const date = "Szerda, Április 23";
-  const time = "14:30 - 15:15";
-  const serviceName = "Hajvágás és styling";
-  const location = "Szépség Szalon, Fő utca 45, Budapest";
-  const timeZone = "GMT +2 (Central European Summer Time)";
-
   return (
     <Tailwind>
       <Html lang="hu" dir="ltr">
@@ -54,26 +48,30 @@ export default function AppointmentReminder() {
               }}
             >
               <Text className="text-xs font-medium tracking-wide text-black uppercase">
-                {date}
+                {"{{ .Date }}"}
               </Text>
-              <Text className="mb-4 text-2xl font-bold text-black">{time}</Text>
-
-              <Text className="text-sm">
-                <span className="font-semibold">Időzóna:</span> {timeZone}
+              <Text className="mb-4 text-2xl font-bold text-black">
+                {"{{ .Time }}"}
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Szolgáltatás:</span>{" "}
-                {serviceName}
+                <span className="font-semibold">Időzóna: </span>
+                {"{{ .TimeZone }}"}
+              </Text>
+
+              <Text className="text-sm">
+                <span className="font-semibold">Szolgáltatás: </span>
+                {"{{ .ServiceType }}"}
               </Text>
               <Text className="text-sm">
-                <span className="font-semibold">Helyszín:</span> {location}
+                <span className="font-semibold">Helyszín: </span>
+                {"{{ .Location }}"}
               </Text>
             </Section>
 
             <Section className="mb-8 text-center">
               <Button
-                href="https://example.com/manage"
+                href="{{ .ModifyLink }}"
                 className="bg-blue-600 px-4 py-3 text-center text-[14px] font-medium text-white"
                 style={{
                   boxSizing: "border-box",

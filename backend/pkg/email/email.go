@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+"time"
 
 	"html/template"
 
@@ -52,6 +53,9 @@ func executeTemplate(name string, data interface{}) (bytes.Buffer, error) {
 }
 
 func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string) error {
+if !cfg.ENABLE_EMAILS {
+		return nil
+	}
 
 	client := resend.NewClient(cfg.RESEND_API_TEST)
 
@@ -71,7 +75,11 @@ func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string)
 	return nil
 }
 
-func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText string, date string) error {
+func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText string, date string) (string, error) {
+	if !cfg.ENABLE_EMAILS {
+return "", nil
+	}
+
 	client := resend.NewClient(cfg.RESEND_API_TEST)
 
 	params := &resend.SendEmailRequest{
@@ -82,15 +90,19 @@ func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText str
 		ScheduledAt: date,
 	}
 
-	_, err := client.Emails.SendWithContext(ctx, params)
+	res, err := client.Emails.SendWithContext(ctx, params)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return res.Id, nil
 }
 
 func Cancel(emailId string) error {
+if !cfg.ENABLE_EMAILS {
+		return nil
+	}
+
 	client := resend.NewClient(cfg.RESEND_API_TEST)
 
 	_, err := client.Emails.Cancel(emailId)
@@ -101,6 +113,10 @@ func Cancel(emailId string) error {
 }
 
 func ReSchedule(emailId string, newDate string) error {
+if !cfg.ENABLE_EMAILS {
+		return nil
+	}
+
 	client := resend.NewClient(cfg.RESEND_API_TEST)
 
 	updateParams := &resend.UpdateEmailRequest{
@@ -147,5 +163,66 @@ func EmailVerification(ctx context.Context, to string, data EmailVerificationDat
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+type AppointmentConfirmationData struct {
+	Time        string `json:"time"`
+	Date        string `json:"date"`
+	Location    string `json:"location"`
+	ServiceName string `json:"service_name"`
+	TimeZone    string `json:"time_zone"`
+	ModifyLink  string `json:"modify_link"`
+}
+
+func AppointmentConfirmation(ctx context.Context, to string, data AppointmentConfirmationData) error {
+	subject := "Időpont megerősitve"
+
+	body, err := executeTemplate("AppointmentConfirmation", data)
+	assert.Nil(err, fmt.Sprintf("Error executing AppointmentConfirmation template: %s", err))
+
+	err = Send(ctx, to, body, subject)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AppointmentReminder(ctx context.Context, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
+	subject := "Időpont emlékeztető"
+
+	body, err := executeTemplate("AppointmentReminder", data)
+	assert.Nil(err, fmt.Sprintf("Error executing AppointmentReminder template: %s", err))
+
+	email_id, err := Schedule(ctx, to, body, subject, date.Format(time.RFC3339))
+	if err != nil {
+		return "", err
+	}
+
+	return email_id, nil
+}
+
+type AppointmentCancellationData struct {
+	Time               string `json:"time"`
+	Date               string `json:"date"`
+	Location           string `json:"location"`
+	ServiceName        string `json:"service_name"`
+	TimeZone           string `json:"time_zone"`
+	Reason             string `json:"reason"`
+	NewAppointmentLink string `json:"new_appointment_link"`
+}
+
+func AppointmentCancellation(ctx context.Context, to string, data AppointmentCancellationData) error {
+	subject := "Időpont törölve lett"
+
+	body, err := executeTemplate("AppointmentCancellation", data)
+	assert.Nil(err, fmt.Sprintf("Error executing AppointmentCancellation template: %s", err))
+
+	err = Send(ctx, to, body, subject)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
