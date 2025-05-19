@@ -128,7 +128,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		Location:    location.PostalCode + " " + location.City + " " + location.Address,
 		ServiceName: service.Name,
 		TimeZone:    newApp.UserTz,
-		ModifyLink:  fmt.Sprintf("http://localhost:5173/settings/profile"),
+		ModifyLink:  "http://localhost:5173/settings/profile",
 	}
 
 	err = email.AppointmentConfirmation(r.Context(), userInfo.Email, emailData)
