@@ -62,7 +62,7 @@ export default function AppointmentConfirmation() {
 
               <Text className="text-sm">
                 <span className="font-semibold">Szolgáltatás: </span>
-                {"{{ .ServiceType }}"}
+                {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">Helyszín: </span>

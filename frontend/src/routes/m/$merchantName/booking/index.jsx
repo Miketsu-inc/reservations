@@ -120,7 +120,6 @@ function SelectDateTime() {
           service_id: serviceId,
           location_id: locationId,
           timeStamp: timeStamp,
-          user_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
           user_note: userNote,
         }),
       });

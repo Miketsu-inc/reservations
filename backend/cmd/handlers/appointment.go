@@ -25,8 +25,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
-		UserTz       string `json:"user_tz" validate:"required,timezone"`
-		UserNote     string `json:"user_note"`
+				UserNote     string `json:"user_note"`
 	}
 	var newApp NewAppointment
 
@@ -113,21 +112,27 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userLocation, err := time.LoadLocation(newApp.UserTz)
+	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid timezone: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
 		return
 	}
 
-	timeStampUserTZ := timeStamp.In(userLocation)
-	toDateUserTZ := toDate.In(userLocation)
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	toDateMerchantTz := toDate.In(merchantTz)
+	fromDateMerchantTz := timeStamp.In(merchantTz)
 
 	emailData := email.AppointmentConfirmationData{
-		Time:        timeStampUserTZ.Format("15:04") + " - " + toDateUserTZ.Format("15:04"),
-		Date:        timeStampUserTZ.Format("2006-01-02"),
+		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
+		Date:        fromDateMerchantTz.Format("MONDAY, JANUARY 2"),
 		Location:    location.PostalCode + " " + location.City + " " + location.Address,
 		ServiceName: service.Name,
-		TimeZone:    newApp.UserTz,
+		TimeZone:    merchantTz.String(),
 		ModifyLink:  "http://localhost:5173/settings/profile",
 	}
 
@@ -243,7 +248,7 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 
 	err = email.AppointmentCancellation(r.Context(), emailData.UserEmail, email.AppointmentCancellationData{
 		Time:               fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-		Date:               fromDateMerchantTz.Format("2006-01-02"),
+		Date:               fromDateMerchantTz.Format("MONDAY, JANUARY 2"),
 		Location:           emailData.ShortLocation,
 		ServiceName:        emailData.ServiceName,
 		TimeZone:           merchantTz.String(),
