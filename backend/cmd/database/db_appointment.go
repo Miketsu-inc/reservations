@@ -164,19 +164,21 @@ type AppointmentEmailData struct {
 	ShortLocation string    `json:"short_location" db:"short_location"`
 	UserEmail     string    `json:"user_email" db:"user_email"`
 	EmailId       uuid.UUID `json:"email_id" db:"email_id"`
+	MerchantName  string    `json:"merchant_name" db:"merchant_name"`
 }
 
 func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId int) (AppointmentEmailData, error) {
 	query := `
-	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, 
+	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, m.name as merchant_name, 
 	l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location from "Appointment" a
 	join "Service" s on s.id = a.service_id
 	join "User" u on u.id = a.user_id
-	join "Location" l on l.id = location_id
+	join "Merchant" m on m.id = a.merchant_id
+	join "Location" l on l.id = a.location_id
 	where a.id = $1`
 
 	var data AppointmentEmailData
-	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.ShortLocation)
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.MerchantName, &data.ShortLocation)
 	if err != nil {
 		return AppointmentEmailData{}, err
 	}

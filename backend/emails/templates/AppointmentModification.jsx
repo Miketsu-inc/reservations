@@ -20,22 +20,12 @@ import LogoHeader from "../components/LogoHeader";
 void React;
 
 export default function AppointmentModification() {
-  const oldDate = "Kedd, Április 22";
-  const oldTime = "12:00 - 12:45";
-  const newDate = "Szerda, Április 23";
-  const newTime = "14:30 - 15:15";
-  const serviceName = "Hajvágás és styling";
-  const location = "Szépség Szalon, Fő utca 45, Budapest";
-  const modificationReason =
-    "A szakember más időpontban tudja csak biztosítani a szolgáltatást.";
-  const timeZone = "GMT +2 (Central European Summer Time)";
-
   return (
     <Tailwind>
       <Html>
         <Head />
         <Preview>
-          Az időpontja módosításra került - {newDate}, {newTime}
+          Az időpontja módosításra került - {"{{ .Date }}"}, {"{{ .Time }}"}
         </Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
@@ -82,7 +72,8 @@ export default function AppointmentModification() {
                     className="m-0 text-gray-800"
                     style={{ textDecoration: "line-through" }}
                   >
-                    <span className="font-medium">{oldDate}</span>, {oldTime}
+                    <span className="font-medium">{"{{ .OldDate }}"}</span>,{" "}
+                    {"{{ .OldTime }}"}
                   </Text>
                 </Column>
               </Row>
@@ -101,7 +92,8 @@ export default function AppointmentModification() {
                 </Column>
                 <Column>
                   <Text className="m-0 text-gray-800">
-                    <span className="font-medium">{newDate}</span>, {newTime}
+                    <span className="font-medium">{"{{ .Date }}"}</span>,{" "}
+                    {"{{ .Time }}"}
                   </Text>
                 </Column>
               </Row>
@@ -116,13 +108,15 @@ export default function AppointmentModification() {
               </Text>
               <Text className="mt-0 mb-1 text-gray-700">
                 <span className="font-semibold">Szolgáltatás:</span>{" "}
-                {serviceName}
+                {"{{ .ServiceName }}"}
               </Text>
               <Text className="mt-0 mb-1 text-gray-700">
-                <span className="font-semibold">Helyszín:</span> {location}
+                <span className="font-semibold">Helyszín:</span>{" "}
+                {"{{ .Location }}"}
               </Text>
               <Text className="m-0 text-gray-700">
-                <span className="font-semibold">Időzóna:</span> {timeZone}
+                <span className="font-semibold">Időzóna:</span>{" "}
+                {"{{ .TimeZone }}"}
               </Text>
             </Section>
 
@@ -133,7 +127,7 @@ export default function AppointmentModification() {
               <Text className="mt-0 mb-2 font-semibold">
                 Miért történt a módosítás?
               </Text>
-              <Text className="m-0 text-gray-700">{modificationReason}</Text>
+              <Text className="m-0 text-gray-700">{"{{ .Reason }}"}</Text>
             </Section>
 
             <Text className="mb-6 text-[16px] text-gray-700">
@@ -143,7 +137,7 @@ export default function AppointmentModification() {
 
             <Section className="mb-8 text-center">
               <Button
-                href="https://example.com/manage"
+                href="{{ .ModifyLink }}"
                 className="bg-blue-600 px-6 py-3 text-center font-medium text-white"
                 style={{
                   boxSizing: "border-box",

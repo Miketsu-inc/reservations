@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
-"time"
+	"time"
 
 	"html/template"
 
@@ -23,7 +23,7 @@ var cfg *config.Config = config.LoadEnvVars()
 func init() {
 	templateFS := emails.TemplateFS()
 
-err := fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
@@ -37,7 +37,7 @@ err := fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) e
 		}
 		return nil
 	})
-assert.Nil(err, fmt.Sprintf("Error walking through templates: %v", err))
+	assert.Nil(err, fmt.Sprintf("Error walking through templates: %v", err))
 }
 
 func executeTemplate(name string, data interface{}) (bytes.Buffer, error) {
@@ -53,7 +53,7 @@ func executeTemplate(name string, data interface{}) (bytes.Buffer, error) {
 }
 
 func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string) error {
-if !cfg.ENABLE_EMAILS {
+	if !cfg.ENABLE_EMAILS {
 		return nil
 	}
 
@@ -77,7 +77,7 @@ if !cfg.ENABLE_EMAILS {
 
 func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText string, date string) (string, error) {
 	if !cfg.ENABLE_EMAILS {
-return "", nil
+		return "", nil
 	}
 
 	client := resend.NewClient(cfg.RESEND_API_TEST)
@@ -99,7 +99,7 @@ return "", nil
 }
 
 func Cancel(emailId string) error {
-if !cfg.ENABLE_EMAILS {
+	if !cfg.ENABLE_EMAILS {
 		return nil
 	}
 
@@ -113,7 +113,7 @@ if !cfg.ENABLE_EMAILS {
 }
 
 func ReSchedule(emailId string, newDate string) error {
-if !cfg.ENABLE_EMAILS {
+	if !cfg.ENABLE_EMAILS {
 		return nil
 	}
 
@@ -218,6 +218,32 @@ func AppointmentCancellation(ctx context.Context, to string, data AppointmentCan
 
 	body, err := executeTemplate("AppointmentCancellation", data)
 	assert.Nil(err, fmt.Sprintf("Error executing AppointmentCancellation template: %s", err))
+
+	err = Send(ctx, to, body, subject)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type AppointmentModificationData struct {
+	Time        string `json:"time"`
+	Date        string `json:"date"`
+	Location    string `json:"location"`
+	ServiceName string `json:"service_name"`
+	TimeZone    string `json:"time_zone"`
+	Reason      string `json:"reason"`
+	ModifyLink  string `json:"modify_link"`
+	OldTime     string `json:"old_time"`
+	OldDate     string `json:"old_date"`
+}
+
+func AppointmentModification(ctx context.Context, to string, data AppointmentModificationData) error {
+	subject := "Időpont áthelyezve"
+
+	body, err := executeTemplate("AppointmentModification", data)
+	assert.Nil(err, fmt.Sprintf("Error executing AppointmentModification template: %s", err))
 
 	err = Send(ctx, to, body, subject)
 	if err != nil {
