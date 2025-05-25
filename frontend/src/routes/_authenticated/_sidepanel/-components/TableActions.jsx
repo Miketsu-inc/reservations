@@ -8,7 +8,7 @@ export default function TableActions({ onEdit, onDelete }) {
         <EditIcon styles="w-4 h-4 mx-1" />
       </button>
       <button className="cursor-pointer" onClick={onDelete}>
-        <TrashBinIcon styles="w-5 h-5 text-white mx-1" />
+        <TrashBinIcon styles="w-5 h-5 mx-1" />
       </button>
     </div>
   );

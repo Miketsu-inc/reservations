@@ -137,7 +137,7 @@ function SidePanelLayout() {
           transition-all duration-300`}
         aria-label="Sidepanel"
       >
-        <div className="bg-layer_bg flex h-full flex-col px-3 py-4">
+        <div className="bg-layer_bg border-border_color flex h-full flex-col border-r px-3 py-4">
           <div
             className={`${isCollapsed ? "w-10" : "w-40"} flex h-10 flex-row items-center gap-3
               transition-normal duration-300 ease-in-out`}
@@ -150,7 +150,7 @@ function SidePanelLayout() {
           <ol className="flex flex-1 flex-col space-y-1 pt-5 font-medium">
             {navigation.map((item, index) => (
               <li
-                className={`${index === navigation.length - 1 && "mt-auto"}`}
+                className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}
                 key={index}
               >
                 <Link

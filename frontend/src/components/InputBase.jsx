@@ -30,7 +30,7 @@ export default function InputBase({
     <>
       <input
         className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill rounded-lg
-          bg-transparent outline-hidden`}
+          bg-transparent outline-hidden dark:[color-scheme:dark]`}
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}
         name={name}

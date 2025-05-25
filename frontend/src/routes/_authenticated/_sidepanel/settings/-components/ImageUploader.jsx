@@ -67,24 +67,24 @@ export default function ImageUploader({
       onDragOver={(e) => {
         e.preventDefault();
       }}
-      className={`${styles} group relative flex h-64 w-full cursor-pointer flex-col items-center
-        justify-center border-2 border-dashed border-gray-400 bg-hvr_gray transition-all
-        duration-300 ease-in-out hover:border-gray-500 dark:border-gray-600
-        dark:hover:border-gray-400`}
+      className={`${styles} group bg-hvr_gray relative flex h-64 w-full cursor-pointer flex-col
+        items-center justify-center border-2 border-dashed border-gray-400
+        transition-all duration-300 ease-in-out hover:border-gray-500
+        dark:border-gray-600 dark:hover:border-gray-400`}
     >
       {preview ? (
         <>
           <img
             src={preview}
             alt="Preview"
-            className={`${imageStyles} h-full w-full object-contain`}
+            className={`${imageStyles} size-full object-contain`}
           />
           <button
             onClick={clearImage}
-            className="absolute right-2 top-2 rounded-full bg-gray-400 p-1 text-white transition-colors
+            className="absolute top-2 right-2 rounded-full bg-gray-400 p-1 text-white transition-colors
               sm:hidden sm:group-hover:block dark:bg-gray-600"
           >
-            <TrashBinIcon styles="w-6 h-6 stroke-white" />
+            <TrashBinIcon styles="size-6" />
           </button>
         </>
       ) : (

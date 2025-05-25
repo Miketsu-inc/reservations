@@ -28,7 +28,7 @@ export default function Input({
   const isEmpty = hasError && !value;
 
   return (
-    <label htmlFor={id} className="flex flex-col">
+    <label htmlFor={id} className="flex w-full flex-col">
       {labelText && <span className="pb-1">{labelText}</span>}
       <InputBase
         styles={`${styles} ps-1 peer border-2 bg-transparent outline-hidden

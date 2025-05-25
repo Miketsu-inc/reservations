@@ -21,7 +21,7 @@ export default function Switch({
       }}
       className={`${isOn ? `${variant === "monochrome" ? "bg-black dark:bg-white" : "bg-primary"}` : "bg-gray-300 dark:bg-gray-800"}
         ${size === "small" ? "pr-4" : size === "medium" ? "pr-5" : size === "large" ? "pr-6" : ""}
-        cursor-pointer rounded-full py-1 pl-1 outline-gray-400 transition-colors
+        w-fit cursor-pointer rounded-full py-1 pl-1 outline-gray-400 transition-colors
         duration-100 focus-visible:outline-2 dark:outline-white`}
     >
       <div

@@ -8,10 +8,11 @@
   --secondary: 210, 151, 190;
   --hvr-secondary: 189, 136, 171;
   --accent: 226, 201, 102;
-  --bg-color: 245, 246, 251;
-  --layer-bg: 236, 238, 248;
+  --bg-color: 236, 238, 248;
+  --layer-bg: 245, 246, 251;
   --text-color: 12, 14, 28;
   --hvr-gray: 209, 213, 219;
+  --border-color: 209, 213, 219;
 }
 
 /* TEMP until the calendar is styled properly in dark mode */
@@ -21,10 +22,11 @@
   --secondary: 210, 151, 190;
   --hvr-secondary: 189, 136, 171;
   --accent: 226, 201, 102;
-  --bg-color: 245, 246, 251;
-  --layer-bg: 236, 238, 248;
+  --bg-color: 236, 238, 248;
+  --layer-bg: 245, 246, 251;
   --text-color: 12, 14, 28;
   --hvr-gray: 209, 213, 219;
+  --border-color: 209, 213, 219;
 }
 
 .dark {
@@ -37,6 +39,7 @@
   --layer-bg: 25, 25, 26;
   --text-color: 236, 236, 238;
   --hvr-gray: 31, 41, 55;
+  --border-color: 38, 38, 38;
 }
 
 @keyframes slideUp {

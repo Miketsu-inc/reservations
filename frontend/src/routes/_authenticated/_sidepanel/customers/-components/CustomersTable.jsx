@@ -123,7 +123,7 @@ export default function CustomersTable({
                     setShowDeleteModal(true);
                   }}
                 >
-                  <TrashBinIcon styles="w-5 h-5 text-white mx-1" />
+                  <TrashBinIcon styles="w-5 h-5 mx-1" />
                 </button>
               </>
             ) : (

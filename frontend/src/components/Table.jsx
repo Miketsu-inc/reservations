@@ -32,7 +32,10 @@ export default function Table({
   }, [columnsToAutoSize]);
 
   return (
-    <div className="md:bg-layer_bg flex h-full w-full flex-1 flex-col md:rounded-lg md:px-4 md:py-4">
+    <div
+      className="md:bg-layer_bg md:border-border_color flex h-full w-full flex-1 flex-col
+        md:rounded-lg md:border md:px-4 md:py-4 md:shadow-sm"
+    >
       <div className="flex flex-col-reverse justify-between gap-2 pb-2 sm:flex-row sm:gap-0">
         <SearchInput
           searchText={searchText}

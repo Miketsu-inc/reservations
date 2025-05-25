@@ -1,7 +1,7 @@
 export default function TrashBinIcon({ styles, onClick }) {
   return (
     <svg
-      className={`${styles} fill-none stroke-black stroke-2 text-text_color dark:stroke-current`}
+      className={`${styles} fill-none stroke-red-600 stroke-2 dark:stroke-red-500`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"

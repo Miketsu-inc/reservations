@@ -1,3 +1,4 @@
+import Card from "@components/Card";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
@@ -127,7 +128,7 @@ function DashboardPage() {
                 <></>
               )}
             </div>
-            <div className="bg-layer_bg flex h-80 flex-col gap-2 rounded-lg p-4 shadow-sm">
+            <Card styles="flex h-80 flex-col gap-2">
               <RevenueChart
                 data={fillStatisticsWithDate(
                   loaderData.data.statistics.revenue,
@@ -135,7 +136,7 @@ function DashboardPage() {
                   loaderData.data.period_end
                 )}
               />
-            </div>
+            </Card>
           </div>
           <div className="flex flex-1 flex-col gap-2">
             <LowStockProductsAlert

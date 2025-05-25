@@ -178,14 +178,14 @@ export default function BusinessHours({ data, setBusinessHours }) {
                         cursor-pointer rounded-full border p-1 transition-colors`}
                       disabled={day.timeSlots.length >= 2}
                     >
-                      <PlusIcon styles="h-4 w-4" />
+                      <PlusIcon styles="size-4" />
                     </button>
                   ) : (
                     <button
                       onClick={() => removeTimePeriod(day.day, timeSlotIndex)}
                       className="border-text_color cursor-pointer rounded-full border p-1"
                     >
-                      <TrashBinIcon styles="h-4 w-4" />
+                      <TrashBinIcon styles="size-4" />
                     </button>
                   )}
                 </div>

@@ -1,3 +1,4 @@
+import Card from "@components/Card";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
@@ -60,7 +61,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
   const [showNote, setShowNote] = useState(false);
 
   return (
-    <div className="bg-layer_bg rounded-lg px-4 py-2 shadow-sm">
+    <Card styles="py-2">
       <div className="flex h-fit flex-row items-center">
         <div
           className="flex w-full flex-col lg:flex-row lg:items-center lg:justify-between lg:pr-3
@@ -132,6 +133,6 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,3 +1,4 @@
+import Card from "@components/Card";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import SettingsHeader from "./settings/-components/SettingsHeader";
 import SettingsNavigation from "./settings/-components/SettingsNavigation";
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/settings")({
 
 function SettingsLayout() {
   return (
-    <div className="bg-layer_bg rounded-lg px-4 py-2">
+    <Card>
       <div className="flex h-full w-full flex-col items-center justify-center p-4 lg:px-14">
         <SettingsHeader />
         <div className="flex h-full w-full flex-col gap-8 md:flex-row md:gap-14">
@@ -24,6 +25,6 @@ function SettingsLayout() {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
