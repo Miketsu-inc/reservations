@@ -233,7 +233,6 @@ type AppointmentModificationData struct {
 	Location    string `json:"location"`
 	ServiceName string `json:"service_name"`
 	TimeZone    string `json:"time_zone"`
-	Reason      string `json:"reason"`
 	ModifyLink  string `json:"modify_link"`
 	OldTime     string `json:"old_time"`
 	OldDate     string `json:"old_date"`

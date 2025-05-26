@@ -129,7 +129,7 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	query := `
 	update "Appointment"
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
-	where merchant_id = $3 and id = $4 and cancelled_by_user_on is null
+	where merchant_id = $3 and id = $4 and cancelled_by_user_on is null and cancelled_by_merchant_on is null and from_date > $1
 	`
 
 	_, err := s.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, appointmentId)

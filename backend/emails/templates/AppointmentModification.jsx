@@ -120,16 +120,6 @@ export default function AppointmentModification() {
               </Text>
             </Section>
 
-            <Section
-              className="mb-6 bg-gray-50 p-4"
-              style={{ borderRadius: "6px" }}
-            >
-              <Text className="mt-0 mb-2 font-semibold">
-                Miért történt a módosítás?
-              </Text>
-              <Text className="m-0 text-gray-700">{"{{ .Reason }}"}</Text>
-            </Section>
-
             <Text className="mb-6 text-[16px] text-gray-700">
               Ha az új időpont nem megfelelő Önnek, kérjük, válasszon egy
               másikat, vagy módosítsa a foglalását az alábbi gombra kattintva.

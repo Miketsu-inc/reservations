@@ -345,8 +345,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		Location:    oldEmailData.ShortLocation,
 		ServiceName: oldEmailData.ServiceName,
 		TimeZone:    merchantId.String(),
-		Reason:      appData.MerchantNote,
-		ModifyLink:  "http://localhost:5173/settings/profile",
+				ModifyLink:  "http://localhost:5173/settings/profile",
 		OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
 		OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
 	})
