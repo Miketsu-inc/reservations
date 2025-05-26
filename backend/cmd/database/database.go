@@ -42,6 +42,10 @@ type PostgreSQL interface {
 	UpdateEmailIdForAppointment(context.Context, int, string) error
 	//Get appointment info for email sending
 	GetAppointmentDataForEmail(context.Context, int) (AppointmentEmailData, error)
+	//Get public appointment info for user
+	GetPublicAppointmentInfo(context.Context, int) (PublicAppointmentInfo, error)
+	//Cancel appointment by user
+	CancelAppointmentByUser(context.Context, uuid.UUID, int) (uuid.UUID, error)
 
 	// -- User --
 

@@ -48,6 +48,8 @@ func staticFilesHandler(r *chi.Mux) {
 		"/m/{merchant_url}",
 		"/m/{merchant_url}/booking",
 		"/m/{merchant_url}/booking/completed",
+"/m/{merchant_url}/cancel/{appointmentId}",
+		"/m/{merchant_url}/cancel/{appointmentId}/completed",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
@@ -84,6 +86,9 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 
 		r.Post("/new", appointmentHandler.Create)
 		r.Get("/all", appointmentHandler.GetAppointments)
+
+		r.Get("/public/{id}", appointmentHandler.GetPublicAppointmentData)
+		r.Delete("/public/{id}", appointmentHandler.CancelAppointmentByUser)
 	})
 }
 

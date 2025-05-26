@@ -140,6 +140,22 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	return nil
 }
 
+func (s *service) CancelAppointmentByUser(ctx context.Context, userId uuid.UUID, appointmentId int) (uuid.UUID, error) {
+	query := `
+	update "Appointment" 
+	set cancelled_by_user_on = $1 
+	where user_id = $2 and id = $3 and cancelled_by_merchant_on is null and cancelled_by_user_on is null and from_date > $1
+	returning email_id`
+
+	var emailId uuid.UUID
+	err := s.db.QueryRow(ctx, query, time.Now().UTC(), userId, appointmentId).Scan(&emailId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return emailId, nil
+}
+
 func (s *service) UpdateEmailIdForAppointment(ctx context.Context, appointmentId int, emailId string) error {
 	emailUUID, err := uuid.Parse(emailId)
 	if err != nil {
@@ -181,6 +197,39 @@ func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId 
 	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.MerchantName, &data.ShortLocation)
 	if err != nil {
 		return AppointmentEmailData{}, err
+	}
+
+	return data, nil
+}
+
+type PublicAppointmentInfo struct {
+	FromDate            time.Time `json:"from_date" db:"from_date"`
+	ToDate              time.Time `json:"to_date" db:"to_date"`
+	ServiceName         string    `json:"service_name" db:"service_name"`
+	ShortLocation       string    `json:"short_location" db:"short_location"`
+	Price               int       `json:"price" db:"price"`
+	Duration            int       `json:"duration" db:"duration"`
+	MerchantName        string    `json:"merchant_name" db:"merchant_name"`
+	CancelledByUser     bool      `json:"cancelled_by_user" db:"cancelled_by_user"`
+	CancelledByMerchant bool      `json:"cancelled_by_merchant" db:"cancelled_by_merchant"`
+}
+
+func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId int) (PublicAppointmentInfo, error) {
+	query := `
+	select a.from_date, a.to_date, a.price_then as price, m.name as merchant_name, s.name as service_name, s.duration,
+	a.cancelled_by_user_on is not null as cancelled_by_user, 
+	a.cancelled_by_merchant_on is not null as cancelled_by_merchant,
+	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location 
+	from "Appointment" a
+	join "Service" s on s.id = a.service_id
+	join "Merchant" m on m.id = a.merchant_id
+	join "Location" l on l.id = a.location_id
+	where a.id = $1`
+
+	var data PublicAppointmentInfo
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName, &data.ServiceName, &data.Duration, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
+	if err != nil {
+		return PublicAppointmentInfo{}, err
 	}
 
 	return data, nil

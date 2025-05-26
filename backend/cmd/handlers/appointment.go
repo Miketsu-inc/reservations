@@ -133,7 +133,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		Location:    location.PostalCode + " " + location.City + " " + location.Address,
 		ServiceName: service.Name,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  "http://localhost:5173/settings/profile",
+		ModifyLink:  "http://localhost:5173/m/" + newApp.MerchantName + "/cancel/" + strconv.Itoa(appointmentId),
 	}
 
 	err = email.AppointmentConfirmation(r.Context(), userInfo.Email, emailData)
@@ -345,7 +345,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		Location:    oldEmailData.ShortLocation,
 		ServiceName: oldEmailData.ServiceName,
 		TimeZone:    merchantId.String(),
-				ModifyLink:  "http://localhost:5173/settings/profile",
+		ModifyLink:  "http://localhost:5173/m/" + oldEmailData.MerchantName + "/cancel/" + strconv.Itoa(appData.Id),
 		OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
 		OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
 	})
@@ -375,7 +375,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 			Location:    oldEmailData.ShortLocation,
 			ServiceName: oldEmailData.ServiceName,
 			TimeZone:    merchantTz.String(),
-			ModifyLink:  "http://localhost:5173/settings/profile",
+			ModifyLink:  "http://localhost:5173/m/" + oldEmailData.MerchantName + "/cancel/" + strconv.Itoa(appData.Id),
 		}, reminderDate)
 		if err != nil {
 			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
@@ -391,4 +391,60 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
+}
+
+func (a *Appointment) GetPublicAppointmentData(w http.ResponseWriter, r *http.Request) {
+	urlId := chi.URLParam(r, "id")
+
+	if urlId == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
+		return
+	}
+
+	appId, err := strconv.Atoi(urlId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting appointment id to int: %s", err.Error()))
+		return
+	}
+
+	//check for authenticated user
+
+	appInfo, err := a.Postgresdb.GetPublicAppointmentInfo(r.Context(), appId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving public data for appointment: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, appInfo)
+}
+
+func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Request) {
+	urlId := chi.URLParam(r, "id")
+
+	if urlId == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
+		return
+	}
+
+	appId, err := strconv.Atoi(urlId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting appointment id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	emailId, err := a.Postgresdb.CancelAppointmentByUser(r.Context(), userId, appId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the appointment by user: %s", err.Error()))
+		return
+	}
+
+	if emailId != uuid.Nil {
+		err = email.Cancel(emailId.String())
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the scheduled email for the appointment: %s", err.Error()))
+			return
+		}
+	}
 }
