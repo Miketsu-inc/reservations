@@ -407,8 +407,6 @@ func (a *Appointment) GetPublicAppointmentData(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	//check for authenticated user
-
 	appInfo, err := a.Postgresdb.GetPublicAppointmentInfo(r.Context(), appId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving public data for appointment: %s", err.Error()))

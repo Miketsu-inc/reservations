@@ -208,7 +208,6 @@ type PublicAppointmentInfo struct {
 	ServiceName         string    `json:"service_name" db:"service_name"`
 	ShortLocation       string    `json:"short_location" db:"short_location"`
 	Price               int       `json:"price" db:"price"`
-	Duration            int       `json:"duration" db:"duration"`
 	MerchantName        string    `json:"merchant_name" db:"merchant_name"`
 	CancelledByUser     bool      `json:"cancelled_by_user" db:"cancelled_by_user"`
 	CancelledByMerchant bool      `json:"cancelled_by_merchant" db:"cancelled_by_merchant"`
@@ -216,7 +215,7 @@ type PublicAppointmentInfo struct {
 
 func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId int) (PublicAppointmentInfo, error) {
 	query := `
-	select a.from_date, a.to_date, a.price_then as price, m.name as merchant_name, s.name as service_name, s.duration,
+	select a.from_date, a.to_date, a.price_then as price, m.name as merchant_name, s.name as service_name,
 	a.cancelled_by_user_on is not null as cancelled_by_user, 
 	a.cancelled_by_merchant_on is not null as cancelled_by_merchant,
 	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location 
@@ -227,7 +226,7 @@ func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId in
 	where a.id = $1`
 
 	var data PublicAppointmentInfo
-	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName, &data.ServiceName, &data.Duration, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName, &data.ServiceName, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
 	if err != nil {
 		return PublicAppointmentInfo{}, err
 	}

@@ -1,5 +1,4 @@
 import Button from "@components/Button";
-import Card from "@components/Card";
 import ServerError from "@components/ServerError";
 import ClockIcon from "@icons/ClockIcon";
 import MapPinIcon from "@icons/MapPinIcon";
@@ -57,7 +56,6 @@ const defaultAppointmentInfo = {
   service_name: "",
   short_location: "",
   price: 0,
-  duration: 0,
   cancelled_by_user: false,
   cancelled_by_merchant: false,
   canBeCancelled: true,
@@ -89,7 +87,6 @@ function CancelPage() {
         to_date: loaderData.to_date,
         short_location: loaderData.short_location,
         price: loaderData.price,
-        duration: loaderData.duration,
         cancelled_by_user: loaderData.cancelled_by_user,
         cancelled_by_merchant: loaderData.cancelled_by_merchant,
         canBeCancelled: !isInPast && !alreadyCancelled,
@@ -148,10 +145,9 @@ function CancelPage() {
           </span>
         </div>
       )}
-      <Card
-        shadow="shadow-none"
-        styles="w-full rounded-t-md rounded-b-none border-b-0 sm:border sm:rounded-md
-          sm:shadow-sm"
+      <div
+        className="bg-layer_bg border-border_color w-full rounded-t-lg rounded-b-none border
+          border-b-0 p-4 shadow-none sm:rounded-lg sm:border sm:shadow-sm"
       >
         <div className="flex items-center gap-4">
           <div className="text-center">
@@ -177,11 +173,11 @@ function CancelPage() {
           </div>
           <div className="from-secondary to-primary h-16 w-16 rounded-xl bg-gradient-to-br sm:h-20 sm:w-20"></div>
         </div>
-      </Card>
+      </div>
       <div className="grid w-full grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 sm:pb-2">
-        <Card
-          shadow="shadow-none"
-          styles="border-y-0 sm:border rounded-none sm:rounded-md sm:p-4 pt-2 sm:shadow-sm sm:mb-0"
+        <div
+          className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2
+            shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm"
         >
           <div className="mb-1 flex items-center gap-2">
             <MapPinIcon styles="w-4 h-4 dark:text-blue-400 text-blue-600" />
@@ -196,11 +192,10 @@ function CancelPage() {
           >
             {appointmentInfo.short_location}
           </p>
-        </Card>
-        <Card
-          shadow="shadow-none"
-          styles="border-y-0 sm:border rounded-none sm:rounded-md pt-2 sm:p-4 sm:shadow-sm mb-4
-            sm:mb-0"
+        </div>
+        <div
+          className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2
+            shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm"
         >
           <div className="text-text_color mb-1 flex items-center gap-2 text-xs font-semibold">
             <span className="text-green-600 dark:text-green-400">$</span>
@@ -210,15 +205,14 @@ function CancelPage() {
           <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
             {appointmentInfo.price} FT -tól
           </p>
-        </Card>
+        </div>
       </div>
       <div
         className="border-border_color bg-layer_bg flex w-full flex-col items-center gap-5
-          rounded-b-md border border-t-0 pb-4 shadow-sm sm:border-none sm:bg-transparent
-          sm:shadow-none"
+          rounded-b-lg border border-t-0 py-4 sm:border-none sm:bg-transparent"
       >
         <div className="px-5 text-center text-sm text-gray-500">
-          The cancellation is inmediate and cannot be undone!
+          The cancellation is inmediate and cannot be undone.
         </div>
         <Button
           buttonText="Cancel appointment"
