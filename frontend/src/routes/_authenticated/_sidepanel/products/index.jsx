@@ -128,15 +128,13 @@ function ProductsPage() {
         isOpen={showProductModal}
         onClose={() => setShowProductModal(false)}
         onSubmit={modalHandler}
-        serviceData={loaderData.data.services}
       />
       <div className="flex w-full flex-col gap-5 py-4">
         <p className="text-xl">Products</p>
         <ServerError error={serverError} />
         <div className="h-2/3 w-full">
           <ProductsTable
-            products={loaderData.data.products}
-            serviceData={loaderData.data.services}
+            products={loaderData.data}
             onNewItem={() => {
               // the first condition is necessary for it to not cause an error
               // in case of a new item

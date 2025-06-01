@@ -406,10 +406,12 @@ func (s *service) GetMerchantTimezoneById(ctx context.Context, merchantId uuid.U
 }
 
 type LowStockProduct struct {
-	Id            int    `json:"id" db:"id"`
-	Name          string `json:"name" db:"name"`
-	StockQuantity int    `json:"stock_quantity" db:"stock_quantity"`
-	UsagePerUnit  int    `json:"usage_per_unit" db:"usage_per_unit"`
+	Id            int     `json:"id" db:"id"`
+	Name          string  `json:"name" db:"name"`
+	MaxAmount     int     `json:"max_amount" db:"max_amount"`
+	CurrentAmount int     `json:"current_amount" db:"current_amount"`
+	Unit          string  `json:"unit" db:"unit"`
+	FillRatio     float64 `json:"fill_ratio" db:"fill_ratio"`
 }
 
 type DashboardData struct {
@@ -469,11 +471,9 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// LowStockProducts
 	query3 := `
-	select p.id, p.name, p.stock_quantity, p.usage_per_unit
-	from "Product" p
-	where p.merchant_id = $1 and p.stock_quantity < 5 and deleted_on is null
-	order by p.stock_quantity
-	`
+	select p.id, p.name, p.max_amount, p.current_amount, p.unit, (p.current_amount::float / p.max_amount) as fill_ratio from "Product" p
+	where  p.merchant_id = $1 and p.deleted_on is null and p.max_amount > 0 and (p.current_amount::float / p.max_amount) < 0.4
+	order by fill_ratio asc`
 
 	rows, _ = s.db.Query(ctx, query3, merchantId)
 	dd.LowStockProducts, err = pgx.CollectRows(rows, pgx.RowToStructByName[LowStockProduct])

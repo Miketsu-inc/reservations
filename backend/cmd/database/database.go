@@ -143,7 +143,7 @@ type PostgreSQL interface {
 	// Insert a new product into the database
 	NewProduct(context.Context, Product) error
 	// Get all products for a merchant by it's id
-	GetProductsByMerchant(context.Context, uuid.UUID) ([]PublicProduct, error)
+	GetProductsByMerchant(context.Context, uuid.UUID) ([]ProductInfo, error)
 	// Delete a Product by it's id
 	DeleteProductById(context.Context, uuid.UUID, int) error
 	// Updateing properties of product by a it's id

@@ -115,14 +115,16 @@ create table if not exists "Product" (
     name                     varchar(50)     not null,
     description              text,
     price                    bigint          not null,
-    stock_quantity           integer         not null,
-    usage_per_unit           integer         not null,
+    unit                     varchar(10)     check (unit in ('ml', 'g', 'pcs')) not null,
+    max_amount               bigint          not null,
+    current_amount           bigint          not null,
     deleted_on               timestamptz
 );
 
 create table if not exists "ServiceProduct" (
     service_id               integer references "Service" (ID) not null,
     product_id               integer references "Product" (ID) not null,
+    amount_used              bigint  not null, 
     primary key (service_id, product_id)
 );
 

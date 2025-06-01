@@ -1,106 +1,161 @@
-import Button from "@components/Button";
+import Card from "@components/Card";
+import BackArrowIcon from "@icons/BackArrowIcon";
 import ProductIcon from "@icons/ProductIcon";
+import TickIcon from "@icons/TickIcon";
 import WarningIcon from "@icons/WarningIcon";
-import XIcon from "@icons/XIcon";
+import { getDisplayUnit } from "@lib/units";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 
 export default function LowStockProductsAlert({ products, route }) {
-  const [dismissedProducts, setDismissedProducts] = useState([]);
+  const totalLowStock = products.length;
+  const hasLowStock = totalLowStock > 0;
 
-  const activeAlerts = products?.filter(
-    (product) => !dismissedProducts.includes(product.id)
-  );
+  function getStockSeverity(stock, fill_ratio) {
+    const percentage = fill_ratio * 100;
+    if (stock === 0) return "text-red-600";
+    if (percentage < 5) return "text-red-500";
+    if (percentage <= 10) return "text-orange-500";
+    if (percentage <= 20) return "text-amber-500";
+    if (percentage <= 35) return "text-yellow-500";
+    return "text-amber-400";
+  }
 
-  const hasAlerts = activeAlerts?.length > 0;
+  function getProgressColor(stock, fill_ratio) {
+    const percentage = fill_ratio * 100;
+    if (stock === 0) return "bg-red-600";
+    if (percentage < 5) return "bg-red-500";
+    if (percentage <= 10) return "bg-orange-500";
+    if (percentage <= 20) return "bg-amber-500";
+    if (percentage <= 35) return "bg-yellow-500";
+    return "bg-amber-400";
+  }
 
-  const dismissProduct = (id) => {
-    setDismissedProducts([...dismissedProducts, id]);
-  };
-
-  const restoreAlerts = () => {
-    setDismissedProducts([]);
-  };
+  function getPercentLabel(stock, fill_ratio) {
+    if (stock === 0) return "Out of stock";
+    const percent = fill_ratio * 100;
+    if (percent < 1) return "<1%";
+    if (percent < 10) return `${percent.toFixed(1)}%`;
+    return `${Math.round(percent)}%`;
+  }
 
   return (
-    <div className="bg-layer_bg flex w-full flex-col rounded-lg shadow-sm">
+    <Card className="text-text_color">
       <div
-        className="flex items-center justify-between rounded-lg bg-orange-50 p-4
-          dark:bg-orange-900/20"
+        className={`flex flex-col justify-center ${hasLowStock ? "gap-4" : "gap-12"}`}
       >
-        <div className="flex gap-3">
-          <WarningIcon styles="size-5 text-orange-500 dark:text-orange-400" />
-          <span className="font-medium text-gray-800 dark:text-gray-100">
-            Low Stock Products Alert
-          </span>
-        </div>
-      </div>
-      <div
-        className={`${hasAlerts ? "h-48" : ""} overflow-y-auto px-4 dark:[color-scheme:dark]`}
-      >
-        {hasAlerts ? (
-          <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-            {activeAlerts.map((product) => (
-              <li
-                key={product.id}
-                className="flex items-center justify-between py-3"
-              >
-                <div className="flex-1">
-                  <p className="font-medium text-gray-800 dark:text-gray-200">
-                    {product.name}
-                  </p>
-                  <div className="mt-1 flex items-center">
-                    <div className="mr-2 size-3 rounded-full bg-amber-500"></div>
-                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                      {product.stock_quantity}{" "}
-                      {product.stock_quantity === 1 ? "unit" : "units"} left
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => dismissProduct(product.id)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600
-                    dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                  aria-label="Dismiss alert"
-                >
-                  <XIcon styles="stroke-text_color size-5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="mb-3 rounded-full bg-gray-300 p-3 dark:bg-gray-700">
-              <ProductIcon styles="text-gray-500 dark:text-gray-400 size-5" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div
+              className={`mr-3 rounded-md p-2
+                ${hasLowStock ? "bg-amber-500/20 dark:bg-amber-500/20" : "bg-green-100 dark:bg-green-500/20"}`}
+            >
+              {hasLowStock ? (
+                <WarningIcon styles="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <ProductIcon styles="h-6 w-6 shrink-0 text-green-600" />
+              )}
             </div>
-            <h4 className="mb-1 text-lg font-medium text-gray-700 dark:text-gray-300">
-              No Low Stock Alerts
-            </h4>
-            <p className="mb-4 text-gray-500 dark:text-gray-400">
-              All your products have sufficient inventory
+            <div>
+              <h3 className="text-lg font-semibold text-nowrap">
+                Low Stock ({totalLowStock})
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {hasLowStock
+                  ? "Products needing attention"
+                  : "All products well-stocked"}
+              </p>
+            </div>
+          </div>
+
+          <Link
+            from={route.fullPath}
+            to="/products"
+            className="text-text_color/70 flex items-center justify-end gap-1 text-sm"
+          >
+            <span className="text-right">Manage Products</span>
+            <BackArrowIcon styles="stroke-text_color/70 h-5 w-5 shrink-0 rotate-180" />
+          </Link>
+        </div>
+
+        {hasLowStock ? (
+          <div className="max-h-[215px] overflow-y-auto pr-1 dark:[color-scheme:dark]">
+            <div>
+              {products.map((product) => {
+                const {
+                  current,
+                  max,
+                  unit: displayUnit,
+                } = getDisplayUnit(
+                  product.current_amount,
+                  product.max_amount,
+                  product.unit
+                );
+
+                return (
+                  <div key={product.id} className="mb-1 rounded-md px-2 py-2.5">
+                    <div className="mb-1 flex items-center justify-between gap-4">
+                      <div className="flex items-center">
+                        <div
+                          className={`h-2 w-2 rounded-full ${getProgressColor( product.current_amount,
+                            product.fill_ratio )}`}
+                        ></div>
+                        <span className="max-w-48 truncate pl-2 text-sm font-medium sm:max-w-xl">
+                          {product.name}
+                        </span>
+                      </div>
+                      <div
+                        className="flex items-center justify-center gap-2 text-xs font-medium whitespace-nowrap
+                          text-gray-500 dark:text-gray-400"
+                      >
+                        <span>
+                          {current} / {max}
+                        </span>
+                        <span> {displayUnit} </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="dark:bg-bg_color mr-2 h-1.5 w-full rounded-full bg-gray-200">
+                        <div
+                          className={`h-1.5 rounded-full ${getProgressColor( product.current_amount,
+                            product.fill_ratio )}`}
+                          style={{
+                            width: `${Math.min(100, (product.current_amount / product.max_amount) * 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <div
+                        className={`text-xs font-semibold text-nowrap ${getStockSeverity( product.current_amount,
+                          product.fill_ratio )}`}
+                      >
+                        {getPercentLabel(
+                          product.current_amount,
+                          product.fill_ratio
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center">
+            <div
+              className="mb-4 flex w-min items-center justify-center rounded-full bg-green-100 p-2
+                dark:bg-green-500/20"
+            >
+              <TickIcon styles="h-12 w-12 text-green-600" />
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              All products are well-stocked
             </p>
-            {dismissedProducts.length > 0 && (
-              <button
-                onClick={restoreAlerts}
-                className="text-sm font-medium text-orange-500 hover:text-orange-600 dark:text-orange-400
-                  dark:hover:text-orange-300"
-              >
-                Restore dismissed alerts ({dismissedProducts.length})
-              </button>
-            )}
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              No items require immediate attention
+            </p>
           </div>
         )}
       </div>
-      {hasAlerts && (
-        <div
-          className="mt-auto border-t border-gray-100 bg-gray-50 p-4 dark:border-gray-700
-            dark:bg-gray-900/40"
-        >
-          <Link from={route.fullPath} to="/products">
-            <Button styles="w-full py-2" buttonText="Manage Products" />
-          </Link>
-        </div>
-      )}
-    </div>
+    </Card>
   );
 }

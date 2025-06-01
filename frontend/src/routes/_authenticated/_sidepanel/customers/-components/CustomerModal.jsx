@@ -69,7 +69,7 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form
-        className="m-2 mx-3 w-72"
+        className="m-2 mx-3 sm:w-72"
         id="CustomerForm"
         onSubmit={submitHandler}
       >

@@ -801,9 +801,9 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 		Name          string `json:"name" validate:"required"`
 		Description   string `json:"description"`
 		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
-		StockQuantity int    `json:"stock_quantity" validate:"required,min=0,max=10000"`
-		UsagePerUnit  int    `json:"usage_per_unit" validate:"min=0,max=10000"`
-		ServiceIds    []*int `json:"service_ids"`
+		Unit          string `json:"unit" validate:"required"`
+		MaxAmount     int    `json:"max_amount" validate:"min=0,max=10000000000"`
+		CurrentAmount int    `json:"current_amount" validate:"min=0,max=10000000000"`
 	}
 	var product newProduct
 
@@ -826,9 +826,9 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 		Name:          product.Name,
 		Description:   product.Description,
 		Price:         product.Price,
-		StockQuantity: product.StockQuantity,
-		UsagePerUnit:  product.UsagePerUnit,
-		ServiceIds:    product.ServiceIds,
+		Unit:          product.Unit,
+		MaxAmount:     product.MaxAmount,
+		CurrentAmount: product.CurrentAmount,
 	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting product for merchant: %s", err.Error()))
 		return
@@ -852,27 +852,7 @@ func (m *Merchant) GetProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
-		return
-	}
-
-	filteredServices := make([]map[string]interface{}, len(services))
-	for i, service := range services {
-		filteredServices[i] = map[string]interface{}{
-			"Id":    service.Id,
-			"Name":  service.Name,
-			"Color": service.Color,
-		}
-	}
-
-	response := map[string]interface{}{
-		"products": products,
-		"services": filteredServices,
-	}
-
-	httputil.Success(w, http.StatusOK, response)
+	httputil.Success(w, http.StatusOK, products)
 }
 
 func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -906,7 +886,17 @@ func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
-	var prod database.PublicProduct
+	type productData struct {
+		Id            int    `json:"id"`
+		Name          string `json:"name" validate:"required"`
+		Description   string `json:"description"`
+		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
+		Unit          string `json:"unit" validate:"required"`
+		MaxAmount     int    `json:"max_amount" validate:"min=0,max=10000000000"`
+		CurrentAmount int    `json:"current_amount" validate:"min=0,max=10000000000"`
+	}
+
+	var prod productData
 
 	if err := validate.ParseStruct(r, &prod); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
@@ -945,9 +935,9 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		Name:          prod.Name,
 		Description:   prod.Description,
 		Price:         prod.Price,
-		StockQuantity: prod.StockQuantity,
-		UsagePerUnit:  prod.UsagePerUnit,
-		ServiceIds:    prod.ServiceIds,
+		Unit:          prod.Unit,
+		MaxAmount:     prod.MaxAmount,
+		CurrentAmount: prod.CurrentAmount,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating product for merchant: %s", err.Error()))

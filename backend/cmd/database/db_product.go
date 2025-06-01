@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -15,32 +16,19 @@ type Product struct {
 	Name          string    `json:"name"`
 	Description   string    `json:"description"`
 	Price         int       `json:"price"`
-	StockQuantity int       `json:"stock_quantity"`
-	UsagePerUnit  int       `json:"usage_per_unit"`
-	ServiceIds    []*int    `json:"service_ids"`
+	Unit          string    `json:"unit"`
+	MaxAmount     int       `json:"max_amount"`
+	CurrentAmount int       `json:"current_amount"`
 	DeletedOn     *string   `json:"deleted_on"`
 }
 
 func (s *service) NewProduct(ctx context.Context, prod Product) error {
 
 	query := `
-	with inserted_product as (
-	    insert into "Product" (merchant_id, name, description, price, stock_quantity, usage_per_unit)
-	    values ($1, $2, $3, $4, $5, $6)
-	    returning ID
-	),
-	valid_services as (
-    	select s.id as service_id
-    	from unnest($7::bigint[]) as input_id
-    	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1 and s.deleted_on is null
-	)
-	insert into "ServiceProduct" (product_id, service_id)
-	select inserted_product.id, valid_services.service_id
-	from inserted_product, valid_services;
-	`
+	insert into "Product" (merchant_id, name, description, price, unit, max_amount, current_amount)
+	values ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err := s.db.Exec(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.StockQuantity, prod.UsagePerUnit, prod.ServiceIds)
+	_, err := s.db.Exec(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.Unit, prod.MaxAmount, prod.CurrentAmount)
 	if err != nil {
 		return err
 	}
@@ -50,63 +38,14 @@ func (s *service) NewProduct(ctx context.Context, prod Product) error {
 
 func (s *service) UpdateProduct(ctx context.Context, newProduct Product) error {
 
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	// nolint: errcheck
-	defer tx.Rollback(ctx)
-
-	productUpdateQuery := `
+	query := `
 	update "Product"
-	set name = $3, description = $4, price = $5, stock_quantity = $6, usage_per_unit = $7
+	set name = $3, description = $4, price = $5, unit = $6, max_amount = $7, current_amount = $8
 	where merchant_id = $1 and id = $2 and deleted_on is null
 	`
-	_, err = tx.Exec(ctx, productUpdateQuery, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.StockQuantity, newProduct.UsagePerUnit)
+	_, err := s.db.Exec(ctx, query, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.Unit, newProduct.MaxAmount, newProduct.CurrentAmount)
 	if err != nil {
 		return fmt.Errorf("failed to update product: %v", err)
-	}
-
-	insertServiceQuery := `
-	with valid_services as (
-    	select s.id as service_id
-    	from unnest($3::bigint[]) as input_id
-    	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1
-	)
-	insert into "ServiceProduct" (product_id, service_id)
-	select $2, service_id
-	from valid_services
-	on conflict (product_id, service_id) do nothing;
-	`
-
-	_, err = tx.Exec(ctx, insertServiceQuery, newProduct.MerchantId, newProduct.Id, newProduct.ServiceIds)
-	if err != nil {
-		return fmt.Errorf("failed to insert new service links: %v", err)
-	}
-
-	deleteServiceQuery := `
-	with valid_services as (
-    	select s.id as service_id
-    	from unnest($3::bigint[]) as input_id
-    	join "Service" s on s.id = input_id
-    	where s.merchant_id = $1
-	)
-	delete from "ServiceProduct"
-	where product_id = $2
-	and not exists (
-		select 1
-		from valid_services
-		where valid_services.service_id = "ServiceProduct".service_id
-	);
-	`
-	_, err = tx.Exec(ctx, deleteServiceQuery, newProduct.MerchantId, newProduct.Id, newProduct.ServiceIds)
-	if err != nil {
-		return fmt.Errorf("failed to delete outdated service associations: %v", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
 	}
 
 	return nil
@@ -132,45 +71,82 @@ func (s *service) DeleteProductById(ctx context.Context, merchantId uuid.UUID, p
 	return nil
 }
 
-type PublicProduct struct {
-	Id            int    `json:"id" db:"id"`
-	Name          string `json:"name" db:"name"`
-	Description   string `json:"description" db:"description"`
-	Price         int    `json:"price" db:"price"`
-	StockQuantity int    `json:"stock_quantity" db:"stock_quantity"`
-	UsagePerUnit  int    `json:"usage_per_unit" db:"usage_per_unit"`
-	ServiceIds    []*int `json:"service_ids" db:"service_ids"`
+type ServiceInfoForProducts struct {
+	Id    int    `json:"id" db:"id"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
+type ProductInfo struct {
+	Id            int                      `json:"id" db:"id"`
+	Name          string                   `json:"name" db:"name"`
+	Description   string                   `json:"description" db:"description"`
+	Price         int                      `json:"price" db:"price"`
+	Unit          string                   `json:"unit" db:"unit"`
+	MaxAmount     int                      `json:"max_amount" db:"max_amount"`
+	CurrentAmount int                      `json:"current_amount" db:"current_amount"`
+	Services      []ServiceInfoForProducts `json:"services" db:"services"`
 }
 
 // TODO: this should use pgx helpers
-func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]PublicProduct, error) {
+func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ProductInfo, error) {
 	query := `
-	select p.id, p.name, p.description, p.price, p.stock_quantity, p.usage_per_unit, array_agg(sp.service_id) as service_ids
+	select p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount, 
+	coalesce(
+        json_agg(
+		    json_build_object(
+	            'id', s.id, 
+	            'name', s.name,
+	            'color', s.color
+			)
+	    ) filter (where s.id is not null), 
+	'[]'::json) as services
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
-	where p.merchant_id = $1 and deleted_on is null
-	group by p.id, p.name, p.description, p.stock_quantity, p.usage_per_unit`
+	left join "Service" s on sp.service_id = s.id and s.deleted_on is null
+	where p.merchant_id = $1 and p.deleted_on is null
+	group by p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount`
 
 	rows, _ := s.db.Query(ctx, query, merchantId)
-	products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (PublicProduct, error) {
-		var product PublicProduct
-		err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.UsagePerUnit, &product.ServiceIds)
+	products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (ProductInfo, error) {
+		var product ProductInfo
+		var servicesJSON []byte
 
-		if product.ServiceIds[0] == nil {
-			product.ServiceIds = []*int{}
+		err := row.Scan(
+			&product.Id,
+			&product.Name,
+			&product.Description,
+			&product.Price,
+			&product.Unit,
+			&product.MaxAmount,
+			&product.CurrentAmount,
+			&servicesJSON,
+		)
+		if err != nil {
+			return product, err
 		}
 
-		return product, err
+		// Parse the JSON
+		if len(servicesJSON) > 0 {
+			err = json.Unmarshal(servicesJSON, &product.Services)
+			if err != nil {
+				return product, err
+			}
+		} else {
+			product.Services = []ServiceInfoForProducts{}
+		}
+
+		return product, nil
 	})
+
 	if err != nil {
-		return []PublicProduct{}, err
+		return []ProductInfo{}, err
 	}
 
 	// if products array is empty the encoded json field will be null
 	// unless an empty slice is supplied to it
 	if len(products) == 0 {
-		products = []PublicProduct{}
+		products = []ProductInfo{}
 	}
-
 	return products, nil
 }
