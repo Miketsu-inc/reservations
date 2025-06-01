@@ -30,15 +30,34 @@ create table if not exists "Merchant" (
     timezone                 text
 );
 
+create table if not exists "ServiceCategory" (
+    ID                       serial          primary key unique not null,
+    merchant_id              uuid            references "Merchant" (ID) not null,
+    name                     varchar(30)     not null
+);
+
 create table if not exists "Service" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
+    category_id              integer         references "ServiceCategory" (ID),
     name                     varchar(30)     not null,
     description              varchar(200),
     color                    char(7)         not null,
-    duration                 integer         not null,
+    total_duration           integer         not null,
     price                    bigint          not null,
+    price_note               varchar(30),
     cost                     bigint          not null,
+    is_active                boolean         not null,
+    deleted_on               timestamptz
+);
+
+create table if not exists "ServicePhase" (
+    ID                       serial          primary key unique not null,
+    service_id               integer         references "Service" (ID) not null,
+    name                     varchar(30)     not null,
+    sequence                 integer         not null,
+    duration                 integer         not null,
+    phase_type               text            check (phase_type in ('active', 'wait')) not null,
     deleted_on               timestamptz
 );
 
@@ -56,7 +75,9 @@ create table if not exists "Appointment" (
     user_id                  uuid            references "User" (ID) not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
     service_id               integer         references "Service" (ID) not null,
+    service_phase_id         integer         references "ServicePhase" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
+    group_id                 integer         not null,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,
     user_note                text,
@@ -67,7 +88,7 @@ create table if not exists "Appointment" (
     cancelled_by_merchant_on timestamptz,
     cancellation_reason      text,
     transferred_to           uuid,
-    email_id                 uuid  
+    email_id                 uuid
 );
 
 create table if not exists "Preferences" (

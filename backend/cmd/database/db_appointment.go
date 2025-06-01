@@ -13,9 +13,11 @@ type Appointment struct {
 	UserId                uuid.UUID `json:"user_id" db:"user_id"`
 	MerchantId            uuid.UUID `json:"merchant_id" db:"merchant_id"`
 	ServiceId             int       `json:"service_id" db:"service_id"`
+	ServicePhaseId        int       `json:"service_phase_id" db:"service_phase_id"`
 	LocationId            int       `json:"location_id" db:"location_id"`
-	FromDate              string    `json:"from_date" db:"from_date"`
-	ToDate                string    `json:"to_date" db:"to_date"`
+	GroupId               int       `json:"group_id" db:"group_id"`
+	FromDate              time.Time `json:"from_date" db:"from_date"`
+	ToDate                time.Time `json:"to_date" db:"to_date"`
 	UserNote              string    `json:"user_note" db:"user_note"`
 	MerchantNote          string    `json:"merchant_note" db:"merchant_note"`
 	PriceThen             int       `json:"price_then" db:"price_then"`
@@ -27,25 +29,70 @@ type Appointment struct {
 	EmailId               uuid.UUID `json:"email_id" db:"email_id"`
 }
 
-func (s *service) NewAppointment(ctx context.Context, app Appointment) (int, error) {
-	query := `
-	insert into "Appointment" (user_id, merchant_id, service_id, location_id, from_date, to_date, user_note, merchant_note, price_then, cost_then)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	returning id`
-
-	var id int
-	err := s.db.QueryRow(ctx, query, app.UserId, app.MerchantId, app.ServiceId, app.LocationId, app.FromDate, app.ToDate, app.UserNote, app.MerchantNote, app.PriceThen, app.CostThen).Scan(&id)
-
+// every appointment needs a group_id because otherwise
+// they would get grouped together as null
+func (s *service) NewAppointment(ctx context.Context, app Appointment, phases []PublicServicePhase) (int, error) {
+	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return 0, err
 	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	insertQuery := `
+	insert into "Appointment" (user_id, merchant_id, service_id, service_phase_id, location_id, group_id, from_date, to_date,
+		user_note, merchant_note, price_then, cost_then)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	`
+
+	var id int
+	appStart := app.FromDate
+
+	for index, phase := range phases {
+		phaseDuration := time.Duration(phase.Duration) * time.Minute
+		appEnd := appStart.Add(phaseDuration)
+
+		// get the first appointment's id for the group_id column
+		if index == 0 {
+			err = tx.QueryRow(ctx, insertQuery+` returning id`, app.UserId, app.MerchantId, app.ServiceId, phase.Id, app.LocationId, app.GroupId,
+				appStart, appEnd, app.UserNote, app.MerchantNote, app.PriceThen, app.CostThen).Scan(&id)
+			if err != nil {
+				return 0, err
+			}
+
+		} else {
+			_, err = tx.Exec(ctx, insertQuery, app.UserId, app.MerchantId, app.ServiceId, phase.Id, app.LocationId, id,
+				appStart, appEnd, app.UserNote, app.MerchantNote, app.PriceThen, app.CostThen)
+			if err != nil {
+				return 0, err
+			}
+		}
+
+		appStart = appEnd
+	}
+
+	updateGroupIdQuery := `
+	update "Appointment"
+	set group_id = $1
+	where id = $2
+	`
+	_, err = tx.Exec(ctx, updateGroupIdQuery, id, id)
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return 0, err
+	}
+
 	return id, nil
 }
 
 func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_note string, from_date string, to_date string) error {
 	query := `
 	update "Appointment" set merchant_note = $1, from_date = $2, to_date = $3
-	where id = $4 and merchant_id = $5 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
+	where (id = $4 or group_id = $4) and merchant_id = $5 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
 	`
 	_, err := s.db.Exec(ctx, query, merchant_note, from_date, to_date, appointmentId, merchantId)
 	if err != nil {
@@ -74,11 +121,12 @@ type AppointmentDetails struct {
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
 	query := `
 	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.duration as service_duration, u.first_name, u.last_name, u.phone_number
+	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
-	where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null`
+	where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
+	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, start, end)
 	appointments, err := pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentDetails])
@@ -96,9 +144,11 @@ type AppointmentTime struct {
 
 func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]AppointmentTime, error) {
 	query := `
-    select from_date, to_date from "Appointment"
-    where merchant_id = $1 and location_id = $2 and DATE(from_date) = $3 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
-    ORDER BY from_date`
+    select a.from_date, a.to_date from "Appointment" a
+	inner join "ServicePhase" sp on a.service_phase_id = sp.id
+    where a.merchant_id = $1 and a.location_id = $2 and DATE(a.from_date) = $3 and a.cancelled_by_user_on is null
+		and a.cancelled_by_merchant_on is null and sp.phase_type = 'active'
+    ORDER BY a.from_date`
 
 	rows, _ := s.db.Query(ctx, query, merchant_id, location_id, day)
 	bookedApps, err := pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentTime])
@@ -129,7 +179,7 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	query := `
 	update "Appointment"
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
-	where merchant_id = $3 and id = $4 and cancelled_by_user_on is null and cancelled_by_merchant_on is null and from_date > $1
+	where merchant_id = $3 and (id = $4 or group_id = $4) and cancelled_by_user_on is null and cancelled_by_merchant_on is null and from_date > $1
 	`
 
 	_, err := s.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, appointmentId)
@@ -142,8 +192,8 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 
 func (s *service) CancelAppointmentByUser(ctx context.Context, userId uuid.UUID, appointmentId int) (uuid.UUID, error) {
 	query := `
-	update "Appointment" 
-	set cancelled_by_user_on = $1 
+	update "Appointment"
+	set cancelled_by_user_on = $1
 	where user_id = $2 and id = $3 and cancelled_by_merchant_on is null and cancelled_by_user_on is null and from_date > $1
 	returning email_id`
 
@@ -163,7 +213,7 @@ func (s *service) UpdateEmailIdForAppointment(ctx context.Context, appointmentId
 	}
 
 	query := `
-	update "Appointment" set email_id = $1 where ID = $2`
+	update "Appointment" set email_id = $1 where (id = $2 or group_id = $2)`
 
 	_, err = s.db.Exec(ctx, query, emailUUID, appointmentId)
 	if err != nil {
@@ -185,7 +235,7 @@ type AppointmentEmailData struct {
 
 func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId int) (AppointmentEmailData, error) {
 	query := `
-	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, m.name as merchant_name, 
+	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, m.name as merchant_name,
 	l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location from "Appointment" a
 	join "Service" s on s.id = a.service_id
 	join "User" u on u.id = a.user_id
@@ -216,9 +266,9 @@ type PublicAppointmentInfo struct {
 func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId int) (PublicAppointmentInfo, error) {
 	query := `
 	select a.from_date, a.to_date, a.price_then as price, m.name as merchant_name, s.name as service_name,
-	a.cancelled_by_user_on is not null as cancelled_by_user, 
+	a.cancelled_by_user_on is not null as cancelled_by_user,
 	a.cancelled_by_merchant_on is not null as cancelled_by_merchant,
-	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location 
+	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location
 	from "Appointment" a
 	join "Service" s on s.id = a.service_id
 	join "Merchant" m on m.id = a.merchant_id

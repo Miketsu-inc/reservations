@@ -91,7 +91,7 @@ export default function Select({
         onClick={() => (isOpen ? handleClose() : handleOpen())}
         className="focus:border-text_color w-full rounded-md border border-gray-400 py-2 pr-2 pl-3
           text-left text-gray-900 focus:outline-none dark:border-gray-500
-          dark:bg-neutral-950 dark:focus:border-white"
+          dark:focus:border-white"
         type="button"
       >
         <div className="flex items-center justify-between">

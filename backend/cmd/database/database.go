@@ -27,7 +27,7 @@ type PostgreSQL interface {
 	// -- Appointment --
 
 	// Insert a new Appointment to the database.
-	NewAppointment(context.Context, Appointment) (int, error)
+	NewAppointment(context.Context, Appointment, []PublicServicePhase) (int, error)
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
 	// Get all available times for reservations
@@ -101,18 +101,18 @@ type PostgreSQL interface {
 	// Get location by it's id
 	GetLocationById(context.Context, int) (Location, error)
 
-	// -- Serivce --
+	// -- Service --
 
 	// Insert a new service to the database
-	NewService(context.Context, Service) error
-	// Get a Service by it's id
-	GetServiceById(context.Context, int) (Service, error)
+	NewService(context.Context, Service, []ServicePhase) error
+	// Get a Service and it's phases by it's id
+	GetServiceById(context.Context, int, uuid.UUID) (PublicService, error)
 	// Get all services for a merchant by it's id
 	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicService, error)
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service by it's id
-	UpdateServiceById(context.Context, Service) error
+	UpdateServiceById(context.Context, PublicService) error
 
 	// -- Customer --
 

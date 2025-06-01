@@ -187,3 +187,14 @@ export function addTimeToDate(date, hours = 0, minutes = 0) {
 
   return newDate;
 }
+
+export function formatDuration(duration) {
+  const minutes = duration % 60;
+  let hours = 0;
+
+  if (duration >= 60) {
+    hours = Math.floor(duration / 60);
+  }
+
+  return `${hours > 0 ? `${hours}h ` : ""}${minutes > 0 ? `${minutes}m` : ""}`;
+}

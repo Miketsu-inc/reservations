@@ -41,6 +41,8 @@ func staticFilesHandler(r *chi.Mux) {
 		"/settings/billing",
 		"/settings/calendar",
 		"/services",
+		"/services/new",
+		"/services/edit/{id}",
 		"/customers",
 		"/products",
 		"/dashboard",
@@ -143,6 +145,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 		r.Get("/services", merchantHandler.GetServices)
 		r.Post("/services", merchantHandler.NewService)
+		r.Get("/services/{id}", merchantHandler.GetService)
 		r.Delete("/services/{id}", merchantHandler.DeleteService)
 		r.Put("/services/{id}", merchantHandler.UpdateService)
 

@@ -34,6 +34,7 @@ export default function Input({
         styles={`${styles} ps-1 peer border-2 bg-transparent outline-hidden
           invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600
           invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
+          placeholder-gray-500 dark:placeholder-gray-400
           ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}
         type={type}
         name={name}

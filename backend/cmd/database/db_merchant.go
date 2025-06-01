@@ -168,13 +168,13 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
+	select distinct on (a.group_id) u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
 		count(a.id) as times_booked, count(case when a.cancelled_by_user_on is not null then 1 end) as times_cancelled
 	from "User" u
 	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
 	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $2
 	where u.is_dummy = true or a.id is not null
-	group by u.id, b.user_id;
+	group by a.group_id, u.id, b.user_id;
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, merchantId)
@@ -434,13 +434,13 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// UpcomingAppointments
 	query := `
-	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.duration as service_duration, u.first_name, u.last_name, u.phone_number
+	select distinct on (a.group_id) a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
-	order by a.from_date
+	order by a.group_id, a.from_date
 	limit 5`
 
 	var err error
@@ -452,13 +452,13 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// LatestBookings
 	query2 := `
-	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.duration as service_duration, u.first_name, u.last_name, u.phone_number
+	select distinct on (a.group_id) a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
-	order by a.id desc
+	order by a.group_id, a.id desc
 	limit 5`
 
 	rows, _ = s.db.Query(ctx, query2, merchantId, utcDate)
@@ -510,6 +510,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	query := `
 	WITH base AS (
     SELECT
+		distinct on (group_id)
         from_date::date AS day,
         price_then,
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
@@ -517,6 +518,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
         (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
     FROM "Appointment"
     WHERE merchant_id = $1
+	order by group_id
 	),
 	current AS (
 		SELECT
@@ -587,9 +589,13 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	SELECT
 		DATE(from_date) AS day,
 		COALESCE(SUM(price_then), 0)::int AS value
-	FROM "Appointment"
-	WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
-	AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
+	FROM (
+		select distinct on (group_id) from_date, price_then
+		from "Appointment"
+		WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
+		AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
+		order by group_id
+	)
 	GROUP BY day
 	ORDER BY day
 	`

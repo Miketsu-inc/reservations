@@ -24,7 +24,7 @@ export default function Button({
   return (
     <button
       onClick={onClick}
-      className={`${styles} ${variants[variant]} rounded-lg font-semibold focus-visible:outline-1
+      className={`${styles} ${variants[variant]} rounded-lg focus-visible:outline-1
         ${isLoading || disabled ? "opacity-50 transition-opacity" : "cursor-pointer"}`}
       name={name}
       type={type}
@@ -36,7 +36,7 @@ export default function Button({
           <LoaderIcon styles="-ml-1 mr-3 h-5 w-5" />
         </div>
       ) : children ? (
-        <div className="flex items-center">
+        <div className="flex items-center justify-center">
           <span>{children}</span>
           <span>{buttonText}</span>
         </div>

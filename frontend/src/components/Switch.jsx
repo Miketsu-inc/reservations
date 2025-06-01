@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Switch({
   size = "medium",
@@ -9,10 +9,15 @@ export default function Switch({
 }) {
   const [isOn, setIsOn] = useState(defaultValue);
 
+  useEffect(() => {
+    setIsOn(defaultValue);
+  }, [defaultValue]);
+
   return (
     <button
       aria-checked={isOn}
       role="switch"
+      type="button"
       onClick={() => {
         if (!disabled) {
           setIsOn(!isOn);

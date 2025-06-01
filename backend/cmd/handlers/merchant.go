@@ -95,13 +95,24 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
+	type newPhase struct {
+		Name      string `json:"name" validate:"required"`
+		Sequence  int    `json:"sequence" validate:"required"`
+		Duration  int    `json:"duration" validate:"required,min=1,max=1440"`
+		PhaseType string `json:"phase_type" validate:"required,eq=wait|eq=active"`
+	}
+
+	fmt.Println("asd")
 	type newService struct {
-		Name        string `json:"name" validate:"required"`
-		Description string `json:"description"`
-		Color       string `json:"color" validate:"required,hexcolor"`
-		Duration    int    `json:"duration" validate:"required,min=1,max=1440"`
-		Price       int    `json:"price" validate:"min=0,max=1000000"`
-		Cost        int    `json:"cost" validate:"min=0,max=1000000"`
+		Name        string     `json:"name" validate:"required"`
+		Description string     `json:"description"`
+		Color       string     `json:"color" validate:"required,hexcolor"`
+		Price       int        `json:"price" validate:"min=0,max=1000000"`
+		PriceNote   *string    `json:"price_note"`
+		Cost        int        `json:"cost" validate:"min=0,max=1000000"`
+		CategoryId  *int       `json:"category_id"`
+		IsActive    bool       `json:"is_active"`
+		Phases      []newPhase `json:"phases" validate:"required"`
 	}
 	var service newService
 
@@ -118,16 +129,33 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var dbPhases []database.ServicePhase
+	durationSum := 0
+	for _, phase := range service.Phases {
+		dbPhases = append(dbPhases, database.ServicePhase{
+			Id:        0,
+			ServiceId: 0,
+			Name:      phase.Name,
+			Sequence:  phase.Sequence,
+			Duration:  phase.Duration,
+			PhaseType: phase.PhaseType,
+		})
+		durationSum += phase.Duration
+	}
+
 	if err := m.Postgresdb.NewService(r.Context(), database.Service{
-		Id:          0,
-		MerchantId:  merchantId,
-		Name:        service.Name,
-		Description: service.Description,
-		Color:       service.Color,
-		Duration:    service.Duration,
-		Price:       service.Price,
-		Cost:        service.Cost,
-	}); err != nil {
+		Id:            0,
+		MerchantId:    merchantId,
+		CategoryId:    service.CategoryId,
+		Name:          service.Name,
+		Description:   service.Description,
+		Color:         service.Color,
+		TotalDuration: durationSum,
+		Price:         service.Price,
+		PriceNote:     service.PriceNote,
+		Cost:          service.Cost,
+		IsActive:      service.IsActive,
+	}, dbPhases); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
 	}
@@ -195,14 +223,14 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := m.Postgresdb.GetServiceById(r.Context(), urlServiceId)
+	service, err := m.Postgresdb.GetServiceById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
 		return
 	}
 
 	if service.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this serivce id does not belong to this merchant"))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
 		return
 	}
 
@@ -232,7 +260,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableSlots := calculateAvailableTimes(reservedTimes, service.Duration, day, businessHours, merchantTz)
+	availableSlots := calculateAvailableTimes(reservedTimes, service.Phases, service.TotalDuration, day, businessHours, merchantTz)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -242,15 +270,19 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuration int, bookingDay time.Time, businessHours []database.TimeSlot, merchantTz *time.Location) FormattedAvailableTimes {
+func calculateAvailableTimes(reserved []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int,
+	bookingDay time.Time, businessHours []database.TimeSlot, merchantTz *time.Location) FormattedAvailableTimes {
+
 	year, month, day := bookingDay.Date()
-	duration := time.Duration(serviceDuration) * time.Minute
+	totalDuration := time.Duration(serviceDuration) * time.Minute
 
 	morning := []string{}
 	afternoon := []string{}
 
 	now := time.Now().In(merchantTz)
 	isToday := bookingDay.Format("2006-01-02") == time.Now().Format("2006-01-02")
+
+	stepSize := 15 * time.Minute
 
 	for _, slot := range businessHours {
 		startTime, _ := time.Parse("15:04:05", slot.StartTime)
@@ -263,32 +295,43 @@ func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuratio
 		businessEnd := time.Date(year, month, day, endTime.Hour(), endTime.Minute(), 0, 0, merchantTz)
 
 		appStart := businessStart
-		appEnd := appStart.Add(duration)
 
-		for appEnd.Before(businessEnd) || appEnd.Equal(businessEnd) {
-
-			available := true
-
-			for _, appt := range reserved {
-				reservedFromDate := appt.From_date.In(merchantTz)
-				reservedToDate := appt.To_date.In(merchantTz)
-
-				if appEnd.After(reservedFromDate) && appStart.Before(reservedToDate) {
-					appStart = reservedToDate
-					appEnd = appStart.Add(duration)
-
-					available = false
-					break
-				}
-			}
-
+		for appStart.Add(totalDuration).Before(businessEnd) || appStart.Add(totalDuration).Equal(businessEnd) {
 			if isToday && appStart.Before(now) {
-				appStart = appEnd
-				appEnd = appStart.Add(duration)
+				appStart = appStart.Add(stepSize)
 				continue
 			}
 
-			if available && (appEnd.Before(businessEnd) || appEnd.Equal(businessEnd)) {
+			available := true
+
+			phaseStart := appStart
+			for _, phase := range servicePhases {
+				phaseDuration := time.Duration(phase.Duration) * time.Minute
+				phaseEnd := phaseStart.Add(phaseDuration)
+
+				if phase.PhaseType == "active" {
+
+					for _, appt := range reserved {
+						reservedFromDate := appt.From_date.In(merchantTz)
+						reservedToDate := appt.To_date.In(merchantTz)
+
+						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
+							appStart = reservedToDate
+
+							available = false
+							break
+						}
+					}
+				}
+
+				if !available {
+					break
+				}
+
+				phaseStart = phaseEnd
+			}
+
+			if available {
 				formattedTime := fmt.Sprintf("%02d:%02d", appStart.Hour(), appStart.Minute())
 
 				if appStart.Hour() < 12 {
@@ -297,8 +340,7 @@ func calculateAvailableTimes(reserved []database.AppointmentTime, serviceDuratio
 					afternoon = append(afternoon, formattedTime)
 				}
 
-				appStart = appEnd
-				appEnd = appStart.Add(duration)
+				appStart = appStart.Add(stepSize)
 			}
 		}
 	}
@@ -329,6 +371,36 @@ func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, services)
 }
 
+func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	service, err := m.Postgresdb.GetServiceById(r.Context(), serviceId, merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service for merchant: %s", err.Error()))
+	}
+
+	httputil.Success(w, http.StatusOK, service)
+}
+
 func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -339,7 +411,7 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 
 	serviceId, err := strconv.Atoi(id)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting serivce id to int: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
 		return
 	}
 
@@ -359,9 +431,9 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
-	var serv database.PublicService
+	var pubServ database.PublicService
 
-	if err := validate.ParseStruct(r, &serv); err != nil {
+	if err := validate.ParseStruct(r, &pubServ); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
@@ -375,11 +447,11 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 
 	serviceId, err := strconv.Atoi(id)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting serivce id to int: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
 		return
 	}
 
-	if serviceId != serv.Id {
+	if serviceId != pubServ.Id {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
 		return
 	}
@@ -392,15 +464,24 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.UpdateServiceById(r.Context(), database.Service{
-		Id:          serv.Id,
-		MerchantId:  merchantId,
-		Name:        serv.Name,
-		Description: serv.Description,
-		Color:       serv.Color,
-		Duration:    serv.Duration,
-		Price:       serv.Price,
-		Cost:        serv.Cost,
+	durationSum := 0
+	for _, phase := range pubServ.Phases {
+		durationSum += phase.Duration
+	}
+
+	err = m.Postgresdb.UpdateServiceById(r.Context(), database.PublicService{
+		Id:            pubServ.Id,
+		MerchantId:    merchantId,
+		CategoryId:    pubServ.CategoryId,
+		Name:          pubServ.Name,
+		Description:   pubServ.Description,
+		Color:         pubServ.Color,
+		TotalDuration: durationSum,
+		Price:         pubServ.Price,
+		PriceNote:     pubServ.PriceNote,
+		Cost:          pubServ.Cost,
+		IsActive:      pubServ.IsActive,
+		Phases:        pubServ.Phases,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating service for merchant: %s", err.Error()))

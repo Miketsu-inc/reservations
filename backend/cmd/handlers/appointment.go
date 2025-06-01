@@ -48,14 +48,14 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := a.Postgresdb.GetServiceById(r.Context(), newApp.ServiceId)
+	service, err := a.Postgresdb.GetServiceById(r.Context(), newApp.ServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
 		return
 	}
 
 	if service.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this serivce id does not belong to this merchant"))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
 		return
 	}
 
@@ -70,11 +70,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration, err := time.ParseDuration(strconv.Itoa(service.Duration) + "m")
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("duration could not be parsed: %s", err.Error()))
-		return
-	}
+	duration := time.Duration(service.TotalDuration) * time.Minute
 
 	timeStamp, err := time.Parse(time.RFC3339, newApp.TimeStamp)
 	if err != nil {
@@ -82,11 +78,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	const postgresTimeFormat = "2006-01-02T15:04:05-0700"
-
 	toDate := timeStamp.Add(duration)
-	from_date := timeStamp.Format(postgresTimeFormat)
-	to_date := toDate.Format(postgresTimeFormat)
 
 	appointmentId, err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:           0,
@@ -94,13 +86,14 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		MerchantId:   merchantId,
 		ServiceId:    newApp.ServiceId,
 		LocationId:   newApp.LocationId,
-		FromDate:     from_date,
-		ToDate:       to_date,
+		GroupId:      0,
+		FromDate:     timeStamp,
+		ToDate:       toDate,
 		UserNote:     newApp.UserNote,
 		MerchantNote: "",
 		PriceThen:    service.Price,
 		CostThen:     service.Cost,
-	})
+	}, service.Phases)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return

@@ -19,10 +19,6 @@ function MerchantSignup() {
       isSubmitDone={setIsSubmitDone}
       redirect={() => navigate({ to: "/dashboard" })}
     />,
-    // <AppointmentsAdder
-    //   key="appointmentsAdder"
-    //   redirect={() => navigate({ to: "/dashboard" })}
-    // />,
   ]);
 
   function isCompletedHandler(isCompleted) {
@@ -39,8 +35,8 @@ function MerchantSignup() {
       <div
         className={`${
           !isSubmitDone
-            ? `flex w-full max-w-md flex-col px-8 shadow-sm sm:rounded-xl sm:bg-layer_bg
-              sm:pb-10 sm:pt-6 sm:shadow-lg`
+            ? `sm:bg-layer_bg flex w-full max-w-md flex-col px-8 shadow-sm sm:rounded-xl
+              sm:pt-6 sm:pb-10 sm:shadow-lg`
             : ""
           } `}
       >

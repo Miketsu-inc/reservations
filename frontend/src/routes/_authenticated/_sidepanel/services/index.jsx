@@ -1,10 +1,13 @@
+import Button from "@components/Button";
+import DeleteModal from "@components/DeleteModal";
+import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
-import { useToast } from "@lib/hooks";
+import PlusIcon from "@icons/PlusIcon";
+import { useToast, useWindowSize } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import ServiceModal from "./-components/ServiceModal";
-import ServicesTable from "./-components/ServicesTable";
+import ServiceCard from "./-components/ServiceCard";
 
 async function fetchServices() {
   const response = await fetch(`/api/v1/merchants/services`, {
@@ -42,10 +45,19 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
 function ServicesPage() {
   const router = useRouter();
   const loaderData = Route.useLoaderData();
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [modalData, setModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  const windowSize = useWindowSize();
+  const [selected, setSelected] = useState({ id: 0, name: "" });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
+
+  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+
+  const filteredServices = loaderData.services.filter((service) =>
+    service.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   async function deleteHandler(selected) {
     try {
@@ -77,82 +89,67 @@ function ServicesPage() {
     }
   }
 
-  async function modalHandler(service) {
-    let url = "";
-    let method = "";
-
-    // means that the service was already added and now should be modified
-    if (service.id != null) {
-      url = `/api/v1/merchants/services/${service.id}`;
-      method = "PUT";
-    } else {
-      // for correct json sending
-      delete service.id;
-      url = "/api/v1/merchants/services";
-      method = "POST";
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(service),
-      });
-
-      if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        router.invalidate();
-        setServerError();
-
-        showToast({
-          message:
-            method === "POST"
-              ? "Service added successfully"
-              : "Service modified successfully",
-          variant: "success",
-        });
-      }
-    } catch (err) {
-      setServerError(err.message);
-    } finally {
-      setModalData();
-    }
-  }
-
   return (
-    <div className="flex h-screen justify-center px-4 py-2 md:px-0 md:py-0">
-      <ServiceModal
-        data={modalData}
-        isOpen={showServiceModal}
-        onClose={() => setShowServiceModal(false)}
-        onSubmit={modalHandler}
-      />
-      <div className="flex w-full flex-col gap-5 py-4">
+    <div className="flex h-screen px-4 py-2 md:px-0 md:py-0">
+      <DeleteModal
+        itemName={selected.name}
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={() => deleteHandler(selected)}
+      ></DeleteModal>
+      <div className="flex w-full flex-col gap-8 py-4">
         <p className="text-xl">Services</p>
         <ServerError error={serverError} />
-        <div className="h-2/3 w-full">
-          <ServicesTable
-            servicesData={loaderData.services}
-            onNewItem={() => {
-              // the first condition is necessary for it to not cause an error
-              // in case of a new item
-              if (modalData && modalData.id) {
-                setModalData();
-              }
-              setTimeout(() => setShowServiceModal(true), 0);
-            }}
-            onEdit={(service) => {
-              setModalData(service);
-              setTimeout(() => setShowServiceModal(true), 0);
-            }}
-            onDelete={deleteHandler}
+        <div className="flex flex-row items-center justify-between">
+          <SearchInput
+            searchText={searchText}
+            onChange={(text) => setSearchText(text)}
           />
+          {isWindowSmall ? (
+            // TODO: temporary until popover is used
+            <Link from={Route.fullPath} to="/services/new">
+              <Button styles="p-2" variant="primary">
+                <PlusIcon styles="size-6" />
+              </Button>
+            </Link>
+          ) : (
+            <div className="flex flex-row items-center gap-4">
+              <Button
+                styles="py-2 px-4"
+                variant="secondary"
+                buttonText="New category"
+              >
+                <PlusIcon styles="size-5 mr-1" />
+              </Button>
+              <Link from={Route.fullPath} to="/services/new">
+                <Button
+                  styles="py-2 px-4"
+                  variant="primary"
+                  buttonText="New service"
+                >
+                  <PlusIcon styles="size-5 mr-1" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-4">
+          {filteredServices.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              onDelete={() => {
+                setSelected({ name: service.name, id: service.id });
+                setShowDeleteModal(true);
+              }}
+              onEdit={() =>
+                router.navigate({
+                  from: Route.fullPath,
+                  to: `/services/edit/${service.id}`,
+                })
+              }
+            />
+          ))}
         </div>
       </div>
     </div>
