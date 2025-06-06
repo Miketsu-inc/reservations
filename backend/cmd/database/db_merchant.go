@@ -104,7 +104,7 @@ type MerchantInfo struct {
 	PostalCode string `json:"postal_code"`
 	Address    string `json:"address"`
 
-	Services []PublicService `json:"services"`
+	Services []PublicServiceWithPhases `json:"services"`
 
 	BusinessHours map[int][]TimeSlot `json:"business_hours"`
 }

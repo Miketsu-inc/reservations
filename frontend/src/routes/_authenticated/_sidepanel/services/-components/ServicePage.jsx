@@ -21,6 +21,8 @@ export default function ServicePage({ service, onSave }) {
       category_id: service?.category_id || null,
       is_active: service?.is_active || true,
       phases: service?.phases || [],
+      products: service?.products || [],
+      categories: service?.categories || [],
     }),
     [service]
   );
@@ -155,7 +157,10 @@ export default function ServicePage({ service, onSave }) {
                       value={serviceData.category_id}
                       options={[
                         { value: null, label: "No category" },
-                        { value: "category1", label: "Category 1" },
+                        ...serviceData.categories.map((category) => ({
+                          value: category.id,
+                          label: category.name,
+                        })),
                       ]}
                       onSelect={(option) =>
                         updateServiceData({ category_id: option.value })

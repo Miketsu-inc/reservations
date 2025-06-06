@@ -13,7 +13,7 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
         className="w-2 rounded-l-lg"
       ></div>
       <div
-        className="absolute inset-0 z-0 opacity-10 dark:opacity-10"
+        className="absolute inset-0 z-0 opacity-0 dark:opacity-10"
         style={{
           background: `linear-gradient(90deg, ${service.color} 0%, ${service.color}30 30%, transparent 70%)`,
         }}

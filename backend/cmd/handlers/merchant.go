@@ -223,7 +223,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := m.Postgresdb.GetServiceById(r.Context(), urlServiceId, merchantId)
+	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
 		return
@@ -393,7 +393,7 @@ func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := m.Postgresdb.GetServiceById(r.Context(), serviceId, merchantId)
+	service, err := m.Postgresdb.GetAllServiceDataById(r.Context(), serviceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service for merchant: %s", err.Error()))
 	}
@@ -431,7 +431,7 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
-	var pubServ database.PublicService
+	var pubServ database.PublicServiceWithPhases
 
 	if err := validate.ParseStruct(r, &pubServ); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
@@ -469,7 +469,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		durationSum += phase.Duration
 	}
 
-	err = m.Postgresdb.UpdateServiceById(r.Context(), database.PublicService{
+	err = m.Postgresdb.UpdateServicWithPhaseseById(r.Context(), database.PublicServiceWithPhases{
 		Id:            pubServ.Id,
 		MerchantId:    merchantId,
 		CategoryId:    pubServ.CategoryId,
@@ -1025,4 +1025,33 @@ func (m *Merchant) GetDashboardData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, dashboardData)
+}
+
+func (m *Merchant) NewServiceCategory(w http.ResponseWriter, r *http.Request) {
+	type newCategory struct {
+		Name string `json:"name" validate:"required"`
+	}
+	var nc newCategory
+
+	err := validate.ParseStruct(r, &nc)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.NewServiceCategory(r.Context(), merchantId, database.ServiceCategory{
+		Name: nc.Name,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new service category %s", err.Error()))
+		return
+	}
 }

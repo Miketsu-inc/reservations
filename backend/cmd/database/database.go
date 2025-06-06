@@ -106,13 +106,19 @@ type PostgreSQL interface {
 	// Insert a new service to the database
 	NewService(context.Context, Service, []ServicePhase) error
 	// Get a Service and it's phases by it's id
-	GetServiceById(context.Context, int, uuid.UUID) (PublicService, error)
+	GetServiceWithPhasesById(context.Context, int, uuid.UUID) (PublicServiceWithPhases, error)
 	// Get all services for a merchant by it's id
-	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicService, error)
+	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicServiceWithPhases, error)
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
-	// Update a Service by it's id
-	UpdateServiceById(context.Context, PublicService) error
+	// Update a Service and it's phases by it's id
+	UpdateServicWithPhaseseById(context.Context, PublicServiceWithPhases) error
+	// Insert a new service category
+	NewServiceCategory(context.Context, uuid.UUID, ServiceCategory) error
+	// Get all service categires for a merchant
+	GetServiceCategoiresById(context.Context, uuid.UUID) ([]ServiceCategory, error)
+	// Get all data required for the service page
+	GetAllServiceDataById(context.Context, int, uuid.UUID) (ServicePageData, error)
 
 	// -- Customer --
 
