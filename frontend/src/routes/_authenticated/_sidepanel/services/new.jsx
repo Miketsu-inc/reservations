@@ -5,14 +5,44 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
+async function fetchServicePageFormOptions() {
+  const response = await fetch("/api/v1/merchants/services/form-options", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
   {
     component: RouteComponent,
-    // loader: () => ({ crumb: "new service" }),
+    loader: async () => {
+      const formOptions = await fetchServicePageFormOptions();
+
+      return {
+        // crumb: "New service",
+        products: formOptions?.products,
+        categories: formOptions?.categories,
+      };
+    },
+    errorComponent: ({ error }) => {
+      return <ServerError error={error.message} />;
+    },
   }
 );
 
 function RouteComponent() {
+  const loaderData = Route.useLoaderData();
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
@@ -51,7 +81,11 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <ServicePage onSave={saveServiceHandler} />
+      <ServicePage
+        categories={loaderData.categories}
+        onSave={saveServiceHandler}
+        route={Route}
+      />
     </>
   );
 }

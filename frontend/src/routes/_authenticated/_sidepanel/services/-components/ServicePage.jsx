@@ -1,14 +1,17 @@
 import Button from "@components/Button";
 import Card from "@components/Card";
+import DeleteModal from "@components/DeleteModal";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
-import { Block } from "@tanstack/react-router";
+import { useToast } from "@lib/hooks";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import ServicePhases from "./ServicePhases";
 import { useServicePhases } from "./servicehooks";
 
-export default function ServicePage({ service, onSave }) {
+export default function ServicePage({ service, categories, onSave, route }) {
   const originalData = useMemo(
     () => ({
       id: service?.id,
@@ -21,13 +24,15 @@ export default function ServicePage({ service, onSave }) {
       category_id: service?.category_id || null,
       is_active: service?.is_active || true,
       phases: service?.phases || [],
-      products: service?.products || [],
-      categories: service?.categories || [],
+      used_products: service?.used_products || [],
     }),
     [service]
   );
+  const router = useRouter();
   const [serviceData, setServiceData] = useState(originalData);
   const [lastSavedData, setLastSavedData] = useState(originalData);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setServiceData(originalData);
@@ -38,6 +43,31 @@ export default function ServicePage({ service, onSave }) {
 
   function updateServiceData(data) {
     setServiceData((prev) => ({ ...prev, ...data }));
+  }
+
+  async function deleteHandler() {
+    const response = await fetch(`/api/v1/merchants/services/${service.id}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      invalidateLocalSotrageAuth(response.status);
+      const result = await response.json();
+      showToast({ message: result.error.message, variant: "error" });
+    } else {
+      router.navigate({
+        from: route.fullPath,
+        to: "/services",
+      });
+      showToast({
+        message: "Service deleted successfully",
+        variant: "success",
+      });
+    }
   }
 
   return (
@@ -52,6 +82,14 @@ export default function ServicePage({ service, onSave }) {
         return !canLeave;
       }}
     >
+      {service && (
+        <DeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={deleteHandler}
+          itemName={service.name}
+        />
+      )}
       <div className="flex h-screen px-4 py-2 md:px-0 md:py-0">
         <div className="my-6 w-full">
           <div className="flex flex-col gap-4">
@@ -157,7 +195,7 @@ export default function ServicePage({ service, onSave }) {
                       value={serviceData.category_id}
                       options={[
                         { value: null, label: "No category" },
-                        ...serviceData.categories.map((category) => ({
+                        ...categories.map((category) => ({
                           value: category.id,
                           label: category.name,
                         })),
@@ -207,6 +245,14 @@ export default function ServicePage({ service, onSave }) {
             <Card>
               <p>Employees</p>
             </Card>
+            {service && (
+              <Button
+                type="button"
+                styles="py-4 mb-2 shadow-none bg-transparent hover:bg-transparent !text-red-500"
+                buttonText="Delete service"
+                onClick={() => setShowDeleteModal(true)}
+              ></Button>
+            )}
           </div>
         </div>
       </div>

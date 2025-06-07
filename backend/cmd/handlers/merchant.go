@@ -393,12 +393,31 @@ func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := m.Postgresdb.GetAllServiceDataById(r.Context(), serviceId, merchantId)
+	service, err := m.Postgresdb.GetAllServicePageData(r.Context(), serviceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service for merchant: %s", err.Error()))
+		return
 	}
 
 	httputil.Success(w, http.StatusOK, service)
+}
+
+func (m *Merchant) GetServiceFormOptions(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	formOptions, err := m.Postgresdb.GetServicePageFormOptions(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service form options for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, formOptions)
 }
 
 func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {

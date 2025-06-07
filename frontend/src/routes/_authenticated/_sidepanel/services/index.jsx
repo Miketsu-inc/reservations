@@ -7,6 +7,7 @@ import { useToast, useWindowSize } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
 import ServiceCard from "./-components/ServiceCard";
 
 async function fetchServices() {
@@ -51,6 +52,7 @@ function ServicesPage() {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [searchText, setSearchText] = useState("");
 
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
@@ -96,7 +98,12 @@ function ServicesPage() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onDelete={() => deleteHandler(selected)}
-      ></DeleteModal>
+      />
+      <AddServiceCategoryModal
+        isOpen={showAddCategoryModal}
+        onClose={() => setShowAddCategoryModal(false)}
+        onAdd={() => router.invalidate()}
+      />
       <div className="flex w-full flex-col gap-8 py-4">
         <p className="text-xl">Services</p>
         <ServerError error={serverError} />
@@ -118,6 +125,7 @@ function ServicesPage() {
                 styles="py-2 px-4"
                 variant="secondary"
                 buttonText="New category"
+                onClick={() => setShowAddCategoryModal(true)}
               >
                 <PlusIcon styles="size-5 mr-1" />
               </Button>

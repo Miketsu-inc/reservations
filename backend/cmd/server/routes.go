@@ -144,6 +144,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Post("/check-url", merchantHandler.CheckUrl)
 
 		r.Get("/services", merchantHandler.GetServices)
+		r.Get("/services/form-options", merchantHandler.GetServiceFormOptions)
 		r.Post("/services", merchantHandler.NewService)
 		r.Get("/services/{id}", merchantHandler.GetService)
 		r.Delete("/services/{id}", merchantHandler.DeleteService)

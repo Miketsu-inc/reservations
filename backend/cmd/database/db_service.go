@@ -374,43 +374,29 @@ func (s *service) NewServiceCategory(ctx context.Context, merchantId uuid.UUID, 
 	return nil
 }
 
-func (s *service) GetServiceCategoiresById(ctx context.Context, merchantId uuid.UUID) ([]ServiceCategory, error) {
-	query := `
-	select id, name from "ServiceCategory"
-	where merchant_id = $1
-	`
-
-	rows, _ := s.db.Query(ctx, query, merchantId)
-	categories, err := pgx.CollectRows(rows, pgx.RowToStructByName[ServiceCategory])
-	if err != nil {
-		return []ServiceCategory{}, err
-	}
-
-	return categories, nil
-}
-
-type MinimalProductInfo struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+type MinimalProductInfoWithUsage struct {
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Unit       string `json:"unit"`
+	AmountUsed int    `json:"amount_used"`
 }
 
 type ServicePageData struct {
-	Id            int                  `json:"id"`
-	CategoryId    *int                 `json:"category_id"`
-	Name          string               `json:"name"`
-	Description   string               `json:"description"`
-	Color         string               `json:"color"`
-	TotalDuration int                  `json:"total_duration"`
-	Price         int                  `json:"price"`
-	PriceNote     *string              `json:"price_note"`
-	Cost          int                  `json:"cost"`
-	IsActive      bool                 `json:"is_active"`
-	Phases        []PublicServicePhase `json:"phases"`
-	Products      []MinimalProductInfo `json:"products"`
-	Categories    []ServiceCategory    `json:"categories"`
+	Id            int                           `json:"id"`
+	CategoryId    *int                          `json:"category_id"`
+	Name          string                        `json:"name"`
+	Description   string                        `json:"description"`
+	Color         string                        `json:"color"`
+	TotalDuration int                           `json:"total_duration"`
+	Price         int                           `json:"price"`
+	PriceNote     *string                       `json:"price_note"`
+	Cost          int                           `json:"cost"`
+	IsActive      bool                          `json:"is_active"`
+	Phases        []PublicServicePhase          `json:"phases"`
+	Products      []MinimalProductInfoWithUsage `json:"used_products"`
 }
 
-func (s *service) GetAllServiceDataById(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error) {
+func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error) {
 	query := `
 	with phases as (
 		select sp.service_id,
@@ -434,6 +420,7 @@ func (s *service) GetAllServiceDataById(ctx context.Context, serviceId int, merc
 				jsonb_build_object(
 					'id', p.id,
 					'name', p.name,
+					'unit', p.unit,
 					'amount_used', sprod.amount_used
 				)
 			) as products
@@ -458,7 +445,7 @@ func (s *service) GetAllServiceDataById(ctx context.Context, serviceId int, merc
 	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
 		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceNote, &spd.Cost, &spd.IsActive, &phaseJson, &productJson)
 	if err != nil {
-		return ServicePageData{}, nil
+		return ServicePageData{}, err
 	}
 
 	if len(phaseJson) > 0 {
@@ -476,13 +463,61 @@ func (s *service) GetAllServiceDataById(ctx context.Context, serviceId int, merc
 			return ServicePageData{}, err
 		}
 	} else {
-		spd.Products = []MinimalProductInfo{}
-	}
-
-	spd.Categories, err = s.GetServiceCategoiresById(ctx, merchantId)
-	if err != nil {
-		return ServicePageData{}, err
+		spd.Products = []MinimalProductInfoWithUsage{}
 	}
 
 	return spd, nil
+}
+
+type MinimalProductInfo struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type ServicePageFormOptions struct {
+	Products   []MinimalProductInfo `json:"products"`
+	Categories []ServiceCategory    `json:"categories"`
+}
+
+func (s *service) GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error) {
+	query := `
+	with product as (
+		select id, name from "Product" where merchant_id = $1
+	),
+	category as (
+		select id, name from "ServiceCategory" where merchant_id = $1
+	)
+	select
+		coalesce((select jsonb_agg(p) from product p), '[]'::jsonb) as products,
+		coalesce((select jsonb_agg(c) from category c), '[]'::jsonb) as categories
+	`
+
+	var spfo ServicePageFormOptions
+	var products []byte
+	var categories []byte
+
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&products, &categories)
+	if err != nil {
+		return ServicePageFormOptions{}, err
+	}
+
+	if len(products) > 0 {
+		err = json.Unmarshal(products, &spfo.Products)
+		if err != nil {
+			return ServicePageFormOptions{}, err
+		}
+	} else {
+		spfo.Products = []MinimalProductInfo{}
+	}
+
+	if len(categories) > 0 {
+		err = json.Unmarshal(categories, &spfo.Categories)
+		if err != nil {
+			return ServicePageFormOptions{}, err
+		}
+	} else {
+		spfo.Categories = []ServiceCategory{}
+	}
+
+	return spfo, nil
 }

@@ -5,8 +5,26 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
-async function fetchService(id) {
+async function fetchServiceData(id) {
   const response = await fetch(`/api/v1/merchants/services/${id}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalSotrageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+async function fetchServicePageFormOptions() {
+  const response = await fetch("/api/v1/merchants/services/form-options", {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -28,11 +46,14 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   loader: async ({ params }) => {
-    const service = await fetchService(params.id);
+    const service = await fetchServiceData(params.id);
+    const formOptions = await fetchServicePageFormOptions();
 
     return {
-      // crumb: "New service",
+      // crumb: "Edit service",
       service: service,
+      products: formOptions?.products,
+      categories: formOptions?.categories,
     };
   },
   errorComponent: ({ error }) => {
@@ -47,7 +68,6 @@ function RouteComponent() {
   const { showToast } = useToast();
 
   async function saveServiceHandler(service) {
-    console.log(service);
     try {
       const response = await fetch(`/api/v1/merchants/services/${service.id}`, {
         method: "PUT",
@@ -81,7 +101,12 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <ServicePage service={loaderData.service} onSave={saveServiceHandler} />
+      <ServicePage
+        service={loaderData.service}
+        categories={loaderData.categories}
+        onSave={saveServiceHandler}
+        route={Route}
+      />
     </>
   );
 }

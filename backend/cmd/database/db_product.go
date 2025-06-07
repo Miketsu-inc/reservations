@@ -91,21 +91,21 @@ type ProductInfo struct {
 // TODO: this should use pgx helpers
 func (s *service) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ProductInfo, error) {
 	query := `
-	select p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount, 
+	select p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount,
 	coalesce(
         json_agg(
 		    json_build_object(
-	            'id', s.id, 
+	            'id', s.id,
 	            'name', s.name,
 	            'color', s.color
 			)
-	    ) filter (where s.id is not null), 
+	    ) filter (where s.id is not null),
 	'[]'::json) as services
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
 	left join "Service" s on sp.service_id = s.id and s.deleted_on is null
 	where p.merchant_id = $1 and p.deleted_on is null
-	group by p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount`
+	group by p.id`
 
 	rows, _ := s.db.Query(ctx, query, merchantId)
 	products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (ProductInfo, error) {

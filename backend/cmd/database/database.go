@@ -115,10 +115,10 @@ type PostgreSQL interface {
 	UpdateServicWithPhaseseById(context.Context, PublicServiceWithPhases) error
 	// Insert a new service category
 	NewServiceCategory(context.Context, uuid.UUID, ServiceCategory) error
-	// Get all service categires for a merchant
-	GetServiceCategoiresById(context.Context, uuid.UUID) ([]ServiceCategory, error)
-	// Get all data required for the service page
-	GetAllServiceDataById(context.Context, int, uuid.UUID) (ServicePageData, error)
+	// Get all data related to a service
+	GetAllServicePageData(context.Context, int, uuid.UUID) (ServicePageData, error)
+	// Get all additional data required for the service page
+	GetServicePageFormOptions(context.Context, uuid.UUID) (ServicePageFormOptions, error)
 
 	// -- Customer --
 
