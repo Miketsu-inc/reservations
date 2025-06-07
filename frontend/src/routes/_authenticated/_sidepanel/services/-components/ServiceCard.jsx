@@ -23,7 +23,7 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
           <div className="flex flex-row gap-4">
             <div
               style={{ backgroundColor: service.color }}
-              className="flex size-[70px] overflow-hidden rounded-lg"
+              className="flex size-[70px] shrink-0 overflow-hidden rounded-lg"
             >
               <img
                 className="size-full object-cover"
@@ -32,7 +32,7 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
               />
             </div>
             <div className="flex flex-col justify-center gap-2">
-              <p className="truncate font-semibold">{service.name}</p>
+              <p className="flex-wrap font-semibold">{service.name}</p>
               <div className="flex flex-row items-center gap-2">
                 <span style={{ fill: service.color }}>
                   <ClockIcon styles="size-4" />
@@ -40,6 +40,14 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
                 <p className="text-sm">
                   {formatDuration(service.total_duration)}
                 </p>
+                {!service.is_active && (
+                  <span
+                    className="w-fit rounded-full bg-red-500/20 px-2 py-1 text-xs text-red-500
+                      dark:bg-red-700/20 dark:text-red-700"
+                  >
+                    Inactive
+                  </span>
+                )}
               </div>
             </div>
           </div>

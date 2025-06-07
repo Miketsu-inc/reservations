@@ -17,6 +17,7 @@ export default function Select({
   emptyText,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [isUsingKeyboard, setIsUsingKeyboard] = useState(false);
   const containerRef = useRef(null);
@@ -30,13 +31,19 @@ export default function Select({
   });
 
   function handleOpen() {
+    if (isClosing) return;
+
     setIsOpen(true);
     setHighlightedIndex(selectedIndex > -1 ? selectedIndex : 0);
   }
 
   function handleClose() {
+    setIsClosing(true);
+
     setIsOpen(false);
     onClose?.();
+
+    setTimeout(() => setIsClosing(false), 0);
   }
 
   function handleKeyDown(e) {

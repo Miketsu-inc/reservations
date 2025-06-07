@@ -108,7 +108,7 @@ type PostgreSQL interface {
 	// Get a Service and it's phases by it's id
 	GetServiceWithPhasesById(context.Context, int, uuid.UUID) (PublicServiceWithPhases, error)
 	// Get all services for a merchant by it's id
-	GetServicesByMerchantId(context.Context, uuid.UUID) ([]PublicServiceWithPhases, error)
+	GetServicesByMerchantId(context.Context, uuid.UUID, bool) ([]PublicServiceWithPhases, error)
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service and it's phases by it's id

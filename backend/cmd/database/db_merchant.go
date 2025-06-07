@@ -125,7 +125,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 		return MerchantInfo{}, err
 	}
 
-	mi.Services, err = s.GetServicesByMerchantId(ctx, merchantId)
+	mi.Services, err = s.GetServicesByMerchantId(ctx, merchantId, true)
 	if err != nil {
 		return MerchantInfo{}, err
 	}

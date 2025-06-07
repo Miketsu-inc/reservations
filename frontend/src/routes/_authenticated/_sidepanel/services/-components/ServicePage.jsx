@@ -4,6 +4,7 @@ import DeleteModal from "@components/DeleteModal";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
+import InfoIcon from "@icons/InfoIcon";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { Block, useRouter } from "@tanstack/react-router";
@@ -22,7 +23,7 @@ export default function ServicePage({ service, categories, onSave, route }) {
       price_note: service?.price_note || "",
       cost: service?.cost || "",
       category_id: service?.category_id || null,
-      is_active: service?.is_active || true,
+      is_active: service?.is_active ?? true,
       phases: service?.phases || [],
       used_products: service?.used_products || [],
     }),
@@ -40,6 +41,17 @@ export default function ServicePage({ service, categories, onSave, route }) {
   }, [originalData]);
 
   const phaseHandlers = useServicePhases(setServiceData);
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: null, label: "No category" },
+      ...categories.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })),
+    ],
+    [categories]
+  );
 
   function updateServiceData(data) {
     setServiceData((prev) => ({ ...prev, ...data }));
@@ -93,7 +105,7 @@ export default function ServicePage({ service, categories, onSave, route }) {
       <div className="flex h-screen px-4 py-2 md:px-0 md:py-0">
         <div className="my-6 w-full">
           <div className="flex flex-col gap-4">
-            <Card styles="sticky top-14 md:top-0 z-10 flex flex-row items-center justify-between">
+            <Card styles="sticky top-14 md:top-0 z-10 flex flex-row items-center justify-between gap-2">
               <p className="text-xl">{serviceData.name || "New service"}</p>
               <Button
                 styles="py-2 px-6"
@@ -193,13 +205,7 @@ export default function ServicePage({ service, categories, onSave, route }) {
                     Service category
                     <Select
                       value={serviceData.category_id}
-                      options={[
-                        { value: null, label: "No category" },
-                        ...categories.map((category) => ({
-                          value: category.id,
-                          label: category.name,
-                        })),
-                      ]}
+                      options={categoryOptions}
                       onSelect={(option) =>
                         updateServiceData({ category_id: option.value })
                       }
@@ -212,7 +218,10 @@ export default function ServicePage({ service, categories, onSave, route }) {
                         updateServiceData({ is_active: !serviceData.is_active })
                       }
                     />
-                    <p>Show on booking page</p>
+                    <div className="flex flex-row items-center gap-1">
+                      <p>Active service</p>
+                      <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label htmlFor="description">Description</label>

@@ -362,7 +362,7 @@ func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId, false)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
 		return
