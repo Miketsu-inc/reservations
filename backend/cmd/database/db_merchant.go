@@ -436,8 +436,11 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// UpcomingAppointments
 	query := `
-	select distinct on (a.group_id) a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
+	select distinct on (a.group_id) a.id,
+		min(a.from_date) over (partition by a.group_id) as from_date,
+		max(a.to_date) over (partition by a.group_id) as to_date,
+		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+		s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
@@ -454,8 +457,11 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// LatestBookings
 	query2 := `
-	select distinct on (a.group_id) a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
+	select distinct on (a.group_id) a.id,
+		min(a.from_date) over (partition by a.group_id) as from_date,
+		max(a.to_date) over (partition by a.group_id) as to_date,
+		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+		s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
@@ -518,7 +524,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
         (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
     FROM "Appointment"
     WHERE merchant_id = $1
-	order by group_id
+	order by group_id, id
 	),
 	current AS (
 		SELECT
