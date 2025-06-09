@@ -102,7 +102,6 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		PhaseType string `json:"phase_type" validate:"required,eq=wait|eq=active"`
 	}
 
-	fmt.Println("asd")
 	type newService struct {
 		Name        string     `json:"name" validate:"required"`
 		Description string     `json:"description"`

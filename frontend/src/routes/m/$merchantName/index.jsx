@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import Card from "@components/Card";
 import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -83,15 +84,18 @@ function MerchantPage() {
     }
   }, [loaderData]);
 
-  const filteredServices = merchantInfo.services.filter(
-    (service) =>
-      service.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchText.toLowerCase())
+  const filteredServicesGroupedByCategories = merchantInfo.services.map(
+    (category) => ({
+      ...category,
+      services: category.services.filter((service) =>
+        service.name.toLowerCase().includes(searchText.toLowerCase())
+      ),
+    })
   );
 
   return (
-    <div className="bg-layer_bg mx-auto min-h-screen max-w-7xl px-8">
-      <div className="flex flex-col-reverse gap-4 py-5 lg:h-96 lg:flex-row lg:gap-14 lg:py-10">
+    <Card styles="mx-auto min-h-screen max-w-7xl md:p-6">
+      <div className="mb-5 flex flex-col-reverse gap-4 lg:mb-0 lg:h-80 lg:flex-row lg:gap-14">
         <div className="flex flex-col gap-6 md:flex-row lg:w-1/3 lg:flex-col">
           <div className="flex w-full flex-row">
             <div className="w-14 sm:w-20 lg:w-24">
@@ -112,14 +116,14 @@ function MerchantPage() {
             <p className="text-justify">{merchantInfo.announcement}</p>
           </div>
         </div>
-        <div className="h-40 sm:h-52 md:h-72 lg:h-full lg:max-h-full lg:w-2/3">
+        <div className="h-40 overflow-hidden rounded-2xl md:h-72 lg:size-10/12">
           <img
-            className="h-full w-full rounded-2xl object-cover"
+            className="size-full object-cover"
             src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"
           ></img>
         </div>
       </div>
-      <hr className="border-gray-500" />
+      <hr className="border-border_color border" />
       <div className="flex flex-col gap-10 pt-5 lg:flex-row lg:pt-10">
         <div className="lg:w-2/3">
           <p className="pb-8 text-lg font-bold">Services</p>
@@ -127,32 +131,36 @@ function MerchantPage() {
             searchText={searchText}
             onChange={(text) => setSearchText(text)}
           />
-          {filteredServices.map((service) => (
-            <ServiceItem
-              key={service.id}
-              id={service.id}
-              name={service.name}
-              price={service.price}
-              description={service.description}
-            >
-              <Link
-                from={Route.fullPath}
-                to="booking"
-                search={{
-                  locationId: merchantInfo.location_id,
-                  serviceId: service.id,
-                  day: new Date().toISOString().split("T")[0],
-                }}
-              >
-                <Button
-                  variant="primary"
-                  styles="p-2"
-                  name="Reserve"
-                  buttonText="Reserve"
-                />
-              </Link>
-            </ServiceItem>
-          ))}
+          <ul>
+            {filteredServicesGroupedByCategories.map((category) => (
+              <li key={category.id}>
+                <ul className="divide-border_color divide-y">
+                  {category.services.map((service) => (
+                    <li className="py-4" key={service.id}>
+                      <ServiceItem service={service}>
+                        <Link
+                          from={Route.fullPath}
+                          to="booking"
+                          search={{
+                            locationId: merchantInfo.location_id,
+                            serviceId: service.id,
+                            day: new Date().toISOString().split("T")[0],
+                          }}
+                        >
+                          <Button
+                            variant="primary"
+                            styles="py-2 px-4"
+                            name="Reserve"
+                            buttonText="Reserve"
+                          />
+                        </Link>
+                      </ServiceItem>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="flex flex-col gap-6 lg:w-1/3">
           <ReservationSection name="About us" show={merchantInfo.about_us}>
@@ -203,6 +211,6 @@ function MerchantPage() {
           </ReservationSection>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

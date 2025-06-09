@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -155,62 +156,93 @@ type PublicServiceWithPhases struct {
 	Phases        []PublicServicePhase `json:"phases"`
 }
 
-func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID, filterForActive bool) ([]PublicServiceWithPhases, error) {
+type ServicesGroupedByCategory struct {
+	Id       *int                      `json:"id"`
+	Name     *string                   `json:"name"`
+	Services []PublicServiceWithPhases `json:"services"`
+}
+
+// TODO: full outer joins can be expensive, this should be reevaluated later for performance
+func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID, filterForActive bool) ([]ServicesGroupedByCategory, error) {
 	query := `
-	select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price, s.price_note,
-		s.cost, s.is_active,
+	with services as (
+		select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price, s.price_note,
+			s.cost, s.is_active,
+		coalesce (
+			jsonb_agg(
+				jsonb_build_object(
+					'id', sp.id,
+					'service_id', sp.service_id,
+					'name', sp.name,
+					'sequence', sp.sequence,
+					'duration', sp.duration,
+					'phase_type', sp.phase_type
+				) order by sp.sequence
+			) filter (where sp.id is not null),
+		'[]'::jsonb) as phases
+		from "Service" s
+		left join "ServicePhase" sp on s.id = sp.service_id
+		where s.merchant_id = $1 and ($2::bool = false or s.is_active = true) and s.deleted_on is null and sp.deleted_on is null
+		group by s.id
+	)
+	select sc.id, sc.name,
 	coalesce (
 		jsonb_agg(
 			jsonb_build_object(
-				'id', sp.id,
-				'service_id', sp.service_id,
-				'name', sp.name,
-				'sequence', sp.sequence,
-				'duration', sp.duration,
-				'phase_type', sp.phase_type
-			)
-		) filter (where sp.id is not null),
-	'[]'::jsonb) as phases
-	from "Service" s
-	left join "ServicePhase" sp on s.id = sp.service_id
-	where s.merchant_id = $1 and ($2::bool = false or s.is_active = true) and s.deleted_on is null and sp.deleted_on is null
-	group by s.id, sp.sequence
-	order by s.id, sp.sequence asc
+				'id', s.id,
+				'merchant_id', s.merchant_id,
+				'name', s.name,
+				'description', s.description,
+				'color', s.color,
+				'total_duration', s.total_duration,
+				'price', s.price,
+				'price_note', s.price_note,
+				'cost', s.cost,
+				'is_active', s.is_active,
+				'phases', s.phases
+			) order by s.name
+		) filter (where s.id is not null),
+	'[]'::jsonb) as services
+	from "ServiceCategory" sc
+	full outer join services s on s.category_id = sc.id
+	where sc.merchant_id = $1 or s.merchant_id = $1
+	group by sc.id, sc.name
+	order by sc.name nulls first
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, filterForActive)
-	servicesWithPhases, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (PublicServiceWithPhases, error) {
-		var pswp PublicServiceWithPhases
-		var phases []byte
+	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (ServicesGroupedByCategory, error) {
+		var sgby ServicesGroupedByCategory
+		var services []byte
 
-		err := row.Scan(&pswp.Id, &pswp.MerchantId, &pswp.CategoryId, &pswp.Name, &pswp.Description, &pswp.Color, &pswp.TotalDuration,
-			&pswp.Price, &pswp.PriceNote, &pswp.Cost, &pswp.IsActive, &phases)
+		err := row.Scan(&sgby.Id, &sgby.Name, &services)
 		if err != nil {
-			return PublicServiceWithPhases{}, err
+			return ServicesGroupedByCategory{}, err
 		}
 
-		if len(phases) > 0 {
-			err = json.Unmarshal(phases, &pswp.Phases)
+		fmt.Println(sgby)
+		if len(services) > 0 {
+			err = json.Unmarshal(services, &sgby.Services)
 			if err != nil {
-				return PublicServiceWithPhases{}, err
+				return ServicesGroupedByCategory{}, err
 			}
 		} else {
-			pswp.Phases = []PublicServicePhase{}
+			sgby.Services = []PublicServiceWithPhases{}
 		}
 
-		return pswp, nil
+		return sgby, nil
 	})
 	if err != nil {
-		return []PublicServiceWithPhases{}, err
+		return []ServicesGroupedByCategory{}, err
 	}
 
 	// if services array is empty the encoded json field will be null
 	// unless an empty slice is supplied to it
-	if len(servicesWithPhases) == 0 {
-		servicesWithPhases = []PublicServiceWithPhases{}
+	if len(servicesGroupByCategory) == 0 {
+		servicesGroupByCategory = []ServicesGroupedByCategory{}
 	}
 
-	return servicesWithPhases, nil
+	return servicesGroupByCategory, nil
 }
 
 func (s *service) DeleteServiceById(ctx context.Context, merchantId uuid.UUID, serviceId int) error {

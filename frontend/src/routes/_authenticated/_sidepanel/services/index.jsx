@@ -57,8 +57,13 @@ function ServicesPage() {
 
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
-  const filteredServices = loaderData.services.filter((service) =>
-    service.name.toLowerCase().includes(searchText.toLowerCase())
+  const filteredServicesGroupedByCategories = loaderData.services.map(
+    (category) => ({
+      ...category,
+      services: category.services.filter((service) =>
+        service.name.toLowerCase().includes(searchText.toLowerCase())
+      ),
+    })
   );
 
   async function deleteHandler(selected) {
@@ -141,23 +146,32 @@ function ServicesPage() {
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-4">
-          {filteredServices.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              onDelete={() => {
-                setSelected({ name: service.name, id: service.id });
-                setShowDeleteModal(true);
-              }}
-              onEdit={() =>
-                router.navigate({
-                  from: Route.fullPath,
-                  to: `/services/edit/${service.id}`,
-                })
-              }
-            />
-          ))}
+        <div>
+          <ul className="flex flex-wrap gap-4">
+            {filteredServicesGroupedByCategories.map((category) => (
+              <li key={category.id}>
+                <ul className="flex flex-wrap gap-4">
+                  {category.services.map((service) => (
+                    <li key={service.id}>
+                      <ServiceCard
+                        service={service}
+                        onDelete={() => {
+                          setSelected({ name: service.name, id: service.id });
+                          setShowDeleteModal(true);
+                        }}
+                        onEdit={() =>
+                          router.navigate({
+                            from: Route.fullPath,
+                            to: `/services/edit/${service.id}`,
+                          })
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
