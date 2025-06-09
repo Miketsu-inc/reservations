@@ -10,7 +10,7 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
     <div className="relative flex h-fit max-w-full flex-row rounded-lg shadow-sm">
       <div
         style={{ backgroundColor: service.color }}
-        className="w-2 rounded-l-lg"
+        className="w-2 shrink-0 rounded-l-lg"
       ></div>
       <div
         className="absolute inset-0 z-0 opacity-0 dark:opacity-10"

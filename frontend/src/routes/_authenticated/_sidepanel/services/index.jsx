@@ -146,33 +146,31 @@ function ServicesPage() {
             </div>
           )}
         </div>
-        <div>
-          <ul className="flex flex-wrap gap-4">
-            {filteredServicesGroupedByCategories.map((category) => (
-              <li key={category.id}>
-                <ul className="flex flex-wrap gap-4">
-                  {category.services.map((service) => (
-                    <li key={service.id}>
-                      <ServiceCard
-                        service={service}
-                        onDelete={() => {
-                          setSelected({ name: service.name, id: service.id });
-                          setShowDeleteModal(true);
-                        }}
-                        onEdit={() =>
-                          router.navigate({
-                            from: Route.fullPath,
-                            to: `/services/edit/${service.id}`,
-                          })
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="flex flex-wrap gap-4">
+          {filteredServicesGroupedByCategories.map((category) => (
+            <li className="w-full" key={category.id}>
+              <ul className="flex flex-wrap gap-4">
+                {category.services.map((service) => (
+                  <li className="w-full md:w-fit" key={service.id}>
+                    <ServiceCard
+                      service={service}
+                      onDelete={() => {
+                        setSelected({ name: service.name, id: service.id });
+                        setShowDeleteModal(true);
+                      }}
+                      onEdit={() =>
+                        router.navigate({
+                          from: Route.fullPath,
+                          to: `/services/edit/${service.id}`,
+                        })
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
