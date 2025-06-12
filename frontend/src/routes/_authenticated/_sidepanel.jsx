@@ -110,7 +110,7 @@ function SidePanelLayout() {
             <button
               aria-controls="sidepanel"
               type="button"
-              className="text-text_color hover:bg-hvr_gray rounded-lg text-sm"
+              className="text-text_color hover:bg-primary/20 rounded-lg text-sm"
               onClick={() => setIsOpen(true)}
             >
               <span className="sr-only">Open sidepanel</span>
@@ -147,7 +147,7 @@ function SidePanelLayout() {
               src="https://dummyimage.com/160x40/d156c3/000000.jpg"
             />
           </div>
-          <ol className="flex flex-1 flex-col space-y-1 pt-5 font-medium">
+          <ol className="flex flex-1 flex-col space-y-2 pt-8 font-medium">
             {navigation.map((item, index) => (
               <li
                 className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}
@@ -156,12 +156,12 @@ function SidePanelLayout() {
                 <Link
                   onClick={item?.onClick ? item.onClick : closeSidePanelHandler}
                   to={item.href}
-                  className="group text-text_color hover:bg-hvr_gray flex items-center rounded-lg p-2"
+                  activeProps={{
+                    className: "bg-primary/20 *:text-primary!",
+                  }}
+                  className="text-text_color hover:bg-primary/20 flex items-center rounded-lg p-2"
                 >
-                  <span
-                    className="group-hover:text-text_color shrink-0 text-gray-500 transition duration-75
-                      dark:text-gray-400"
-                  >
+                  <span className="shrink-0 text-gray-500 transition duration-75 dark:text-gray-400">
                     {item.icon}
                   </span>
                   {!isCollapsed && (

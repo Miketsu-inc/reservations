@@ -5,6 +5,7 @@ import ServerError from "@components/ServerError";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ReservationSection from "./-components/ReservationSection";
+import ServiceCategoryItem from "./-components/ServiceCategoryItem";
 import ServiceItem from "./-components/ServiceItem";
 
 async function fetchMerchantInfo(name) {
@@ -134,30 +135,32 @@ function MerchantPage() {
           <ul>
             {filteredServicesGroupedByCategories.map((category) => (
               <li key={category.id}>
-                <ul className="divide-border_color divide-y">
-                  {category.services.map((service) => (
-                    <li className="py-4" key={service.id}>
-                      <ServiceItem service={service}>
-                        <Link
-                          from={Route.fullPath}
-                          to="booking"
-                          search={{
-                            locationId: merchantInfo.location_id,
-                            serviceId: service.id,
-                            day: new Date().toISOString().split("T")[0],
-                          }}
-                        >
-                          <Button
-                            variant="primary"
-                            styles="py-2 px-4"
-                            name="Reserve"
-                            buttonText="Reserve"
-                          />
-                        </Link>
-                      </ServiceItem>
-                    </li>
-                  ))}
-                </ul>
+                <ServiceCategoryItem category={category}>
+                  <ul className="divide-border_color divide-y">
+                    {category.services.map((service) => (
+                      <li className="py-4" key={service.id}>
+                        <ServiceItem service={service}>
+                          <Link
+                            from={Route.fullPath}
+                            to="booking"
+                            search={{
+                              locationId: merchantInfo.location_id,
+                              serviceId: service.id,
+                              day: new Date().toISOString().split("T")[0],
+                            }}
+                          >
+                            <Button
+                              variant="primary"
+                              styles="py-2 px-4"
+                              name="Reserve"
+                              buttonText="Reserve"
+                            />
+                          </Link>
+                        </ServiceItem>
+                      </li>
+                    ))}
+                  </ul>
+                </ServiceCategoryItem>
               </li>
             ))}
           </ul>

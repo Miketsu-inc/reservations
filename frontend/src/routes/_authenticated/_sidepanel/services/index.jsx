@@ -9,6 +9,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
 import ServiceCard from "./-components/ServiceCard";
+import ServiceCategoryCard from "./-components/ServiceCategoryCard";
 
 async function fetchServices() {
   const response = await fetch(`/api/v1/merchants/services`, {
@@ -97,7 +98,7 @@ function ServicesPage() {
   }
 
   return (
-    <div className="flex h-screen px-4 py-2 md:px-0 md:py-0">
+    <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0">
       <DeleteModal
         itemName={selected.name}
         isOpen={showDeleteModal}
@@ -109,7 +110,7 @@ function ServicesPage() {
         onClose={() => setShowAddCategoryModal(false)}
         onAdd={() => router.invalidate()}
       />
-      <div className="flex w-full flex-col gap-8 py-4">
+      <div className="flex w-full flex-col gap-8 py-6">
         <p className="text-xl">Services</p>
         <ServerError error={serverError} />
         <div className="flex flex-row items-center justify-between">
@@ -146,28 +147,33 @@ function ServicesPage() {
             </div>
           )}
         </div>
+      </div>
+      <div className="py-6">
         <ul className="flex flex-wrap gap-4">
           {filteredServicesGroupedByCategories.map((category) => (
             <li className="w-full" key={category.id}>
-              <ul className="flex flex-wrap gap-4">
-                {category.services.map((service) => (
-                  <li className="w-full md:w-fit" key={service.id}>
-                    <ServiceCard
-                      service={service}
-                      onDelete={() => {
-                        setSelected({ name: service.name, id: service.id });
-                        setShowDeleteModal(true);
-                      }}
-                      onEdit={() =>
-                        router.navigate({
-                          from: Route.fullPath,
-                          to: `/services/edit/${service.id}`,
-                        })
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
+              <ServiceCategoryCard category={category}>
+                <ul className="flex flex-wrap gap-4">
+                  {category.services.map((service) => (
+                    <li className="w-full md:w-fit" key={service.id}>
+                      <ServiceCard
+                        isWindowSmall={isWindowSmall}
+                        service={service}
+                        onDelete={() => {
+                          setSelected({ name: service.name, id: service.id });
+                          setShowDeleteModal(true);
+                        }}
+                        onEdit={() =>
+                          router.navigate({
+                            from: Route.fullPath,
+                            to: `/services/edit/${service.id}`,
+                          })
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </ServiceCategoryCard>
             </li>
           ))}
         </ul>

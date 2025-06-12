@@ -207,7 +207,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 	full outer join services s on s.category_id = sc.id
 	where sc.merchant_id = $1 or s.merchant_id = $1
 	group by sc.id, sc.name
-	order by sc.name nulls first
+	order by sc.name nulls last
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, filterForActive)

@@ -5,7 +5,12 @@ import ThreeDotsIcon from "@icons/ThreeDotsIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatDuration } from "@lib/datetime";
 
-export default function ServiceCard({ service, onDelete, onEdit }) {
+export default function ServiceCard({
+  isWindowSmall,
+  service,
+  onDelete,
+  onEdit,
+}) {
   return (
     <div className="relative flex h-fit max-w-full flex-row rounded-lg shadow-sm">
       <div
@@ -51,17 +56,16 @@ export default function ServiceCard({ service, onDelete, onEdit }) {
               </div>
             </div>
           </div>
-          <ThreeDotsIcon
-            styles="size-8 stroke-4 stroke-gray-400 dark:stroke-gray-500 hover:bg-hvr_gray
-              rounded-lg cursor-pointer hover:stroke-text_color"
-          />
+          <button className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit cursor-pointer rounded-lg p-1">
+            <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
+          </button>
         </div>
         <div className="relative z-[5] flex flex-row items-center justify-between gap-4 p-4">
           <Button
             type="button"
             styles="py-2 px-4"
             variant="danger"
-            buttonText="Delete"
+            buttonText={`${!isWindowSmall ? "Delete" : ""}`}
             onClick={onDelete}
           >
             <TrashBinIcon styles="size-5 !stroke-white mr-1 mb-0.5" />
