@@ -16,7 +16,7 @@ export default function RevenueChart({ data }) {
           <AreaChart
             accessibilityLayer
             data={data}
-            margin={{ left: 4, right: 4 }}
+            margin={{ left: 4, right: 4, top: 4, bottom: 4 }}
           >
             <defs>
               <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
