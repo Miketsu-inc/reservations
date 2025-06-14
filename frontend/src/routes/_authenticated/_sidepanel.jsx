@@ -21,7 +21,9 @@ function SidePanelLayout() {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
   const [isOpen, setIsOpen] = useState(isWindowSmall ? false : true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(
+    localStorage.getItem("sidepanel_collapsed") === "true"
+  );
 
   const handleLogout = useCallback(async () => {
     try {
@@ -40,13 +42,8 @@ function SidePanelLayout() {
   useEffect(() => {
     if (windowSize === "sm" || windowSize === "md") {
       setIsOpen(false);
-      setIsCollapsed(false);
-    } else if (windowSize === "lg") {
-      setIsOpen(true);
-      setIsCollapsed(true);
     } else {
       setIsOpen(true);
-      setIsCollapsed(false);
     }
   }, [windowSize]);
 
@@ -133,14 +130,14 @@ function SidePanelLayout() {
       <aside
         id="sidepanel"
         className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
-          ${isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-30 h-dvh overflow-hidden
-          transition-all duration-300`}
+          ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-30 h-dvh
+          overflow-hidden transition-all duration-300`}
         aria-label="Sidepanel"
       >
         <div className="bg-layer_bg border-border_color flex h-full flex-col border-r px-3 py-4">
           <div
-            className={`${isCollapsed ? "w-10" : "w-40"} flex h-10 flex-row items-center gap-3
-              transition-normal duration-300 ease-in-out`}
+            className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"} flex h-10 flex-row
+              items-center gap-3 transition-normal duration-300 ease-in-out`}
           >
             <img
               className="h-full rounded-lg object-cover"
@@ -164,11 +161,11 @@ function SidePanelLayout() {
                   <span className="shrink-0 text-gray-500 transition duration-75 dark:text-gray-400">
                     {item.icon}
                   </span>
-                  {!isCollapsed && (
+                  {(!isCollapsed || isWindowSmall) && (
                     <>
                       <span
-                        className={`${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3 flex-1
-                        whitespace-nowrap transition-opacity duration-300`}
+                        className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3
+                        flex-1 whitespace-nowrap transition-opacity duration-300`}
                       >
                         {item.label}
                       </span>
@@ -189,8 +186,8 @@ function SidePanelLayout() {
         </div>
       </aside>
       <div
-        className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen flex-col
-          transition-[margin] duration-300 md:px-4`}
+        className={`${!isWindowSmall && isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen
+          flex-col transition-[margin] duration-300 md:px-4`}
       >
         {!isWindowSmall && (
           <div
@@ -199,7 +196,10 @@ function SidePanelLayout() {
           >
             <button
               className="cursor-pointer"
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => {
+                localStorage.setItem("sidepanel_collapsed", !isCollapsed);
+                setIsCollapsed(!isCollapsed);
+              }}
             >
               <SidePanelToggleIcon styles="w-4 h-4 stroke-gray-800 dark:stroke-gray-300 hover:stroke-text_color" />
             </button>

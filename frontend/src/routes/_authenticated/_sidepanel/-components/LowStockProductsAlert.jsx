@@ -56,7 +56,7 @@ export default function LowStockProductsAlert({ products, route }) {
               )}
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-nowrap">
+              <h3 className="text-lg text-nowrap dark:font-semibold">
                 Low Stock ({totalLowStock})
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">

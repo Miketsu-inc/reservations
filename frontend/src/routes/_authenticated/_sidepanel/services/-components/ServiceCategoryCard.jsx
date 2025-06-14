@@ -3,7 +3,9 @@ import ThreeDotsIcon from "@icons/ThreeDotsIcon";
 import { useState } from "react";
 
 export default function ServiceCategoryCard({ children, category }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(
+    localStorage.getItem(`category_${category.id}_collapsed`) === "true"
+  );
 
   return (
     <div
@@ -30,7 +32,13 @@ export default function ServiceCategoryCard({ children, category }) {
           </button>
           <button
             className="hover:bg-hvr_gray hover:*:stroke-text_color cursor-pointer rounded-lg p-1"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => {
+              localStorage.setItem(
+                `category_${category.id}_collapsed`,
+                !isCollapsed
+              );
+              setIsCollapsed(!isCollapsed);
+            }}
           >
             <BackArrowIcon
               styles={`${isCollapsed ? "-rotate-90" : "rotate-90"} transition-transform duration-200

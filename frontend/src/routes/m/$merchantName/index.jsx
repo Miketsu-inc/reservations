@@ -127,7 +127,7 @@ function MerchantPage() {
       <hr className="border-border_color border" />
       <div className="flex flex-col gap-10 pt-5 lg:flex-row lg:pt-10">
         <div className="lg:w-2/3">
-          <p className="pb-8 text-lg font-bold">Services</p>
+          <p className="pb-8 text-xl font-bold">Services</p>
           <SearchInput
             searchText={searchText}
             onChange={(text) => setSearchText(text)}

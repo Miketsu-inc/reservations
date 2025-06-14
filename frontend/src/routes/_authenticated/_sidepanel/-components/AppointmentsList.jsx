@@ -3,7 +3,7 @@ import BackArrowIcon from "@icons/BackArrowIcon";
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
 import TickIcon from "@icons/TickIcon";
-import XIcon from "@icons/XIcon";
+import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatToDateString, timeStringFromDate } from "@lib/datetime";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -68,7 +68,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             xl:pr-6"
         >
           <div className="flex flex-col gap-2 py-1">
-            <span>{`${appointment.last_name} ${appointment.first_name}`}</span>
+            <span className="dark:font-semibold">{`${appointment.last_name} ${appointment.first_name}`}</span>
             <div className="flex flex-row items-center gap-3">
               <span className="text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">
@@ -101,7 +101,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             className="cursor-pointer ps-1"
             onClick={() => onCancel(appointment)}
           >
-            <XIcon styles="size-6 stroke-text_color" />
+            <TrashBinIcon styles="size-5" />
           </button>
           <button
             className="cursor-pointer"
