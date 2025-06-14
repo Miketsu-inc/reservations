@@ -168,13 +168,13 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select distinct on (a.group_id) u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
-		count(a.id) as times_booked, count(case when a.cancelled_by_user_on is not null then 1 end) as times_cancelled
+	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
+		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
 	from "User" u
 	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
 	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $2
 	where u.is_dummy = true or a.id is not null
-	group by a.group_id, u.id, b.user_id;
+	group by u.id, b.user_id;
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, merchantId)
