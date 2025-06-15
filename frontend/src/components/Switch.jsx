@@ -21,7 +21,7 @@ export default function Switch({
       onClick={() => {
         if (!disabled) {
           setIsOn(!isOn);
-          onSwitch();
+          onSwitch(isOn);
         }
       }}
       className={`${isOn ? `${variant === "monochrome" ? "bg-black dark:bg-white" : "bg-primary"}` : "bg-gray-300 dark:bg-gray-800"}

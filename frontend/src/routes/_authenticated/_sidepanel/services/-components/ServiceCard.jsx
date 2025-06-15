@@ -1,24 +1,58 @@
 import Button from "@components/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
+import Switch from "@components/Switch";
+import ArrowIcon from "@icons/ArrowIcon";
 import ClockIcon from "@icons/ClockIcon";
 import EditIcon from "@icons/EditIcon";
 import ThreeDotsIcon from "@icons/ThreeDotsIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatDuration } from "@lib/datetime";
+import { useToast } from "@lib/hooks";
+import { invalidateLocalSotrageAuth } from "@lib/lib";
 
 export default function ServiceCard({
   isWindowSmall,
   service,
   onDelete,
   onEdit,
+  refresh,
 }) {
+  const { showToast } = useToast();
+
+  async function serviceStatusHandler(isActive) {
+    const response = await fetch(
+      `/api/v1/merchants/services/${service.id}/${isActive ? "activate" : "deactivate"}`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const result = await response.json();
+      invalidateLocalSotrageAuth(response.status);
+      showToast({
+        variant: "error",
+        message: `Something went wrong while ${isActive ? "activating" : "deactivating"} the service ${result.error}`,
+      });
+    } else {
+      refresh();
+    }
+  }
+
   return (
     <div className="relative flex h-fit max-w-full flex-row rounded-lg shadow-sm">
       <div
-        style={{ backgroundColor: service.color }}
-        className="w-2 shrink-0 rounded-l-lg"
+        style={{
+          backgroundColor: service.is_active ? service.color : undefined,
+        }}
+        className="w-2 shrink-0 rounded-l-lg bg-gray-400 dark:bg-gray-500"
       ></div>
       <div
-        className="absolute inset-0 z-0 opacity-0 dark:opacity-10"
+        className={`${service.is_active ? "dark:opacity-10" : ""} absolute inset-0 z-0 opacity-0`}
         style={{
           background: `linear-gradient(90deg, ${service.color} 0%, ${service.color}30 30%, transparent 70%)`,
         }}
@@ -39,26 +73,49 @@ export default function ServiceCard({
             <div className="flex flex-col justify-center gap-2">
               <p className="flex-wrap font-semibold">{service.name}</p>
               <div className="flex flex-row items-center gap-2">
-                <span style={{ fill: service.color }}>
+                <span
+                  className="fill-gray-400 dark:fill-gray-500"
+                  style={{
+                    fill: service.is_active ? service.color : undefined,
+                  }}
+                >
                   <ClockIcon styles="size-4" />
                 </span>
                 <p className="text-sm">
                   {formatDuration(service.total_duration)}
                 </p>
-                {!service.is_active && (
-                  <span
-                    className="w-fit rounded-full bg-red-500/20 px-2 py-1 text-xs text-red-500
-                      dark:bg-red-700/20 dark:text-red-700"
-                  >
-                    Inactive
-                  </span>
-                )}
               </div>
             </div>
           </div>
-          <button className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit cursor-pointer rounded-lg p-1">
-            <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit cursor-pointer rounded-lg p-1">
+                <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="left">
+              <div
+                className="flex flex-col items-start *:flex *:w-full *:flex-row *:items-center *:rounded-lg
+                  *:p-2"
+              >
+                <div className="flex flex-row items-center gap-3">
+                  <Switch
+                    onSwitch={serviceStatusHandler}
+                    defaultValue={service.is_active}
+                  />
+                  <p>Active</p>
+                </div>
+                <button className="hover:bg-hvr_gray cursor-pointer gap-5">
+                  <ArrowIcon styles="size-6 ml-2 -rotate-90 stroke-current" />
+                  <p>Move back</p>
+                </button>
+                <button className="hover:bg-hvr_gray cursor-pointer gap-5">
+                  <ArrowIcon styles="size-6 rotate-90 stroke-current ml-2" />
+                  <p>Move forth</p>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="relative z-[5] flex flex-row items-center justify-between gap-4 p-4">
           <Button

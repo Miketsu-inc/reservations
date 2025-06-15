@@ -46,6 +46,7 @@ function formatData(data) {
     extendedProps: {
       // this is a number unlike the normal 'id' which get's converted to a string
       appointment_id: event.id,
+      group_id: event.group_id,
       first_name: event.first_name,
       last_name: event.last_name,
       phone_number: event.phone_number,
@@ -60,6 +61,7 @@ function formatData(data) {
 
 const defaultEventInfo = {
   id: 0,
+  group_id: 0,
   title: "",
   start: new Date(),
   end: new Date(),

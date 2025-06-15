@@ -436,7 +436,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// UpcomingAppointments
 	query := `
-	select distinct on (a.group_id) a.id,
+	select distinct on (a.group_id) a.id, a.group_id,
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
 		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
@@ -457,7 +457,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// LatestBookings
 	query2 := `
-	select distinct on (a.group_id) a.id,
+	select distinct on (a.group_id) a.id, a.group_id,
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
 		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,

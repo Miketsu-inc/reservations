@@ -113,8 +113,16 @@ type PostgreSQL interface {
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service and it's phases by it's id
 	UpdateServicWithPhaseseById(context.Context, PublicServiceWithPhases) error
+	// Deactivate a service by it's id
+	DeactivateServiceById(context.Context, uuid.UUID, int) error
+	// Activate a service by it's id
+	ActivateServiceById(context.Context, uuid.UUID, int) error
 	// Insert a new service category
 	NewServiceCategory(context.Context, uuid.UUID, ServiceCategory) error
+	// Update a service category by it's id
+	UpdateServiceCategoryById(context.Context, uuid.UUID, ServiceCategory) error
+	// Delete a service category by it's id, making it's services uncategorized
+	DeleteServiceCategoryById(context.Context, uuid.UUID, int) error
 	// Get all data related to a service
 	GetAllServicePageData(context.Context, int, uuid.UUID) (ServicePageData, error)
 	// Get all additional data required for the service page

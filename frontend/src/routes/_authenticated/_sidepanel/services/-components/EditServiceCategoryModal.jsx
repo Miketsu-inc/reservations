@@ -5,8 +5,13 @@ import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { useState } from "react";
 
-export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
-  const [categoryData, setCategoryData] = useState({ name: "" });
+export default function EditServiceCategoryModal({
+  category,
+  isOpen,
+  onClose,
+  onModified,
+}) {
+  const [categoryData, setCategoryData] = useState({ name: category.name });
   const { showToast } = useToast();
 
   function updateCategoryData(data) {
@@ -20,16 +25,19 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
       return;
     }
 
-    const response = await fetch(`/api/v1/merchants/services/categories`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        name: categoryData.name,
-      }),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/services/categories/${category.id}`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name: categoryData.name,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const result = await response.json();
@@ -44,7 +52,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
         message: `New service category added successfully`,
       });
 
-      onAdded();
+      onModified();
       onClose();
     }
   }
@@ -52,12 +60,8 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form className="p-4 sm:w-lg" onSubmit={submitHandler}>
-        <p className="pb-8 text-xl font-semibold">Create a new category</p>
+        <p className="pb-8 text-xl font-semibold">Edit category</p>
         <div className="flex flex-col gap-6">
-          <p>
-            Order your services by categorizing them. The services will get
-            displayed under their categories.
-          </p>
           <div className="size-18 shrink-0 overflow-hidden rounded-lg">
             <img
               className="size-full object-cover"
@@ -86,7 +90,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
             />
             <Button
               styles="py-2 px-4"
-              buttonText="Create"
+              buttonText="Save"
               variant="primary"
               type="submit"
             />

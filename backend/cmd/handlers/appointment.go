@@ -212,12 +212,6 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = a.Postgresdb.CancelAppointmentByMerchant(r.Context(), merchantId, appId, cancelData.CancellationReason)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling appointment by merchant: %s", err.Error()))
-		return
-	}
-
 	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
@@ -236,8 +230,19 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 		return
 	}
 
+	if emailData.FromDate.Before(time.Now().UTC()) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("you cannot cancel past appointments"))
+		return
+	}
+
 	toDateMerchantTz := emailData.ToDate.In(merchantTz)
 	fromDateMerchantTz := emailData.FromDate.In(merchantTz)
+
+	err = a.Postgresdb.CancelAppointmentByMerchant(r.Context(), merchantId, appId, cancelData.CancellationReason)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling appointment by merchant: %s", err.Error()))
+		return
+	}
 
 	err = email.AppointmentCancellation(r.Context(), emailData.UserEmail, email.AppointmentCancellationData{
 		Time:               fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),

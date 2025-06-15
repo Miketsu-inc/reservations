@@ -104,6 +104,7 @@ func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUI
 
 type AppointmentDetails struct {
 	ID              int       `json:"id" db:"id"`
+	GroupId         int       `json:"group_id" db:"group_id"`
 	FromDate        time.Time `json:"from_date" db:"from_date"`
 	ToDate          time.Time `json:"to_date" db:"to_date"`
 	UserNote        string    `json:"user_note" db:"user_note"`
@@ -120,7 +121,7 @@ type AppointmentDetails struct {
 
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
 	query := `
-	select a.id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	select a.id, a.group_id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
 	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
@@ -235,13 +236,17 @@ type AppointmentEmailData struct {
 
 func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId int) (AppointmentEmailData, error) {
 	query := `
-	select a.from_date, a.to_date, a.email_id, s.name as service_name, u.email as user_email, m.name as merchant_name,
+	select distinct on (a.group_id)
+		min(a.from_date) over (partition by a.group_id) as from_date,
+		max(a.to_date) over (partition by a.group_id) as to_date,
+		a.email_id, s.name as service_name, u.email as user_email, m.name as merchant_name,
 	l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location from "Appointment" a
 	join "Service" s on s.id = a.service_id
 	join "User" u on u.id = a.user_id
 	join "Merchant" m on m.id = a.merchant_id
 	join "Location" l on l.id = a.location_id
-	where a.id = $1`
+	where a.group_id = $1
+	`
 
 	var data AppointmentEmailData
 	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.MerchantName, &data.ShortLocation)

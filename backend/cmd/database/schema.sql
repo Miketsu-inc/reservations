@@ -39,7 +39,7 @@ create table if not exists "ServiceCategory" (
 create table if not exists "Service" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
-    category_id              integer         references "ServiceCategory" (ID),
+    category_id              integer         references "ServiceCategory" (ID) on delete set null,
     name                     varchar(30)     not null,
     description              varchar(200),
     color                    char(7)         not null,
@@ -124,7 +124,7 @@ create table if not exists "Product" (
 create table if not exists "ServiceProduct" (
     service_id               integer references "Service" (ID) not null,
     product_id               integer references "Product" (ID) not null,
-    amount_used              bigint  not null, 
+    amount_used              bigint  not null,
     primary key (service_id, product_id)
 );
 

@@ -1,16 +1,20 @@
 import LoaderIcon from "@icons/LoaderIcon";
+import React from "react";
 
-export default function Button({
-  children,
-  name,
-  type,
-  styles,
-  onClick,
-  buttonText,
-  isLoading,
-  disabled,
-  variant = "primary",
-}) {
+const Button = React.forwardRef(function Button(
+  {
+    children,
+    name,
+    type,
+    styles,
+    onClick,
+    buttonText,
+    isLoading,
+    disabled,
+    variant = "primary",
+  },
+  ref
+) {
   const variants = {
     primary: "bg-primary hover:bg-hvr_primary text-white shadow-md",
     secondary:
@@ -23,6 +27,7 @@ export default function Button({
 
   return (
     <button
+      ref={ref}
       onClick={onClick}
       className={`${styles} ${variants[variant]} rounded-lg focus-visible:outline-1
         ${isLoading || disabled ? "opacity-50 transition-opacity" : "cursor-pointer"}`}
@@ -45,4 +50,6 @@ export default function Button({
       )}
     </button>
   );
-}
+});
+
+export default Button;

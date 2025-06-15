@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import DeleteModal from "@components/DeleteModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
@@ -108,7 +109,7 @@ function ServicesPage() {
       <AddServiceCategoryModal
         isOpen={showAddCategoryModal}
         onClose={() => setShowAddCategoryModal(false)}
-        onAdd={() => router.invalidate()}
+        onAdded={router.invalidate}
       />
       <div className="flex w-full flex-col gap-8 py-6">
         <p className="text-xl">Services</p>
@@ -119,12 +120,26 @@ function ServicesPage() {
             onChange={(text) => setSearchText(text)}
           />
           {isWindowSmall ? (
-            // TODO: temporary until popover is used
-            <Link from={Route.fullPath} to="/services/new">
-              <Button styles="p-2" variant="primary">
-                <PlusIcon styles="size-6" />
-              </Button>
-            </Link>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button styles="p-2" variant="primary">
+                  <PlusIcon styles="size-6" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end">
+                <div className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full *:rounded-lg *:p-2">
+                  <Link from={Route.fullPath} to="/services/new">
+                    New service
+                  </Link>
+                  <button
+                    onClick={() => setShowAddCategoryModal(true)}
+                    className="cursor-pointer text-left"
+                  >
+                    New category
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           ) : (
             <div className="flex flex-row items-center gap-4">
               <Button
@@ -152,7 +167,10 @@ function ServicesPage() {
         <ul className="flex flex-wrap gap-4">
           {filteredServicesGroupedByCategories.map((category) => (
             <li className="w-full" key={category.id}>
-              <ServiceCategoryCard category={category}>
+              <ServiceCategoryCard
+                category={category}
+                refresh={router.invalidate}
+              >
                 <ul className="flex flex-wrap gap-4">
                   {category.services.map((service) => (
                     <li className="w-full md:w-fit" key={service.id}>
@@ -169,6 +187,7 @@ function ServicesPage() {
                             to: `/services/edit/${service.id}`,
                           })
                         }
+                        refresh={router.invalidate}
                       />
                     </li>
                   ))}

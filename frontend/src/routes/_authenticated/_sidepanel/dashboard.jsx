@@ -4,12 +4,10 @@ import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
 import { fillStatisticsWithDate, invalidateLocalSotrageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
 import AppointmentsList from "./-components/AppointmentsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import RevenueChart from "./-components/RevenueChart";
 import StatisticsCard from "./-components/StatisticsCard";
-import DeleteAppsModal from "./calendar/-components/DeleteAppsModal";
 
 async function fetchDashboardData(period) {
   const date = new Date().toJSON();
@@ -63,17 +61,9 @@ function DashboardPage() {
   const search = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const router = useRouter();
-  const [deleteAppModalOpen, setDeleteAppModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState();
 
   return (
     <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0 lg:h-[90svh]">
-      <DeleteAppsModal
-        event={selectedAppointment}
-        isOpen={deleteAppModalOpen}
-        onClose={() => setDeleteAppModalOpen(false)}
-        onDeleted={() => router.invalidate()}
-      />
       <div className="flex flex-row items-center justify-between py-3">
         <p className="text-xl">Your dashboard</p>
         <Select
@@ -150,12 +140,9 @@ function DashboardPage() {
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
             <AppointmentsList
               appointments={loaderData.data.upcoming_appointments}
-              visibleCount={3}
+              visibleCount={1}
               onAccept={() => {}}
-              onCancel={(app) => {
-                setSelectedAppointment(app);
-                setTimeout(() => setDeleteAppModalOpen(true), 0);
-              }}
+              onCancel={router.invalidate}
               route={Route}
             />
           </div>
@@ -165,10 +152,7 @@ function DashboardPage() {
               appointments={loaderData.data.latest_bookings}
               visibleCount={3}
               onAccept={() => {}}
-              onCancel={(app) => {
-                setSelectedAppointment(app);
-                setTimeout(() => setDeleteAppModalOpen(true), 0);
-              }}
+              onCancel={router.invalidate}
               route={Route}
             />
           </div>

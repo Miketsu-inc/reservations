@@ -2,6 +2,7 @@ import Button from "@components/Button";
 import CloseButton from "@components/CloseButton";
 import DatePicker from "@components/DatePicker";
 import Modal from "@components/Modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import CalendarIcon from "@icons/CalendarIcon";
 import {
   addTimeToDate,
@@ -11,7 +12,7 @@ import {
 import { useToast } from "@lib/hooks";
 import { useEffect, useState } from "react";
 import AppointmentInfoSection from "./AppointmentInfoSection";
-import DeleteAppsModal from "./DeleteAppsModal";
+import DeleteAppsPopoverContent from "./DeleteAppsPopoverContent";
 import NotesSection from "./NotesSection";
 import RecurSection from "./RecurSection";
 
@@ -33,7 +34,7 @@ export default function CalendarModal({
   });
   const [merchantNote, setMerchantNote] = useState("");
   const [hasUnsavedChanges, SetHasUnsavedChanges] = useState(false);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [isDeletePopoverOpen, SetIsDeletePopoverOpen] = useState(false);
   const [eventDatetime, setEventDatetime] = useState({
     date: eventInfo.start,
     start_time: timeStringFromDate(eventInfo.start).split(" ")[0],
@@ -121,20 +122,12 @@ export default function CalendarModal({
 
   return (
     <>
-      <DeleteAppsModal
-        event={eventInfo}
-        isOpen={cancelModalOpen}
-        onClose={() => setCancelModalOpen(false)}
-        onDeleted={() => {
-          onDeleted();
-          onClose();
-        }}
-      />
       <Modal
         styles="w-full sm:w-fit"
-        suspendCloseOnClickOutside={cancelModalOpen}
         isOpen={isOpen}
         onClose={onClose}
+        disableFocusTrap={true}
+        suspendCloseOnClickOutside={isDeletePopoverOpen}
       >
         <div className="h-auto w-full">
           <div className="flex flex-col gap-2 p-3">
@@ -205,13 +198,28 @@ export default function CalendarModal({
               disabled={disabled}
             />
             <div className="flex items-center justify-end gap-2 pt-2">
-              <Button
-                styles="p-2"
-                buttonText="Delete"
-                variant="danger"
-                type="button"
-                onClick={() => setCancelModalOpen(true)}
-              />
+              <Popover
+                open={isDeletePopoverOpen}
+                onOpenChange={SetIsDeletePopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    styles="p-2"
+                    buttonText="Delete"
+                    variant="danger"
+                    type="button"
+                  />
+                </PopoverTrigger>
+                <PopoverContent side="top" styles="w-fit">
+                  <DeleteAppsPopoverContent
+                    event={eventInfo.extendedProps}
+                    onDeleted={() => {
+                      onDeleted();
+                      onClose();
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
               <Button
                 styles="p-2"
                 buttonText="Cancel"

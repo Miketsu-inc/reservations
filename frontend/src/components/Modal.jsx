@@ -5,6 +5,7 @@ export default function Modal({
   styles,
   zindex = 40,
   suspendCloseOnClickOutside = false,
+  disableFocusTrap = false,
   isOpen,
   onClose,
   children,
@@ -16,22 +17,20 @@ export default function Modal({
     if (isOpen) {
       modalRef.current.focus();
 
-      // TODO: Temporarily disable focustrap because with stacked modals
-      // it steals the focus away from an input. Should be enabled
-      // once stacked modals are eliminated.
-      //
-      // const focusOutHandler = (event) => {
-      //   if (!modalRef.current?.contains(event.relatedTarget))
-      //     modalRef.current?.focus();
-      // };
+      if (!disableFocusTrap) {
+        const focusOutHandler = (event) => {
+          if (!modalRef.current?.contains(event.relatedTarget))
+            modalRef.current?.focus();
+        };
 
-      // modalRef.current.addEventListener("focusout", focusOutHandler);
+        modalRef.current.addEventListener("focusout", focusOutHandler);
 
-      // return () => {
-      //   document.removeEventListener("focusout", focusOutHandler);
-      // };
+        return () => {
+          document.removeEventListener("focusout", focusOutHandler);
+        };
+      }
     }
-  }, [isOpen, onClose]);
+  }, [disableFocusTrap, isOpen, onClose]);
 
   return (
     <>
@@ -50,9 +49,9 @@ export default function Modal({
               role="dialog"
               aria-modal="true"
               tabIndex={-1}
-              className={`${styles} bg-layer_bg text-text_color w-full rounded-lg shadow-md
-              shadow-gray-400 transition-all focus:outline-none sm:w-fit dark:border
-              dark:border-gray-600 dark:shadow-xs dark:shadow-gray-800`}
+              className={`${styles} bg-layer_bg text-text_color dark:border-border_color w-full rounded-lg
+              shadow-lg shadow-gray-500 transition-all focus:outline-none sm:w-fit dark:border
+              dark:shadow-md dark:shadow-gray-950`}
               ref={modalRef}
             >
               {children}

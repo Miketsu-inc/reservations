@@ -17,6 +17,7 @@
     "@fullcalendar/list": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@radix-ui/react-popover": "^1.1.14",
     "@tanstack/react-router": "^1.115.0",
     "ag-grid-react": "^33.2.1",
     "react": "^19.1.0",

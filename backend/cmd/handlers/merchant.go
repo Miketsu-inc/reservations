@@ -507,6 +507,54 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (m *Merchant) DeactivateService(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.DeactivateServiceById(r.Context(), merchantId, serviceId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deactivating service: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) ActivateService(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.ActivateServiceById(r.Context(), merchantId, serviceId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deactivating service: %s", err.Error()))
+		return
+	}
+}
+
 func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 	userId := jwt.UserIDFromContext(r.Context())
 
@@ -1070,6 +1118,68 @@ func (m *Merchant) NewServiceCategory(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new service category %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) UpdateServiceCategory(w http.ResponseWriter, r *http.Request) {
+	type categoryData struct {
+		Name string `json:"name" validate:"required"`
+	}
+
+	var cd categoryData
+
+	err := validate.ParseStruct(r, &cd)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+	}
+
+	id := chi.URLParam(r, "id")
+
+	categoryId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.UpdateServiceCategoryById(r.Context(), merchantId, database.ServiceCategory{
+		Id:   categoryId,
+		Name: cd.Name,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while updating service category: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	categoryId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.DeleteServiceCategoryById(r.Context(), merchantId, categoryId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deleting service category: %s", err.Error()))
 		return
 	}
 }

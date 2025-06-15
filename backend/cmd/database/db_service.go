@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -220,7 +219,6 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 			return ServicesGroupedByCategory{}, err
 		}
 
-		fmt.Println(sgby)
 		if len(services) > 0 {
 			err = json.Unmarshal(services, &sgby.Services)
 			if err != nil {
@@ -394,6 +392,35 @@ func (s *service) NewServiceCategory(ctx context.Context, merchantId uuid.UUID, 
 	return nil
 }
 
+func (s *service) UpdateServiceCategoryById(ctx context.Context, merchantId uuid.UUID, sc ServiceCategory) error {
+	query := `
+	update "ServiceCategory"
+	set name = $3
+	where id = $1 and merchant_id = $2
+	`
+
+	_, err := s.db.Exec(ctx, query, sc.Id, merchantId, sc.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) DeleteServiceCategoryById(ctx context.Context, merchantId uuid.UUID, categoryId int) error {
+	query := `
+	delete from "ServiceCategory"
+	where id = $1 and merchant_id = $2
+	`
+
+	_, err := s.db.Exec(ctx, query, categoryId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type MinimalProductInfoWithUsage struct {
 	Id         int    `json:"id"`
 	Name       string `json:"name"`
@@ -540,4 +567,34 @@ func (s *service) GetServicePageFormOptions(ctx context.Context, merchantId uuid
 	}
 
 	return spfo, nil
+}
+
+func (s *service) DeactivateServiceById(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
+	query := `
+	update "Service"
+	set is_active = true
+	where id = $1 and merchant_id = $2
+	`
+
+	_, err := s.db.Exec(ctx, query, serviceId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) ActivateServiceById(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
+	query := `
+	update "Service"
+	set is_active = false
+	where id = $1 and merchant_id = $2
+	`
+
+	_, err := s.db.Exec(ctx, query, serviceId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

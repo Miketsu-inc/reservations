@@ -1,4 +1,5 @@
 import Card from "@components/Card";
+import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
@@ -7,6 +8,7 @@ import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatToDateString, timeStringFromDate } from "@lib/datetime";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import DeleteAppsPopoverContent from "../calendar/-components/DeleteAppsPopoverContent";
 
 export default function AppointmentsList({
   appointments,
@@ -97,12 +99,19 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
           >
             <CalendarIcon styles="size-5 stroke-text_color" />
           </Link>
-          <button
-            className="cursor-pointer ps-1"
-            onClick={() => onCancel(appointment)}
-          >
-            <TrashBinIcon styles="size-5" />
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="cursor-pointer ps-1">
+                <TrashBinIcon styles="size-5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="bottom" align="end" styles="w-fit">
+              <DeleteAppsPopoverContent
+                event={appointment}
+                onDeleted={onCancel}
+              />
+            </PopoverContent>
+          </Popover>
           <button
             className="cursor-pointer"
             onClick={() => onAccept(appointment)}
