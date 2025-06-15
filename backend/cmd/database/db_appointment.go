@@ -89,12 +89,14 @@ func (s *service) NewAppointment(ctx context.Context, app Appointment, phases []
 	return id, nil
 }
 
-func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_note string, from_date string, to_date string) error {
+func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUID, appointmentId int, merchant_note string, offset time.Duration) error {
 	query := `
-	update "Appointment" set merchant_note = $1, from_date = $2, to_date = $3
-	where (id = $4 or group_id = $4) and merchant_id = $5 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
+	update "Appointment"
+	set merchant_note = $1, from_date = from_date + $2, to_date = to_date + $2
+	where group_id = $3 and merchant_id = $4 and cancelled_by_user_on is null and cancelled_by_merchant_on is null
 	`
-	_, err := s.db.Exec(ctx, query, merchant_note, from_date, to_date, appointmentId, merchantId)
+
+	_, err := s.db.Exec(ctx, query, merchant_note, offset, appointmentId, merchantId)
 	if err != nil {
 		return err
 	}
@@ -121,12 +123,16 @@ type AppointmentDetails struct {
 
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
 	query := `
-	select a.id, a.group_id, a.from_date, a.to_date, a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
+	select distinct on (a.group_id) a.id, a.group_id,
+		min(a.from_date) over (partition by a.group_id) as from_date,
+		max(a.to_date) over (partition by a.group_id) as to_date,
+		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
 	s.name as service_name, s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
 	join "User" u on a.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.to_date <= $3 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
+	order by a.group_id, a.id
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, start, end)
@@ -180,7 +186,7 @@ func (s *service) CancelAppointmentByMerchant(ctx context.Context, merchantId uu
 	query := `
 	update "Appointment"
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
-	where merchant_id = $3 and (id = $4 or group_id = $4) and cancelled_by_user_on is null and cancelled_by_merchant_on is null and from_date > $1
+	where merchant_id = $3 and group_id = $4 and cancelled_by_user_on is null and cancelled_by_merchant_on is null and from_date > $1
 	`
 
 	_, err := s.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, appointmentId)
@@ -195,7 +201,7 @@ func (s *service) CancelAppointmentByUser(ctx context.Context, userId uuid.UUID,
 	query := `
 	update "Appointment"
 	set cancelled_by_user_on = $1
-	where user_id = $2 and id = $3 and cancelled_by_merchant_on is null and cancelled_by_user_on is null and from_date > $1
+	where user_id = $2 and group_id = $3 and cancelled_by_merchant_on is null and cancelled_by_user_on is null and from_date > $1
 	returning email_id`
 
 	var emailId uuid.UUID
@@ -214,7 +220,7 @@ func (s *service) UpdateEmailIdForAppointment(ctx context.Context, appointmentId
 	}
 
 	query := `
-	update "Appointment" set email_id = $1 where (id = $2 or group_id = $2)`
+	update "Appointment" set email_id = $1 where group_id = $2`
 
 	_, err = s.db.Exec(ctx, query, emailUUID, appointmentId)
 	if err != nil {
@@ -249,7 +255,8 @@ func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId 
 	`
 
 	var data AppointmentEmailData
-	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName, &data.UserEmail, &data.MerchantName, &data.ShortLocation)
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
+		&data.UserEmail, &data.MerchantName, &data.ShortLocation)
 	if err != nil {
 		return AppointmentEmailData{}, err
 	}
@@ -270,7 +277,10 @@ type PublicAppointmentInfo struct {
 
 func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId int) (PublicAppointmentInfo, error) {
 	query := `
-	select a.from_date, a.to_date, a.price_then as price, m.name as merchant_name, s.name as service_name,
+	select distinct on (a.group_id)
+		min(a.from_date) over (partition by a.group_id) as from_date,
+		max(a.to_date) over (partition by a.group_id) as to_date,
+		a.price_then as price, m.name as merchant_name, s.name as service_name,
 	a.cancelled_by_user_on is not null as cancelled_by_user,
 	a.cancelled_by_merchant_on is not null as cancelled_by_merchant,
 	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location
@@ -278,10 +288,12 @@ func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId in
 	join "Service" s on s.id = a.service_id
 	join "Merchant" m on m.id = a.merchant_id
 	join "Location" l on l.id = a.location_id
-	where a.id = $1`
+	where a.group_id = $1
+	`
 
 	var data PublicAppointmentInfo
-	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName, &data.ServiceName, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
+	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
+		&data.ServiceName, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
 	if err != nil {
 		return PublicAppointmentInfo{}, err
 	}

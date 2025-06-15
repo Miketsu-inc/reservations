@@ -186,11 +186,6 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 
 	urlId := chi.URLParam(r, "id")
 
-	if urlId == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
-		return
-	}
-
 	appId, err := strconv.Atoi(urlId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting appointment id to int: %s", err.Error()))
@@ -271,7 +266,6 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 	// validate:"required" on MerchantNote would fail
 	// if an empty string arrives as a note
 	type appointmentData struct {
-		Id           int    `json:"id" validate:"required"`
 		MerchantNote string `json:"merchant_note"`
 		FromDate     string `json:"from_date" validate:"required"`
 		ToDate       string `json:"to_date" validate:"required"`
@@ -281,6 +275,14 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 
 	if err := validate.ParseStruct(r, &appData); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	urlId := chi.URLParam(r, "id")
+
+	appId, err := strconv.Atoi(urlId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting appointment id to int: %s", err.Error()))
 		return
 	}
 
@@ -304,18 +306,21 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	oldEmailData, err := a.Postgresdb.GetAppointmentDataForEmail(r.Context(), appData.Id)
+	oldEmailData, err := a.Postgresdb.GetAppointmentDataForEmail(r.Context(), appId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
 		return
 	}
 
-	const postgresTimeFormat = "2006-01-02T15:04:05-0700"
+	fromDateOffset := fromDate.Sub(oldEmailData.FromDate)
+	toDateOffset := fromDate.Sub(oldEmailData.FromDate)
 
-	formattedFromDate := fromDate.Format(postgresTimeFormat)
-	formattedToDate := toDate.Format(postgresTimeFormat)
+	if fromDateOffset != toDateOffset {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid from and to date supplied"))
+		return
+	}
 
-	if err := a.Postgresdb.UpdateAppointmentData(r.Context(), merchantId, appData.Id, appData.MerchantNote, formattedFromDate, formattedToDate); err != nil {
+	if err := a.Postgresdb.UpdateAppointmentData(r.Context(), merchantId, appId, appData.MerchantNote, fromDateOffset); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -343,7 +348,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		Location:    oldEmailData.ShortLocation,
 		ServiceName: oldEmailData.ServiceName,
 		TimeZone:    merchantId.String(),
-		ModifyLink:  "http://localhost:5173/m/" + oldEmailData.MerchantName + "/cancel/" + strconv.Itoa(appData.Id),
+		ModifyLink:  fmt.Sprintf("http://localhost:5173/m/%s/cancel/%d", oldEmailData.MerchantName, appId),
 		OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
 		OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
 	})
@@ -373,7 +378,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 			Location:    oldEmailData.ShortLocation,
 			ServiceName: oldEmailData.ServiceName,
 			TimeZone:    merchantTz.String(),
-			ModifyLink:  "http://localhost:5173/m/" + oldEmailData.MerchantName + "/cancel/" + strconv.Itoa(appData.Id),
+			ModifyLink:  fmt.Sprintf("http://localhost:5173/m/%s/cancel/%d", oldEmailData.MerchantName, appId),
 		}, reminderDate)
 		if err != nil {
 			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
@@ -381,7 +386,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 		}
 
 		if email_id != "" { //check because return "" when email sending is off
-			err = a.Postgresdb.UpdateEmailIdForAppointment(r.Context(), appData.Id, email_id)
+			err = a.Postgresdb.UpdateEmailIdForAppointment(r.Context(), appId, email_id)
 			if err != nil {
 				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
 				return
@@ -393,11 +398,6 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 
 func (a *Appointment) GetPublicAppointmentData(w http.ResponseWriter, r *http.Request) {
 	urlId := chi.URLParam(r, "id")
-
-	if urlId == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
-		return
-	}
 
 	appId, err := strconv.Atoi(urlId)
 	if err != nil {
@@ -416,11 +416,6 @@ func (a *Appointment) GetPublicAppointmentData(w http.ResponseWriter, r *http.Re
 
 func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Request) {
 	urlId := chi.URLParam(r, "id")
-
-	if urlId == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid appointment id provided"))
-		return
-	}
 
 	appId, err := strconv.Atoi(urlId)
 	if err != nil {

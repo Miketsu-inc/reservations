@@ -33,7 +33,7 @@ type PostgreSQL interface {
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
 	// Update appointment fields
-	UpdateAppointmentData(context.Context, uuid.UUID, int, string, string, string) error
+	UpdateAppointmentData(context.Context, uuid.UUID, int, string, time.Duration) error
 	// Transfer dummy user appointments
 	TransferDummyAppointments(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
 	// Cancel appointment by merchant

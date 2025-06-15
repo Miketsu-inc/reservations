@@ -22,7 +22,7 @@ export default function DragConfirmationModal({
 
     try {
       const response = await fetch(
-        `/api/v1/appointments/${eventData.event.extendedProps.appointment_id}`,
+        `/api/v1/appointments/${eventData.event.extendedProps.group_id}`,
         {
           method: "PATCH",
           headers: {
@@ -30,7 +30,6 @@ export default function DragConfirmationModal({
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            id: eventData.event.extendedProps.appointment_id,
             merchant_note: eventData.event.extendedProps.merchant_note,
             from_date: eventData.event.start.toISOString(),
             to_date: eventData.event.end.toISOString(),

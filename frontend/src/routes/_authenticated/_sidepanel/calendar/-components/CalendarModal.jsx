@@ -83,23 +83,26 @@ export default function CalendarModal({
     );
 
     try {
-      const response = await fetch(`/api/v1/appointments/${eventInfo.id}`, {
-        method: "PATCH",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          id: eventInfo.extendedProps.appointment_id,
-          merchant_note: merchantNote,
-          from_date: start_date.toISOString(),
-          to_date: addTimeToDate(
-            start_date,
-            0,
-            eventInfo.extendedProps.service_duration
-          ).toISOString(),
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/appointments/${eventInfo.extendedProps.group_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            id: eventInfo.extendedProps.group_id,
+            merchant_note: merchantNote,
+            from_date: start_date.toISOString(),
+            to_date: addTimeToDate(
+              start_date,
+              0,
+              eventInfo.extendedProps.service_duration
+            ).toISOString(),
+          }),
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();
