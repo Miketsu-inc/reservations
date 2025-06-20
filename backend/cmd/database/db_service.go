@@ -39,7 +39,7 @@ type ServiceCategory struct {
 	Name string `json:"name" db:"name"`
 }
 
-func (s *service) NewService(ctx context.Context, serv Service, servPhases []ServicePhase) error {
+func (s *service) NewService(ctx context.Context, serv Service, servPhases []ServicePhase, ConnProducts []ConnectedProducts) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -67,6 +67,18 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 	for _, phase := range servPhases {
 		_, err := tx.Exec(ctx, servicePhaseQuery, serviceId, phase.Name, phase.Sequence, phase.Duration, phase.PhaseType)
+		if err != nil {
+			return err
+		}
+	}
+
+	serviceProductQuery := `
+	insert into "ServiceProduct" (service_id, product_id, amount_used)
+	select $1, p.id, $3
+	from "Product" p where p.id = $2 and p.merchant_id = $4`
+
+	for _, cp := range ConnProducts {
+		_, err := tx.Exec(ctx, serviceProductQuery, serviceId, cp.ProductId, cp.AmountUsed, serv.MerchantId)
 		if err != nil {
 			return err
 		}
@@ -519,6 +531,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 type MinimalProductInfo struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
+Unit string `json:"unit"`
 }
 
 type ServicePageFormOptions struct {
@@ -529,7 +542,7 @@ type ServicePageFormOptions struct {
 func (s *service) GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error) {
 	query := `
 	with product as (
-		select id, name from "Product" where merchant_id = $1
+		select id, name, unit from "Product" where merchant_id = $1
 	),
 	category as (
 		select id, name from "ServiceCategory" where merchant_id = $1
@@ -597,4 +610,76 @@ func (s *service) ActivateServiceById(ctx context.Context, merchantId uuid.UUID,
 	}
 
 	return nil
+}
+
+type ConnectedProducts struct {
+	ProductId  int `json:"product_id"`
+	ServiceId  int `json:"service_id"`
+	AmountUsed int `json:"amount_used"`
+}
+
+func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, productData []ConnectedProducts) error {
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	productConnectionsQuery := `
+	select product_id, amount_used from "ServiceProduct" 
+	where service_id = $1
+	`
+
+	existingConnectionsMap := map[int]ConnectedProducts{}
+
+	var conn ConnectedProducts
+	rows, _ := tx.Query(ctx, productConnectionsQuery, serviceId)
+	_, err = pgx.ForEachRow(rows, []any{&conn.ProductId, &conn.AmountUsed}, func() error {
+		conn.ServiceId = serviceId
+		existingConnectionsMap[conn.ProductId] = conn
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	updatedConnectionsMap := map[int]ConnectedProducts{}
+	for _, connection := range productData {
+		if _, exists := existingConnectionsMap[connection.ProductId]; exists {
+			updatedConnectionsMap[connection.ProductId] = connection
+		}
+	}
+
+	deleteConnectionsQuery := `
+	delete from "ServiceProduct"
+	where service_id = $1 and product_id = $2
+	`
+
+	for productId := range existingConnectionsMap {
+		if _, exists := updatedConnectionsMap[productId]; !exists {
+			_, err := tx.Exec(ctx, deleteConnectionsQuery, serviceId, productId)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	upsertQuery := `
+	insert into "ServiceProduct" (service_id, product_id, amount_used)
+	values ($1, $2, $3)
+	on conflict (service_id, product_id) do update 
+	set amount_used = excluded.amount_used
+	`
+
+	for _, conn := range productData {
+		_, err := tx.Exec(ctx, upsertQuery, serviceId, conn.ProductId, conn.AmountUsed)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }

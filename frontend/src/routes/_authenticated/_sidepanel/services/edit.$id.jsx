@@ -69,32 +69,64 @@ function RouteComponent() {
 
   async function saveServiceHandler(service) {
     try {
-      const response = await fetch(`/api/v1/merchants/services/${service.id}`, {
+      const { used_products, ...serviceData } = service;
+
+      await updateServiceData(service.id, serviceData);
+
+      await updateUsedProducts(service.id, used_products);
+
+      showToast({
+        message: "Service updated successfully",
+        variant: "success",
+      });
+      setServerError();
+      router.navigate({
+        from: Route.fullPath,
+        to: "/services",
+      });
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
+
+  async function updateServiceData(serviceId, serviceData) {
+    const response = await fetch(`/api/v1/merchants/services/${serviceId}`, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(serviceData),
+    });
+
+    if (!response.ok) {
+      invalidateLocalSotrageAuth(response.status);
+      const result = await response.json();
+      console.log("Error body from updateServiceData:", result);
+      throw new Error(result.error.message);
+    }
+  }
+
+  async function updateUsedProducts(serviceId, usedProducts) {
+    const response = await fetch(
+      `/api/v1/merchants/services/${serviceId}/products`,
+      {
         method: "PUT",
         headers: {
           Accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify(service),
-      });
-
-      if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        showToast({
-          message: "Service updated successfully",
-          variant: "success",
-        });
-        setServerError();
-        router.navigate({
-          from: Route.fullPath,
-          to: "/services",
-        });
+        body: JSON.stringify({
+          service_id: serviceId,
+          used_products: usedProducts,
+        }),
       }
-    } catch (err) {
-      setServerError(err.message);
+    );
+
+    if (!response.ok) {
+      invalidateLocalSotrageAuth(response.status);
+      const result = await response.json();
+      throw new Error(result.error.message);
     }
   }
 
@@ -104,6 +136,7 @@ function RouteComponent() {
       <ServicePage
         service={loaderData.service}
         categories={loaderData.categories}
+        products={loaderData.products}
         onSave={saveServiceHandler}
         route={Route}
       />

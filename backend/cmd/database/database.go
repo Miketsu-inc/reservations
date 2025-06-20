@@ -104,7 +104,7 @@ type PostgreSQL interface {
 	// -- Service --
 
 	// Insert a new service to the database
-	NewService(context.Context, Service, []ServicePhase) error
+	NewService(context.Context, Service, []ServicePhase, []ConnectedProducts) error
 	// Get a Service and it's phases by it's id
 	GetServiceWithPhasesById(context.Context, int, uuid.UUID) (PublicServiceWithPhases, error)
 	// Get all services for a merchant by it's id
@@ -127,6 +127,8 @@ type PostgreSQL interface {
 	GetAllServicePageData(context.Context, int, uuid.UUID) (ServicePageData, error)
 	// Get all additional data required for the service page
 	GetServicePageFormOptions(context.Context, uuid.UUID) (ServicePageFormOptions, error)
+// Update the connected product for a service by id
+	UpdateConnectedProducts(context.Context, int, []ConnectedProducts) error
 
 	// -- Customer --
 

@@ -9,10 +9,17 @@ import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
 import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import ProductAdder from "./ProductAdder";
 import ServicePhases from "./ServicePhases";
 import { useServicePhases } from "./servicehooks";
 
-export default function ServicePage({ service, categories, onSave, route }) {
+export default function ServicePage({
+  service,
+  categories,
+  products,
+  onSave,
+  route,
+}) {
   const originalData = useMemo(
     () => ({
       id: service?.id,
@@ -248,9 +255,13 @@ export default function ServicePage({ service, categories, onSave, route }) {
                 />
               </div>
             </div>
-            <Card>
-              <p>Products</p>
-            </Card>
+            <ProductAdder
+              availableProducts={products}
+              usedProducts={serviceData.used_products}
+              onUpdate={(updated) =>
+                updateServiceData({ used_products: updated })
+              }
+            />
             <Card>
               <p>Employees</p>
             </Card>

@@ -83,6 +83,7 @@ function RouteComponent() {
       <ServerError error={serverError} />
       <ServicePage
         categories={loaderData.categories}
+        products={loaderData.products}
         onSave={saveServiceHandler}
         route={Route}
       />

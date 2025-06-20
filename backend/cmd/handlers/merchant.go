@@ -95,6 +95,11 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
+type newConnectedProducts struct {
+		ProductId  int `json:"id" validate:"required"`
+		AmountUsed int `json:"amount_used" validate:"min=0,max=1000000"`
+	}
+
 	type newPhase struct {
 		Name      string `json:"name" validate:"required"`
 		Sequence  int    `json:"sequence" validate:"required"`
@@ -103,15 +108,16 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type newService struct {
-		Name        string     `json:"name" validate:"required"`
-		Description string     `json:"description"`
-		Color       string     `json:"color" validate:"required,hexcolor"`
-		Price       int        `json:"price" validate:"min=0,max=1000000"`
-		PriceNote   *string    `json:"price_note"`
-		Cost        int        `json:"cost" validate:"min=0,max=1000000"`
-		CategoryId  *int       `json:"category_id"`
-		IsActive    bool       `json:"is_active"`
-		Phases      []newPhase `json:"phases" validate:"required"`
+		Name         string                 `json:"name" validate:"required"`
+		Description  string                 `json:"description"`
+		Color        string                 `json:"color" validate:"required,hexcolor"`
+		Price        int                    `json:"price" validate:"min=0,max=1000000"`
+		PriceNote    *string                `json:"price_note"`
+		Cost         int                    `json:"cost" validate:"min=0,max=1000000"`
+		CategoryId   *int                   `json:"category_id"`
+		IsActive     bool                   `json:"is_active"`
+		Phases       []newPhase             `json:"phases" validate:"required"`
+UsedProducts []newConnectedProducts `json:"used_products" validate:"required"`
 	}
 	var service newService
 
@@ -142,6 +148,15 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		durationSum += phase.Duration
 	}
 
+	var dbProducts []database.ConnectedProducts
+	for _, product := range service.UsedProducts {
+		dbProducts = append(dbProducts, database.ConnectedProducts{
+			ProductId:  product.ProductId,
+			ServiceId:  0,
+			AmountUsed: product.AmountUsed,
+		})
+	}
+
 	if err := m.Postgresdb.NewService(r.Context(), database.Service{
 		Id:            0,
 		MerchantId:    merchantId,
@@ -154,7 +169,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		PriceNote:     service.PriceNote,
 		Cost:          service.Cost,
 		IsActive:      service.IsActive,
-	}, dbPhases); err != nil {
+	}, dbPhases, dbProducts); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
 	}
@@ -1180,6 +1195,58 @@ func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request)
 	err = m.Postgresdb.DeleteServiceCategoryById(r.Context(), merchantId, categoryId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deleting service category: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) UpdateServiceProductConnections(w http.ResponseWriter, r *http.Request) {
+	type updatedProductConnections struct {
+		ProductId  int `json:"id" validate:"required"`
+		AmountUsed int `json:"amount_used" validate:"min=0,max=1000000"`
+	}
+
+	type ProductData struct {
+		ServiceId    int                         `json:"service_id" validate:"required"`
+		UsedProducts []updatedProductConnections `json:"used_products" validate:"required"`
+	}
+
+	var updatedProducts ProductData
+
+	if err := validate.ParseStruct(r, &updatedProducts); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	if serviceId != updatedProducts.ServiceId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	var dbProducts []database.ConnectedProducts
+	for _, product := range updatedProducts.UsedProducts {
+		dbProducts = append(dbProducts, database.ConnectedProducts{
+			ProductId:  product.ProductId,
+			ServiceId:  updatedProducts.ServiceId,
+			AmountUsed: product.AmountUsed,
+		})
+	}
+
+	err = m.Postgresdb.UpdateConnectedProducts(r.Context(), updatedProducts.ServiceId, dbProducts)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating products connected to service for merchant: %s", err.Error()))
 		return
 	}
 }
