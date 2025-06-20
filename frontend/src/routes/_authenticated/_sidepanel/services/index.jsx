@@ -30,6 +30,29 @@ async function fetchServices() {
   }
 }
 
+function reorderArray(items, itemId, direction) {
+  const currentIndex = items.findIndex((item) => item.id === itemId);
+  const itemIds = items.map((item) => item.id);
+
+  // remove id from item ids
+  itemIds.splice(currentIndex, 1);
+
+  if (direction === "forward") {
+    if (currentIndex === 0) return null;
+    // put id one index before it's original spot
+    itemIds.splice(currentIndex - 1, 0, itemId);
+  } else if (direction === "backward") {
+    if (currentIndex === items.length - 1) return null;
+    // put id on index after it's original spot
+    itemIds.splice(currentIndex + 1, 0, itemId);
+  } else {
+    console.error("wrong direction ", direction);
+    return null;
+  }
+
+  return itemIds;
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
   component: ServicesPage,
   loader: async () => {
@@ -95,6 +118,80 @@ function ServicesPage() {
       }
     } catch (err) {
       setServerError(err.message);
+    }
+  }
+
+  async function moveCategoryHandler(id, direction) {
+    const categories = loaderData.services.filter(
+      (category) => category.id !== null
+    );
+    if (categories.length === 1) return;
+
+    const categoryIds = reorderArray(categories, id, direction);
+    if (!categoryIds) return;
+
+    const response = await fetch(
+      `/api/v1/merchants/services/categories/reorder`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          categories: categoryIds,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      invalidateLocalSotrageAuth(response.status);
+      const result = await response.json();
+      setServerError(result.error.message);
+    } else {
+      router.invalidate();
+      setServerError();
+      showToast({
+        message: "Service categories reordered successfully",
+        variant: "success",
+      });
+    }
+  }
+
+  async function moveServiceHandler(categoryId, id, direction) {
+    const services = loaderData.services.find(
+      (category) => category.id === categoryId
+    ).services;
+    if (services.length === 1) return;
+
+    const serviceIds = reorderArray(services, id, direction);
+    if (!serviceIds) return;
+
+    console.log(serviceIds);
+
+    const response = await fetch(`/api/v1/merchants/services/reorder`, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        category_id: categoryId,
+        services: serviceIds,
+      }),
+    });
+
+    if (!response.ok) {
+      invalidateLocalSotrageAuth(response.status);
+      const result = await response.json();
+      setServerError(result.error.message);
+    } else {
+      router.invalidate();
+      setServerError();
+      showToast({
+        message: "Services reordered successfully",
+        variant: "success",
+      });
     }
   }
 
@@ -169,7 +266,15 @@ function ServicesPage() {
             <li className="w-full" key={category.id}>
               <ServiceCategoryCard
                 category={category}
+                // -1 due to uncategorized. Which should always be the last
+                categoryCount={loaderData.services.length - 1}
                 refresh={router.invalidate}
+                onMoveUp={async (id) =>
+                  await moveCategoryHandler(id, "forward")
+                }
+                onMoveDown={async (id) =>
+                  await moveCategoryHandler(id, "backward")
+                }
               >
                 <ul className="flex flex-wrap gap-4">
                   {category.services.map((service) => (
@@ -177,6 +282,7 @@ function ServicesPage() {
                       <ServiceCard
                         isWindowSmall={isWindowSmall}
                         service={service}
+                        serviceCount={category.services.length}
                         onDelete={() => {
                           setSelected({ name: service.name, id: service.id });
                           setShowDeleteModal(true);
@@ -188,6 +294,12 @@ function ServicesPage() {
                           })
                         }
                         refresh={router.invalidate}
+                        onMoveForth={async (id) =>
+                          await moveServiceHandler(category.id, id, "forward")
+                        }
+                        onMoveBack={async (id) =>
+                          await moveServiceHandler(category.id, id, "backward")
+                        }
                       />
                     </li>
                   ))}

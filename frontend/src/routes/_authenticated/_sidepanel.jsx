@@ -154,7 +154,7 @@ function SidePanelLayout() {
                   onClick={item?.onClick ? item.onClick : closeSidePanelHandler}
                   to={item.href}
                   activeProps={{
-                    className: "bg-primary/20 *:text-primary!",
+                    className: "bg-primary/20 *:text-primary! *:duration-0",
                   }}
                   className="text-text_color hover:bg-primary/20 flex items-center rounded-lg p-2"
                 >

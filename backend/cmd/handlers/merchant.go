@@ -95,7 +95,7 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
-type newConnectedProducts struct {
+	type newConnectedProducts struct {
 		ProductId  int `json:"id" validate:"required"`
 		AmountUsed int `json:"amount_used" validate:"min=0,max=1000000"`
 	}
@@ -117,7 +117,7 @@ type newConnectedProducts struct {
 		CategoryId   *int                   `json:"category_id"`
 		IsActive     bool                   `json:"is_active"`
 		Phases       []newPhase             `json:"phases" validate:"required"`
-UsedProducts []newConnectedProducts `json:"used_products" validate:"required"`
+		UsedProducts []newConnectedProducts `json:"used_products" validate:"required"`
 	}
 	var service newService
 
@@ -169,6 +169,7 @@ UsedProducts []newConnectedProducts `json:"used_products" validate:"required"`
 		PriceNote:     service.PriceNote,
 		Cost:          service.Cost,
 		IsActive:      service.IsActive,
+		Sequence:      0,
 	}, dbPhases, dbProducts); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
@@ -566,6 +567,35 @@ func (m *Merchant) ActivateService(w http.ResponseWriter, r *http.Request) {
 	err = m.Postgresdb.ActivateServiceById(r.Context(), merchantId, serviceId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deactivating service: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) ReorderServices(w http.ResponseWriter, r *http.Request) {
+	type servicesOrder struct {
+		CategoryId *int  `json:"category_id"`
+		Services   []int `json:"services" validate:"required"`
+	}
+
+	var so servicesOrder
+
+	err := validate.ParseStruct(r, &so)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.ReorderServices(r.Context(), merchantId, so.CategoryId, so.Services)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while ordering services: %s", err.Error()))
 		return
 	}
 }
@@ -1129,7 +1159,8 @@ func (m *Merchant) NewServiceCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = m.Postgresdb.NewServiceCategory(r.Context(), merchantId, database.ServiceCategory{
-		Name: nc.Name,
+		Name:     nc.Name,
+		Sequence: 0,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new service category %s", err.Error()))
@@ -1147,6 +1178,7 @@ func (m *Merchant) UpdateServiceCategory(w http.ResponseWriter, r *http.Request)
 	err := validate.ParseStruct(r, &cd)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
+		return
 	}
 
 	id := chi.URLParam(r, "id")
@@ -1195,6 +1227,34 @@ func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request)
 	err = m.Postgresdb.DeleteServiceCategoryById(r.Context(), merchantId, categoryId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deleting service category: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) ReorderServiceCategories(w http.ResponseWriter, r *http.Request) {
+	type categoryOrder struct {
+		Categories []int `json:"categories" validate:"required"`
+	}
+
+	var co categoryOrder
+
+	err := validate.ParseStruct(r, &co)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.ReorderServiceCategories(r.Context(), merchantId, co.Categories)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while ordering services: %s", err.Error()))
 		return
 	}
 }

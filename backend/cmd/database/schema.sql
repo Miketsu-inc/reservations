@@ -33,7 +33,8 @@ create table if not exists "Merchant" (
 create table if not exists "ServiceCategory" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
-    name                     varchar(30)     not null
+    name                     varchar(30)     not null,
+    sequence                 integer         not null default 0
 );
 
 create table if not exists "Service" (
@@ -48,6 +49,7 @@ create table if not exists "Service" (
     price_note               varchar(30),
     cost                     bigint          not null,
     is_active                boolean         not null,
+    sequence                 integer         not null default 0,
     deleted_on               timestamptz
 );
 

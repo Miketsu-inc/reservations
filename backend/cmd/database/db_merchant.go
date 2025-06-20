@@ -588,7 +588,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 
 	stats.RevenueChange = utils.CalculatePercentChange(prevRevenue, currRevenue)
 	stats.AppointmentsChange = utils.CalculatePercentChange(prevAppointments, currAppointments)
-	stats.CancellationsChange = utils.CalculatePercentChange(prevCancellations, currCancellations)
+	stats.CancellationsChange = utils.CalculatePercentChange(prevCancellations, currCancellations) * -1
 	stats.AverageDurationChange = utils.CalculatePercentChange(prevAvgDuration, currAvgDuration)
 
 	query2 := `

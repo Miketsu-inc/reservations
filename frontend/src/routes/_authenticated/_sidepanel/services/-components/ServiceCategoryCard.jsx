@@ -10,7 +10,14 @@ import { PopoverClose } from "@radix-ui/react-popover";
 import { useState } from "react";
 import EditServiceCategoryModal from "./EditServiceCategoryModal";
 
-export default function ServiceCategoryCard({ children, category, refresh }) {
+export default function ServiceCategoryCard({
+  children,
+  category,
+  categoryCount,
+  refresh,
+  onMoveUp,
+  onMoveDown,
+}) {
   const [isCollapsed, setIsCollapsed] = useState(
     localStorage.getItem(`category_${category.id}_collapsed`) === "true"
   );
@@ -75,52 +82,64 @@ export default function ServiceCategoryCard({ children, category, refresh }) {
           <p className="text-lg font-semibold">{`${category.id ? `${category.name}` : "Uncategorized"}`}</p>
         </div>
         <div className="flex flex-row gap-3">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="hover:bg-hvr_gray hover:*:stroke-text_color cursor-pointer rounded-lg p-1">
-                <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="left">
-              <div
-                className="*:hover:bg-hvr_gray flex flex-col items-start *:flex *:w-full *:cursor-pointer
-                  *:flex-row *:items-center *:rounded-lg *:p-2"
-              >
-                <PopoverClose asChild>
-                  <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="gap-5"
-                  >
-                    <EditIcon styles="size-4 ml-1" />
-                    <p>Edit category</p>
-                  </button>
-                </PopoverClose>
-                <PopoverClose asChild>
-                  <button className="gap-4">
-                    <ArrowIcon styles="size-6 stroke-current" />
-                    <p>Move up</p>
-                  </button>
-                </PopoverClose>
-                <PopoverClose asChild>
-                  <button className="gap-4">
-                    <ArrowIcon styles="size-6 rotate-180 stroke-current" />
-                    <p>Move down</p>
-                  </button>
-                </PopoverClose>
-                <PopoverClose asChild>
-                  <button
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    className="gap-4"
-                  >
-                    <TrashBinIcon styles="size-5 ml-0.5 mb-0.5" />
-                    <p className="text-red-600 dark:text-red-500">
-                      Delete category
-                    </p>
-                  </button>
-                </PopoverClose>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {category.id !== null && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="hover:bg-hvr_gray hover:*:stroke-text_color cursor-pointer rounded-lg p-1">
+                  <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="left">
+                <div
+                  className="flex flex-col items-start *:flex *:w-full *:flex-row *:items-center *:rounded-lg
+                    *:p-2"
+                >
+                  <PopoverClose asChild>
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="hover:bg-hvr_gray cursor-pointer gap-5"
+                    >
+                      <EditIcon styles="size-4 ml-1" />
+                      <p>Edit category</p>
+                    </button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <button
+                      disabled={category.sequence === categoryCount}
+                      onClick={() => onMoveDown(category.id)}
+                      className={`${category.sequence === categoryCount ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                      gap-4`}
+                    >
+                      <ArrowIcon styles="size-6 stroke-current" />
+                      <p>Move down</p>
+                    </button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <button
+                      disabled={category.sequence === 1}
+                      onClick={() => onMoveUp(category.id)}
+                      className={`${category.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                      gap-4`}
+                    >
+                      <ArrowIcon styles="size-6 rotate-180 stroke-current" />
+                      <p>Move up</p>
+                    </button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <button
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="hover:bg-hvr_gray cursor-pointer gap-4"
+                    >
+                      <TrashBinIcon styles="size-5 ml-0.5 mb-0.5" />
+                      <p className="text-red-600 dark:text-red-500">
+                        Delete category
+                      </p>
+                    </button>
+                  </PopoverClose>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
           <button
             className="hover:bg-hvr_gray hover:*:stroke-text_color cursor-pointer rounded-lg p-1"
             onClick={() => {

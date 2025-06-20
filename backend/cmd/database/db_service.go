@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,6 +23,7 @@ type Service struct {
 	PriceNote     *string   `json:"price_note"`
 	Cost          int       `json:"cost"`
 	IsActive      bool      `json:"is_active"`
+	Sequence      int       `json:"sequence"`
 	DeletedOn     *string   `json:"deleted_on"`
 }
 
@@ -35,8 +38,9 @@ type ServicePhase struct {
 }
 
 type ServiceCategory struct {
-	Id   int    `json:"id" db:"id"`
-	Name string `json:"name" db:"name"`
+	Id       int    `json:"id" db:"id"`
+	Name     string `json:"name" db:"name"`
+	Sequence int    `json:"sequence"`
 }
 
 func (s *service) NewService(ctx context.Context, serv Service, servPhases []ServicePhase, ConnProducts []ConnectedProducts) error {
@@ -48,8 +52,8 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 	defer tx.Rollback(ctx)
 
 	serviceQuery := `
-	insert into "Service" (merchant_id, category_id, name, description, color, total_duration, price, price_note, cost, is_active)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	insert into "Service" (merchant_id, category_id, name, description, color, total_duration, price, price_note, cost, is_active, sequence)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((select max(sequence) + 1 from "Service" where merchant_id = $1 and deleted_on is null), 1))
 	returning id
 	`
 
@@ -164,12 +168,14 @@ type PublicServiceWithPhases struct {
 	PriceNote     *string              `json:"price_note"`
 	Cost          int                  `json:"cost"`
 	IsActive      bool                 `json:"is_active"`
+	Sequence      int                  `json:"sequence"`
 	Phases        []PublicServicePhase `json:"phases"`
 }
 
 type ServicesGroupedByCategory struct {
 	Id       *int                      `json:"id"`
 	Name     *string                   `json:"name"`
+	Sequence *int                      `json:"sequence"`
 	Services []PublicServiceWithPhases `json:"services"`
 }
 
@@ -178,7 +184,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 	query := `
 	with services as (
 		select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price, s.price_note,
-			s.cost, s.is_active,
+			s.cost, s.is_active, s.sequence,
 		coalesce (
 			jsonb_agg(
 				jsonb_build_object(
@@ -192,11 +198,11 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 			) filter (where sp.id is not null),
 		'[]'::jsonb) as phases
 		from "Service" s
-		left join "ServicePhase" sp on s.id = sp.service_id
-		where s.merchant_id = $1 and ($2::bool = false or s.is_active = true) and s.deleted_on is null and sp.deleted_on is null
+		left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
+		where s.merchant_id = $1 and ($2::bool = false or s.is_active = true) and s.deleted_on is null
 		group by s.id
 	)
-	select sc.id, sc.name,
+	select sc.id, sc.name, sc.sequence,
 	coalesce (
 		jsonb_agg(
 			jsonb_build_object(
@@ -210,15 +216,16 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 				'price_note', s.price_note,
 				'cost', s.cost,
 				'is_active', s.is_active,
+				'sequence', s.sequence,
 				'phases', s.phases
-			) order by s.name
+			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
 	from "ServiceCategory" sc
 	full outer join services s on s.category_id = sc.id
 	where sc.merchant_id = $1 or s.merchant_id = $1
 	group by sc.id, sc.name
-	order by sc.name nulls last
+	order by sc.sequence, sc.name nulls last
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, filterForActive)
@@ -226,7 +233,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 		var sgby ServicesGroupedByCategory
 		var services []byte
 
-		err := row.Scan(&sgby.Id, &sgby.Name, &services)
+		err := row.Scan(&sgby.Id, &sgby.Name, &sgby.Sequence, &services)
 		if err != nil {
 			return ServicesGroupedByCategory{}, err
 		}
@@ -392,11 +399,53 @@ func (s *service) UpdateServicWithPhaseseById(ctx context.Context, pswp PublicSe
 
 func (s *service) NewServiceCategory(ctx context.Context, merchantId uuid.UUID, sc ServiceCategory) error {
 	query := `
-	insert into "ServiceCategory" (merchant_id, name)
-	values ($1, $2)
+	insert into "ServiceCategory" (merchant_id, name, sequence)
+	values ($1, $2, coalesce(
+		(select max(sequence) + 1 from "ServiceCategory" where merchant_id = $1), 1)
+	)
 	`
 
 	_, err := s.db.Exec(ctx, query, merchantId, sc.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) ReorderServices(ctx context.Context, merchantId uuid.UUID, categoryId *int, serviceIds []int) error {
+	var cases []string
+	var inParams []string
+	params := make([]any, len(serviceIds))
+
+	for i, id := range serviceIds {
+		params[i] = id
+		paramIndex := i + 1
+		cases = append(cases, fmt.Sprintf("when $%d then %d", paramIndex, i+1))
+		inParams = append(inParams, fmt.Sprintf("$%d", paramIndex))
+	}
+
+	categoryIdParamIndex := len(serviceIds) + 1
+	categoryCondition := ""
+	if categoryId == nil {
+		categoryCondition = "category_id is null"
+	} else {
+		categoryCondition = fmt.Sprintf("category_id = $%d", categoryIdParamIndex)
+		params = append(params, *categoryId)
+	}
+
+	merchantIdParamIndex := len(params) + 1
+	params = append(params, merchantId)
+
+	query := fmt.Sprintf(`
+	update "Service"
+	set sequence = case id
+	%s
+	end
+	where id in (%s) and %s and merchant_id = $%d`,
+		strings.Join(cases, "\n"), strings.Join(inParams, ", "), categoryCondition, merchantIdParamIndex)
+
+	_, err := s.db.Exec(ctx, query, params...)
 	if err != nil {
 		return err
 	}
@@ -451,6 +500,7 @@ type ServicePageData struct {
 	PriceNote     *string                       `json:"price_note"`
 	Cost          int                           `json:"cost"`
 	IsActive      bool                          `json:"is_active"`
+	Sequence      int                           `json:"sequence"`
 	Phases        []PublicServicePhase          `json:"phases"`
 	Products      []MinimalProductInfoWithUsage `json:"used_products"`
 }
@@ -488,7 +538,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 		where p.deleted_on is null
 		group by sprod.service_id
 	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price, s.price_note, s.cost, s.is_active,
+	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price, s.price_note, s.cost, s.is_active, s.sequence,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s
@@ -502,7 +552,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 	var productJson []byte
 
 	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
-		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceNote, &spd.Cost, &spd.IsActive, &phaseJson, &productJson)
+		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceNote, &spd.Cost, &spd.IsActive, &spd.Sequence, &phaseJson, &productJson)
 	if err != nil {
 		return ServicePageData{}, err
 	}
@@ -531,7 +581,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 type MinimalProductInfo struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
-Unit string `json:"unit"`
+	Unit string `json:"unit"`
 }
 
 type ServicePageFormOptions struct {
@@ -612,6 +662,36 @@ func (s *service) ActivateServiceById(ctx context.Context, merchantId uuid.UUID,
 	return nil
 }
 
+func (s *service) ReorderServiceCategories(ctx context.Context, merchantId uuid.UUID, categoryIds []int) error {
+	var cases []string
+	var inParams []string
+	params := make([]any, len(categoryIds))
+
+	for i, id := range categoryIds {
+		params[i] = id
+		paramIndex := i + 1
+		cases = append(cases, fmt.Sprintf("when $%d then %d", paramIndex, i+1))
+		inParams = append(inParams, fmt.Sprintf("$%d", paramIndex))
+	}
+
+	merchantIdParamIndex := len(categoryIds) + 1
+	params = append(params, merchantId)
+
+	query := fmt.Sprintf(`
+	update "ServiceCategory"
+	set sequence = case id
+	%s
+	end
+	where id in (%s) and merchant_id = $%d`, strings.Join(cases, "\n"), strings.Join(inParams, ", "), merchantIdParamIndex)
+
+	_, err := s.db.Exec(ctx, query, params...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type ConnectedProducts struct {
 	ProductId  int `json:"product_id"`
 	ServiceId  int `json:"service_id"`
@@ -629,7 +709,7 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 	defer tx.Rollback(ctx)
 
 	productConnectionsQuery := `
-	select product_id, amount_used from "ServiceProduct" 
+	select product_id, amount_used from "ServiceProduct"
 	where service_id = $1
 	`
 
@@ -670,7 +750,7 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 	upsertQuery := `
 	insert into "ServiceProduct" (service_id, product_id, amount_used)
 	values ($1, $2, $3)
-	on conflict (service_id, product_id) do update 
+	on conflict (service_id, product_id) do update
 	set amount_used = excluded.amount_used
 	`
 

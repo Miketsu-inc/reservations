@@ -13,9 +13,12 @@ import { invalidateLocalSotrageAuth } from "@lib/lib";
 export default function ServiceCard({
   isWindowSmall,
   service,
+  serviceCount,
   onDelete,
   onEdit,
   refresh,
+  onMoveBack,
+  onMoveForth,
 }) {
   const { showToast } = useToast();
 
@@ -105,11 +108,21 @@ export default function ServiceCard({
                   />
                   <p>Active</p>
                 </div>
-                <button className="hover:bg-hvr_gray cursor-pointer gap-5">
+                <button
+                  disabled={service.sequence === serviceCount}
+                  onClick={() => onMoveBack(service.id)}
+                  className={`${service.sequence === serviceCount ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                    gap-5`}
+                >
                   <ArrowIcon styles="size-6 ml-2 -rotate-90 stroke-current" />
                   <p>Move back</p>
                 </button>
-                <button className="hover:bg-hvr_gray cursor-pointer gap-5">
+                <button
+                  disabled={service.sequence === 1}
+                  onClick={() => onMoveForth(service.id)}
+                  className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                    gap-5`}
+                >
                   <ArrowIcon styles="size-6 rotate-90 stroke-current ml-2" />
                   <p>Move forth</p>
                 </button>
