@@ -9,6 +9,7 @@ import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatDuration } from "@lib/datetime";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { PopoverClose } from "@radix-ui/react-popover";
 
 export default function ServiceCard({
   isWindowSmall,
@@ -108,24 +109,28 @@ export default function ServiceCard({
                   />
                   <p>Active</p>
                 </div>
-                <button
-                  disabled={service.sequence === serviceCount}
-                  onClick={() => onMoveBack(service.id)}
-                  className={`${service.sequence === serviceCount ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
-                    gap-5`}
-                >
-                  <ArrowIcon styles="size-6 ml-2 -rotate-90 stroke-current" />
-                  <p>Move back</p>
-                </button>
-                <button
-                  disabled={service.sequence === 1}
-                  onClick={() => onMoveForth(service.id)}
-                  className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
-                    gap-5`}
-                >
-                  <ArrowIcon styles="size-6 rotate-90 stroke-current ml-2" />
-                  <p>Move forth</p>
-                </button>
+                <PopoverClose asChild>
+                  <button
+                    disabled={service.sequence === serviceCount}
+                    onClick={() => onMoveBack(service.id)}
+                    className={`${service.sequence === serviceCount ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                      gap-5`}
+                  >
+                    <ArrowIcon styles="size-6 ml-2 -rotate-90 stroke-current" />
+                    <p>Move back</p>
+                  </button>
+                </PopoverClose>
+                <PopoverClose asChild>
+                  <button
+                    disabled={service.sequence === 1}
+                    onClick={() => onMoveForth(service.id)}
+                    className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+                      gap-5`}
+                  >
+                    <ArrowIcon styles="size-6 rotate-90 stroke-current ml-2" />
+                    <p>Move forth</p>
+                  </button>
+                </PopoverClose>
               </div>
             </PopoverContent>
           </Popover>

@@ -53,7 +53,9 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 	serviceQuery := `
 	insert into "Service" (merchant_id, category_id, name, description, color, total_duration, price, price_note, cost, is_active, sequence)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((select max(sequence) + 1 from "Service" where merchant_id = $1 and deleted_on is null), 1))
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((
+		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1 and deleted_on is null
+		), 1))
 	returning id
 	`
 
@@ -382,16 +384,68 @@ func (s *service) UpdateServicWithPhaseseById(ctx context.Context, pswp PublicSe
 	}
 
 	updateServiceQuery := `
+	with old as (
+		select id, category_id from "Service"
+		where id = $1 and merchant_id = $2 and deleted_on is null
+	)
 	update "Service"
 	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price = $8, price_note = $9,
-		cost = $10, is_active = $11
-	where ID = $1 and merchant_id = $2 and deleted_on is null
+		cost = $10, is_active = $11,
+		sequence = case
+			when old.category_id is distinct from $3 then (
+				coalesce((
+					select max(sequence) + 1 from "Service" where category_id is not distinct from $3 and merchant_id = $2 and deleted_on is null
+				), 1)
+			)
+			else sequence
+		end
+	from old
+	where "Service".id = old.id
+	returning old.category_id
 	`
 
-	_, err = s.db.Exec(ctx, updateServiceQuery, pswp.Id, pswp.MerchantId, pswp.CategoryId, pswp.Name, pswp.Description, pswp.Color, pswp.TotalDuration,
-		pswp.Price, pswp.PriceNote, pswp.Cost, pswp.IsActive)
+	var oldCategoryId *int
+	err = tx.QueryRow(ctx, updateServiceQuery, pswp.Id, pswp.MerchantId, pswp.CategoryId, pswp.Name, pswp.Description, pswp.Color, pswp.TotalDuration,
+		pswp.Price, pswp.PriceNote, pswp.Cost, pswp.IsActive).Scan(&oldCategoryId)
 	if err != nil {
 		return err
+	}
+
+	// the categoryId has changed, reordering services is needed
+	if (oldCategoryId == nil && pswp.CategoryId != nil) || (oldCategoryId != nil && (pswp.CategoryId == nil || *oldCategoryId != *pswp.CategoryId)) {
+		reorderOldCategoryQuery := `
+		with reordered as (
+			select id, row_number() over (order by sequence) as new_sequence
+			from "Service"
+			where category_id is not distinct from $1 and merchant_id = $2 and deleted_on is null and id != $3
+		)
+		update "Service" s
+		set sequence = r.new_sequence
+		from reordered r
+		where s.id = r.id
+		`
+
+		_, err := tx.Exec(ctx, reorderOldCategoryQuery, oldCategoryId, pswp.MerchantId, pswp.Id)
+		if err != nil {
+			return err
+		}
+
+		reorderNewCategoryQuery := `
+		with reordered as (
+			select id, row_number() over (order by sequence) as new_sequence
+			from "Service"
+			where category_id is not distinct from $1 and merchant_id = $2 and deleted_on is null
+		)
+		update "Service" s
+		set sequence = r.new_sequence
+		from reordered r
+		where s.id = r.id
+		`
+
+		_, err = tx.Exec(ctx, reorderNewCategoryQuery, pswp.CategoryId, pswp.MerchantId)
+		if err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit(ctx)
