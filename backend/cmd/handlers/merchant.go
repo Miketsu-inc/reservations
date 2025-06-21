@@ -503,7 +503,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		durationSum += phase.Duration
 	}
 
-	err = m.Postgresdb.UpdateServicWithPhaseseById(r.Context(), database.PublicServiceWithPhases{
+	err = m.Postgresdb.UpdateServiceWithPhaseseById(r.Context(), database.PublicServiceWithPhases{
 		Id:            pubServ.Id,
 		MerchantId:    merchantId,
 		CategoryId:    pubServ.CategoryId,

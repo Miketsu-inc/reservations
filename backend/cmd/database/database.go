@@ -112,7 +112,7 @@ type PostgreSQL interface {
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service and it's phases by it's id
-	UpdateServicWithPhaseseById(context.Context, PublicServiceWithPhases) error
+	UpdateServiceWithPhaseseById(context.Context, PublicServiceWithPhases) error
 	// Deactivate a service by it's id
 	DeactivateServiceById(context.Context, uuid.UUID, int) error
 	// Activate a service by it's id
@@ -131,7 +131,7 @@ type PostgreSQL interface {
 	GetAllServicePageData(context.Context, int, uuid.UUID) (ServicePageData, error)
 	// Get all additional data required for the service page
 	GetServicePageFormOptions(context.Context, uuid.UUID) (ServicePageFormOptions, error)
-// Update the connected product for a service by id
+	// Update the connected product for a service by id
 	UpdateConnectedProducts(context.Context, int, []ConnectedProducts) error
 
 	// -- Customer --

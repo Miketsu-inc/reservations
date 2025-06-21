@@ -304,7 +304,7 @@ func servicePhasesEqual(a, b PublicServicePhase) bool {
 		a.PhaseType == b.PhaseType
 }
 
-func (s *service) UpdateServicWithPhaseseById(ctx context.Context, pswp PublicServiceWithPhases) error {
+func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp PublicServiceWithPhases) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err

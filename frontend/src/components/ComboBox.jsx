@@ -20,6 +20,7 @@ export default function ComboBox({
   return (
     <Select
       options={filteredOptions}
+      allOptions={options}
       value={value}
       onSelect={onSelect}
       placeholder={placeholder}

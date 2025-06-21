@@ -56,6 +56,7 @@ const defaultAppointmentInfo = {
   service_name: "",
   short_location: "",
   price: 0,
+  price_note: "",
   cancelled_by_user: false,
   cancelled_by_merchant: false,
   canBeCancelled: true,
@@ -87,6 +88,7 @@ function CancelPage() {
         to_date: loaderData.to_date,
         short_location: loaderData.short_location,
         price: loaderData.price,
+        price_note: loaderData.price_note,
         cancelled_by_user: loaderData.cancelled_by_user,
         cancelled_by_merchant: loaderData.cancelled_by_merchant,
         canBeCancelled: !isInPast && !alreadyCancelled,
@@ -203,7 +205,8 @@ function CancelPage() {
           </div>
 
           <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
-            {appointmentInfo.price} FT -tól
+            {appointmentInfo.price.toLocaleString()} HUF
+            {appointmentInfo.price_note}
           </p>
         </div>
       </div>

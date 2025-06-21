@@ -7,6 +7,7 @@ const itemHeight = 34;
 
 export default function Select({
   options,
+  allOptions,
   value,
   onSelect,
   placeholder,
@@ -23,8 +24,11 @@ export default function Select({
   const containerRef = useRef(null);
   const dropDownListRef = useRef(null);
 
-  const selectedIndex = options?.findIndex((option) => option.value === value);
-  const selectedOption = options?.[selectedIndex];
+  const fullOptions = allOptions || options;
+  const selectedIndex = fullOptions?.findIndex(
+    (option) => option.value === value
+  );
+  const selectedOption = fullOptions?.[selectedIndex];
 
   useClickOutside(containerRef, () => {
     handleClose();

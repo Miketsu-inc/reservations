@@ -212,7 +212,9 @@ function ProductForm({
           placeholder="Select a product to add"
           value={productData.id}
           options={productOptions}
-          emptyText="You have no products to add"
+          emptyText={
+            availableProducts.length === 0 ? "You have no product to add" : ""
+          }
           onSelect={(option) => {
             const selected = availableProducts.find(
               (p) => p.id === option.value
