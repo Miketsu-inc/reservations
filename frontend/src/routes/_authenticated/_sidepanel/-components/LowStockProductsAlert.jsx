@@ -39,11 +39,11 @@ export default function LowStockProductsAlert({ products, route }) {
   }
 
   return (
-    <Card className="text-text_color">
+    <Card styles="!p-0">
       <div
-        className={`flex flex-col justify-center ${hasLowStock ? "gap-4" : "gap-12"}`}
+        className={`flex flex-col justify-center ${hasLowStock ? "" : "gap-12"}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="border-border_color flex items-center justify-between border-b p-4">
           <div className="flex items-center">
             <div
               className={`mr-3 rounded-md p-2
@@ -57,28 +57,29 @@ export default function LowStockProductsAlert({ products, route }) {
             </div>
             <div>
               <h3 className="text-lg text-nowrap dark:font-semibold">
-                Low Stock ({totalLowStock})
+                Low Stock {hasLowStock ? `(${totalLowStock})` : ""}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {hasLowStock
-                  ? "Products needing attention"
-                  : "All products well-stocked"}
-              </p>
+              {hasLowStock && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Products about to run out
+                </p>
+              )}
             </div>
           </div>
 
           <Link
             from={route.fullPath}
             to="/products"
-            className="text-text_color/70 flex items-center justify-end gap-1 text-sm"
+            className="text-text_color/70 hover:bg-hvr_gray flex items-center justify-end gap-1
+              rounded-lg p-0 text-sm sm:p-2"
           >
-            <span className="text-right">Manage Products</span>
+            <span className="hidden text-right sm:block">Manage Products</span>
             <BackArrowIcon styles="stroke-text_color/70 h-5 w-5 shrink-0 rotate-180" />
           </Link>
         </div>
 
         {hasLowStock ? (
-          <div className="max-h-[215px] overflow-y-auto pr-1 dark:[color-scheme:dark]">
+          <div className="max-h-[230px] overflow-y-auto px-2 dark:[color-scheme:dark]">
             <div>
               {products.map((product) => {
                 const {

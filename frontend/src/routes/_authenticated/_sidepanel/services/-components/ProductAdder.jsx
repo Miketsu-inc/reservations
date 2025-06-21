@@ -18,8 +18,16 @@ export default function ProductAdder({
   const [isOpen, setIsOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
 
+  const filteredAvailableProducts = availableProducts.filter(
+    (p) =>
+      !usedProducts.find((up) => up.id === p.id) ||
+      (editProduct && p.id === editProduct.id)
+  );
+
   function handleAddProduct(product) {
-    const selectedProduct = availableProducts.find((p) => p.id === product.id);
+    const selectedProduct = filteredAvailableProducts.find(
+      (p) => p.id === product.id
+    );
 
     const enrichedProduct = {
       id: product.id,
@@ -44,33 +52,41 @@ export default function ProductAdder({
   }
 
   return (
-    <Card styles="flex flex-col">
-      <div className="flex items-center justify-between">
+    <Card styles="!p-0 flex flex-col">
+      <div
+        className={`${isOpen ? "border-border_color border-b" : ""} flex items-center
+          justify-between p-4`}
+      >
         <div className="flex items-center justify-center gap-2">
-          <ProductIcon styles="size-6 text-text_color" />
+          <ProductIcon styles="size-6 mb-0.5 text-text_color" />
           <p className="text-lg">Products</p>
         </div>
-        <button type="button" onClick={() => setIsOpen(!isOpen)} className="">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+        >
           <BackArrowIcon
             styles={`size-6 stroke-text_color transition-transform duration-200 ${
               isOpen ? "rotate-90" : "-rotate-90" }`}
           />
         </button>
       </div>
-      <hr
-        className={`border-border_color transition-all duration-200
-          ${isOpen ? "mt-2 border-b opacity-100" : "opacity-0"}`}
-      />
       <div
-        className={`transition-all duration-200 ease-in-out ${
-          isOpen ? "mt-6 max-h-[1000px] opacity-100" : "max-h-0 opacity-0" }`}
+        className={`px-4 transition-all duration-200 ease-in-out ${
+          isOpen ? "max-h-[1000px] py-4 opacity-100" : "max-h-0 opacity-0" }`}
       >
         <div className="flex flex-col gap-5 xl:flex-row xl:gap-10">
           <ProductForm
             product={editProduct || {}}
             onSubmit={handleAddProduct}
-            availableProducts={availableProducts}
+            availableProducts={filteredAvailableProducts}
             usedProducts={usedProducts}
+            onSelectNewProduct={(p) => {
+              if (p.id !== editProduct?.id) {
+                setEditProduct(null);
+              }
+            }}
           />
 
           {usedProducts.length > 0 ? (
@@ -128,7 +144,13 @@ export default function ProductAdder({
   );
 }
 
-function ProductForm({ product, onSubmit, availableProducts, usedProducts }) {
+function ProductForm({
+  product,
+  onSubmit,
+  onSelectNewProduct,
+  availableProducts,
+  usedProducts,
+}) {
   const [productData, setProductData] = useState({
     id: 0,
     unit: "",
@@ -202,6 +224,7 @@ function ProductForm({ product, onSubmit, availableProducts, usedProducts }) {
               unit: selected.unit,
               amount_used: used ? used.amount_used : "",
             }));
+            onSelectNewProduct(selected);
           }}
         />
       </div>
@@ -220,7 +243,7 @@ function ProductForm({ product, onSubmit, availableProducts, usedProducts }) {
             name="productAmount"
             type="number"
             min={1}
-            labelText={`Amount (${productData.unit && productData.unit})`}
+            labelText={`Amount ${productData.unit && `(${productData.unit})`}`}
             hasError={false}
             placeholder="40"
             value={productData.amount_used}

@@ -242,7 +242,8 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 	return msi, nil
 }
 
-func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, introduction, announcement, aboutUs, paymentInfo, parkingInfo string, businessHours map[int][]TimeSlot) error {
+func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, introduction, announcement, aboutUs, paymentInfo, parkingInfo string,
+	businessHours map[int][]TimeSlot) error {
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -571,7 +572,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		currAvgDuration, prevAvgDuration     int
 	)
 
-	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date, prevPeriodStart, currPeriodStart).Scan(
+	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date.AddDate(0, 0, 1), prevPeriodStart, currPeriodStart.AddDate(0, 0, 1)).Scan(
 		&currRevenue, &prevRevenue,
 		&currAppointments, &prevAppointments,
 		&currCancellations, &prevCancellations,
@@ -605,6 +606,9 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	GROUP BY day
 	ORDER BY day
 	`
+
+	fmt.Println(date)
+	fmt.Println(currPeriodStart)
 
 	rows, _ := s.db.Query(ctx, query2, merchantId, currPeriodStart, date)
 	stats.Revenue, err = pgx.CollectRows(rows, pgx.RowToStructByName[RevenueStat])
