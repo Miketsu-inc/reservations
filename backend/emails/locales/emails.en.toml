@@ -1,0 +1,147 @@
+[Footer]
+privacy_policy = "Privacy Policy"
+terms_of_service = "Terms of Service"
+unsubscribe = "Unsubscribe"
+
+
+[AppointmentCancellation]
+subject = "Appointment Cancelled"
+preview = "Your appointment has been cancelled"
+heading = "Your appointment has been cancelled"
+main_text = """
+We regret to inform you that your upcoming appointment has been cancelled \
+due to unforeseen circumstances:"""
+cancelled = "CANCELLED"
+timezone = "Timezone: "
+service_name = "Service: "
+location = "Location: "
+cancellation_reason = "Reason for cancellation:"
+cancellation_reason_note = """
+We apologize for the inconvenience. We value your time and would like \
+to offer you the option to easily book a new appointment."""
+primary_button = "Book a New Appointment"
+contact_us_note = """
+If you have any questions or need assistance, please contact us at \
++36 1 234 5678 or reply to this email.
+"""
+apology = "Thank you for your understanding, and we apologize for any inconvenience."
+
+
+[AppointmentConfirmation]
+subject = "Appointment Confirmed"
+preview = "Your appointment is confirmed"
+heading = "Your appointment is confirmed"
+main_text = "Your appointment is booked and we look forward to seeing you. Here's everything you need to know:"
+timezone = "Timezone: "
+service_name = "Service: "
+location = "Location: "
+primary_button = "Add to Calendar"
+secondary_button = "Manage Appointment"
+modification_note = """
+If you need to make any changes to your appointment, please contact us \
+at least 24 hours before the scheduled time."""
+
+
+[AppointmentModification]
+subject = "Appointment Rescheduled"
+preview = "Your appointment has been rescheduled - {{ .Date }}, {{ .Time }}"
+heading = "Your appointment has been rescheduled"
+main_text = """
+Dear Customer, please note that your previously scheduled appointment \
+has been changed. You can find the new appointment details below."""
+modification_details = "Appointment Modification Details"
+original_text = "Original appointment:"
+new_text = "New appointment:"
+unmodified_details = "Unchanged Booking Details"
+timezone = "Timezone: "
+service_name = "Service: "
+location = "Location: "
+modification_note = """
+If the new time doesn't work for you, please select another one \
+or update your booking using the button below."""
+primary_button = "Manage Appointment"
+extra_info = """
+The new appointment has been automatically added to your calendar, \
+if you had previously accepted the invitation."""
+contact_us_note = """
+If you have any questions or need help, please contact us at \
++36 1 234 5678 or reply to this email."""
+
+
+[AppointmentReminder]
+subject = "Appointment Reminder"
+preview = "Reminder: your upcoming appointment!"
+heading = "Reminder: your upcoming appointment!"
+main_text = """
+Just a quick reminder that your appointment is coming up soon. \
+Here are the details:"""
+timezone = "Timezone: "
+service_name = "Service: "
+location = "Location: "
+primary_button = "Manage Appointment"
+arrive_on_time_note = """
+Please arrive on time for your scheduled appointment. If you have any \
+questions or need to reschedule, feel free to reach out to us."""
+contact_us_note = """
+If you'd like to make any changes to your appointment, please contact us \
+at least 24 hours before the scheduled time."""
+
+
+[EmailVerification]
+subject = "Email Verification"
+preview = "Verify your email address"
+heading = "Verify your email address"
+main_text = """
+To verify your email address, simply enter the code below into the appropriate field."""
+expiration_note = "This code is valid for "
+expiration_note2 = "10 minutes"
+expiration_note3 = """
+. If you didn't initiate the registration, you can safely ignore this email."""
+contact_us_note = "Have questions? Write to us at "
+contact_us_note2 = " "
+
+
+[ForgotPassword]
+subject = "Set a New Password"
+preview = "Password reset request"
+heading = "Forgot Your Password?"
+main_text = "No worries, it happens! Click the button below to set a new password."
+primary_button = "Set New Password"
+expiration_note = "This link is valid for "
+expiration_note2 = "30 minutes "
+expiration_note3 = "for security reasons."
+ignore_email_note = """
+If you didn't request a password reset, you can safely ignore this email. \
+Your account is secure."""
+
+
+[SubscriptionConfirmation]
+
+
+[TrialEndingSoon]
+subject = "Your Free Trial is Ending Soon"
+preview = "Your free trial is ending soon!"
+heading = "Your Free Trial is Ending Soon!"
+main_text = "We hope you've enjoyed using our service so far! Your free trial will expire "
+days_left = "in 2 days"
+main_text2 = """
+. If you don't cancel before the trial ends, your subscription will \
+automatically convert to a monthly plan."""
+primary_button = "Manage Subscription"
+contact_us_note = """
+If you have any questions or need assistance, don't hesitate to contact us at """
+contact_us_note2 = " "
+
+
+[TrialWelcome]
+preview = "Your free trial has started - take a look around!"
+heading = "Welcome to company name"
+main_text = """
+Thank you for trying out our service! Your free trial has now started. \
+Click the button below and start exploring all the new features!"""
+primary_button = "Explore"
+contact_us_note = """
+If you need help using any of the new features, check out our """
+contact_us_note2 = "tutorials "
+contact_us_note3 = """
+or contact our support team at support@example.com."""

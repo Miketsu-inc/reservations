@@ -1,0 +1,156 @@
+[Footer]
+privacy_policy = "Adatvédelmi irányelvek"
+terms_of_service = "Felhasználási feltételek"
+unsubscribe = "Leiratkozás"
+
+
+[AppointmentCancellation]
+subject = "Időpont törölve lett"
+preview = "Az időpontja lemondásra került"
+heading = "Az időpontja lemondásra került"
+main_text = """
+Sajnálattal tájékoztatjuk, hogy az alábbi időpontját előre nem \
+látható körülmények miatt le kellett mondanunk:"""
+cancelled = "LEMONDVA"
+timezone = "Időzóna: "
+service_name = "Szolgáltatás: "
+location = "Helyszín: "
+cancellation_reason = "A lemondás oka:"
+cancellation_reason_note = """
+Elnézést kérünk a kellemetlenségért. Értékeljük az Ön idejét, és \
+szeretnénk lehetőséget biztosítani egy új időpont egyszerű foglalására.
+"""
+primary_button = "Új időpont foglalása"
+contact_us_note = """
+Amennyiben kérdése lenne vagy segítségre van szüksége, kérjük, \
+vegye fel velünk a kapcsolatot a +36 1 234 5678 telefonszámon vagy \
+válaszoljon erre az e-mailre.
+"""
+apology = "Köszönjük megértését és elnézést kérünk az esetleges kellemetlenségért."
+
+
+[AppointmentConfirmation]
+subject = "Időpont megerősítve"
+preview = "Az időpontja megerősítve"
+heading = "Az időpontja megerősítve"
+main_text = "Lefoglaltuk az időpontját és várjuk a találkozást. Íme minden, amit tudnia kell:"
+timezone = "Időzóna: "
+service_name = "Szolgáltatás: "
+location = "Helyszín: "
+primary_button = "Naptárhoz adás"
+secondary_button = "Időpont kezelése"
+modification_note = """
+Amennyiben bármilyen változtatást szeretne eszközölni az időpontjával kapcsolatban, kérjük, \
+lépjen kapcsolatba velünk legalább 24 órával a tervezett időpont előtt."""
+
+
+[AppointmentModification]
+subject = "Időpont áthelyezve"
+preview = "Az időpontja módosításra került - {{ .Date }}, {{ .Time }}"
+heading = "Az időpontja módosításra került"
+main_text = """
+Tisztelt Ügyfelünk! Tájékoztatjuk, hogy a korábban foglalt \
+időpontját módosítottuk. Az új időpont részleteit alább találja."""
+modification_details = "Időpont módosítás részletei"
+original_text = "Eredeti időpont:"
+new_text = "Új időpont:"
+unmodified_details = "A foglalás változatlan részei"
+timezone = "Időzóna: "
+service_name = "Szolgáltatás: "
+location = "Helyszín: "
+modification_note = """
+Ha az új időpont nem megfelelő Önnek, kérjük, válasszon egy \
+másikat, vagy módosítsa a foglalását az alábbi gombra kattintva."""
+primary_button = "Időpont kezelése"
+extra_info = """
+Az új időpont automatikusan bekerült a naptárába, amennyiben \
+korábban elfogadta a naptárbejegyzést."""
+contact_us_note = """
+Ha kérdése van, vagy segítségre van szüksége, kérjük, vegye fel a \
+kapcsolatot a +36 1 234 5678 telefonszámon, vagy válaszoljon erre az e-mailre."""
+
+
+[AppointmentReminder]
+subject = "Időpont emlékeztető"
+preview = "Emlékeztető a közelgő időpontjáról!"
+heading = "Emlékeztető a közelgő időpontjáról!"
+main_text = """
+Szeretnénk emlékeztetni, hogy hamarosan esedékes a foglalása. Íme \
+az időpontjával kapcsolatos információk:"""
+timezone = "Időzóna: "
+service_name = "Szolgáltatás: "
+location = "Helyszín: "
+primary_button = "Időpont kezelése"
+arrive_on_time_note = """
+Kérjük, érkezzen pontosan a foglalt időpontra. Ha bármilyen \
+kérdése van, vagy módosítaná időpontját, kérjük, vegye fel velünk a kapcsolatot."""
+contact_us_note = """
+Ha bármilyen változtatást szeretne eszközölni az időpontjával \
+kapcsolatban, kérjük, lépjen kapcsolatba velünk legalább 24 órával \
+a tervezett időpont előtt."""
+
+
+[EmailVerification]
+subject = "Email megerősítés"
+preview = "Érvényesítsd az email címed"
+heading = "Erősitsd meg az email címed"
+main_text = """
+Az email címed megerősítéséhez nincs más dolgod mint hogy beírod \
+az alábbi códot az arra kijelölt helyre."""
+expiration_note = "Ez a kód "
+expiration_note2 = "10 percig "
+expiration_note3 = """
+érvényes. Ha nem te kezdeményezted a regisztrációt, egyszerűen \
+figyelmen kívül hagyhatod ezt az emailt.
+"""
+contact_us_note = "Kérdésed van? Írj nekünk a "
+contact_us_note2 = " címre"
+
+
+[ForgotPassword]
+subject = "Állíts be új jelszót"
+preview = "jelszó visszaállítási kérelem"
+heading = "Elfelejtetted a jelszavadat?"
+main_text = "Semmi gond, előfordul! Kattints az alábbi gombra az új jelszó beállitásához."
+primary_button = "Új jelszó beállitása"
+expiration_note = "Ez a link "
+expiration_note2 = "30 percig "
+expiration_note3 = "érvényes biztonsági okokból."
+ignore_email_note = """
+Ha nem te kérted a jelszó visszaállítását, figyelmen kívül \
+hagyhatod ezt az e-mailt. A fiókod biztonságban van."""
+
+
+[SubscriptionConfirmation]
+
+
+[TrialEndingSoon]
+subject = "A próbaidőszakod hamarosan lejár"
+preview = "Az ingyenes próbaidőszakod hamarosan lejár!"
+heading = "A próbaidőszakod hamarosan lejár!"
+main_text = "Reméljük, élvezted az eddigi szolgáltatásunkat! Az ingyenes próbaidőszakod "
+days_left = "2 napon belül "
+main_text2 = """
+lejár. Ha nem mondod le az előfizetést a próbaidőszak vége előtt, \
+automatikusan aktiváljuk számodra a havi előfizetést. \
+"""
+primary_button = "Előfizetés kezelése"
+contact_us_note = """
+Ha bármilyen kérdésed van, vagy segítségre van szükséged, ne habozz kapcsolatba \
+lépni velünk a """
+contact_us_note2 = " címen."
+
+
+[TrialWelcome]
+preview = "Az ingyenes próbaidőszakod most elindult, nézz körül bátran!"
+heading = "Üdvözlünk a company name-nél"
+main_text = """
+Köszönjük, hogy kipróbálod a szolgáltatásunkat! Az ingyenes próbaidőszakod \
+most elkezdődött, kattints az alábbi gombra, és kezdj el felfedezni minden \
+új lehetőséget!"""
+primary_button = "Felfedezés"
+contact_us_note = """
+Ha segítségre van szüksége az új funkciók használatával kapcsolatban, tekintse meg """
+contact_us_note2 = "oktatóanyagainkat "
+contact_us_note3 = """
+vagy vegye fel a kapcsolatot ügyfélszolgálatunkkal a support@example.com címen."""

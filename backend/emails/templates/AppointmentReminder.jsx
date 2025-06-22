@@ -22,7 +22,7 @@ export default function AppointmentReminder() {
     <Tailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>Emlékeztető a közelgő időpontjáról</Preview>
+        <Preview>{"{{ T .Lang `AppointmentReminder.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -33,11 +33,10 @@ export default function AppointmentReminder() {
               as="h1"
               className="mb-4 text-[22px] font-bold text-[#111111]"
             >
-              Emlékeztető a közelgő időpontjáról!
+              {"{{ T .Lang `AppointmentReminder.heading` . }}"}
             </Heading>
             <Text className="mb-6 text-sm text-black">
-              Szeretnénk emlékeztetni, hogy hamarosan esedékes a foglalása. Íme
-              az időpontjával kapcsolatos információk:
+              {"{{ T .Lang `AppointmentReminder.main_text` . }}"}
             </Text>
 
             <Section
@@ -55,16 +54,22 @@ export default function AppointmentReminder() {
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Időzóna: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentReminder.timezone` . }}"}
+                </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Szolgáltatás: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentReminder.service_name` . }}"}
+                </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
-                <span className="font-semibold">Helyszín: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentReminder.location` . }}"}
+                </span>
                 {"{{ .Location }}"}
               </Text>
             </Section>
@@ -78,20 +83,16 @@ export default function AppointmentReminder() {
                   borderRadius: "6px",
                 }}
               >
-                Időpont kezelése
+                {"{{ T .Lang `AppointmentReminder.primary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-3 text-sm">
-              Kérjük, érkezzen pontosan a foglalt időpontra. Ha bármilyen
-              kérdése van, vagy módosítaná időpontját, kérjük, vegye fel velünk
-              a kapcsolatot.
+              {"{{ T .Lang `AppointmentReminder.arrive_on_time_note` . }}"}
             </Text>
 
             <Text className="mb-6 text-xs text-gray-600">
-              Ha bármilyen változtatást szeretne eszközölni az időpontjával
-              kapcsolatban, kérjük, lépjen kapcsolatba velünk legalább 24 órával
-              a tervezett időpont előtt.
+              {"{{ T .Lang `AppointmentReminder.contact_us_note` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7eb" }} />

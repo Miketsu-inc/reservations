@@ -24,7 +24,7 @@ export default function AppointmentCancellation() {
     <Tailwind>
       <Html>
         <Head />
-        <Preview>Az időpontja lemondásra került</Preview>
+        <Preview>{"{{ T .Lang `AppointmentCancellation.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -35,12 +35,11 @@ export default function AppointmentCancellation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-[#111111]"
             >
-              Az időpontja lemondásra került
+              {"{{ T .Lang `AppointmentCancellation.heading` . }}"}
             </Heading>
 
             <Text className="mb-6 text-sm">
-              Sajnálattal tájékoztatjuk, hogy az alábbi időpontját előre nem
-              látható körülmények miatt le kellett mondanunk:
+              {"{{ T .Lang `AppointmentCancellation.main_text` . }}"}
             </Text>
 
             <Section
@@ -62,7 +61,7 @@ export default function AppointmentCancellation() {
                       font-medium text-red-600"
                     style={{ border: "solid 2px #dc2626", borderRadius: "6px" }}
                   >
-                    LEMONDVA
+                    {"{{ T .Lang `AppointmentCancellation.cancelled` . }}"}
                   </Text>
                 </Column>
               </Row>
@@ -72,20 +71,27 @@ export default function AppointmentCancellation() {
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Időzóna: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentCancellation.timezone` . }}"}
+                </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Szolgáltatás: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentCancellation.service_name` . }}"}
+                </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
-                <span className="font-semibold">Helyszín: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentCancellation.location` . }}"}
+                </span>
                 {"{{ .Location }}"}
               </Text>
             </Section>
 
+            {"{{ if .Reason}}"}
             {/* Cancellation reason section */}
             <Section
               className="mb-6 bg-gray-50 p-[16px]"
@@ -94,15 +100,17 @@ export default function AppointmentCancellation() {
               }}
             >
               <Text className="m-0 mb-[8px] text-sm font-semibold">
-                A lemondás oka:
+                {
+                  "{{ T .Lang `AppointmentCancellation.cancellation_reason` . }}"
+                }
               </Text>
-              <Text className="m-0 text-sm"> {"{{  .Reason }}"} </Text>
+              <Text className="m-0 text-sm">{"{{ .Reason }}"}</Text>
             </Section>
-
+            {"{{ end }}"}
             <Text className="mb-6 text-sm">
-              Elnézést kérünk a kellemetlenségért. Értékeljük az Ön idejét, és
-              szeretnénk lehetőséget biztosítani egy új időpont egyszerű
-              foglalására.
+              {
+                "{{ T .Lang `AppointmentCancellation.cancellation_reason_note` . }}"
+              }
             </Text>
 
             <Section className="my-8 text-center">
@@ -114,19 +122,16 @@ export default function AppointmentCancellation() {
                   borderRadius: "6px",
                 }}
               >
-                Új időpont foglalása
+                {"{{ T .Lang `AppointmentCancellation.primary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-6 text-sm">
-              Amennyiben kérdése lenne vagy segítségre van szüksége, kérjük,
-              vegye fel velünk a kapcsolatot a +36 1 234 5678 telefonszámon vagy
-              válaszoljon erre az e-mailre.
+              {"{{ T .Lang `AppointmentCancellation.contact_us_note` . }}"}
             </Text>
 
             <Text className="mb-6 text-xs text-gray-600">
-              Köszönjük megértését és elnézést kérünk az esetleges
-              kellemetlenségért.
+              {"{{ T .Lang `AppointmentCancellation.apology` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7eb" }} />

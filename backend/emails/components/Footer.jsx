@@ -13,16 +13,19 @@ export default function Footer() {
         123 Utca Neve, Város, IR 12345
       </Text>
       <Text className="mt-2 text-center text-[12px]">
-        <Link href="https://company.com/privacy" className="text-gray-500">
-          <u>Adatvédelmi irányelvek</u>
+        <Link href="http://localhost:5173/privacy" className="text-gray-500">
+          <u>{"{{ T .Lang `Footer.privacy_policy` }}"}</u>
         </Link>
         {" • "}
-        <Link href="https://company.com/terms" className="text-gray-500">
-          <u>Felhasználási feltételek</u>
+        <Link href="http://localhost:5173/terms" className="text-gray-500">
+          <u>{"{{ T .Lang `Footer.terms_of_service` }}"}</u>
         </Link>
         {" • "}
-        <Link href="https://company.com/unsubscribe" className="text-gray-500">
-          <u>Leiratkozás</u>
+        <Link
+          href="http://localhost:5173/unsubscribe"
+          className="text-gray-500"
+        >
+          <u>{"{{ T .Lang `Footer.unsubscribe` }}"}</u>
         </Link>
       </Text>
     </Section>

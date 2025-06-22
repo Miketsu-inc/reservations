@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,26 @@ func ParsePgArrayToInt(arrayStr string) ([]int, error) {
 		result = append(result, val)
 	}
 	return result, nil
+}
+
+func StructToMap(data any) map[string]any {
+	result := make(map[string]any)
+
+	val := reflect.ValueOf(data)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	typ := val.Type()
+
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+		if field.PkgPath != "" { // unexported field
+			continue
+		}
+		result[field.Name] = val.Field(i).Interface()
+	}
+
+	return result
 }
 
 func CalculatePercentChange(previous int, current int) int {

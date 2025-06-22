@@ -22,9 +22,7 @@ export default function TrialWelcome() {
   return (
     <Html lang="hu" dir="ltr">
       <Head />
-      <Preview>
-        Az ingyenes próbaidőszakod most elindult, nézz körül bátran!
-      </Preview>
+      <Preview>{"{{ T .Lang `TrialWelcome.preview` . }}"}</Preview>
       <Tailwind>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
@@ -34,13 +32,11 @@ export default function TrialWelcome() {
             <LogoHeader />
             <Section>
               <Heading className="my-6 text-[22px] font-bold">
-                Üdvözlünk a company name-nél
+                {"{{ T .Lang `TrialWelcome.heading` . }}"}
               </Heading>
 
               <Text className="mb-6 text-[16px] text-gray-700">
-                Köszönjük, hogy kipróbálod a szolgáltatásunkat! Az ingyenes
-                próbaidőszakod most elkezdődött, kattints az alábbi gombra, és
-                kezdj el felfedezni minden új lehetőséget!
+                {"{{ T .Lang `TrialWelcome.main_text` . }}"}
               </Text>
 
               <Section className="my-8 text-center">
@@ -49,21 +45,19 @@ export default function TrialWelcome() {
                   href="https://app.example.com/dashboard"
                   style={{ boxSizing: "border-box", borderRadius: "6px" }}
                 >
-                  Felfedezés
+                  {"{{ T .Lang `TrialWelcome.primary_button` . }}"}
                 </Button>
               </Section>
 
               <Text className="mb-6 text-gray-700">
-                Ha segítségre van szüksége az új funkciók használatával
-                kapcsolatban, tekintse meg{" "}
+                {"{{ T .Lang `TrialWelcome.contact_us_note` . }}"}
                 <Link
                   href="https://app.example.com/tutorials"
                   className="font-medium text-blue-600"
                 >
-                  oktatóanyagainkat
-                </Link>{" "}
-                vagy vegye fel a kapcsolatot ügyfélszolgálatunkkal a
-                support@example.com címen.
+                  {"{{ T .Lang `TrialWelcome.contact_us_note2` . }}"}
+                </Link>
+                {"{{ T .Lang `TrialWelcome.contact_us_note3` . }}"}
               </Text>
 
               <Hr className="my-6 border-gray-200" />

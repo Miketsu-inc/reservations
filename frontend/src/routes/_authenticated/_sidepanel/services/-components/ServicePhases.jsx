@@ -221,7 +221,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
           id="duration"
           name="duration"
           type="number"
-          min={0}
+          min={1}
           max={phaseData.duration_unit === "hours" ? 24 : 1440}
           labelText="Duration"
           hasError={false}

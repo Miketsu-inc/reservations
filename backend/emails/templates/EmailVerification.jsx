@@ -20,13 +20,11 @@ import LogoHeader from "../components/LogoHeader";
 void React;
 
 export default function EmailVerification() {
-  const code = "141592";
-
   return (
     <Tailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>Érvényesítsd az email címed</Preview>
+        <Preview>{"{{ T .Lang `EmailVerification.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -35,12 +33,11 @@ export default function EmailVerification() {
             <LogoHeader />
             <Section className="py-4">
               <Heading className="mb-2 text-center text-2xl font-bold text-gray-800">
-                Erősitsd meg az email címed
+                {"{{ T .Lang `EmailVerification.heading` . }}"}
               </Heading>
 
               <Text className="mb-6 text-center text-[16px] text-gray-700">
-                Az email címed megerősítéséhez nincs más dolgod mint hogy beírod
-                az alábbi códot az arra kijelölt helyre.
+                {"{{ T .Lang `EmailVerification.main_text` . }}"}
               </Text>
 
               <Section className="mb-6 w-auto text-center">
@@ -54,7 +51,7 @@ export default function EmailVerification() {
                           borderRadius: "5px",
                         }}
                       >
-                        {code}
+                        {"{{ .Code }}"}
                       </Text>
                     </Section>
                   </Column>
@@ -62,19 +59,21 @@ export default function EmailVerification() {
               </Section>
 
               <Text className="mb-16 text-center text-gray-600">
-                Ez a kód <strong className="text-blue-600">10 percig</strong>{" "}
-                érvényes. Ha nem te kezdeményezted a regisztrációt, egyszerűen
-                figyelmen kívül hagyhatod ezt az emailt.
+                {"{{ T .Lang `EmailVerification.expiration_note` . }}"}
+                <strong className="text-blue-600">
+                  {"{{ T .Lang `EmailVerification.expiration_note2` . }}"}
+                </strong>
+                {"{{ T .Lang `EmailVerification.expiration_note3` . }}"}
               </Text>
               <Text className="text-center text-[14px] text-gray-600">
-                Kérdésed van? Írj nekünk a{" "}
+                {"{{ T .Lang `EmailVerification.contact_us_note` . }}"}
                 <Link
                   href="mailto:support@company.com"
                   className="text-blue-600"
                 >
                   <u>support@company.com</u>
-                </Link>{" "}
-                címre.
+                </Link>
+                {"{{ T .Lang `EmailVerification.contact_us_note2` . }}"}
               </Text>
               <Hr className="mt-2" style={{ border: "1px solid #e5e7b" }} />
             </Section>

@@ -5,54 +5,96 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"html/template"
 
+	"github.com/BurntSushi/toml"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
+	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/emails"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/resend/resend-go/v2"
+	"golang.org/x/text/language"
 )
 
-var templates = make(map[string]*template.Template)
+var templates *template.Template
 var cfg *config.Config = config.LoadEnvVars()
 
-func init() {
-	templateFS := emails.TemplateFS()
+var bundle *i18n.Bundle
 
+func init() {
+	templateFS, localesFs := emails.TemplateFS()
+
+	bundle = i18n.NewBundle(language.English)
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+
+	mustLoadMessageFileFs(localesFs, "emails.en.toml")
+	mustLoadMessageFileFs(localesFs, "emails.hu.toml")
+
+	templates = template.New("").Funcs(template.FuncMap{
+		"T": func(lang, key string, data ...any) string {
+			var templateData any
+			if len(data) > 0 {
+				templateData = data[0]
+			}
+
+			localizer := i18n.NewLocalizer(bundle, lang)
+			msg := localizer.MustLocalize(&i18n.LocalizeConfig{
+				MessageID:    key,
+				TemplateData: templateData,
+			})
+			return msg
+		},
+	})
 	err := fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+		if err != nil {
 			return err
 		}
 
-		if strings.HasSuffix(path, ".html") {
-			templ, err := template.ParseFS(templateFS, path)
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".html") {
+			_, err := templates.ParseFS(templateFS, path)
 			assert.Nil(err, fmt.Sprintf("Failed to parse template %s: %v", path, err))
-
-			name := strings.TrimSuffix(filepath.Base(path), ".html")
-			templates[name] = templ
 		}
 		return nil
 	})
 	assert.Nil(err, fmt.Sprintf("Error walking through templates: %v", err))
 }
 
-func executeTemplate(name string, data interface{}) (bytes.Buffer, error) {
-	var body bytes.Buffer
-
-	tmpl, ok := templates[name]
-	if !ok {
-		return body, fmt.Errorf("template %s not found", name)
-	}
-
-	err := tmpl.Execute(&body, data)
-	return body, err
+func mustLoadMessageFileFs(fsys fs.FS, filename string) {
+	data, _ := fs.ReadFile(fsys, filename)
+	bundle.MustParseMessageFileBytes(data, filename)
 }
 
-func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string) error {
+func executeTemplate(name string, lang string, data any) string {
+	var buf bytes.Buffer
+
+	templateName := name + ".html"
+
+	tmpl := templates.Lookup(templateName)
+	assert.NotNil(tmpl, fmt.Sprintf("template %s not found", templateName))
+
+	// has to be a map as passing an anonymous struct does not work
+	// and passing a name struct causes you to write the name everywhere
+	dataMap := utils.StructToMap(data)
+	dataMap["Lang"] = lang
+
+	err := tmpl.Execute(&buf, dataMap)
+	assert.Nil(err, fmt.Sprintf("error while executing template %s: %v", name, err))
+
+	return buf.String()
+}
+
+func getSubject(templateName string, lang string) string {
+	localizer := i18n.NewLocalizer(bundle, lang)
+	return localizer.MustLocalize(&i18n.LocalizeConfig{
+		MessageID: fmt.Sprintf("%s.subject", templateName),
+	})
+}
+
+func send(ctx context.Context, to string, body string, subjectText string) error {
 	if !cfg.ENABLE_EMAILS {
 		return nil
 	}
@@ -63,7 +105,7 @@ func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string)
 	params := &resend.SendEmailRequest{
 		From:    "Acme <onboarding@resend.dev>",
 		To:      []string{"delivered@resend.dev"},
-		Html:    body.String(),
+		Html:    body,
 		Subject: subjectText,
 	}
 
@@ -75,7 +117,7 @@ func Send(ctx context.Context, to string, body bytes.Buffer, subjectText string)
 	return nil
 }
 
-func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText string, date string) (string, error) {
+func schedule(ctx context.Context, to string, body string, subjectText string, date string) (string, error) {
 	if !cfg.ENABLE_EMAILS {
 		return "", nil
 	}
@@ -85,7 +127,7 @@ func Schedule(ctx context.Context, to string, body bytes.Buffer, subjectText str
 	params := &resend.SendEmailRequest{
 		From:        "Acme <onboarding@resend.dev>",
 		To:          []string{"delivered@resend.dev"},
-		Html:        body.String(),
+		Html:        body,
 		Subject:     subjectText,
 		ScheduledAt: date,
 	}
@@ -136,13 +178,12 @@ type ForgotPasswordData struct {
 	PasswordLink string `json:"password_link"`
 }
 
-func ForgotPassword(ctx context.Context, to string, data ForgotPasswordData) error {
-	subject := "Állíts be új jelszót"
+func ForgotPassword(ctx context.Context, lang string, to string, data ForgotPasswordData) error {
+	templateName := "ForgotPassword"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("ForgotPassword", data)
-	assert.Nil(err, fmt.Sprintf("Error executing ForgotPassword template: %s", err))
-
-	err = Send(ctx, to, body, subject)
+	err := send(ctx, to, body, subject)
 	if err != nil {
 		return err
 	}
@@ -150,16 +191,15 @@ func ForgotPassword(ctx context.Context, to string, data ForgotPasswordData) err
 }
 
 type EmailVerificationData struct {
-	VerificationCode string `json:"verification_code"`
+	Code int `json:"code"`
 }
 
-func EmailVerification(ctx context.Context, to string, data EmailVerificationData) error {
-	subject := "Email megerősítés"
+func EmailVerification(ctx context.Context, lang string, to string, data EmailVerificationData) error {
+	templateName := "EmailVerification"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("EmailVerification", data)
-	assert.Nil(err, fmt.Sprintf("Error executing EmailVerification template: %s", err))
-
-	err = Send(ctx, to, body, subject)
+	err := send(ctx, to, body, subject)
 	if err != nil {
 		return err
 	}
@@ -175,13 +215,12 @@ type AppointmentConfirmationData struct {
 	ModifyLink  string `json:"modify_link"`
 }
 
-func AppointmentConfirmation(ctx context.Context, to string, data AppointmentConfirmationData) error {
-	subject := "Időpont megerősitve"
+func AppointmentConfirmation(ctx context.Context, lang string, to string, data AppointmentConfirmationData) error {
+	templateName := "AppointmentConfirmation"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("AppointmentConfirmation", data)
-	assert.Nil(err, fmt.Sprintf("Error executing AppointmentConfirmation template: %s", err))
-
-	err = Send(ctx, to, body, subject)
+	err := send(ctx, to, body, subject)
 	if err != nil {
 		return err
 	}
@@ -189,13 +228,12 @@ func AppointmentConfirmation(ctx context.Context, to string, data AppointmentCon
 	return nil
 }
 
-func AppointmentReminder(ctx context.Context, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
-	subject := "Időpont emlékeztető"
+func AppointmentReminder(ctx context.Context, lang string, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
+	templateName := "AppointmentReminder"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("AppointmentReminder", data)
-	assert.Nil(err, fmt.Sprintf("Error executing AppointmentReminder template: %s", err))
-
-	email_id, err := Schedule(ctx, to, body, subject, date.Format(time.RFC3339))
+	email_id, err := schedule(ctx, to, body, subject, date.Format(time.RFC3339))
 	if err != nil {
 		return "", err
 	}
@@ -213,13 +251,12 @@ type AppointmentCancellationData struct {
 	NewAppointmentLink string `json:"new_appointment_link"`
 }
 
-func AppointmentCancellation(ctx context.Context, to string, data AppointmentCancellationData) error {
-	subject := "Időpont törölve lett"
+func AppointmentCancellation(ctx context.Context, lang string, to string, data AppointmentCancellationData) error {
+	templateName := "AppointmentCancellation"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("AppointmentCancellation", data)
-	assert.Nil(err, fmt.Sprintf("Error executing AppointmentCancellation template: %s", err))
-
-	err = Send(ctx, to, body, subject)
+	err := send(ctx, to, body, subject)
 	if err != nil {
 		return err
 	}
@@ -238,13 +275,12 @@ type AppointmentModificationData struct {
 	OldDate     string `json:"old_date"`
 }
 
-func AppointmentModification(ctx context.Context, to string, data AppointmentModificationData) error {
-	subject := "Időpont áthelyezve"
+func AppointmentModification(ctx context.Context, lang string, to string, data AppointmentModificationData) error {
+	templateName := "AppointmentModification"
+	subject := getSubject(templateName, lang)
+	body := executeTemplate(templateName, lang, data)
 
-	body, err := executeTemplate("AppointmentModification", data)
-	assert.Nil(err, fmt.Sprintf("Error executing AppointmentModification template: %s", err))
-
-	err = Send(ctx, to, body, subject)
+	err := send(ctx, to, body, subject)
 	if err != nil {
 		return err
 	}

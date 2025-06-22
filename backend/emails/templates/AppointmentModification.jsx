@@ -24,9 +24,7 @@ export default function AppointmentModification() {
     <Tailwind>
       <Html>
         <Head />
-        <Preview>
-          Az időpontja módosításra került - {"{{ .Date }}"}, {"{{ .Time }}"}
-        </Preview>
+        <Preview>{"{{ T .Lang `AppointmentModification.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -34,12 +32,11 @@ export default function AppointmentModification() {
           >
             <LogoHeader />
             <Heading as="h1" className="mb-4 text-2xl font-bold text-[#111111]">
-              Az időpontja módosításra került
+              {"{{ T .Lang `AppointmentModification.heading` . }}"}
             </Heading>
 
             <Text className="mb-5 text-[16px] text-gray-700">
-              Tisztelt Ügyfelünk! Tájékoztatjuk, hogy a korábban foglalt
-              időpontját módosítottuk. Az új időpont részleteit alább találja.
+              {"{{ T .Lang `AppointmentModification.main_text` . }}"}
             </Text>
 
             <Section className="mb-6">
@@ -53,7 +50,9 @@ export default function AppointmentModification() {
               >
                 <Column>
                   <Text className="m-0 text-[16px] font-semibold text-black">
-                    Időpont módosítás részletei
+                    {
+                      "{{ T .Lang `AppointmentModification.modification_details` . }}"
+                    }
                   </Text>
                 </Column>
               </Row>
@@ -64,7 +63,7 @@ export default function AppointmentModification() {
               >
                 <Column className="w-[120px]">
                   <Text className="m-0 font-semibold text-gray-600">
-                    Eredeti időpont:
+                    {"{{ T .Lang `AppointmentModification.original_text` . }}"}
                   </Text>
                 </Column>
                 <Column>
@@ -87,7 +86,7 @@ export default function AppointmentModification() {
               >
                 <Column className="w-[120px]">
                   <Text className="m-0 font-semibold text-gray-600">
-                    Új időpont:
+                    {"{{ T .Lang `AppointmentModification.new_text` . }}"}
                   </Text>
                 </Column>
                 <Column>
@@ -104,25 +103,30 @@ export default function AppointmentModification() {
               style={{ borderLeft: "solid 2px #000000", borderRadius: "6px" }}
             >
               <Text className="mt-0 text-[16px] font-semibold text-black">
-                A foglalás változatlan részei
+                {"{{ T .Lang `AppointmentModification.unmodified_details` . }}"}
               </Text>
               <Text className="mt-0 mb-1 text-gray-700">
-                <span className="font-semibold">Szolgáltatás:</span>{" "}
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentModification.timezone` . }}"}
+                </span>{" "}
+                {"{{ .TimeZone }}"}
+              </Text>
+              <Text className="mt-0 mb-1 text-gray-700">
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentModification.service_name` . }}"}
+                </span>{" "}
                 {"{{ .ServiceName }}"}
               </Text>
-              <Text className="mt-0 mb-1 text-gray-700">
-                <span className="font-semibold">Helyszín:</span>{" "}
-                {"{{ .Location }}"}
-              </Text>
               <Text className="m-0 text-gray-700">
-                <span className="font-semibold">Időzóna:</span>{" "}
-                {"{{ .TimeZone }}"}
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentModification.location` . }}"}
+                </span>{" "}
+                {"{{ .Location }}"}
               </Text>
             </Section>
 
             <Text className="mb-6 text-[16px] text-gray-700">
-              Ha az új időpont nem megfelelő Önnek, kérjük, válasszon egy
-              másikat, vagy módosítsa a foglalását az alábbi gombra kattintva.
+              {"{{ T .Lang `AppointmentModification.modification_note` . }}"}
             </Text>
 
             <Section className="mb-8 text-center">
@@ -134,19 +138,16 @@ export default function AppointmentModification() {
                   borderRadius: "6px",
                 }}
               >
-                Időpont kezelése
+                {"{{ T .Lang `AppointmentModification.primary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-2 text-gray-700">
-              Az új időpont automatikusan bekerült a naptárába, amennyiben
-              korábban elfogadta a naptárbejegyzést.
+              {"{{ T .Lang `AppointmentModification.extra_info` . }}"}
             </Text>
 
             <Text className="mb-6 text-gray-700">
-              Ha kérdése van, vagy segítségre van szüksége, kérjük, vegye fel a
-              kapcsolatot a +36 1 234 5678 telefonszámon, vagy válaszoljon erre
-              az e-mailre.
+              {"{{ T .Lang `AppointmentModification.contact_us_note` . }}"}
             </Text>
 
             <Hr className="my-6" style={{ border: "1px solid #e5e7eb" }} />

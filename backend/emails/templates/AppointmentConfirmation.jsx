@@ -1,4 +1,3 @@
-// components/AppointmentConfirmation.tsx
 import {
   Body,
   Button,
@@ -23,7 +22,7 @@ export default function AppointmentConfirmation() {
     <Tailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>Az időpontja megerősítve</Preview>
+        <Preview>{"{{ T .Lang `AppointmentConfirmation.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -34,11 +33,10 @@ export default function AppointmentConfirmation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-[#111111]"
             >
-              Az időpontja megerősítve
+              {"{{ T .Lang `AppointmentConfirmation.heading` . }}"}
             </Heading>
             <Text className="mb-6 text-sm">
-              Lefoglaltuk az időpontját és várjuk a találkozást. Íme minden,
-              amit tudnia kell:
+              {"{{ T .Lang `AppointmentConfirmation.main_text` . }}"}
             </Text>
 
             <Section
@@ -56,30 +54,36 @@ export default function AppointmentConfirmation() {
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Időzóna: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentConfirmation.timezone` . }}"}
+                </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
-                <span className="font-semibold">Szolgáltatás: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentConfirmation.service_name` . }}"}
+                </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
-                <span className="font-semibold">Helyszín: </span>
+                <span className="font-semibold">
+                  {"{{ T .Lang `AppointmentConfirmation.location` . }}"}
+                </span>
                 {"{{ .Location }}"}
               </Text>
             </Section>
 
             <Section className="mb-8 text-left">
               <Button
-                href="https://example.com/calendar"
+                href="http://localhost:5173/calendar"
                 className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3 text-[14px] font-medium text-white"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
                 }}
               >
-                Naptárhoz adás
+                {"{{ T .Lang `AppointmentConfirmation.primary_button` . }}"}
               </Button>
               <Button
                 href="{{ .ModifyLink }}"
@@ -90,14 +94,12 @@ export default function AppointmentConfirmation() {
                   borderRadius: "6px",
                 }}
               >
-                Időpont kezelése
+                {"{{ T .Lang `AppointmentConfirmation.secondary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-6 text-xs text-gray-600">
-              Amennyiben bármilyen változtatást szeretne eszközölni az
-              időpontjával kapcsolatban, kérjük, lépjen kapcsolatba velünk
-              legalább 24 órával a tervezett időpont előtt.
+              {"{{ T .Lang `AppointmentConfirmation.modification_note` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7b" }} />
