@@ -13,6 +13,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"golang.org/x/text/language"
 )
 
 // Service represents a service that interacts with a database.
@@ -66,6 +67,8 @@ type PostgreSQL interface {
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
 	// Check if the user is blacklisted
 	IsUserBlacklisted(context.Context, uuid.UUID, uuid.UUID) error
+	// Get a user's preferred language
+	GetUserPreferredLanguage(context.Context, uuid.UUID) (language.Tag, error)
 
 	// -- Merchant --
 

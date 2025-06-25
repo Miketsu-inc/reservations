@@ -13,7 +13,8 @@ create table if not exists "User" (
     jwt_refresh_version      integer,
     subscription             integer,
     is_dummy                 boolean         not null,
-    added_by                 uuid
+    added_by                 uuid,
+    preferred_lang           varchar(10)
 );
 
 create table if not exists "Merchant" (

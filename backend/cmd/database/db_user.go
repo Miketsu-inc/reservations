@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/text/language"
 )
 
 type User struct {
@@ -20,6 +21,7 @@ type User struct {
 	Subscription      int       `json:"subscription" db:"subscription"`
 	IsDummy           bool      `json:"is_dummy" db:"is_dummy"`
 	AddedBy           uuid.UUID `json:"added_by" db:"added_by"`
+	PreferredLang     *string   `json:"preferred_lang" db:"preferred_lang"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
@@ -45,7 +47,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 
 	var user User
 	err := s.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
-		&user.JwtRefreshVersion, &user.Subscription, &user.IsDummy, &user.AddedBy)
+		&user.JwtRefreshVersion, &user.Subscription, &user.IsDummy, &user.AddedBy, &user.PreferredLang)
 	if err != nil {
 		return User{}, err
 	}
@@ -234,4 +236,28 @@ func (s *service) IsUserBlacklisted(ctx context.Context, merchantId uuid.UUID, u
 	}
 
 	return nil
+}
+
+func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (language.Tag, error) {
+	query := `
+	select preferred_lang from "User"
+	where id = $1
+	`
+
+	var pl *string
+	err := s.db.QueryRow(ctx, query, userId).Scan(&pl)
+	if err != nil {
+		return language.Tag{}, err
+	}
+
+	if pl == nil {
+		return language.Tag{}, err
+	}
+
+	tag, err := language.Parse(*pl)
+	if err != nil {
+		return language.Tag{}, err
+	}
+
+	return tag, nil
 }

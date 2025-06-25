@@ -6,6 +6,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -82,6 +83,7 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
+		r.Use(lang.LangMiddleware)
 
 		r.Delete("/{id}", appointmentHandler.CancelAppointmentByMerchant)
 		r.Patch("/{id}", appointmentHandler.UpdateAppointmentData)
@@ -99,11 +101,16 @@ func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Post("/signup", userAuthHandler.Signup)
-	r.Post("/login", userAuthHandler.Login)
+	r.Group(func(r chi.Router) {
+		r.Use(lang.LangMiddleware)
+
+		r.Post("/signup", userAuthHandler.Signup)
+		r.Post("/login", userAuthHandler.Login)
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
+		r.Use(lang.LangMiddleware)
 
 		r.Get("/", userAuthHandler.IsAuthenticated)
 		r.Post("/logout", userAuthHandler.Logout)
@@ -118,6 +125,7 @@ func (rh *RouteHandlers) merchantAuthRoutes(r chi.Router) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
+		r.Use(lang.LangMiddleware)
 
 		r.Post("/signup", merchantAuthHandler.Signup)
 	})
@@ -128,12 +136,18 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		Postgresdb: *rh.Postgresdb,
 	}
 
-	r.Get("/info", merchantHandler.InfoByName)
-	r.Get("/available-times", merchantHandler.GetHours)
-	r.Get("/business-hours/closed", merchantHandler.GetClosedDays)
+	r.Group(func(r chi.Router) {
+		r.Use(lang.LangMiddleware)
+
+		r.Get("/info", merchantHandler.InfoByName)
+		r.Get("/available-times", merchantHandler.GetHours)
+		r.Get("/business-hours/closed", merchantHandler.GetClosedDays)
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
+		r.Use(lang.LangMiddleware)
+
 		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
 		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
 

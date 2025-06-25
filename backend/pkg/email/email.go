@@ -68,7 +68,7 @@ func mustLoadMessageFileFs(fsys fs.FS, filename string) {
 	bundle.MustParseMessageFileBytes(data, filename)
 }
 
-func executeTemplate(name string, lang string, data any) string {
+func executeTemplate(name string, lang language.Tag, data any) string {
 	var buf bytes.Buffer
 
 	templateName := name + ".html"
@@ -79,7 +79,7 @@ func executeTemplate(name string, lang string, data any) string {
 	// has to be a map as passing an anonymous struct does not work
 	// and passing a name struct causes you to write the name everywhere
 	dataMap := utils.StructToMap(data)
-	dataMap["Lang"] = lang
+	dataMap["Lang"] = lang.String()
 
 	err := tmpl.Execute(&buf, dataMap)
 	assert.Nil(err, fmt.Sprintf("error while executing template %s: %v", name, err))
@@ -87,8 +87,8 @@ func executeTemplate(name string, lang string, data any) string {
 	return buf.String()
 }
 
-func getSubject(templateName string, lang string) string {
-	localizer := i18n.NewLocalizer(bundle, lang)
+func getSubject(templateName string, lang language.Tag) string {
+	localizer := i18n.NewLocalizer(bundle, lang.String())
 	return localizer.MustLocalize(&i18n.LocalizeConfig{
 		MessageID: fmt.Sprintf("%s.subject", templateName),
 	})
@@ -178,7 +178,7 @@ type ForgotPasswordData struct {
 	PasswordLink string `json:"password_link"`
 }
 
-func ForgotPassword(ctx context.Context, lang string, to string, data ForgotPasswordData) error {
+func ForgotPassword(ctx context.Context, lang language.Tag, to string, data ForgotPasswordData) error {
 	templateName := "ForgotPassword"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
@@ -194,7 +194,7 @@ type EmailVerificationData struct {
 	Code int `json:"code"`
 }
 
-func EmailVerification(ctx context.Context, lang string, to string, data EmailVerificationData) error {
+func EmailVerification(ctx context.Context, lang language.Tag, to string, data EmailVerificationData) error {
 	templateName := "EmailVerification"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
@@ -215,7 +215,7 @@ type AppointmentConfirmationData struct {
 	ModifyLink  string `json:"modify_link"`
 }
 
-func AppointmentConfirmation(ctx context.Context, lang string, to string, data AppointmentConfirmationData) error {
+func AppointmentConfirmation(ctx context.Context, lang language.Tag, to string, data AppointmentConfirmationData) error {
 	templateName := "AppointmentConfirmation"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
@@ -228,7 +228,7 @@ func AppointmentConfirmation(ctx context.Context, lang string, to string, data A
 	return nil
 }
 
-func AppointmentReminder(ctx context.Context, lang string, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
+func AppointmentReminder(ctx context.Context, lang language.Tag, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
 	templateName := "AppointmentReminder"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
@@ -251,7 +251,7 @@ type AppointmentCancellationData struct {
 	NewAppointmentLink string `json:"new_appointment_link"`
 }
 
-func AppointmentCancellation(ctx context.Context, lang string, to string, data AppointmentCancellationData) error {
+func AppointmentCancellation(ctx context.Context, lang language.Tag, to string, data AppointmentCancellationData) error {
 	templateName := "AppointmentCancellation"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
@@ -275,7 +275,7 @@ type AppointmentModificationData struct {
 	OldDate     string `json:"old_date"`
 }
 
-func AppointmentModification(ctx context.Context, lang string, to string, data AppointmentModificationData) error {
+func AppointmentModification(ctx context.Context, lang language.Tag, to string, data AppointmentModificationData) error {
 	templateName := "AppointmentModification"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)

@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
-	"golang.org/x/text/language"
 )
 
 type Appointment struct {
@@ -130,7 +130,9 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ModifyLink:  "http://localhost:5173/m/" + newApp.MerchantName + "/cancel/" + strconv.Itoa(appointmentId),
 	}
 
-	err = email.AppointmentConfirmation(r.Context(), language.Hungarian.String(), userInfo.Email, emailData)
+	lang := lang.LangFromContext(r.Context())
+
+	err = email.AppointmentConfirmation(r.Context(), lang, userInfo.Email, emailData)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the appointment: %s", err.Error()))
 		return
@@ -141,7 +143,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	if hoursUntilAppointment >= 24 {
 
 		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-		email_id, err := email.AppointmentReminder(r.Context(), language.Hungarian.String(), userInfo.Email, emailData, reminderDate)
+		email_id, err := email.AppointmentReminder(r.Context(), lang, userInfo.Email, emailData, reminderDate)
 		if err != nil {
 			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
 			return
@@ -240,7 +242,9 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = email.AppointmentCancellation(r.Context(), language.Hungarian.String(), emailData.UserEmail, email.AppointmentCancellationData{
+	lang := lang.LangFromContext(r.Context())
+
+	err = email.AppointmentCancellation(r.Context(), lang, emailData.UserEmail, email.AppointmentCancellationData{
 		Time:               fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:               fromDateMerchantTz.Format("Monday, January 2"),
 		Location:           emailData.ShortLocation,
@@ -343,7 +347,9 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 	oldToDateMerchantTz := oldEmailData.ToDate.In(merchantTz)
 	oldFromDateMerchantTz := oldEmailData.FromDate.In(merchantTz)
 
-	err = email.AppointmentModification(r.Context(), language.Hungarian.String(), oldEmailData.UserEmail, email.AppointmentModificationData{
+	lang := lang.LangFromContext(r.Context())
+
+	err = email.AppointmentModification(r.Context(), lang, oldEmailData.UserEmail, email.AppointmentModificationData{
 		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:        fromDate.Format("Monday, January 2"),
 		Location:    oldEmailData.ShortLocation,
@@ -373,7 +379,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 	if hoursUntilAppointment >= 24 {
 		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
 
-		email_id, err := email.AppointmentReminder(r.Context(), language.Hungarian.String(), oldEmailData.UserEmail, email.AppointmentConfirmationData{
+		email_id, err := email.AppointmentReminder(r.Context(), lang, oldEmailData.UserEmail, email.AppointmentConfirmationData{
 			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 			Date:        fromDateMerchantTz.Format("Monday, January 2"),
 			Location:    oldEmailData.ShortLocation,

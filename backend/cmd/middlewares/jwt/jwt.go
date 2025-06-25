@@ -30,15 +30,25 @@ type contextKey struct {
 	name string
 }
 
-var UserIDCtxKey = &contextKey{"UserID"}
+var userIDCtxKey = &contextKey{"UserID"}
 
 // Returns UserID from the request's context.
 // Should be only called in authenticated routes!
 func UserIDFromContext(ctx context.Context) uuid.UUID {
-	userID, ok := ctx.Value(UserIDCtxKey).(uuid.UUID)
-	assert.True(ok, "Authenticated route called without jwt user id", ctx.Value(UserIDCtxKey), userID)
+	userID, ok := ctx.Value(userIDCtxKey).(uuid.UUID)
+	assert.True(ok, "Authenticated route called without jwt user id", ctx.Value(userIDCtxKey), userID)
 
 	return userID
+}
+
+// TODO: temporary as I don't want to rename the main function 'UserIDFromContext' everywhere
+func UserIDFromContextLight(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(userIDCtxKey).(uuid.UUID)
+	if !ok {
+		return uuid.Nil, false
+	}
+
+	return userID, true
 }
 
 // Jwt authentication middleware. Uses refresh and access tokens
@@ -103,7 +113,7 @@ func JwtMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, UserIDCtxKey, userID)
+		ctx = context.WithValue(ctx, userIDCtxKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
