@@ -427,13 +427,7 @@ type DashboardData struct {
 func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, date time.Time, period int) (DashboardData, error) {
 	var dd DashboardData
 
-	// -1 because the last is the current day
 	utcDate := date.UTC()
-	currPeriodStart := utcDate.AddDate(0, 0, -(period - 1))
-	prevPeriodStart := currPeriodStart.AddDate(0, 0, -(period - 1))
-
-	dd.PeriodStart = utils.TruncateToDay(currPeriodStart)
-	dd.PeriodEnd = utils.TruncateToDay(utcDate)
 
 	// UpcomingAppointments
 	query := `
@@ -487,6 +481,13 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	if err != nil {
 		return DashboardData{}, err
 	}
+
+	// -1 because the last is the current day
+	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
+	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -(period - 1)))
+
+	dd.PeriodStart = currPeriodStart
+	dd.PeriodEnd = utils.TruncateToDay(utcDate)
 
 	dd.Statistics, err = s.getDashboardStatistics(ctx, merchantId, utcDate, currPeriodStart, prevPeriodStart)
 	if err != nil {
@@ -606,9 +607,6 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	GROUP BY day
 	ORDER BY day
 	`
-
-	fmt.Println(date)
-	fmt.Println(currPeriodStart)
 
 	rows, _ := s.db.Query(ctx, query2, merchantId, currPeriodStart, date)
 	stats.Revenue, err = pgx.CollectRows(rows, pgx.RowToStructByName[RevenueStat])
