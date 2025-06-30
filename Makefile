@@ -53,5 +53,5 @@ lint:
 	@golangci-lint run
 
 test:
-	@go test ./backend/...
+	@go test -v ./backend/...
 	@npm run test
