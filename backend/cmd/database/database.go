@@ -68,7 +68,7 @@ type PostgreSQL interface {
 	// Check if the user is blacklisted
 	IsUserBlacklisted(context.Context, uuid.UUID, uuid.UUID) error
 	// Get a user's preferred language
-	GetUserPreferredLanguage(context.Context, uuid.UUID) (language.Tag, error)
+	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
 
 	// -- Merchant --
 

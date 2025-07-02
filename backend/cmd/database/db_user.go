@@ -238,7 +238,7 @@ func (s *service) IsUserBlacklisted(ctx context.Context, merchantId uuid.UUID, u
 	return nil
 }
 
-func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (language.Tag, error) {
+func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error) {
 	query := `
 	select preferred_lang from "User"
 	where id = $1
@@ -247,17 +247,17 @@ func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID
 	var pl *string
 	err := s.db.QueryRow(ctx, query, userId).Scan(&pl)
 	if err != nil {
-		return language.Tag{}, err
+		return nil, err
 	}
 
 	if pl == nil {
-		return language.Tag{}, err
+		return nil, err
 	}
 
 	tag, err := language.Parse(*pl)
 	if err != nil {
-		return language.Tag{}, err
+		return nil, err
 	}
 
-	return tag, nil
+	return &tag, nil
 }

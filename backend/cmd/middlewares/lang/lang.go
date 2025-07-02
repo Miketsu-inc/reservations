@@ -23,10 +23,10 @@ var supportedLanguages = language.NewMatcher([]language.Tag{
 	language.English,
 })
 
-// Return the user's locale from the context
+// Return the user's language from the context
 func LangFromContext(ctx context.Context) language.Tag {
 	lang, ok := ctx.Value(langCtxKey).(language.Tag)
-	assert.True(ok, "Locale not found in route context", ctx, lang)
+	assert.True(ok, "Language not found in route context", ctx, lang)
 
 	return lang
 }
@@ -46,10 +46,10 @@ func LangMiddleware(next http.Handler) http.Handler {
 			langTag = getLangFromHeader(r)
 		} else {
 			lang, err := database.PostgreSQL.GetUserPreferredLanguage(database.New(), ctx, userId)
-			if err != nil {
-				langTag = getLangFromHeader(r)
+			if err == nil && lang != nil {
+				langTag = *lang
 			} else {
-				langTag = lang
+				langTag = getLangFromHeader(r)
 			}
 		}
 
