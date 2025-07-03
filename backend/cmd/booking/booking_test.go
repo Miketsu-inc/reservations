@@ -127,44 +127,43 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
 	})
 
-	// TODO: reenable once issue is solved
-	// t.Run("Reserved appointments with multiple phases", func(t *testing.T) {
-	// 	reserved := []database.AppointmentTime{
-	// 		ctReserved(year, month, day, "10:00", "10:30", tz),
-	// 		ctReserved(year, month, day, "11:00", "11:45", tz),
-	// 		ctReserved(year, month, day, "13:00", "14:00", tz),
-	// 	}
+	t.Run("Reserved appointments with multiple phases", func(t *testing.T) {
+		reserved := []database.AppointmentTime{
+			ctReserved(year, month, day, "10:00", "10:30", tz),
+			ctReserved(year, month, day, "11:15", "11:45", tz),
+			ctReserved(year, month, day, "13:00", "14:00", tz),
+		}
 
-	// 	servicePhases := []database.PublicServicePhase{
-	// 		{PhaseType: "active", Duration: 15},
-	// 		{PhaseType: "wait", Duration: 30},
-	// 		{PhaseType: "active", Duration: 45},
-	// 	}
-	// 	serviceDuration := 90
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 15},
+			{PhaseType: "wait", Duration: 30},
+			{PhaseType: "active", Duration: 45},
+		}
+		serviceDuration := 90
 
-	// 	bookingDay := ct(year, month, day, "00:00", tz)
+		bookingDay := ct(year, month, day, "00:00", tz)
 
-	// 	businessHours := []database.TimeSlot{
-	// 		{StartTime: "09:00:00", EndTime: "16:00:00"},
-	// 	}
+		businessHours := []database.TimeSlot{
+			{StartTime: "09:00:00", EndTime: "16:00:00"},
+		}
 
-	// 	expectedMorning := []time.Time{
-	// 		ct(year, month, day, "09:45", tz),
-	// 		ct(year, month, day, "11:45", tz),
-	// 	}
-	// 	expectedAfternoon := []time.Time{
-	// 		ct(year, month, day, "14:00", tz),
-	// 		ct(year, month, day, "14:15", tz),
-	// 		ct(year, month, day, "14:30", tz),
-	// 	}
+		expectedMorning := []time.Time{
+			ct(year, month, day, "09:45", tz),
+			ct(year, month, day, "11:00", tz),
+		}
+		expectedAfternoon := []time.Time{
+			ct(year, month, day, "14:00", tz),
+			ct(year, month, day, "14:15", tz),
+			ct(year, month, day, "14:30", tz),
+		}
 
-	// 	currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
+		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-	// 	result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
 
-	// 	assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
-	// 	assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
-	// })
+		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
+		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+	})
 
 	t.Run("Close current time", func(t *testing.T) {
 		reserved := []database.AppointmentTime{

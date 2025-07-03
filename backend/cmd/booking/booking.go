@@ -58,7 +58,7 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 						reservedToDate := appt.To_date.In(merchantTz)
 
 						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
-							appStart = reservedToDate
+							appStart = appStart.Add(stepSize)
 
 							available = false
 							break
