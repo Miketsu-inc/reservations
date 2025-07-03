@@ -262,9 +262,6 @@ export default function ServicePage({
                 updateServiceData({ used_products: updated })
               }
             />
-            <Card>
-              <p>Employees</p>
-            </Card>
             {service && (
               <Button
                 type="button"

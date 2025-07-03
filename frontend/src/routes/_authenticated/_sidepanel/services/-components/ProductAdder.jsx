@@ -54,7 +54,9 @@ export default function ProductAdder({
   return (
     <Card styles="!p-0 flex flex-col">
       <div
-        className={`${isOpen ? "border-border_color border-b" : ""} flex items-center
+        role="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${isOpen ? "border-border_color border-b" : ""} flex cursor-pointer items-center
           justify-between p-4`}
       >
         <div className="flex items-center justify-center gap-2">
@@ -73,7 +75,7 @@ export default function ProductAdder({
         </button>
       </div>
       <div
-        className={`px-4 transition-all duration-200 ease-in-out ${
+        className={`overflow-hidden px-4 transition-[max-height,opacity] duration-200 ease-in-out ${
           isOpen ? "max-h-[1000px] py-4 opacity-100" : "max-h-0 opacity-0" }`}
       >
         <div className="flex flex-col gap-5 xl:flex-row xl:gap-10">
@@ -88,7 +90,6 @@ export default function ProductAdder({
               }
             }}
           />
-
           {usedProducts.length > 0 ? (
             <div className="flex flex-col gap-2 xl:w-1/2">
               <p className="font-medium">Connected Products</p>
@@ -132,7 +133,6 @@ export default function ProductAdder({
               <div className="mb-4 flex w-min items-center justify-center rounded-full">
                 <ProductIcon styles="size-12 dark:text-gray-500 text-gray-400" />
               </div>
-
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 No products added yet
               </p>
@@ -230,7 +230,6 @@ function ProductForm({
           }}
         />
       </div>
-
       <div
         className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${
           productData.id !== 0 || !isWindowSmall

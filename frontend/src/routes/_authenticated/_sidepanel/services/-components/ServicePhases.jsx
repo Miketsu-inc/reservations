@@ -202,7 +202,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
 
   return (
     <form onSubmit={submitHandler} className="flex flex-col gap-4">
-      <p className="pb-2 text-lg">Add new phase</p>
+      <p className="pb-2 text-lg">{isEdit ? "Edit phase" : "Add new phase"}</p>
       <Input
         styles="p-2"
         id="phase_name"
