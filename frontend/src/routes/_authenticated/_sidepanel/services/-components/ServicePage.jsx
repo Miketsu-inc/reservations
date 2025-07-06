@@ -119,8 +119,15 @@ export default function ServicePage({
                 variant="primary"
                 buttonText="Save"
                 onClick={() => {
-                  setLastSavedData(serviceData);
-                  onSave(serviceData);
+                  if (serviceData.phases.length > 0) {
+                    setLastSavedData(serviceData);
+                    onSave(serviceData);
+                  } else {
+                    showToast({
+                      message: "Please add at least one service phase",
+                      variant: "error",
+                    });
+                  }
                 }}
               />
             </Card>

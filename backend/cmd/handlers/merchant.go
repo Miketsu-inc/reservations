@@ -135,6 +135,10 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(service.Phases) == 0 {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("service phases can not be empty"))
+	}
+
 	var dbPhases []database.ServicePhase
 	durationSum := 0
 	for _, phase := range service.Phases {
@@ -402,6 +406,10 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 	if serviceId != pubServ.Id {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
 		return
+	}
+
+	if len(pubServ.Phases) == 0 {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("service phases can not be empty"))
 	}
 
 	userId := jwt.UserIDFromContext(r.Context())

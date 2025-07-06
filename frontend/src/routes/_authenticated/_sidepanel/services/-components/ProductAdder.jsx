@@ -74,9 +74,13 @@ export default function ProductAdder({
           />
         </button>
       </div>
+      {/* TODO: same issue as with dropdowns in the recurSection */}
       <div
-        className={`overflow-hidden px-4 transition-[max-height,opacity] duration-200 ease-in-out ${
-          isOpen ? "max-h-[1000px] py-4 opacity-100" : "max-h-0 opacity-0" }`}
+        className={`px-4 transition-[max-height,opacity] duration-200 ease-in-out ${
+          isOpen
+            ? "max-h-[1000px] py-4 opacity-100"
+            : "max-h-0 overflow-hidden opacity-0"
+          }`}
       >
         <div className="flex flex-col gap-5 xl:flex-row xl:gap-10">
           <ProductForm
