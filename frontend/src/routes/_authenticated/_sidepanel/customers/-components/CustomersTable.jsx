@@ -26,36 +26,35 @@ export default function CustomersTable({
     last_name: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const isSmallScreen = windowSize !== "xl" || windowSize !== "2xl";
 
   const columnDef = [
     { field: "id", hide: true },
     {
-      field: "first_name",
-      headerName: "First name",
+      field: "name",
+      headerName: "Name",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
-    },
-    {
-      field: "last_name",
-      headerName: "Last name",
-      flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      ...(isSmallScreen ? { minWidth: 160 } : {}),
+      valueGetter: (params) =>
+        `${params.data.first_name} ${params.data.last_name}`.trim(),
     },
     {
       field: "email",
       headerName: "Email",
+      flex: 1,
       ...(isSmallScreen ? { minWidth: 120 } : {}),
     },
     {
       field: "phone_number",
       headerName: "Phone number",
+      flex: 1,
       ...(isSmallScreen ? { minWidth: 120 } : {}),
     },
     {
       field: "booking_history",
       headerName: "Booking history",
+      flex: 1,
+      ...(isSmallScreen ? { minWidth: 120 } : {}),
       cellRenderer: (params) => {
         return (
           <div className="flex flex-row items-center justify-center gap-2">
@@ -76,15 +75,18 @@ export default function CustomersTable({
     },
     {
       field: "times_booked",
+      headerName: "Total Bookings",
       sort: "desc",
       hide: true,
     },
     {
-      field: "is_dummy",
-      headerName: "Add by me",
+      field: "times_cancelled",
+      headerName: "Cancellations",
+      hide: true,
     },
     {
       field: "actions",
+      flex: 1,
       headerName: "",
       cellRenderer: (params) => {
         return (
@@ -99,7 +101,7 @@ export default function CustomersTable({
                     className="cursor-pointer"
                     onClick={() => onTransfer(params.node.sourceRowIndex)}
                   >
-                    <TransferIcon styles="w-5 h-5 mx-1" />
+                    <TransferIcon styles="size-5 mx-1" />
                   </button>
                 ) : (
                   <></>
@@ -110,7 +112,7 @@ export default function CustomersTable({
                     onEdit(customersData[params.node.sourceRowIndex])
                   }
                 >
-                  <EditIcon styles="w-4 h-4 mx-1" />
+                  <EditIcon styles="size-4 mx-1" />
                 </button>
                 <button
                   className="cursor-pointer"
@@ -123,7 +125,7 @@ export default function CustomersTable({
                     setShowDeleteModal(true);
                   }}
                 >
-                  <TrashBinIcon styles="w-5 h-5 mx-1" />
+                  <TrashBinIcon styles="size-5 mx-1" />
                 </button>
               </>
             ) : (
@@ -134,14 +136,14 @@ export default function CustomersTable({
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <ApproveIcon styles="w-5 h-5" />
+                    <ApproveIcon styles="size-5" />
                   </button>
                 ) : (
                   <button
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <BanIcon styles="w-5 h-5" />
+                    <BanIcon styles="size-5" />
                   </button>
                 )}
               </>
@@ -169,13 +171,15 @@ export default function CustomersTable({
           rowData={customersData}
           columnDef={columnDef}
           itemName="customer"
-          columnsToAutoSize={[
+          onNewItem={onNewItem}
+          exportName="customers_table"
+          columnsToExport={[
+            "name",
             "email",
             "phone_number",
-            "booking_history",
-            "is_dummy",
+            "times_booked",
+            "times_cancelled",
           ]}
-          onNewItem={onNewItem}
         />
       </Suspense>
     </div>

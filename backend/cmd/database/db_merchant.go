@@ -161,20 +161,21 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 
 type PublicCustomer struct {
 	Customer
-	IsBlacklisted  bool `json:"is_blacklisted" db:"is_blacklisted"`
-	TimesBooked    int  `json:"times_booked" db:"times_booked"`
-	TimesCancelled int  `json:"times_cancelled" db:"times_cancelled"`
+	IsBlacklisted   bool    `json:"is_blacklisted" db:"is_blacklisted"`
+	BlacklistReason *string `json:"blacklist_reason" db:"blacklist_reason"`
+	TimesBooked     int     `json:"times_booked" db:"times_booked"`
+	TimesCancelled  int     `json:"times_cancelled" db:"times_cancelled"`
 }
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted,
+	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted, b.reason as blacklist_reason,
 		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
 	from "User" u
 	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
 	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $2
 	where u.is_dummy = true or a.id is not null
-	group by u.id, b.user_id;
+	group by u.id, b.user_id, b.reason;
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, merchantId)

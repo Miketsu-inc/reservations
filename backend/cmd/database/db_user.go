@@ -191,13 +191,13 @@ func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, 
 	return nil
 }
 
-func (s *service) AddCustomerToBlacklist(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) error {
+func (s *service) AddCustomerToBlacklist(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, reason string) error {
 	query := `
-	insert into "Blacklist" (merchant_id, user_id)
-	values ($1, $2)
+	insert into "Blacklist" (merchant_id, user_id, reason)
+	values ($1, $2, $3)
 	`
 
-	_, err := s.db.Exec(ctx, query, merchantId, customerId)
+	_, err := s.db.Exec(ctx, query, merchantId, customerId, reason)
 	if err != nil {
 		return err
 	}

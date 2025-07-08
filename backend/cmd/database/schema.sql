@@ -109,7 +109,8 @@ create table if not exists "Preferences" (
 create table if not exists "Blacklist" (
     ID                       serial           primary key unique not null,
     merchant_id              uuid             references "Merchant" (ID) not null,
-    user_id                  uuid             references "User" (ID) not null
+    user_id                  uuid             references "User" (ID) not null,
+    reason                   text,
 );
 
 create table if not exists "Product" (

@@ -148,7 +148,7 @@ type PostgreSQL interface {
 	// Update customer by it's id
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
 	// Add customer to the blacklist
-	AddCustomerToBlacklist(context.Context, uuid.UUID, uuid.UUID) error
+	AddCustomerToBlacklist(context.Context, uuid.UUID, uuid.UUID, string) error
 	// Remove customer from the blacklist
 	RemoveCustomerFromBlacklist(context.Context, uuid.UUID, uuid.UUID) error
 

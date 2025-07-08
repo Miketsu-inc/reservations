@@ -772,6 +772,18 @@ func (m *Merchant) TransferCustomerApps(w http.ResponseWriter, r *http.Request) 
 }
 
 func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
+	type blakclistData struct {
+		CustomerId uuid.UUID `json:"id" validate:"required,uuid"`
+		Reason     string    `json:"reason"`
+	}
+
+	var data blakclistData
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 
 	if id == "" {
@@ -785,6 +797,11 @@ func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if customerId != data.CustomerId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id provided"))
+		return
+	}
+
 	userId := jwt.UserIDFromContext(r.Context())
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
@@ -793,7 +810,7 @@ func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.AddCustomerToBlacklist(r.Context(), merchantId, customerId)
+	err = m.Postgresdb.AddCustomerToBlacklist(r.Context(), merchantId, customerId, data.Reason)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while adding customer to blacklist: %s", err.Error()))
 		return

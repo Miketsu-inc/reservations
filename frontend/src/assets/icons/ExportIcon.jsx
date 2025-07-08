@@ -1,4 +1,4 @@
-export default function ApproveIcon({ styles }) {
+export default function ExportIcon({ styles }) {
   return (
     <svg
       className={`${styles} fill-none`}
@@ -11,7 +11,7 @@ export default function ApproveIcon({ styles }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-        d="M8.5 11.5 11 14l4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+        d="M4 15v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2m-8 1V4m0 12-4-4m4 4 4-4"
       />
     </svg>
   );

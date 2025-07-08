@@ -68,6 +68,16 @@ export default function ProductsTable({
         );
       },
       sortable: false,
+      valueGetter: (params) => {
+        const { current_amount, max_amount, unit } = params.data;
+        const {
+          current,
+          max,
+          unit: displayUnit,
+        } = getDisplayUnit(current_amount, max_amount, unit);
+
+        return `${current} / ${max} ${displayUnit}`;
+      },
     },
     {
       headerName: "Connected Services",
@@ -85,6 +95,11 @@ export default function ProductsTable({
         );
       },
       sortable: false,
+      valueGetter: (params) => {
+        return (
+          params.data.services?.map((service) => service.name).join(", ") || ""
+        );
+      },
     },
     {
       field: "actions",
@@ -121,6 +136,7 @@ export default function ProductsTable({
           columnsToAutoSize={["price", "stock_amount", "actions"]}
           itemName="product"
           onNewItem={onNewItem}
+          exportName="product_table"
         />
       </Suspense>
     </div>

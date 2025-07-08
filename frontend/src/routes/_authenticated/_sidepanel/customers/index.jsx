@@ -162,16 +162,25 @@ function CustomersPage() {
   }
 
   async function blacklistHandler(data) {
+    const options = {
+      method: data.method,
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    };
+
+    if (data.method === "POST") {
+      options.body = JSON.stringify({
+        id: data.id,
+        reason: data.reason,
+      });
+    }
+
     try {
       const response = await fetch(
         `/api/v1/merchants/customers/blacklist/${data.id}`,
-        {
-          method: data.method,
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
+        options
       );
 
       if (!response.ok) {
@@ -222,6 +231,7 @@ function CustomersPage() {
           blacklistHandler({
             method: customer.is_blacklisted ? "DELETE" : "POST",
             id: customer.id,
+            reason: customer.reason,
           })
         }
       />
