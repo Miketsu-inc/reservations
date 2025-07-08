@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -260,4 +261,74 @@ func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID
 	}
 
 	return &tag, nil
+}
+
+type AllCustomerInfo struct {
+	Customer
+	IsBlacklisted   bool                    `json:"is_blacklisted"`
+	BlacklistReason *string                 `json:"blacklist_reason"`
+	TimesBooked     int                     `json:"times_booked"`
+	TimesCancelled  int                     `json:"times_cancelled"`
+	TimesUpcoming   int                     `json:"times_upcoming"`
+	Appointments    []PublicAppointmentInfo `json:"appointments"`
+}
+
+func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (AllCustomerInfo, error) {
+	query := `
+	with appointments as (
+		select a.user_id, 
+			jsonb_agg(
+				jsonb_build_object(
+					'from_date', a.from_date,
+					'to_date', a.to_date,
+					'service_name', s.name,
+					'price', a.price_then,
+					'price_note', s.price_note,
+					'merchant_name', m.name,
+					'short_location', l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country,
+					'cancelled_by_user', a.cancelled_by_user_on IS NOT NULL,
+					'cancelled_by_merchant', a.cancelled_by_merchant_on IS NOT NULL
+				) order by a.from_date desc
+			) as appointments
+		from (
+			select distinct on (a.group_id) a.user_id, a.group_id, min(a.from_date) over (partition by a.group_id) as from_date,
+			max(a.to_date) over (partition by a.group_id) as to_date, a.merchant_id, a.location_id, a.service_id, a.price_then, a.cancelled_by_user_on, a.cancelled_by_merchant_on
+			from "Appointment" a where a.merchant_id = $1 and a.user_id = $2
+		) a
+		join "Service" s on s.id = a.service_id
+		join "Merchant" m on m.id = a.merchant_id
+		join "Location" l on l.id = a.location_id
+		group by a.user_id
+	)
+	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted, b.reason as blacklist_reason,
+	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled,
+	count(distinct case when a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null and a.from_date >= now() then group_id end) as times_upcoming,
+	coalesce(ca.appointments, '[]'::jsonb) as appointments
+	from "User" u
+	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
+	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $1
+	left join appointments ca on u.id = ca.user_id
+	where u.id = $2
+	GROUP BY u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id, b.reason, ca.appointments
+	`
+
+	var customer AllCustomerInfo
+	var appointmentsJSON []byte
+
+	err := s.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.IsDummy, &customer.IsBlacklisted,
+		&customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelled, &customer.TimesUpcoming, &appointmentsJSON)
+	if err != nil {
+		return AllCustomerInfo{}, err
+	}
+
+	if len(appointmentsJSON) > 0 {
+		err = json.Unmarshal(appointmentsJSON, &customer.Appointments)
+		if err != nil {
+			return AllCustomerInfo{}, err
+		}
+	} else {
+		customer.Appointments = []PublicAppointmentInfo{}
+	}
+
+	return customer, nil
 }

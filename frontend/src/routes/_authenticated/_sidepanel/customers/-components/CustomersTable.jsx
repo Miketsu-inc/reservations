@@ -18,6 +18,7 @@ export default function CustomersTable({
   onTransfer,
   onNewItem,
   onBlackList,
+  onRowClick,
 }) {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({
@@ -173,6 +174,7 @@ export default function CustomersTable({
           itemName="customer"
           onNewItem={onNewItem}
           exportName="customers_table"
+          onRowClick={onRowClick}
           columnsToExport={[
             "name",
             "email",

@@ -43,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/customers/")({
 
 function CustomersPage() {
   const router = useRouter();
+  const navigate = Route.useNavigate();
   const loaderData = Route.useLoaderData();
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerModalData, setCustomerModalData] = useState();
@@ -52,6 +53,21 @@ function CustomersPage() {
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  function handleRowClick(e) {
+    const customerId = e.data.id;
+    const target = e.event.target;
+    const colId = target.closest("[col-id]")?.getAttribute("col-id");
+
+    if (colId === "actions") {
+      return;
+    }
+
+    navigate({
+      from: Route.fullPath,
+      to: `${customerId}`,
+    });
+  }
 
   async function deleteHandler(selected) {
     try {
@@ -265,6 +281,7 @@ function CustomersPage() {
               setBlacklistModalData(customer);
               setTimeout(() => setShowBlacklistModal(true), 0);
             }}
+            onRowClick={handleRowClick}
           />
         </div>
       </div>

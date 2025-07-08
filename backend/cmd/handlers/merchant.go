@@ -1249,3 +1249,35 @@ func (m *Merchant) UpdateServiceProductConnections(w http.ResponseWriter, r *htt
 		return
 	}
 }
+
+func (m *Merchant) GetCustomer(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	customerId, err := uuid.Parse(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting customer id to uuid: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	customer, err := m.Postgresdb.GetCustomerInfoByMerchant(r.Context(), merchantId, customerId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving customer info for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, customer)
+
+}

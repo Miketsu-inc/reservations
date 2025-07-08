@@ -22,6 +22,7 @@ export default function Table({
   itemName,
   onNewItem,
   exportName = "export",
+  onRowClick,
   columnsToExport,
 }) {
   const tableRef = useRef();
@@ -107,6 +108,7 @@ export default function Table({
           // suppressColumnVirtualisation is needed for autosizing to work on mobile
           // if disabled only columns in view will get autosized
           suppressColumnVirtualisation={true}
+          onRowClicked={onRowClick}
         />
       </div>
     </div>

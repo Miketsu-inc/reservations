@@ -151,6 +151,8 @@ type PostgreSQL interface {
 	AddCustomerToBlacklist(context.Context, uuid.UUID, uuid.UUID, string) error
 	// Remove customer from the blacklist
 	RemoveCustomerFromBlacklist(context.Context, uuid.UUID, uuid.UUID) error
+	// Get one customer's info for a merchant
+	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (AllCustomerInfo, error)
 
 	// -- Preferences --
 
