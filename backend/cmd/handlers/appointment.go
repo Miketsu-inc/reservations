@@ -441,11 +441,6 @@ func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if appId != data.AppointmentId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("the appointment ids are not matching", err.Error()))
-		return
-	}
-
 	userId := jwt.UserIDFromContext(r.Context())
 
 	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), data.MerchantName)

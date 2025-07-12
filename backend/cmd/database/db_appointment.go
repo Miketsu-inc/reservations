@@ -52,7 +52,7 @@ func (s *service) NewAppointment(ctx context.Context, app Appointment, phases []
 		return 0, err
 	}
 	if IsBlacklisted {
-		return 0, fmt.Errorf("You are blacklisted. Please contact the merchant by email or phone to book an appointment")
+		return 0, fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to book an appointment")
 	}
 
 	insertQuery := `
