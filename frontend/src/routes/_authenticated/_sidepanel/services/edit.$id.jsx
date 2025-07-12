@@ -102,7 +102,6 @@ function RouteComponent() {
     if (!response.ok) {
       invalidateLocalSotrageAuth(response.status);
       const result = await response.json();
-      console.log("Error body from updateServiceData:", result);
       throw new Error(result.error.message);
     }
   }

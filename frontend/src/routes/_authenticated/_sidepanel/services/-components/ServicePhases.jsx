@@ -228,18 +228,19 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
           inputData={(data) =>
             updatePhaseData({ [data.name]: Number(data.value) })
           }
-        />
-        <Select
-          styles="!w-32"
-          value={phaseData.duration_unit || "min"}
-          options={[
-            { value: "min", label: "minutes" },
-            { value: "hour", label: "hour" },
-          ]}
-          onSelect={(option) =>
-            updatePhaseData({ duration_unit: option.value })
-          }
-        />
+        >
+          <Select
+            styles="!w-32 rounded-l-none"
+            value={phaseData.duration_unit || "min"}
+            options={[
+              { value: "min", label: "minutes" },
+              { value: "hour", label: "hour" },
+            ]}
+            onSelect={(option) =>
+              updatePhaseData({ duration_unit: option.value })
+            }
+          />
+        </Input>
       </div>
       <div className="flex flex-row items-center gap-1">
         <Switch

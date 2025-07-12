@@ -167,8 +167,6 @@ function ServicesPage() {
     const serviceIds = reorderArray(services, id, direction);
     if (!serviceIds) return;
 
-    console.log(serviceIds);
-
     const response = await fetch(`/api/v1/merchants/services/reorder`, {
       method: "PUT",
       headers: {

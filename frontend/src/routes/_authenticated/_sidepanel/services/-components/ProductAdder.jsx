@@ -248,13 +248,19 @@ function ProductForm({
             name="productAmount"
             type="number"
             min={1}
-            labelText={`Amount ${productData.unit && `(${productData.unit})`}`}
+            labelText="Amount"
             placeholder="40"
             value={productData.amount_used}
             inputData={(data) =>
               setProductData((prev) => ({ ...prev, amount_used: data.value }))
             }
-          />
+          >
+            {productData.unit && (
+              <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                {productData.unit}
+              </p>
+            )}
+          </Input>
 
           <div className="flex justify-end gap-4">
             {isEdit ? (

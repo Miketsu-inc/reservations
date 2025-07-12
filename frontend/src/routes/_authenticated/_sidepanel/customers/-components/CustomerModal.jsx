@@ -82,56 +82,48 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="first_name">First name</label>
-              <Input
-                styles="p-2"
-                id="first_name"
-                name="first_name"
-                type="text"
-                placeholder="First name"
-                value={customerData.first_name}
-                inputData={onChangeHandler}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="last_name">Last name</label>
-              <Input
-                styles="p-2"
-                id="last_name"
-                name="last_name"
-                type="text"
-                placeholder="Last name"
-                value={customerData.last_name}
-                inputData={onChangeHandler}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="email">Email</label>
-              <Input
-                styles="p-2"
-                id="email"
-                name="email"
-                type="email"
-                placeholder="customer@gmail.com"
-                required={false}
-                value={customerData.email}
-                inputData={onChangeHandler}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="phone_number">Phone number</label>
-              <Input
-                styles="p-2"
-                id="phone_number"
-                name="phone_number"
-                type="tel"
-                placeholder="+36201234567"
-                required={false}
-                value={customerData.phone_number}
-                inputData={onChangeHandler}
-              />
-            </div>
+            <Input
+              styles="p-2"
+              id="first_name"
+              name="first_name"
+              labelText="First name"
+              type="text"
+              placeholder="First name"
+              value={customerData.first_name}
+              inputData={onChangeHandler}
+            />
+            <Input
+              styles="p-2"
+              id="last_name"
+              name="last_name"
+              labelText="Last name"
+              type="text"
+              placeholder="Last name"
+              value={customerData.last_name}
+              inputData={onChangeHandler}
+            />
+            <Input
+              styles="p-2"
+              id="email"
+              name="email"
+              labelText="Email"
+              type="email"
+              placeholder="customer@gmail.com"
+              required={false}
+              value={customerData.email}
+              inputData={onChangeHandler}
+            />
+            <Input
+              styles="p-2"
+              id="phone_number"
+              name="phone_number"
+              labelText="Phone number"
+              type="tel"
+              placeholder="+36201234567"
+              required={false}
+              value={customerData.phone_number}
+              inputData={onChangeHandler}
+            />
           </div>
           <div className="text-right">
             <Button

@@ -145,16 +145,6 @@ export default function ServicePage({
                 </div>
                 <div className="flex w-full flex-col gap-6">
                   <div className="flex w-full flex-row items-end gap-2">
-                    <input
-                      id="color"
-                      className="size-11 cursor-pointer bg-transparent"
-                      name="color"
-                      type="color"
-                      value={serviceData.color}
-                      onChange={(e) =>
-                        updateServiceData({ color: e.target.value })
-                      }
-                    />
                     <Input
                       styles="p-2"
                       id="ServiceName"
@@ -162,11 +152,24 @@ export default function ServicePage({
                       type="text"
                       labelText="Service name"
                       placeholder="e.g. hair styling"
+                      childrenSide="left"
                       value={serviceData.name}
                       inputData={(data) =>
                         updateServiceData({ name: data.value })
                       }
-                    />
+                    >
+                      <input
+                        id="color"
+                        className="border-input_border_color size-10.5 cursor-pointer rounded-l-lg border
+                          bg-transparent"
+                        name="color"
+                        type="color"
+                        value={serviceData.color}
+                        onChange={(e) =>
+                          updateServiceData({ color: e.target.value })
+                        }
+                      />
+                    </Input>
                   </div>
                   <div className="flex flex-row gap-4">
                     <Input
@@ -176,13 +179,17 @@ export default function ServicePage({
                       type="number"
                       min={0}
                       max={1000000}
-                      labelText="Price (HUF)"
+                      labelText="Price"
                       placeholder="1000"
                       value={serviceData.price}
                       inputData={(data) =>
                         updateServiceData({ price: Number(data.value) })
                       }
-                    />
+                    >
+                      <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                        HUF
+                      </p>
+                    </Input>
                     <Input
                       styles="p-2"
                       id="PriceNote"
@@ -215,8 +222,8 @@ export default function ServicePage({
                       HUF
                     </p>
                   </Input>
-                  <label>
-                    Service category
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm">Service category</span>
                     <Select
                       value={serviceData.category_id}
                       options={categoryOptions}

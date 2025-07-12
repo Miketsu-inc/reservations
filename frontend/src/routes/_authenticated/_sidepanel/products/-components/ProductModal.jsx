@@ -164,7 +164,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
             <Input
               styles="p-2"
               id="price"
-              labelText="Price (HUF)"
+              labelText="Price"
               name="price"
               type="number"
               placeholder="0"
@@ -172,7 +172,11 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               max={10000000}
               value={productData.price}
               inputData={onChangeHandler}
-            />
+            >
+              <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                HUF
+              </p>
+            </Input>
             <div className="flex flex-col gap-1">
               <label htmlFor="description">Description</label>
               <textarea
@@ -200,23 +204,23 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   step={1}
                   value={productData.current_amount}
                   inputData={onChangeHandler}
-                />
-                <Select
-                  options={unitOptions}
-                  value={productData.current_amount_unit}
-                  onSelect={(selected) => {
-                    onChangeHandler({
-                      name: "current_amount_unit",
-                      value: selected.value,
-                    });
-                    setUnitError("");
-                  }}
-                  placeholder=""
-                  styles="!w-24 mb-0.5"
-                  onOpenChange={(open) => setIsSelectOpen(open)}
-                />
+                >
+                  <Select
+                    options={unitOptions}
+                    value={productData.current_amount_unit}
+                    onSelect={(selected) => {
+                      onChangeHandler({
+                        name: "current_amount_unit",
+                        value: selected.value,
+                      });
+                      setUnitError("");
+                    }}
+                    placeholder=""
+                    styles="!w-24 rounded-l-none"
+                    onOpenChange={(open) => setIsSelectOpen(open)}
+                  />
+                </Input>
               </div>
-
               <div className="flex items-end justify-center gap-1">
                 <Input
                   styles="p-2"
@@ -229,21 +233,22 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   step={1}
                   value={productData.max_amount}
                   inputData={onChangeHandler}
-                />
-                <Select
-                  options={unitOptions}
-                  value={productData.max_amount_unit}
-                  onSelect={(selected) => {
-                    onChangeHandler({
-                      name: "max_amount_unit",
-                      value: selected.value,
-                    });
-                    setUnitError("");
-                  }}
-                  placeholder=""
-                  styles="!w-24 mb-0.5"
-                  onOpenChange={(open) => setIsSelectOpen(open)}
-                />
+                >
+                  <Select
+                    options={unitOptions}
+                    value={productData.max_amount_unit}
+                    onSelect={(selected) => {
+                      onChangeHandler({
+                        name: "max_amount_unit",
+                        value: selected.value,
+                      });
+                      setUnitError("");
+                    }}
+                    placeholder=""
+                    styles="!w-24 rounded-l-none"
+                    onOpenChange={(open) => setIsSelectOpen(open)}
+                  />
+                </Input>
               </div>
               {unitError && (
                 <span className="my-1 text-sm text-red-500">{unitError}</span>
