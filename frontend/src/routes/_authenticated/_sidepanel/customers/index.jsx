@@ -1,6 +1,6 @@
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "./-components/BlacklistModal";
@@ -19,7 +19,7 @@ async function fetchCustomers() {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -83,7 +83,7 @@ function CustomersPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -125,7 +125,7 @@ function CustomersPage() {
       });
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -160,7 +160,7 @@ function CustomersPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -189,7 +189,7 @@ function CustomersPage() {
     if (data.method === "POST") {
       options.body = JSON.stringify({
         id: data.id,
-        reason: data.reason,
+        blacklist_reason: data.blacklist_reason,
       });
     }
 
@@ -200,7 +200,7 @@ function CustomersPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -247,7 +247,7 @@ function CustomersPage() {
           blacklistHandler({
             method: customer.is_blacklisted ? "DELETE" : "POST",
             id: customer.id,
-            reason: customer.reason,
+            blacklist_reason: customer.blacklist_reason,
           })
         }
       />

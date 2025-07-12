@@ -1,6 +1,6 @@
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
@@ -16,7 +16,7 @@ async function fetchServiceData(id) {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -34,7 +34,7 @@ async function fetchServicePageFormOptions() {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -100,7 +100,7 @@ function RouteComponent() {
     });
 
     if (!response.ok) {
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       throw new Error(result.error.message);
     }
@@ -123,7 +123,7 @@ function RouteComponent() {
     );
 
     if (!response.ok) {
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       throw new Error(result.error.message);
     }

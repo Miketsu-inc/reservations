@@ -120,7 +120,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
           </button>
         </div>
       </div>
-      {appointment.user_note && (
+      {appointment.customer_note && (
         <div className="pt-3 md:pt-2">
           <button
             className="flex cursor-pointer flex-row items-center gap-2 text-gray-500 dark:text-gray-400"
@@ -137,7 +137,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             overflow-hidden transition-all duration-300`}
           >
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {appointment.user_note}
+              {appointment.customer_note}
             </p>
           </div>
         </div>

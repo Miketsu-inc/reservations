@@ -26,7 +26,7 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
-		UserNote     string `json:"user_note"`
+		CustomerNote string `json:"customer_note"`
 	}
 	var newApp NewAppointment
 
@@ -40,12 +40,6 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), newApp.MerchantName)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching merchant by this name: %s", err.Error()))
-		return
-	}
-
-	err = a.Postgresdb.IsUserBlacklisted(r.Context(), merchantId, userID)
-	if err != nil {
-		httputil.Error(w, http.StatusForbidden, err)
 		return
 	}
 
@@ -81,20 +75,25 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 
 	toDate := timeStamp.Add(duration)
 
+	customerId, err := uuid.NewV7()
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
+		return
+	}
+
 	appointmentId, err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:           0,
-		UserId:       userID,
 		MerchantId:   merchantId,
 		ServiceId:    newApp.ServiceId,
 		LocationId:   newApp.LocationId,
 		GroupId:      0,
 		FromDate:     timeStamp,
 		ToDate:       toDate,
-		UserNote:     newApp.UserNote,
+		CustomerNote: newApp.CustomerNote,
 		MerchantNote: "",
 		PriceThen:    service.Price,
 		CostThen:     service.Cost,
-	}, service.Phases)
+	}, service.Phases, userID, customerId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))
 		return
@@ -244,7 +243,7 @@ func (a *Appointment) CancelAppointmentByMerchant(w http.ResponseWriter, r *http
 
 	lang := lang.LangFromContext(r.Context())
 
-	err = email.AppointmentCancellation(r.Context(), lang, emailData.UserEmail, email.AppointmentCancellationData{
+	err = email.AppointmentCancellation(r.Context(), lang, emailData.CustomerEmail, email.AppointmentCancellationData{
 		Time:               fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:               fromDateMerchantTz.Format("Monday, January 2"),
 		Location:           emailData.ShortLocation,
@@ -349,7 +348,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 
 	lang := lang.LangFromContext(r.Context())
 
-	err = email.AppointmentModification(r.Context(), lang, oldEmailData.UserEmail, email.AppointmentModificationData{
+	err = email.AppointmentModification(r.Context(), lang, oldEmailData.CustomerEmail, email.AppointmentModificationData{
 		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:        fromDate.Format("Monday, January 2"),
 		Location:    oldEmailData.ShortLocation,
@@ -379,7 +378,7 @@ func (a *Appointment) UpdateAppointmentData(w http.ResponseWriter, r *http.Reque
 	if hoursUntilAppointment >= 24 {
 		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
 
-		email_id, err := email.AppointmentReminder(r.Context(), lang, oldEmailData.UserEmail, email.AppointmentConfirmationData{
+		email_id, err := email.AppointmentReminder(r.Context(), lang, oldEmailData.CustomerEmail, email.AppointmentConfirmationData{
 			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 			Date:        fromDateMerchantTz.Format("Monday, January 2"),
 			Location:    oldEmailData.ShortLocation,
@@ -422,6 +421,18 @@ func (a *Appointment) GetPublicAppointmentData(w http.ResponseWriter, r *http.Re
 }
 
 func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Request) {
+	type cancelData struct {
+		AppointmentId int    `json:"appointment_id" validate:"required"`
+		MerchantName  string `json:"merchant_name" validate:"required"`
+	}
+
+	var data cancelData
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
 	urlId := chi.URLParam(r, "id")
 
 	appId, err := strconv.Atoi(urlId)
@@ -430,9 +441,25 @@ func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	if appId != data.AppointmentId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("the appointment ids are not matching", err.Error()))
+		return
+	}
+
 	userId := jwt.UserIDFromContext(r.Context())
 
-	emailId, err := a.Postgresdb.CancelAppointmentByUser(r.Context(), userId, appId)
+	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), data.MerchantName)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching merchant by this name: %s", err.Error()))
+		return
+	}
+
+	customerId, err := a.Postgresdb.GetCustomerIdByUserIdAndMerchantId(r.Context(), merchantId, userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer id: %s", err.Error()))
+	}
+
+	emailId, err := a.Postgresdb.CancelAppointmentByUser(r.Context(), customerId, appId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the appointment by user: %s", err.Error()))
 		return

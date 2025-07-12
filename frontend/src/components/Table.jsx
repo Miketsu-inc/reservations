@@ -35,7 +35,7 @@ export default function Table({
   // making the table potentially not fill it's grid
   const resetView = useCallback(() => {
     tableRef.current.api.resetColumnState();
-    tableRef.current.api.autoSizeColumns(columnsToAutoSize);
+    tableRef.current.api.autoSizeColumns(columnsToAutoSize || []);
   }, [columnsToAutoSize]);
 
   const onBtnExport = useCallback(() => {

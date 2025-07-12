@@ -30,19 +30,19 @@ export default function NotesSection({
           </button>
         </div>
         <div
-          className={`${areNotesHidden ? "max-h-0 opacity-0" : `${event.extendedProps.user_note ? "max-h-52" : "max-h-32"} opacity-100`}
+          className={`${areNotesHidden ? "max-h-0 opacity-0" : `${event.extendedProps.customer_note ? "max-h-52" : "max-h-32"} opacity-100`}
             overflow-hidden transition-all duration-300`}
         >
           <div className="pt-3">
             <div className="flex flex-col gap-3 text-sm">
-              {event.extendedProps.user_note && (
+              {event.extendedProps.customer_note && (
                 <div className="flex flex-col gap-1">
                   <p>Customer's note</p>
                   <p
                     className="text-text_color bg-bg_color h-fit max-h-24 w-full overflow-auto rounded-lg
                       border border-gray-400 p-2 dark:[color-scheme:dark]"
                   >
-                    {event.extendedProps.user_note}
+                    {event.extendedProps.customer_note}
                   </p>
                 </div>
               )}

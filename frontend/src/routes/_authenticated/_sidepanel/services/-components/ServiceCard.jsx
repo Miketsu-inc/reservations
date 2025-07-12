@@ -8,7 +8,7 @@ import ThreeDotsIcon from "@icons/ThreeDotsIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatDuration } from "@lib/datetime";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
 
 export default function ServiceCard({
@@ -37,7 +37,7 @@ export default function ServiceCard({
 
     if (!response.ok) {
       const result = await response.json();
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       showToast({
         variant: "error",
         message: `Something went wrong while ${isActive ? "activating" : "deactivating"} the service ${result.error}`,

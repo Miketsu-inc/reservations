@@ -2,7 +2,7 @@ import Card from "@components/Card";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
-import { fillStatisticsWithDate, invalidateLocalSotrageAuth } from "@lib/lib";
+import { fillStatisticsWithDate, invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import AppointmentsList from "./-components/AppointmentsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
@@ -22,7 +22,7 @@ async function fetchDashboardData(period) {
   const result = await response.json();
 
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     if (result.data !== null) {

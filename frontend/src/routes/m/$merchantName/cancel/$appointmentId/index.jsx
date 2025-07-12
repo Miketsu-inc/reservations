@@ -103,6 +103,13 @@ function CancelPage() {
         `/api/v1/appointments/public/${params.appointmentId}`,
         {
           method: "DELETE",
+          headers: {
+            "Content-type": "application/json; charset=UTF-8",
+          },
+          body: JSON.stringify({
+            appointment_id: Number(params.appointmentId),
+            merchant_name: params.merchantName,
+          }),
         }
       );
 

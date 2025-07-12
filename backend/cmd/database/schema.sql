@@ -12,8 +12,6 @@ create table if not exists "User" (
     password_hash            varchar(72),
     jwt_refresh_version      integer,
     subscription             integer,
-    is_dummy                 boolean         not null,
-    added_by                 uuid,
     preferred_lang           varchar(10)
 );
 
@@ -75,7 +73,7 @@ create table if not exists "Location" (
 
 create table if not exists "Appointment" (
     ID                       serial          primary key unique not null,
-    user_id                  uuid            references "User" (ID) not null,
+    customer_id              uuid            references "Customer" (ID) not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
     service_id               integer         references "Service" (ID) not null,
     service_phase_id         integer         references "ServicePhase" (ID) not null,
@@ -83,7 +81,7 @@ create table if not exists "Appointment" (
     group_id                 integer         not null,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,
-    user_note                text,
+    customer_note            text,
     merchant_note            text,
     price_then               bigint          not null,
     cost_then                bigint,
@@ -104,13 +102,6 @@ create table if not exists "Preferences" (
     start_hour               time(0)          default '08:00:00' not null,
     end_hour                 time(0)          default '17:00:00' not null,
     time_frequency           time(0)          default '00:15:00' not null
-);
-
-create table if not exists "Blacklist" (
-    ID                       serial           primary key unique not null,
-    merchant_id              uuid             references "Merchant" (ID) not null,
-    user_id                  uuid             references "User" (ID) not null,
-    reason                   text,
 );
 
 create table if not exists "Product" (
@@ -140,4 +131,19 @@ create table if not exists "BusinessHours" (
     end_time                 time(0)         not null,
 
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
+);
+
+-- constraint is neccessary for the on conflict
+create table if not exists "Customer" (
+    ID                      uuid            primary key unique not null,
+    merchant_id             uuid            references "Merchant" (ID) not null,
+    user_id                 uuid            references "User" (ID),
+    first_name              varchar(30),
+    last_name               varchar(30),
+    email                   varchar(320),
+    phone_number            varchar(30),
+    is_blacklisted          boolean default false not null,
+    blacklist_reason        text,
+
+    constraint unique_merchant_user unique (merchant_id, user_id)
 );

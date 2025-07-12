@@ -7,7 +7,7 @@ import {
   MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from "@lib/constants";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
@@ -122,7 +122,7 @@ function LoginPage() {
       });
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {

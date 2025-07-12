@@ -4,7 +4,7 @@ import SmallCalendar from "@components/SmallCalendar";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import MessageIcon from "@icons/MessageIcon";
 import { formatToDateString } from "@lib/datetime";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import "react-day-picker/style.css";
@@ -24,7 +24,7 @@ async function fetchHours(merchantName, locationId, serviceId, day) {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -45,7 +45,7 @@ async function fetchClosedDays(merchantName) {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -90,7 +90,7 @@ function SelectDateTime() {
     morning: [],
     afternoon: [],
   });
-  const [userNote, setUserNote] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
   const closedDays = loaderData.closedDays;
 
   useEffect(() => {
@@ -120,12 +120,12 @@ function SelectDateTime() {
           service_id: serviceId,
           location_id: locationId,
           timeStamp: timeStamp,
-          user_note: userNote,
+          customer_note: customerNote,
         }),
       });
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
 
         if (response.status === 401) {
           router.navigate({
@@ -240,9 +240,9 @@ function SelectDateTime() {
                 </div>
                 <textarea
                   name="appointment note"
-                  value={userNote}
+                  value={customerNote}
                   onChange={(e) => {
-                    setUserNote(e.target.value);
+                    setCustomerNote(e.target.value);
                   }}
                   className="focus:border-text_color max-h-20 min-h-10 w-full rounded-md border
                     border-gray-400 bg-transparent p-2 text-sm outline-hidden placeholder:text-sm

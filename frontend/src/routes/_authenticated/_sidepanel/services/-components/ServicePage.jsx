@@ -6,7 +6,7 @@ import Select from "@components/Select";
 import Switch from "@components/Switch";
 import InfoIcon from "@icons/InfoIcon";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import ProductAdder from "./ProductAdder";
@@ -74,7 +74,7 @@ export default function ServicePage({
     });
 
     if (!response.ok) {
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       showToast({ message: result.error.message, variant: "error" });
     } else {

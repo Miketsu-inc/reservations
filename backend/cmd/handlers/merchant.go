@@ -574,7 +574,6 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 		LastName:    customer.LastName,
 		Email:       customer.Email,
 		PhoneNumber: customer.PhoneNumber,
-		IsDummy:     true,
 	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
 		return
@@ -630,7 +629,7 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if id == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id provided"))
 		return
 	}
 
@@ -659,7 +658,6 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 		LastName:    customer.LastName,
 		Email:       customer.Email,
 		PhoneNumber: customer.PhoneNumber,
-		IsDummy:     true,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating customer for merchant: %s", err.Error()))
@@ -772,12 +770,12 @@ func (m *Merchant) TransferCustomerApps(w http.ResponseWriter, r *http.Request) 
 }
 
 func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
-	type blakclistData struct {
-		CustomerId uuid.UUID `json:"id" validate:"required,uuid"`
-		Reason     string    `json:"reason"`
+	type blacklistData struct {
+		CustomerId      uuid.UUID `json:"id" validate:"required,uuid"`
+		BlacklistReason *string   `json:"blacklist_reason"`
 	}
 
-	var data blakclistData
+	var data blacklistData
 
 	if err := validate.ParseStruct(r, &data); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
@@ -810,7 +808,7 @@ func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.AddCustomerToBlacklist(r.Context(), merchantId, customerId, data.Reason)
+	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), merchantId, customerId, true, data.BlacklistReason)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while adding customer to blacklist: %s", err.Error()))
 		return
@@ -839,7 +837,7 @@ func (m *Merchant) UnBlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.RemoveCustomerFromBlacklist(r.Context(), merchantId, customerId)
+	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), merchantId, customerId, false, nil)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting customer from blacklist: %s", err.Error()))
 		return

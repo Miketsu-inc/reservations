@@ -5,7 +5,7 @@ import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
 import { useToast, useWindowSize } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
@@ -23,7 +23,7 @@ async function fetchServices() {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -105,7 +105,7 @@ function ServicesPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -145,7 +145,7 @@ function ServicesPage() {
     );
 
     if (!response.ok) {
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       setServerError(result.error.message);
     } else {
@@ -180,7 +180,7 @@ function ServicesPage() {
     });
 
     if (!response.ok) {
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       setServerError(result.error.message);
     } else {

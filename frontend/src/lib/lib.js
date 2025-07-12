@@ -24,7 +24,7 @@ export async function isAuthenticated(path) {
   }
 }
 
-export function invalidateLocalSotrageAuth(responseCode) {
+export function invalidateLocalStorageAuth(responseCode) {
   if (responseCode === 401) {
     localStorage.setItem("loggedIn", false);
   }

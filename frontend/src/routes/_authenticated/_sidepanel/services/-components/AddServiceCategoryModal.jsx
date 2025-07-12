@@ -2,7 +2,7 @@ import Button from "@components/Button";
 import Input from "@components/Input";
 import Modal from "@components/Modal";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { useState } from "react";
 
 export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
@@ -33,7 +33,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
 
     if (!response.ok) {
       const result = await response.json();
-      invalidateLocalSotrageAuth(response.status);
+      invalidateLocalStorageAuth(response.status);
       showToast({
         variant: "error",
         message: `Something went wrong while creating a new category ${result.error}`,

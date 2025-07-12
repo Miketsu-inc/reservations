@@ -1,7 +1,7 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import BusinessHours from "../-components/BusinessHours";
@@ -27,7 +27,7 @@ async function fetchMerchantData() {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;

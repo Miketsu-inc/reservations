@@ -1,6 +1,6 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import SectionHeader from "../-components/SectionHeader";
@@ -30,7 +30,7 @@ function ProfilePage() {
       setServerError(result.error.message);
     }
 
-    invalidateLocalSotrageAuth(401);
+    invalidateLocalStorageAuth(401);
     navigate({
       from: Route.fullPath,
       to: "/",

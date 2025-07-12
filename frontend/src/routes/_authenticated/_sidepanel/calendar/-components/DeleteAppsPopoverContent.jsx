@@ -1,6 +1,6 @@
 import Button from "@components/Button";
 import { useToast } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
 import { useRef } from "react";
 
@@ -27,7 +27,7 @@ export default function DeleteAppsPopoverContent({ event, onDeleted }) {
 
       if (!response.ok) {
         const result = await response.json();
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         showToast({ message: result.error.message, variant: "error" });
       } else {
         showToast({

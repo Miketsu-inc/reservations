@@ -86,7 +86,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             onClick={() => {
               onSubmit({
                 ...data,
-                reason: reason.trim(),
+                blacklist_reason: reason.trim(),
               });
               onClose();
             }}

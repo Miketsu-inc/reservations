@@ -28,7 +28,7 @@ type PostgreSQL interface {
 	// -- Appointment --
 
 	// Insert a new Appointment to the database.
-	NewAppointment(context.Context, Appointment, []PublicServicePhase) (int, error)
+	NewAppointment(context.Context, Appointment, []PublicServicePhase, uuid.UUID, uuid.UUID) (int, error)
 	// Get all Aappintments assigned to a Merchant.
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
 	// Get all available times for reservations
@@ -65,8 +65,6 @@ type PostgreSQL interface {
 	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) error
 	// Get User's refresh version
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
-	// Check if the user is blacklisted
-	IsUserBlacklisted(context.Context, uuid.UUID, uuid.UUID) error
 	// Get a user's preferred language
 	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
 
@@ -147,12 +145,12 @@ type PostgreSQL interface {
 	DeleteCustomerById(context.Context, uuid.UUID, uuid.UUID) error
 	// Update customer by it's id
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
-	// Add customer to the blacklist
-	AddCustomerToBlacklist(context.Context, uuid.UUID, uuid.UUID, string) error
-	// Remove customer from the blacklist
-	RemoveCustomerFromBlacklist(context.Context, uuid.UUID, uuid.UUID) error
+	// Set blacklist status for a customer
+	SetBlacklistStatusForCustomer(context.Context, uuid.UUID, uuid.UUID, bool, *string) error
 	// Get one customer's info for a merchant
 	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (AllCustomerInfo, error)
+	//Get a User's customer id from it's user id and the merchant's id
+	GetCustomerIdByUserIdAndMerchantId(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error)
 
 	// -- Preferences --
 

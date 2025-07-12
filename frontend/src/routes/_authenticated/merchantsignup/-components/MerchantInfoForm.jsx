@@ -1,7 +1,7 @@
 import Button from "@components/Button";
 import Input from "@components/Input";
 import ServerError from "@components/ServerError";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { useCallback, useState } from "react";
 
 const defaultFormData = {
@@ -46,7 +46,7 @@ export default function MerchantInfoForm({ isCompleted }) {
       });
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -81,7 +81,7 @@ export default function MerchantInfoForm({ isCompleted }) {
             url: result.data.merchant_url,
           });
         } else {
-          invalidateLocalSotrageAuth(response.status);
+          invalidateLocalStorageAuth(response.status);
           setMerchantUrl({
             valid: false,
             url: result.error.merchant_url,

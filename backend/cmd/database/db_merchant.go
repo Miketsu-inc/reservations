@@ -161,6 +161,7 @@ func (s *service) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) e
 
 type PublicCustomer struct {
 	Customer
+	IsDummy         bool    `json:"is_dummy" db:"is_dummy"`
 	IsBlacklisted   bool    `json:"is_blacklisted" db:"is_blacklisted"`
 	BlacklistReason *string `json:"blacklist_reason" db:"blacklist_reason"`
 	TimesBooked     int     `json:"times_booked" db:"times_booked"`
@@ -169,16 +170,19 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select u.id, u.first_name, u.last_name, u.email, u.phone_number, u.is_dummy, b.user_id is not null as is_blacklisted, b.reason as blacklist_reason,
+	select c.id, 
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, 
+		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
-	from "User" u
-	left join "Appointment" a on u.id = a.user_id and a.merchant_id = $1
-	left join "Blacklist" b on u.id = b.user_id and b.merchant_id = $2
-	where u.is_dummy = true or a.id is not null
-	group by u.id, b.user_id, b.reason;
+	from "Customer" c
+	left join "User" u on c.user_id = u.id
+	left join "Appointment" a on (c.id = a.customer_id or a.transferred_to = c.id) and a.merchant_id = $1
+	where c.merchant_id = $1
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
 
-	rows, _ := s.db.Query(ctx, query, merchantId, merchantId)
+	rows, _ := s.db.Query(ctx, query, merchantId)
 	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicCustomer])
 	if err != nil {
 		return []PublicCustomer{}, err
@@ -435,11 +439,15 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	select distinct on (a.group_id) a.id, a.group_id,
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
-		s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
+		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+		s.color as service_color, s.total_duration as service_duration, 
+		coalesce(c.first_name, u.first_name) as first_name,
+		coalesce(c.last_name, u.last_name) as last_name,
+		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
-	join "User" u on a.user_id = u.id
+	join "Customer" c on a.customer_id = c.id
+	left join "User" u on c.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
 	order by a.group_id, a.from_date
 	limit 5`
@@ -456,11 +464,15 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	select distinct on (a.group_id) a.id, a.group_id,
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.user_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
-		s.color as service_color, s.total_duration as service_duration, u.first_name, u.last_name, u.phone_number
+		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+		s.color as service_color, s.total_duration as service_duration, 
+		coalesce(c.first_name, u.first_name) as first_name,
+		coalesce(c.last_name, u.last_name) as last_name,
+		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
-	join "User" u on a.user_id = u.id
+	join "Customer" c on a.customer_id = c.id
+	left join "User" u on c.user_id = u.id
 	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
 	order by a.group_id, a.id desc
 	limit 5`

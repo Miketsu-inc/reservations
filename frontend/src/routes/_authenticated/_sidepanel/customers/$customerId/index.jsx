@@ -10,7 +10,7 @@ import PhoneIcon from "@icons/PhoneIcon";
 import ThreeDotsIcon from "@icons/ThreeDotsIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { useToast, useWindowSize } from "@lib/hooks";
-import { invalidateLocalSotrageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -31,7 +31,7 @@ async function fetchCustomerInfo(customerId) {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -93,7 +93,7 @@ function CustomerDetailsPage() {
       });
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -135,7 +135,7 @@ function CustomerDetailsPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -173,7 +173,7 @@ function CustomerDetailsPage() {
       );
 
       if (!response.ok) {
-        invalidateLocalSotrageAuth(response.status);
+        invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
       } else {
@@ -227,8 +227,8 @@ function CustomerDetailsPage() {
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
               <div
-                className="bg-primary flex size-16 items-center justify-center rounded-md text-lg
-                  text-white"
+                className="from-secondary to-primary bg-primary flex size-16 items-center justify-center
+                  rounded-md text-lg text-white dark:bg-gradient-to-br"
               >
                 {`${loaderData.first_name.charAt(0)}${loaderData.last_name.charAt(0)}`.toUpperCase()}
               </div>

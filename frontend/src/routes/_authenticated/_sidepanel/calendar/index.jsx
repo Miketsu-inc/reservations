@@ -3,7 +3,7 @@ import ServerError from "@components/ServerError";
 import { SCREEN_SM } from "@lib/constants";
 import { calculateStartEndTime, isDurationValid } from "@lib/datetime";
 import { useToast } from "@lib/hooks";
-import { getStoredPreferences, invalidateLocalSotrageAuth } from "@lib/lib";
+import { getStoredPreferences, invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 
@@ -23,7 +23,7 @@ async function fetchEvents(start, end) {
   const result = await response.json();
 
   if (!response.ok) {
-    invalidateLocalSotrageAuth(response.status);
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     if (result.data !== null) {
