@@ -161,7 +161,6 @@ export default function ServicePage({
                       name="ServiceName"
                       type="text"
                       labelText="Service name"
-                      hasError={false}
                       placeholder="e.g. hair styling"
                       value={serviceData.name}
                       inputData={(data) =>
@@ -169,17 +168,16 @@ export default function ServicePage({
                       }
                     />
                   </div>
-                  <div className="flex flex-row items-center gap-4">
+                  <div className="flex flex-row gap-4">
                     <Input
                       styles="p-2"
                       id="price"
                       name="price"
                       type="number"
                       min={0}
+                      max={1000000}
                       labelText="Price (HUF)"
-                      hasError={false}
                       placeholder="1000"
-                      errorText="Price must be between 1 and 1,000,000"
                       value={serviceData.price}
                       inputData={(data) =>
                         updateServiceData({ price: Number(data.value) })
@@ -191,7 +189,6 @@ export default function ServicePage({
                       name="PriceNote"
                       type="text"
                       labelText="Price note"
-                      hasError={false}
                       placeholder="e.g. -tol"
                       value={serviceData.price_note}
                       inputData={(data) =>
@@ -205,16 +202,19 @@ export default function ServicePage({
                     name="cost"
                     type="number"
                     min={0}
-                    labelText="Cost (HUF)"
-                    hasError={false}
+                    max={1000000}
+                    labelText="Cost"
                     placeholder="500"
                     required={false}
-                    errorText="Cost must be between 0 and 1,000,000"
                     value={serviceData.cost}
                     inputData={(data) =>
                       updateServiceData({ cost: Number(data.value) })
                     }
-                  />
+                  >
+                    <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                      HUF
+                    </p>
+                  </Input>
                   <label>
                     Service category
                     <Select

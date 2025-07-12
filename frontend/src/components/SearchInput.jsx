@@ -23,7 +23,6 @@ export default function SearchInput({
         inputData={(data) => {
           onChange(data.value);
         }}
-        hasError={false}
         autoFocus={autoFocus}
       />
     </div>

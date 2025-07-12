@@ -12,7 +12,6 @@ const defaultFormData = {
 };
 export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
   const [formData, setFormData] = useState(defaultFormData);
-  const [isEmpty, setIsEmpty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -21,7 +20,6 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
     const form = e.target;
 
     if (!form.checkValidity()) {
-      setIsEmpty(true);
       return;
     }
 
@@ -81,10 +79,8 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
               name="country"
               id="country"
               autoComplete="country"
-              errorText="Inputs must be 256 character or less!"
               labelText="Country"
               inputData={handleInputData}
-              hasError={isEmpty}
             />
           </div>
           <div className="w-24">
@@ -96,10 +92,8 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
               name="postal_code"
               id="postal_code"
               autoComplete="postal-code"
-              errorText="Postal code should consists of numbers only!"
               labelText="Postal Code"
               inputData={handleInputData}
-              hasError={isEmpty}
             />
           </div>
         </div>
@@ -112,10 +106,8 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
             name="city"
             id="city"
             autoComplete="address-level2"
-            errorText="Inputs must be 256 character or less!"
             labelText="City"
             inputData={handleInputData}
-            hasError={isEmpty}
           />
           <Input
             type="text"
@@ -125,10 +117,8 @@ export default function LocationForm({ isSubmitDone, isCompleted, redirect }) {
             name="address"
             id="address"
             autoComplete="address-line1"
-            errorText="Inputs must be 256 character or less!"
             labelText="Address"
             inputData={handleInputData}
-            hasError={isEmpty}
           />
         </div>
         <Button

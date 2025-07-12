@@ -3,20 +3,14 @@ import InputBase from "./InputBase";
 export default function Input({
   id,
   name,
-  type,
-  autoComplete,
   styles,
   labelText,
-  errorText,
-  placeholder,
-  pattern,
   inputData,
-  hasError,
   value,
   required,
-  min,
-  max,
-  autoFocus,
+  children,
+  childrenSide = "right",
+  ...props
 }) {
   function handleChange(e) {
     inputData({
@@ -25,44 +19,33 @@ export default function Input({
     });
   }
 
-  const isEmpty = hasError && !value;
-
   return (
-    <label htmlFor={id} className="flex w-full flex-col">
-      {labelText && <span className="pb-1">{labelText}</span>}
-      <InputBase
-        styles={`${styles} ps-1 peer border-2 bg-transparent outline-hidden
-          invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-600
-          invalid:[&:not(:placeholder-shown):not(:focus)]:autofill:border-text_color
-          placeholder-gray-500 dark:placeholder-gray-400
-          ${isEmpty ? "border-red-600 focus:border-red-600" : "border-text_color focus:border-primary"}`}
-        type={type}
-        name={name}
-        id={id}
-        autoComplete={autoComplete}
-        pattern={pattern}
-        placeholder={placeholder}
-        onChange={handleChange}
-        required={required === undefined ? true : required}
-        onBlur={() => {}}
-        value={value}
-        min={min}
-        max={max}
-        autoFocus={autoFocus}
-      />
-      {isEmpty && (
-        <span className="text-sm text-red-600">
-          Please fill out this field!
-        </span>
-      )}
-      {errorText && (
-        <span
-          className="hidden text-sm text-red-600
-            peer-[&:not(:placeholder-shown):not(:focus):invalid]:block"
+    <>
+      <label htmlFor={id} className="flex w-full flex-col">
+        {labelText && <span className="pb-1 text-sm">{labelText}</span>}
+        <div
+          className={`${childrenSide !== "right" ? "flex-row-reverse" : "flex-row"} flex items-center`}
         >
-          {errorText}
-        </span>
-      )}
-    </label>
+          <InputBase
+            styles={`${styles} ${ children &&
+              (childrenSide === "right"
+                ? "border-r-0 rounded-r-none"
+                : "border-l-0 rounded-l-none")
+              } peer border bg-layer_bg outline-hidden placeholder-stone-500
+              dark:placeholder-zinc-400 transition-[border-color,box-shadow] ease-in-out
+              duration-150 border-input_border_color focus:border-primary focus:ring-4
+              focus:ring-primary/30`}
+            id={id}
+            name={name}
+            onChange={handleChange}
+            required={required === undefined ? true : required}
+            onBlur={() => {}}
+            value={value}
+            {...props}
+          />
+          {children}
+        </div>
+      </label>
+    </>
   );
 }

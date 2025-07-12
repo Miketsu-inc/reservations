@@ -18,7 +18,6 @@ var keyUpTimer;
 
 export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
-  const [isEmpty, setIsEmpty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
@@ -28,7 +27,6 @@ export default function MerchantInfoForm({ isCompleted }) {
     const form = e.target;
 
     if (!form.checkValidity()) {
-      setIsEmpty(true);
       return;
     }
 
@@ -135,10 +133,8 @@ export default function MerchantInfoForm({ isCompleted }) {
           pattern=".{0,255}"
           name="name"
           id="company_name"
-          errorText="Inputs must be 256 character or less!"
           labelText="Company Name"
           inputData={handleInputData}
-          hasError={isEmpty}
         />
         <p
           className={`${merchantUrl.url ? "" : "invisible"} text-sm dark:text-gray-400`}
@@ -159,10 +155,8 @@ export default function MerchantInfoForm({ isCompleted }) {
           name="contact_email"
           id="contact_email"
           autoComplete="email"
-          errorText="Please eneter a valid email"
           labelText="Contact Email"
           inputData={handleInputData}
-          hasError={isEmpty}
         />
         <Button
           variant="primary"

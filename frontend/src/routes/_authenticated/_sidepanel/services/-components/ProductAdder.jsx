@@ -249,7 +249,6 @@ function ProductForm({
             type="number"
             min={1}
             labelText={`Amount ${productData.unit && `(${productData.unit})`}`}
-            hasError={false}
             placeholder="40"
             value={productData.amount_used}
             inputData={(data) =>

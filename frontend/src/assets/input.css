@@ -13,6 +13,7 @@
   --text-color: 12, 14, 28;
   --hvr-gray: 209, 213, 219;
   --border-color: 209, 213, 219;
+  --input-border-color: 168, 162, 158;
 }
 
 /* TEMP until the calendar is styled properly in dark mode */
@@ -27,6 +28,7 @@
   --text-color: 12, 14, 28;
   --hvr-gray: 209, 213, 219;
   --border-color: 209, 213, 219;
+  --input-border-color: 168, 162, 158;
 }
 
 .dark {
@@ -40,6 +42,7 @@
   --text-color: 236, 236, 238;
   --hvr-gray: 31, 41, 55;
   --border-color: 38, 38, 38;
+  --input-border-color: 82, 82, 91;
 }
 
 @keyframes slideUp {

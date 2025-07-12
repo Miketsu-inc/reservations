@@ -75,7 +75,6 @@ export default function EditServiceCategoryModal({
             name="CategoryName"
             type="text"
             labelText="Category name"
-            hasError={false}
             placeholder="e.g. hair"
             value={categoryData.name}
             inputData={(data) => updateCategoryData({ name: data.value })}

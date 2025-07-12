@@ -8,17 +8,12 @@ export default function InputBase({
   name,
   type,
   value,
-  autoComplete,
   styles,
   onChange,
   onBlur,
   onFocus,
-  placeholder,
-  pattern,
-  required,
-  min,
-  max,
   autoFocus = false,
+  ...props
 }) {
   const isTypePassword = type === "password";
   const [visible, setVisible] = useState(false);
@@ -29,23 +24,17 @@ export default function InputBase({
   return (
     <>
       <input
-        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill rounded-lg
-          bg-transparent outline-hidden dark:[color-scheme:dark]`}
+        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill appearance-none
+          rounded-lg ps-3 pe-3 outline-hidden dark:[color-scheme:dark]`}
+        id={id}
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}
         name={name}
-        id={id}
-        autoComplete={autoComplete}
-        pattern={pattern}
-        required={required}
         onChange={onChange}
         onBlur={onBlur}
         onFocus={onFocus}
-        placeholder={placeholder}
-        min={min}
-        max={max}
-        autoFocus={autoFocus}
         ref={inputRef}
+        {...props}
       />
       {isTypePassword ? (
         <div>

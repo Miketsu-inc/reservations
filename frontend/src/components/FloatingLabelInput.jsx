@@ -5,13 +5,12 @@ export default forwardRef(function FloatingLabelInput(
   {
     id,
     name,
-    type,
-    autoComplete,
     labelText,
     styles,
     errorText,
     inputValidation,
     inputData,
+    ...props
   },
   ref
 ) {
@@ -70,30 +69,29 @@ export default forwardRef(function FloatingLabelInput(
       >
         <InputBase
           styles="peer mt-1 pt-4 p-2"
-          type={type}
+          id={id}
           value={inputValue}
           name={name}
-          id={id}
-          autoComplete={autoComplete}
           onChange={onChangeHandler}
           onBlur={onBlurHandler}
           onFocus={() => {
             setIsInputFocused(true);
           }}
+          {...props}
         />
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `peer-focus:text-primary left-2 text-lg text-gray-500 peer-focus:left-2
+              ? `peer-focus:text-primary left-3 text-lg text-gray-500 peer-focus:left-3
                 peer-focus:-translate-y-4 peer-focus:text-sm dark:text-gray-400`
               : `${
                 isValid
-                    ? `peer-focus:text-primary peer-focus:left-2 peer-focus:-translate-y-4
+                    ? `peer-focus:text-primary peer-focus:left-3 peer-focus:-translate-y-4
                       peer-focus:text-sm`
                     : "text-red-600"
-                } left-2 -translate-y-4 text-sm`
+                } left-3 -translate-y-4 text-sm`
  
-            } pointer-events-none absolute transition-all peer-autofill:left-2
+            } pointer-events-none absolute transition-all peer-autofill:left-3
             peer-autofill:-translate-y-4 peer-autofill:text-sm`}
           htmlFor={id}
         >

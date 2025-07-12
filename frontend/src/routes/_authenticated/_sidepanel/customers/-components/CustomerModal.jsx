@@ -89,7 +89,6 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
                 id="first_name"
                 name="first_name"
                 type="text"
-                hasError={false}
                 placeholder="First name"
                 value={customerData.first_name}
                 inputData={onChangeHandler}
@@ -102,7 +101,6 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
                 id="last_name"
                 name="last_name"
                 type="text"
-                hasError={false}
                 placeholder="Last name"
                 value={customerData.last_name}
                 inputData={onChangeHandler}
@@ -115,7 +113,6 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
                 id="email"
                 name="email"
                 type="email"
-                hasError={false}
                 placeholder="customer@gmail.com"
                 required={false}
                 value={customerData.email}
@@ -129,7 +126,6 @@ export default function CustomerModal({ data, isOpen, onClose, onSubmit }) {
                 id="phone_number"
                 name="phone_number"
                 type="tel"
-                hasError={false}
                 placeholder="+36201234567"
                 required={false}
                 value={customerData.phone_number}

@@ -151,7 +151,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               id="name"
               name="name"
               type="text"
-              hasError={false}
               placeholder="Product name"
               value={productData.name}
               inputData={onChangeHandler}

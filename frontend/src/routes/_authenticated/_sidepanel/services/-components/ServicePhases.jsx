@@ -209,7 +209,6 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
         name="phase_name"
         type="text"
         labelText="Phase name (optional)"
-        hasError={false}
         placeholder="e.g. hair wash"
         required={false}
         value={phaseData.name}
@@ -224,7 +223,6 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
           min={1}
           max={phaseData.duration_unit === "hours" ? 24 : 1440}
           labelText="Duration"
-          hasError={false}
           placeholder="30"
           value={phaseData.duration}
           inputData={(data) =>

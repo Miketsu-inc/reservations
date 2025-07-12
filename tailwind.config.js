@@ -29,6 +29,7 @@ export default {
         layer_bg: "rgba(var(--layer-bg))",
         text_color: "rgba(var(--text-color))",
         border_color: "rgba(var(--border-color))",
+        input_border_color: "rgba(var(--input-border-color))",
       },
     },
   },
