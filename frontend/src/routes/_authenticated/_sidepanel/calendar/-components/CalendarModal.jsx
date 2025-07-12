@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import AppointmentInfoSection from "./AppointmentInfoSection";
 import DeleteAppsPopoverContent from "./DeleteAppsPopoverContent";
 import NotesSection from "./NotesSection";
-import RecurSection from "./RecurSection";
+// import RecurSection from "./RecurSection";
 
 export default function CalendarModal({
   eventInfo,
@@ -23,18 +23,19 @@ export default function CalendarModal({
   onDeleted,
   onEdit,
 }) {
-  const [recurData, setRecurData] = useState({
-    isRecurring: false,
-    frequency: "weekly",
-    endDate: new Date(
-      eventInfo.start.getFullYear(),
-      eventInfo.start.getMonth() + 1,
-      eventInfo.start.getDate()
-    ),
-  });
+  // const [recurData, setRecurData] = useState({
+  //   isRecurring: false,
+  //   frequency: "weekly",
+  //   endDate: new Date(
+  //     eventInfo.start.getFullYear(),
+  //     eventInfo.start.getMonth() + 1,
+  //     eventInfo.start.getDate()
+  //   ),
+  // });
   const [merchantNote, setMerchantNote] = useState("");
-  const [hasUnsavedChanges, SetHasUnsavedChanges] = useState(false);
-  const [isDeletePopoverOpen, SetIsDeletePopoverOpen] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isDeletePopoverOpen, setIsDeletePopoverOpen] = useState(false);
+  const [isDatepickerOpen, setIsDatepickerOpen] = useState(false);
   const [eventDatetime, setEventDatetime] = useState({
     date: eventInfo.start,
     start_time: timeStringFromDate(eventInfo.start).split(" ")[0],
@@ -51,28 +52,28 @@ export default function CalendarModal({
       date: eventInfo.start,
       start_time: timeStringFromDate(eventInfo.start).split(" ")[0],
     });
-    setRecurData({
-      isRecurring: false,
-      frequency: "weekly",
-      endDate: new Date(
-        eventInfo.start.getFullYear(),
-        eventInfo.start.getMonth() + 1,
-        eventInfo.start.getDate()
-      ),
-    });
+    // setRecurData({
+    //   isRecurring: false,
+    //   frequency: "weekly",
+    //   endDate: new Date(
+    //     eventInfo.start.getFullYear(),
+    //     eventInfo.start.getMonth() + 1,
+    //     eventInfo.start.getDate()
+    //   ),
+    // });
   }, [eventInfo]);
 
-  function updateRecurData(data) {
-    setRecurData((prev) => ({ ...prev, ...data }));
-  }
+  // function updateRecurData(data) {
+  //   setRecurData((prev) => ({ ...prev, ...data }));
+  // }
 
   function updateMerchantNote(note) {
     setMerchantNote(note);
 
     if (note === eventInfo.extendedProps.merchant_note) {
-      SetHasUnsavedChanges(false);
+      setHasUnsavedChanges(false);
     } else {
-      SetHasUnsavedChanges(true);
+      setHasUnsavedChanges(true);
     }
   }
 
@@ -109,7 +110,7 @@ export default function CalendarModal({
         showToast({ message: result.error.message, variant: "error" });
       } else {
         eventInfo.setExtendedProp("merchant_note", merchantNote);
-        SetHasUnsavedChanges(false);
+        setHasUnsavedChanges(false);
         showToast({
           message: "Successfully updated the appointment",
           variant: "success",
@@ -130,10 +131,10 @@ export default function CalendarModal({
         isOpen={isOpen}
         onClose={onClose}
         disableFocusTrap={true}
-        suspendCloseOnClickOutside={isDeletePopoverOpen}
+        suspendCloseOnClickOutside={isDeletePopoverOpen || isDatepickerOpen}
       >
         <div className="h-auto w-full">
-          <div className="flex flex-col gap-2 p-3">
+          <div className="flex flex-col gap-3 p-3">
             <div className="flex items-start justify-between pb-1">
               <div className="flex items-center gap-3 text-xl">
                 <CalendarIcon styles="size-7 stroke-gray-700 dark:stroke-white" />
@@ -143,7 +144,7 @@ export default function CalendarModal({
             </div>
             <AppointmentInfoSection event={eventInfo} />
             <div className="px-1">
-              <div className="flex flex-row items-center justify-between">
+              <div className="flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                   <p>Date</p>
                   <DatePicker
@@ -155,11 +156,12 @@ export default function CalendarModal({
                       setEventDatetime((prev) => ({ ...prev, date: date }));
 
                       if (date.getTime() !== eventInfo.start.getTime()) {
-                        SetHasUnsavedChanges(true);
+                        setHasUnsavedChanges(true);
                       } else {
-                        SetHasUnsavedChanges(false);
+                        setHasUnsavedChanges(false);
                       }
                     }}
+                    onOpenChange={(open) => setIsDatepickerOpen(open)}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -179,21 +181,21 @@ export default function CalendarModal({
                         e.target.value !==
                         timeStringFromDate(eventInfo.start).split(" ")[0]
                       ) {
-                        SetHasUnsavedChanges(true);
+                        setHasUnsavedChanges(true);
                       } else {
-                        SetHasUnsavedChanges(false);
+                        setHasUnsavedChanges(false);
                       }
                     }}
                   />
                 </div>
               </div>
             </div>
-            <RecurSection
+            {/* <RecurSection
               event={eventInfo}
               recurData={recurData}
               updateRecurData={updateRecurData}
               disabled={disabled}
-            />
+            /> */}
             <NotesSection
               event={eventInfo}
               merchantNote={merchantNote}
@@ -203,7 +205,7 @@ export default function CalendarModal({
             <div className="flex items-center justify-end gap-2 pt-2">
               <Popover
                 open={isDeletePopoverOpen}
-                onOpenChange={SetIsDeletePopoverOpen}
+                onOpenChange={setIsDeletePopoverOpen}
               >
                 <PopoverTrigger asChild>
                   <Button

@@ -6,7 +6,7 @@ export default function SmallCalendar({
   onSelect,
   firstDayOfWeek,
   disabledSelectedModifier,
-disabledTodayStyling = false,
+  disabledTodayStyling = false,
 }) {
   return (
     <DayPicker

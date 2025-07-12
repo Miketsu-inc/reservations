@@ -34,6 +34,7 @@ export default function InputBase({
         onBlur={onBlur}
         onFocus={onFocus}
         ref={inputRef}
+        autoFocus={autoFocus}
         {...props}
       />
       {isTypePassword ? (

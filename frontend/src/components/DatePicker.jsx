@@ -1,6 +1,6 @@
 import DatePickerIcon from "@icons/DatePickerIcon";
-import { useClickOutside } from "@lib/hooks";
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import SmallCalendar from "./SmallCalendar";
 
 function formatDate(date) {
@@ -22,69 +22,70 @@ export default function DatePicker({
   firstDayOfWeek = "Monday",
   preventUnselect = false,
   resetOnUnselect = true,
+  closeOnSelect = false,
+  onOpenChange,
   onSelect,
 }) {
-  const datePickerRef = useRef();
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, SetSelectedDate] = useState(defaultDate);
-  useClickOutside(datePickerRef, () => {
-    setShowCalendar(false);
-    if (clearAfterClose) SetSelectedDate();
-  });
+  const [selectedDate, setSelectedDate] = useState(defaultDate);
 
   return (
     <>
-      <div ref={datePickerRef} className={`${styles}`}>
-        <button
-          className={`${!disabled ? "focus:border-text_color dark:focus:border-white" : ""} w-full
-            rounded-md border border-gray-400 px-3 py-2 text-left text-gray-900
-            focus:outline-none dark:border-gray-500 dark:bg-neutral-950`}
-          type="button"
-          onClick={() => {
-            setShowCalendar(!showCalendar);
-            if (clearAfterClose) SetSelectedDate();
-          }}
-        >
-          <div className="flex items-center justify-between">
-            {!hideText && (
-              <span className="text-text_color h-5 flex-1 truncate">
-                {selectedDate
-                  ? formatDate(selectedDate)
-                  : palaceHolderText || "Pick a date"}
-              </span>
-            )}
-            <DatePickerIcon styles="stroke-text_color shrink-0 h-4 w-4" />
-          </div>
-        </button>
-        {showCalendar && !disabled && (
-          <div className="relative top-1.5">
-            <div
-              className="absolute z-50 w-fit rounded-md border border-gray-300 bg-white shadow-lg
-                dark:border-gray-500 dark:bg-neutral-950"
-            >
-              <SmallCalendar
-                value={selectedDate}
-                onSelect={(date) => {
-                  if (!date) {
-                    if (preventUnselect) return;
-                    if (resetOnUnselect) date = defaultDate;
-                  }
-
-                  SetSelectedDate(date);
-                  onSelect(date);
-                }}
-                firstDayOfWeek={firstDayOfWeek}
-                disabled={{ before: disabledBefore }}
-                disabledSelectedModifier={
-                  disabledBefore?.getTime() > selectedDate?.getTime()
-                    ? selectedDate
-                    : undefined
-                }
-              />
+      <Popover
+        open={showCalendar}
+        onOpenChange={(open) => {
+          open ? setShowCalendar(true) : setShowCalendar(false);
+          onOpenChange?.(open);
+        }}
+      >
+        <PopoverTrigger disabled={disabled} asChild>
+          <button
+            className={`${styles} ${disabled ? "outline-none" : ""} border-input_border_color w-full
+              rounded-lg border px-3 py-2 text-left`}
+            type="button"
+            onClick={() => {
+              setShowCalendar(!showCalendar);
+              if (clearAfterClose) setSelectedDate();
+            }}
+          >
+            <div className="flex items-center justify-between">
+              {!hideText && (
+                <span className="text-text_color h-5 flex-1 truncate">
+                  {selectedDate
+                    ? formatDate(selectedDate)
+                    : palaceHolderText || "Pick a date"}
+                </span>
+              )}
+              <DatePickerIcon styles="stroke-gray-700 dark:stroke-gray-300 shrink-0 h-4 w-4" />
             </div>
-          </div>
-        )}
-      </div>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent styles="w-fit !p-0">
+          <SmallCalendar
+            value={selectedDate}
+            onSelect={(date) => {
+              if (!date) {
+                if (preventUnselect) return;
+                if (resetOnUnselect) date = defaultDate;
+              }
+
+              setSelectedDate(date);
+              onSelect(date);
+
+              if (closeOnSelect) {
+                setShowCalendar(!showCalendar);
+              }
+            }}
+            firstDayOfWeek={firstDayOfWeek}
+            disabled={{ before: disabledBefore }}
+            disabledSelectedModifier={
+              disabledBefore?.getTime() > selectedDate?.getTime()
+                ? selectedDate
+                : undefined
+            }
+          />
+        </PopoverContent>
+      </Popover>
     </>
   );
 }

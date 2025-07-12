@@ -27,6 +27,7 @@ const defaultProductData = {
 export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
   const [productData, setProductData] = useState(defaultProductData);
   const [unitError, setUnitError] = useState();
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   useEffect(() => {
     if (!data) {
@@ -134,7 +135,12 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      disableFocusTrap={true}
+      suspendCloseOnClickOutside={isSelectOpen}
+    >
       <form id="ProductForm" onSubmit={submitHandler} className="m-2 mx-3">
         <div className="flex flex-col">
           <div className="my-1 flex flex-row items-center justify-between">
@@ -164,7 +170,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               placeholder="0"
               min={0}
               max={10000000}
-              errorText="Price must be between 1 and 1,000,000"
               value={productData.price}
               inputData={onChangeHandler}
             />
@@ -207,7 +212,8 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                     setUnitError("");
                   }}
                   placeholder=""
-                  styles="w-24 mb-0.5"
+                  styles="!w-24 mb-0.5"
+                  onOpenChange={(open) => setIsSelectOpen(open)}
                 />
               </div>
 
@@ -235,7 +241,8 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                     setUnitError("");
                   }}
                   placeholder=""
-                  styles="w-24 mb-0.5"
+                  styles="!w-24 mb-0.5"
+                  onOpenChange={(open) => setIsSelectOpen(open)}
                 />
               </div>
               {unitError && (

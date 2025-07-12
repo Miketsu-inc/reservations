@@ -230,7 +230,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
           }
         />
         <Select
-          styles="w-32"
+          styles="!w-32"
           value={phaseData.duration_unit || "min"}
           options={[
             { value: "min", label: "minutes" },

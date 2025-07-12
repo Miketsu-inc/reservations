@@ -1,7 +1,7 @@
 import BackArrowIcon from "@icons/BackArrowIcon";
 import TickIcon from "@icons/TickIcon";
-import { useClickOutside } from "@lib/hooks";
 import { useEffect, useRef, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 34;
 
@@ -16,9 +16,9 @@ export default function Select({
   extraContent,
   onClose,
   emptyText,
+  onOpenChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [isUsingKeyboard, setIsUsingKeyboard] = useState(false);
   const containerRef = useRef(null);
@@ -30,24 +30,14 @@ export default function Select({
   );
   const selectedOption = fullOptions?.[selectedIndex];
 
-  useClickOutside(containerRef, () => {
-    handleClose();
-  });
-
   function handleOpen() {
-    if (isClosing) return;
-
     setIsOpen(true);
     setHighlightedIndex(selectedIndex > -1 ? selectedIndex : 0);
   }
 
   function handleClose() {
-    setIsClosing(true);
-
     setIsOpen(false);
     onClose?.();
-
-    setTimeout(() => setIsClosing(false), 0);
   }
 
   function handleKeyDown(e) {
@@ -72,127 +62,134 @@ export default function Select({
   }
 
   useEffect(() => {
-    if (isOpen && selectedIndex > -1 && dropDownListRef.current?.children) {
-      dropDownListRef.current.children[selectedIndex].scrollIntoView({
-        block: "nearest", //when center scrolling weird shit happens
-        behavior: "smooth",
-      });
-    }
+    if (!isOpen || selectedIndex < 0) return;
+
+    const timeout = setTimeout(() => {
+      if (dropDownListRef.current?.children) {
+        dropDownListRef.current.children[selectedIndex].scrollIntoView({
+          block: "center",
+          behavior: "smooth",
+        });
+      }
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [isOpen, selectedIndex]);
 
   useEffect(() => {
-    if (
-      isOpen &&
-      isUsingKeyboard &&
-      dropDownListRef.current?.children[highlightedIndex]
-    ) {
-      dropDownListRef.current.children[highlightedIndex].scrollIntoView({
-        block: "nearest",
-      });
-    }
+    if (!isOpen || !isUsingKeyboard) return;
+
+    const timeout = setTimeout(() => {
+      if (dropDownListRef.current?.children[highlightedIndex]) {
+        dropDownListRef.current.children[highlightedIndex].scrollIntoView({
+          block: "center",
+        });
+      }
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [highlightedIndex, isUsingKeyboard, isOpen]);
 
   return (
-    <div
-      className={`${styles} relative`}
-      ref={containerRef}
-      onKeyDown={handleKeyDown}
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        open ? handleOpen() : handleClose();
+        onOpenChange?.(open);
+      }}
     >
-      <button
-        onClick={() => (isOpen ? handleClose() : handleOpen())}
-        className="focus:border-text_color w-full rounded-md border border-gray-400 py-2 pr-2 pl-3
-          text-left text-gray-900 focus:outline-none dark:border-gray-500
-          dark:focus:border-white"
-        type="button"
-      >
-        <div className="flex items-center justify-between">
-          <span
-            className={`${selectedOption ? "text-text_color" : "text-gray-500"} min-h-6 flex-1 truncate`}
-          >
-            {!selectedOption ? (
-              placeholder
-            ) : selectedOption.icon ? (
-              <span className="flex items-center gap-2">
-                <span className="shrink-0">{selectedOption.icon}</span>
-                <span className="truncate">{selectedOption.label}</span>
-              </span>
-            ) : (
-              selectedOption.label
-            )}
-          </span>
-          <BackArrowIcon
-            styles={`dark:stroke-gray-300 stroke-gray-500 transition-transform -rotate-90 shrink-0
-              ${isOpen ? "rotate-90" : ""} h-5 w-5`}
-          />
-        </div>
-      </button>
-      {isOpen && (
-        <div
-          className={`z-50 ${
-          window.innerHeight -
-              containerRef.current.getBoundingClientRect().bottom <
-            itemHeight * maxVisibleItems + (extraContent ? 48 : 0) // height of the search input
-              ? "bottom-full mb-1"
-              : "top-full mt-1"
-          } absolute flex w-full flex-col rounded-md border border-gray-300 bg-white
-          shadow-lg dark:border-gray-500 dark:bg-neutral-950`}
+      <PopoverTrigger asChild>
+        <button
+          className={`${styles} border-input_border_color w-full min-w-fit rounded-lg border py-2 pr-2
+            pl-3 text-left`}
+          type="button"
+          ref={containerRef}
         >
-          {extraContent}
-          <ul
-            ref={dropDownListRef}
-            style={{
-              maxHeight: itemHeight
-                ? `${itemHeight * maxVisibleItems + 8}px`
-                : "auto",
-            }}
-            className="overflow-x-hidden overflow-y-auto p-1 transition-all dark:[color-scheme:dark]"
-            onMouseMove={() => {
-              setIsUsingKeyboard(false);
-              setHighlightedIndex(null);
-            }}
-          >
-            {options.length === 0 ? (
-              <li className="px-4 py-6 text-center text-gray-500 select-none dark:text-gray-400">
-                {emptyText || "No results found"}
-              </li>
-            ) : (
-              options.map((option, index) => {
-                const isSelected = value === option.value;
-                const isHighlighted = index === highlightedIndex;
+          <div className="flex items-center justify-between">
+            <span
+              className={`${selectedOption ? "text-text_color" : "text-gray-500"} min-h-6 flex-1 truncate`}
+            >
+              {!selectedOption ? (
+                placeholder
+              ) : selectedOption.icon ? (
+                <span className="flex items-center gap-2">
+                  <span className="shrink-0">{selectedOption.icon}</span>
+                  <span className="truncate">{selectedOption.label}</span>
+                </span>
+              ) : (
+                selectedOption.label
+              )}
+            </span>
+            <BackArrowIcon
+              styles={`stroke-gray-700 dark:stroke-gray-300 transition-transform -rotate-90 shrink-0
+                ${isOpen ? "rotate-90" : ""} h-5 w-5`}
+            />
+          </div>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        forceMount
+        styles="!p-0"
+        onKeyDown={handleKeyDown}
+        style={{
+          width: containerRef.current?.offsetWidth || "auto",
+        }}
+      >
+        {extraContent}
+        <ul
+          ref={dropDownListRef}
+          style={{
+            maxHeight: itemHeight
+              ? `${itemHeight * maxVisibleItems + 8}px`
+              : "auto",
+          }}
+          className="overflow-x-hidden overflow-y-auto p-1 transition-all dark:[color-scheme:dark]"
+          onMouseMove={() => {
+            setIsUsingKeyboard(false);
+            setHighlightedIndex(null);
+          }}
+        >
+          {options.length === 0 ? (
+            <li className="px-4 py-6 text-center text-gray-500 select-none dark:text-gray-400">
+              {emptyText || "No results found"}
+            </li>
+          ) : (
+            options.map((option, index) => {
+              const isSelected = value === option.value;
+              const isHighlighted = index === highlightedIndex;
 
-                return (
-                  <li
-                    onClick={() => {
-                      onSelect(option);
-                      handleClose();
-                    }}
-                    key={index}
-                    className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700
-                      select-none`}
-                    role="option"
-                    aria-selected={isSelected}
-                  >
-                    <div className="flex w-full items-center justify-between">
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        {option.icon && (
-                          <span className="flex shrink-0 items-center justify-center">
-                            {option.icon}
-                          </span>
-                        )}
-                        <span className="truncate">{option.label}</span>
-                      </div>
-                      {isSelected && (
-                        <TickIcon styles="h-6 w-6 fill-text_color shrink-0" />
+              return (
+                <li
+                  onClick={() => {
+                    onSelect(option);
+                    handleClose();
+                  }}
+                  key={index}
+                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
+                    dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700
+                    select-none`}
+                  role="option"
+                  aria-selected={isSelected}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      {option.icon && (
+                        <span className="flex shrink-0 items-center justify-center">
+                          {option.icon}
+                        </span>
                       )}
+                      <span className="truncate">{option.label}</span>
                     </div>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </div>
-      )}
-    </div>
+                    {isSelected && (
+                      <TickIcon styles="h-6 w-6 fill-text_color shrink-0" />
+                    )}
+                  </div>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }
