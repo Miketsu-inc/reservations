@@ -1,4 +1,5 @@
 import Breadcrumbs from "@components/Breadcrumbs";
+import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import CalendarIcon from "@icons/CalendarIcon";
 import ChartIcon from "@icons/ChartIcon";
 import CustomersIcon from "@icons/CustomersIcon";
@@ -98,6 +99,19 @@ function SidePanelLayout() {
     },
   ];
 
+  function withConditionalTooltip(condition, content, children) {
+    if (!condition) return children;
+
+    return (
+      <Tootlip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={4}>
+          <p>{content}</p>
+        </TooltipContent>
+      </Tootlip>
+    );
+  }
+
   return (
     <div className="h-screen overflow-y-auto">
       {/* sticky will have to be replaced with fixed when navlinks are removed */}
@@ -150,36 +164,42 @@ function SidePanelLayout() {
                 className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}
                 key={index}
               >
-                <Link
-                  onClick={item?.onClick ? item.onClick : closeSidePanelHandler}
-                  to={item.href}
-                  activeProps={{
-                    className: "bg-primary/20 *:text-primary! *:duration-0",
-                  }}
-                  className="text-text_color hover:bg-primary/20 flex items-center rounded-lg p-2"
-                >
-                  <span className="shrink-0 text-gray-500 transition duration-75 dark:text-gray-400">
-                    {item.icon}
-                  </span>
-                  {(!isCollapsed || isWindowSmall) && (
-                    <>
-                      <span
-                        className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3
-                        flex-1 whitespace-nowrap transition-opacity duration-300`}
-                      >
-                        {item.label}
-                      </span>
-                      {item.isPro && (
+                {withConditionalTooltip(
+                  !isWindowSmall && isCollapsed,
+                  item.label,
+                  <Link
+                    onClick={
+                      item?.onClick ? item.onClick : closeSidePanelHandler
+                    }
+                    to={item.href}
+                    activeProps={{
+                      className: "bg-primary/20 *:text-primary! *:duration-0",
+                    }}
+                    className="text-text_color hover:bg-primary/20 flex items-center rounded-lg p-2"
+                  >
+                    <span className="shrink-0 text-gray-500 transition duration-75 dark:text-gray-400">
+                      {item.icon}
+                    </span>
+                    {(!isCollapsed || isWindowSmall) && (
+                      <>
                         <span
-                          className="ms-3 inline-flex items-center justify-center rounded-full bg-gray-300 px-2
-                            text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3
+                          flex-1 whitespace-nowrap transition-opacity duration-300`}
                         >
-                          Pro
+                          {item.label}
                         </span>
-                      )}
-                    </>
-                  )}
-                </Link>
+                        {item.isPro && (
+                          <span
+                            className="ms-3 inline-flex items-center justify-center rounded-full bg-gray-300 px-2
+                              text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          >
+                            Pro
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </Link>
+                )}
               </li>
             ))}
           </ol>

@@ -4,6 +4,7 @@ import DeleteModal from "@components/DeleteModal";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
+import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import InfoIcon from "@icons/InfoIcon";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
@@ -241,7 +242,19 @@ export default function ServicePage({
                     />
                     <div className="flex flex-row items-center gap-1">
                       <p>Active service</p>
-                      <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+                      <span className="hidden items-center md:flex">
+                        <Tootlip>
+                          <TooltipTrigger>
+                            <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>
+                              Only active services will show up on your booking
+                              page
+                            </p>
+                          </TooltipContent>
+                        </Tootlip>
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">

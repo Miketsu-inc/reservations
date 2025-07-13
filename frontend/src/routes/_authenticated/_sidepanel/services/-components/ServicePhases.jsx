@@ -3,6 +3,7 @@ import Card from "@components/Card";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
+import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import ClockIcon from "@icons/ClockIcon";
 import EditIcon from "@icons/EditIcon";
 import HourGlassIcon from "@icons/HourGlassIcon";
@@ -41,7 +42,25 @@ export default function ServicePhases({
     <>
       <div className="flex flex-row items-center gap-1">
         <p className="text-lg">Service phases</p>
-        <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+        <span className="hidden md:flex">
+          <Tootlip>
+            <TooltipTrigger>
+              <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>
+                Services consist of phases letting you customize your
+                availability for other bookings during the service.
+                <br />
+                To learn more about service pahses visit the{" "}
+                <a className="text-blue-600 underline dark:text-blue-500">
+                  support
+                </a>{" "}
+                page.
+              </p>
+            </TooltipContent>
+          </Tootlip>
+        </span>
       </div>
       {!phases || phases.length === 0 ? (
         <div className="bg-layer_bg border-border_color rounded-lg border p-4">
@@ -252,7 +271,16 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
           }
         />
         <p className="pl-2">Waiting phase</p>
-        <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+        <span className="hidden md:flex">
+          <Tootlip>
+            <TooltipTrigger>
+              <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Customers can book appointments during this phase</p>
+            </TooltipContent>
+          </Tootlip>
+        </span>
       </div>
       <div className="flex flex-row gap-2 pt-2">
         {isEdit ? (

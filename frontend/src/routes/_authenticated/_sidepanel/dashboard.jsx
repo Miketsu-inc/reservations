@@ -91,11 +91,15 @@ function DashboardPage() {
                 title="Revenue"
                 text={`${loaderData.data.statistics.revenue_sum} HUF`}
                 percent={loaderData.data.statistics.revenue_change}
+                tooltip={windowSize !== "sm" && windowSize !== "md"}
+                tooltipText="Calculated by adding up all your completed appointments for this period"
               />
               <StatisticsCard
                 title="Appointments"
                 text={loaderData.data.statistics.appointments}
                 percent={loaderData.data.statistics.appointments_change}
+                tooltip={windowSize !== "sm" && windowSize !== "md"}
+                tooltipText="The amount of completed appointments in this period"
               />
               {windowSize === "lg" ||
               windowSize === "2xl" ||
@@ -104,6 +108,8 @@ function DashboardPage() {
                   title="Cancellations"
                   text={loaderData.data.statistics.cancellations}
                   percent={loaderData.data.statistics.cancellations_change}
+                  tooltip={windowSize !== "sm" && windowSize !== "md"}
+                  tooltipText="The amount of cancelled appointments (by customers) in this period"
                 />
               ) : (
                 <></>
@@ -113,6 +119,8 @@ function DashboardPage() {
                   title="Average duration"
                   text={loaderData.data.statistics.average_duration}
                   percent={loaderData.data.statistics.average_duration_change}
+                  tooltip={windowSize !== "sm" && windowSize !== "md"}
+                  tooltipText="The average duration of services from your completed appointments in this period"
                 />
               ) : (
                 <></>
