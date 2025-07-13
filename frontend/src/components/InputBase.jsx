@@ -25,7 +25,7 @@ export default function InputBase({
     <>
       <input
         className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill appearance-none
-          rounded-lg ps-3 pe-3 outline-hidden dark:[color-scheme:dark]`}
+          rounded-lg ps-3 pe-3 outline-hidden dark:scheme-dark`}
         id={id}
         type={isTypePassword ? (visible ? "text" : type) : type}
         value={value}

@@ -167,7 +167,7 @@ export default function CalendarModal({
                 <div className="flex flex-col gap-1">
                   <p>Start time</p>
                   <input
-                    className="h-10 w-32 dark:[color-scheme:dark]"
+                    className="h-10 w-32 dark:scheme-dark"
                     type="time"
                     value={eventDatetime.start_time}
                     disabled={disabled}

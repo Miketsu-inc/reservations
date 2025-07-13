@@ -228,7 +228,7 @@ function CustomerDetailsPage() {
             <div className="flex items-center gap-4">
               <div
                 className="from-secondary to-primary bg-primary flex size-16 items-center justify-center
-                  rounded-md text-lg text-white dark:bg-gradient-to-br"
+                  rounded-md text-lg text-white dark:bg-linear-to-br"
               >
                 {`${loaderData.first_name.charAt(0)}${loaderData.last_name.charAt(0)}`.toUpperCase()}
               </div>

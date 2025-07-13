@@ -223,7 +223,7 @@ function SidePanelLayout() {
             >
               <SidePanelToggleIcon styles="w-4 h-4 stroke-gray-800 dark:stroke-gray-300 hover:stroke-text_color" />
             </button>
-            <div className="mx-2 h-3 w-[1px] border-none bg-gray-800 dark:bg-gray-300"></div>
+            <div className="mx-2 h-3 w-px border-none bg-gray-800 dark:bg-gray-300"></div>
             <Breadcrumbs />
           </div>
         )}

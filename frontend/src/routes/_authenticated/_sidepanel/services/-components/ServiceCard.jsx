@@ -62,7 +62,7 @@ export default function ServiceCard({
         }}
       />
       <div className="border-border_color bg-layer_bg w-sm rounded-r-lg border">
-        <div className="border-border_color relative z-[5] flex flex-row justify-between border-b p-4">
+        <div className="border-border_color relative z-5 flex flex-row justify-between border-b p-4">
           <div className="flex flex-row gap-4">
             <div
               style={{ backgroundColor: service.color }}
@@ -135,7 +135,7 @@ export default function ServiceCard({
             </PopoverContent>
           </Popover>
         </div>
-        <div className="relative z-[5] flex flex-row items-center justify-between gap-4 p-4">
+        <div className="relative z-5 flex flex-row items-center justify-between gap-4 p-4">
           <Button
             type="button"
             styles="py-2 px-4"
@@ -143,7 +143,7 @@ export default function ServiceCard({
             buttonText={`${!isWindowSmall ? "Delete" : ""}`}
             onClick={onDelete}
           >
-            <TrashBinIcon styles="size-5 !stroke-white mr-1 mb-0.5" />
+            <TrashBinIcon styles="size-5 stroke-white! mr-1 mb-0.5" />
           </Button>
           <Button
             type="button"

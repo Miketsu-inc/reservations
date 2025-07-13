@@ -57,7 +57,7 @@ export default function AppointmentCancellation() {
                 </Column>
                 <Column className="w-[100px]" align="right">
                   <Text
-                    className="m-0 inline-block border-[2px] border-red-600 px-1.5 py-0.5 text-[14px]
+                    className="m-0 inline-block border-2 border-red-600 px-1.5 py-0.5 text-[14px]
                       font-medium text-red-600"
                     style={{ border: "solid 2px #dc2626", borderRadius: "6px" }}
                   >

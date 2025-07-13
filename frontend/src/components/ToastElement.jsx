@@ -56,7 +56,7 @@ export default function ToastElement({
     >
       <div className="mr-6 flex items-center gap-3">
         <div>{icons[variant]}</div>
-        <span className="flex-grow text-sm text-gray-800 dark:text-gray-400">
+        <span className="grow text-sm text-gray-800 dark:text-gray-400">
           {message}
         </span>
       </div>

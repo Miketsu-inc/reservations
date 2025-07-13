@@ -67,7 +67,7 @@ function DashboardPage() {
       <div className="flex flex-row items-center justify-between py-3">
         <p className="text-xl">Your dashboard</p>
         <Select
-          styles="!w-36"
+          styles="w-36!"
           options={[
             { value: 7, label: "Last 7 days" },
             { value: 30, label: "Last 30 days" },

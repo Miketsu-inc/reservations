@@ -40,7 +40,7 @@ export default function NotesSection({
                   <p>Customer's note</p>
                   <p
                     className="text-text_color bg-bg_color h-fit max-h-24 w-full overflow-auto rounded-lg
-                      border border-gray-400 p-2 dark:[color-scheme:dark]"
+                      border border-gray-400 p-2 dark:scheme-dark"
                   >
                     {event.extendedProps.customer_note}
                   </p>

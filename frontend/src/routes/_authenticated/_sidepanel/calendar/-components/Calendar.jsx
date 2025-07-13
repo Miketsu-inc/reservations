@@ -214,7 +214,7 @@ export default function Calendar({
               options={calendarViewOptions}
               value={calendarView}
               onSelect={(option) => changeViewHandler(option.value)}
-              styles="!w-28"
+              styles="w-28!"
             />
           </div>
         </div>

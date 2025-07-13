@@ -58,7 +58,7 @@ const TooltipContent = ({ active, payload, total }) => {
 
     return (
       <div
-        className="bg-bg_color flex h-fit min-w-[8rem] flex-col rounded-lg border border-gray-200
+        className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border border-gray-200
           p-2 text-xs shadow-xl dark:border-gray-800"
       >
         <div className="text-text_color flex items-center justify-between font-semibold">

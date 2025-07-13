@@ -52,7 +52,7 @@ export default function ProductAdder({
   }
 
   return (
-    <Card styles="!p-0 flex flex-col">
+    <Card styles="p-0! flex flex-col">
       <div
         role="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -97,7 +97,7 @@ export default function ProductAdder({
           {usedProducts.length > 0 ? (
             <div className="flex flex-col gap-2 xl:w-1/2">
               <p className="font-medium">Connected Products</p>
-              <div className="flex flex-col gap-2 overflow-y-auto xl:pr-2 dark:[color-scheme:dark]">
+              <div className="flex flex-col gap-2 overflow-y-auto xl:pr-2 dark:scheme-dark">
                 {usedProducts.map((product) => {
                   return (
                     <div

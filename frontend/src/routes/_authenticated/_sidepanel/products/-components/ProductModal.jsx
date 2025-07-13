@@ -216,7 +216,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                       setUnitError("");
                     }}
                     placeholder=""
-                    styles="!w-24 rounded-l-none"
+                    styles="w-24! rounded-l-none"
                     onOpenChange={(open) => setIsSelectOpen(open)}
                   />
                 </Input>
@@ -245,7 +245,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                       setUnitError("");
                     }}
                     placeholder=""
-                    styles="!w-24 rounded-l-none"
+                    styles="w-24! rounded-l-none"
                     onOpenChange={(open) => setIsSelectOpen(open)}
                   />
                 </Input>
@@ -258,7 +258,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   <span>Connected Services</span>
                   <div
                     className="mt-1 flex gap-2 overflow-x-auto scroll-smooth rounded-lg pb-2 outline-none
-                      md:max-h-24 md:flex-wrap md:overflow-y-auto dark:[color-scheme:dark]"
+                      md:max-h-24 md:flex-wrap md:overflow-y-auto dark:scheme-dark"
                   >
                     {productData.services.map((service) => (
                       <div

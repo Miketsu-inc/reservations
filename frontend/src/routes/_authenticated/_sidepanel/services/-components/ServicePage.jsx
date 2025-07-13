@@ -292,7 +292,7 @@ export default function ServicePage({
             {service && (
               <Button
                 type="button"
-                styles="py-4 mb-2 shadow-none bg-transparent hover:bg-transparent !text-red-500"
+                styles="py-4 mb-2 shadow-none bg-transparent hover:bg-transparent text-red-500!"
                 buttonText="Delete service"
                 onClick={() => setShowDeleteModal(true)}
               ></Button>

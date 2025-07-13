@@ -39,7 +39,7 @@ export default function LowStockProductsAlert({ products, route }) {
   }
 
   return (
-    <Card styles="!p-0">
+    <Card styles="p-0!">
       <div
         className={`flex flex-col justify-center ${hasLowStock ? "" : "gap-12"}`}
       >
@@ -79,7 +79,7 @@ export default function LowStockProductsAlert({ products, route }) {
         </div>
 
         {hasLowStock ? (
-          <div className="max-h-[230px] overflow-y-auto px-2 dark:[color-scheme:dark]">
+          <div className="max-h-[230px] overflow-y-auto px-2 dark:scheme-dark">
             <div>
               {products.map((product) => {
                 const {

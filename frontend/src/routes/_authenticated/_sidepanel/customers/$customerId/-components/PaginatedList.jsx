@@ -24,7 +24,7 @@ export default function PaginatedList({
 
   if (data.length === 0) {
     return (
-      <Card styles={`!p-0 ${styles}`}>
+      <Card styles={`p-0! ${styles}`}>
         <div className="border-border_color border-b p-4">
           <h3 className="text-text_color text-xl font-semibold">{title}</h3>
         </div>
@@ -36,7 +36,7 @@ export default function PaginatedList({
   }
 
   return (
-    <Card styles={`!p-0 ${styles}`}>
+    <Card styles={`p-0! ${styles}`}>
       <div className="border-border_color border-b p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-text_color text-xl font-semibold">{title}</h3>

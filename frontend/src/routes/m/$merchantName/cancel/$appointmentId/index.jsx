@@ -141,7 +141,7 @@ function CancelPage() {
       </div>
       {!appointmentInfo?.canBeCancelled && (
         <div
-          className="my-4 flex w-full items-start justify-start gap-3 rounded-lg border-[1px]
+          className="my-4 flex w-full items-start justify-start gap-3 rounded-lg border
             border-yellow-800 bg-yellow-400/25 px-2 py-3 text-yellow-900 sm:mt-0 sm:mb-4
             dark:border-yellow-800 dark:bg-yellow-700/15 dark:text-yellow-500"
         >
@@ -180,7 +180,7 @@ function CancelPage() {
               </span>
             </div>
           </div>
-          <div className="from-secondary to-primary h-16 w-16 rounded-xl bg-gradient-to-br sm:h-20 sm:w-20"></div>
+          <div className="from-secondary to-primary h-16 w-16 rounded-xl bg-linear-to-br sm:h-20 sm:w-20"></div>
         </div>
       </div>
       <div className="grid w-full grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 sm:pb-2">

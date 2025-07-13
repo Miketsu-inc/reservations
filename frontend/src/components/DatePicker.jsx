@@ -60,7 +60,7 @@ export default function DatePicker({
             </div>
           </button>
         </PopoverTrigger>
-        <PopoverContent styles="w-fit !p-0">
+        <PopoverContent styles="w-fit p-0!">
           <SmallCalendar
             value={selectedDate}
             onSelect={(date) => {

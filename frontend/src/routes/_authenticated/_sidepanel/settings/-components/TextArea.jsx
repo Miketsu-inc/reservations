@@ -22,7 +22,7 @@ export default function TextArea({
         <textarea
           className={`${styles} w-full overflow-auto rounded-lg border border-gray-400 bg-hvr_gray/50
             px-3 py-2 font-normal outline-hidden focus:border-2 focus:border-primary
-            focus:bg-transparent md:resize dark:[color-scheme:dark]`}
+            focus:bg-transparent md:resize dark:scheme-dark`}
           name={name}
           id={id}
           placeholder={placeholder}

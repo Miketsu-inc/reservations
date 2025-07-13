@@ -79,7 +79,7 @@ export default function MultipleSelect({
       {selectedItems.length > 0 && (
         <div
           className="mt-1 flex gap-2 overflow-x-auto scroll-smooth rounded-lg pb-2 outline-none
-            md:max-h-24 md:flex-wrap md:overflow-y-auto dark:[color-scheme:dark]"
+            md:max-h-24 md:flex-wrap md:overflow-y-auto dark:scheme-dark"
         >
           {selectedItems.map((item) =>
             item?.value ? (

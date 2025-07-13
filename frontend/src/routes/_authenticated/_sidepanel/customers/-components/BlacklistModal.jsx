@@ -52,7 +52,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
                 value={reason}
                 className="bg-bg_color text-text_color max-h-20 min-h-20 w-full rounded-lg border
                   border-gray-400 p-2 text-sm outline-hidden focus:border-gray-900
-                  dark:[color-scheme:dark] dark:focus:border-gray-200"
+                  dark:scheme-dark dark:focus:border-gray-200"
                 onChange={(e) => {
                   setReason(e.target.value);
                 }}

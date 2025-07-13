@@ -188,7 +188,7 @@ function CalendarPage() {
             id="start-hour"
             value={changedPreferences.start_hour}
             onChange={(e) => handleInputChange("start_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:[color-scheme:dark]"
+            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:scheme-dark"
             step="1800"
           />
         </label>
@@ -202,7 +202,7 @@ function CalendarPage() {
             id="end-hour"
             value={changedPreferences.end_hour}
             onChange={(e) => handleInputChange("end_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:[color-scheme:dark]"
+            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:scheme-dark"
             step="1800"
           />
         </label>

@@ -129,7 +129,7 @@ export default function Select({
       </PopoverTrigger>
       <PopoverContent
         forceMount
-        styles="!p-0"
+        styles="p-0!"
         onKeyDown={handleKeyDown}
         style={{
           width: containerRef.current?.offsetWidth || "auto",
@@ -143,7 +143,7 @@ export default function Select({
               ? `${itemHeight * maxVisibleItems + 8}px`
               : "auto",
           }}
-          className="overflow-x-hidden overflow-y-auto p-1 transition-all dark:[color-scheme:dark]"
+          className="overflow-x-hidden overflow-y-auto p-1 transition-all dark:scheme-dark"
           onMouseMove={() => {
             setIsUsingKeyboard(false);
             setHighlightedIndex(null);

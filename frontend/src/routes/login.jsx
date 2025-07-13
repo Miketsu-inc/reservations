@@ -155,7 +155,7 @@ function LoginPage() {
           type="Button"
           name="Goolge button"
           styles="group flex justify-center items-center my-2 bg-transparent border
-            border-secondary hover:border-hvr_secondary !text-secondary !font-normal
+            border-secondary hover:border-hvr_secondary text-secondary! font-normal!
             hover:*:text-hvr_secondary focus:outline-hidden focus:*:text-hvr_secondary
             focus:border-hvr_secondary hover:bg-transparent py-2"
           buttonText="Log in with Google"
