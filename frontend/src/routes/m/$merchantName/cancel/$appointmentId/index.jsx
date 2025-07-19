@@ -55,7 +55,7 @@ const defaultAppointmentInfo = {
   merchant_name: "",
   service_name: "",
   short_location: "",
-  price: 0,
+  price: "",
   price_note: "",
   cancelled_by_user: false,
   cancelled_by_merchant: false,
@@ -140,11 +140,7 @@ function CancelPage() {
         </p>
       </div>
       {!appointmentInfo?.canBeCancelled && (
-        <div
-          className="my-4 flex w-full items-start justify-start gap-3 rounded-lg border
-            border-yellow-800 bg-yellow-400/25 px-2 py-3 text-yellow-900 sm:mt-0 sm:mb-4
-            dark:border-yellow-800 dark:bg-yellow-700/15 dark:text-yellow-500"
-        >
+        <div className="my-4 flex w-full items-start justify-start gap-3 rounded-lg border border-yellow-800 bg-yellow-400/25 px-2 py-3 text-yellow-900 sm:mt-0 sm:mb-4 dark:border-yellow-800 dark:bg-yellow-700/15 dark:text-yellow-500">
           <WarningIcon styles="h-5 w-5 shrink-0" />
           <span className="text-sm">
             {appointmentInfo.cancelled_by_user ||
@@ -154,10 +150,7 @@ function CancelPage() {
           </span>
         </div>
       )}
-      <div
-        className="bg-layer_bg border-border_color w-full rounded-t-lg rounded-b-none border
-          border-b-0 p-4 shadow-none sm:rounded-lg sm:border sm:shadow-sm"
-      >
+      <div className="bg-layer_bg border-border_color w-full rounded-t-lg rounded-b-none border border-b-0 p-4 shadow-none sm:rounded-lg sm:border sm:shadow-sm">
         <div className="flex items-center gap-4">
           <div className="text-center">
             <div className="text-3xl font-bold">{dateInfo.day}</div>
@@ -183,11 +176,10 @@ function CancelPage() {
           <div className="from-secondary to-primary h-16 w-16 rounded-xl bg-linear-to-br sm:h-20 sm:w-20"></div>
         </div>
       </div>
-      <div className="grid w-full grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-4 sm:pb-2">
-        <div
-          className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2
-            shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm"
-        >
+      <div
+        className={`${appointmentInfo.price && "sm:grid-cols-2"} grid w-full grid-cols-1 gap-0 sm:gap-4 sm:pb-2`}
+      >
+        <div className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm">
           <div className="mb-1 flex items-center gap-2">
             <MapPinIcon styles="w-4 h-4 dark:text-blue-400 text-blue-600" />
             <span className="text-text_color text-xs font-semibold">
@@ -202,25 +194,20 @@ function CancelPage() {
             {appointmentInfo.short_location}
           </p>
         </div>
-        <div
-          className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2
-            shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm"
-        >
-          <div className="text-text_color mb-1 flex items-center gap-2 text-xs font-semibold">
-            <span className="text-green-600 dark:text-green-400">$</span>
-            PRICE
-          </div>
+        {appointmentInfo.price && (
+          <div className="border-border_color bg-layer_bg rounded-none border border-y-0 p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4 sm:shadow-sm">
+            <div className="text-text_color mb-1 flex items-center gap-2 text-xs font-semibold">
+              <span className="text-green-600 dark:text-green-400">$</span>
+              PRICE
+            </div>
 
-          <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
-            {appointmentInfo.price.toLocaleString()} HUF
-            {appointmentInfo.price_note}
-          </p>
-        </div>
+            <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
+              {appointmentInfo.price} {appointmentInfo.price_note}
+            </p>
+          </div>
+        )}
       </div>
-      <div
-        className="border-border_color bg-layer_bg flex w-full flex-col items-center gap-5
-          rounded-b-lg border border-t-0 py-4 sm:border-none sm:bg-transparent"
-      >
+      <div className="border-border_color bg-layer_bg flex w-full flex-col items-center gap-5 rounded-b-lg border border-t-0 py-4 sm:border-none sm:bg-transparent">
         <div className="px-5 text-center text-sm text-gray-500">
           The cancellation is inmediate and cannot be undone.
         </div>

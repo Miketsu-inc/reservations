@@ -3,6 +3,11 @@
 alter database reservations set timezone to 'UTC';
 select pg_reload_conf();
 
+create type price as (
+    number                   numeric,
+    currency                 char(3)
+);
+
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
     first_name               varchar(30)     not null,
@@ -26,7 +31,8 @@ create table if not exists "Merchant" (
     about_us                 text,
     parking_info             text,
     payment_info             text,
-    timezone                 text
+    timezone                 text,
+    currency_code            char(3)         not null
 );
 
 create table if not exists "ServiceCategory" (
@@ -44,9 +50,9 @@ create table if not exists "Service" (
     description              varchar(200),
     color                    char(7)         not null,
     total_duration           integer         not null,
-    price                    bigint          not null,
+    price                    price,
     price_note               varchar(30),
-    cost                     bigint          not null,
+    cost                     price,
     is_active                boolean         not null,
     sequence                 integer         not null default 0,
     deleted_on               timestamptz
@@ -98,8 +104,8 @@ create table if not exists "Appointment" (
     to_date                  timestamptz     not null,
     customer_note            text,
     merchant_note            text,
-    price_then               bigint          not null,
-    cost_then                bigint,
+    price_then               price           not null,
+    cost_then                price           not null,
     cancelled_by_user_on     timestamptz,
     cancelled_by_merchant_on timestamptz,
     cancellation_reason      text,
@@ -124,7 +130,7 @@ create table if not exists "Product" (
     merchant_id              uuid            references "Merchant" (ID) not null,
     name                     varchar(50)     not null,
     description              text,
-    price                    bigint          not null,
+    price                    price,
     unit                     varchar(10)     check (unit in ('ml', 'g', 'pcs')) not null,
     max_amount               bigint          not null,
     current_amount           bigint          not null,

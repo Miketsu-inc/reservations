@@ -73,7 +73,7 @@ const defaultEventInfo = {
     phone_number: "",
     customer_note: "",
     merchant_note: "",
-    price: 0,
+    price: "",
   },
 };
 

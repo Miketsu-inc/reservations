@@ -7,10 +7,7 @@ import { formatToDateString, timeStringFromDate } from "@lib/datetime";
 
 export default function AppointmentInfoSection({ event }) {
   return (
-    <div
-      className="bg-primary dark:bg-primary/80 mb-2 flex flex-col gap-3 rounded-lg p-3 text-sm
-        font-semibold text-white"
-    >
+    <div className="bg-primary dark:bg-primary/80 mb-2 flex flex-col gap-3 rounded-lg p-3 text-sm font-semibold text-white">
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
           <PersonIcon styles="fill-white size-4" />
@@ -26,7 +23,7 @@ export default function AppointmentInfoSection({ event }) {
           <ServicesIcon styles="size-4" />
           <p className="text-center">{event.extendedProps.service_name}</p>
         </div>
-        <p>{parseFloat(event.extendedProps.price).toLocaleString()} HUF</p>
+        {event.extendedProps.price && <p>{event.extendedProps.price}</p>}
       </div>
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">

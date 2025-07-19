@@ -8,18 +8,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Product struct {
-	Id            int       `json:"ID"`
-	MerchantId    uuid.UUID `json:"merchant_id"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	Price         int       `json:"price"`
-	Unit          string    `json:"unit"`
-	MaxAmount     int       `json:"max_amount"`
-	CurrentAmount int       `json:"current_amount"`
-	DeletedOn     *string   `json:"deleted_on"`
+	Id            int              `json:"ID"`
+	MerchantId    uuid.UUID        `json:"merchant_id"`
+	Name          string           `json:"name"`
+	Description   string           `json:"description"`
+	Price         *currencyx.Price `json:"price"`
+	Unit          string           `json:"unit"`
+	MaxAmount     int              `json:"max_amount"`
+	CurrentAmount int              `json:"current_amount"`
+	DeletedOn     *string          `json:"deleted_on"`
 }
 
 func (s *service) NewProduct(ctx context.Context, prod Product) error {
@@ -81,7 +82,7 @@ type ProductInfo struct {
 	Id            int                      `json:"id" db:"id"`
 	Name          string                   `json:"name" db:"name"`
 	Description   string                   `json:"description" db:"description"`
-	Price         int                      `json:"price" db:"price"`
+	Price         *currencyx.Price         `json:"price" db:"price"`
 	Unit          string                   `json:"unit" db:"unit"`
 	MaxAmount     int                      `json:"max_amount" db:"max_amount"`
 	CurrentAmount int                      `json:"current_amount" db:"current_amount"`

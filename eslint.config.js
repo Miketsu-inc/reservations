@@ -6,7 +6,7 @@ import globals from "globals";
 
 export default [
   {
-    ignores: ["frontend/dist/**"],
+    ignores: ["frontend/dist/**", "frontend/src/routeTree.gen.*"],
   },
   js.configs.recommended,
   react.configs.flat.recommended,

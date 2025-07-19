@@ -89,7 +89,7 @@ function DashboardPage() {
             <div className="flex h-fit flex-row items-center justify-between gap-4">
               <StatisticsCard
                 title="Revenue"
-                text={`${loaderData.data.statistics.revenue_sum} HUF`}
+                text={`${loaderData.data.statistics.revenue_sum}`}
                 percent={loaderData.data.statistics.revenue_change}
                 tooltip={windowSize !== "sm" && windowSize !== "md"}
                 tooltipText="Calculated by adding up all your completed appointments for this period"

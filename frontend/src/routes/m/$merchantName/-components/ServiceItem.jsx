@@ -14,10 +14,7 @@ export default function ServiceItem({ children, service }) {
         <div className="flex flex-row items-center md:flex-col md:justify-center">
           <div className="flex flex-col">
             <p className="text-lg font-semibold">{service.name}</p>
-            <p
-              className="line-clamp-2 text-sm text-gray-600 md:line-clamp-none md:max-w-70 md:truncate
-                dark:text-gray-400"
-            >
+            <p className="line-clamp-2 text-sm text-gray-600 md:line-clamp-none md:max-w-70 md:truncate dark:text-gray-400">
               {service.description}
             </p>
             <p className="hidden pt-2 text-sm md:block">
@@ -27,7 +24,7 @@ export default function ServiceItem({ children, service }) {
         </div>
         <div className="flex flex-row items-center justify-between gap-2 md:gap-4">
           <p className="w-full font-semibold">
-            {`${parseFloat(service.price).toLocaleString()} HUF ${service.price_note}`}
+            {service.price && `${service.price} ${service.price_note}`}
           </p>
           {children}
         </div>

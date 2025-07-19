@@ -9,22 +9,23 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Service struct {
-	Id            int       `json:"ID"`
-	MerchantId    uuid.UUID `json:"merchant_id"`
-	CategoryId    *int      `json:"category_id"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	Color         string    `json:"color"`
-	TotalDuration int       `json:"total_duration"`
-	Price         int       `json:"price"`
-	PriceNote     *string   `json:"price_note"`
-	Cost          int       `json:"cost"`
-	IsActive      bool      `json:"is_active"`
-	Sequence      int       `json:"sequence"`
-	DeletedOn     *string   `json:"deleted_on"`
+	Id            int              `json:"ID"`
+	MerchantId    uuid.UUID        `json:"merchant_id"`
+	CategoryId    *int             `json:"category_id"`
+	Name          string           `json:"name"`
+	Description   string           `json:"description"`
+	Color         string           `json:"color"`
+	TotalDuration int              `json:"total_duration"`
+	Price         *currencyx.Price `json:"price"`
+	PriceNote     *string          `json:"price_note"`
+	Cost          *currencyx.Price `json:"cost"`
+	IsActive      bool             `json:"is_active"`
+	Sequence      int              `json:"sequence"`
+	DeletedOn     *string          `json:"deleted_on"`
 }
 
 type ServicePhase struct {
@@ -166,9 +167,9 @@ type PublicServiceWithPhases struct {
 	Description   string               `json:"description"`
 	Color         string               `json:"color"`
 	TotalDuration int                  `json:"total_duration"`
-	Price         int                  `json:"price"`
+	Price         *currencyx.Price     `json:"price"`
 	PriceNote     *string              `json:"price_note"`
-	Cost          int                  `json:"cost"`
+	Cost          *currencyx.Price     `json:"cost"`
 	IsActive      bool                 `json:"is_active"`
 	Sequence      int                  `json:"sequence"`
 	Phases        []PublicServicePhase `json:"phases"`
@@ -182,7 +183,7 @@ type ServicesGroupedByCategory struct {
 }
 
 // TODO: full outer joins can be expensive, this should be reevaluated later for performance
-func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID, filterForActive bool) ([]ServicesGroupedByCategory, error) {
+func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error) {
 	query := `
 	with services as (
 		select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price, s.price_note,
@@ -201,7 +202,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 		'[]'::jsonb) as phases
 		from "Service" s
 		left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
-		where s.merchant_id = $1 and ($2::bool = false or s.is_active = true) and s.deleted_on is null
+		where s.merchant_id = $1 and s.deleted_on is null
 		group by s.id
 	)
 	select sc.id, sc.name, sc.sequence,
@@ -230,7 +231,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 	order by sc.sequence, sc.name nulls last
 	`
 
-	rows, _ := s.db.Query(ctx, query, merchantId, filterForActive)
+	rows, _ := s.db.Query(ctx, query, merchantId)
 	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (ServicesGroupedByCategory, error) {
 		var sgby ServicesGroupedByCategory
 		var services []byte
@@ -259,6 +260,81 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 	// unless an empty slice is supplied to it
 	if len(servicesGroupByCategory) == 0 {
 		servicesGroupByCategory = []ServicesGroupedByCategory{}
+	}
+
+	return servicesGroupByCategory, nil
+}
+
+type MerchantPageService struct {
+	Id            int                       `json:"id"`
+	CategoryId    *int                      `json:"category_id"`
+	Name          string                    `json:"name"`
+	Description   string                    `json:"description"`
+	TotalDuration int                       `json:"total_duration"`
+	Price         *currencyx.FormattedPrice `json:"price"`
+	PriceNote     *string                   `json:"price_note"`
+	Sequence      int                       `json:"sequence"`
+}
+
+type MerchantPageServicesGroupedByCategory struct {
+	Id       int                   `json:"id"`
+	Name     string                `json:"name"`
+	Sequence int                   `json:"sequence"`
+	Services []MerchantPageService `json:"services"`
+}
+
+func (s *service) GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error) {
+	query := `
+	select sc.id, sc.name, sc.sequence,
+	coalesce (
+		jsonb_agg(
+			jsonb_build_object(
+				'id', s.id,
+				'name', s.name,
+				'description', s.description,
+				'total_duration', s.total_duration,
+				'price', s.price,
+				'price_note', s.price_note,
+				'sequence', s.sequence
+			) order by s.sequence
+		) filter (where s.id is not null),
+	'[]'::jsonb) as services
+	from "ServiceCategory" sc
+	inner join "Service" s on s.category_id = sc.id
+	where sc.merchant_id = $1 and s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	group by sc.id, sc.name
+	order by sc.sequence, sc.name
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (MerchantPageServicesGroupedByCategory, error) {
+		var sgby MerchantPageServicesGroupedByCategory
+		var services []byte
+
+		err := row.Scan(&sgby.Id, &sgby.Name, &sgby.Sequence, &services)
+		if err != nil {
+			return MerchantPageServicesGroupedByCategory{}, err
+		}
+
+		if len(services) > 0 {
+			err = json.Unmarshal(services, &sgby.Services)
+			if err != nil {
+				return MerchantPageServicesGroupedByCategory{}, err
+			}
+		} else {
+			sgby.Services = []MerchantPageService{}
+		}
+
+		return sgby, nil
+	})
+	if err != nil {
+		return []MerchantPageServicesGroupedByCategory{}, err
+	}
+
+	// if services array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(servicesGroupByCategory) == 0 {
+		servicesGroupByCategory = []MerchantPageServicesGroupedByCategory{}
 	}
 
 	return servicesGroupByCategory, nil
@@ -550,9 +626,9 @@ type ServicePageData struct {
 	Description   string                        `json:"description"`
 	Color         string                        `json:"color"`
 	TotalDuration int                           `json:"total_duration"`
-	Price         int                           `json:"price"`
+	Price         *currencyx.Price              `json:"price"`
 	PriceNote     *string                       `json:"price_note"`
-	Cost          int                           `json:"cost"`
+	Cost          *currencyx.Price              `json:"cost"`
 	IsActive      bool                          `json:"is_active"`
 	Sequence      int                           `json:"sequence"`
 	Phases        []PublicServicePhase          `json:"phases"`

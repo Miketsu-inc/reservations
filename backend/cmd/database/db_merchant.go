@@ -2,14 +2,18 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bojanz/currency"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Merchant struct {
@@ -24,16 +28,17 @@ type Merchant struct {
 	ParkingInfo  string    `json:"parking_info"`
 	PaymentInfo  string    `json:"payment_info"`
 	Timezone     string    `json:"timezone"`
+	CurrencyCode string    `json:"currency_code"`
 }
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info, timezone)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info, timezone, currency_code)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	_, err := s.db.Exec(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
-		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Timezone)
+		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Timezone, merchant.CurrencyCode)
 	if err != nil {
 		return err
 	}
@@ -79,7 +84,7 @@ func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Me
 
 	var merchant Merchant
 	err := s.db.QueryRow(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail,
-		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo)
+		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Timezone, &merchant.CurrencyCode)
 	if err != nil {
 		return Merchant{}, err
 	}
@@ -104,7 +109,7 @@ type MerchantInfo struct {
 	PostalCode string `json:"postal_code"`
 	Address    string `json:"address"`
 
-	Services []ServicesGroupedByCategory `json:"services"`
+	Services []MerchantPageServicesGroupedByCategory `json:"services"`
 
 	BusinessHours map[int][]TimeSlot `json:"business_hours"`
 }
@@ -125,7 +130,7 @@ func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) 
 		return MerchantInfo{}, err
 	}
 
-	mi.Services, err = s.GetServicesByMerchantId(ctx, merchantId, true)
+	mi.Services, err = s.GetServicesForMerchantPage(ctx, merchantId)
 	if err != nil {
 		return MerchantInfo{}, err
 	}
@@ -170,9 +175,9 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select c.id, 
-		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
-		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, 
+	select c.id,
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
+		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
 	from "Customer" c
@@ -440,7 +445,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
 		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
-		s.color as service_color, s.total_duration as service_duration, 
+		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
@@ -465,7 +470,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
 		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
-		s.color as service_color, s.total_duration as service_duration, 
+		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
@@ -511,13 +516,13 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 }
 
 type RevenueStat struct {
-	Value int       `json:"value" db:"value"`
-	Day   time.Time `json:"day" db:"day"`
+	Value currencyx.FormattedPrice `json:"value" db:"value"`
+	Day   time.Time                `json:"day" db:"day"`
 }
 
 type DashboardStatistics struct {
 	Revenue               []RevenueStat `json:"revenue"`
-	RevenueSum            int           `json:"revenue_sum"`
+	RevenueSum            string        `json:"revenue_sum"`
 	RevenueChange         int           `json:"revenue_change"`
 	Appointments          int           `json:"appointments"`
 	AppointmentsChange    int           `json:"appointments_change"`
@@ -527,24 +532,26 @@ type DashboardStatistics struct {
 	AverageDurationChange int           `json:"average_duration_change"`
 }
 
+// TODO: currently this assumes that all of the prices are/were in the same currency
 func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UUID, date, currPeriodStart, prevPeriodStart time.Time) (DashboardStatistics, error) {
 	query := `
 	WITH base AS (
     SELECT
 		distinct on (group_id)
         from_date::date AS day,
-        price_then,
+        (price_then).number as price,
+		(price_then).currency as currency,
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
         cancelled_by_user_on is not null as cancelled_by_user,
         (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
-    FROM "Appointment"
+    FROM "Appointment" a
     WHERE merchant_id = $1
 	order by group_id, id
 	),
 	current AS (
 		SELECT
 			day,
-			SUM(price_then) FILTER (WHERE NOT cancelled) AS revenue,
+			SUM(price) FILTER (WHERE NOT cancelled) AS revenue,
 			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			AVG(duration) FILTER (WHERE NOT cancelled) AS avg_duration
@@ -562,19 +569,29 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	),
 	previous AS (
 		SELECT
-			COALESCE(SUM(price_then) FILTER (WHERE NOT cancelled), 0) AS revenue_sum,
+			COALESCE(SUM(price) FILTER (WHERE NOT cancelled), 0) AS revenue_sum,
 			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			CAST(AVG(duration) FILTER (WHERE NOT cancelled) AS INTEGER) AS average_duration
 		FROM base
 		WHERE day >= $4 AND day < $5
+	),
+	single_currency as (
+		select currency
+		from base
+		group by currency
+		order by count(*) desc, currency asc
+		limit 1
 	)
 	SELECT
 		ct.revenue_sum, p.revenue_sum,
 		ct.appointments, p.appointments,
 		ct.cancellations, p.cancellations,
-		COALESCE(ct.average_duration, 0), COALESCE(p.average_duration, 0)
-	FROM current_totals ct, previous p;
+		COALESCE(ct.average_duration, 0), COALESCE(p.average_duration, 0),
+		sc.currency
+	FROM current_totals ct
+	cross join previous p
+	cross join single_currency sc
 	`
 
 	var stats DashboardStatistics
@@ -584,6 +601,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		currAppointments, prevAppointments   int
 		currCancellations, prevCancellations int
 		currAvgDuration, prevAvgDuration     int
+		curr                                 string
 	)
 
 	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date.AddDate(0, 0, 1), prevPeriodStart, currPeriodStart.AddDate(0, 0, 1)).Scan(
@@ -591,12 +609,28 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		&currAppointments, &prevAppointments,
 		&currCancellations, &prevCancellations,
 		&currAvgDuration, &prevAvgDuration,
+		&curr,
 	)
 	if err != nil {
-		return DashboardStatistics{}, err
+		if !errors.Is(err, sql.ErrNoRows) {
+			return DashboardStatistics{}, err
+		}
 	}
 
-	stats.RevenueSum = currRevenue
+	var formattedRevenue string
+
+	// if no rows are returned
+	if curr != "" {
+		amount, err := currency.NewAmount(strconv.Itoa(currRevenue), curr)
+		if err != nil {
+			return DashboardStatistics{}, fmt.Errorf("new amount creation failed: %v", err)
+		}
+		formattedRevenue = currencyx.Format(amount)
+	} else {
+		formattedRevenue = "0"
+	}
+
+	stats.RevenueSum = formattedRevenue
 	stats.Appointments = currAppointments
 	stats.Cancellations = currCancellations
 	stats.AverageDuration = currAvgDuration
@@ -609,15 +643,16 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	query2 := `
 	SELECT
 		DATE(from_date) AS day,
-		COALESCE(SUM(price_then), 0)::int AS value
+		row(COALESCE(SUM(price), 0)::numeric, min(currency))::price AS value
 	FROM (
-		select distinct on (group_id) from_date, price_then
+		select distinct on (group_id) from_date, (price_then).number as price, (price_then).currency as currency
 		from "Appointment"
 		WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
 		AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
 		order by group_id
 	)
 	GROUP BY day
+	HAVING COUNT(DISTINCT currency) = 1
 	ORDER BY day
 	`
 
@@ -628,4 +663,18 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	}
 
 	return stats, nil
+}
+
+func (s *service) GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID) (string, error) {
+	query := `
+	select currency_code from "Merchant" where id = $1
+	`
+
+	var curr string
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&curr)
+	if err != nil {
+		return "", err
+	}
+
+	return curr, nil
 }

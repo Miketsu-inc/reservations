@@ -6,11 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -81,6 +83,34 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// prevent null appointment price and cost to avoid a lot of headaches
+	var price currencyx.Price
+	var cost currencyx.Price
+	if service.Price == nil || service.Cost == nil {
+		curr, err := a.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
+			return
+		}
+
+		zeroAmount, err := currency.NewAmount("0", curr)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new amount: %s", err.Error()))
+		}
+
+		if service.Price != nil {
+			price = *service.Price
+		} else {
+			price = currencyx.Price{Amount: zeroAmount}
+		}
+
+		if service.Cost != nil {
+			cost = *service.Cost
+		} else {
+			cost = currencyx.Price{Amount: zeroAmount}
+		}
+	}
+
 	appointmentId, err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{
 		Id:           0,
 		MerchantId:   merchantId,
@@ -91,8 +121,8 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		ToDate:       toDate,
 		CustomerNote: newApp.CustomerNote,
 		MerchantNote: "",
-		PriceThen:    service.Price,
-		CostThen:     service.Cost,
+		PriceThen:    price,
+		CostThen:     cost,
 	}, service.Phases, userID, customerId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new apppointment: %s", err.Error()))

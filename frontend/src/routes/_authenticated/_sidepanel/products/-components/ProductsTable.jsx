@@ -8,7 +8,7 @@ import TableActions from "../../-components/TableActions";
 const Table = lazy(() => import("@components/Table"));
 
 function currencyFormatter(params) {
-  return params.value.toLocaleString();
+  return params.value?.number?.toLocaleString();
 }
 
 export default function ProductsTable({
@@ -43,7 +43,8 @@ export default function ProductsTable({
     },
     {
       field: "price",
-      headerName: "Price (HUF)",
+      headerValueGetter: (params) =>
+        `Price (${params.value?.currency || "HUF"})`,
       valueFormatter: currencyFormatter,
       cellClass: "text-right",
     },

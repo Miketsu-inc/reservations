@@ -94,6 +94,8 @@ type PostgreSQL interface {
 	GetMerchantTimezoneById(context.Context, uuid.UUID) (string, error)
 	// Get the dashboard data by the merchant's id for a period of days
 	GetDashboardData(context.Context, uuid.UUID, time.Time, int) (DashboardData, error)
+	// Get the merchant's currency
+	GetMerchantCurrency(context.Context, uuid.UUID) (string, error)
 
 	// -- Location --
 
@@ -109,7 +111,7 @@ type PostgreSQL interface {
 	// Get a Service and it's phases by it's id
 	GetServiceWithPhasesById(context.Context, int, uuid.UUID) (PublicServiceWithPhases, error)
 	// Get all services for a merchant by it's id
-	GetServicesByMerchantId(context.Context, uuid.UUID, bool) ([]ServicesGroupedByCategory, error)
+	GetServicesByMerchantId(context.Context, uuid.UUID) ([]ServicesGroupedByCategory, error)
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service and it's phases by it's id
@@ -134,6 +136,8 @@ type PostgreSQL interface {
 	GetServicePageFormOptions(context.Context, uuid.UUID) (ServicePageFormOptions, error)
 	// Update the connected product for a service by id
 	UpdateConnectedProducts(context.Context, int, []ConnectedProducts) error
+	// Get all services grouped by category for the merchant page
+	GetServicesForMerchantPage(context.Context, uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
 
 	// -- Customer --
 

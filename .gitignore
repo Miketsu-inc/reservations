@@ -15,6 +15,7 @@ frontend/src/assets/output.css
 
 # tanstack generated routes
 frontend/src/routeTree.gen.ts
+frontend/src/routeTree.gen.js
 
 # backend
 .env
@@ -25,4 +26,4 @@ backend/tmp
 backend/cmd/*/testdata
 
 # generated html email templates
-backend/emails/out 
+backend/emails/out

@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -112,9 +113,9 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Name         string                 `json:"name" validate:"required"`
 		Description  string                 `json:"description"`
 		Color        string                 `json:"color" validate:"required,hexcolor"`
-		Price        int                    `json:"price" validate:"min=0,max=1000000"`
+		Price        *currencyx.Price       `json:"price"`
 		PriceNote    *string                `json:"price_note"`
-		Cost         int                    `json:"cost" validate:"min=0,max=1000000"`
+		Cost         *currencyx.Price       `json:"cost"`
 		CategoryId   *int                   `json:"category_id"`
 		IsActive     bool                   `json:"is_active"`
 		Phases       []newPhase             `json:"phases" validate:"required"`
@@ -160,6 +161,26 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 			ServiceId:  0,
 			AmountUsed: product.AmountUsed,
 		})
+	}
+
+	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
+		return
+	}
+
+	if service.Price != nil {
+		if service.Price.CurrencyCode() != curr {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service price's currency does not match merchant's currency"))
+			return
+		}
+	}
+
+	if service.Cost != nil {
+		if service.Cost.CurrencyCode() != curr {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service cost's currency does not match merchant's currency"))
+			return
+		}
 	}
 
 	if err := m.Postgresdb.NewService(r.Context(), database.Service{
@@ -295,7 +316,7 @@ func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId, false)
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
 		return
@@ -846,12 +867,12 @@ func (m *Merchant) UnBlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 	type newProduct struct {
-		Name          string `json:"name" validate:"required"`
-		Description   string `json:"description"`
-		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
-		Unit          string `json:"unit" validate:"required"`
-		MaxAmount     int    `json:"max_amount" validate:"min=0,max=10000000000"`
-		CurrentAmount int    `json:"current_amount" validate:"min=0,max=10000000000"`
+		Name          string           `json:"name" validate:"required"`
+		Description   string           `json:"description"`
+		Price         *currencyx.Price `json:"price"`
+		Unit          string           `json:"unit" validate:"required"`
+		MaxAmount     int              `json:"max_amount" validate:"min=0,max=10000000000"`
+		CurrentAmount int              `json:"current_amount" validate:"min=0,max=10000000000"`
 	}
 	var product newProduct
 
@@ -866,6 +887,19 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
 		return
+	}
+
+	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
+		return
+	}
+
+	if product.Price != nil {
+		if product.Price.CurrencyCode() != curr {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new product price's currency does not match merchant's currency"))
+			return
+		}
 	}
 
 	if err := m.Postgresdb.NewProduct(r.Context(), database.Product{
@@ -933,15 +967,14 @@ func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
-
 	type productData struct {
-		Id            int    `json:"id"`
-		Name          string `json:"name" validate:"required"`
-		Description   string `json:"description"`
-		Price         int    `json:"price" validate:"required,min=0,max=1000000"`
-		Unit          string `json:"unit" validate:"required"`
-		MaxAmount     int    `json:"max_amount" validate:"min=0,max=10000000000"`
-		CurrentAmount int    `json:"current_amount" validate:"min=0,max=10000000000"`
+		Id            int              `json:"id"`
+		Name          string           `json:"name" validate:"required"`
+		Description   string           `json:"description"`
+		Price         *currencyx.Price `json:"price"`
+		Unit          string           `json:"unit" validate:"required"`
+		MaxAmount     int              `json:"max_amount" validate:"min=0,max=10000000000"`
+		CurrentAmount int              `json:"current_amount" validate:"min=0,max=10000000000"`
 	}
 
 	var prod productData
@@ -1122,7 +1155,7 @@ func (m *Merchant) UpdateServiceCategory(w http.ResponseWriter, r *http.Request)
 
 	categoryId, err := strconv.Atoi(id)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
 		return
 	}
 
@@ -1149,7 +1182,7 @@ func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request)
 
 	categoryId, err := strconv.Atoi(id)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting product id to int: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting category id to int: %s", err.Error()))
 		return
 	}
 

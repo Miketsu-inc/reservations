@@ -27,9 +27,9 @@ export default function ServicePage({
       name: service?.name || "",
       description: service?.description || "",
       color: service?.color || "#2334b8",
-      price: service?.price ?? "",
+      price: service?.price ?? null,
       price_note: service?.price_note || "",
-      cost: service?.cost ?? "",
+      cost: service?.cost ?? null,
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
       phases: service?.phases || [],
@@ -161,8 +161,7 @@ export default function ServicePage({
                     >
                       <input
                         id="color"
-                        className="border-input_border_color size-10.5 cursor-pointer rounded-l-lg border
-                          bg-transparent"
+                        className="border-input_border_color size-10.5 cursor-pointer rounded-l-lg border bg-transparent"
                         name="color"
                         type="color"
                         value={serviceData.color}
@@ -182,13 +181,19 @@ export default function ServicePage({
                       max={1000000}
                       labelText="Price"
                       placeholder="1000"
-                      value={serviceData.price}
+                      required={false}
+                      value={serviceData.price?.number || ""}
                       inputData={(data) =>
-                        updateServiceData({ price: Number(data.value) })
+                        updateServiceData({
+                          price: {
+                            number: data.value,
+                            currency: serviceData.price?.currency || "HUF",
+                          },
+                        })
                       }
                     >
                       <p className="border-input_border_color rounded-r-lg border px-4 py-2">
-                        HUF
+                        {serviceData.price?.currency || "HUF"}
                       </p>
                     </Input>
                     <Input
@@ -214,13 +219,18 @@ export default function ServicePage({
                     labelText="Cost"
                     placeholder="500"
                     required={false}
-                    value={serviceData.cost}
+                    value={serviceData.cost?.number || ""}
                     inputData={(data) =>
-                      updateServiceData({ cost: Number(data.value) })
+                      updateServiceData({
+                        cost: {
+                          number: data.value,
+                          currency: serviceData.cost?.currency || "HUF",
+                        },
+                      })
                     }
                   >
                     <p className="border-input_border_color rounded-r-lg border px-4 py-2">
-                      HUF
+                      {serviceData.cost?.currency || "HUF"}
                     </p>
                   </Input>
                   <label className="flex flex-col gap-1">
@@ -263,8 +273,7 @@ export default function ServicePage({
                       id="description"
                       name="description"
                       placeholder="About this service..."
-                      className="bg-bg_color focus:border-primary max-h-20 min-h-20 w-full rounded-lg border
-                        border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
+                      className="bg-bg_color focus:border-primary max-h-20 min-h-20 w-full rounded-lg border border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
                       value={serviceData.description}
                       onChange={(e) =>
                         updateServiceData({ description: e.target.value })

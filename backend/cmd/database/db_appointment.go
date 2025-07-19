@@ -7,27 +7,28 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Appointment struct {
-	Id                    int       `json:"ID" db:"id"`
-	CustomerId            uuid.UUID `json:"customer_id" db:"customer_id"`
-	MerchantId            uuid.UUID `json:"merchant_id" db:"merchant_id"`
-	ServiceId             int       `json:"service_id" db:"service_id"`
-	ServicePhaseId        int       `json:"service_phase_id" db:"service_phase_id"`
-	LocationId            int       `json:"location_id" db:"location_id"`
-	GroupId               int       `json:"group_id" db:"group_id"`
-	FromDate              time.Time `json:"from_date" db:"from_date"`
-	ToDate                time.Time `json:"to_date" db:"to_date"`
-	CustomerNote          string    `json:"" db:"customer_note"`
-	MerchantNote          string    `json:"merchant_note" db:"merchant_note"`
-	PriceThen             int       `json:"price_then" db:"price_then"`
-	CostThen              int       `json:"cost_then" db:"cost_then"`
-	CancelledByUserOn     string    `json:"cancelled_by_user_on" db:"cancelled_by_user_on"`
-	CancelledByMerchantOn string    `json:"cancelled_by_merchant_on" db:"cancelled_by_merchant_on"`
-	CancellationReason    string    `json:"cancellation_reason" db:"cancellation_reason"`
-	TransferredTo         uuid.UUID `json:"transferred_to" db:"transferred_to"`
-	EmailId               uuid.UUID `json:"email_id" db:"email_id"`
+	Id                    int             `json:"ID" db:"id"`
+	CustomerId            uuid.UUID       `json:"customer_id" db:"customer_id"`
+	MerchantId            uuid.UUID       `json:"merchant_id" db:"merchant_id"`
+	ServiceId             int             `json:"service_id" db:"service_id"`
+	ServicePhaseId        int             `json:"service_phase_id" db:"service_phase_id"`
+	LocationId            int             `json:"location_id" db:"location_id"`
+	GroupId               int             `json:"group_id" db:"group_id"`
+	FromDate              time.Time       `json:"from_date" db:"from_date"`
+	ToDate                time.Time       `json:"to_date" db:"to_date"`
+	CustomerNote          string          `json:"" db:"customer_note"`
+	MerchantNote          string          `json:"merchant_note" db:"merchant_note"`
+	PriceThen             currencyx.Price `json:"price_then" db:"price_then"`
+	CostThen              currencyx.Price `json:"cost_then" db:"cost_then"`
+	CancelledByUserOn     string          `json:"cancelled_by_user_on" db:"cancelled_by_user_on"`
+	CancelledByMerchantOn string          `json:"cancelled_by_merchant_on" db:"cancelled_by_merchant_on"`
+	CancellationReason    string          `json:"cancellation_reason" db:"cancellation_reason"`
+	TransferredTo         uuid.UUID       `json:"transferred_to" db:"transferred_to"`
+	EmailId               uuid.UUID       `json:"email_id" db:"email_id"`
 }
 
 // every appointment needs a group_id because otherwise
@@ -121,20 +122,20 @@ func (s *service) UpdateAppointmentData(ctx context.Context, merchantId uuid.UUI
 }
 
 type AppointmentDetails struct {
-	ID              int       `json:"id" db:"id"`
-	GroupId         int       `json:"group_id" db:"group_id"`
-	FromDate        time.Time `json:"from_date" db:"from_date"`
-	ToDate          time.Time `json:"to_date" db:"to_date"`
-	CustomerNote    string    `json:"customer_note" db:"customer_note"`
-	MerchantNote    string    `json:"merchant_note" db:"merchant_note"`
-	ServiceName     string    `json:"service_name" db:"service_name"`
-	ServiceColor    string    `json:"service_color" db:"service_color"`
-	ServiceDuration int       `json:"service_duration" db:"service_duration"`
-	Price           int       `json:"price" db:"price"`
-	Cost            int       `json:"cost" db:"cost"`
-	FirstName       string    `json:"first_name" db:"first_name"`
-	LastName        string    `json:"last_name" db:"last_name"`
-	PhoneNumber     string    `json:"phone_number" db:"phone_number"`
+	ID              int                      `json:"id" db:"id"`
+	GroupId         int                      `json:"group_id" db:"group_id"`
+	FromDate        time.Time                `json:"from_date" db:"from_date"`
+	ToDate          time.Time                `json:"to_date" db:"to_date"`
+	CustomerNote    string                   `json:"customer_note" db:"customer_note"`
+	MerchantNote    string                   `json:"merchant_note" db:"merchant_note"`
+	ServiceName     string                   `json:"service_name" db:"service_name"`
+	ServiceColor    string                   `json:"service_color" db:"service_color"`
+	ServiceDuration int                      `json:"service_duration" db:"service_duration"`
+	Price           currencyx.FormattedPrice `json:"price" db:"price"`
+	Cost            currencyx.FormattedPrice `json:"cost" db:"cost"`
+	FirstName       string                   `json:"first_name" db:"first_name"`
+	LastName        string                   `json:"last_name" db:"last_name"`
+	PhoneNumber     string                   `json:"phone_number" db:"phone_number"`
 }
 
 func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]AppointmentDetails, error) {
@@ -143,7 +144,7 @@ func (s *service) GetAppointmentsByMerchant(ctx context.Context, merchantId uuid
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
 		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost,
-	s.name as service_name, s.color as service_color, s.total_duration as service_duration, 
+	s.name as service_name, s.color as service_color, s.total_duration as service_duration,
 	coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Appointment" a
 	join "Service" s on a.service_id = s.id
@@ -284,15 +285,15 @@ func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId 
 }
 
 type PublicAppointmentInfo struct {
-	FromDate            time.Time `json:"from_date" db:"from_date"`
-	ToDate              time.Time `json:"to_date" db:"to_date"`
-	ServiceName         string    `json:"service_name" db:"service_name"`
-	ShortLocation       string    `json:"short_location" db:"short_location"`
-	Price               int       `json:"price" db:"price"`
-	PriceNote           *string   `json:"price_note"`
-	MerchantName        string    `json:"merchant_name" db:"merchant_name"`
-	CancelledByUser     bool      `json:"cancelled_by_user" db:"cancelled_by_user"`
-	CancelledByMerchant bool      `json:"cancelled_by_merchant" db:"cancelled_by_merchant"`
+	FromDate            time.Time                `json:"from_date" db:"from_date"`
+	ToDate              time.Time                `json:"to_date" db:"to_date"`
+	ServiceName         string                   `json:"service_name" db:"service_name"`
+	ShortLocation       string                   `json:"short_location" db:"short_location"`
+	Price               currencyx.FormattedPrice `json:"price" db:"price"`
+	PriceNote           *string                  `json:"price_note"`
+	MerchantName        string                   `json:"merchant_name" db:"merchant_name"`
+	CancelledByUser     bool                     `json:"cancelled_by_user" db:"cancelled_by_user"`
+	CancelledByMerchant bool                     `json:"cancelled_by_merchant" db:"cancelled_by_merchant"`
 }
 
 func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId int) (PublicAppointmentInfo, error) {

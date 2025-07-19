@@ -15,7 +15,10 @@ const defaultProductData = {
   id: null,
   name: "",
   description: "",
-  price: "",
+  price: {
+    number: "",
+    currency: "HUF",
+  },
   duration: "",
   max_amount: "",
   max_amount_unit: "",
@@ -105,7 +108,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
         id: productData.id,
         name: productData.name,
         description: productData.description,
-        price: parseInt(productData.price),
+        price: productData.price?.number ? productData.price : null,
         unit: unitConversionMap[productData.current_amount_unit].base,
         max_amount: maxBase,
         current_amount: currentBase,
@@ -116,22 +119,8 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
     onClose();
   }
 
-  function onChangeHandler(e) {
-    let name = "";
-    let value = "";
-
-    if (e.target) {
-      name = e.target.name;
-      value = e.target.value;
-    } else {
-      name = e.name;
-      value = e.value;
-    }
-
-    setProductData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  function updateProductData(data) {
+    setProductData((prev) => ({ ...prev, ...data }));
   }
 
   return (
@@ -159,7 +148,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               type="text"
               placeholder="Product name"
               value={productData.name}
-              inputData={onChangeHandler}
+              inputData={(data) => updateProductData({ name: data.value })}
             />
             <Input
               styles="p-2"
@@ -168,13 +157,21 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               name="price"
               type="number"
               placeholder="0"
+              required={false}
               min={0}
               max={10000000}
-              value={productData.price}
-              inputData={onChangeHandler}
+              value={productData.price?.number || ""}
+              inputData={(data) =>
+                updateProductData({
+                  price: {
+                    number: data.value,
+                    currency: productData.price?.currency || "HUF",
+                  },
+                })
+              }
             >
               <p className="border-input_border_color rounded-r-lg border px-4 py-2">
-                HUF
+                {productData.price?.currency || "HUF"}
               </p>
             </Input>
             <div className="flex flex-col gap-1">
@@ -183,10 +180,11 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                 id="description"
                 name="description"
                 placeholder="About this product..."
-                className="bg-bg_color focus:border-primary max-h-20 min-h-16 w-full rounded-lg border
-                  border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
+                className="bg-bg_color focus:border-primary max-h-20 min-h-16 w-full rounded-lg border border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
                 value={productData.description}
-                onChange={onChangeHandler}
+                onChange={(e) =>
+                  updateProductData({ description: e.target.value })
+                }
               />
             </div>
           </div>
@@ -203,15 +201,16 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   min={0}
                   step={1}
                   value={productData.current_amount}
-                  inputData={onChangeHandler}
+                  inputData={(data) =>
+                    updateProductData({ current_amount: data.value })
+                  }
                 >
                   <Select
                     options={unitOptions}
                     value={productData.current_amount_unit}
                     onSelect={(selected) => {
-                      onChangeHandler({
-                        name: "current_amount_unit",
-                        value: selected.value,
+                      updateProductData({
+                        current_amount_unit: selected.value,
                       });
                       setUnitError("");
                     }}
@@ -232,16 +231,15 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   min={0}
                   step={1}
                   value={productData.max_amount}
-                  inputData={onChangeHandler}
+                  inputData={(data) =>
+                    updateProductData({ max_amount: data.value })
+                  }
                 >
                   <Select
                     options={unitOptions}
                     value={productData.max_amount_unit}
                     onSelect={(selected) => {
-                      onChangeHandler({
-                        name: "max_amount_unit",
-                        value: selected.value,
-                      });
+                      updateProductData({ max_amount_unit: selected.value });
                       setUnitError("");
                     }}
                     placeholder=""
@@ -256,15 +254,11 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               {productData.services.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <span>Connected Services</span>
-                  <div
-                    className="mt-1 flex gap-2 overflow-x-auto scroll-smooth rounded-lg pb-2 outline-none
-                      md:max-h-24 md:flex-wrap md:overflow-y-auto dark:scheme-dark"
-                  >
+                  <div className="mt-1 flex gap-2 overflow-x-auto scroll-smooth rounded-lg pb-2 outline-none md:max-h-24 md:flex-wrap md:overflow-y-auto dark:scheme-dark">
                     {productData.services.map((service) => (
                       <div
                         key={service.id}
-                        className="bg-hvr_gray flex max-w-44 items-center gap-2 rounded-full px-3 py-1 text-sm
-                          md:max-w-36"
+                        className="bg-hvr_gray flex max-w-44 items-center gap-2 rounded-full px-3 py-1 text-sm md:max-w-36"
                       >
                         <span
                           className="h-3 w-3 shrink-0 rounded-full"
