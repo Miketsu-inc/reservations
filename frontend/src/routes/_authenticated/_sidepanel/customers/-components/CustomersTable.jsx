@@ -19,6 +19,7 @@ export default function CustomersTable({
   onNewItem,
   onBlackList,
   onRowClick,
+  noRowsOverlayComponent,
 }) {
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({
@@ -95,6 +96,12 @@ export default function CustomersTable({
             key={params.data.id}
             className="flex h-full flex-row items-center justify-center"
           >
+            <button
+              className="cursor-pointer"
+              onClick={() => onEdit(customersData[params.node.sourceRowIndex])}
+            >
+              <EditIcon styles="size-4 mx-1" />
+            </button>
             {params.data.is_dummy ? (
               <>
                 {params.data.times_booked || params.data.times_cancelled ? (
@@ -107,14 +114,6 @@ export default function CustomersTable({
                 ) : (
                   <></>
                 )}
-                <button
-                  className="cursor-pointer"
-                  onClick={() =>
-                    onEdit(customersData[params.node.sourceRowIndex])
-                  }
-                >
-                  <EditIcon styles="size-4 mx-1" />
-                </button>
                 <button
                   className="cursor-pointer"
                   onClick={() => {
@@ -137,14 +136,14 @@ export default function CustomersTable({
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <ApproveIcon styles="size-5" />
+                    <ApproveIcon styles="size-5 mx-1" />
                   </button>
                 ) : (
                   <button
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <BanIcon styles="size-5" />
+                    <BanIcon styles="size-5 mx-1" />
                   </button>
                 )}
               </>
@@ -182,8 +181,16 @@ export default function CustomersTable({
             "times_booked",
             "times_cancelled",
           ]}
+          noRowsOverlayComponent={
+            noRowsOverlayComponent || DefaultNoRowsOverlay
+          }
+          showControls={false}
         />
       </Suspense>
     </div>
   );
 }
+
+const DefaultNoRowsOverlay = () => (
+  <div className="text-text_color text-lg">No customers found</div>
+);

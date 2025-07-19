@@ -86,6 +86,8 @@ create table if not exists "Customer" (
     last_name               varchar(30),
     email                   varchar(320),
     phone_number            varchar(30),
+    birthday                date,
+    note                    text,   
     is_blacklisted          boolean default false not null,
     blacklist_reason        text,
 

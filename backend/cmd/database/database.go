@@ -143,6 +143,8 @@ type PostgreSQL interface {
 
 	// Get all customers for a mechant by it's id
 	GetCustomersByMerchantId(context.Context, uuid.UUID) ([]PublicCustomer, error)
+	// Get all blacklisted customers for a merchant by it's id
+	GetBlacklistedCustomersByMerchantId(context.Context, uuid.UUID) ([]PublicCustomer, error)
 	// Insert a new customer to the database
 	NewCustomer(context.Context, uuid.UUID, Customer) error
 	// Delete customer by it's id
@@ -151,10 +153,12 @@ type PostgreSQL interface {
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
 	// Set blacklist status for a customer
 	SetBlacklistStatusForCustomer(context.Context, uuid.UUID, uuid.UUID, bool, *string) error
-	// Get one customer's info for a merchant
-	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (AllCustomerInfo, error)
+	// Get one customer's info and appoitnemts for a merchant
+	GetCustomerStatsByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerStatistics, error)
 	//Get a User's customer id from it's user id and the merchant's id
 	GetCustomerIdByUserIdAndMerchantId(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error)
+	// Get one customer's info for a merchant
+	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerInfo, error)
 
 	// -- Preferences --
 

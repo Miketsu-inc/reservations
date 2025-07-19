@@ -24,6 +24,8 @@ export default function Table({
   exportName = "export",
   onRowClick,
   columnsToExport,
+  noRowsOverlayComponent,
+  showControls = true,
 }) {
   const tableRef = useRef();
   const [searchText, setSearchText] = useState("");
@@ -46,10 +48,7 @@ export default function Table({
   }, [exportName, columnsToExport]);
 
   return (
-    <div
-      className="md:bg-layer_bg md:border-border_color flex h-full w-full flex-1 flex-col
-        md:rounded-lg md:border md:px-4 md:py-4 md:shadow-sm"
-    >
+    <div className="md:bg-layer_bg md:border-border_color flex h-full w-full flex-1 flex-col md:rounded-lg md:border md:px-4 md:py-4 md:shadow-sm">
       <div className="flex flex-col-reverse justify-between gap-2 pb-2 sm:flex-row sm:gap-0">
         <div className="flex items-center justify-center gap-3 pt-2 md:pt-0">
           <div className="w-full md:w-auto">
@@ -64,25 +63,27 @@ export default function Table({
             buttonText={windowSize != "sm" ? "Export" : ""}
             onClick={onBtnExport}
           >
-            <ExportIcon styles="text-text_color md:mr-1 md:mb-0.5 size-5" />
+            <ExportIcon styles="text-text_color md:mr-2 md:mb-0.5 size-5" />
           </Button>
         </div>
-        <div className="flex flex-row justify-between sm:gap-3">
-          <Button
-            variant="primary"
-            onClick={resetView}
-            styles="p-2 text-sm w-fit"
-            buttonText="Reset view"
-          />
-          <Button
-            variant="primary"
-            onClick={onNewItem}
-            styles="p-2 text-sm w-fit"
-            buttonText={`New ${itemName}`}
-          >
-            <PlusIcon styles="size-4 md:size-5 mr-1 text-white" />
-          </Button>
-        </div>
+        {showControls && (
+          <div className="flex flex-row justify-between sm:gap-3">
+            <Button
+              variant="primary"
+              onClick={resetView}
+              styles="p-2 text-sm w-fit"
+              buttonText="Reset view"
+            />
+            <Button
+              variant="primary"
+              onClick={onNewItem}
+              styles="p-2 text-sm w-fit"
+              buttonText={`New ${itemName}`}
+            >
+              <PlusIcon styles="size-4 md:size-5 mr-1 text-white" />
+            </Button>
+          </div>
+        )}
       </div>
       <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
         <AgGridReact
@@ -109,6 +110,7 @@ export default function Table({
           // if disabled only columns in view will get autosized
           suppressColumnVirtualisation={true}
           onRowClicked={onRowClick}
+          noRowsOverlayComponent={noRowsOverlayComponent}
         />
       </div>
     </div>

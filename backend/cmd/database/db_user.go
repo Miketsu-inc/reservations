@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -139,20 +142,22 @@ func (s *service) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID
 }
 
 type Customer struct {
-	Id          uuid.UUID `json:"id" db:"id"`
-	FirstName   string    `json:"first_name" db:"first_name"`
-	LastName    string    `json:"last_name" db:"last_name"`
-	Email       string    `json:"email" db:"email"`
-	PhoneNumber string    `json:"phone_number" db:"phone_number"`
+	Id          uuid.UUID  `json:"id" db:"id"`
+	FirstName   *string    `json:"first_name" db:"first_name"`
+	LastName    *string    `json:"last_name" db:"last_name"`
+	Email       *string    `json:"email" db:"email"`
+	PhoneNumber *string    `json:"phone_number" db:"phone_number"`
+	Birthday    *time.Time `json:"birthday" db:"birthday"`
+	Note        *string    `json:"note" db:"note"`
 }
 
 func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
 	query := `
-	insert into "Customer" (id, merchant_id, first_name, last_name, email, phone_number)
-	values ($1, $2, $3, $4, $5, $6)
+	insert into "Customer" (id, merchant_id, first_name, last_name, email, phone_number, birthday, note)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	_, err := s.db.Exec(ctx, query, customer.Id, merchantId, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber)
+	_, err := s.db.Exec(ctx, query, customer.Id, merchantId, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber, customer.Birthday, customer.Note)
 	if err != nil {
 		return err
 	}
@@ -195,13 +200,43 @@ func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, 
 }
 
 func (s *service) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, customer Customer) error {
-	query := `
-	update "Customer"
-	set first_name = $3, last_name = $4, email = $5, phone_number = $6
-	where id = $2 and merchant_id = $1
-	`
+	type field struct {
+		name  string
+		value interface{}
+	}
 
-	_, err := s.db.Exec(ctx, query, merchantId, customer.Id, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber)
+	fields := []field{
+		{"first_name", customer.FirstName},
+		{"last_name", customer.LastName},
+		{"email", customer.Email},
+		{"phone_number", customer.PhoneNumber},
+		{"birthday", customer.Birthday},
+		{"note", customer.Note},
+	}
+
+	setClauses := []string{}
+	args := []interface{}{merchantId, customer.Id}
+	argPos := 3
+
+	for _, f := range fields {
+		if f.value != nil && !reflect.ValueOf(f.value).IsNil() {
+			setClauses = append(setClauses, fmt.Sprintf(`%s = $%d`, f.name, argPos))
+			args = append(args, f.value)
+			argPos++
+		}
+	}
+
+	if len(setClauses) == 0 {
+		return nil
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE "Customer"
+		SET %s
+		WHERE merchant_id = $1 AND id = $2
+	`, strings.Join(setClauses, ", "))
+
+	_, err := s.db.Exec(ctx, query, args...)
 	if err != nil {
 		return err
 	}
@@ -247,7 +282,7 @@ func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID
 	return &tag, nil
 }
 
-type AllCustomerInfo struct {
+type CustomerStatistics struct {
 	Customer
 	IsDummy         bool                    `json:"is_dummy"`
 	IsBlacklisted   bool                    `json:"is_blacklisted"`
@@ -258,7 +293,7 @@ type AllCustomerInfo struct {
 	Appointments    []PublicAppointmentInfo `json:"appointments"`
 }
 
-func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (AllCustomerInfo, error) {
+func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error) {
 	query := `
 	with appointments as (
 		select a.customer_id, 
@@ -286,7 +321,7 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 		group by a.customer_id
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
-	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
+	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled,
 	count(distinct case when a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null and a.from_date >= now() then group_id end) as times_upcoming,
 	coalesce(ca.appointments, '[]'::jsonb) as appointments
@@ -294,23 +329,23 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 	left join "User" u on u.id = c.user_id
 	left join "Appointment" a on c.id = a.customer_id and a.merchant_id = $1
 	left join appointments ca on c.id = ca.customer_id
-	where c.id = $2 
+	where c.id = $2 and c.merchant_id = $1
 	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.appointments
 	`
 
-	var customer AllCustomerInfo
+	var customer CustomerStatistics
 	var appointmentsJSON []byte
 
-	err := s.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.IsDummy, &customer.IsBlacklisted,
-		&customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelled, &customer.TimesUpcoming, &appointmentsJSON)
+	err := s.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.Birthday,
+		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelled, &customer.TimesUpcoming, &appointmentsJSON)
 	if err != nil {
-		return AllCustomerInfo{}, err
+		return CustomerStatistics{}, err
 	}
 
 	if len(appointmentsJSON) > 0 {
 		err = json.Unmarshal(appointmentsJSON, &customer.Appointments)
 		if err != nil {
-			return AllCustomerInfo{}, err
+			return CustomerStatistics{}, err
 		}
 	} else {
 		customer.Appointments = []PublicAppointmentInfo{}
@@ -330,4 +365,27 @@ func (s *service) GetCustomerIdByUserIdAndMerchantId(ctx context.Context, mercha
 	}
 
 	return customerId, nil
+}
+
+type CustomerInfo struct {
+	Customer
+	IsDummy bool `json:"is_dummy"`
+}
+
+func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error) {
+	query := `
+	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note, c.user_id is null as is_dummy
+	from "Customer" c
+	left join "User" u on u.id = c.user_id
+	where c.id = $1 and c.merchant_id = $2`
+
+	var customer CustomerInfo
+	err := s.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
+		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy)
+	if err != nil {
+		return CustomerInfo{}, err
+	}
+	fmt.Println("hkjshflkjdh")
+	return customer, nil
 }

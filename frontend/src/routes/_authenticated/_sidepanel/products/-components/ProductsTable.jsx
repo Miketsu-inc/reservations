@@ -138,8 +138,13 @@ export default function ProductsTable({
           itemName="product"
           onNewItem={onNewItem}
           exportName="product_table"
+          noRowsOverlayComponent={DefaultNoRowsOverlay}
         />
       </Suspense>
     </div>
   );
 }
+
+const DefaultNoRowsOverlay = () => (
+  <div className="text-text_color text-lg">No products found</div>
+);

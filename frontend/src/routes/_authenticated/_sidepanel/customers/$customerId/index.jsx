@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import ServerError from "@components/ServerError";
 import ApproveIcon from "@icons/ApproveIcon";
 import BanIcon from "@icons/BanIcon";
+import CakeIcon from "@icons/CakeIcon";
 import EditIcon from "@icons/EditIcon";
 import EnvelopeIcon from "@icons/EnvelopeIcon";
 import PhoneIcon from "@icons/PhoneIcon";
@@ -15,19 +16,22 @@ import { PopoverClose } from "@radix-ui/react-popover";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
-import CustomerModal from "../-components/CustomerModal";
 import AppointmentItem from "./-components/AppointmentItem";
 import CustomerStats from "./-components/CustomerStats";
+import ExpandableNote from "./-components/ExpandableNote";
 import PaginatedList from "./-components/PaginatedList";
 
 async function fetchCustomerInfo(customerId) {
-  const response = await fetch(`/api/v1/merchants/customers/${customerId}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+  const response = await fetch(
+    `/api/v1/merchants/customers/stats/${customerId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -42,6 +46,14 @@ function monthDateFormat(date) {
   return date.toLocaleDateString([], {
     weekday: "short",
     month: "short",
+    day: "numeric",
+  });
+}
+
+function formatBirthday(datestr) {
+  const date = new Date(datestr);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
     day: "numeric",
   });
 }
@@ -65,7 +77,6 @@ function CustomerDetailsPage() {
   const windowSize = useWindowSize();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const now = new Date();
@@ -158,37 +169,6 @@ function CustomerDetailsPage() {
     }
   }
 
-  async function editHandler(customer) {
-    try {
-      const response = await fetch(
-        `/api/v1/merchants/customers/${customer.id}`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(customer),
-        }
-      );
-
-      if (!response.ok) {
-        invalidateLocalStorageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        showToast({
-          message: "Customer modified successfully",
-          variant: "success",
-        });
-        setServerError();
-        router.invalidate();
-      }
-    } catch (err) {
-      setServerError(err.message);
-    }
-  }
-
   return (
     <div className="flex justify-center py-5">
       <BlacklistModal
@@ -209,27 +189,12 @@ function CustomerDetailsPage() {
         onClose={() => setShowDeleteModal(false)}
         onDelete={() => deleteHandler(loaderData.id)}
       />
-      <CustomerModal
-        data={{
-          id: loaderData.id,
-          first_name: loaderData.first_name,
-          last_name: loaderData.last_name,
-          email: loaderData.email,
-          phone_number: loaderData.phone_number,
-        }}
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onSubmit={editHandler}
-      />
       <div className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2">
         <ServerError error={serverError} />
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <div
-                className="from-secondary to-primary bg-primary flex size-16 items-center justify-center
-                  rounded-md text-lg text-white dark:bg-linear-to-br"
-              >
+              <div className="from-secondary to-primary bg-primary flex size-16 items-center justify-center rounded-md text-lg text-white dark:bg-linear-to-br">
                 {`${loaderData.first_name.charAt(0)}${loaderData.last_name.charAt(0)}`.toUpperCase()}
               </div>
 
@@ -237,27 +202,20 @@ function CustomerDetailsPage() {
                 className={`flex flex-col ${lastVisited ? "gap-2" : "gap-0"}`}
               >
                 <div
-                  className={`flex flex-col gap-2
-                    ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
+                  className={`flex flex-col gap-2 ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
                 >
                   <h2 className="text-text_color text-lg font-bold">
                     {loaderData.first_name} {loaderData.last_name}
                   </h2>
                   {loaderData.is_blacklisted && (
-                    <span
-                      className="inline-flex w-fit items-center gap-1 rounded-full bg-red-700/20 px-2 py-0.5
-                        text-xs font-medium text-red-800 dark:text-red-500"
-                    >
+                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-700/20 px-2 py-0.5 text-xs font-medium text-red-800 dark:text-red-500">
                       <BanIcon styles="size-4" />
                       Blacklisted
                     </span>
                   )}
 
                   {loaderData.is_dummy && (
-                    <span
-                      className="bg-hvr_gray text-text_color/90 w-fit rounded-full px-2 py-0.5 text-xs
-                        font-medium"
-                    >
+                    <span className="bg-hvr_gray text-text_color/90 w-fit rounded-full px-2 py-0.5 text-xs font-medium">
                       User Added by You
                     </span>
                   )}
@@ -280,10 +238,7 @@ function CustomerDetailsPage() {
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="left" styles="w-auto">
-                  <div
-                    className="itmes-start flex w-auto flex-col *:flex *:w-full *:flex-row *:items-center
-                      *:rounded-lg *:p-2"
-                  >
+                  <div className="itmes-start flex w-auto flex-col *:flex *:w-full *:flex-row *:items-center *:rounded-lg *:p-2">
                     {!loaderData.is_dummy && (
                       <PopoverClose asChild>
                         <button
@@ -303,17 +258,22 @@ function CustomerDetailsPage() {
                         </button>
                       </PopoverClose>
                     )}
+                    <PopoverClose asChild>
+                      <button
+                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        onClick={() => {
+                          router.navigate({
+                            from: Route.fullPath,
+                            to: `/customers/edit/${loaderData.id}`,
+                          });
+                        }}
+                      >
+                        <EditIcon styles="size-4" />
+                        <p>Edit customer</p>
+                      </button>
+                    </PopoverClose>
                     {loaderData.is_dummy && (
                       <>
-                        <PopoverClose asChild>
-                          <button
-                            className="hover:bg-hvr_gray cursor-pointer gap-3"
-                            onClick={() => setShowEditModal(true)}
-                          >
-                            <EditIcon styles="size-4" />
-                            <p>Edit customer</p>
-                          </button>
-                        </PopoverClose>
                         <PopoverClose asChild>
                           <button
                             onClick={() => setShowDeleteModal(true)}
@@ -333,19 +293,30 @@ function CustomerDetailsPage() {
             </div>
           </div>
 
-          <div
-            className="text-text_color/70 flex flex-col items-start gap-3 text-sm sm:flex-row
-              sm:items-center sm:gap-6"
-          >
-            <div className="flex items-center gap-2">
-              <EnvelopeIcon styles="size-4 text-text_color/70" />
-              {loaderData.email}
-            </div>
-            <div className="flex items-center gap-2">
-              <PhoneIcon styles="size-4 mb-0.5 fill-text_color/70" />
-              {loaderData.phone_number}
+          <div className="text-text_color/70 flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:gap-6">
+            {loaderData.email && (
+              <div className="flex items-center gap-2">
+                <EnvelopeIcon styles="size-5 text-text_color/70" />
+                {loaderData.email}
+              </div>
+            )}
+            <div className="flex items-center gap-6 sm:justify-start">
+              {loaderData.phone_number && (
+                <div className="flex items-center gap-2">
+                  <PhoneIcon styles="size-4 mb-0.5 fill-text_color/70 stroke-text_color/10" />
+                  {loaderData.phone_number}
+                </div>
+              )}
+              {loaderData.birthday && (
+                <div className="flex items-center gap-2">
+                  <CakeIcon styles="size-5 mb-0.5 text-text_color/70" />
+                  {formatBirthday(loaderData.birthday)}
+                </div>
+              )}
             </div>
           </div>
+          <ExpandableNote text={loaderData.note} />
+
           <CustomerStats customer={loaderData} />
         </Card>
 

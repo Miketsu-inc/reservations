@@ -175,15 +175,15 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select c.id,
-		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,
+	select c.id, 
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
 	left join "Appointment" a on (c.id = a.customer_id or a.transferred_to = c.id) and a.merchant_id = $1
-	where c.merchant_id = $1
+	where c.merchant_id = $1 and c.is_blacklisted is false
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
 
@@ -195,6 +195,33 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 
 	// if customers array is empty the encoded json field will be null
 	// unless an empty slice is supplied to it
+	if len(customers) == 0 {
+		customers = []PublicCustomer{}
+	}
+
+	return customers, nil
+}
+
+func (s *service) GetBlacklistedCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
+	query := `
+	select c.id, 
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
+		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,  c.birthday, c.note,
+		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
+		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
+	from "Customer" c
+	left join "User" u on c.user_id = u.id
+	left join "Appointment" a on (c.id = a.customer_id or a.transferred_to = c.id) and a.merchant_id = $1
+	where c.merchant_id = $1 and c.is_blacklisted is true
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicCustomer])
+	if err != nil {
+		return customers, nil
+	}
+
 	if len(customers) == 0 {
 		customers = []PublicCustomer{}
 	}

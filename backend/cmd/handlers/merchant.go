@@ -561,12 +561,32 @@ func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, customers)
 }
 
+func (m *Merchant) GetBlacklistedCustomers(w http.ResponseWriter, r *http.Request) {
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	customers, err := m.Postgresdb.GetBlacklistedCustomersByMerchantId(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving blacklisted customers for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, customers)
+}
+
 func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 	type newCustomer struct {
-		FirstName   string `json:"first_name" validate:"required"`
-		LastName    string `json:"last_name" validate:"required"`
-		Email       string `json:"email" validate:"omitempty,email"`
-		PhoneNumber string `json:"phone_number" validate:"omitempty,e164"`
+		FirstName   *string    `json:"first_name" validate:"required"`
+		LastName    *string    `json:"last_name" validate:"required"`
+		Email       *string    `json:"email"`
+		PhoneNumber *string    `json:"phone_number"`
+		Birthday    *time.Time `json:"birthday"`
+		Note        *string    `json:"note"`
 	}
 	var customer newCustomer
 
@@ -595,6 +615,8 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 		LastName:    customer.LastName,
 		Email:       customer.Email,
 		PhoneNumber: customer.PhoneNumber,
+		Birthday:    customer.Birthday,
+		Note:        customer.Note,
 	}); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
 		return
@@ -634,11 +656,13 @@ func (m *Merchant) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	type Customer struct {
-		Id          uuid.UUID `json:"id" validate:"required,uuid"`
-		FirstName   string    `json:"first_name" validate:"required"`
-		LastName    string    `json:"last_name" validate:"required"`
-		Email       string    `json:"email" validate:"omitempty,email"`
-		PhoneNumber string    `json:"phone_number" validate:"omitempty,e164"`
+		Id          uuid.UUID  `json:"id" validate:"required,uuid"`
+		FirstName   *string    `json:"first_name"`
+		LastName    *string    `json:"last_name"`
+		Email       *string    `json:"email"`
+		PhoneNumber *string    `json:"phone_number"`
+		Birthday    *time.Time `json:"birthday"`
+		Note        *string    `json:"note"`
 	}
 	var customer Customer
 
@@ -679,6 +703,8 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 		LastName:    customer.LastName,
 		Email:       customer.Email,
 		PhoneNumber: customer.PhoneNumber,
+		Birthday:    customer.Birthday,
+		Note:        customer.Note,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating customer for merchant: %s", err.Error()))
@@ -1281,7 +1307,39 @@ func (m *Merchant) UpdateServiceProductConnections(w http.ResponseWriter, r *htt
 	}
 }
 
-func (m *Merchant) GetCustomer(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) GetCustomerStatistics(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	customerId, err := uuid.Parse(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting customer id to uuid: %s", err.Error()))
+		return
+	}
+
+	userId := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		return
+	}
+
+	customer, err := m.Postgresdb.GetCustomerStatsByMerchant(r.Context(), merchantId, customerId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving customer stats for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, customer)
+
+}
+
+func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if id == "" {
@@ -1310,5 +1368,4 @@ func (m *Merchant) GetCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, customer)
-
 }
