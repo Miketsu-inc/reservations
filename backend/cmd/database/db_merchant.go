@@ -175,8 +175,8 @@ type PublicCustomer struct {
 
 func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select c.id, 
-		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+	select c.id,
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
@@ -204,7 +204,7 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 
 func (s *service) GetBlacklistedCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
 	query := `
-	select c.id, 
+	select c.id,
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,  c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
@@ -542,9 +542,11 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	return dd, nil
 }
 
+// TODO: value is of numeric type so float might not be the best
+// type to return here
 type RevenueStat struct {
-	Value currencyx.FormattedPrice `json:"value" db:"value"`
-	Day   time.Time                `json:"day" db:"day"`
+	Value float64   `json:"value" db:"value"`
+	Day   time.Time `json:"day" db:"day"`
 }
 
 type DashboardStatistics struct {
@@ -565,7 +567,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	WITH base AS (
     SELECT
 		distinct on (group_id)
-        from_date::date AS day,
+        to_date,
         (price_then).number as price,
 		(price_then).currency as currency,
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
@@ -577,14 +579,12 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	),
 	current AS (
 		SELECT
-			day,
 			SUM(price) FILTER (WHERE NOT cancelled) AS revenue,
 			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			AVG(duration) FILTER (WHERE NOT cancelled) AS avg_duration
 		FROM base
-		WHERE day >= $2 AND day < $3
-		GROUP BY day
+		WHERE to_date >= $2 AND to_date < $3
 	),
 	current_totals AS (
 		SELECT
@@ -601,7 +601,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			CAST(AVG(duration) FILTER (WHERE NOT cancelled) AS INTEGER) AS average_duration
 		FROM base
-		WHERE day >= $4 AND day < $5
+		WHERE to_date >= $4 AND to_date < $5
 	),
 	single_currency as (
 		select currency
@@ -631,7 +631,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		curr                                 string
 	)
 
-	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date.AddDate(0, 0, 1), prevPeriodStart, currPeriodStart.AddDate(0, 0, 1)).Scan(
+	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date, prevPeriodStart, currPeriodStart.AddDate(0, 0, 1)).Scan(
 		&currRevenue, &prevRevenue,
 		&currAppointments, &prevAppointments,
 		&currCancellations, &prevCancellations,
@@ -670,16 +670,15 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	query2 := `
 	SELECT
 		DATE(from_date) AS day,
-		row(COALESCE(SUM(price), 0)::numeric, min(currency))::price AS value
+		COALESCE(SUM(price), 0) AS value
 	FROM (
-		select distinct on (group_id) from_date, (price_then).number as price, (price_then).currency as currency
+		select distinct on (group_id) from_date, (price_then).number as price
 		from "Appointment"
 		WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
 		AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
 		order by group_id
 	)
 	GROUP BY day
-	HAVING COUNT(DISTINCT currency) = 1
 	ORDER BY day
 	`
 
@@ -688,6 +687,8 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	if err != nil {
 		return DashboardStatistics{}, err
 	}
+
+	fmt.Println(stats.Revenue)
 
 	return stats, nil
 }
