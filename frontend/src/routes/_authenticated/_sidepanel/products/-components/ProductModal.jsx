@@ -3,6 +3,7 @@ import CloseButton from "@components/CloseButton";
 import Input from "@components/Input";
 import Modal from "@components/Modal";
 import Select from "@components/Select";
+import Textarea from "@components/TextArea";
 import {
   convertFromBaseUnit,
   convertToBaseUnit,
@@ -174,19 +175,18 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                 {productData.price?.currency || "HUF"}
               </p>
             </Input>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                placeholder="About this product..."
-                className="bg-bg_color focus:border-primary max-h-20 min-h-16 w-full rounded-lg border border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
-                value={productData.description}
-                onChange={(e) =>
-                  updateProductData({ description: e.target.value })
-                }
-              />
-            </div>
+            <Textarea
+              styles="p-2 md:max-h-32 md:min-h-32 max-h-20 min-h-20 text-sm"
+              id="description"
+              name="description"
+              labelText="Description"
+              required={false}
+              placeholder="About this product..."
+              value={productData.description}
+              inputData={(data) =>
+                updateProductData({ description: data.value })
+              }
+            />
           </div>
           <div className="flex flex-col gap-4 md:w-96 md:justify-between">
             <div className="flex flex-col gap-2 md:gap-4">

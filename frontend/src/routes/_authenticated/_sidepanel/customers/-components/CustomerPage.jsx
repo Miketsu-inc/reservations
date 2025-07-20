@@ -2,6 +2,7 @@ import Button from "@components/Button";
 import Card from "@components/Card";
 import Input from "@components/Input";
 import Select from "@components/Select";
+import Textarea from "@components/TextArea";
 import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -194,17 +195,17 @@ export default function CustomerPage({ customer, onSave }) {
               />
             </Input>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="note">Note</label>
-              <textarea
-                id="note"
-                name="note"
-                placeholder="About this cutomer..."
-                className="bg-layer_bg focus:ring-primary/30 focus:border-primary border-input_border_color max-h-20 min-h-20 w-full rounded-lg border p-2 text-sm outline-hidden transition-[border-color,box-shadow] focus:ring-4 md:max-h-32 md:min-h-32"
-                value={customerData.note}
-                onChange={(e) => updateCustomerData({ note: e.target.value })}
-              />
-            </div>
+            <Textarea
+              styles="p-2 max-h-20 min-h-20 md:max-h-32 md:min-h-32"
+              id="note"
+              name="note"
+              labelText="Note"
+              required={false}
+              placeholder="About this cutomer..."
+              value={customerData.note}
+              inputData={(data) => updateCustomerData({ note: data.value })}
+            />
+
             <div className="flex w-full justify-end gap-2">
               <Link from={router.fullPath}>
                 <Button

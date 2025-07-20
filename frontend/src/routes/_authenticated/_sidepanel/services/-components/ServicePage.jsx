@@ -4,6 +4,7 @@ import DeleteModal from "@components/DeleteModal";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
+import Textarea from "@components/TextArea";
 import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import InfoIcon from "@icons/InfoIcon";
 import { useToast } from "@lib/hooks";
@@ -267,19 +268,18 @@ export default function ServicePage({
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="description">Description</label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      placeholder="About this service..."
-                      className="bg-bg_color focus:border-primary max-h-20 min-h-20 w-full rounded-lg border border-gray-300 p-2 text-sm outline-hidden md:max-h-32 md:min-h-32"
-                      value={serviceData.description}
-                      onChange={(e) =>
-                        updateServiceData({ description: e.target.value })
-                      }
-                    />
-                  </div>
+                  <Textarea
+                    styles="p-2 max-h-20 min-h-20 md:max-h-32 md:min-h-32"
+                    id="description"
+                    name="description"
+                    labelText="Description"
+                    required={false}
+                    placeholder="About this service..."
+                    value={serviceData.description}
+                    inputData={(data) =>
+                      updateServiceData({ description: data.value })
+                    }
+                  />
                 </div>
               </Card>
               <div className="flex h-fit flex-col gap-2 md:w-1/2">

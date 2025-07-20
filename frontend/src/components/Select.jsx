@@ -100,8 +100,7 @@ export default function Select({
     >
       <PopoverTrigger asChild>
         <button
-          className={`${styles} border-input_border_color w-full min-w-fit rounded-lg border py-2 pr-2
-            pl-3 text-left`}
+          className={`${styles} border-input_border_color w-full min-w-fit rounded-lg border py-2 pr-2 pl-3 text-left`}
           type="button"
           ref={containerRef}
         >
@@ -135,7 +134,7 @@ export default function Select({
           width: containerRef.current?.offsetWidth || "auto",
         }}
       >
-        {extraContent}
+        {extraContent && <div className="p-2">{extraContent}</div>}
         <ul
           ref={dropDownListRef}
           style={{
@@ -165,9 +164,7 @@ export default function Select({
                     handleClose();
                   }}
                   key={index}
-                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                    dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700
-                    select-none`}
+                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"} dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700 select-none`}
                   role="option"
                   aria-selected={isSelected}
                 >

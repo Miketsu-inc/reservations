@@ -1,4 +1,5 @@
 import Button from "@components/Button";
+import Textarea from "@components/TextArea";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
@@ -56,17 +57,14 @@ export default function DeleteAppsPopoverContent({ event, onDeleted }) {
           You can give a cancellation reason here, which will be included in the
           cancellation email sent to the customer.
         </p>
-        <div className="flex flex-col gap-1 px-1">
-          <p className="">Deletion reason</p>
-          <textarea
-            id="deletion_reason"
-            name="deletion reason"
-            placeholder="Add your reason here..."
-            className="bg-bg_color text-text_color max-h-20 min-h-20 w-full rounded-lg border
-              border-gray-400 p-2 text-sm outline-hidden focus:border-gray-900
-              dark:focus:border-gray-200"
-          />
-        </div>
+        <Textarea
+          styles="p-2 max-h-20 min-h-20 text-sm"
+          id="deletion_reason"
+          name="deletion reason"
+          labelText="Deletion reason"
+          required={false}
+          placeholder="About this cutomer..."
+        />
       </div>
       <div className="flex justify-end pt-2">
         <PopoverClose asChild>

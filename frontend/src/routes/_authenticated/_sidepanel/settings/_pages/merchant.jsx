@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
+import Textarea from "@components/TextArea";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,7 +9,6 @@ import BusinessHours from "../-components/BusinessHours";
 import DangerZoneItem from "../-components/DangerZoneItem";
 import ImageUploader from "../-components/ImageUploader";
 import SectionHeader from "../-components/SectionHeader";
-import TextArea from "../-components/TextArea";
 
 const daysOfWeek = {
   1: "Monday",
@@ -182,59 +182,58 @@ function MerchantPage() {
     <div className="flex w-full flex-col gap-6">
       <div className="flex w-full flex-col gap-6">
         <SectionHeader title="General info" styles="" />
-        <TextArea
-          styles="max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl text-text_color/90"
+        <Textarea
+          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl"
           id="intorudtion"
           placeholder="Introduce your company to the clients"
           name="introduction"
-          description="The introduction will appear on the top of the booking page"
-          label="Introduction"
+          required={false}
+          labelText="Introduction"
           value={merchantInfo.introduction}
-          sendInputData={handleInputData}
+          inputData={handleInputData}
         />
-        <TextArea
-          styles="text-text_color/90 max-h-96 min-h-28 md:w-2/3 min-w-52 md:max-w-2xl"
+        <Textarea
+          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-52 md:max-w-2xl"
           id="announcement"
           placeholder=""
           name="announcement"
-          description="I dont even know what the hell is that to be honest but here i guess
-            we will explain to you."
-          label="Announcement"
+          required={false}
+          labelText="Announcement"
           value={merchantInfo.announcement}
-          sendInputData={handleInputData}
+          inputData={handleInputData}
         />
-        <TextArea
-          styles="text-text_color/90 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl resize-none"
+        <Textarea
+          styles="p-2 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl"
           id="payment_info"
           placeholder=""
+          required={false}
           name="payment_info"
-          description="Tell your clients what they can use to pay you."
-          label="Payment Info"
+          labelText="Payment Info"
           value={merchantInfo.payment_info}
-          sendInputData={handleInputData}
+          inputData={handleInputData}
         />
-        <TextArea
-          styles="text-text_color/90 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl resize-none"
+        <Textarea
+          styles="p-2 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl"
           id="parking_info"
           placeholder=""
+          required={false}
           name="parking_info"
-          description="Share your client if there is any parking opportunity near your office"
-          label="Parking Info"
+          labelText="Parking Info"
           value={merchantInfo.parking_info}
-          sendInputData={handleInputData}
+          inputData={handleInputData}
         />
-        <TextArea
-          styles="max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl text-text_color/90"
+        <Textarea
+          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl"
           id="about_us"
           placeholder="Tell about your company to the clients"
           name="about_us"
-          description=""
-          label="About Us"
+          required={false}
+          labelText="About Us"
           value={merchantInfo.about_us}
-          sendInputData={handleInputData}
+          inputData={handleInputData}
         />
 
-        <div className="my-2 font-semibold">Currency (I have no idea yet)</div>
+        <div className="my-2 font-semibold">Currency</div>
         <div className="my-2 flex flex-col gap-3">
           <div className="font-semibold">Business hours</div>
           <p className="text-text_color/70">

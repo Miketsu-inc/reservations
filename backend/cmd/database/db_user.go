@@ -386,6 +386,6 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 	if err != nil {
 		return CustomerInfo{}, err
 	}
-	fmt.Println("hkjshflkjdh")
+
 	return customer, nil
 }

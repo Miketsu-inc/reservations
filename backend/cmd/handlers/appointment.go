@@ -109,6 +109,9 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		} else {
 			cost = currencyx.Price{Amount: zeroAmount}
 		}
+	} else {
+		price = *service.Price
+		cost = *service.Cost
 	}
 
 	appointmentId, err := a.Postgresdb.NewAppointment(r.Context(), database.Appointment{

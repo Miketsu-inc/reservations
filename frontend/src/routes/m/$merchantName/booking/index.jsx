@@ -1,8 +1,8 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import SmallCalendar from "@components/SmallCalendar";
+import Textarea from "@components/TextArea";
 import BackArrowIcon from "@icons/BackArrowIcon";
-import MessageIcon from "@icons/MessageIcon";
 import { formatToDateString } from "@lib/datetime";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
@@ -177,10 +177,7 @@ function SelectDateTime() {
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
             <div className="flex flex-col gap-6 md:w-1/2">
               <p className="text-xl sm:py-5">Pick a date</p>
-              <div
-                className="flex items-center justify-center self-center bg-white shadow-lg
-                  dark:bg-neutral-950"
-              >
+              <div className="flex items-center justify-center self-center bg-white shadow-lg dark:bg-neutral-950">
                 <SmallCalendar
                   value={day}
                   onSelect={dayChangeHandler}
@@ -233,27 +230,19 @@ function SelectDateTime() {
                   </div>
                 </div>
               </div>
-              <div className="mt-2 mb-20 flex w-full flex-col gap-3 md:mt-4 md:mb-0">
-                <div className="flex items-center gap-3">
-                  <MessageIcon styles="size-4 fill-current" />
-                  <span>Add a note to your appointment (optional)</span>
-                </div>
-                <textarea
-                  name="appointment note"
-                  value={customerNote}
-                  onChange={(e) => {
-                    setCustomerNote(e.target.value);
-                  }}
-                  className="focus:border-text_color max-h-20 min-h-10 w-full rounded-md border
-                    border-gray-400 bg-transparent p-2 text-sm outline-hidden placeholder:text-sm
-                    md:max-h-32"
-                  placeholder="Add your note here..."
-                />
-              </div>
-              <div
-                className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0 left-0 px-8 py-3 md:static
-                  md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent"
-              >
+
+              <Textarea
+                styles="p-2 max-h-20 min-h-20 md:max-h-32 md:min-h-32"
+                id="customerNote"
+                name="customerNote"
+                labelText="Add a note to your appointment"
+                required={false}
+                placeholder="Add your note here..."
+                value={customerNote}
+                inputData={(data) => setCustomerNote(data.value)}
+              />
+
+              <div className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0 left-0 px-8 py-3 md:static md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent">
                 <Button
                   variant="primary"
                   type="submit"

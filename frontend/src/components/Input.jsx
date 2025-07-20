@@ -22,19 +22,27 @@ export default function Input({
   return (
     <>
       <label htmlFor={id} className="flex w-full flex-col">
-        {labelText && <span className="pb-1 text-sm">{labelText}</span>}
+        {labelText && (
+          <span className="flex items-center gap-1 pb-1 text-sm">
+            {labelText}
+            {required !== false && (
+              <span className="text-base leading-none text-red-500">*</span>
+            )}
+          </span>
+        )}
         <div
           className={`${childrenSide !== "right" ? "flex-row-reverse" : "flex-row"} flex items-center`}
         >
           <InputBase
-            styles={`${styles} ${ children &&
+            styles={`${styles} ${
+              children &&
               (childrenSide === "right"
                 ? "border-r-0 rounded-r-none"
                 : "border-l-0 rounded-l-none")
-              } peer border bg-layer_bg outline-hidden placeholder-stone-500
+            } peer border bg-layer_bg outline-hidden placeholder-stone-500
               dark:placeholder-zinc-400 transition-[border-color,box-shadow] ease-in-out
               duration-150 border-input_border_color focus:border-primary focus:ring-4
-              focus:ring-primary/30`}
+              focus:ring-primary/30 disabled:text-text_color/70 disabled:border-input_border_color/60 disabled:bg-gray-200/60  disabled:dark:bg-gray-700/20`}
             id={id}
             name={name}
             onChange={handleChange}

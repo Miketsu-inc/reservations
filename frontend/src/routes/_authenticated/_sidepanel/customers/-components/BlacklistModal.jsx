@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import Modal from "@components/Modal";
+import Textarea from "@components/TextArea";
 import { useEffect, useState } from "react";
 
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
@@ -25,41 +26,30 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             {data?.first_name + " " + data?.last_name}
           </p>
         </div>
-        <div className="flex justify-center py-3">
-          <div className="text-text_color/80 py-4 text-center">
-            {data?.is_blacklisted ? (
-              <p>
-                You are about to remove this customer from the blacklist. They
-                will be able to book appointments by themselves from now on.
-              </p>
-            ) : (
-              <p>
-                You are about to blacklist this customer. They will not be able
-                to book appointments from now on. They will see a message asking
-                them to contact you for an appointment once trying.
-              </p>
-            )}
-            <div className="flex flex-col gap-1 px-4 py-3">
-              {data?.is_blacklisted && (
-                <label className="text-left" htmlFor="blacklist_reson">
-                  Your reason for blacklist
-                </label>
-              )}
-              <textarea
-                id="blacklist_reason"
-                name="reason"
-                placeholder="Add your reason here..."
-                value={reason}
-                className="bg-bg_color text-text_color max-h-20 min-h-20 w-full rounded-lg border
-                  border-gray-400 p-2 text-sm outline-hidden focus:border-gray-900
-                  dark:scheme-dark dark:focus:border-gray-200"
-                onChange={(e) => {
-                  setReason(e.target.value);
-                }}
-              />
-            </div>
-            <p>You can always revert this action later.</p>
-          </div>
+        <div className="text-text_color/80 flex flex-col justify-center gap-4 py-3 text-center">
+          {data?.is_blacklisted ? (
+            <p>
+              You are about to remove this customer from the blacklist. They
+              will be able to book appointments by themselves from now on.
+            </p>
+          ) : (
+            <p>
+              You are about to blacklist this customer. They will not be able to
+              book appointments from now on. They will see a message asking them
+              to contact you for an appointment once trying.
+            </p>
+          )}
+          <Textarea
+            styles="p-2 max-h-20 min-h-20"
+            id="blacklist_reason"
+            name="blacklist_reason"
+            labelText={data?.is_blacklisted ? "Your Reson for blacklist" : ""}
+            required={false}
+            placeholder="Add your reson here..."
+            value={reason}
+            inputData={(data) => setReason(data.value)}
+          />
+          <p>You can always revert this action later.</p>
         </div>
         <div className="flex flex-row items-center justify-end gap-4">
           <Button
