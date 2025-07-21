@@ -22,14 +22,14 @@ function CustomersLayout() {
   const pathName = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="flex flex-col justify-center gap-3 px-4 py-4 md:px-0">
-      <div className="md:bg-layer_bg md:border-border_color flex w-full flex-col gap-4 md:rounded-lg md:border md:px-4 md:py-4 md:shadow-sm">
+    <div className="flex flex-col justify-center gap-6 px-4 py-4 md:px-0">
+      <div className="flex w-full flex-col gap-4">
         <h1 className="text-text_color text-2xl font-bold">Customers</h1>
         <div className="flex items-center justify-between">
-          <nav className="md:bg-bg_color flex w-fit rounded-md bg-gray-200 p-1 dark:bg-gray-600/20">
+          <nav className="dark:bg-layer_bg flex w-fit rounded-md bg-gray-200 p-1">
             <Link
               activeProps={{
-                className: "md:bg-layer_bg bg-bg_color text-primary! shadow-sm",
+                className: " bg-bg_color text-primary! shadow-sm",
               }}
               activeOptions={{ exact: true }}
               to="/customers/"
@@ -42,7 +42,7 @@ function CustomersLayout() {
             </Link>
             <Link
               activeProps={{
-                className: "md:bg-layer_bg bg-bg_color text-red-600! shadow-sm",
+                className: " bg-bg_color text-red-600! shadow-sm",
               }}
               to="/customers/blacklist"
               className="text-text_color/70 rounded-md px-4 py-2 text-sm font-medium"

@@ -3,6 +3,7 @@ import Loading from "@components/Loading";
 import ApproveIcon from "@icons/ApproveIcon";
 import BanIcon from "@icons/BanIcon";
 import EditIcon from "@icons/EditIcon";
+import PersonIcon from "@icons/PersonIcon";
 import TransferIcon from "@icons/TransferIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { useWindowSize } from "@lib/hooks";
@@ -191,6 +192,20 @@ export default function CustomersTable({
   );
 }
 
-const DefaultNoRowsOverlay = () => (
-  <div className="text-text_color text-lg">No customers found</div>
-);
+function DefaultNoRowsOverlay() {
+  return (
+    <div className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600 dark:text-gray-300">
+      <PersonIcon styles="stroke-gray-200 size-16" />
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-text_color text-base font-medium">
+          No customers found
+        </p>
+        <p className="text-sm md:w-2/3">
+          Once a customer books an appointment or makes a purchase, their
+          information will appear here. You can use this list to track and
+          manage your regular clients.
+        </p>
+      </div>
+    </div>
+  );
+}

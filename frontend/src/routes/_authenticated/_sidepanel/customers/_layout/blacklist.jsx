@@ -131,7 +131,7 @@ function BlacklistPage() {
 
 function NoRowsComponent() {
   return (
-    <div className="flex flex-col items-center gap-4 px-2 text-gray-600 dark:text-gray-300">
+    <div className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600 dark:text-gray-300">
       <PersonIcon styles="fill-current size-16" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-text_color text-base font-medium">
@@ -139,7 +139,7 @@ function NoRowsComponent() {
         </p>
         <p className="text-sm md:w-2/3">
           You can blacklist clients who violate your policies. Blacklisted
-          clients will not be able to book appointments through your booking
+          customers will not be able to book appointments through your booking
           page.
         </p>
       </div>

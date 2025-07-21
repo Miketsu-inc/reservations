@@ -85,7 +85,9 @@ export default function Table({
           </div>
         )}
       </div>
-      <div className={`${isLoading ? "invisible" : "visible"} h-full w-full`}>
+      <div
+        className={`${isLoading ? "invisible" : "visible"} h-full w-full ${rowData?.length === 0 ? "ag-header-hidden" : ""} `}
+      >
         <AgGridReact
           ref={tableRef}
           theme={themeAlpine}

@@ -1,5 +1,6 @@
 import DeleteModal from "@components/DeleteModal";
 import Loading from "@components/Loading";
+import ProductIcon from "@icons/ProductIcon";
 import { useWindowSize } from "@lib/hooks";
 import { getDisplayUnit } from "@lib/units";
 import { lazy, Suspense, useState } from "react";
@@ -145,6 +146,20 @@ export default function ProductsTable({
   );
 }
 
-const DefaultNoRowsOverlay = () => (
-  <div className="text-text_color text-lg">No products found</div>
-);
+function DefaultNoRowsOverlay() {
+  return (
+    <div className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600 dark:text-gray-300">
+      <ProductIcon styles="size-16" />
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-text_color text-base font-medium">
+          No products added
+        </p>
+        <p className="text-sm md:w-2/3">
+          Use this space to keep track of your inventory. Add items you offer so
+          you can monitor stock levels, identify what’s running low, and stay
+          organized.
+        </p>
+      </div>
+    </div>
+  );
+}

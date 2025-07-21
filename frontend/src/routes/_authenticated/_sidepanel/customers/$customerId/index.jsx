@@ -316,7 +316,6 @@ function CustomerDetailsPage() {
             </div>
           </div>
           <ExpandableNote text={loaderData.note} />
-
           <CustomerStats customer={loaderData} />
         </Card>
 
