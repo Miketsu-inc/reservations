@@ -7,6 +7,8 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/sub"
+	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -151,6 +153,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 		r.Use(lang.LangMiddleware)
+		r.Use(sub.SubscriptionMiddleware(subscription.Free))
 
 		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
 		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)

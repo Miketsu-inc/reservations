@@ -8,6 +8,8 @@ create type price as (
     currency                 char(3)
 );
 
+create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
+
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
     first_name               varchar(30)     not null,
@@ -16,7 +18,6 @@ create table if not exists "User" (
     phone_number             varchar(30),
     password_hash            varchar(72),
     jwt_refresh_version      integer,
-    subscription             integer,
     preferred_lang           varchar(10)
 );
 
@@ -32,7 +33,8 @@ create table if not exists "Merchant" (
     parking_info             text,
     payment_info             text,
     timezone                 text,
-    currency_code            char(3)         not null
+    currency_code            char(3)         not null,
+    subscription_tier        subscription_tier not null
 );
 
 create table if not exists "ServiceCategory" (
@@ -87,7 +89,7 @@ create table if not exists "Customer" (
     email                   varchar(320),
     phone_number            varchar(30),
     birthday                date,
-    note                    text,   
+    note                    text,
     is_blacklisted          boolean default false not null,
     blacklist_reason        text,
 

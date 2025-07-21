@@ -14,31 +14,35 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 )
 
 type Merchant struct {
-	Id           uuid.UUID `json:"ID"`
-	Name         string    `json:"name"`
-	UrlName      string    `json:"url_name"`
-	OwnerId      uuid.UUID `json:"owner_id"`
-	ContactEmail string    `json:"contact_email"`
-	Introduction string    `json:"introduction"`
-	Announcement string    `json:"announcement"`
-	AboutUs      string    `json:"about_us"`
-	ParkingInfo  string    `json:"parking_info"`
-	PaymentInfo  string    `json:"payment_info"`
-	Timezone     string    `json:"timezone"`
-	CurrencyCode string    `json:"currency_code"`
+	Id               uuid.UUID         `json:"ID"`
+	Name             string            `json:"name"`
+	UrlName          string            `json:"url_name"`
+	OwnerId          uuid.UUID         `json:"owner_id"`
+	ContactEmail     string            `json:"contact_email"`
+	Introduction     string            `json:"introduction"`
+	Announcement     string            `json:"announcement"`
+	AboutUs          string            `json:"about_us"`
+	ParkingInfo      string            `json:"parking_info"`
+	PaymentInfo      string            `json:"payment_info"`
+	Timezone         string            `json:"timezone"`
+	CurrencyCode     string            `json:"currency_code"`
+	SubscriptionTier subscription.Tier `json:"subscription_tier"`
 }
 
 func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info, payment_info, timezone, currency_code)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info,
+		payment_info, timezone, currency_code, subscription_tier)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
 	_, err := s.db.Exec(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
-		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo, merchant.Timezone, merchant.CurrencyCode)
+		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo,
+		merchant.Timezone, merchant.CurrencyCode, merchant.SubscriptionTier)
 	if err != nil {
 		return err
 	}
@@ -74,22 +78,6 @@ func (s *service) GetMerchantIdByOwnerId(ctx context.Context, ownerId uuid.UUID)
 	}
 
 	return merchantId, nil
-}
-
-func (s *service) GetMerchantById(ctx context.Context, merchantId uuid.UUID) (Merchant, error) {
-	query := `
-	select * from "Merchant"
-	where id = $1
-	`
-
-	var merchant Merchant
-	err := s.db.QueryRow(ctx, query, merchantId).Scan(&merchant.Id, &merchant.Name, &merchant.UrlName, &merchant.OwnerId, &merchant.ContactEmail,
-		&merchant.Introduction, &merchant.Announcement, &merchant.AboutUs, &merchant.ParkingInfo, &merchant.PaymentInfo, &merchant.Timezone, &merchant.CurrencyCode)
-	if err != nil {
-		return Merchant{}, err
-	}
-
-	return merchant, nil
 }
 
 type MerchantInfo struct {
@@ -705,4 +693,19 @@ func (s *service) GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID)
 	}
 
 	return curr, nil
+}
+
+func (s *service) GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (subscription.Tier, error) {
+	query := `
+	select subscription_tier from "Merchant"
+	where id = $1
+	`
+
+	var tier subscription.Tier
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&tier)
+	if err != nil {
+		return subscription.Tier{}, err
+	}
+
+	return tier, nil
 }

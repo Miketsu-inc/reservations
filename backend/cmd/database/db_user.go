@@ -296,7 +296,7 @@ type CustomerStatistics struct {
 func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error) {
 	query := `
 	with appointments as (
-		select a.customer_id, 
+		select a.customer_id,
 			jsonb_agg(
 				jsonb_build_object(
 					'from_date', a.from_date,
@@ -320,7 +320,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 		join "Location" l on l.id = a.location_id
 		group by a.customer_id
 	)
-	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled,
 	count(distinct case when a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null and a.from_date >= now() then group_id end) as times_upcoming,
@@ -374,7 +374,7 @@ type CustomerInfo struct {
 
 func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error) {
 	query := `
-	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, 
+	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note, c.user_id is null as is_dummy
 	from "Customer" c
 	left join "User" u on u.id = c.user_id

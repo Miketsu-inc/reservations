@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -53,18 +54,19 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	curr := currencyx.FindBest(language)
 
 	err = m.Postgresdb.NewMerchant(r.Context(), database.Merchant{
-		Id:           merchantID,
-		Name:         signup.Name,
-		UrlName:      urlName,
-		OwnerId:      userID,
-		ContactEmail: signup.ContactEmail,
-		Introduction: "",
-		Announcement: "",
-		AboutUs:      "",
-		ParkingInfo:  "",
-		PaymentInfo:  "",
-		Timezone:     signup.Timezone,
-		CurrencyCode: curr,
+		Id:               merchantID,
+		Name:             signup.Name,
+		UrlName:          urlName,
+		OwnerId:          userID,
+		ContactEmail:     signup.ContactEmail,
+		Introduction:     "",
+		Announcement:     "",
+		AboutUs:          "",
+		ParkingInfo:      "",
+		PaymentInfo:      "",
+		Timezone:         signup.Timezone,
+		CurrencyCode:     curr,
+		SubscriptionTier: subscription.Free,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))

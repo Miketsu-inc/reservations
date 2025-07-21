@@ -13,6 +13,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 	"golang.org/x/text/language"
 )
 
@@ -76,8 +77,6 @@ type PostgreSQL interface {
 	GetMerchantIdByUrlName(context.Context, string) (uuid.UUID, error)
 	// Get a Merchant's owner id by the merchantId
 	GetMerchantIdByOwnerId(context.Context, uuid.UUID) (uuid.UUID, error)
-	// Get a Merchant by it's user id
-	GetMerchantById(context.Context, uuid.UUID) (Merchant, error)
 	// Get all publicly available merchant info that will be displayed
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 	// Check if a merchant url exists in the database
@@ -96,6 +95,8 @@ type PostgreSQL interface {
 	GetDashboardData(context.Context, uuid.UUID, time.Time, int) (DashboardData, error)
 	// Get the merchant's currency
 	GetMerchantCurrency(context.Context, uuid.UUID) (string, error)
+	// Get the merchant's subscription tier
+	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
 
 	// -- Location --
 
