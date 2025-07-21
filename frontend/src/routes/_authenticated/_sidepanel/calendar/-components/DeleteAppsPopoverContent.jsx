@@ -1,5 +1,5 @@
 import Button from "@components/Button";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";

@@ -3,7 +3,7 @@ import CloseButton from "@components/CloseButton";
 import Input from "@components/Input";
 import Modal from "@components/Modal";
 import Select from "@components/Select";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import {
   convertFromBaseUnit,
   convertToBaseUnit,

@@ -1,7 +1,7 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
 import SmallCalendar from "@components/SmallCalendar";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import { formatToDateString } from "@lib/datetime";
 import { invalidateLocalStorageAuth } from "@lib/lib";

@@ -4,7 +4,7 @@ import DeleteModal from "@components/DeleteModal";
 import Input from "@components/Input";
 import Select from "@components/Select";
 import Switch from "@components/Switch";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import InfoIcon from "@icons/InfoIcon";
 import { useToast } from "@lib/hooks";

@@ -2,7 +2,7 @@ import Button from "@components/Button";
 import Card from "@components/Card";
 import Input from "@components/Input";
 import Select from "@components/Select";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 

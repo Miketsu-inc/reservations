@@ -1,6 +1,6 @@
 import Button from "@components/Button";
 import ServerError from "@components/ServerError";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { createFileRoute } from "@tanstack/react-router";

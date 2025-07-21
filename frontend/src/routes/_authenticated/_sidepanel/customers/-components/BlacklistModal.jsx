@@ -1,6 +1,6 @@
 import Button from "@components/Button";
 import Modal from "@components/Modal";
-import Textarea from "@components/TextArea";
+import Textarea from "@components/Textarea";
 import { useEffect, useState } from "react";
 
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
