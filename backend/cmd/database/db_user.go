@@ -22,18 +22,17 @@ type User struct {
 	PhoneNumber       string    `json:"phone_number" db:"phone_number"`
 	PasswordHash      string    `json:"password_hash" db:"password_hash"`
 	JwtRefreshVersion int       `json:"jwt_refresh_version" db:"jwt_refresh_version"`
-	Subscription      int       `json:"subscription" db:"subscription"`
 	PreferredLang     *string   `json:"preferred_lang" db:"preferred_lang"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
 	query := `
-	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, subscription)
+	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := s.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
-		user.JwtRefreshVersion, user.Subscription)
+		user.JwtRefreshVersion)
 	if err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 
 	var user User
 	err := s.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
-		&user.JwtRefreshVersion, &user.Subscription, &user.PreferredLang)
+		&user.JwtRefreshVersion, &user.PreferredLang)
 	if err != nil {
 		return User{}, err
 	}

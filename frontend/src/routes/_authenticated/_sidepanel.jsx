@@ -5,12 +5,15 @@ import ChartIcon from "@icons/ChartIcon";
 import CustomersIcon from "@icons/CustomersIcon";
 import DashboardIcon from "@icons/DashboardIcon";
 import HamburgerMenuIcon from "@icons/HamburgerMenuIcon";
+import LinkIcon from "@icons/LinkIcon";
+import MoonIcon from "@icons/MoonIcon";
 import ProductIcon from "@icons/ProductIcon";
 import ServicesIcon from "@icons/ServicesIcon";
 import SettingsIcon from "@icons/SettingsIcon";
 import SidePanelToggleIcon from "@icons/SidePanelToggleIcon";
 import SignOutIcon from "@icons/SignOutIcon";
-import { useWindowSize } from "@lib/hooks";
+import SunIcon from "@icons/SunIcon";
+import { useTheme, useWindowSize } from "@lib/hooks";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
@@ -25,6 +28,8 @@ function SidePanelLayout() {
   const [isCollapsed, setIsCollapsed] = useState(
     localStorage.getItem("sidepanel_collapsed") === "true"
   );
+
+  const { isDarkTheme, switchTheme } = useTheme();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -114,7 +119,6 @@ function SidePanelLayout() {
 
   return (
     <div className="h-screen overflow-y-auto">
-      {/* sticky will have to be replaced with fixed when navlinks are removed */}
       {isWindowSmall && (
         <nav className="bg-layer_bg sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center justify-between px-4 py-2">
@@ -127,31 +131,53 @@ function SidePanelLayout() {
               <span className="sr-only">Open sidepanel</span>
               <HamburgerMenuIcon styles="h-6 w-6" />
             </button>
-            <img
-              className="rounded-full"
-              src="https://dummyimage.com/40x40/d156c3/000000.jpg"
-            />
+            <div className="flex flex-row gap-4">
+              <Link
+                className="hover:bg-primary/20 flex flex-row items-center gap-2
+                  rounded-lg p-2"
+                from={Route.fullPath}
+                to="/m/bwnet"
+              >
+                <LinkIcon styles="size-5" />
+                <span>Live booking page</span>
+              </Link>
+              <button
+                className="cursor-pointer transition-transform duration-300"
+                onClick={switchTheme}
+              >
+                {isDarkTheme ? (
+                  <SunIcon styles="size-5" />
+                ) : (
+                  <MoonIcon styles="size-5" />
+                )}
+              </button>
+            </div>
           </div>
         </nav>
       )}
       {isOpen && isWindowSmall && (
         <div
           onClick={closeSidePanelHandler}
-          className={`fixed inset-0 z-20 bg-black transition-opacity duration-1000 ease-in-out
+          className={`fixed inset-0 z-20 bg-black transition-opacity
+          duration-1000 ease-in-out
           ${isOpen ? "opacity-60" : "pointer-events-none opacity-0"}`}
         ></div>
       )}
       <aside
         id="sidepanel"
         className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
-          ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0 z-30 h-dvh
-          overflow-hidden transition-all duration-300`}
+          ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0
+          z-30 h-dvh overflow-hidden transition-all duration-300`}
         aria-label="Sidepanel"
       >
-        <div className="bg-layer_bg border-border_color flex h-full flex-col border-r px-3 py-4">
+        <div
+          className="bg-layer_bg border-border_color flex h-full flex-col
+            border-r px-3 py-4"
+        >
           <div
-            className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"} flex h-10 flex-row
-              items-center gap-3 transition-normal duration-300 ease-in-out`}
+            className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"} flex
+              h-10 flex-row items-center gap-3 transition-normal duration-300
+              ease-in-out`}
           >
             <img
               className="h-full rounded-lg object-cover"
@@ -175,23 +201,30 @@ function SidePanelLayout() {
                     activeProps={{
                       className: "bg-primary/20 *:text-primary! *:duration-0",
                     }}
-                    className="text-text_color hover:bg-primary/20 flex items-center rounded-lg p-2"
+                    className="text-text_color hover:bg-primary/20 flex
+                      items-center rounded-lg p-2"
                   >
-                    <span className="shrink-0 text-gray-500 transition duration-75 dark:text-gray-400">
+                    <span
+                      className="shrink-0 text-gray-500 transition duration-75
+                        dark:text-gray-400"
+                    >
                       {item.icon}
                     </span>
                     {(!isCollapsed || isWindowSmall) && (
                       <>
                         <span
-                          className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"} ms-3
-                          flex-1 whitespace-nowrap transition-opacity duration-300`}
+                          className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
+                          ms-3 flex-1 whitespace-nowrap transition-opacity
+                          duration-300`}
                         >
                           {item.label}
                         </span>
                         {item.isPro && (
                           <span
-                            className="ms-3 inline-flex items-center justify-center rounded-full bg-gray-300 px-2
-                              text-sm font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                            className="ms-3 inline-flex items-center
+                              justify-center rounded-full bg-gray-300 px-2
+                              text-sm font-medium text-gray-800 dark:bg-gray-700
+                              dark:text-gray-300"
                           >
                             Pro
                           </span>
@@ -205,31 +238,65 @@ function SidePanelLayout() {
           </ol>
         </div>
       </aside>
-      <div
-        className={`${!isWindowSmall && isCollapsed ? "md:ml-16" : "md:ml-60"} flex min-h-screen
-          flex-col transition-[margin] duration-300 md:px-4`}
-      >
-        {!isWindowSmall && (
-          <div
-            className="flex flex-row items-center gap-2 py-3 text-sm text-gray-800 transition-opacity
-              dark:text-gray-300"
-          >
-            <button
-              className="cursor-pointer"
-              onClick={() => {
-                localStorage.setItem("sidepanel_collapsed", !isCollapsed);
-                setIsCollapsed(!isCollapsed);
-              }}
+      {!isWindowSmall && (
+        <div
+          className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} bg-layer_bg
+          border-b-border_color border-b py-2 pl-4 transition-[margin]
+          duration-300`}
+        >
+          <div className="mr-4 flex flex-row items-center justify-between">
+            <div
+              className="flex flex-row items-center gap-2 py-3 text-sm
+                text-gray-800 dark:text-gray-300"
             >
-              <SidePanelToggleIcon styles="w-4 h-4 stroke-gray-800 dark:stroke-gray-300 hover:stroke-text_color" />
-            </button>
-            <div className="mx-2 h-3 w-px border-none bg-gray-800 dark:bg-gray-300"></div>
-            <Breadcrumbs />
+              <button
+                className="cursor-pointer"
+                onClick={() => {
+                  localStorage.setItem("sidepanel_collapsed", !isCollapsed);
+                  setIsCollapsed(!isCollapsed);
+                }}
+              >
+                <SidePanelToggleIcon
+                  styles="w-4 h-4 stroke-gray-800 dark:stroke-gray-300
+                    hover:stroke-text_color"
+                />
+              </button>
+              <div
+                className="mx-2 h-3 w-px border-none bg-gray-800
+                  dark:bg-gray-300"
+              ></div>
+              <Breadcrumbs />
+            </div>
+            <div className="flex flex-row gap-4">
+              <Link
+                className="hover:bg-primary/20 flex flex-row items-center gap-2
+                  rounded-lg p-2"
+                from={Route.fullPath}
+                to="/m/bwnet"
+              >
+                <LinkIcon styles="size-5" />
+                <span>Live booking page</span>
+              </Link>
+              <button
+                className="cursor-pointer transition-transform duration-300"
+                onClick={switchTheme}
+              >
+                {isDarkTheme ? (
+                  <SunIcon styles="size-5" />
+                ) : (
+                  <MoonIcon styles="size-5" />
+                )}
+              </button>
+            </div>
           </div>
-        )}
-        <div>
-          <Outlet />
         </div>
+      )}
+      <div
+        className={`${!isWindowSmall && isCollapsed ? "md:ml-16" : "md:ml-60"}
+          flex min-h-screen flex-col transition-[margin] duration-300 md:px-4
+          md:pt-4`}
+      >
+        <Outlet />
       </div>
     </div>
   );

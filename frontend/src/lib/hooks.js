@@ -1,5 +1,5 @@
 import { ToastContext } from "@components/ToastProvider";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import "./autofill/detect-autofill";
 import { getBreakPoint } from "./utils";
 
@@ -91,4 +91,36 @@ export function useAutofill(ref, callback) {
 
 export function useToast() {
   return useContext(ToastContext);
+}
+
+export function useTheme() {
+  const [isDarkTheme, setIsDarkTheme] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  const switchTheme = useCallback(() => {
+    window.toggleTheme();
+
+    setIsDarkTheme(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  useEffect(() => {
+    function handleSystemThemeChange() {
+      if (!localStorage.getItem("theme")) {
+        setIsDarkTheme(document.documentElement.classList.contains("dark"));
+      }
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleSystemThemeChange);
+    };
+  }, []);
+
+  return {
+    switchTheme,
+    isDarkTheme,
+  };
 }

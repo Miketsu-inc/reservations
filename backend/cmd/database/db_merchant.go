@@ -676,8 +676,6 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		return DashboardStatistics{}, err
 	}
 
-	fmt.Println(stats.Revenue)
-
 	return stats, nil
 }
 

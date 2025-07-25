@@ -16,6 +16,7 @@ frontend/src/assets/output.css
 # tanstack generated routes
 frontend/src/routeTree.gen.ts
 frontend/src/routeTree.gen.js
+.tanstack
 
 # backend
 .env
