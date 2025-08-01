@@ -112,7 +112,7 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime,
 		reservationsByDate[date] = append(reservationsByDate[date], appt)
 	}
 
-	for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
+	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 		if len(businessHoursForDay) == 0 {
 			continue
