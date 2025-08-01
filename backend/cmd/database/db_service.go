@@ -722,7 +722,7 @@ type ServicePageFormOptions struct {
 func (s *service) GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error) {
 	query := `
 	with product as (
-		select id, name, unit from "Product" where merchant_id = $1
+		select id, name, unit from "Product" where merchant_id = $1 and deleted_on is null
 	),
 	category as (
 		select id, name from "ServiceCategory" where merchant_id = $1

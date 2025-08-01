@@ -1343,7 +1343,7 @@ func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if id == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id provided"))
 		return
 	}
 

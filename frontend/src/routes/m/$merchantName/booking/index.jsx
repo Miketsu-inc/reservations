@@ -168,7 +168,7 @@ function SelectDateTime() {
       <div className="py-5">
         <Link from={Route.fullPath} to="..">
           <button className="inline-flex cursor-pointer gap-1 hover:underline">
-            <BackArrowIcon styles="h-6 w-6 stroke-gray-500" />
+            <BackArrowIcon styles="size-6 stroke-gray-500" />
             Back
           </button>
         </Link>

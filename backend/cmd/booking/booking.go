@@ -94,3 +94,41 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 
 	return availableTimes
 }
+
+type MultiDayAvailableTimes struct {
+	Date      string   `json:"date"`
+	Morning   []string `json:"morning"`
+	Afternoon []string `json:"afternoon"`
+}
+
+func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int,
+	startDate time.Time, endDate time.Time, businessHours map[int][]database.TimeSlot, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
+
+	results := []MultiDayAvailableTimes{}
+
+	reservationsByDate := make(map[string][]database.AppointmentTime)
+	for _, appt := range reservedForPeriod {
+		date := appt.From_date.In(merchantTz).Format("2006-01-02")
+		reservationsByDate[date] = append(reservationsByDate[date], appt)
+	}
+
+	for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
+		businessHoursForDay := businessHours[int(d.Weekday())]
+		if len(businessHoursForDay) == 0 {
+			continue
+		}
+
+		day := d.Format("2006-01-02")
+		reservedForDay := reservationsByDate[day]
+
+		dayResult := CalculateAvailableTimes(reservedForDay, servicePhases, serviceDuration, d, businessHoursForDay, currentTime, merchantTz)
+
+		results = append(results, MultiDayAvailableTimes{
+			Date:      d.Format("2006-01-02"),
+			Morning:   dayResult.Morning,
+			Afternoon: dayResult.Afternoon,
+		})
+	}
+
+	return results
+}

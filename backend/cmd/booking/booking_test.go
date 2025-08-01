@@ -214,3 +214,83 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
 	})
 }
+
+func TestCalculateAvailableTimesPeriod(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Budapest")
+
+	t.Run("Empty period", func(t *testing.T) {
+		startDate := ct(2025, time.July, 1, "00:00", tz)
+		endDate := ct(2025, time.June, 30, "23:59", tz)
+
+		results := booking.CalculateAvailableTimesPeriod(
+			[]database.AppointmentTime{},
+			[]database.PublicServicePhase{{PhaseType: "active", Duration: 30}},
+			30,
+			startDate, endDate,
+			map[int][]database.TimeSlot{},
+			ct(2025, time.June, 12, "00:00", time.UTC),
+			tz,
+		)
+
+		assert.Equal(t, 0, len(results), "Should return empty results for invalid date range")
+	})
+
+	t.Run("Empty Business Hours", func(t *testing.T) {
+		startDate := ct(2025, time.July, 1, "00:00", tz)
+		endDate := ct(2025, time.July, 3, "23:59", tz)
+
+		reserved := []database.AppointmentTime{
+			ctReserved(2025, time.July, 2, "10:00", "10:30", tz),
+		}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30},
+		}
+		serviceDuration := 30
+
+		businessHours := map[int][]database.TimeSlot{
+			2: {}, // Tuesday (July 1, 2025)
+			3: { // Wednesday (July 2, 2025)
+				{StartTime: "09:00:00", EndTime: "11:00:00"},
+			},
+			4: { // Thursday (July 3, 2025)
+				{StartTime: "09:00:00", EndTime: "11:00:00"},
+			},
+		}
+
+		currentTime := ct(2025, time.June, 12, "00:00", tz)
+
+		results := booking.CalculateAvailableTimesPeriod(
+			reserved,
+			servicePhases,
+			serviceDuration,
+			startDate,
+			endDate,
+			businessHours,
+			currentTime,
+			tz,
+		)
+
+		assert.Equal(t, 2, len(results), "Expected 2 days of results")
+
+		expectedDay2 := formatTimes([]time.Time{
+			ct(2025, time.July, 2, "09:00", tz),
+			ct(2025, time.July, 2, "09:15", tz),
+			ct(2025, time.July, 2, "09:30", tz),
+			ct(2025, time.July, 2, "10:30", tz),
+		})
+
+		expectedDay3 := formatTimes([]time.Time{
+			ct(2025, time.July, 3, "09:00", tz),
+			ct(2025, time.July, 3, "09:15", tz),
+			ct(2025, time.July, 3, "09:30", tz),
+			ct(2025, time.July, 3, "09:45", tz),
+			ct(2025, time.July, 3, "10:00", tz),
+			ct(2025, time.July, 3, "10:15", tz),
+			ct(2025, time.July, 3, "10:30", tz),
+		})
+
+		assert.ElementsMatch(t, expectedDay2, append(results[0].Morning, results[0].Afternoon...), "Day 2 times mismatch")
+		assert.ElementsMatch(t, expectedDay3, append(results[1].Morning, results[1].Afternoon...), "Day 3 times mismatch")
+	})
+}

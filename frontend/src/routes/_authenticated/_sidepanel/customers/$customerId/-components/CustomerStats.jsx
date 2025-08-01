@@ -5,14 +5,16 @@ import BookingDonutChart from "./BookingDonutChart";
 export default function CustomerStats({ customer }) {
   const completed =
     customer.times_booked -
-    (customer.times_upcoming + customer.times_cancelled);
+    (customer.times_upcoming +
+      customer.times_cancelled_by_user +
+      customer.times_cancelled_by_merchant);
 
   return (
     <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start sm:gap-0">
       {customer.times_booked !== 0 && (
         <div className="flex h-[180px] w-full justify-center sm:ml-10 sm:w-1/3">
           <BookingDonutChart
-            cancelled={customer.times_cancelled}
+            cancelled={customer.times_cancelled_by_user}
             upcoming={customer.times_upcoming}
             completed={completed}
           />
@@ -30,7 +32,7 @@ export default function CustomerStats({ customer }) {
             <ApproveIcon styles="size-7 stroke-green-600" />
           </StatElement>
           <StatElement
-            value={customer.times_cancelled}
+            value={customer.times_cancelled_by_user}
             color="red-600"
             label="Cancelled"
           >

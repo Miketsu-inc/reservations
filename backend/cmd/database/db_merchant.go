@@ -312,7 +312,6 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 		return fmt.Errorf("failed to delete outdated business hours for merchant: %v", err)
 	}
 
-	// 2. Insert new rows (avoiding duplicates)
 	insertQuery := `
     insert into "BusinessHours" (merchant_id, day_of_week, start_time, end_time)
     select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[])

@@ -87,7 +87,7 @@ type PostgreSQL interface {
 	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string, map[int][]TimeSlot) error
 	// Get business hours for a merchant by a given day
 	GetBusinessHoursByDay(context.Context, uuid.UUID, int) ([]TimeSlot, error)
-	// Get business hours for merchant including only the first start aand last ending time
+	// Get business hours for merchant including only the first start and last ending time
 	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlot, error)
 	// Get the merchant's timezone by it's id
 	GetMerchantTimezoneById(context.Context, uuid.UUID) (string, error)

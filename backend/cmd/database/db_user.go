@@ -283,13 +283,14 @@ func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID
 
 type CustomerStatistics struct {
 	Customer
-	IsDummy         bool                    `json:"is_dummy"`
-	IsBlacklisted   bool                    `json:"is_blacklisted"`
-	BlacklistReason *string                 `json:"blacklist_reason"`
-	TimesBooked     int                     `json:"times_booked"`
-	TimesCancelled  int                     `json:"times_cancelled"`
-	TimesUpcoming   int                     `json:"times_upcoming"`
-	Appointments    []PublicAppointmentInfo `json:"appointments"`
+	IsDummy                  bool                    `json:"is_dummy"`
+	IsBlacklisted            bool                    `json:"is_blacklisted"`
+	BlacklistReason          *string                 `json:"blacklist_reason"`
+	TimesBooked              int                     `json:"times_booked"`
+	TimesCancelledByUser     int                     `json:"times_cancelled_by_user"`
+	TimesCancelledByMerchant int                     `json:"times_cancelled_by_merchant"`
+	TimesUpcoming            int                     `json:"times_upcoming"`
+	Appointments             []PublicAppointmentInfo `json:"appointments"`
 }
 
 func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error) {
@@ -321,7 +322,8 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled,
+	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled_by_user,
+	count(distinct case when a.cancelled_by_merchant_on is not null then a.group_id end) as times_cancelled_by_merchant,
 	count(distinct case when a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null and a.from_date >= now() then group_id end) as times_upcoming,
 	coalesce(ca.appointments, '[]'::jsonb) as appointments
 	from "Customer" c
@@ -336,7 +338,8 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 	var appointmentsJSON []byte
 
 	err := s.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.Birthday,
-		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelled, &customer.TimesUpcoming, &appointmentsJSON)
+		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesCancelledByMerchant,
+		&customer.TimesUpcoming, &appointmentsJSON)
 	if err != nil {
 		return CustomerStatistics{}, err
 	}
