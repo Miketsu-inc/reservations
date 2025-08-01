@@ -139,7 +139,11 @@ function MerchantPage() {
                   <ul className="divide-border_color divide-y">
                     {category.services.map((service) => (
                       <li className="py-4" key={service.id}>
-                        <ServiceItem service={service}>
+                        <ServiceItem
+                          service={service}
+                          router={Route}
+                          locationId={merchantInfo.location_id}
+                        >
                           <Link
                             from={Route.fullPath}
                             to="booking"

@@ -893,3 +893,55 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 
 	return tx.Commit(ctx)
 }
+
+type PublicServiceDetails struct {
+	Id            int                  `json:"id"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description"`
+	TotalDuration int                  `json:"total_duration"`
+	Price         *currencyx.Price     `json:"price"`
+	PriceNote     *string              `json:"price_note"`
+	Phases        []PublicServicePhase `json:"phases"`
+}
+
+func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int) (PublicServiceDetails, error) {
+	query := `
+	select s.id, s.name, s.description, s.total_duration, s.price, s.price_note, 
+	coalesce(
+		jsonb_agg(
+			jsonb_build_object(
+				'id', sp.id,
+				'service_id', sp.service_id,
+                'name', sp.name,
+                'sequence', sp.sequence,
+                'duration', sp.duration,
+                'phase_type', sp.phase_type
+			) order by sp.sequence
+		) filter (where sp.id is not null),
+		'[]'::jsonb
+	) as phases
+	from "Service" s
+	left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
+	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
+	group by s.id`
+
+	var data PublicServiceDetails
+	var phaseJson []byte
+
+	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration, &data.Price, &data.PriceNote, &phaseJson)
+	if err != nil {
+		return PublicServiceDetails{}, err
+	}
+
+	if len(phaseJson) > 0 {
+		err = json.Unmarshal(phaseJson, &data.Phases)
+		if err != nil {
+			return PublicServiceDetails{}, err
+		}
+	} else {
+		data.Phases = []PublicServicePhase{}
+	}
+
+	return data, nil
+
+}

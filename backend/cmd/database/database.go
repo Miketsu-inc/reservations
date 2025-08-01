@@ -34,6 +34,8 @@ type PostgreSQL interface {
 	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
+	// Get all reserved times for reservations in a given period
+	GetReservedTimesForPeriod(context.Context, uuid.UUID, int, time.Time, time.Time) ([]AppointmentTime, error)
 	// Update appointment fields
 	UpdateAppointmentData(context.Context, uuid.UUID, int, string, time.Duration) error
 	// Transfer dummy user appointments
@@ -85,6 +87,8 @@ type PostgreSQL interface {
 	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
 	// Update the field used in the reservation page
 	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string, map[int][]TimeSlot) error
+	// Get all businessHours for a merchant
+	GetBusinessHours(context.Context, uuid.UUID) (map[int][]TimeSlot, error)
 	// Get business hours for a merchant by a given day
 	GetBusinessHoursByDay(context.Context, uuid.UUID, int) ([]TimeSlot, error)
 	// Get business hours for merchant including only the first start and last ending time
@@ -139,6 +143,8 @@ type PostgreSQL interface {
 	UpdateConnectedProducts(context.Context, int, []ConnectedProducts) error
 	// Get all services grouped by category for the merchant page
 	GetServicesForMerchantPage(context.Context, uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
+	// get public details about a service for the merchant page service details section
+	GetServiceDetailsForMerchantPage(context.Context, uuid.UUID, int) (PublicServiceDetails, error)
 
 	// -- Customer --
 

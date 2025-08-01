@@ -185,6 +185,23 @@ func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, l
 	return bookedApps, nil
 }
 
+func (s *service) GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationId int, startDate time.Time, endDate time.Time) ([]AppointmentTime, error) {
+	query := `
+	select a.from_date, a.to_date from "Appointment" a
+	inner join "ServicePhase" sp on a.service_phase_id = sp.id
+	where a.merchant_id = $1 and a.location_id = $2 and DATE(a.from_date) >= $3 and DATE(to_date) <= $4
+		and a.cancelled_by_merchant_on is null and a.cancelled_by_user_on is null and sp.phase_type = 'active'
+	order by a.from_date`
+
+	rows, _ := s.db.Query(ctx, query, merchantId, locationId, startDate, endDate)
+	bookedApps, err := pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentTime])
+	if err != nil {
+		return nil, err
+	}
+
+	return bookedApps, nil
+}
+
 func (s *service) TransferDummyAppointments(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
 	query := `
 	update "Appointment" a

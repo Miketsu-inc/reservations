@@ -1,6 +1,8 @@
+import BackArrowIcon from "@icons/BackArrowIcon";
 import { formatDuration } from "@lib/datetime";
+import { Link } from "@tanstack/react-router";
 
-export default function ServiceItem({ children, service }) {
+export default function ServiceItem({ children, service, router, locationId }) {
   return (
     <div className="flex flex-row gap-3">
       <div className="mt-1 size-12 shrink-0 overflow-hidden rounded-lg md:size-20">
@@ -14,12 +16,21 @@ export default function ServiceItem({ children, service }) {
         <div className="flex flex-row items-center md:flex-col md:justify-center">
           <div className="flex flex-col">
             <p className="text-lg font-semibold">{service.name}</p>
-            <p className="line-clamp-2 text-sm text-gray-600 md:line-clamp-none md:max-w-70 md:truncate dark:text-gray-400">
-              {service.description}
-            </p>
-            <p className="hidden pt-2 text-sm md:block">
+            <p className="hidden text-sm md:block">
               {formatDuration(service.total_duration)}
             </p>
+
+            <Link
+              from={router.fullPath}
+              to={`services/${service.id}`}
+              search={{
+                locationId: locationId,
+              }}
+              className="hover:text-text_color hover:stroke-text_color flex items-center gap-1 pt-2 text-sm text-gray-700 dark:text-gray-300"
+            >
+              See service details
+              <BackArrowIcon styles=" size-4 rotate-180 stroke-gray-700 dark:stroke-gray-300" />
+            </Link>
           </div>
         </div>
         <div className="flex flex-row items-center justify-between gap-2 md:gap-4">

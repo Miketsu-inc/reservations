@@ -57,6 +57,7 @@ func staticFilesHandler(r *chi.Mux) {
 		"/m/{merchant_url}",
 		"/m/{merchant_url}/booking",
 		"/m/{merchant_url}/booking/completed",
+		"/m/{merchant_url}/services/{serviceId}",
 		"/m/{merchant_url}/cancel/{appointmentId}",
 		"/m/{merchant_url}/cancel/{appointmentId}/completed",
 	}
@@ -147,7 +148,9 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 		r.Get("/info", merchantHandler.InfoByName)
 		r.Get("/available-times", merchantHandler.GetHours)
+		r.Get("/next-available", merchantHandler.GetNextAvailable)
 		r.Get("/business-hours/closed", merchantHandler.GetClosedDays)
+		r.Get("/services/public/{id}/{merchantName}", merchantHandler.GetPublicServiceDetails)
 	})
 
 	r.Group(func(r chi.Router) {

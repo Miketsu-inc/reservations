@@ -1369,3 +1369,123 @@ func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 
 	httputil.Success(w, http.StatusOK, customer)
 }
+
+func (m *Merchant) GetPublicServiceDetails(w http.ResponseWriter, r *http.Request) {
+	urlName := chi.URLParam(r, "merchantName")
+	if urlName == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name provided"))
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		return
+	}
+
+	service, err := m.Postgresdb.GetServiceDetailsForMerchantPage(r.Context(), merchantId, serviceId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service info: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, service)
+}
+
+func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
+	urlName := r.URL.Query().Get("name")
+
+	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("serviceId should be a number: %s", err.Error()))
+		return
+	}
+
+	urlLocationId, err := strconv.Atoi(r.URL.Query().Get("locationId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("locationId should be a number: %s", err.Error()))
+		return
+	}
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		return
+	}
+
+	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
+		return
+	}
+
+	if service.MerchantId != merchantId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
+		return
+	}
+
+	startDate := time.Now()
+	endDate := startDate.AddDate(0, 3, 0)
+
+	reservedTimes, err := m.Postgresdb.GetReservedTimesForPeriod(r.Context(), merchantId, urlLocationId, startDate, endDate)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
+		return
+	}
+
+	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
+		return
+	}
+
+	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	now := time.Now()
+	availableSlots := booking.CalculateAvailableTimesPeriod(reservedTimes, service.Phases, service.TotalDuration, startDate, endDate, businessHours, now, merchantTz)
+
+	type nextAvailable struct {
+		Date string `json:"date"`
+		Time string `json:"time"`
+	}
+
+	var na nextAvailable
+
+	for _, day := range availableSlots {
+		if len(day.Morning) > 0 {
+			na.Time = day.Morning[0]
+			na.Date = day.Date
+			break
+		}
+		if len(day.Afternoon) > 0 {
+			na.Time = day.Afternoon[0]
+			na.Date = day.Date
+			break
+		}
+	}
+
+	httputil.Success(w, http.StatusOK, na)
+}
