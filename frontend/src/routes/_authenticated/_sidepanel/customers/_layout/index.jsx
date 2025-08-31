@@ -1,7 +1,9 @@
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import CustomersTable from "../-components/CustomersTable";
@@ -25,12 +27,19 @@ async function fetchCustomers() {
   }
 }
 
+function customersQueryOptions() {
+  return queryOptions({
+    queryKey: ["customers"],
+    queryFn: fetchCustomers,
+  });
+}
+
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout/"
 )({
   component: CustomersPage,
-  loader: async () => {
-    return await fetchCustomers();
+  loader: ({ context: { queryClient } }) => {
+    return queryClient.ensureQueryData(customersQueryOptions());
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -38,15 +47,24 @@ export const Route = createFileRoute(
 });
 
 function CustomersPage() {
-  const router = useRouter();
   const navigate = Route.useNavigate();
-  const loaderData = Route.useLoaderData();
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferModalData, setTransferModalData] = useState();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { data, isLoading, isError, error } = useQuery(customersQueryOptions());
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
 
   function handleRowClick(e) {
     const customerId = e.data.id;
@@ -85,7 +103,9 @@ function CustomersPage() {
           message: "Customer deleted successfully",
           variant: "success",
         });
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["customers"],
+        });
         setServerError();
       }
     } catch (err) {
@@ -115,7 +135,9 @@ function CustomersPage() {
           message: "Appointments transferred successfully",
           variant: "success",
         });
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["customers"],
+        });
         setServerError();
         setTransferModalData();
       }
@@ -150,7 +172,9 @@ function CustomersPage() {
           message: "Customer blacklisted successfully",
           variant: "success",
         });
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["customers"],
+        });
         setServerError();
       }
     } catch (err) {
@@ -183,16 +207,16 @@ function CustomersPage() {
         <ServerError error={serverError} />
         <div className="h-2/3 w-full">
           <CustomersTable
-            customersData={loaderData}
+            customersData={data}
             onTransfer={(index) => {
               setTransferModalData({
                 fromIndex: index,
-                customers: loaderData,
+                customers: data,
               });
               setTimeout(() => setShowTransferModal(true), 0);
             }}
             onEdit={(customer) => {
-              router.navigate({
+              navigate({
                 from: Route.fullPath,
                 to: `/customers/edit/${customer.id}`,
               });

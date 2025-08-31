@@ -1,11 +1,13 @@
 import Button from "@components/Button";
 import DeleteModal from "@components/DeleteModal";
+import Loading from "@components/Loading";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
 import PlusIcon from "@icons/PlusIcon";
 import { useToast, useWindowSize } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
@@ -28,6 +30,13 @@ async function fetchServices() {
   } else {
     return result.data;
   }
+}
+
+function servicesQueryOptions() {
+  return queryOptions({
+    queryKey: ["services"],
+    queryFn: fetchServices,
+  });
 }
 
 function reorderArray(items, itemId, direction) {
@@ -55,13 +64,8 @@ function reorderArray(items, itemId, direction) {
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
   component: ServicesPage,
-  loader: async () => {
-    const services = await fetchServices();
-
-    return {
-      crumb: "Services",
-      services: services,
-    };
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(servicesQueryOptions());
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -70,7 +74,6 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
 
 function ServicesPage() {
   const router = useRouter();
-  const loaderData = Route.useLoaderData();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
 
@@ -82,14 +85,35 @@ function ServicesPage() {
 
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
-  const filteredServicesGroupedByCategories = loaderData.services.map(
-    (category) => ({
-      ...category,
-      services: category.services.filter((service) =>
-        service.name.toLowerCase().includes(searchText.toLowerCase())
-      ),
-    })
-  );
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+
+  const {
+    data: services,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(servicesQueryOptions());
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error} />;
+  }
+
+  async function invalidateServicesQuery() {
+    await queryClient.invalidateQueries({
+      queryKey: ["services"],
+    });
+  }
+
+  const filteredServicesGroupedByCategories = services.map((category) => ({
+    ...category,
+    services: category.services.filter((service) =>
+      service.name.toLowerCase().includes(searchText.toLowerCase())
+    ),
+  }));
 
   async function deleteHandler(selected) {
     try {
@@ -109,7 +133,7 @@ function ServicesPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        router.invalidate();
+        invalidateServicesQuery();
         setServerError();
         showToast({
           message: "Service deleted successfully",
@@ -122,9 +146,7 @@ function ServicesPage() {
   }
 
   async function moveCategoryHandler(id, direction) {
-    const categories = loaderData.services.filter(
-      (category) => category.id !== null
-    );
+    const categories = services.filter((category) => category.id !== null);
     if (categories.length === 1) return;
 
     const categoryIds = reorderArray(categories, id, direction);
@@ -149,7 +171,7 @@ function ServicesPage() {
       const result = await response.json();
       setServerError(result.error.message);
     } else {
-      router.invalidate();
+      invalidateServicesQuery();
       setServerError();
       showToast({
         message: "Service categories reordered successfully",
@@ -159,7 +181,7 @@ function ServicesPage() {
   }
 
   async function moveServiceHandler(categoryId, id, direction) {
-    const services = loaderData.services.find(
+    const services = services.find(
       (category) => category.id === categoryId
     ).services;
     if (services.length === 1) return;
@@ -184,7 +206,7 @@ function ServicesPage() {
       const result = await response.json();
       setServerError(result.error.message);
     } else {
-      router.invalidate();
+      invalidateServicesQuery();
       setServerError();
       showToast({
         message: "Services reordered successfully",
@@ -204,7 +226,7 @@ function ServicesPage() {
       <AddServiceCategoryModal
         isOpen={showAddCategoryModal}
         onClose={() => setShowAddCategoryModal(false)}
-        onAdded={router.invalidate}
+        onAdded={invalidateServicesQuery}
       />
       <div className="flex w-full flex-col gap-8 py-6">
         <p className="text-xl">Services</p>
@@ -222,7 +244,10 @@ function ServicesPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end">
-                <div className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full *:rounded-lg *:p-2">
+                <div
+                  className="*:hover:bg-hvr_gray flex flex-col items-start
+                    *:w-full *:rounded-lg *:p-2"
+                >
                   <Link from={Route.fullPath} to="/services/new">
                     New service
                   </Link>
@@ -265,8 +290,8 @@ function ServicesPage() {
               <ServiceCategoryCard
                 category={category}
                 // -1 due to uncategorized. Which should always be the last
-                categoryCount={loaderData.services.length - 1}
-                refresh={router.invalidate}
+                categoryCount={services.length - 1}
+                refresh={invalidateServicesQuery}
                 onMoveUp={async (id) =>
                   await moveCategoryHandler(id, "forward")
                 }
@@ -291,7 +316,7 @@ function ServicesPage() {
                             to: `/services/edit/${service.id}`,
                           })
                         }
-                        refresh={router.invalidate}
+                        refresh={invalidateServicesQuery}
                         onMoveForth={async (id) =>
                           await moveServiceHandler(category.id, id, "forward")
                         }

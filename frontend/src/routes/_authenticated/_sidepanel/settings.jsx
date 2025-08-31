@@ -5,16 +5,15 @@ import SettingsNavigation from "./settings/-components/SettingsNavigation";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/settings")({
   component: SettingsLayout,
-  //   loader: () => ({ redirect: "/_authenticated/_sidepanel/settings/profile" }),
-  loader: () => ({
-    crumb: "Settings",
-  }),
 });
 
 function SettingsLayout() {
   return (
     <Card>
-      <div className="flex h-full w-full flex-col items-center justify-center p-4 lg:px-14">
+      <div
+        className="flex h-full w-full flex-col items-center justify-center p-4
+          lg:px-14"
+      >
         <SettingsHeader />
         <div className="flex h-full w-full flex-col gap-8 md:flex-row md:gap-14">
           <div className="w-full md:w-1/4">

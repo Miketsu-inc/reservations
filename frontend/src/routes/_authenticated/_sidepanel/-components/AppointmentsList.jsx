@@ -6,6 +6,8 @@ import ClockIcon from "@icons/ClockIcon";
 import TickIcon from "@icons/TickIcon";
 import TrashBinIcon from "@icons/TrashBinIcon";
 import { formatToDateString, timeStringFromDate } from "@lib/datetime";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import DeleteAppsPopoverContent from "../calendar/-components/DeleteAppsPopoverContent";
@@ -35,8 +37,8 @@ export default function AppointmentsList({
         </div>
       ) : (
         <div
-          className="bg-layer_bg flex flex-col items-center justify-center rounded-lg p-4 text-center
-            shadow-sm"
+          className="bg-layer_bg flex flex-col items-center justify-center
+            rounded-lg p-4 text-center shadow-sm"
         >
           <div className="mb-3 rounded-full bg-gray-300 p-3 dark:bg-gray-700">
             <CalendarIcon styles="size-8 stroke-gray-500 dark:stroke-gray-400" />
@@ -61,13 +63,14 @@ function monthDateFormat(date) {
 
 function AppointmentCard({ appointment, route, onCancel, onAccept }) {
   const [showNote, setShowNote] = useState(false);
+  const { data: preferences } = useQuery(preferencesQueryOptions());
 
   return (
     <Card styles="py-2">
       <div className="flex h-fit flex-row items-center">
         <div
-          className="flex w-full flex-col lg:flex-row lg:items-center lg:justify-between lg:pr-3
-            xl:pr-6"
+          className="flex w-full flex-col lg:flex-row lg:items-center
+            lg:justify-between lg:pr-3 xl:pr-6"
         >
           <div className="flex flex-col gap-2 py-1">
             <span className="dark:font-semibold">{`${appointment.last_name} ${appointment.first_name}`}</span>
@@ -75,7 +78,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
               <span className="text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">
                 <ClockIcon styles="size-3 fill-gray-500 dark:fill-gray-400" />
-                <span className="text-sm">{`${timeStringFromDate(new Date(appointment.from_date))} - ${timeStringFromDate(new Date(appointment.to_date))}`}</span>
+                <span className="text-sm">{`${timeStringFromDate(new Date(appointment.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(appointment.to_date), preferences?.time_format)}`}</span>
               </div>
             </div>
           </div>
@@ -123,12 +126,14 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
       {appointment.customer_note && (
         <div className="pt-3 md:pt-2">
           <button
-            className="flex cursor-pointer flex-row items-center gap-2 text-gray-500 dark:text-gray-400"
+            className="flex cursor-pointer flex-row items-center gap-2
+              text-gray-500 dark:text-gray-400"
             onClick={() => setShowNote(!showNote)}
           >
             <BackArrowIcon
-              styles={`${showNote ? "rotate-90" : "-rotate-90"} transition-transform duration-300
-              size-3 stroke-gray-500 dark:stroke-gray-400`}
+              styles={`${showNote ? "rotate-90" : "-rotate-90"}
+              transition-transform duration-300 size-3 stroke-gray-500
+              dark:stroke-gray-400`}
             />
             <span className="text-xs">{showNote ? "Hide" : "View"} note</span>
           </button>

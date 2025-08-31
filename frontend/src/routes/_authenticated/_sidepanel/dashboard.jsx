@@ -1,9 +1,16 @@
 import Card from "@components/Card";
+import Loading from "@components/Loading";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
 import { useWindowSize } from "@lib/hooks";
 import { fillStatisticsWithDate, invalidateLocalStorageAuth } from "@lib/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
+import { createFileRoute, useRouteContext } from "@tanstack/react-router";
+import { useState } from "react";
 import AppointmentsList from "./-components/AppointmentsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import RevenueChart from "./-components/RevenueChart";
@@ -16,6 +23,10 @@ async function fetchDashboardData(period) {
     `/api/v1/merchants/dashboard?date=${date}&period=${period}`,
     {
       method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
     }
   );
 
@@ -31,36 +42,43 @@ async function fetchDashboardData(period) {
   }
 }
 
+function dashboardQueryOptions(period) {
+  return queryOptions({
+    queryKey: ["dashboard", period],
+    queryFn: () => fetchDashboardData(period),
+  });
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
   component: DashboardPage,
-  validateSearch: (search) => {
-    if (search.period && (search.period === 7 || search.period === 30)) {
-      return search;
-    } else {
-      return {
-        period: 7,
-      };
-    }
-  },
-  loaderDeps: ({ search: { period } }) => ({ period }),
-  loader: async ({ deps: { period } }) => {
-    const dashboardData = await fetchDashboardData(period);
-
-    return {
-      crumb: "Dashboard",
-      data: dashboardData,
-    };
-  },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
+  pendingComponent: Loading,
 });
 
 function DashboardPage() {
   const windowSize = useWindowSize();
-  const search = Route.useSearch();
-  const loaderData = Route.useLoaderData();
-  const router = useRouter();
+  const [period, setPeriod] = useState(7);
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    ...dashboardQueryOptions(period),
+    placeholderData: keepPreviousData,
+  });
+  const { queryClient } = useRouteContext({ from: Route.id });
+
+  async function invalidateDashBoardData() {
+    await queryClient.invalidateQueries({
+      queryKey: ["dashboard"],
+    });
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0 lg:h-[90svh]">
@@ -72,32 +90,32 @@ function DashboardPage() {
             { value: 7, label: "Last 7 days" },
             { value: 30, label: "Last 30 days" },
           ]}
-          value={search.period}
+          value={period}
           onSelect={(option) => {
-            if (search.period !== option.value) {
-              router.navigate({
-                search: () => ({ period: option.value }),
-                replace: true,
-              });
+            if (period !== option.value) {
+              setPeriod(option.value);
             }
           }}
+          disabled={isFetching}
         />
       </div>
       <div className="flex h-full w-full flex-col gap-4 lg:flex-row lg:gap-6">
         <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">
           <div className="flex h-fit flex-col gap-4">
-            <div className="flex h-fit flex-row items-center justify-between gap-4">
+            <div
+              className="flex h-fit flex-row items-center justify-between gap-4"
+            >
               <StatisticsCard
                 title="Revenue"
-                text={`${loaderData.data.statistics.revenue_sum}`}
-                percent={loaderData.data.statistics.revenue_change}
+                text={`${data.statistics.revenue_sum}`}
+                percent={data.statistics.revenue_change}
                 tooltip={windowSize !== "sm" && windowSize !== "md"}
                 tooltipText="Calculated by adding up all your completed appointments for this period"
               />
               <StatisticsCard
                 title="Appointments"
-                text={loaderData.data.statistics.appointments}
-                percent={loaderData.data.statistics.appointments_change}
+                text={data.statistics.appointments}
+                percent={data.statistics.appointments_change}
                 tooltip={windowSize !== "sm" && windowSize !== "md"}
                 tooltipText="The amount of completed appointments in this period"
               />
@@ -106,8 +124,8 @@ function DashboardPage() {
               windowSize === "3xl" ? (
                 <StatisticsCard
                   title="Cancellations"
-                  text={loaderData.data.statistics.cancellations}
-                  percent={loaderData.data.statistics.cancellations_change}
+                  text={data.statistics.cancellations}
+                  percent={data.statistics.cancellations_change}
                   tooltip={windowSize !== "sm" && windowSize !== "md"}
                   tooltipText="The amount of cancelled appointments (by customers) in this period"
                 />
@@ -117,8 +135,8 @@ function DashboardPage() {
               {windowSize === "3xl" ? (
                 <StatisticsCard
                   title="Average duration"
-                  text={loaderData.data.statistics.average_duration}
-                  percent={loaderData.data.statistics.average_duration_change}
+                  text={data.statistics.average_duration}
+                  percent={data.statistics.average_duration_change}
                   tooltip={windowSize !== "sm" && windowSize !== "md"}
                   tooltipText="The average duration of services from your completed appointments in this period"
                 />
@@ -129,16 +147,16 @@ function DashboardPage() {
             <Card styles="flex h-80 flex-col gap-2">
               <RevenueChart
                 data={fillStatisticsWithDate(
-                  loaderData.data.statistics.revenue,
-                  loaderData.data.period_start,
-                  loaderData.data.period_end
+                  data.statistics.revenue,
+                  data.period_start,
+                  data.period_end
                 )}
               />
             </Card>
           </div>
           <div className="flex flex-1 flex-col gap-2">
             <LowStockProductsAlert
-              products={loaderData.data.low_stock_products}
+              products={data.low_stock_products}
               route={Route}
             />
           </div>
@@ -147,20 +165,20 @@ function DashboardPage() {
           <p className="text-lg">Upcoming appointments</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
             <AppointmentsList
-              appointments={loaderData.data.upcoming_appointments}
+              appointments={data.upcoming_appointments}
               visibleCount={1}
               onAccept={() => {}}
-              onCancel={router.invalidate}
+              onCancel={invalidateDashBoardData}
               route={Route}
             />
           </div>
           <p className="text-lg">Latest bookings</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
             <AppointmentsList
-              appointments={loaderData.data.latest_bookings}
+              appointments={data.latest_bookings}
               visibleCount={3}
               onAccept={() => {}}
-              onCancel={router.invalidate}
+              onCancel={invalidateDashBoardData}
               route={Route}
             />
           </div>

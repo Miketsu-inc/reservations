@@ -17,6 +17,7 @@ export default function Select({
   onClose,
   emptyText,
   onOpenChange,
+  disabled,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
@@ -100,13 +101,17 @@ export default function Select({
     >
       <PopoverTrigger asChild>
         <button
-          className={`${styles} border-input_border_color w-full min-w-fit rounded-lg border py-2 pr-2 pl-3 text-left`}
+          className={`${styles} border-input_border_color w-full min-w-fit
+            rounded-lg border py-2 pr-2 pl-3 text-left transition-opacity
+            disabled:opacity-70`}
           type="button"
           ref={containerRef}
+          disabled={disabled}
         >
           <div className="flex items-center justify-between">
             <span
-              className={`${selectedOption ? "text-text_color" : "text-gray-500"} min-h-6 flex-1 truncate`}
+              className={`${selectedOption ? "text-text_color" : "text-gray-500"}
+                min-h-6 flex-1 truncate`}
             >
               {!selectedOption ? (
                 placeholder
@@ -120,8 +125,8 @@ export default function Select({
               )}
             </span>
             <BackArrowIcon
-              styles={`stroke-gray-700 dark:stroke-gray-300 transition-transform -rotate-90 shrink-0
-                ${isOpen ? "rotate-90" : ""} h-5 w-5`}
+              styles={`stroke-gray-700 dark:stroke-gray-300 transition-transform
+                -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} h-5 w-5`}
             />
           </div>
         </button>
@@ -142,14 +147,18 @@ export default function Select({
               ? `${itemHeight * maxVisibleItems + 8}px`
               : "auto",
           }}
-          className="overflow-x-hidden overflow-y-auto p-1 transition-all dark:scheme-dark"
+          className="overflow-x-hidden overflow-y-auto p-1 transition-all
+            dark:scheme-dark"
           onMouseMove={() => {
             setIsUsingKeyboard(false);
             setHighlightedIndex(null);
           }}
         >
           {options.length === 0 ? (
-            <li className="px-4 py-6 text-center text-gray-500 select-none dark:text-gray-400">
+            <li
+              className="px-4 py-6 text-center text-gray-500 select-none
+                dark:text-gray-400"
+            >
               {emptyText || "No results found"}
             </li>
           ) : (
@@ -164,14 +173,18 @@ export default function Select({
                     handleClose();
                   }}
                   key={index}
-                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"} dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2 text-gray-700 select-none`}
+                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
+                    dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5
+                    pl-2 text-gray-700 select-none`}
                   role="option"
                   aria-selected={isSelected}
                 >
                   <div className="flex w-full items-center justify-between">
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       {option.icon && (
-                        <span className="flex shrink-0 items-center justify-center">
+                        <span
+                          className="flex shrink-0 items-center justify-center"
+                        >
                           {option.icon}
                         </span>
                       )}

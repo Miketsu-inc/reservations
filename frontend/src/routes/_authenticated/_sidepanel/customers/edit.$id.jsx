@@ -1,6 +1,8 @@
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import CustomerPage from "./-components/CustomerPage";
@@ -23,17 +25,19 @@ async function fetchCustomerData(id) {
   }
 }
 
+function customerQueryOptions(id) {
+  return queryOptions({
+    queryKey: ["customer", id],
+    queryFn: () => fetchCustomerData(id),
+  });
+}
+
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/edit/$id"
 )({
   component: RouteComponent,
-  loader: async ({ params }) => {
-    const customer = await fetchCustomerData(params.id);
-
-    return {
-      crumb: "Edit Customer",
-      customer: customer,
-    };
+  loader: ({ context: { queryClient }, params }) => {
+    return queryClient.ensureQueryData(customerQueryOptions(params.id));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -41,10 +45,13 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const loaderData = Route.useLoaderData();
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { id } = Route.useParams();
+  const { data, isLoading, isError, error } = useQuery(
+    customerQueryOptions(id)
+  );
 
   async function saveCustomerHandler(customer) {
     try {
@@ -79,13 +86,18 @@ function RouteComponent() {
     }
   }
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
   return (
     <>
       <ServerError error={serverError} />
-      <CustomerPage
-        customer={loaderData.customer}
-        onSave={saveCustomerHandler}
-      />
+      <CustomerPage customer={data} onSave={saveCustomerHandler} />
     </>
   );
 }

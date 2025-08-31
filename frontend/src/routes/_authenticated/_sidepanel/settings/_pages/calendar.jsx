@@ -1,7 +1,10 @@
 import Button from "@components/Button";
+import Loading from "@components/Loading";
 import Select from "@components/Select";
 import ServerError from "@components/ServerError";
-import { useToast } from "@lib/hooks";
+import { invalidateLocalStorageAuth } from "@lib/lib";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import RadioInputGroup from "../-components/RadioInputGroup";
@@ -20,6 +23,37 @@ const TimeFrequencyOptions = [
   { value: "00:30:00", label: "30 minute" },
 ];
 
+function convertTimeToMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+async function updatePreferences(preferences) {
+  const response = await fetch("/api/v1/merchants/preferences", {
+    method: "PATCH",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(preferences),
+  });
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
+    throw result.error;
+  }
+}
+
+function validateTimeRange(startHour, endHour) {
+  if (!startHour || !endHour) return true;
+
+  const startTime = convertTimeToMinutes(startHour);
+  const endTime = convertTimeToMinutes(endHour);
+
+  return startTime < endTime;
+}
+
 const defaultPreferences = {
   first_day_of_week: "",
   time_format: "",
@@ -30,91 +64,80 @@ const defaultPreferences = {
   time_frequency: "",
 };
 
-function convertTimeToMinutes(time) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function hasChanges(changedData, originalData) {
-  return JSON.stringify(changedData) !== JSON.stringify(originalData);
-}
-
-function getStoredPreferences() {
-  const storedPreferences = localStorage.getItem("Preferences");
-  return storedPreferences ? JSON.parse(storedPreferences) : defaultPreferences;
-}
-
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/calendar"
 )({
   component: CalendarPage,
-  loader: () => ({ crumb: "Calendar" }),
+  loader: ({ context: { queryClient } }) => {
+    return queryClient.ensureQueryData(preferencesQueryOptions());
+  },
 });
 
 function CalendarPage() {
-  const [preferences, setPreferences] = useState(getStoredPreferences);
-  const [changedPreferences, setChangedPreferences] = useState(preferences);
+  const [preferences, setPreferences] = useState(defaultPreferences);
   const [serverError, setServerError] = useState("");
-  const { showToast } = useToast();
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { data, isLoading, isError, error } = useQuery(
+    preferencesQueryOptions()
+  );
+
+  const updateMutation = useMutation({
+    mutationFn: updatePreferences,
+    onSuccess: () => {
+      queryClient.setQueryData(["preferences"], preferences);
+      setServerError("");
+    },
+    onError: (error) => {
+      setServerError(error.message);
+    },
+  });
+
   useEffect(() => {
-    setHasUnsavedChanges(hasChanges(changedPreferences, preferences));
-  }, [preferences, changedPreferences]);
-
-  async function updateHandler() {
-    try {
-      const response = await fetch("/api/v1/merchants/preferences", {
-        method: "PATCH",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(changedPreferences),
-      });
-
-      if (!response.ok) {
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        setPreferences(changedPreferences);
-        localStorage.setItem("Preferences", JSON.stringify(changedPreferences));
-        setServerError("");
-        showToast({
-          message: "Calendar preferences updated successfully!",
-          variant: "success",
-        });
-      }
-    } catch (err) {
-      setServerError(err.message);
+    if (data) {
+      setPreferences(data);
     }
+  }, [data]);
+
+  function handleUpdate() {
+    if (JSON.stringify(preferences) === JSON.stringify(data)) {
+      return;
+    }
+
+    updateMutation.mutate(preferences);
   }
 
   function handleInputChange(key, value) {
-    setChangedPreferences((prev) => {
-      if (key === "start_hour" || key === "end_hour") {
-        const newTime = convertTimeToMinutes(value);
-        const startTime =
-          key === "start_hour"
-            ? newTime
-            : convertTimeToMinutes(prev.start_hour);
-        const endTime =
-          key === "end_hour" ? newTime : convertTimeToMinutes(prev.end_hour);
+    setPreferences((prev) => {
+      const newPreferences = { ...prev, [key]: value };
 
-        if (startTime >= endTime) {
-          if (key === "start_hour") {
-            setErrorMessage("Start time must be before end time");
-          } else {
-            setErrorMessage("End time must be after start time");
-          }
+      if (key === "start_hour" || key === "end_hour") {
+        const startHour = key === "start_hour" ? value : prev.start_hour;
+        const endHour = key === "end_hour" ? value : prev.end_hour;
+
+        if (!validateTimeRange(startHour, endHour)) {
+          const errorMsg =
+            key === "start_hour"
+              ? "Start time must be before end time"
+              : "End time must be after start time";
+          setErrorMessage(errorMsg);
+          // Don't update if validation fails
           return prev;
         }
       }
-      setErrorMessage("");
 
-      return { ...prev, [key]: value };
+      setErrorMessage("");
+      return newPreferences;
     });
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
   }
 
   return (
@@ -124,7 +147,7 @@ function CalendarPage() {
         <RadioInputGroup
           title="First day of the week"
           name="firstDayOfWeek"
-          value={changedPreferences.first_day_of_week}
+          value={preferences.first_day_of_week}
           onChange={(value) => handleInputChange("first_day_of_week", value)}
           options={[
             { value: "Monday", label: "Monday" },
@@ -135,7 +158,7 @@ function CalendarPage() {
         <RadioInputGroup
           title="Time Format"
           name="timeFormat"
-          value={changedPreferences.time_format}
+          value={preferences.time_format}
           onChange={(value) => handleInputChange("time_format", value)}
           options={[
             { value: "24-hour", label: "24-Hour Format" },
@@ -152,7 +175,7 @@ function CalendarPage() {
           Desktop Default View
           <Select
             options={calendarViewOptions}
-            value={changedPreferences.calendar_view}
+            value={preferences.calendar_view}
             onSelect={(option) =>
               handleInputChange("calendar_view", option.value)
             }
@@ -167,7 +190,7 @@ function CalendarPage() {
           Mobile Default View
           <Select
             options={calendarViewOptions}
-            value={changedPreferences.calendar_view_mobile}
+            value={preferences.calendar_view_mobile}
             onSelect={(option) =>
               handleInputChange("calendar_view_mobile", option.value)
             }
@@ -186,9 +209,10 @@ function CalendarPage() {
           <input
             type="time"
             id="start-hour"
-            value={changedPreferences.start_hour}
+            value={preferences.start_hour}
             onChange={(e) => handleInputChange("start_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:scheme-dark"
+            className="bg-hvr_gray rounded-lg border p-2 font-normal
+              dark:scheme-dark"
             step="1800"
           />
         </label>
@@ -200,9 +224,10 @@ function CalendarPage() {
           <input
             type="time"
             id="end-hour"
-            value={changedPreferences.end_hour}
+            value={preferences.end_hour}
             onChange={(e) => handleInputChange("end_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal dark:scheme-dark"
+            className="bg-hvr_gray rounded-lg border p-2 font-normal
+              dark:scheme-dark"
             step="1800"
           />
         </label>
@@ -214,7 +239,7 @@ function CalendarPage() {
         Time slot frequency
         <Select
           options={TimeFrequencyOptions}
-          value={changedPreferences.time_frequency}
+          value={preferences.time_frequency}
           onSelect={(option) =>
             handleInputChange("time_frequency", option.value)
           }
@@ -232,8 +257,7 @@ function CalendarPage() {
           variant="primary"
           buttonText="Update fields"
           type="button"
-          onClick={updateHandler}
-          disabled={!hasUnsavedChanges}
+          onClick={handleUpdate}
         />
         <ServerError error={serverError} styles="mt-2" />
       </div>

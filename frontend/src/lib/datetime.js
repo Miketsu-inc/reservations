@@ -1,5 +1,3 @@
-import { getStoredPreferences } from "./lib";
-
 export function formatToDateString(date) {
   return (
     date.getFullYear() +
@@ -149,12 +147,11 @@ export function getDaySuffix(day) {
   }
 }
 
-export function timeStringFromDate(date) {
-  const preferences = getStoredPreferences();
+export function timeStringFromDate(date, time_format = "24-hour") {
   const hour12 =
-    preferences?.time_format === "12-hour"
+    time_format === "12-hour"
       ? true
-      : preferences?.time_format === "24-hour"
+      : time_format === "24-hour"
         ? false
         : undefined;
 

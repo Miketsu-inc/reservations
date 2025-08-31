@@ -1,8 +1,10 @@
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import PersonIcon from "@icons/PersonIcon";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import CustomersTable from "../-components/CustomersTable";
@@ -25,16 +27,19 @@ async function fetchCustomers() {
   }
 }
 
+function blacklistQueryOptions() {
+  return queryOptions({
+    queryKey: ["blacklisted-customers"],
+    queryFn: fetchCustomers,
+  });
+}
+
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout/blacklist"
 )({
   component: BlacklistPage,
-  loader: async () => {
-    const customers = await fetchCustomers();
-    return {
-      crumb: "Blacklisted",
-      customers: customers,
-    };
+  loader: ({ context: { queryClient } }) => {
+    return queryClient.ensureQueryData(blacklistQueryOptions());
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -42,13 +47,22 @@ export const Route = createFileRoute(
 });
 
 function BlacklistPage() {
-  const router = useRouter();
-  const loaderData = Route.useLoaderData();
   const navigate = Route.useNavigate();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { data, isLoading, isError, error } = useQuery(blacklistQueryOptions());
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
 
   function handleRowClick(e) {
     const customerId = e.data.id;
@@ -87,7 +101,10 @@ function BlacklistPage() {
           message: "Customer removed from blacklist successfully",
           variant: "success",
         });
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["blacklisted-customers"],
+        });
+
         setServerError();
       }
     } catch (err) {
@@ -109,13 +126,13 @@ function BlacklistPage() {
         <ServerError error={serverError} />
         <div className="h-2/3 w-full">
           <CustomersTable
-            customersData={loaderData.customers}
+            customersData={data}
             onBlackList={(customer) => {
               setBlacklistModalData(customer);
               setTimeout(() => setShowBlacklistModal(true), 0);
             }}
             onEdit={(customer) => {
-              router.navigate({
+              navigate({
                 from: Route.fullPath,
                 to: `/customers/edit/${customer.id}`,
               });
@@ -131,7 +148,10 @@ function BlacklistPage() {
 
 function NoRowsComponent() {
   return (
-    <div className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600 dark:text-gray-300">
+    <div
+      className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
+        dark:text-gray-300"
+    >
       <PersonIcon styles="fill-current size-16" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-text_color text-base font-medium">

@@ -4,10 +4,17 @@ import PersonIcon from "@icons/PersonIcon";
 import PhoneIcon from "@icons/PhoneIcon";
 import ServicesIcon from "@icons/ServicesIcon";
 import { formatToDateString, timeStringFromDate } from "@lib/datetime";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AppointmentInfoSection({ event }) {
+  const { data: preferences } = useQuery(preferencesQueryOptions());
+
   return (
-    <div className="bg-primary dark:bg-primary/80 mb-2 flex flex-col gap-3 rounded-lg p-3 text-sm font-semibold text-white">
+    <div
+      className="bg-primary dark:bg-primary/80 mb-2 flex flex-col gap-3
+        rounded-lg p-3 text-sm font-semibold text-white"
+    >
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
           <PersonIcon styles="fill-white size-4" />
@@ -33,7 +40,7 @@ export default function AppointmentInfoSection({ event }) {
         <div className="flex items-center gap-3">
           <ClockIcon styles="fill-white size-4" />
           <p className="text-center">
-            {`${timeStringFromDate(event.start)} - ${timeStringFromDate(event.end)}`}
+            {`${timeStringFromDate(event.start, preferences?.time_format)} - ${timeStringFromDate(event.end, preferences?.time_format)}`}
           </p>
         </div>
       </div>

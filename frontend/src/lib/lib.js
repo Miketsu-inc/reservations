@@ -30,11 +30,6 @@ export function invalidateLocalStorageAuth(responseCode) {
   }
 }
 
-export function getStoredPreferences() {
-  const storedPreferences = localStorage.getItem("Preferences");
-  return storedPreferences ? JSON.parse(storedPreferences) : {};
-}
-
 export function fillStatisticsWithDate(data, fromDateStr, toDateStr) {
   let filledStats = [];
 

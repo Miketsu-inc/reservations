@@ -1,12 +1,18 @@
 import Button from "@components/Button";
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import SmallCalendar from "@components/SmallCalendar";
 import Textarea from "@components/Textarea";
 import BackArrowIcon from "@icons/BackArrowIcon";
 import { formatToDateString } from "@lib/datetime";
 import { invalidateLocalStorageAuth } from "@lib/lib";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
@@ -31,6 +37,13 @@ async function fetchHours(merchantName, locationId, serviceId, day) {
   }
 }
 
+function availableTimesQueryOptions(merchantName, locationId, serviceId, day) {
+  return queryOptions({
+    queryKey: ["available-times", merchantName, locationId, serviceId, day],
+    queryFn: () => fetchHours(merchantName, locationId, serviceId, day),
+  });
+}
+
 async function fetchClosedDays(merchantName) {
   const response = await fetch(
     `/api/v1/merchants/business-hours/closed?name=${merchantName}`,
@@ -52,6 +65,13 @@ async function fetchClosedDays(merchantName) {
   }
 }
 
+function closedDaysQueryOptions(merchantName) {
+  return queryOptions({
+    queryKey: ["closed-days", merchantName],
+    queryFn: () => fetchClosedDays(merchantName),
+  });
+}
+
 export const Route = createFileRoute("/m/$merchantName/booking/")({
   component: SelectDateTime,
   loaderDeps: ({ search: { locationId, serviceId, day } }) => ({
@@ -59,19 +79,15 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
     serviceId,
     day,
   }),
-  loader: async ({ params, deps: { locationId, serviceId, day } }) => {
-    const availableTimes = await fetchHours(
-      params.merchantName,
-      locationId,
-      serviceId,
-      day
+  loader: async ({
+    params: { merchantName },
+    context: { queryClient },
+    deps: { locationId, serviceId, day },
+  }) => {
+    await queryClient.ensureQueryData(
+      availableTimesQueryOptions(merchantName, locationId, serviceId, day)
     );
-    const closedDays = await fetchClosedDays(params.merchantName);
-
-    return {
-      availableTimes,
-      closedDays,
-    };
+    await queryClient.ensureQueryData(closedDaysQueryOptions(merchantName));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -81,23 +97,37 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
 function SelectDateTime() {
   const { merchantName } = Route.useParams();
   const { locationId, serviceId, day } = Route.useSearch();
-  const loaderData = Route.useLoaderData();
   const router = useRouter();
   const [selectedHour, setSelectedHour] = useState();
   const [serverError, setServerError] = useState();
   const [isLoading, setIsLoading] = useState(false);
-  const [availableTimes, setAvailableTimes] = useState({
-    morning: [],
-    afternoon: [],
-  });
   const [customerNote, setCustomerNote] = useState("");
-  const closedDays = loaderData.closedDays;
 
-  useEffect(() => {
-    if (loaderData.availableTimes) {
-      setAvailableTimes(loaderData.availableTimes);
-    }
-  }, [loaderData]);
+  const {
+    data: availableTimes,
+    isLoading: atIsLoading,
+    isError: atIsError,
+    error: atError,
+  } = useQuery({
+    ...availableTimesQueryOptions(merchantName, locationId, serviceId, day),
+    placeholderData: keepPreviousData,
+  });
+
+  const {
+    data: closedDays,
+    isLoading: cdIsLoading,
+    isError: cdIsError,
+    error: cdError,
+  } = useQuery(closedDaysQueryOptions(merchantName));
+
+  if (atIsLoading || cdIsLoading) {
+    return <Loading />;
+  }
+
+  if (atIsError || cdIsError) {
+    const error = atError || cdError;
+    return <ServerError error={error} />;
+  }
 
   async function onSubmitHandler(e) {
     e.preventDefault();
@@ -177,7 +207,10 @@ function SelectDateTime() {
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
             <div className="flex flex-col gap-6 md:w-1/2">
               <p className="text-xl sm:py-5">Pick a date</p>
-              <div className="flex items-center justify-center self-center bg-white shadow-lg dark:bg-neutral-950">
+              <div
+                className="flex items-center justify-center self-center bg-white
+                  shadow-lg dark:bg-neutral-950"
+              >
                 <SmallCalendar
                   value={day}
                   onSelect={dayChangeHandler}
@@ -242,7 +275,11 @@ function SelectDateTime() {
                 inputData={(data) => setCustomerNote(data.value)}
               />
 
-              <div className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0 left-0 px-8 py-3 md:static md:bg-transparent md:px-0 md:pt-10 dark:md:bg-transparent">
+              <div
+                className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0
+                  left-0 px-8 py-3 md:static md:bg-transparent md:px-0 md:pt-10
+                  dark:md:bg-transparent"
+              >
                 <Button
                   variant="primary"
                   type="submit"

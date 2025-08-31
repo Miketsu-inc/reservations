@@ -1,6 +1,8 @@
 import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
 import { timeStringFromDate } from "@lib/datetime";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 
 function monthDateFormat(date) {
   return date.toLocaleDateString([], {
@@ -13,6 +15,7 @@ function monthDateFormat(date) {
 export default function AppointmentItem({ appointment, customerName }) {
   const now = new Date();
   const toDate = new Date(appointment.to_date);
+  const { data: preferences } = useQuery(preferencesQueryOptions());
 
   const isCancelled =
     appointment.cancelled_by_user || appointment.cancelled_by_merchant;
@@ -44,14 +47,17 @@ export default function AppointmentItem({ appointment, customerName }) {
           {statusLabel}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+      <div
+        className="flex flex-wrap items-center gap-4 text-sm text-gray-500
+          dark:text-gray-400"
+      >
         <span className="flex items-center gap-2">
           <CalendarIcon styles="size-4 text-gray-500 dark:text-gray-400" />
           <span className="mt-0.5 text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
         </span>
         <span className="flex items-center gap-2">
           <ClockIcon styles="size-4 fill-gray-500 dark:fill-gray-400" />
-          <span className="mt-0.5 text-sm">{`${timeStringFromDate(new Date(appointment.from_date))} - ${timeStringFromDate(new Date(appointment.to_date))}`}</span>
+          <span className="mt-0.5 text-sm">{`${timeStringFromDate(new Date(appointment.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(appointment.to_date), preferences?.time_format)}`}</span>
         </span>
       </div>
     </div>

@@ -14,7 +14,6 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout"
 )({
   component: CustomersLayout,
-  loader: () => ({ crumb: "Customers" }),
 });
 
 function CustomersLayout() {
@@ -26,14 +25,17 @@ function CustomersLayout() {
       <div className="flex w-full flex-col gap-4">
         <h1 className="text-text_color text-2xl font-bold">Customers</h1>
         <div className="flex items-center justify-between">
-          <nav className="dark:bg-layer_bg flex w-fit rounded-md bg-gray-200 p-1">
+          <nav
+            className="dark:bg-layer_bg flex w-fit rounded-md bg-gray-200 p-1"
+          >
             <Link
               activeProps={{
                 className: " bg-bg_color text-primary! shadow-sm",
               }}
               activeOptions={{ exact: true }}
               to="/customers/"
-              className="text-text_color/70 rounded-md px-4 py-2 text-sm font-medium"
+              className="text-text_color/70 rounded-md px-4 py-2 text-sm
+                font-medium"
             >
               <div className="flex items-center gap-2">
                 <PersonIcon styles="size-4 fill-current" />
@@ -45,7 +47,8 @@ function CustomersLayout() {
                 className: " bg-bg_color text-red-600! shadow-sm",
               }}
               to="/customers/blacklist"
-              className="text-text_color/70 rounded-md px-4 py-2 text-sm font-medium"
+              className="text-text_color/70 rounded-md px-4 py-2 text-sm
+                font-medium"
             >
               <div className="flex items-center gap-2">
                 <BanIcon styles="size-4" />

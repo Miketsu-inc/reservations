@@ -85,8 +85,8 @@ const TooltipContent = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div
-        className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border border-gray-200
-          p-2 text-xs shadow-xl dark:border-gray-800"
+        className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border
+          border-gray-200 p-2 text-xs shadow-xl dark:border-gray-800"
       >
         <p>{label}</p>
         {payload.map((item, index) => (

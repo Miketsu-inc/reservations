@@ -1,5 +1,6 @@
 import Card from "@components/Card";
 import DeleteModal from "@components/DeleteModal";
+import Loading from "@components/Loading";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/Popover";
 import ServerError from "@components/ServerError";
 import ApproveIcon from "@icons/ApproveIcon";
@@ -13,7 +14,8 @@ import TrashBinIcon from "@icons/TrashBinIcon";
 import { useToast, useWindowSize } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import AppointmentItem from "./-components/AppointmentItem";
@@ -42,6 +44,13 @@ async function fetchCustomerInfo(customerId) {
   }
 }
 
+function customerInfoQueryOptions(id) {
+  return queryOptions({
+    queryKey: ["customer-info", id],
+    queryFn: () => fetchCustomerInfo(id),
+  });
+}
+
 function monthDateFormat(date) {
   return date.toLocaleDateString([], {
     weekday: "short",
@@ -62,8 +71,10 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/$customerId/"
 )({
   component: CustomerDetailsPage,
-  loader: async ({ params }) => {
-    return fetchCustomerInfo(params.customerId);
+  loader: ({ context: { queryClient }, params }) => {
+    return queryClient.ensureQueryData(
+      customerInfoQueryOptions(params.customerId)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.mesage} />;
@@ -71,9 +82,7 @@ export const Route = createFileRoute(
 });
 
 function CustomerDetailsPage() {
-  const router = useRouter();
   const navigate = Route.useNavigate();
-  const loaderData = Route.useLoaderData();
   const windowSize = useWindowSize();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -81,7 +90,21 @@ function CustomerDetailsPage() {
   const { showToast } = useToast();
   const now = new Date();
 
-  const completedAppointments = loaderData.appointments
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { customerId } = Route.useParams();
+  const { data, isLoading, isError, error } = useQuery(
+    customerInfoQueryOptions(customerId)
+  );
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  const completedAppointments = data.appointments
     .filter((appt) => {
       const toDate = new Date(appt.to_date);
       const wasCancelled = appt.cancelled_by_user || appt.cancelled_by_merchant;
@@ -161,7 +184,9 @@ function CustomerDetailsPage() {
             variant: "success",
           });
         }
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["customer-info", customerId],
+        });
         setServerError();
       }
     } catch (err) {
@@ -172,7 +197,7 @@ function CustomerDetailsPage() {
   return (
     <div className="flex justify-center py-5">
       <BlacklistModal
-        data={loaderData}
+        data={data}
         isOpen={showBlacklistModal}
         onClose={() => setShowBlacklistModal(false)}
         onSubmit={(customer) =>
@@ -184,38 +209,52 @@ function CustomerDetailsPage() {
         }
       />
       <DeleteModal
-        itemName={`${loaderData.first_name} ${loaderData.last_name}`}
+        itemName={`${data.first_name} ${data.last_name}`}
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onDelete={() => deleteHandler(loaderData.id)}
+        onDelete={() => deleteHandler(data.id)}
       />
-      <div className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2">
+      <div
+        className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2"
+      >
         <ServerError error={serverError} />
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <div className="from-secondary to-primary bg-primary flex size-16 items-center justify-center rounded-md text-lg text-white dark:bg-linear-to-br">
-                {`${loaderData.first_name.charAt(0)}${loaderData.last_name.charAt(0)}`.toUpperCase()}
+              <div
+                className="from-secondary to-primary bg-primary flex size-16
+                  items-center justify-center rounded-md text-lg text-white
+                  dark:bg-linear-to-br"
+              >
+                {`${data.first_name.charAt(0)}${data.last_name.charAt(0)}`.toUpperCase()}
               </div>
 
               <div
                 className={`flex flex-col ${lastVisited ? "gap-2" : "gap-0"}`}
               >
                 <div
-                  className={`flex flex-col gap-2 ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
+                  className={`flex flex-col gap-2
+                    ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
                 >
                   <h2 className="text-text_color text-lg font-bold">
-                    {loaderData.first_name} {loaderData.last_name}
+                    {data.first_name} {data.last_name}
                   </h2>
-                  {loaderData.is_blacklisted && (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-700/20 px-2 py-0.5 text-xs font-medium text-red-800 dark:text-red-500">
+                  {data.is_blacklisted && (
+                    <span
+                      className="inline-flex w-fit items-center gap-1
+                        rounded-full bg-red-700/20 px-2 py-0.5 text-xs
+                        font-medium text-red-800 dark:text-red-500"
+                    >
                       <BanIcon styles="size-4" />
                       Blacklisted
                     </span>
                   )}
 
-                  {loaderData.is_dummy && (
-                    <span className="bg-hvr_gray text-text_color/90 w-fit rounded-full px-2 py-0.5 text-xs font-medium">
+                  {data.is_dummy && (
+                    <span
+                      className="bg-hvr_gray text-text_color/90 w-fit
+                        rounded-full px-2 py-0.5 text-xs font-medium"
+                    >
                       User Added by You
                     </span>
                   )}
@@ -223,7 +262,7 @@ function CustomerDetailsPage() {
 
                 {lastVisited &&
                   (windowSize !== "sm" ||
-                    (!loaderData.is_blacklisted && !loaderData.is_dummy)) && (
+                    (!data.is_blacklisted && !data.is_dummy)) && (
                     <p className="text-text_color/70 text-sm">
                       Last visited: {lastVisited}
                     </p>
@@ -233,25 +272,35 @@ function CustomerDetailsPage() {
             <div className="flex flex-col items-start">
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit cursor-pointer rounded-lg p-1">
-                    <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500" />
+                  <button
+                    className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
+                      cursor-pointer rounded-lg p-1"
+                  >
+                    <ThreeDotsIcon
+                      styles="size-6 stroke-4 stroke-gray-400
+                        dark:stroke-gray-500"
+                    />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="left" styles="w-auto">
-                  <div className="itmes-start flex w-auto flex-col *:flex *:w-full *:flex-row *:items-center *:rounded-lg *:p-2">
-                    {!loaderData.is_dummy && (
+                  <div
+                    className="itmes-start flex w-auto flex-col *:flex *:w-full
+                      *:flex-row *:items-center *:rounded-lg *:p-2"
+                  >
+                    {!data.is_dummy && (
                       <PopoverClose asChild>
                         <button
                           onClick={() => setShowBlacklistModal(true)}
-                          className="hover:bg-hvr_gray text-text_color cursor-pointer gap-3"
+                          className="hover:bg-hvr_gray text-text_color
+                            cursor-pointer gap-3"
                         >
-                          {!loaderData.is_blacklisted ? (
+                          {!data.is_blacklisted ? (
                             <BanIcon styles="size-6 ml-0.5 shrink-0" />
                           ) : (
                             <ApproveIcon styles="size-6" />
                           )}
                           <p className="text-nowrap">
-                            {!loaderData.is_blacklisted
+                            {!data.is_blacklisted
                               ? "Blacklist Customer"
                               : "Unban customer"}
                           </p>
@@ -262,9 +311,9 @@ function CustomerDetailsPage() {
                       <button
                         className="hover:bg-hvr_gray cursor-pointer gap-3"
                         onClick={() => {
-                          router.navigate({
+                          navigate({
                             from: Route.fullPath,
-                            to: `/customers/edit/${loaderData.id}`,
+                            to: `/customers/edit/${data.id}`,
                           });
                         }}
                       >
@@ -272,7 +321,7 @@ function CustomerDetailsPage() {
                         <p>Edit customer</p>
                       </button>
                     </PopoverClose>
-                    {loaderData.is_dummy && (
+                    {data.is_dummy && (
                       <>
                         <PopoverClose asChild>
                           <button
@@ -293,41 +342,47 @@ function CustomerDetailsPage() {
             </div>
           </div>
 
-          <div className="text-text_color/70 flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:gap-6">
-            {loaderData.email && (
+          <div
+            className="text-text_color/70 flex flex-col items-start gap-3
+              text-sm sm:flex-row sm:items-center sm:gap-6"
+          >
+            {data.email && (
               <div className="flex items-center gap-2">
                 <EnvelopeIcon styles="size-5 text-text_color/70" />
-                {loaderData.email}
+                {data.email}
               </div>
             )}
             <div className="flex items-center gap-6 sm:justify-start">
-              {loaderData.phone_number && (
+              {data.phone_number && (
                 <div className="flex items-center gap-2">
-                  <PhoneIcon styles="size-4 mb-0.5 fill-text_color/70 stroke-text_color/10" />
-                  {loaderData.phone_number}
+                  <PhoneIcon
+                    styles="size-4 mb-0.5 fill-text_color/70
+                      stroke-text_color/10"
+                  />
+                  {data.phone_number}
                 </div>
               )}
-              {loaderData.birthday && (
+              {data.birthday && (
                 <div className="flex items-center gap-2">
                   <CakeIcon styles="size-5 mb-0.5 text-text_color/70" />
-                  {formatBirthday(loaderData.birthday)}
+                  {formatBirthday(data.birthday)}
                 </div>
               )}
             </div>
           </div>
-          <ExpandableNote text={loaderData.note} />
-          <CustomerStats customer={loaderData} />
+          <ExpandableNote text={data.note} />
+          <CustomerStats customer={data} />
         </Card>
 
         <PaginatedList
-          data={loaderData.appointments}
+          data={data.appointments}
           itemsPerPage={8}
           title="Appointment History"
           emptyMessage="No appointments found for this customer"
           renderItem={(appointment) => (
             <AppointmentItem
               appointment={appointment}
-              customerName={loaderData.first_name}
+              customerName={data.first_name}
             />
           )}
         />

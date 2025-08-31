@@ -3,10 +3,12 @@ import Modal from "@components/Modal";
 import CalendarIcon from "@icons/CalendarIcon";
 import { formatToDateString, timeStringFromDate } from "@lib/datetime";
 import { useToast } from "@lib/hooks";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 
-function dateFormatter(date) {
+function dateFormatter(date, time_format) {
   if (!date) return "";
-  return formatToDateString(date) + " " + timeStringFromDate(date);
+  return formatToDateString(date) + " " + timeStringFromDate(date, time_format);
 }
 
 export default function DragConfirmationModal({
@@ -16,6 +18,7 @@ export default function DragConfirmationModal({
   onMoved,
 }) {
   const { showToast } = useToast();
+  const { data: preferences } = useQuery(preferencesQueryOptions());
 
   async function submitButtonHandler(e) {
     e.preventDefault();
@@ -71,12 +74,19 @@ export default function DragConfirmationModal({
           <div className="flex flex-col items-center gap-2">
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
-              <p>{dateFormatter(eventData.old_event.start)}</p>
+              <p>
+                {dateFormatter(
+                  eventData.old_event.start,
+                  preferences?.time_format
+                )}
+              </p>
             </div>
             <p>to</p>
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
-              <p>{dateFormatter(eventData.event.start)}</p>
+              <p>
+                {dateFormatter(eventData.event.start, preferences?.time_format)}
+              </p>
             </div>
           </div>
         </div>

@@ -9,7 +9,6 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/profile"
 )({
   component: ProfilePage,
-  loader: () => ({ crumb: "Profile" }),
 });
 
 function ProfilePage() {

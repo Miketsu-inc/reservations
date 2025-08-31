@@ -1,9 +1,11 @@
 import Button from "@components/Button";
 import Card from "@components/Card";
+import Loading from "@components/Loading";
 import SearchInput from "@components/SearchInput";
 import ServerError from "@components/ServerError";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceCategoryItem from "./-components/ServiceCategoryItem";
 import ServiceItem from "./-components/ServiceItem";
@@ -21,29 +23,24 @@ async function fetchMerchantInfo(name) {
   }
 }
 
+function merchantInfoQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-info", name],
+    queryFn: () => fetchMerchantInfo(name),
+  });
+}
+
 export const Route = createFileRoute("/m/$merchantName/")({
   component: MerchantPage,
-  loader: async ({ params }) => {
-    return fetchMerchantInfo(params.merchantName);
+  loader: async ({ params, context: { queryClient } }) => {
+    await queryClient.ensureQueryData(
+      merchantInfoQueryOptions(params.merchantName)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
 });
-
-const defaultMerchantInfo = {
-  merchant_name: "",
-  location_id: 0,
-  contact_email: "",
-  short_location: "",
-  introduction: "",
-  announcement: "",
-  about_us: "",
-  parking_info: "",
-  payment_info: "",
-  services: [],
-  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
-};
 
 const days = [
   "Sunday",
@@ -56,34 +53,25 @@ const days = [
 ];
 
 function MerchantPage() {
-  const [merchantInfo, setMerchantInfo] = useState(defaultMerchantInfo);
-  const loaderData = Route.useLoaderData();
   const [searchText, setSearchText] = useState("");
+  const { merchantName } = Route.useParams({ from: Route.id });
 
-  useEffect(() => {
-    if (loaderData) {
-      const shortLocation =
-        loaderData.address +
-        ", " +
-        loaderData.city +
-        " " +
-        loaderData.postal_code;
+  const {
+    data: merchantInfo,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(merchantInfoQueryOptions(merchantName));
 
-      setMerchantInfo({
-        merchant_name: loaderData.merchant_name,
-        location_id: loaderData.location_id,
-        contact_email: loaderData.contact_email,
-        short_location: shortLocation,
-        introduction: loaderData.introduction,
-        announcement: loaderData.announcement,
-        about_us: loaderData.about_us,
-        parking_info: loaderData.parking_info,
-        payment_info: loaderData.payment_info,
-        services: loaderData.services,
-        business_hours: loaderData.business_hours,
-      });
-    }
-  }, [loaderData]);
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error} />;
+  }
+
+  const short_location = `${merchantInfo.address}, ${merchantInfo.city} ${merchantInfo.postal_code}`;
 
   const filteredServicesGroupedByCategories = merchantInfo.services.map(
     (category) => ({
@@ -96,7 +84,10 @@ function MerchantPage() {
 
   return (
     <Card styles="mx-auto min-h-screen max-w-7xl md:p-6">
-      <div className="mb-5 flex flex-col-reverse gap-4 lg:mb-0 lg:h-80 lg:flex-row lg:gap-14">
+      <div
+        className="mb-5 flex flex-col-reverse gap-4 lg:mb-0 lg:h-80 lg:flex-row
+          lg:gap-14"
+      >
         <div className="flex flex-col gap-6 md:flex-row lg:w-1/3 lg:flex-col">
           <div className="flex w-full flex-row">
             <div className="w-14 sm:w-20 lg:w-24">
@@ -109,10 +100,12 @@ function MerchantPage() {
               <h1 className="text-2xl font-bold lg:text-4xl">
                 {merchantInfo.merchant_name}
               </h1>
-              <p className="text-sm">{merchantInfo.short_location}</p>
+              <p className="text-sm">{short_location}</p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-2 md:items-end lg:items-start">
+          <div
+            className="flex w-full flex-col gap-2 md:items-end lg:items-start"
+          >
             <p className="text-justify">{merchantInfo.introduction}</p>
             <p className="text-justify">{merchantInfo.announcement}</p>
           </div>
@@ -198,11 +191,8 @@ function MerchantPage() {
           <ReservationSection name="Payment" show={merchantInfo.payment_info}>
             <p>{merchantInfo.payment_info}</p>
           </ReservationSection>
-          <ReservationSection
-            name="Location"
-            show={merchantInfo.short_location}
-          >
-            <p>{merchantInfo.short_location}</p>
+          <ReservationSection name="Location" show={short_location}>
+            <p>{short_location}</p>
           </ReservationSection>
           <ReservationSection name="Parking" show={merchantInfo.parking_info}>
             <p>{merchantInfo.parking_info}</p>

@@ -114,7 +114,10 @@ export default function ServicePage({
       <div className="flex h-screen px-4 py-2 md:px-0 md:py-0">
         <div className="my-6 w-full">
           <div className="flex flex-col gap-4">
-            <Card styles="sticky top-14 md:top-0 z-10 flex flex-row items-center justify-between gap-2">
+            <Card
+              styles="sticky top-14 md:top-0 z-10 flex flex-row items-center
+                justify-between gap-2"
+            >
               <p className="text-xl">{serviceData.name || "New service"}</p>
               <Button
                 styles="py-2 px-6"
@@ -137,7 +140,8 @@ export default function ServicePage({
               <Card styles="flex flex-col gap-4 md:w-1/2 md:flex-row">
                 <div
                   style={{ backgroundColor: serviceData.color }}
-                  className="size-28 shrink-0 overflow-hidden rounded-lg xl:size-[120px]"
+                  className="size-28 shrink-0 overflow-hidden rounded-lg
+                    xl:size-[120px]"
                 >
                   <img
                     className="size-full object-cover"
@@ -162,7 +166,8 @@ export default function ServicePage({
                     >
                       <input
                         id="color"
-                        className="border-input_border_color size-10.5 cursor-pointer rounded-l-lg border bg-transparent"
+                        className="border-input_border_color size-10.5
+                          cursor-pointer rounded-l-lg border bg-transparent"
                         name="color"
                         type="color"
                         value={serviceData.color}
@@ -193,7 +198,10 @@ export default function ServicePage({
                         })
                       }
                     >
-                      <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                      <p
+                        className="border-input_border_color rounded-r-lg border
+                          px-4 py-2"
+                      >
                         {serviceData.price?.currency || "HUF"}
                       </p>
                     </Input>
@@ -230,7 +238,10 @@ export default function ServicePage({
                       })
                     }
                   >
-                    <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+                    <p
+                      className="border-input_border_color rounded-r-lg border
+                        px-4 py-2"
+                    >
                       {serviceData.cost?.currency || "HUF"}
                     </p>
                   </Input>
@@ -256,7 +267,10 @@ export default function ServicePage({
                       <span className="hidden items-center md:flex">
                         <Tootlip>
                           <TooltipTrigger>
-                            <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+                            <InfoIcon
+                              styles="size-4 stroke-gray-500
+                                dark:stroke-gray-400"
+                            />
                           </TooltipTrigger>
                           <TooltipContent side="right">
                             <p>
@@ -301,7 +315,8 @@ export default function ServicePage({
             {service && (
               <Button
                 type="button"
-                styles="py-4 mb-2 shadow-none bg-transparent hover:bg-transparent text-red-500!"
+                styles="py-4 mb-2 shadow-none bg-transparent
+                  hover:bg-transparent text-red-500!"
                 buttonText="Delete service"
                 onClick={() => setShowDeleteModal(true)}
               ></Button>

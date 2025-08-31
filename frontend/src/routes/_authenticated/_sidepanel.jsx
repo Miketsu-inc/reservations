@@ -1,4 +1,5 @@
-import Breadcrumbs from "@components/Breadcrumbs";
+import Loading from "@components/Loading";
+import ServerError from "@components/ServerError";
 import { TooltipContent, TooltipTrigger, Tootlip } from "@components/Tooltip";
 import CalendarIcon from "@icons/CalendarIcon";
 import ChartIcon from "@icons/ChartIcon";
@@ -14,11 +15,19 @@ import SidePanelToggleIcon from "@icons/SidePanelToggleIcon";
 import SignOutIcon from "@icons/SignOutIcon";
 import SunIcon from "@icons/SunIcon";
 import { useTheme, useWindowSize } from "@lib/hooks";
+import { preferencesQueryOptions } from "@lib/queries";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel")({
   component: SidePanelLayout,
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(preferencesQueryOptions());
+  },
+  pendingComponent: Loading,
+  errorComponent: ({ error }) => {
+    return <ServerError error={error.message} />;
+  },
 });
 
 function SidePanelLayout() {
@@ -249,23 +258,30 @@ function SidePanelLayout() {
               className="flex flex-row items-center gap-2 py-3 text-sm
                 text-gray-800 dark:text-gray-300"
             >
-              <button
-                className="cursor-pointer"
-                onClick={() => {
-                  localStorage.setItem("sidepanel_collapsed", !isCollapsed);
-                  setIsCollapsed(!isCollapsed);
-                }}
-              >
-                <SidePanelToggleIcon
-                  styles="w-4 h-4 stroke-gray-800 dark:stroke-gray-300
-                    hover:stroke-text_color"
-                />
-              </button>
-              <div
+              <Tootlip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="cursor-pointer"
+                    onClick={() => {
+                      localStorage.setItem("sidepanel_collapsed", !isCollapsed);
+                      setIsCollapsed(!isCollapsed);
+                    }}
+                  >
+                    <SidePanelToggleIcon
+                      styles="size-4 stroke-gray-800 dark:stroke-gray-300
+                        hover:stroke-text_color"
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={6}>
+                  <p>Sidepanel toggle</p>
+                </TooltipContent>
+              </Tootlip>
+              {/* <div
                 className="mx-2 h-3 w-px border-none bg-gray-800
                   dark:bg-gray-300"
               ></div>
-              <Breadcrumbs />
+              <Breadcrumbs /> */}
             </div>
             <div className="flex flex-row gap-4">
               <Link
@@ -282,9 +298,15 @@ function SidePanelLayout() {
                 onClick={switchTheme}
               >
                 {isDarkTheme ? (
-                  <SunIcon styles="size-5" />
+                  <SunIcon
+                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
+                      hover:stroke-text_color"
+                  />
                 ) : (
-                  <MoonIcon styles="size-5" />
+                  <MoonIcon
+                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
+                      hover:stroke-text_color"
+                  />
                 )}
               </button>
             </div>

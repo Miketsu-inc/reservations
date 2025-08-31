@@ -1,11 +1,13 @@
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
-async function fetchServicePageFormOptions() {
+async function fetchServiceFormOptions() {
   const response = await fetch("/api/v1/merchants/services/form-options", {
     method: "GET",
     headers: {
@@ -23,17 +25,18 @@ async function fetchServicePageFormOptions() {
   }
 }
 
+function serviceFormOptionsQueryOptions() {
+  return queryOptions({
+    queryKey: ["service-from-options"],
+    queryFn: fetchServiceFormOptions,
+  });
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
   {
     component: RouteComponent,
-    loader: async () => {
-      const formOptions = await fetchServicePageFormOptions();
-
-      return {
-        // crumb: "New service",
-        products: formOptions?.products,
-        categories: formOptions?.categories,
-      };
+    loader: async ({ context: { queryClient } }) => {
+      await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
     },
     errorComponent: ({ error }) => {
       return <ServerError error={error.message} />;
@@ -42,10 +45,24 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
 );
 
 function RouteComponent() {
-  const loaderData = Route.useLoaderData();
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  const {
+    data: formOptions,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(serviceFormOptionsQueryOptions());
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error} />;
+  }
 
   async function saveServiceHandler(service) {
     try {
@@ -82,8 +99,8 @@ function RouteComponent() {
     <>
       <ServerError error={serverError} />
       <ServicePage
-        categories={loaderData.categories}
-        products={loaderData.products}
+        categories={formOptions.categories}
+        products={formOptions.products}
         onSave={saveServiceHandler}
         route={Route}
       />

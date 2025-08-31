@@ -3,6 +3,8 @@ import ServerError from "@components/ServerError";
 import Textarea from "@components/Textarea";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
+import { preferencesQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import BusinessHours from "../-components/BusinessHours";
@@ -85,7 +87,6 @@ export const Route = createFileRoute(
     const merchantData = await fetchMerchantData();
 
     return {
-      crumb: "Merchant",
       ...merchantData,
     };
   },
@@ -117,6 +118,8 @@ function MerchantPage() {
   const [serverError, setServerError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const { showToast } = useToast();
+
+  const { data: preferences } = useQuery(preferencesQueryOptions());
 
   function handleInputData(data) {
     setMerchantInfo((prevFormData) => ({
@@ -183,7 +186,8 @@ function MerchantPage() {
       <div className="flex w-full flex-col gap-6">
         <SectionHeader title="General info" styles="" />
         <Textarea
-          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl"
+          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52
+            md:max-w-2xl"
           id="intorudtion"
           placeholder="Introduce your company to the clients"
           name="introduction"
@@ -223,7 +227,8 @@ function MerchantPage() {
           inputData={handleInputData}
         />
         <Textarea
-          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52 md:max-w-2xl"
+          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52
+            md:max-w-2xl"
           id="about_us"
           placeholder="Tell about your company to the clients"
           name="about_us"
@@ -249,6 +254,7 @@ function MerchantPage() {
                 business_hours: updatedHours,
               }));
             }}
+            preferences={preferences}
           />
           {errorMessage && <span className="text-red-500">{errorMessage}</span>}
         </div>
@@ -279,7 +285,10 @@ function MerchantPage() {
           upload clear and appropiate images to provide the best experiance for
           your customers.
         </p>
-        <div className="mt-6 flex flex-col items-center justify-between gap-10 md:flex-row">
+        <div
+          className="mt-6 flex flex-col items-center justify-between gap-10
+            md:flex-row"
+        >
           <ImageUploader
             onImageUpload={handleImageUpload}
             text="Upload profile picture"

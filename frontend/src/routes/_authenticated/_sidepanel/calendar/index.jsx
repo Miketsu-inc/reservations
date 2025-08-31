@@ -2,10 +2,12 @@ import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { SCREEN_SM } from "@lib/constants";
 import { calculateStartEndTime, isDurationValid } from "@lib/datetime";
-import { useToast } from "@lib/hooks";
-import { getStoredPreferences, invalidateLocalStorageAuth } from "@lib/lib";
+import { invalidateLocalStorageAuth } from "@lib/lib";
+import { businessHoursQueryOptions } from "@lib/queries";
+import { globalQueryClient } from "@root/main";
+import { queryOptions } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
@@ -32,6 +34,13 @@ async function fetchEvents(start, end) {
   }
 }
 
+export function eventsQueryOptions(start, end) {
+  return queryOptions({
+    queryKey: ["events", start, end],
+    queryFn: () => fetchEvents(start, end),
+  });
+}
+
 function mapCalendarView(view, mobile_view) {
   const viewMapping = {
     month: "dayGridMonth",
@@ -51,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   validateSearch: (search) => {
     let defaultView = "timeGridWeek";
 
-    const preferences = getStoredPreferences();
+    const preferences = globalQueryClient.getQueryData(["preferences"]);
     if (preferences?.calendar_view) {
       defaultView = mapCalendarView(
         preferences.calendar_view,
@@ -91,13 +100,9 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
     start,
     end,
   }),
-  loader: async ({ deps: { start, end } }) => {
-    const events = await fetchEvents(start, end);
-
-    return {
-      crumb: "Calendar",
-      events: events,
-    };
+  loader: async ({ deps: { start, end }, context: { queryClient } }) => {
+    await queryClient.ensureQueryData(eventsQueryOptions(start, end));
+    await queryClient.ensureQueryData(businessHoursQueryOptions());
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -106,53 +111,11 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
 
 function CalendarPage() {
   const search = Route.useSearch();
-  const loaderData = Route.useLoaderData();
   const router = useRouter();
-  const preferences = getStoredPreferences();
-  const [businessHours, setBusinessHours] = useState();
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    async function fetchBusinessHours() {
-      const response = await fetch(`/api/v1/merchants/business-hours`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "constent-type": "application/json",
-        },
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        showToast({
-          message: "error fetching business hours",
-          variant: "error",
-        });
-      } else {
-        const transformedBusinessHours = Object.entries(result.data).map(
-          ([day, times]) => ({
-            daysOfWeek: [parseInt(day)],
-            startTime: times.start_time.slice(0, 5),
-            endTime: times.end_time.slice(0, 5),
-          })
-        );
-        setBusinessHours(transformedBusinessHours);
-      }
-    }
-
-    fetchBusinessHours();
-  }, [showToast]);
 
   return (
     <Suspense fallback={<Loading />}>
-      <Calendar
-        router={router}
-        view={search.view}
-        start={search.start}
-        eventData={loaderData.events}
-        preferences={preferences}
-        businessHours={businessHours}
-      />
+      <Calendar router={router} route={Route} search={search} />
     </Suspense>
   );
 }

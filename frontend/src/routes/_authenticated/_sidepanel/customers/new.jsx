@@ -9,7 +9,6 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/new"
 )({
   component: RouteComponent,
-  loader: () => ({ crumb: "New Customer" }),
 });
 
 function RouteComponent() {

@@ -1,12 +1,14 @@
+import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
 import ProductModal from "./-components/ProductModal";
 import ProductsTable from "./-components/ProductsTable";
 
-async function fetchTableData() {
+async function fetchProducts() {
   const response = await fetch(`/api/v1/merchants/products`, {
     method: "GET",
     headers: {
@@ -24,15 +26,17 @@ async function fetchTableData() {
   }
 }
 
+function productsQueryOptions() {
+  return queryOptions({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+  });
+}
+
 export const Route = createFileRoute("/_authenticated/_sidepanel/products/")({
   component: ProductsPage,
-  loader: async () => {
-    const data = await fetchTableData();
-
-    return {
-      crumb: "Products",
-      data: data,
-    };
+  loader: ({ context: { queryClient } }) => {
+    return queryClient.ensureQueryData(productsQueryOptions());
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -40,12 +44,13 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/products/")({
 });
 
 function ProductsPage() {
-  const router = useRouter();
-  const loaderData = Route.useLoaderData();
   const [showProductModal, setShowProductModal] = useState(false);
   const [modalData, setModalData] = useState();
   const [serverError, setServerError] = useState();
+  const { queryClient } = useRouteContext({ from: Route.id });
   const { showToast } = useToast();
+
+  const { data, isLoading, isError, error } = useQuery(productsQueryOptions());
 
   async function deleteHandler(product) {
     try {
@@ -62,7 +67,10 @@ function ProductsPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        router.invalidate();
+        await queryClient.invalidateQueries({
+          queryKey: ["products"],
+        });
+
         setServerError();
         showToast({
           message: "Product deleted successfully",
@@ -112,13 +120,24 @@ function ProductsPage() {
           variant: "success",
         });
         setServerError();
-        router.invalidate();
+
+        await queryClient.invalidateQueries({
+          queryKey: ["products"],
+        });
       }
     } catch (err) {
       setServerError(err.message);
     } finally {
       setModalData();
     }
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
   }
 
   return (
@@ -134,7 +153,7 @@ function ProductsPage() {
         <ServerError error={serverError} />
         <div className="h-2/3 w-full">
           <ProductsTable
-            products={loaderData.data}
+            products={data}
             onNewItem={() => {
               // the first condition is necessary for it to not cause an error
               // in case of a new item

@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
         "@components": "/src/components",
         "@icons": "/src/assets/icons",
         "@lib": "/src/lib",
+        "@root": "/src",
       },
     },
   };
