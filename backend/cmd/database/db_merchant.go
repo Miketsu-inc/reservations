@@ -329,6 +329,56 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	return nil
 }
 
+func (s *service) UpdateBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]TimeSlot) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// nolint: errcheck
+	defer tx.Rollback(ctx)
+
+	var days []int
+	var starts, ends []string
+
+	for day, timeRanges := range businessHours {
+		for _, ts := range timeRanges {
+			if ts.StartTime != "" && ts.EndTime != "" {
+				days = append(days, day)
+				starts = append(starts, ts.StartTime)
+				ends = append(ends, ts.EndTime)
+			}
+		}
+	}
+
+	deleteQuery := `
+    delete from "BusinessHours"
+    where merchant_id = $1
+    and (day_of_week, start_time, end_time) not in (
+        select unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
+    );`
+
+	_, err = tx.Exec(ctx, deleteQuery, merchantId, utils.IntSliceToPgArray(days), utils.TimeStringToPgArray(starts), utils.TimeStringToPgArray(ends))
+	if err != nil {
+		return fmt.Errorf("failed to delete outdated business hours for merchant: %v", err)
+	}
+
+	insertQuery := `
+    insert into "BusinessHours" (merchant_id, day_of_week, start_time, end_time)
+    select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
+    on conflict (merchant_id, day_of_week, start_time, end_time) do nothing;`
+
+	_, err = tx.Exec(ctx, insertQuery, merchantId, utils.IntSliceToPgArray(days), utils.TimeStringToPgArray(starts), utils.TimeStringToPgArray(ends))
+	if err != nil {
+		return fmt.Errorf("failed to insert business hours for merchant: %v", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *service) GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int][]TimeSlot, error) {
 	query := `
 	select day_of_week, start_time, end_time from "BusinessHours"

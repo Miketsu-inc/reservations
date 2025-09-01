@@ -79,5 +79,21 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	businessHours := map[int][]database.TimeSlot{
+		0: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		1: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		2: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		3: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		4: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		5: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		6: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+	}
+
+	err = m.Postgresdb.UpdateBusinessHours(r.Context(), merchantID, businessHours)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating business hours for merchant: %s", err.Error()))
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
