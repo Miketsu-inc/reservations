@@ -2,37 +2,13 @@ import Loading from "@components/Loading";
 import ServerError from "@components/ServerError";
 import { useToast } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { customersQueryOptions } from "@lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import CustomersTable from "../-components/CustomersTable";
 import TransferAppsModal from "../-components/TransferAppsModal";
-
-async function fetchCustomers() {
-  const response = await fetch(`/api/v1/merchants/customers`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function customersQueryOptions() {
-  return queryOptions({
-    queryKey: ["customers"],
-    queryFn: fetchCustomers,
-  });
-}
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout/"
@@ -210,7 +186,7 @@ function CustomersPage() {
             customersData={data}
             onTransfer={(index) => {
               setTransferModalData({
-                fromIndex: index,
+                from: index,
                 customers: data,
               });
               setTimeout(() => setShowTransferModal(true), 0);

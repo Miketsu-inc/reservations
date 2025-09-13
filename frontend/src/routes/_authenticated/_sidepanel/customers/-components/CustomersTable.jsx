@@ -108,7 +108,7 @@ export default function CustomersTable({
                 {params.data.times_booked || params.data.times_cancelled ? (
                   <button
                     className="cursor-pointer"
-                    onClick={() => onTransfer(params.node.sourceRowIndex)}
+                    onClick={() => onTransfer(params.data.id)}
                   >
                     <TransferIcon styles="size-5 mx-1" />
                   </button>

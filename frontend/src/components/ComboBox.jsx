@@ -10,6 +10,7 @@ export default function ComboBox({
   styles,
   maxVisibleItems = 7,
   emptyText,
+  onOpenChange,
 }) {
   const [searchText, setSearchText] = useState("");
 
@@ -35,6 +36,7 @@ export default function ComboBox({
       }
       onClose={() => setSearchText("")}
       emptyText={emptyText}
+      onOpenChange={onOpenChange}
     />
   );
 }

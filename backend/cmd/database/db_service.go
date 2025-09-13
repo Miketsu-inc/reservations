@@ -895,13 +895,13 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 }
 
 type PublicServiceDetails struct {
-	Id            int                  `json:"id"`
-	Name          string               `json:"name"`
-	Description   string               `json:"description"`
-	TotalDuration int                  `json:"total_duration"`
-	Price         *currencyx.Price     `json:"price"`
-	PriceNote     *string              `json:"price_note"`
-	Phases        []PublicServicePhase `json:"phases"`
+	Id            int                       `json:"id"`
+	Name          string                    `json:"name"`
+	Description   string                    `json:"description"`
+	TotalDuration int                       `json:"total_duration"`
+	Price         *currencyx.FormattedPrice `json:"price"`
+	PriceNote     *string                   `json:"price_note"`
+	Phases        []PublicServicePhase      `json:"phases"`
 }
 
 func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int) (PublicServiceDetails, error) {

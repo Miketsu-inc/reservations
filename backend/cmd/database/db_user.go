@@ -28,7 +28,7 @@ type User struct {
 func (s *service) NewUser(ctx context.Context, user User) error {
 	query := `
 	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	values ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	_, err := s.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
