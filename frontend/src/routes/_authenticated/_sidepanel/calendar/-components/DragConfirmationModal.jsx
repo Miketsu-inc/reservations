@@ -12,7 +12,7 @@ function dateFormatter(date, time_format) {
 }
 
 export default function DragConfirmationModal({
-  eventData,
+  bookingData,
   isOpen,
   onClose,
   onMoved,
@@ -25,7 +25,7 @@ export default function DragConfirmationModal({
 
     try {
       const response = await fetch(
-        `/api/v1/appointments/${eventData.event.extendedProps.group_id}`,
+        `/api/v1/bookings/${bookingData.booking.extendedProps.group_id}`,
         {
           method: "PATCH",
           headers: {
@@ -33,19 +33,19 @@ export default function DragConfirmationModal({
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            merchant_note: eventData.event.extendedProps.merchant_note,
-            from_date: eventData.event.start.toISOString(),
-            to_date: eventData.event.end.toISOString(),
+            merchant_note: bookingData.booking.extendedProps.merchant_note,
+            from_date: bookingData.booking.start.toISOString(),
+            to_date: bookingData.booking.end.toISOString(),
           }),
         }
       );
       if (!response.ok) {
         const result = await response.json();
         showToast({ message: result.error.message, variant: "error" });
-        eventData.revert();
+        bookingData.revert();
       } else {
         showToast({
-          message: "Successfully updated the appointment",
+          message: "Successfully updated the booking",
           variant: "success",
         });
 
@@ -53,7 +53,7 @@ export default function DragConfirmationModal({
       }
     } catch (err) {
       showToast({ message: err.message, variant: "error" });
-      eventData.revert();
+      bookingData.revert();
     }
   }
 
@@ -67,16 +67,16 @@ export default function DragConfirmationModal({
           <p className="max-w-72 pb-5 text-center">
             You are about to modify the date of{" "}
             <span className="font-semibold">
-              {eventData.event.extendedProps?.first_name}'s
+              {bookingData.booking.extendedProps?.first_name}'s
             </span>{" "}
-            appointment
+            booking
           </p>
           <div className="flex flex-col items-center gap-2">
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
               <p>
                 {dateFormatter(
-                  eventData.old_event.start,
+                  bookingData.old_booking.start,
                   preferences?.time_format
                 )}
               </p>
@@ -85,7 +85,10 @@ export default function DragConfirmationModal({
             <div className="flex flex-row items-center gap-2">
               <CalendarIcon styles="size-5" />
               <p>
-                {dateFormatter(eventData.event.start, preferences?.time_format)}
+                {dateFormatter(
+                  bookingData.booking.start,
+                  preferences?.time_format
+                )}
               </p>
             </div>
           </div>

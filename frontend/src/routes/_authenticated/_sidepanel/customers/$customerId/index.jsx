@@ -21,7 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import TransferAppsModal from "../-components/TransferAppsModal";
-import AppointmentItem from "./-components/AppointmentItem";
+import BookingItem from "./-components/BookingItem";
 import CustomerStats from "./-components/CustomerStats";
 import ExpandableNote from "./-components/ExpandableNote";
 import PaginatedList from "./-components/PaginatedList";
@@ -111,16 +111,17 @@ function CustomerDetailsPage() {
     return <ServerError error={error} />;
   }
 
-  const completedAppointments = queryResults[0].data.appointments
-    .filter((appt) => {
-      const toDate = new Date(appt.to_date);
-      const wasCancelled = appt.cancelled_by_user || appt.cancelled_by_merchant;
+  const completedBookings = queryResults[0].data.bookings
+    .filter((booking) => {
+      const toDate = new Date(booking.to_date);
+      const wasCancelled =
+        booking.cancelled_by_user || booking.cancelled_by_merchant;
       return toDate < now && !wasCancelled;
     })
     .sort((a, b) => new Date(b.to_date) - new Date(a.to_date));
 
-  const lastVisited = completedAppointments[0]
-    ? monthDateFormat(new Date(completedAppointments[0].to_date))
+  const lastVisited = completedBookings[0]
+    ? monthDateFormat(new Date(completedBookings[0].to_date))
     : null;
 
   async function deleteHandler(id) {
@@ -262,12 +263,18 @@ function CustomerDetailsPage() {
         onClose={() => setShowDeleteModal(false)}
         onDelete={() => deleteHandler(queryResults[0].data.id)}
       />
-      <div className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2">
+      <div
+        className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2"
+      >
         <ServerError error={serverError} />
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <div className="from-secondary to-primary bg-primary flex size-16 items-center justify-center rounded-md text-lg text-white dark:bg-linear-to-br">
+              <div
+                className="from-secondary to-primary bg-primary flex size-16
+                  items-center justify-center rounded-md text-lg text-white
+                  dark:bg-linear-to-br"
+              >
                 {`${queryResults[0].data.first_name.charAt(0)}${queryResults[0].data.last_name.charAt(0)}`.toUpperCase()}
               </div>
 
@@ -275,21 +282,29 @@ function CustomerDetailsPage() {
                 className={`flex flex-col ${lastVisited ? "gap-2" : "gap-0"}`}
               >
                 <div
-                  className={`flex flex-col gap-2 ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
+                  className={`flex flex-col gap-2
+                    ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
                 >
                   <h2 className="text-text_color text-lg font-bold">
                     {queryResults[0].data.first_name}{" "}
                     {queryResults[0].data.last_name}
                   </h2>
                   {queryResults[0].data.is_blacklisted && (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-700/20 px-2 py-0.5 text-xs font-medium text-red-800 dark:text-red-500">
+                    <span
+                      className="inline-flex w-fit items-center gap-1
+                        rounded-full bg-red-700/20 px-2 py-0.5 text-xs
+                        font-medium text-red-800 dark:text-red-500"
+                    >
                       <BanIcon styles="size-4" />
                       Blacklisted
                     </span>
                   )}
 
                   {queryResults[0].data.is_dummy && (
-                    <span className="bg-hvr_gray text-text_color/90 w-fit rounded-full px-2 py-0.5 text-xs font-medium">
+                    <span
+                      className="bg-hvr_gray text-text_color/90 w-fit
+                        rounded-full px-2 py-0.5 text-xs font-medium"
+                    >
                       User Added by You
                     </span>
                   )}
@@ -308,7 +323,10 @@ function CustomerDetailsPage() {
             <div className="flex flex-col items-start">
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit cursor-pointer rounded-lg p-1">
+                  <button
+                    className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
+                      cursor-pointer rounded-lg p-1"
+                  >
                     <ThreeDotsIcon
                       styles="size-6 stroke-4 stroke-gray-400
                         dark:stroke-gray-500"
@@ -316,12 +334,16 @@ function CustomerDetailsPage() {
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="left" styles="w-auto">
-                  <div className="itmes-start flex w-auto flex-col *:flex *:w-full *:flex-row *:items-center *:rounded-lg *:p-2">
+                  <div
+                    className="itmes-start flex w-auto flex-col *:flex *:w-full
+                      *:flex-row *:items-center *:rounded-lg *:p-2"
+                  >
                     {!queryResults[0].data.is_dummy && (
                       <PopoverClose asChild>
                         <button
                           onClick={() => setShowBlacklistModal(true)}
-                          className="hover:bg-hvr_gray text-text_color cursor-pointer gap-3"
+                          className="hover:bg-hvr_gray text-text_color
+                            cursor-pointer gap-3"
                         >
                           {!queryResults[0].data.is_blacklisted ? (
                             <BanIcon styles="size-6 ml-0.5 shrink-0" />
@@ -384,7 +406,10 @@ function CustomerDetailsPage() {
             </div>
           </div>
 
-          <div className="text-text_color/70 flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:gap-6">
+          <div
+            className="text-text_color/70 flex flex-col items-start gap-3
+              text-sm sm:flex-row sm:items-center sm:gap-6"
+          >
             {queryResults[0].data.email && (
               <div className="flex items-center gap-2">
                 <EnvelopeIcon styles="size-5 text-text_color/70" />
@@ -414,13 +439,13 @@ function CustomerDetailsPage() {
         </Card>
 
         <PaginatedList
-          data={queryResults[0].data.appointments}
+          data={queryResults[0].data.bookings}
           itemsPerPage={8}
-          title="Appointment History"
-          emptyMessage="No appointments found for this customer"
-          renderItem={(appointment) => (
-            <AppointmentItem
-              appointment={appointment}
+          title="Booking History"
+          emptyMessage="No bookings found for this customer"
+          renderItem={(booking) => (
+            <BookingItem
+              booking={booking}
               customerName={queryResults[0].data.first_name}
             />
           )}

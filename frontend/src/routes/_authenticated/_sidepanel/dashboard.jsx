@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
-import AppointmentsList from "./-components/AppointmentsList";
+import BookingsList from "./-components/BookingsList";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import RevenueChart from "./-components/RevenueChart";
 import StatisticsCard from "./-components/StatisticsCard";
@@ -110,14 +110,14 @@ function DashboardPage() {
                 text={`${data.statistics.revenue_sum}`}
                 percent={data.statistics.revenue_change}
                 tooltip={windowSize !== "sm" && windowSize !== "md"}
-                tooltipText="Calculated by adding up all your completed appointments for this period"
+                tooltipText="Calculated by adding up all your completed bookings for this period"
               />
               <StatisticsCard
-                title="Appointments"
-                text={data.statistics.appointments}
-                percent={data.statistics.appointments_change}
+                title="Bookings"
+                text={data.statistics.bookings}
+                percent={data.statistics.bookings_change}
                 tooltip={windowSize !== "sm" && windowSize !== "md"}
-                tooltipText="The amount of completed appointments in this period"
+                tooltipText="The amount of completed bookings in this period"
               />
               {windowSize === "lg" ||
               windowSize === "2xl" ||
@@ -127,7 +127,7 @@ function DashboardPage() {
                   text={data.statistics.cancellations}
                   percent={data.statistics.cancellations_change}
                   tooltip={windowSize !== "sm" && windowSize !== "md"}
-                  tooltipText="The amount of cancelled appointments (by customers) in this period"
+                  tooltipText="The amount of cancelled bookings (by customers) in this period"
                 />
               ) : (
                 <></>
@@ -138,7 +138,7 @@ function DashboardPage() {
                   text={data.statistics.average_duration}
                   percent={data.statistics.average_duration_change}
                   tooltip={windowSize !== "sm" && windowSize !== "md"}
-                  tooltipText="The average duration of services from your completed appointments in this period"
+                  tooltipText="The average duration of services from your completed bookings in this period"
                 />
               ) : (
                 <></>
@@ -162,10 +162,10 @@ function DashboardPage() {
           </div>
         </div>
         <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">
-          <p className="text-lg">Upcoming appointments</p>
+          <p className="text-lg">Upcoming bookings</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
-            <AppointmentsList
-              appointments={data.upcoming_appointments}
+            <BookingsList
+              bookings={data.upcoming_bookings}
               visibleCount={1}
               onAccept={() => {}}
               onCancel={invalidateDashBoardData}
@@ -174,8 +174,8 @@ function DashboardPage() {
           </div>
           <p className="text-lg">Latest bookings</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
-            <AppointmentsList
-              appointments={data.latest_bookings}
+            <BookingsList
+              bookings={data.latest_bookings}
               visibleCount={3}
               onAccept={() => {}}
               onCancel={invalidateDashBoardData}

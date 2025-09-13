@@ -28,7 +28,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/api/v1/auth/merchant", rh.merchantAuthRoutes)
 
 	r.Route("/api/v1/merchants", rh.merchantRoutes)
-	r.Route("/api/v1/appointments", rh.appointmentRoutes)
+	r.Route("/api/v1/bookings", rh.bookingRoutes)
 
 	return r
 }
@@ -58,8 +58,8 @@ func staticFilesHandler(r *chi.Mux) {
 		"/m/{merchant_url}/booking",
 		"/m/{merchant_url}/booking/completed",
 		"/m/{merchant_url}/services/{serviceId}",
-		"/m/{merchant_url}/cancel/{appointmentId}",
-		"/m/{merchant_url}/cancel/{appointmentId}/completed",
+		"/m/{merchant_url}/cancel/{bookingId}",
+		"/m/{merchant_url}/cancel/{bookingId}/completed",
 	}
 
 	dist, assets := frontend.StaticFilesPath()
@@ -83,8 +83,8 @@ type RouteHandlers struct {
 	Postgresdb *database.PostgreSQL
 }
 
-func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
-	appointmentHandler := &handlers.Appointment{
+func (rh *RouteHandlers) bookingRoutes(r chi.Router) {
+	bookingHandler := &handlers.Booking{
 		Postgresdb: *rh.Postgresdb,
 	}
 
@@ -92,14 +92,14 @@ func (rh *RouteHandlers) appointmentRoutes(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 		r.Use(lang.LangMiddleware)
 
-		r.Delete("/{id}", appointmentHandler.CancelAppointmentByMerchant)
-		r.Patch("/{id}", appointmentHandler.UpdateAppointmentData)
+		r.Delete("/{id}", bookingHandler.CancelBookingByMerchant)
+		r.Patch("/{id}", bookingHandler.UpdateBookingData)
 
-		r.Post("/new", appointmentHandler.Create)
-		r.Get("/all", appointmentHandler.GetAppointments)
+		r.Post("/new", bookingHandler.Create)
+		r.Get("/all", bookingHandler.GetBookings)
 
-		r.Get("/public/{id}", appointmentHandler.GetPublicAppointmentData)
-		r.Delete("/public/{id}", appointmentHandler.CancelAppointmentByUser)
+		r.Get("/public/{id}", bookingHandler.GetPublicBookingData)
+		r.Delete("/public/{id}", bookingHandler.CancelBookingByUser)
 	})
 }
 
@@ -189,7 +189,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Put("/customers/{id}", merchantHandler.UpdateCustomer)
 		r.Get("/customers/{id}", merchantHandler.GetCustomerInfo)
 		r.Get("/customers/stats/{id}", merchantHandler.GetCustomerStatistics)
-		r.Put("/customers/transfer", merchantHandler.TransferCustomerApps)
+		r.Put("/customers/transfer", merchantHandler.TransferCustomerBookings)
 		r.Get("/customers/blacklist", merchantHandler.GetBlacklistedCustomers)
 		r.Post("/customers/blacklist/{id}", merchantHandler.BlacklistCustomer)
 		r.Delete("/customers/blacklist/{id}", merchantHandler.UnBlacklistCustomer)

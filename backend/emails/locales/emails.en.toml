@@ -4,12 +4,12 @@ terms_of_service = "Terms of Service"
 unsubscribe = "Unsubscribe"
 
 
-[AppointmentCancellation]
-subject = "Appointment Cancelled"
-preview = "Your appointment has been cancelled"
-heading = "Your appointment has been cancelled"
+[BookingCancellation]
+subject = "Booking Cancelled"
+preview = "Your booking has been cancelled"
+heading = "Your booking has been cancelled"
 main_text = """
-We regret to inform you that your upcoming appointment has been cancelled \
+We regret to inform you that your upcoming booking has been cancelled \
 due to unforeseen circumstances:"""
 cancelled = "CANCELLED"
 timezone = "Timezone: "
@@ -18,8 +18,8 @@ location = "Location: "
 cancellation_reason = "Reason for cancellation:"
 cancellation_reason_note = """
 We apologize for the inconvenience. We value your time and would like \
-to offer you the option to easily book a new appointment."""
-primary_button = "Book a New Appointment"
+to offer you the option to easily make a new booking."""
+primary_button = "Make a New Booking"
 contact_us_note = """
 If you have any questions or need assistance, please contact us at \
 +36 1 234 5678 or reply to this email.
@@ -27,31 +27,31 @@ If you have any questions or need assistance, please contact us at \
 apology = "Thank you for your understanding, and we apologize for any inconvenience."
 
 
-[AppointmentConfirmation]
-subject = "Appointment Confirmed"
-preview = "Your appointment is confirmed"
-heading = "Your appointment is confirmed"
-main_text = "Your appointment is booked and we look forward to seeing you. Here's everything you need to know:"
+[BookingConfirmation]
+subject = "Booking Confirmed"
+preview = "Your booking is confirmed"
+heading = "Your booking is confirmed"
+main_text = "Your booking has been created and we look forward to seeing you. Here's everything you need to know:"
 timezone = "Timezone: "
 service_name = "Service: "
 location = "Location: "
 primary_button = "Add to Calendar"
-secondary_button = "Manage Appointment"
+secondary_button = "Manage Booking"
 modification_note = """
-If you need to make any changes to your appointment, please contact us \
+If you need to make any changes to your booking, please contact us \
 at least 24 hours before the scheduled time."""
 
 
-[AppointmentModification]
-subject = "Appointment Rescheduled"
-preview = "Your appointment has been rescheduled - {{ .Date }}, {{ .Time }}"
-heading = "Your appointment has been rescheduled"
+[BookingModification]
+subject = "Booking Rescheduled"
+preview = "Your booking has been rescheduled - {{ .Date }}, {{ .Time }}"
+heading = "Your booking has been rescheduled"
 main_text = """
-Dear Customer, please note that your previously scheduled appointment \
-has been changed. You can find the new appointment details below."""
-modification_details = "Appointment Modification Details"
-original_text = "Original appointment:"
-new_text = "New appointment:"
+Dear Customer, please note that your previously scheduled booking \
+has been changed. You can find the new booking details below."""
+modification_details = "Booking Modification Details"
+original_text = "Original booking:"
+new_text = "New booking:"
 unmodified_details = "Unchanged Booking Details"
 timezone = "Timezone: "
 service_name = "Service: "
@@ -59,31 +59,31 @@ location = "Location: "
 modification_note = """
 If the new time doesn't work for you, please select another one \
 or update your booking using the button below."""
-primary_button = "Manage Appointment"
+primary_button = "Manage Booking"
 extra_info = """
-The new appointment has been automatically added to your calendar, \
+The new booking has been automatically added to your calendar, \
 if you had previously accepted the invitation."""
 contact_us_note = """
 If you have any questions or need help, please contact us at \
 +36 1 234 5678 or reply to this email."""
 
 
-[AppointmentReminder]
-subject = "Appointment Reminder"
-preview = "Reminder: your upcoming appointment!"
-heading = "Reminder: your upcoming appointment!"
+[BookingReminder]
+subject = "Booking Reminder"
+preview = "Reminder: your upcoming booking!"
+heading = "Reminder: your upcoming booking!"
 main_text = """
-Just a quick reminder that your appointment is coming up soon. \
+Just a quick reminder that your booking is coming up soon. \
 Here are the details:"""
 timezone = "Timezone: "
 service_name = "Service: "
 location = "Location: "
-primary_button = "Manage Appointment"
+primary_button = "Manage Booking"
 arrive_on_time_note = """
-Please arrive on time for your scheduled appointment. If you have any \
+Please arrive on time for your scheduled booking. If you have any \
 questions or need to reschedule, feel free to reach out to us."""
 contact_us_note = """
-If you'd like to make any changes to your appointment, please contact us \
+If you'd like to make any changes to your booking, please contact us \
 at least 24 hours before the scheduled time."""
 
 

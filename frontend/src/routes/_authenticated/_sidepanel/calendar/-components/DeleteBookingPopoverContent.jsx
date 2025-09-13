@@ -5,17 +5,17 @@ import { invalidateLocalStorageAuth } from "@lib/lib";
 import { PopoverClose } from "@radix-ui/react-popover";
 import { useRef } from "react";
 
-export default function DeleteAppsPopoverContent({ event, onDeleted }) {
+export default function DeleteBookingPopoverContent({ booking, onDeleted }) {
   const { showToast } = useToast();
   const closeButtonRef = useRef(null);
 
-  async function deleteAppointmentHandler(e) {
+  async function deleteBookingHandler(e) {
     e.preventDefault();
 
     const deletion_reason = e.target.elements.deletion_reason.value;
 
     try {
-      const response = await fetch(`/api/v1/appointments/${event.group_id}`, {
+      const response = await fetch(`/api/v1/bookings/${booking.group_id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -32,7 +32,7 @@ export default function DeleteAppsPopoverContent({ event, onDeleted }) {
         showToast({ message: result.error.message, variant: "error" });
       } else {
         showToast({
-          message: "Appointment deleted successfully",
+          message: "Booking deleted successfully",
           variant: "success",
         });
 
@@ -47,12 +47,9 @@ export default function DeleteAppsPopoverContent({ event, onDeleted }) {
   }
 
   return (
-    <form
-      onSubmit={deleteAppointmentHandler}
-      className="h-auto w-72 p-2 sm:w-80"
-    >
+    <form onSubmit={deleteBookingHandler} className="h-auto w-72 p-2 sm:w-80">
       <div className="flex flex-col gap-4">
-        <p className="text-lg">Delete appointment</p>
+        <p className="text-lg">Delete booking</p>
         <p className="py-2 text-sm">
           You can give a cancellation reason here, which will be included in the
           cancellation email sent to the customer.

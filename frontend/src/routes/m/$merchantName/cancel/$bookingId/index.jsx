@@ -10,8 +10,8 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
-async function fetchAppointmentInfo(appointmentId) {
-  const response = await fetch(`/api/v1/appointments/public/${appointmentId}`, {
+async function fetchBookingInfo(bookingId) {
+  const response = await fetch(`/api/v1/bookings/public/${bookingId}`, {
     method: "GET",
   });
 
@@ -23,10 +23,10 @@ async function fetchAppointmentInfo(appointmentId) {
   }
 }
 
-function publicAppointmentInfoQueryOptions(appointmentId) {
+function publicBookingInfoQueryOptions(bookingId) {
   return queryOptions({
-    queryKey: ["public-appointment-info", appointmentId],
-    queryFn: () => fetchAppointmentInfo(appointmentId),
+    queryKey: ["public-booking-info", bookingId],
+    queryFn: () => fetchBookingInfo(bookingId),
   });
 }
 
@@ -39,19 +39,15 @@ function formatDate(dateString) {
   };
 }
 
-export const Route = createFileRoute("/m/$merchantName/cancel/$appointmentId/")(
-  {
-    component: CancelPage,
-    loader: async ({ params: { appointmentId }, context: { queryClient } }) => {
-      await queryClient.ensureQueryData(
-        publicAppointmentInfoQueryOptions(appointmentId)
-      );
-    },
-    errorComponent: ({ error }) => {
-      return <ServerError error={error.message} />;
-    },
-  }
-);
+export const Route = createFileRoute("/m/$merchantName/cancel/$bookingId/")({
+  component: CancelPage,
+  loader: async ({ params: { bookingId }, context: { queryClient } }) => {
+    await queryClient.ensureQueryData(publicBookingInfoQueryOptions(bookingId));
+  },
+  errorComponent: ({ error }) => {
+    return <ServerError error={error.message} />;
+  },
+});
 
 const cancelDeadlineLabels = {
   0: "",
@@ -73,14 +69,14 @@ function CancelPage() {
   const [cancelling, setCancelling] = useState(false);
   const [serverError, setServerError] = useState("");
   const router = useRouter();
-  const { merchantName, appointmentId } = Route.useParams();
+  const { merchantName, bookingId } = Route.useParams();
 
   const {
-    data: appointmentData,
+    data: bookingData,
     isLoading,
     isError,
     error,
-  } = useQuery(publicAppointmentInfoQueryOptions(appointmentId));
+  } = useQuery(publicBookingInfoQueryOptions(bookingId));
 
   const { data: preferences } = useQuery(preferencesQueryOptions());
 
@@ -92,45 +88,40 @@ function CancelPage() {
     return <ServerError error={error} />;
   }
 
-  const dateInfo = formatDate(appointmentData.from_date);
-  const fromDate = new Date(appointmentData.from_date);
+  const dateInfo = formatDate(bookingData.from_date);
+  const fromDate = new Date(bookingData.from_date);
   const cancelDeadline = new Date(
-    fromDate.getTime() - appointmentData.cancel_deadline * 60000
+    fromDate.getTime() - bookingData.cancel_deadline * 60000
   ); // getTime returns in milisecond
 
   const now = new Date();
-  const alreadyCancelled =
-    appointmentData.cancelled_by_user || appointmentData.cancelled_by_merchant;
-
+  const alreadyCancelled = bookingData.is_cancelled;
   const canBeCancelled = !alreadyCancelled && now < cancelDeadline;
 
   let cancelMessage = "";
   if (alreadyCancelled) {
     cancelMessage = "This appointment has already been cancelled.";
-  } else if (appointmentData.cancel_deadline === 0 || fromDate <= now) {
+  } else if (bookingData.cancel_deadline === 0 || fromDate <= now) {
     cancelMessage =
       "You cannot cancel this appointment because it has already passed.";
   } else {
-    const deadlineLabel = cancelDeadlineLabels[appointmentData.cancel_deadline];
+    const deadlineLabel = cancelDeadlineLabels[bookingData.cancel_deadline];
     cancelMessage = `You cannot cancel this appointment less than ${deadlineLabel} before it starts.`;
   }
 
   async function handleCancel() {
     setCancelling(true);
     try {
-      const response = await fetch(
-        `/api/v1/appointments/public/${appointmentId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-type": "application/json; charset=UTF-8",
-          },
-          body: JSON.stringify({
-            appointment_id: Number(appointmentId),
-            merchant_name: merchantName,
-          }),
-        }
-      );
+      const response = await fetch(`/api/v1/bookings/public/${bookingId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+        body: JSON.stringify({
+          booking_id: Number(bookingId),
+          merchant_name: merchantName,
+        }),
+      });
 
       if (!response.ok) {
         const result = await response.json();
@@ -154,9 +145,9 @@ function CancelPage() {
         sm:gap-4 sm:p-0"
     >
       <div className={`${!canBeCancelled ? "pt-6" : "py-6"} text-center`}>
-        <h1 className="text-2xl font-bold">Cancel Appointment</h1>
+        <h1 className="text-2xl font-bold">Cancel Booking</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Review your appointment details below
+          Review your booking details below
         </p>
       </div>
       {!canBeCancelled && (
@@ -184,20 +175,18 @@ function CancelPage() {
           </div>
 
           <div className="flex-1">
-            <h2 className="text-lg font-bold">
-              {appointmentData.service_name}
-            </h2>
+            <h2 className="text-lg font-bold">{bookingData.service_name}</h2>
             <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-              {appointmentData.merchant_name}
+              {bookingData.merchant_name}
             </p>
             <div className="flex items-center gap-2">
               <ClockIcon styles="w-4 h-4 dark:fill-gray-400 fill-gray-500" />
               <span className="font-medium text-gray-500 dark:text-gray-400">
                 {`${timeStringFromDate(
-                  new Date(appointmentData.from_date),
+                  new Date(bookingData.from_date),
                   preferences?.time_format
                 )} - ${timeStringFromDate(
-                  new Date(appointmentData.to_date),
+                  new Date(bookingData.to_date),
                   preferences?.time_format
                 )}`}
               </span>
@@ -210,7 +199,7 @@ function CancelPage() {
         </div>
       </div>
       <div
-        className={`${appointmentData.price && "sm:grid-cols-2"} grid w-full
+        className={`${bookingData.price && "sm:grid-cols-2"} grid w-full
           grid-cols-1 gap-0 sm:gap-4 sm:pb-2`}
       >
         <div
@@ -229,10 +218,10 @@ function CancelPage() {
               "mt-2 text-sm font-medium text-gray-500 dark:text-gray-400"
             }
           >
-            {appointmentData.short_location}
+            {bookingData.short_location}
           </p>
         </div>
-        {appointmentData.price && (
+        {bookingData.price && (
           <div
             className="border-border_color bg-layer_bg rounded-none border
               border-y-0 p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border
@@ -247,7 +236,7 @@ function CancelPage() {
             </div>
 
             <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
-              {appointmentData.price} {appointmentData.price_note}
+              {bookingData.price} {bookingData.price_note}
             </p>
           </div>
         )}
@@ -261,7 +250,7 @@ function CancelPage() {
           The cancellation is inmediate and cannot be undone.
         </div>
         <Button
-          buttonText="Cancel appointment"
+          buttonText="Cancel booking"
           onClick={handleCancel}
           isLoading={cancelling}
           disabled={!canBeCancelled}

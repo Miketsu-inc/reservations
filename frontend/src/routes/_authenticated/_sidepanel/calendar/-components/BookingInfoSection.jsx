@@ -7,7 +7,7 @@ import { formatToDateString, timeStringFromDate } from "@lib/datetime";
 import { preferencesQueryOptions } from "@lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
-export default function AppointmentInfoSection({ event }) {
+export default function BookingInfoSection({ booking }) {
   const { data: preferences } = useQuery(preferencesQueryOptions());
 
   return (
@@ -18,29 +18,29 @@ export default function AppointmentInfoSection({ event }) {
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
           <PersonIcon styles="fill-white size-4" />
-          <p>{event.title}</p>
+          <p>{booking.title}</p>
         </div>
         <div className="flex items-center gap-2">
           <PhoneIcon styles="fill-white size-4" />
-          <p>{event.extendedProps.phone_number}</p>
+          <p>{booking.extendedProps.phone_number}</p>
         </div>
       </div>
       <div className="flex justify-between">
         <div className="flex items-center gap-3">
           <ServicesIcon styles="size-4" />
-          <p className="text-center">{event.extendedProps.service_name}</p>
+          <p className="text-center">{booking.extendedProps.service_name}</p>
         </div>
-        {event.extendedProps.price && <p>{event.extendedProps.price}</p>}
+        {booking.extendedProps.price && <p>{booking.extendedProps.price}</p>}
       </div>
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
           <CalendarIcon styles="size-4" />
-          <p>{formatToDateString(event.start)}</p>
+          <p>{formatToDateString(booking.start)}</p>
         </div>
         <div className="flex items-center gap-3">
           <ClockIcon styles="fill-white size-4" />
           <p className="text-center">
-            {`${timeStringFromDate(event.start, preferences?.time_format)} - ${timeStringFromDate(event.end, preferences?.time_format)}`}
+            {`${timeStringFromDate(booking.start, preferences?.time_format)} - ${timeStringFromDate(booking.end, preferences?.time_format)}`}
           </p>
         </div>
       </div>

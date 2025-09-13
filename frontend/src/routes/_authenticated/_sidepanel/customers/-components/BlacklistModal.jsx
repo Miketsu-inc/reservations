@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
   const [reason, setReason] = useState("");
 
-  //without useEffect data is undefined on first render
+  // without useEffect data is undefined on first render
   useEffect(() => {
     if (isOpen) {
       setReason(data?.blacklist_reason || "");
@@ -26,17 +26,20 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             {data?.first_name + " " + data?.last_name}
           </p>
         </div>
-        <div className="text-text_color/80 flex flex-col justify-center gap-4 py-3 text-center">
+        <div
+          className="text-text_color/80 flex flex-col justify-center gap-4 py-3
+            text-center"
+        >
           {data?.is_blacklisted ? (
             <p>
               You are about to remove this customer from the blacklist. They
-              will be able to book appointments by themselves from now on.
+              will be able to create bookings by themselves from now on.
             </p>
           ) : (
             <p>
               You are about to blacklist this customer. They will not be able to
-              book appointments from now on. They will see a message asking them
-              to contact you for an appointment once trying.
+              create bookings from now on. They will see a message asking them
+              to contact you for creating a booking once trying.
             </p>
           )}
           <Textarea

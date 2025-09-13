@@ -100,7 +100,7 @@ create table if not exists "Customer" (
     constraint unique_merchant_user unique (merchant_id, user_id)
 );
 
-create table if not exists "Appointment" (
+create table if not exists "Booking" (
     ID                       serial          primary key unique not null,
     customer_id              uuid            references "Customer" (ID) not null,
     merchant_id              uuid            references "Merchant" (ID) not null,

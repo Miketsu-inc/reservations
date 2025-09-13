@@ -15,8 +15,8 @@ func ct(year int, month time.Month, day int, timeStr string, loc *time.Location)
 	return time.Date(year, month, day, t.Hour(), t.Minute(), 0, 0, loc)
 }
 
-func ctReserved(year int, month time.Month, day int, start, end string, loc *time.Location) database.AppointmentTime {
-	return database.AppointmentTime{
+func ctReserved(year int, month time.Month, day int, start, end string, loc *time.Location) database.BookingTime {
+	return database.BookingTime{
 		From_date: ct(year, month, day, start, loc).UTC(),
 		To_date:   ct(year, month, day, end, loc).UTC(),
 	}
@@ -38,7 +38,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	day := 1
 
 	t.Run("Business hours", func(t *testing.T) {
-		reserved := []database.AppointmentTime{}
+		reserved := []database.BookingTime{}
 
 		servicePhases := []database.PublicServicePhase{
 			{PhaseType: "active", Duration: 30},
@@ -65,7 +65,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("One active phase", func(t *testing.T) {
-		reserved := []database.AppointmentTime{
+		reserved := []database.BookingTime{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:00", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -105,7 +105,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Mutliple phases with wait at the start", func(t *testing.T) {
-		reserved := []database.AppointmentTime{
+		reserved := []database.BookingTime{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:15", "11:30", tz),
 			ctReserved(year, month, day, "13:00", "15:00", tz),
@@ -147,7 +147,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Mutliple phases with wait in the middle", func(t *testing.T) {
-		reserved := []database.AppointmentTime{
+		reserved := []database.BookingTime{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:15", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -186,7 +186,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Close current time", func(t *testing.T) {
-		reserved := []database.AppointmentTime{
+		reserved := []database.BookingTime{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:00", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -268,7 +268,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		bookingWindowMin, bufferTime := 0, 0
 
 		results := booking.CalculateAvailableTimesPeriod(
-			[]database.AppointmentTime{},
+			[]database.BookingTime{},
 			[]database.PublicServicePhase{{PhaseType: "active", Duration: 30}},
 			30,
 			bufferTime,
@@ -286,7 +286,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		startDate := ct(2025, time.July, 1, "00:00", tz)
 		endDate := ct(2025, time.July, 3, "23:59", tz)
 
-		reserved := []database.AppointmentTime{
+		reserved := []database.BookingTime{
 			ctReserved(2025, time.July, 2, "10:00", "10:30", tz),
 		}
 

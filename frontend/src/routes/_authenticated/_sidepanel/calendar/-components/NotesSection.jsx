@@ -3,7 +3,7 @@ import MessageIcon from "@icons/MessageIcon";
 import { useState } from "react";
 
 export default function NotesSection({
-  event,
+  booking,
   merchantNote,
   updateMerchantNote,
   disabled,
@@ -24,25 +24,30 @@ export default function NotesSection({
             onClick={() => setAreNotesHidden(!areNotesHidden)}
           >
             <BackArrowIcon
-              styles={`${areNotesHidden ? "-rotate-90" : "rotate-90"} size-5 stroke-text_color
-                transition-transform duration-200`}
+              styles={`${areNotesHidden ? "-rotate-90" : "rotate-90"} size-5
+                stroke-text_color transition-transform duration-200`}
             />
           </button>
         </div>
         <div
-          className={`${areNotesHidden ? "max-h-0 opacity-0" : `${event.extendedProps.customer_note ? "max-h-52" : "max-h-32"} opacity-100`}
-            overflow-hidden transition-all duration-300`}
+          className={`${
+            areNotesHidden
+              ? "max-h-0 opacity-0"
+              : `${booking.extendedProps.customer_note ? "max-h-52" : "max-h-32"}
+                opacity-100`
+            } overflow-hidden transition-all duration-300`}
         >
           <div className="pt-3">
             <div className="flex flex-col gap-3 text-sm">
-              {event.extendedProps.customer_note && (
+              {booking.extendedProps.customer_note && (
                 <div className="flex flex-col gap-1">
                   <p>Customer's note</p>
                   <p
-                    className="text-text_color bg-bg_color h-fit max-h-24 w-full overflow-auto rounded-lg
-                      border border-gray-400 p-2 dark:scheme-dark"
+                    className="text-text_color bg-bg_color h-fit max-h-24 w-full
+                      overflow-auto rounded-lg border border-gray-400 p-2
+                      dark:scheme-dark"
                   >
-                    {event.extendedProps.customer_note}
+                    {booking.extendedProps.customer_note}
                   </p>
                 </div>
               )}
@@ -55,8 +60,9 @@ export default function NotesSection({
                   onChange={(e) => updateMerchantNote(e.target.value)}
                   disabled={disabled}
                   placeholder="Add notes here..."
-                  className="bg-bg_color text-text_color max-h-20 min-h-20 w-full rounded-lg border
-                    border-gray-400 p-2 text-sm outline-hidden focus:border-gray-900
+                  className="bg-bg_color text-text_color max-h-20 min-h-20
+                    w-full rounded-lg border border-gray-400 p-2 text-sm
+                    outline-hidden focus:border-gray-900
                     dark:focus:border-gray-200"
                 />
               </div>

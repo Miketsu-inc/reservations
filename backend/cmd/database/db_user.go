@@ -172,10 +172,10 @@ func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, 
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
-	deleteAppointmentsQuery := `
-	delete from "Appointment" where customer_id = $1 and merchant_id = $2`
+	deleteBookingsQuery := `
+	delete from "Booking" where customer_id = $1 and merchant_id = $2`
 
-	_, err = tx.Exec(ctx, deleteAppointmentsQuery, customerId, merchantId)
+	_, err = tx.Exec(ctx, deleteBookingsQuery, customerId, merchantId)
 	if err != nil {
 		return err
 	}
@@ -283,74 +283,74 @@ func (s *service) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID
 
 type CustomerStatistics struct {
 	Customer
-	IsDummy                  bool                    `json:"is_dummy"`
-	IsBlacklisted            bool                    `json:"is_blacklisted"`
-	BlacklistReason          *string                 `json:"blacklist_reason"`
-	TimesBooked              int                     `json:"times_booked"`
-	TimesCancelledByUser     int                     `json:"times_cancelled_by_user"`
-	TimesCancelledByMerchant int                     `json:"times_cancelled_by_merchant"`
-	TimesUpcoming            int                     `json:"times_upcoming"`
-	Appointments             []PublicAppointmentInfo `json:"appointments"`
+	IsDummy                  bool                `json:"is_dummy"`
+	IsBlacklisted            bool                `json:"is_blacklisted"`
+	BlacklistReason          *string             `json:"blacklist_reason"`
+	TimesBooked              int                 `json:"times_booked"`
+	TimesCancelledByUser     int                 `json:"times_cancelled_by_user"`
+	TimesCancelledByMerchant int                 `json:"times_cancelled_by_merchant"`
+	TimesUpcoming            int                 `json:"times_upcoming"`
+	Bookings                 []PublicBookingInfo `json:"bookings"`
 }
 
 func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error) {
 	query := `
-	with appointments as (
-		select a.customer_id,
+	with bookings as (
+		select b.customer_id,
 			jsonb_agg(
 				jsonb_build_object(
-					'from_date', a.from_date,
-					'to_date', a.to_date,
+					'from_date', b.from_date,
+					'to_date', b.to_date,
 					'service_name', s.name,
-					'price', a.price_then,
+					'price', b.price_then,
 					'price_note', s.price_note,
 					'merchant_name', m.name,
 					'short_location', l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country,
-					'cancelled_by_user', a.cancelled_by_user_on IS NOT NULL,
-					'cancelled_by_merchant', a.cancelled_by_merchant_on IS NOT NULL
-				) order by a.from_date desc
-			) as appointments
+					'cancelled_by_user', b.cancelled_by_user_on IS NOT NULL,
+					'cancelled_by_merchant', b.cancelled_by_merchant_on IS NOT NULL
+				) order by b.from_date desc
+			) as bookings
 		from (
-			select distinct on (a.group_id) a.customer_id, a.group_id, min(a.from_date) over (partition by a.group_id) as from_date,
-			max(a.to_date) over (partition by a.group_id) as to_date, a.merchant_id, a.location_id, a.service_id, a.price_then, a.cancelled_by_user_on, a.cancelled_by_merchant_on
-			from "Appointment" a where a.merchant_id = $1 and (customer_id = $2 or a.transferred_to = $2)
-		) a
-		join "Service" s on s.id = a.service_id
-		join "Merchant" m on m.id = a.merchant_id
-		join "Location" l on l.id = a.location_id
-		group by a.customer_id
+			select distinct on (b.group_id) b.customer_id, b.group_id, min(b.from_date) over (partition by b.group_id) as from_date,
+			max(b.to_date) over (partition by b.group_id) as to_date, b.merchant_id, b.location_id, b.service_id, b.price_then, b.cancelled_by_user_on, b.cancelled_by_merchant_on
+			from "Booking" b where b.merchant_id = $1 and (customer_id = $2 or b.transferred_to = $2)
+		) b
+		join "Service" s on s.id = b.service_id
+		join "Merchant" m on m.id = b.merchant_id
+		join "Location" l on l.id = b.location_id
+		group by b.customer_id
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-	count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled_by_user,
-	count(distinct case when a.cancelled_by_merchant_on is not null then a.group_id end) as times_cancelled_by_merchant,
-	count(distinct case when a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null and a.from_date >= now() then group_id end) as times_upcoming,
-	coalesce(ca.appointments, '[]'::jsonb) as appointments
+	count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled_by_user,
+	count(distinct case when b.cancelled_by_merchant_on is not null then b.group_id end) as times_cancelled_by_merchant,
+	count(distinct case when b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null and b.from_date >= now() then b.group_id end) as times_upcoming,
+	coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
-	left join "Appointment" a on c.id = a.customer_id and a.merchant_id = $1
-	left join appointments ca on c.id = ca.customer_id
+	left join "Booking" b on c.id = b.customer_id and b.merchant_id = $1
+	left join bookings ca on c.id = ca.customer_id
 	where c.id = $2 and c.merchant_id = $1
-	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.appointments
+	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.bookings
 	`
 
 	var customer CustomerStatistics
-	var appointmentsJSON []byte
+	var bookingsJSON []byte
 
 	err := s.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.Birthday,
 		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesCancelledByMerchant,
-		&customer.TimesUpcoming, &appointmentsJSON)
+		&customer.TimesUpcoming, &bookingsJSON)
 	if err != nil {
 		return CustomerStatistics{}, err
 	}
 
-	if len(appointmentsJSON) > 0 {
-		err = json.Unmarshal(appointmentsJSON, &customer.Appointments)
+	if len(bookingsJSON) > 0 {
+		err = json.Unmarshal(bookingsJSON, &customer.Bookings)
 		if err != nil {
 			return CustomerStatistics{}, err
 		}
 	} else {
-		customer.Appointments = []PublicAppointmentInfo{}
+		customer.Bookings = []PublicBookingInfo{}
 	}
 
 	return customer, nil

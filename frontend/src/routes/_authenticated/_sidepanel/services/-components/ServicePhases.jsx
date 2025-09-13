@@ -76,8 +76,8 @@ export default function ServicePhases({
       ) : (
         <Card styles="px-0 py-0">
           <div
-            className="border-border_color flex flex-row items-center justify-between border-b px-4
-              py-4"
+            className="border-border_color flex flex-row items-center
+              justify-between border-b px-4 py-4"
           >
             <div className="flex flex-row items-center gap-3">
               <div className="bg-primary/20 rounded-lg p-2">
@@ -102,8 +102,9 @@ export default function ServicePhases({
             )}
           </div>
           <div
-            className={`${showAddForm ? "max-h-90 opacity-100" : "max-h-0 opacity-0"} overflow-hidden
-              transition-[max-height,opacity] duration-300 ease-in-out`}
+            className={`${showAddForm ? "max-h-90 opacity-100" : "max-h-0 opacity-0"}
+              overflow-hidden transition-[max-height,opacity] duration-300
+              ease-in-out`}
           >
             <div className="border-border_color border-b p-4">
               <PhaseForm
@@ -135,8 +136,8 @@ export default function ServicePhases({
                   <div className="flex flex-row items-center justify-between">
                     <div className="flex flex-row items-center gap-3">
                       <div
-                        className={`${phase.phase_type === "wait" ? "bg-accent/20" : "bg-secondary/20"} rounded-lg
-                          p-2`}
+                        className={`${phase.phase_type === "wait" ? "bg-accent/20" : "bg-secondary/20"}
+                          rounded-lg p-2`}
                       >
                         {phase.phase_type === "wait" ? (
                           <HourGlassIcon styles="size-5 stroke-accent" />
@@ -277,7 +278,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
               <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>Customers can book appointments during this phase</p>
+              <p>Customers can make bookings during this phase</p>
             </TooltipContent>
           </Tootlip>
         </span>

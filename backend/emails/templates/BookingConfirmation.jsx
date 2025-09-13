@@ -17,12 +17,12 @@ import LogoHeader from "../components/LogoHeader";
 
 void React;
 
-export default function AppointmentConfirmation() {
+export default function BookingConfirmation() {
   return (
     <Tailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>{"{{ T .Lang `AppointmentConfirmation.preview` . }}"}</Preview>
+        <Preview>{"{{ T .Lang `BookingConfirmation.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -33,10 +33,10 @@ export default function AppointmentConfirmation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-[#111111]"
             >
-              {"{{ T .Lang `AppointmentConfirmation.heading` . }}"}
+              {"{{ T .Lang `BookingConfirmation.heading` . }}"}
             </Heading>
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `AppointmentConfirmation.main_text` . }}"}
+              {"{{ T .Lang `BookingConfirmation.main_text` . }}"}
             </Text>
 
             <Section
@@ -46,7 +46,10 @@ export default function AppointmentConfirmation() {
                 borderRadius: "6px",
               }}
             >
-              <Text className="text-xs font-medium tracking-wide text-black uppercase">
+              <Text
+                className="text-xs font-medium tracking-wide text-black
+                  uppercase"
+              >
                 {"{{ .Date }}"}
               </Text>
               <Text className="mb-4 text-2xl font-bold text-black">
@@ -55,20 +58,20 @@ export default function AppointmentConfirmation() {
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentConfirmation.timezone` . }}"}
+                  {"{{ T .Lang `BookingConfirmation.timezone` . }}"}
                 </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentConfirmation.service_name` . }}"}
+                  {"{{ T .Lang `BookingConfirmation.service_name` . }}"}
                 </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentConfirmation.location` . }}"}
+                  {"{{ T .Lang `BookingConfirmation.location` . }}"}
                 </span>
                 {"{{ .Location }}"}
               </Text>
@@ -77,29 +80,30 @@ export default function AppointmentConfirmation() {
             <Section className="mb-8 text-left">
               <Button
                 href="http://localhost:5173/calendar"
-                className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3 text-[14px] font-medium text-white"
+                className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3
+                  text-[14px] font-medium text-white"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `AppointmentConfirmation.primary_button` . }}"}
+                {"{{ T .Lang `BookingConfirmation.primary_button` . }}"}
               </Button>
               <Button
                 href="{{ .ModifyLink }}"
-                className="ml-2 inline-block w-fit bg-blue-50 px-4 py-3 text-[14px] font-semibold
-                  text-blue-700"
+                className="ml-2 inline-block w-fit bg-blue-50 px-4 py-3
+                  text-[14px] font-semibold text-blue-700"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `AppointmentConfirmation.secondary_button` . }}"}
+                {"{{ T .Lang `BookingConfirmation.secondary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-6 text-xs text-gray-600">
-              {"{{ T .Lang `AppointmentConfirmation.modification_note` . }}"}
+              {"{{ T .Lang `BookingConfirmation.modification_note` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7b" }} />

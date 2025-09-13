@@ -108,7 +108,7 @@ function CustomersPage() {
         setServerError(result.error.message);
       } else {
         showToast({
-          message: "Appointments transferred successfully",
+          message: "Bookings transferred successfully",
           variant: "success",
         });
         await queryClient.invalidateQueries({

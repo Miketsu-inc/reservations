@@ -206,7 +206,7 @@ func EmailVerification(ctx context.Context, lang language.Tag, to string, data E
 	return nil
 }
 
-type AppointmentConfirmationData struct {
+type BookingConfirmationData struct {
 	Time        string `json:"time"`
 	Date        string `json:"date"`
 	Location    string `json:"location"`
@@ -215,8 +215,8 @@ type AppointmentConfirmationData struct {
 	ModifyLink  string `json:"modify_link"`
 }
 
-func AppointmentConfirmation(ctx context.Context, lang language.Tag, to string, data AppointmentConfirmationData) error {
-	templateName := "AppointmentConfirmation"
+func BookingConfirmation(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData) error {
+	templateName := "BookingConfirmation"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
 
@@ -228,8 +228,8 @@ func AppointmentConfirmation(ctx context.Context, lang language.Tag, to string, 
 	return nil
 }
 
-func AppointmentReminder(ctx context.Context, lang language.Tag, to string, data AppointmentConfirmationData, date time.Time) (string, error) {
-	templateName := "AppointmentReminder"
+func BookingReminder(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData, date time.Time) (string, error) {
+	templateName := "BookingReminder"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
 
@@ -241,18 +241,18 @@ func AppointmentReminder(ctx context.Context, lang language.Tag, to string, data
 	return email_id, nil
 }
 
-type AppointmentCancellationData struct {
-	Time               string `json:"time"`
-	Date               string `json:"date"`
-	Location           string `json:"location"`
-	ServiceName        string `json:"service_name"`
-	TimeZone           string `json:"time_zone"`
-	Reason             string `json:"reason"`
-	NewAppointmentLink string `json:"new_appointment_link"`
+type BookingCancellationData struct {
+	Time           string `json:"time"`
+	Date           string `json:"date"`
+	Location       string `json:"location"`
+	ServiceName    string `json:"service_name"`
+	TimeZone       string `json:"time_zone"`
+	Reason         string `json:"reason"`
+	NewBookingLink string `json:"new_booking_link"`
 }
 
-func AppointmentCancellation(ctx context.Context, lang language.Tag, to string, data AppointmentCancellationData) error {
-	templateName := "AppointmentCancellation"
+func BookingCancellation(ctx context.Context, lang language.Tag, to string, data BookingCancellationData) error {
+	templateName := "BookingCancellation"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
 
@@ -264,7 +264,7 @@ func AppointmentCancellation(ctx context.Context, lang language.Tag, to string, 
 	return nil
 }
 
-type AppointmentModificationData struct {
+type BookingModificationData struct {
 	Time        string `json:"time"`
 	Date        string `json:"date"`
 	Location    string `json:"location"`
@@ -275,8 +275,8 @@ type AppointmentModificationData struct {
 	OldDate     string `json:"old_date"`
 }
 
-func AppointmentModification(ctx context.Context, lang language.Tag, to string, data AppointmentModificationData) error {
-	templateName := "AppointmentModification"
+func BookingModification(ctx context.Context, lang language.Tag, to string, data BookingModificationData) error {
+	templateName := "BookingModification"
 	subject := getSubject(templateName, lang)
 	body := executeTemplate(templateName, lang, data)
 

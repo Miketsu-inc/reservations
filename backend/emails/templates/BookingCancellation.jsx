@@ -19,12 +19,12 @@ import LogoHeader from "../components/LogoHeader";
 
 void React;
 
-export default function AppointmentCancellation() {
+export default function BookingCancellation() {
   return (
     <Tailwind>
       <Html>
         <Head />
-        <Preview>{"{{ T .Lang `AppointmentCancellation.preview` . }}"}</Preview>
+        <Preview>{"{{ T .Lang `BookingCancellation.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -35,11 +35,11 @@ export default function AppointmentCancellation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-[#111111]"
             >
-              {"{{ T .Lang `AppointmentCancellation.heading` . }}"}
+              {"{{ T .Lang `BookingCancellation.heading` . }}"}
             </Heading>
 
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `AppointmentCancellation.main_text` . }}"}
+              {"{{ T .Lang `BookingCancellation.main_text` . }}"}
             </Text>
 
             <Section
@@ -51,17 +51,20 @@ export default function AppointmentCancellation() {
             >
               <Row>
                 <Column>
-                  <Text className="m-0 text-xs font-medium tracking-wide text-gray-700 uppercase">
+                  <Text
+                    className="m-0 text-xs font-medium tracking-wide
+                      text-gray-700 uppercase"
+                  >
                     {"{{ .Date }}"}
                   </Text>
                 </Column>
                 <Column className="w-[100px]" align="right">
                   <Text
-                    className="m-0 inline-block border-2 border-red-600 px-1.5 py-0.5 text-[14px]
-                      font-medium text-red-600"
+                    className="m-0 inline-block border-2 border-red-600 px-1.5
+                      py-0.5 text-[14px] font-medium text-red-600"
                     style={{ border: "solid 2px #dc2626", borderRadius: "6px" }}
                   >
-                    {"{{ T .Lang `AppointmentCancellation.cancelled` . }}"}
+                    {"{{ T .Lang `BookingCancellation.cancelled` . }}"}
                   </Text>
                 </Column>
               </Row>
@@ -72,20 +75,20 @@ export default function AppointmentCancellation() {
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentCancellation.timezone` . }}"}
+                  {"{{ T .Lang `BookingCancellation.timezone` . }}"}
                 </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentCancellation.service_name` . }}"}
+                  {"{{ T .Lang `BookingCancellation.service_name` . }}"}
                 </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentCancellation.location` . }}"}
+                  {"{{ T .Lang `BookingCancellation.location` . }}"}
                 </span>
                 {"{{ .Location }}"}
               </Text>
@@ -100,38 +103,35 @@ export default function AppointmentCancellation() {
               }}
             >
               <Text className="m-0 mb-[8px] text-sm font-semibold">
-                {
-                  "{{ T .Lang `AppointmentCancellation.cancellation_reason` . }}"
-                }
+                {"{{ T .Lang `BookingCancellation.cancellation_reason` . }}"}
               </Text>
               <Text className="m-0 text-sm">{"{{ .Reason }}"}</Text>
             </Section>
             {"{{ end }}"}
             <Text className="mb-6 text-sm">
-              {
-                "{{ T .Lang `AppointmentCancellation.cancellation_reason_note` . }}"
-              }
+              {"{{ T .Lang `BookingCancellation.cancellation_reason_note` . }}"}
             </Text>
 
             <Section className="my-8 text-center">
               <Button
-                href="{{ .NewAppointmentLink }}"
-                className="bg-blue-600 px-4 py-3 text-center text-[14px] font-medium text-white"
+                href="{{ .NewBookingLink }}"
+                className="bg-blue-600 px-4 py-3 text-center text-[14px]
+                  font-medium text-white"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `AppointmentCancellation.primary_button` . }}"}
+                {"{{ T .Lang `BookingCancellation.primary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `AppointmentCancellation.contact_us_note` . }}"}
+              {"{{ T .Lang `BookingCancellation.contact_us_note` . }}"}
             </Text>
 
             <Text className="mb-6 text-xs text-gray-600">
-              {"{{ T .Lang `AppointmentCancellation.apology` . }}"}
+              {"{{ T .Lang `BookingCancellation.apology` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7eb" }} />

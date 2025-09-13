@@ -4,7 +4,7 @@ terms_of_service = "Felhasználási feltételek"
 unsubscribe = "Leiratkozás"
 
 
-[AppointmentCancellation]
+[BookingCancellation]
 subject = "Időpont törölve lett"
 preview = "Az időpontja lemondásra került"
 heading = "Az időpontja lemondásra került"
@@ -29,7 +29,7 @@ válaszoljon erre az e-mailre.
 apology = "Köszönjük megértését és elnézést kérünk az esetleges kellemetlenségért."
 
 
-[AppointmentConfirmation]
+[BookingConfirmation]
 subject = "Időpont megerősítve"
 preview = "Az időpontja megerősítve"
 heading = "Az időpontja megerősítve"
@@ -44,7 +44,7 @@ Amennyiben bármilyen változtatást szeretne eszközölni az időpontjával kap
 lépjen kapcsolatba velünk legalább 24 órával a tervezett időpont előtt."""
 
 
-[AppointmentModification]
+[BookingModification]
 subject = "Időpont áthelyezve"
 preview = "Az időpontja módosításra került - {{ .Date }}, {{ .Time }}"
 heading = "Az időpontja módosításra került"
@@ -70,7 +70,7 @@ Ha kérdése van, vagy segítségre van szüksége, kérjük, vegye fel a \
 kapcsolatot a +36 1 234 5678 telefonszámon, vagy válaszoljon erre az e-mailre."""
 
 
-[AppointmentReminder]
+[BookingReminder]
 subject = "Időpont emlékeztető"
 preview = "Emlékeztető a közelgő időpontjáról!"
 heading = "Emlékeztető a közelgő időpontjáról!"

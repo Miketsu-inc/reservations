@@ -47,7 +47,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
       suspendCloseOnClickOutside={isCOmboBoxOpen}
     >
       <form onSubmit={submitHandler} className="m-3 sm:w-md">
-        <p className="pb-6 text-xl">Transfer appointments</p>
+        <p className="pb-6 text-xl">Transfer bookings</p>
         <div className="flex items-center justify-center gap-6 py-2 sm:px-4">
           <p className="w-fit text-lg font-semibold sm:text-nowrap">
             {fromCustomer?.first_name + " " + fromCustomer?.last_name}
@@ -69,14 +69,15 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
           />
         </div>
         <p
-          className={`${showError ? "visible" : "invisible"} text-center text-red-500`}
+          className={`${showError ? "visible" : "invisible"} text-center
+            text-red-500`}
         >
           Please select a customer!
         </p>
         <div className="flex justify-center py-3">
           <div className="py-4 text-center">
             <p className="text-gray-700 dark:text-gray-300">
-              You are about to transfer all past and future appointments (booked
+              You are about to transfer all past and future bookings (booked
               until now) to another customer.
               <br />
               This is a permanent action which cannot be reverted!

@@ -167,10 +167,10 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
+		count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "Appointment" a on (c.id = a.customer_id or a.transferred_to = c.id) and a.merchant_id = $1
+	left join "Booking" b on (c.id = b.customer_id or b.transferred_to = c.id) and b.merchant_id = $1
 	where c.merchant_id = $1 and c.is_blacklisted is false
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
@@ -196,10 +196,10 @@ func (s *service) GetBlacklistedCustomersByMerchantId(ctx context.Context, merch
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,  c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(distinct a.group_id) as times_booked, count(distinct case when a.cancelled_by_user_on is not null then a.group_id end) as times_cancelled
+		count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "Appointment" a on (c.id = a.customer_id or a.transferred_to = c.id) and a.merchant_id = $1
+	left join "Booking" b on (c.id = b.customer_id or b.transferred_to = c.id) and b.merchant_id = $1
 	where c.merchant_id = $1 and c.is_blacklisted is true
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
@@ -508,12 +508,12 @@ type LowStockProduct struct {
 }
 
 type DashboardData struct {
-	PeriodStart          time.Time            `json:"period_start"`
-	PeriodEnd            time.Time            `json:"period_end"`
-	UpcomingAppointments []AppointmentDetails `json:"upcoming_appointments"`
-	LatestBookings       []AppointmentDetails `json:"latest_bookings"`
-	LowStockProducts     []LowStockProduct    `json:"low_stock_products"`
-	Statistics           DashboardStatistics  `json:"statistics"`
+	PeriodStart      time.Time           `json:"period_start"`
+	PeriodEnd        time.Time           `json:"period_end"`
+	UpcomingBookings []BookingDetails    `json:"upcoming_bookings"`
+	LatestBookings   []BookingDetails    `json:"latest_bookings"`
+	LowStockProducts []LowStockProduct   `json:"low_stock_products"`
+	Statistics       DashboardStatistics `json:"statistics"`
 }
 
 func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, date time.Time, period int) (DashboardData, error) {
@@ -521,51 +521,51 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	utcDate := date.UTC()
 
-	// UpcomingAppointments
+	// UpcomingBookings
 	query := `
-	select distinct on (a.group_id) a.id, a.group_id,
-		min(a.from_date) over (partition by a.group_id) as from_date,
-		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+	select distinct on (b.group_id) b.id, b.group_id,
+		min(b.from_date) over (partition by b.group_id) as from_date,
+		max(b.to_date) over (partition by b.group_id) as to_date,
+		b.customer_note, b.merchant_note, b.price_then as price, b.cost_then as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
-	from "Appointment" a
-	join "Service" s on a.service_id = s.id
-	join "Customer" c on a.customer_id = c.id
+	from "Booking" b
+	join "Service" s on b.service_id = s.id
+	join "Customer" c on b.customer_id = c.id
 	left join "User" u on c.user_id = u.id
-	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
-	order by a.group_id, a.from_date
+	where b.merchant_id = $1 and b.from_date >= $2 AND b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null
+	order by b.group_id, b.from_date
 	limit 5`
 
 	var err error
 	rows, _ := s.db.Query(ctx, query, merchantId, utcDate)
-	dd.UpcomingAppointments, err = pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentDetails])
+	dd.UpcomingBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[BookingDetails])
 	if err != nil {
 		return DashboardData{}, err
 	}
 
 	// LatestBookings
 	query2 := `
-	select distinct on (a.group_id) a.id, a.group_id,
-		min(a.from_date) over (partition by a.group_id) as from_date,
-		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.customer_note, a.merchant_note, a.price_then as price, a.cost_then as cost, s.name as service_name,
+	select distinct on (b.group_id) b.id, b.group_id,
+		min(b.from_date) over (partition by b.group_id) as from_date,
+		max(b.to_date) over (partition by b.group_id) as to_date,
+		b.customer_note, b.merchant_note, b.price_then as price, b.cost_then as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
-	from "Appointment" a
-	join "Service" s on a.service_id = s.id
-	join "Customer" c on a.customer_id = c.id
+	from "Booking" b
+	join "Service" s on b.service_id = s.id
+	join "Customer" c on b.customer_id = c.id
 	left join "User" u on c.user_id = u.id
-	where a.merchant_id = $1 and a.from_date >= $2 AND a.cancelled_by_user_on is null and a.cancelled_by_merchant_on is null
-	order by a.group_id, a.id desc
+	where b.merchant_id = $1 and b.from_date >= $2 AND b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null
+	order by b.group_id, b.id desc
 	limit 5`
 
 	rows, _ = s.db.Query(ctx, query2, merchantId, utcDate)
-	dd.LatestBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[AppointmentDetails])
+	dd.LatestBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[BookingDetails])
 	if err != nil {
 		return DashboardData{}, err
 	}
@@ -608,8 +608,8 @@ type DashboardStatistics struct {
 	Revenue               []RevenueStat `json:"revenue"`
 	RevenueSum            string        `json:"revenue_sum"`
 	RevenueChange         int           `json:"revenue_change"`
-	Appointments          int           `json:"appointments"`
-	AppointmentsChange    int           `json:"appointments_change"`
+	Bookings              int           `json:"bookings"`
+	BookingsChange        int           `json:"bookings_change"`
 	Cancellations         int           `json:"cancellations"`
 	CancellationsChange   int           `json:"cancellations_change"`
 	AverageDuration       int           `json:"average_duration"`
@@ -628,14 +628,14 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
         cancelled_by_user_on is not null as cancelled_by_user,
         (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
-    FROM "Appointment" a
+    FROM "Booking" b
     WHERE merchant_id = $1
 	order by group_id, id
 	),
 	current AS (
 		SELECT
 			SUM(price) FILTER (WHERE NOT cancelled) AS revenue,
-			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
+			COUNT(*) FILTER (WHERE NOT cancelled) AS bookings,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			AVG(duration) FILTER (WHERE NOT cancelled) AS avg_duration
 		FROM base
@@ -644,7 +644,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	current_totals AS (
 		SELECT
 			COALESCE(SUM(revenue), 0) AS revenue_sum,
-			COALESCE(SUM(appointments), 0) AS appointments,
+			COALESCE(SUM(bookings), 0) AS bookings,
 			COALESCE(SUM(cancellations), 0) AS cancellations,
 			COALESCE(CAST(AVG(avg_duration) AS INTEGER), 0) AS average_duration
 		FROM current
@@ -652,7 +652,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	previous AS (
 		SELECT
 			COALESCE(SUM(price) FILTER (WHERE NOT cancelled), 0) AS revenue_sum,
-			COUNT(*) FILTER (WHERE NOT cancelled) AS appointments,
+			COUNT(*) FILTER (WHERE NOT cancelled) AS bookings,
 			COUNT(*) FILTER (WHERE cancelled_by_user) AS cancellations,
 			CAST(AVG(duration) FILTER (WHERE NOT cancelled) AS INTEGER) AS average_duration
 		FROM base
@@ -667,7 +667,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	)
 	SELECT
 		ct.revenue_sum, p.revenue_sum,
-		ct.appointments, p.appointments,
+		ct.bookings, p.bookings,
 		ct.cancellations, p.cancellations,
 		COALESCE(ct.average_duration, 0), COALESCE(p.average_duration, 0),
 		sc.currency
@@ -680,7 +680,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 
 	var (
 		currRevenue, prevRevenue             int
-		currAppointments, prevAppointments   int
+		currBookings, prevBookings           int
 		currCancellations, prevCancellations int
 		currAvgDuration, prevAvgDuration     int
 		curr                                 string
@@ -688,7 +688,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 
 	err := s.db.QueryRow(ctx, query, merchantId, currPeriodStart, date, prevPeriodStart, currPeriodStart.AddDate(0, 0, 1)).Scan(
 		&currRevenue, &prevRevenue,
-		&currAppointments, &prevAppointments,
+		&currBookings, &prevBookings,
 		&currCancellations, &prevCancellations,
 		&currAvgDuration, &prevAvgDuration,
 		&curr,
@@ -713,12 +713,12 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	}
 
 	stats.RevenueSum = formattedRevenue
-	stats.Appointments = currAppointments
+	stats.Bookings = currBookings
 	stats.Cancellations = currCancellations
 	stats.AverageDuration = currAvgDuration
 
 	stats.RevenueChange = utils.CalculatePercentChange(prevRevenue, currRevenue)
-	stats.AppointmentsChange = utils.CalculatePercentChange(prevAppointments, currAppointments)
+	stats.BookingsChange = utils.CalculatePercentChange(prevBookings, currBookings)
 	stats.CancellationsChange = utils.CalculatePercentChange(prevCancellations, currCancellations) * -1
 	stats.AverageDurationChange = utils.CalculatePercentChange(prevAvgDuration, currAvgDuration)
 
@@ -728,7 +728,7 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		COALESCE(SUM(price), 0) AS value
 	FROM (
 		select distinct on (group_id) from_date, (price_then).number as price
-		from "Appointment"
+		from "Booking"
 		WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
 		AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
 		order by group_id

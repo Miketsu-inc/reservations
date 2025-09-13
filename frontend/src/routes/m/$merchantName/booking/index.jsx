@@ -142,7 +142,7 @@ function SelectDateTime() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/v1/appointments/new", {
+      const response = await fetch("/api/v1/bookings/new", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",
@@ -274,7 +274,7 @@ function SelectDateTime() {
                 styles="p-2 max-h-20 min-h-20 md:max-h-32 md:min-h-32"
                 id="customerNote"
                 name="customerNote"
-                labelText="Add a note to your appointment"
+                labelText="Add a note to your booking"
                 required={false}
                 placeholder="Add your note here..."
                 value={customerNote}

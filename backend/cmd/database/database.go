@@ -26,30 +26,30 @@ type PostgreSQL interface {
 	// Close terminates the database connection.
 	Close()
 
-	// -- Appointment --
+	// -- Booking --
 
-	// Insert a new Appointment to the database.
-	NewAppointment(context.Context, Appointment, []PublicServicePhase, uuid.UUID, uuid.UUID) (int, error)
-	// Get all Aappintments assigned to a Merchant.
-	GetAppointmentsByMerchant(context.Context, uuid.UUID, string, string) ([]AppointmentDetails, error)
+	// Insert a new Booking to the database.
+	NewBooking(context.Context, Booking, []PublicServicePhase, uuid.UUID, uuid.UUID) (int, error)
+	// Get all Bookings assigned to a Merchant.
+	GetBookingsByMerchant(context.Context, uuid.UUID, string, string) ([]BookingDetails, error)
 	// Get all available times for reservations
-	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]AppointmentTime, error)
+	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]BookingTime, error)
 	// Get all reserved times for reservations in a given period
-	GetReservedTimesForPeriod(context.Context, uuid.UUID, int, time.Time, time.Time) ([]AppointmentTime, error)
-	// Update appointment fields
-	UpdateAppointmentData(context.Context, uuid.UUID, int, string, time.Duration) error
-	// Transfer dummy user appointments
-	TransferDummyAppointments(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
-	// Cancel appointment by merchant
-	CancelAppointmentByMerchant(context.Context, uuid.UUID, int, string) error
-	// Update the email id for an appointment
-	UpdateEmailIdForAppointment(context.Context, int, string) error
-	//Get appointment info for email sending
-	GetAppointmentDataForEmail(context.Context, int) (AppointmentEmailData, error)
-	//Get public appointment info for user
-	GetPublicAppointmentInfo(context.Context, int) (PublicAppointmentInfo, error)
-	//Cancel appointment by user
-	CancelAppointmentByUser(context.Context, uuid.UUID, int) (uuid.UUID, error)
+	GetReservedTimesForPeriod(context.Context, uuid.UUID, int, time.Time, time.Time) ([]BookingTime, error)
+	// Update booking fields
+	UpdateBookingData(context.Context, uuid.UUID, int, string, time.Duration) error
+	// Transfer dummy user bookings
+	TransferDummyBookings(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
+	// Cancel booking by merchant
+	CancelBookingByMerchant(context.Context, uuid.UUID, int, string) error
+	// Update the email id for a booking
+	UpdateEmailIdForBooking(context.Context, int, string) error
+	// Get booking info for email sending
+	GetBookingDataForEmail(context.Context, int) (BookingEmailData, error)
+	// Get public booking info for user
+	GetPublicBookingInfo(context.Context, int) (PublicBookingInfo, error)
+	// Cancel booking by user
+	CancelBookingByUser(context.Context, uuid.UUID, int) (uuid.UUID, error)
 
 	// -- User --
 
@@ -164,7 +164,7 @@ type PostgreSQL interface {
 	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
 	// Set blacklist status for a customer
 	SetBlacklistStatusForCustomer(context.Context, uuid.UUID, uuid.UUID, bool, *string) error
-	// Get one customer's info and appoitnemts for a merchant
+	// Get one customer's info and bookings for a merchant
 	GetCustomerStatsByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerStatistics, error)
 	//Get a User's customer id from it's user id and the merchant's id
 	GetCustomerIdByUserIdAndMerchantId(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error)

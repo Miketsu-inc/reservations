@@ -12,21 +12,21 @@ function monthDateFormat(date) {
   });
 }
 
-export default function AppointmentItem({ appointment, customerName }) {
+export default function BookingItem({ booking, customerName }) {
   const now = new Date();
-  const toDate = new Date(appointment.to_date);
+  const toDate = new Date(booking.to_date);
   const { data: preferences } = useQuery(preferencesQueryOptions());
 
   const isCancelled =
-    appointment.cancelled_by_user || appointment.cancelled_by_merchant;
+    booking.cancelled_by_user || booking.cancelled_by_merchant;
 
   let statusLabel = "Completed";
   let statusStyle = "bg-green-600/20 text-green-600";
 
   if (isCancelled) {
-    if (appointment.cancelled_by_user) {
+    if (booking.cancelled_by_user) {
       statusLabel = `Cancelled by ${customerName}`;
-    } else if (appointment.cancelled_by_merchant) {
+    } else if (booking.cancelled_by_merchant) {
       statusLabel = "Cancelled by You";
     }
     statusStyle = "bg-red-600/20 text-red-600";
@@ -39,7 +39,7 @@ export default function AppointmentItem({ appointment, customerName }) {
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between gap-4">
         <h4 className="text-text_color font-semibold">
-          {appointment.service_name}
+          {booking.service_name}
         </h4>
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${statusStyle}`}
@@ -53,11 +53,11 @@ export default function AppointmentItem({ appointment, customerName }) {
       >
         <span className="flex items-center gap-2">
           <CalendarIcon styles="size-4 text-gray-500 dark:text-gray-400" />
-          <span className="mt-0.5 text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
+          <span className="mt-0.5 text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
         </span>
         <span className="flex items-center gap-2">
           <ClockIcon styles="size-4 fill-gray-500 dark:fill-gray-400" />
-          <span className="mt-0.5 text-sm">{`${timeStringFromDate(new Date(appointment.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(appointment.to_date), preferences?.time_format)}`}</span>
+          <span className="mt-0.5 text-sm">{`${timeStringFromDate(new Date(booking.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(booking.to_date), preferences?.time_format)}`}</span>
         </span>
       </div>
     </div>

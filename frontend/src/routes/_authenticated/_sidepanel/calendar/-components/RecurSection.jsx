@@ -41,17 +41,20 @@ function recurFreqText(startDate, freq) {
 }
 
 export default function RecurSection({
-  event,
+  booking,
   recurData,
   updateRecurData,
   disabled,
 }) {
   return (
     <>
-      <div className="border-text_color flex flex-row items-center justify-between px-1 pt-2">
+      <div
+        className="border-text_color flex flex-row items-center justify-between
+          px-1 pt-2"
+      >
         <div className="flex flex-row items-center gap-2">
           <RefreshIcon styles="size-5" />
-          <p>Recurring appointment?</p>
+          <p>Recurring booking?</p>
         </div>
         <Switch
           size="large"
@@ -66,12 +69,15 @@ export default function RecurSection({
                 but it causes the dropdowns to not open. This could be solved by only applying
                 overflow-hidden while transitioning or reworking the dropdowns */}
       <div
-        className={`${recurData.isRecurring ? "max-h-52 p-2 opacity-100" : "max-h-0 overflow-hidden p-0 opacity-0"}
-          flex flex-col gap-3 transition-all duration-300 sm:w-86`}
+        className={`${
+          recurData.isRecurring
+            ? "max-h-52 p-2 opacity-100"
+            : "max-h-0 overflow-hidden p-0 opacity-0"
+          } flex flex-col gap-3 transition-all duration-300 sm:w-86`}
       >
         <p className="max-w-5/6 text-sm">
-          {`Recurs ${recurFreqText(event.start, recurData.frequency)} at ${timeStringFromDate(event.start)} - ${timeStringFromDate(event.end)}
-                      from ${recurUntiText(event.start, recurData.endDate)}`}
+          {`Recurs ${recurFreqText(booking.start, recurData.frequency)} at ${timeStringFromDate(booking.start)} - ${timeStringFromDate(booking.end)}
+                      from ${recurUntiText(booking.start, recurData.endDate)}`}
         </p>
         <Select
           styles="w-full"
@@ -88,9 +94,9 @@ export default function RecurSection({
           styles="w-full"
           defaultDate={
             new Date(
-              event.start.getFullYear(),
-              event.start.getMonth() + 1,
-              event.start.getDate()
+              booking.start.getFullYear(),
+              booking.start.getMonth() + 1,
+              booking.start.getDate()
             )
           }
           disabledBefore={new Date()}

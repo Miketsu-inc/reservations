@@ -11,12 +11,12 @@ import { lazy, Suspense } from "react";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
-async function fetchEvents(start, end) {
+async function fetchBookings(start, end) {
   start = new Date(start).toJSON();
   end = new Date(end).toJSON();
 
   const response = await fetch(
-    `/api/v1/appointments/all?start=${start}&end=${end}`,
+    `/api/v1/bookings/all?start=${start}&end=${end}`,
     {
       method: "GET",
     }
@@ -34,10 +34,10 @@ async function fetchEvents(start, end) {
   }
 }
 
-export function eventsQueryOptions(start, end) {
+export function bookingsQueryOptions(start, end) {
   return queryOptions({
-    queryKey: ["events", start, end],
-    queryFn: () => fetchEvents(start, end),
+    queryKey: ["bookings", start, end],
+    queryFn: () => fetchBookings(start, end),
   });
 }
 
@@ -101,7 +101,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
     end,
   }),
   loader: async ({ deps: { start, end }, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(eventsQueryOptions(start, end));
+    await queryClient.ensureQueryData(bookingsQueryOptions(start, end));
     await queryClient.ensureQueryData(businessHoursQueryOptions());
   },
   errorComponent: ({ error }) => {

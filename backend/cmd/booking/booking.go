@@ -12,7 +12,7 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int, BufferTime int,
+func CalculateAvailableTimes(reserved []database.BookingTime, servicePhases []database.PublicServicePhase, serviceDuration int, BufferTime int,
 	BookingWindowMin int, bookingDay time.Time, businessHours []database.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
 
 	year, month, day := bookingDay.Date()
@@ -37,29 +37,29 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 		businessStart := time.Date(year, month, day, startTime.Hour(), startTime.Minute(), 0, 0, merchantTz)
 		businessEnd := time.Date(year, month, day, endTime.Hour(), endTime.Minute(), 0, 0, merchantTz)
 
-		appStart := businessStart
+		bookingStart := businessStart
 
-		for appStart.Add(totalDuration).Before(businessEnd) || appStart.Add(totalDuration).Equal(businessEnd) {
-			if appStart.Before(now.Add(bookingDeadlineDuration)) {
-				appStart = appStart.Add(stepSize)
+		for bookingStart.Add(totalDuration).Before(businessEnd) || bookingStart.Add(totalDuration).Equal(businessEnd) {
+			if bookingStart.Before(now.Add(bookingDeadlineDuration)) {
+				bookingStart = bookingStart.Add(stepSize)
 				continue
 			}
 
 			available := true
 
-			phaseStart := appStart
+			phaseStart := bookingStart
 			for _, phase := range servicePhases {
 				phaseDuration := time.Duration(phase.Duration) * time.Minute
 				phaseEnd := phaseStart.Add(phaseDuration)
 
 				if phase.PhaseType == "active" {
 
-					for _, appt := range reserved {
-						reservedFromDate := appt.From_date.In(merchantTz).Add(-bufferDuration)
-						reservedToDate := appt.To_date.In(merchantTz).Add(bufferDuration)
+					for _, booking := range reserved {
+						reservedFromDate := booking.From_date.In(merchantTz).Add(-bufferDuration)
+						reservedToDate := booking.To_date.In(merchantTz).Add(bufferDuration)
 
 						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
-							appStart = appStart.Add(stepSize)
+							bookingStart = bookingStart.Add(stepSize)
 
 							available = false
 							break
@@ -75,15 +75,15 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 			}
 
 			if available {
-				formattedTime := fmt.Sprintf("%02d:%02d", appStart.Hour(), appStart.Minute())
+				formattedTime := fmt.Sprintf("%02d:%02d", bookingStart.Hour(), bookingStart.Minute())
 
-				if appStart.Hour() < 12 {
+				if bookingStart.Hour() < 12 {
 					morning = append(morning, formattedTime)
-				} else if appStart.Hour() >= 12 {
+				} else if bookingStart.Hour() >= 12 {
 					afternoon = append(afternoon, formattedTime)
 				}
 
-				appStart = appStart.Add(stepSize)
+				bookingStart = bookingStart.Add(stepSize)
 			}
 		}
 	}
@@ -102,15 +102,15 @@ type MultiDayAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
+func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
 	startDate time.Time, endDate time.Time, businessHours map[int][]database.TimeSlot, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}
 
-	reservationsByDate := make(map[string][]database.AppointmentTime)
-	for _, appt := range reservedForPeriod {
-		date := appt.From_date.In(merchantTz).Format("2006-01-02")
-		reservationsByDate[date] = append(reservationsByDate[date], appt)
+	reservationsByDate := make(map[string][]database.BookingTime)
+	for _, booking := range reservedForPeriod {
+		date := booking.From_date.In(merchantTz).Format("2006-01-02")
+		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
 	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {

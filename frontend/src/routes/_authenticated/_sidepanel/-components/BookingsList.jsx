@@ -10,27 +10,27 @@ import { preferencesQueryOptions } from "@lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import DeleteAppsPopoverContent from "../calendar/-components/DeleteAppsPopoverContent";
+import DeleteBookingPopoverContent from "../calendar/-components/DeleteBookingPopoverContent";
 
-export default function AppointmentsList({
-  appointments,
+export default function BookingsList({
+  bookings,
   visibleCount,
   onCancel,
   onAccept,
   route,
 }) {
-  const visibleAppointments = appointments.slice(0, visibleCount);
+  const visibleBookings = bookings.slice(0, visibleCount);
 
   return (
     <div className="h-full">
-      {visibleAppointments.length > 0 ? (
+      {visibleBookings.length > 0 ? (
         <div className="space-y-4">
-          {visibleAppointments.map((appointment) => (
-            <AppointmentCard
-              key={appointment.id}
-              appointment={appointment}
-              onCancel={(app) => onCancel(app)}
-              onAccept={(app) => onAccept(app)}
+          {visibleBookings.map((booking) => (
+            <BookingCard
+              key={booking.id}
+              booking={booking}
+              onCancel={(book) => onCancel(book)}
+              onAccept={(book) => onAccept(book)}
               route={route}
             />
           ))}
@@ -43,9 +43,9 @@ export default function AppointmentsList({
           <div className="mb-3 rounded-full bg-gray-300 p-3 dark:bg-gray-700">
             <CalendarIcon styles="size-8 stroke-gray-500 dark:stroke-gray-400" />
           </div>
-          <p className="mb-1">No appointments yet</p>
+          <p className="mb-1">No bookings yet</p>
           <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            When customers schedule appointments, they will appear here.
+            When customers schedule bookings, they will appear here.
           </p>
         </div>
       )}
@@ -61,7 +61,7 @@ function monthDateFormat(date) {
   });
 }
 
-function AppointmentCard({ appointment, route, onCancel, onAccept }) {
+function BookingCard({ booking, route, onCancel, onAccept }) {
   const [showNote, setShowNote] = useState(false);
   const { data: preferences } = useQuery(preferencesQueryOptions());
 
@@ -73,23 +73,23 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             lg:justify-between lg:pr-3 xl:pr-6"
         >
           <div className="flex flex-col gap-2 py-1">
-            <span className="dark:font-semibold">{`${appointment.last_name} ${appointment.first_name}`}</span>
+            <span className="dark:font-semibold">{`${booking.last_name} ${booking.first_name}`}</span>
             <div className="flex flex-row items-center gap-3">
-              <span className="text-sm">{`${monthDateFormat(new Date(appointment.from_date))}`}</span>
+              <span className="text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">
                 <ClockIcon styles="size-3 fill-gray-500 dark:fill-gray-400" />
-                <span className="text-sm">{`${timeStringFromDate(new Date(appointment.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(appointment.to_date), preferences?.time_format)}`}</span>
+                <span className="text-sm">{`${timeStringFromDate(new Date(booking.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(booking.to_date), preferences?.time_format)}`}</span>
               </div>
             </div>
           </div>
           <span
             className="w-fit rounded-full px-2 py-1 text-xs"
             style={{
-              backgroundColor: `${appointment.service_color}20`,
-              color: appointment.service_color,
+              backgroundColor: `${booking.service_color}20`,
+              color: booking.service_color,
             }}
           >
-            {appointment.service_name}
+            {booking.service_name}
           </span>
         </div>
         <div className="flex flex-row items-center gap-1">
@@ -97,7 +97,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             from={route.fullPath}
             to="/calendar"
             params={{
-              start: formatToDateString(new Date(appointment.from_date)),
+              start: formatToDateString(new Date(booking.from_date)),
             }}
           >
             <CalendarIcon styles="size-5 stroke-text_color" />
@@ -109,21 +109,18 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
               </button>
             </PopoverTrigger>
             <PopoverContent side="bottom" align="end" styles="w-fit">
-              <DeleteAppsPopoverContent
-                event={appointment}
+              <DeleteBookingPopoverContent
+                booking={booking}
                 onDeleted={onCancel}
               />
             </PopoverContent>
           </Popover>
-          <button
-            className="cursor-pointer"
-            onClick={() => onAccept(appointment)}
-          >
+          <button className="cursor-pointer" onClick={() => onAccept(booking)}>
             <TickIcon styles="size-6 stroke-text_color" />
           </button>
         </div>
       </div>
-      {appointment.customer_note && (
+      {booking.customer_note && (
         <div className="pt-3 md:pt-2">
           <button
             className="flex cursor-pointer flex-row items-center gap-2
@@ -142,7 +139,7 @@ function AppointmentCard({ appointment, route, onCancel, onAccept }) {
             overflow-hidden transition-all duration-300`}
           >
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {appointment.customer_note}
+              {booking.customer_note}
             </p>
           </div>
         </div>

@@ -17,12 +17,12 @@ import LogoHeader from "../components/LogoHeader";
 
 void React;
 
-export default function AppointmentReminder() {
+export default function BookingReminder() {
   return (
     <Tailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>{"{{ T .Lang `AppointmentReminder.preview` . }}"}</Preview>
+        <Preview>{"{{ T .Lang `BookingReminder.preview` . }}"}</Preview>
         <Body className="bg-gray-100 font-sans text-black">
           <Container
             className="mx-auto max-w-md bg-white p-4"
@@ -33,10 +33,10 @@ export default function AppointmentReminder() {
               as="h1"
               className="mb-4 text-[22px] font-bold text-[#111111]"
             >
-              {"{{ T .Lang `AppointmentReminder.heading` . }}"}
+              {"{{ T .Lang `BookingReminder.heading` . }}"}
             </Heading>
             <Text className="mb-6 text-sm text-black">
-              {"{{ T .Lang `AppointmentReminder.main_text` . }}"}
+              {"{{ T .Lang `BookingReminder.main_text` . }}"}
             </Text>
 
             <Section
@@ -46,7 +46,10 @@ export default function AppointmentReminder() {
                 borderRadius: "6px",
               }}
             >
-              <Text className="text-xs font-medium tracking-wide text-black uppercase">
+              <Text
+                className="text-xs font-medium tracking-wide text-black
+                  uppercase"
+              >
                 {"{{ .Date }}"}
               </Text>
               <Text className="mb-4 text-2xl font-bold text-black">
@@ -55,20 +58,20 @@ export default function AppointmentReminder() {
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentReminder.timezone` . }}"}
+                  {"{{ T .Lang `BookingReminder.timezone` . }}"}
                 </span>
                 {"{{ .TimeZone }}"}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentReminder.service_name` . }}"}
+                  {"{{ T .Lang `BookingReminder.service_name` . }}"}
                 </span>
                 {"{{ .ServiceName }}"}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `AppointmentReminder.location` . }}"}
+                  {"{{ T .Lang `BookingReminder.location` . }}"}
                 </span>
                 {"{{ .Location }}"}
               </Text>
@@ -77,22 +80,23 @@ export default function AppointmentReminder() {
             <Section className="mb-8 text-center">
               <Button
                 href="{{ .ModifyLink }}"
-                className="bg-blue-600 px-4 py-3 text-center text-[14px] font-medium text-white"
+                className="bg-blue-600 px-4 py-3 text-center text-[14px]
+                  font-medium text-white"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `AppointmentReminder.primary_button` . }}"}
+                {"{{ T .Lang `BookingReminder.primary_button` . }}"}
               </Button>
             </Section>
 
             <Text className="mb-3 text-sm">
-              {"{{ T .Lang `AppointmentReminder.arrive_on_time_note` . }}"}
+              {"{{ T .Lang `BookingReminder.arrive_on_time_note` . }}"}
             </Text>
 
             <Text className="mb-6 text-xs text-gray-600">
-              {"{{ T .Lang `AppointmentReminder.contact_us_note` . }}"}
+              {"{{ T .Lang `BookingReminder.contact_us_note` . }}"}
             </Text>
 
             <Hr className="mt-4" style={{ border: "1px solid #e5e7eb" }} />

@@ -783,7 +783,7 @@ func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (m *Merchant) TransferCustomerApps(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) TransferCustomerBookings(w http.ResponseWriter, r *http.Request) {
 	fromStr := r.URL.Query().Get("from")
 	toStr := r.URL.Query().Get("to")
 
@@ -807,9 +807,9 @@ func (m *Merchant) TransferCustomerApps(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = m.Postgresdb.TransferDummyAppointments(r.Context(), merchantId, from, to)
+	err = m.Postgresdb.TransferDummyBookings(r.Context(), merchantId, from, to)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while transfering appointments: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while transfering bookings: %s", err.Error()))
 		return
 	}
 }

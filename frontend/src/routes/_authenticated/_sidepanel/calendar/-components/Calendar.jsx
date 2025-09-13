@@ -20,7 +20,7 @@ import {
   useSuspenseQueries,
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { eventsQueryOptions } from "..";
+import { bookingsQueryOptions } from "..";
 import CalendarModal from "./CalendarModal";
 import DragConfirmationModal from "./DragConfirmationModal";
 
@@ -55,32 +55,32 @@ function transformBusinessHours(businessHours) {
 function formatData(data) {
   if (data === undefined) return;
 
-  return data.map((event) => ({
-    id: event.id,
-    title: event.first_name + " " + event.last_name,
-    start: event.from_date,
-    end: event.to_date,
-    color: event.service_color,
-    textColor: getContrastColor(event.service_color),
+  return data.map((booking) => ({
+    id: booking.id,
+    title: booking.first_name + " " + booking.last_name,
+    start: booking.from_date,
+    end: booking.to_date,
+    color: booking.service_color,
+    textColor: getContrastColor(booking.service_color),
     durationEditable: false,
-    startEditable: new Date(event.to_date) > new Date() ? true : false,
+    startEditable: new Date(booking.to_date) > new Date() ? true : false,
     extendedProps: {
       // this is a number unlike the normal 'id' which get's converted to a string
-      appointment_id: event.id,
-      group_id: event.group_id,
-      first_name: event.first_name,
-      last_name: event.last_name,
-      phone_number: event.phone_number,
-      customer_note: event.customer_note,
-      merchant_note: event.merchant_note,
-      service_name: event.service_name,
-      service_duration: event.service_duration,
-      price: event.price,
+      booking_id: booking.id,
+      group_id: booking.group_id,
+      first_name: booking.first_name,
+      last_name: booking.last_name,
+      phone_number: booking.phone_number,
+      customer_note: booking.customer_note,
+      merchant_note: booking.merchant_note,
+      service_name: booking.service_name,
+      service_duration: booking.service_duration,
+      price: booking.price,
     },
   }));
 }
 
-const defaultEventInfo = {
+const defaultBookingInfo = {
   id: 0,
   group_id: 0,
   title: "",
@@ -88,7 +88,7 @@ const defaultEventInfo = {
   end: new Date(),
   startEditable: true,
   extendedProps: {
-    appointment_id: 0,
+    booking_id: 0,
     first_name: "",
     last_name: "",
     phone_number: "",
@@ -101,21 +101,21 @@ const defaultEventInfo = {
 export default function Calendar({ router, route, search }) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [eventInfo, setEventInfo] = useState(defaultEventInfo);
+  const [bookingInfo, setBookingInfo] = useState(defaultBookingInfo);
   const [dragModalOpen, setDragModalOpen] = useState(false);
   const [dragModalData, setDragModalData] = useState({
-    event: {},
-    old_event: {},
+    booking: {},
+    old_booking: {},
     revert: {},
   });
 
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
-    data: events,
+    data: bookings,
     isError,
     error,
   } = useQuery({
-    ...eventsQueryOptions(search.start, search.end),
+    ...bookingsQueryOptions(search.start, search.end),
     placeholderData: keepPreviousData,
   });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
@@ -130,9 +130,9 @@ export default function Calendar({ router, route, search }) {
   const isWindowSmall =
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
-  const invalidateEventsQuery = useCallback(async () => {
+  const invalidateBookingsQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["events", search.start, search.end],
+      queryKey: ["bookings", search.start, search.end],
     });
   }, [queryClient, search]);
 
@@ -284,9 +284,9 @@ export default function Calendar({ router, route, search }) {
           }
           height="auto"
           headerToolbar={false}
-          events={formatData(events)}
+          events={formatData(bookings)}
           eventClick={(e) => {
-            setEventInfo(e.event);
+            setBookingInfo(e.event);
             setTimeout(() => setIsModalOpen(true), 0);
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
@@ -312,8 +312,8 @@ export default function Calendar({ router, route, search }) {
           snapDuration={{ minutes: 5 }}
           eventDrop={(e) => {
             setDragModalData({
-              event: e.event,
-              old_event: e.oldEvent,
+              booking: e.event,
+              old_booking: e.oldEvent,
               revert: e.revert,
             });
             setTimeout(() => setDragModalOpen(true), 0);
@@ -357,23 +357,23 @@ export default function Calendar({ router, route, search }) {
         />
       </div>
       <CalendarModal
-        eventInfo={eventInfo}
+        bookingInfo={bookingInfo}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
         }}
-        onDeleted={invalidateEventsQuery}
-        onEdit={invalidateEventsQuery}
+        onDeleted={invalidateBookingsQuery}
+        onEdit={invalidateBookingsQuery}
       />
       <DragConfirmationModal
         isOpen={dragModalOpen}
-        eventData={dragModalData}
+        bookingData={dragModalData}
         onClose={() => {
           dragModalData.revert();
           setDragModalOpen(false);
         }}
         onMoved={async () => {
-          await invalidateEventsQuery();
+          await invalidateBookingsQuery();
           setDragModalOpen(false);
         }}
       />

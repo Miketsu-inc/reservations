@@ -159,7 +159,7 @@ function NoRowsComponent() {
         </p>
         <p className="text-sm md:w-2/3">
           You can blacklist clients who violate your policies. Blacklisted
-          customers will not be able to book appointments through your booking
+          customers will not be able to create bookings through your booking
           page.
         </p>
       </div>
