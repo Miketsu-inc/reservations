@@ -53,6 +53,22 @@ export const Route = createFileRoute("/m/$merchantName/cancel/$appointmentId/")(
   }
 );
 
+const cancelDeadlineLabels = {
+  0: "",
+  30: "30 minutes",
+  60: "1 hour",
+  120: "2 hours",
+  180: "3 hours",
+  240: "4 hours",
+  300: "5 hours",
+  360: "6 hours",
+  720: "12 hours",
+  1440: "1 day",
+  2880: "2 days",
+  5760: "3 days",
+  20160: "2 weeks",
+};
+
 function CancelPage() {
   const [cancelling, setCancelling] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -77,13 +93,27 @@ function CancelPage() {
   }
 
   const dateInfo = formatDate(appointmentData.from_date);
+  const fromDate = new Date(appointmentData.from_date);
+  const cancelDeadline = new Date(
+    fromDate.getTime() - appointmentData.cancel_deadline * 60000
+  ); // getTime returns in milisecond
 
   const now = new Date();
-  const fromDate = new Date(appointmentData.from_date);
-  const isInPast = fromDate <= now;
   const alreadyCancelled =
     appointmentData.cancelled_by_user || appointmentData.cancelled_by_merchant;
-  const canBeCancelled = !isInPast && !alreadyCancelled;
+
+  const canBeCancelled = !alreadyCancelled && now < cancelDeadline;
+
+  let cancelMessage = "";
+  if (alreadyCancelled) {
+    cancelMessage = "This appointment has already been cancelled.";
+  } else if (appointmentData.cancel_deadline === 0 || fromDate <= now) {
+    cancelMessage =
+      "You cannot cancel this appointment because it has already passed.";
+  } else {
+    const deadlineLabel = cancelDeadlineLabels[appointmentData.cancel_deadline];
+    cancelMessage = `You cannot cancel this appointment less than ${deadlineLabel} before it starts.`;
+  }
 
   async function handleCancel() {
     setCancelling(true);
@@ -137,12 +167,8 @@ function CancelPage() {
             dark:text-yellow-500"
         >
           <WarningIcon styles="h-5 w-5 shrink-0" />
-          <span className="text-sm">
-            {appointmentData.cancelled_by_user ||
-            appointmentData.cancelled_by_merchant
-              ? "This appointment has already been cancelled."
-              : "You cannot cancel this appointment because it has already passed."}
-          </span>
+
+          <span className="text-sm">{cancelMessage}</span>
         </div>
       )}
       <div

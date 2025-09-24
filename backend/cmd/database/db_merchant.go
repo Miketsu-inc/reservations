@@ -223,15 +223,19 @@ type TimeSlot struct {
 }
 
 type MerchantSettingsInfo struct {
-	Name          string             `json:"merchant_name" db:"merchant_name"`
-	ContactEmail  string             `json:"contact_email" db:"contact_email"`
-	Introduction  string             `json:"introduction" db:"introduction"`
-	Announcement  string             `json:"announcement" db:"announcement"`
-	AboutUs       string             `json:"about_us" db:"about_us"`
-	ParkingInfo   string             `json:"parking_info" db:"parking_info"`
-	PaymentInfo   string             `json:"payment_info" db:"payment_info"`
-	Timezone      string             `json:"timezone" db:"timezone"`
-	BusinessHours map[int][]TimeSlot `json:"business_hours" db:"business_hours"`
+	Name             string             `json:"merchant_name" db:"merchant_name"`
+	ContactEmail     string             `json:"contact_email" db:"contact_email"`
+	Introduction     string             `json:"introduction" db:"introduction"`
+	Announcement     string             `json:"announcement" db:"announcement"`
+	AboutUs          string             `json:"about_us" db:"about_us"`
+	ParkingInfo      string             `json:"parking_info" db:"parking_info"`
+	PaymentInfo      string             `json:"payment_info" db:"payment_info"`
+	CancelDeadline   int                `json:"cancel_deadline" db:"cancel_deadline"`
+	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
+	Timezone         string             `json:"timezone" db:"timezone"`
+	BusinessHours    map[int][]TimeSlot `json:"business_hours" db:"business_hours"`
 
 	LocationId int    `json:"location_id" db:"location_id"`
 	Country    string `json:"country" db:"country"`
@@ -246,13 +250,13 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 
 	merchantQuery := `
 	select m.name, m.contact_email, m.introduction, m.announcement,
-		   m.about_us, m.parking_info, m.payment_info, m.timezone,
+		   m.about_us, m.parking_info, m.payment_info, m.cancel_deadline, m.booking_window_min, m.booking_window_max, m.buffer_time, m.timezone,
 	       l.id as location_id, l.country, l.city, l.postal_code, l.address
 	from "Merchant" m inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1;`
 
 	err := s.db.QueryRow(ctx, merchantQuery, merchantId).Scan(&msi.Name, &msi.ContactEmail, &msi.Introduction, &msi.Announcement,
-		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address)
+		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address)
 	if err != nil {
 		return MerchantSettingsInfo{}, err
 	}
@@ -267,8 +271,20 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 	return msi, nil
 }
 
-func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, introduction, announcement, aboutUs, paymentInfo, parkingInfo string,
-	businessHours map[int][]TimeSlot) error {
+type MerchantSettingFields struct {
+	Introduction     string             `json:"introduction"`
+	Announcement     string             `json:"announcement"`
+	AboutUs          string             `json:"about_us"`
+	ParkingInfo      string             `json:"parking_info"`
+	PaymentInfo      string             `json:"payment_info"`
+	CancelDeadline   int                `json:"cancel_deadline"`
+	BookingWindowMin int                `json:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time"`
+	BusinessHours    map[int][]TimeSlot `json:"business_hours"`
+}
+
+func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.UUID, ms MerchantSettingFields) error {
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -279,10 +295,12 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 
 	merchantQuery := `
 	update "Merchant"
-	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
+	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, 
+	parking_info = $6, cancel_deadline = $7, booking_window_min = $8, booking_window_max = $9, buffer_time = $10
 	where id = $1;`
 
-	_, err = tx.Exec(ctx, merchantQuery, merchantId, introduction, announcement, aboutUs, paymentInfo, parkingInfo)
+	_, err = tx.Exec(ctx, merchantQuery, merchantId, ms.Introduction, ms.Announcement, ms.AboutUs, ms.PaymentInfo, ms.ParkingInfo,
+		ms.CancelDeadline, ms.BookingWindowMin, ms.BookingWindowMax, ms.BufferTime)
 	if err != nil {
 		return err
 	}
@@ -290,7 +308,7 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 	var days []int
 	var starts, ends []string
 
-	for day, timeRanges := range businessHours {
+	for day, timeRanges := range ms.BusinessHours {
 		for _, ts := range timeRanges {
 			if ts.StartTime != "" && ts.EndTime != "" {
 				days = append(days, day)
@@ -755,4 +773,24 @@ func (s *service) GetMerchantSubscriptionTier(ctx context.Context, merchantId uu
 	}
 
 	return tier, nil
+}
+
+type MerchantBookingSettings struct {
+	BookingWindowMin int `json:"booking_window_min" db:"booking_window_min"`
+	BookingWindowMax int `json:"booking_window_max" db:"booking_window_max"`
+	BufferTime       int `json:"buffer_time" db:"buffer_time"`
+}
+
+func (s *service) GetBookingSettingsByMerchant(ctx context.Context, merchantId uuid.UUID) (MerchantBookingSettings, error) {
+	query := `
+	select buffer_time, booking_window_max, booking_window_min from "Merchant"
+	where id = $1`
+
+	var mbs MerchantBookingSettings
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin)
+	if err != nil {
+		return MerchantBookingSettings{}, err
+	}
+
+	return mbs, nil
 }

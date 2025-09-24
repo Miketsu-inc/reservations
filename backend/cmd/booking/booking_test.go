@@ -44,6 +44,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{PhaseType: "active", Duration: 30},
 		}
 		serviceDuration := 30
+		bookingWindowMin, bufferTime := 0, 0
 
 		bookingDay := ct(2025, time.July, 1, "00:00", tz)
 
@@ -57,7 +58,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, expectedAfternoon, result.Afternoon, "Afternoon times do not match")
@@ -74,6 +75,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{PhaseType: "active", Duration: 60},
 		}
 		serviceDuration := 60
+		bookingWindowMin, bufferTime := 0, 0
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
@@ -96,7 +98,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -114,6 +116,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{PhaseType: "active", Duration: 15},
 		}
 		serviceDuration := 45
+		bookingWindowMin, bufferTime := 0, 0
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
@@ -137,7 +140,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -156,6 +159,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{PhaseType: "active", Duration: 45},
 		}
 		serviceDuration := 90
+		bookingWindowMin, bufferTime := 0, 0
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
@@ -175,7 +179,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -194,6 +198,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{PhaseType: "active", Duration: 45},
 		}
 		serviceDuration := 90
+		bookingWindowMin, bufferTime := 0, 0
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
@@ -208,10 +213,48 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.July, 1, "14:20", tz)
 
-		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bookingDay, businessHours, currentTime, tz)
+		result := booking.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+	})
+
+	t.Run("Buffer time between bookings", func(t *testing.T) {
+		reserved := []database.AppointmentTime{
+			ctReserved(year, month, day, "10:00", "10:30", tz),
+		}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30},
+		}
+		serviceDuration := 30
+		bookingWindowMin, bufferTime := 0, 15
+
+		bookingDay := ct(year, month, day, "00:00", tz)
+
+		businessHours := []database.TimeSlot{
+			{StartTime: "09:00:00", EndTime: "12:00:00"},
+		}
+
+		// With buffer=15min, the blocked period is 09:45–10:45.
+		// So "09:00" and "09:15" are fine, next available is "10:45".
+		expectedMorning := []string{
+			"09:00",
+			"09:15",
+			"10:45",
+			"11:00",
+			"11:15",
+			"11:30",
+		}
+
+		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
+
+		result := booking.CalculateAvailableTimes(
+			reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz,
+		)
+
+		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
+		assert.Empty(t, result.Afternoon, "Afternoon should be empty")
 	})
 }
 
@@ -222,10 +265,14 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		startDate := ct(2025, time.July, 1, "00:00", tz)
 		endDate := ct(2025, time.June, 30, "23:59", tz)
 
+		bookingWindowMin, bufferTime := 0, 0
+
 		results := booking.CalculateAvailableTimesPeriod(
 			[]database.AppointmentTime{},
 			[]database.PublicServicePhase{{PhaseType: "active", Duration: 30}},
 			30,
+			bufferTime,
+			bookingWindowMin,
 			startDate, endDate,
 			map[int][]database.TimeSlot{},
 			ct(2025, time.June, 12, "00:00", time.UTC),
@@ -247,6 +294,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			{PhaseType: "active", Duration: 30},
 		}
 		serviceDuration := 30
+		bookingWindowMin, bufferTime := 0, 0
 
 		businessHours := map[int][]database.TimeSlot{
 			2: {}, // Tuesday (July 1, 2025)
@@ -264,6 +312,8 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			reserved,
 			servicePhases,
 			serviceDuration,
+			bufferTime,
+			bookingWindowMin,
 			startDate,
 			endDate,
 			businessHours,

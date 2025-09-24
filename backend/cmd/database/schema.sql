@@ -32,8 +32,12 @@ create table if not exists "Merchant" (
     about_us                 text,
     parking_info             text,
     payment_info             text,
+    cancel_deadline          integer not null default 0, 
+    booking_window_min       integer not null default 0,
+    booking_window_max       integer not null default 5, --  in months 
+    buffer_time              integer not null default 0,
     timezone                 text,
-    currency_code            char(3)         not null,
+    currency_code            char(3)           not null,
     subscription_tier        subscription_tier not null
 );
 

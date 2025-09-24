@@ -86,7 +86,7 @@ type PostgreSQL interface {
 	// Get all necessary information for merchant settings page
 	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
 	// Update the field used in the reservation page
-	UpdateMerchantFieldsById(context.Context, uuid.UUID, string, string, string, string, string, map[int][]TimeSlot) error
+	UpdateMerchantFieldsById(context.Context, uuid.UUID, MerchantSettingFields) error
 	// Update a merchant's businessHours
 	UpdateBusinessHours(context.Context, uuid.UUID, map[int][]TimeSlot) error
 	// Get all businessHours for a merchant
@@ -103,6 +103,8 @@ type PostgreSQL interface {
 	GetMerchantCurrency(context.Context, uuid.UUID) (string, error)
 	// Get the merchant's subscription tier
 	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
+	// Get necessary booking settings by a merchnat's id
+	GetBookingSettingsByMerchant(context.Context, uuid.UUID) (MerchantBookingSettings, error)
 
 	// -- Location --
 

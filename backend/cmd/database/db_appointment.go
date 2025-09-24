@@ -267,13 +267,14 @@ func (s *service) UpdateEmailIdForAppointment(ctx context.Context, appointmentId
 }
 
 type AppointmentEmailData struct {
-	FromDate      time.Time `json:"from_date" db:"from_date"`
-	ToDate        time.Time `json:"to_date" db:"to_date"`
-	ServiceName   string    `json:"service_name" db:"service_name"`
-	ShortLocation string    `json:"short_location" db:"short_location"`
-	CustomerEmail string    `json:"customer_email" db:"customer_email"`
-	EmailId       uuid.UUID `json:"email_id" db:"email_id"`
-	MerchantName  string    `json:"merchant_name" db:"merchant_name"`
+	FromDate       time.Time `json:"from_date" db:"from_date"`
+	ToDate         time.Time `json:"to_date" db:"to_date"`
+	ServiceName    string    `json:"service_name" db:"service_name"`
+	ShortLocation  string    `json:"short_location" db:"short_location"`
+	CustomerEmail  string    `json:"customer_email" db:"customer_email"`
+	EmailId        uuid.UUID `json:"email_id" db:"email_id"`
+	MerchantName   string    `json:"merchant_name" db:"merchant_name"`
+	CancelDeadline int       `json:"cancel_deadline" db:"cancel_deadline"`
 }
 
 func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId int) (AppointmentEmailData, error) {
@@ -281,7 +282,7 @@ func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId 
 	select distinct on (a.group_id)
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
+		a.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name, m.cancel_deadline,
 	l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location from "Appointment" a
 	join "Service" s on s.id = a.service_id
 	join "Customer" c on c.id = a.customer_id
@@ -293,7 +294,7 @@ func (s *service) GetAppointmentDataForEmail(ctx context.Context, appointmentId 
 
 	var data AppointmentEmailData
 	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
-		&data.CustomerEmail, &data.MerchantName, &data.ShortLocation)
+		&data.CustomerEmail, &data.MerchantName, &data.CancelDeadline, &data.ShortLocation)
 	if err != nil {
 		return AppointmentEmailData{}, err
 	}
@@ -305,6 +306,7 @@ type PublicAppointmentInfo struct {
 	FromDate            time.Time                `json:"from_date" db:"from_date"`
 	ToDate              time.Time                `json:"to_date" db:"to_date"`
 	ServiceName         string                   `json:"service_name" db:"service_name"`
+	CancelDeadline      int                      `json:"cancel_deadline" db:"cancel_deadline"`
 	ShortLocation       string                   `json:"short_location" db:"short_location"`
 	Price               currencyx.FormattedPrice `json:"price" db:"price"`
 	PriceNote           *string                  `json:"price_note"`
@@ -318,7 +320,7 @@ func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId in
 	select distinct on (a.group_id)
 		min(a.from_date) over (partition by a.group_id) as from_date,
 		max(a.to_date) over (partition by a.group_id) as to_date,
-		a.price_then as price, m.name as merchant_name, s.name as service_name, s.price_note,
+		a.price_then as price, m.name as merchant_name, s.name as service_name, m.cancel_deadline, s.price_note,
 	a.cancelled_by_user_on is not null as cancelled_by_user,
 	a.cancelled_by_merchant_on is not null as cancelled_by_merchant,
 	l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location
@@ -331,7 +333,7 @@ func (s *service) GetPublicAppointmentInfo(ctx context.Context, appointmentId in
 
 	var data PublicAppointmentInfo
 	err := s.db.QueryRow(ctx, query, appointmentId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
-		&data.ServiceName, &data.PriceNote, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
+		&data.ServiceName, &data.CancelDeadline, &data.PriceNote, &data.CancelledByUser, &data.CancelledByMerchant, &data.ShortLocation)
 	if err != nil {
 		return PublicAppointmentInfo{}, err
 	}

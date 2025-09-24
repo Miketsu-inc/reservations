@@ -12,17 +12,18 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int,
-	bookingDay time.Time, businessHours []database.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
+func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int, BufferTime int,
+	BookingWindowMin int, bookingDay time.Time, businessHours []database.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
 
 	year, month, day := bookingDay.Date()
 	totalDuration := time.Duration(serviceDuration) * time.Minute
+	bufferDuration := time.Duration(BufferTime) * time.Minute
+	bookingDeadlineDuration := time.Duration(BookingWindowMin) * time.Minute
 
 	morning := []string{}
 	afternoon := []string{}
 
 	now := currentTime.In(merchantTz)
-	isToday := bookingDay.Format("2006-01-02") == currentTime.Format("2006-01-02")
 
 	stepSize := 15 * time.Minute
 
@@ -39,7 +40,7 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 		appStart := businessStart
 
 		for appStart.Add(totalDuration).Before(businessEnd) || appStart.Add(totalDuration).Equal(businessEnd) {
-			if isToday && appStart.Before(now) {
+			if appStart.Before(now.Add(bookingDeadlineDuration)) {
 				appStart = appStart.Add(stepSize)
 				continue
 			}
@@ -54,8 +55,8 @@ func CalculateAvailableTimes(reserved []database.AppointmentTime, servicePhases 
 				if phase.PhaseType == "active" {
 
 					for _, appt := range reserved {
-						reservedFromDate := appt.From_date.In(merchantTz)
-						reservedToDate := appt.To_date.In(merchantTz)
+						reservedFromDate := appt.From_date.In(merchantTz).Add(-bufferDuration)
+						reservedToDate := appt.To_date.In(merchantTz).Add(bufferDuration)
 
 						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
 							appStart = appStart.Add(stepSize)
@@ -101,7 +102,7 @@ type MultiDayAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int,
+func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
 	startDate time.Time, endDate time.Time, businessHours map[int][]database.TimeSlot, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}
@@ -121,7 +122,7 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.AppointmentTime,
 		day := d.Format("2006-01-02")
 		reservedForDay := reservationsByDate[day]
 
-		dayResult := CalculateAvailableTimes(reservedForDay, servicePhases, serviceDuration, d, businessHoursForDay, currentTime, merchantTz)
+		dayResult := CalculateAvailableTimes(reservedForDay, servicePhases, serviceDuration, bufferTime, bookingindowMin, d, businessHoursForDay, currentTime, merchantTz)
 
 		results = append(results, MultiDayAvailableTimes{
 			Date:      d.Format("2006-01-02"),

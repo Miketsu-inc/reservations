@@ -264,6 +264,12 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error()))
+		return
+	}
+
 	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
@@ -302,7 +308,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	availableSlots := booking.CalculateAvailableTimes(reservedTimes, service.Phases, service.TotalDuration, day, businessHours, now, merchantTz)
+	availableSlots := booking.CalculateAvailableTimes(reservedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, day, businessHours, now, merchantTz)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -714,14 +720,17 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) {
 	type MerchantFileds struct {
-		Introduction  string                      `json:"introduction"`
-		Announcement  string                      `json:"announcement"`
-		AboutUs       string                      `json:"about_us"`
-		ParkingInfo   string                      `json:"parking_info"`
-		PaymentInfo   string                      `json:"payment_info"`
-		BusinessHours map[int][]database.TimeSlot `json:"business_hours"`
+		Introduction     string                      `json:"introduction"`
+		Announcement     string                      `json:"announcement"`
+		AboutUs          string                      `json:"about_us"`
+		ParkingInfo      string                      `json:"parking_info"`
+		PaymentInfo      string                      `json:"payment_info"`
+		CancelDeadline   int                         `json:"cancel_deadline"`
+		BookingWindowMin int                         `json:"booking_window_min"`
+		BufferTime       int                         `json:"buffer_time"`
+		BusinessHours    map[int][]database.TimeSlot `json:"business_hours"`
 	}
-	var data MerchantFileds
+	var data database.MerchantSettingFields
 
 	if err := validate.ParseStruct(r, &data); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
@@ -736,7 +745,7 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data.Introduction, data.Announcement, data.AboutUs, data.PaymentInfo, data.ParkingInfo, data.BusinessHours)
+	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error()))
 		return
@@ -1052,7 +1061,7 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *Merchant) GetClosedDays(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http.Request) {
 	urlName := r.URL.Query().Get("name")
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
@@ -1061,9 +1070,32 @@ func (m *Merchant) GetClosedDays(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving booking settings by merchant id: %s", err.Error()))
+		return
+	}
+
+	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	now := time.Now().In(merchantTz)
+
+	minDate := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
+	maxDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+
 	businessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
 		return
 	}
 
@@ -1075,7 +1107,17 @@ func (m *Merchant) GetClosedDays(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	httputil.Success(w, http.StatusOK, closedDays)
+	type disabledSettings struct {
+		ClosedDays []int     `json:"closed_days"`
+		MinDate    time.Time `json:"min_date"`
+		MaxDate    time.Time `json:"max_date"`
+	}
+
+	httputil.Success(w, http.StatusOK, disabledSettings{
+		ClosedDays: closedDays,
+		MinDate:    minDate,
+		MaxDate:    maxDate,
+	})
 }
 
 func (m *Merchant) GetBusinessHours(w http.ResponseWriter, r *http.Request) {
@@ -1452,6 +1494,12 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error()))
+		return
+	}
+
 	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
@@ -1465,7 +1513,7 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	availableSlots := booking.CalculateAvailableTimesPeriod(reservedTimes, service.Phases, service.TotalDuration, startDate, endDate, businessHours, now, merchantTz)
+	availableSlots := booking.CalculateAvailableTimesPeriod(reservedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
 
 	type nextAvailable struct {
 		Date string `json:"date"`

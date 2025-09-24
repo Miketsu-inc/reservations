@@ -7,6 +7,7 @@ import { preferencesQueryOptions } from "@lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import BookingSettings from "../-components/BookingSettings";
 import BusinessHours from "../-components/BusinessHours";
 import DangerZoneItem from "../-components/DangerZoneItem";
 import ImageUploader from "../-components/ImageUploader";
@@ -76,6 +77,10 @@ const defaultMerchantInfo = {
   about_us: "",
   parking_info: "",
   payment_info: "",
+  cancel_deadline: 0,
+  booking_window_min: 0,
+  booking_window_max: 5,
+  buffer_time: 0,
   business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
 };
 
@@ -108,6 +113,10 @@ function MerchantPage() {
         about_us: loaderData.about_us,
         parking_info: loaderData.parking_info,
         payment_info: loaderData.payment_info,
+        cancel_deadline: loaderData.cancel_deadline,
+        booking_window_min: loaderData.booking_window_min,
+        booking_window_max: loaderData.booking_window_max,
+        buffer_time: loaderData.buffer_time,
         business_hours: loaderData.business_hours,
       }
     : defaultMerchantInfo;
@@ -156,6 +165,10 @@ function MerchantPage() {
           about_us: merchantInfo.about_us,
           payment_info: merchantInfo.payment_info,
           parking_info: merchantInfo.parking_info,
+          cancel_deadline: merchantInfo.cancel_deadline,
+          booking_window_min: merchantInfo.booking_window_min,
+          booking_window_max: merchantInfo.booking_window_max,
+          buffer_time: merchantInfo.buffer_time,
           business_hours: merchantInfo.business_hours,
         }),
       });
@@ -238,7 +251,6 @@ function MerchantPage() {
           inputData={handleInputData}
         />
 
-        <div className="my-2 font-semibold">Currency</div>
         <div className="my-2 flex flex-col gap-3">
           <div className="font-semibold">Business hours</div>
           <p className="text-text_color/70">
@@ -258,8 +270,16 @@ function MerchantPage() {
           />
           {errorMessage && <span className="text-red-500">{errorMessage}</span>}
         </div>
-
-        <div className="flex flex-col gap-3">
+        <BookingSettings
+          settings={{
+            booking_window_max: merchantInfo.booking_window_max,
+            booking_window_min: merchantInfo.booking_window_min,
+            cancel_deadline: merchantInfo.cancel_deadline,
+            buffer_time: merchantInfo.buffer_time,
+          }}
+          onChange={handleInputData}
+        />
+        <div className="mt-10 flex flex-col gap-3">
           <span className="text-text_color/70 text-sm md:w-2/3">
             All of the fields on this page are optional and can be deleted at
             any time, and by filling them out, you're giving us consent to share

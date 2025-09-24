@@ -44,9 +44,9 @@ function availableTimesQueryOptions(merchantName, locationId, serviceId, day) {
   });
 }
 
-async function fetchClosedDays(merchantName) {
+async function fetchDisabledSettings(merchantName) {
   const response = await fetch(
-    `/api/v1/merchants/business-hours/closed?name=${merchantName}`,
+    `/api/v1/merchants/disabled-settings?name=${merchantName}`,
     {
       method: "GET",
       headers: {
@@ -65,10 +65,10 @@ async function fetchClosedDays(merchantName) {
   }
 }
 
-function closedDaysQueryOptions(merchantName) {
+function disabledSettingsQueryOptions(merchantName) {
   return queryOptions({
-    queryKey: ["closed-days", merchantName],
-    queryFn: () => fetchClosedDays(merchantName),
+    queryKey: ["disabled-settings", merchantName],
+    queryFn: () => fetchDisabledSettings(merchantName),
   });
 }
 
@@ -87,7 +87,9 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
     await queryClient.ensureQueryData(
       availableTimesQueryOptions(merchantName, locationId, serviceId, day)
     );
-    await queryClient.ensureQueryData(closedDaysQueryOptions(merchantName));
+    await queryClient.ensureQueryData(
+      disabledSettingsQueryOptions(merchantName)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -114,18 +116,18 @@ function SelectDateTime() {
   });
 
   const {
-    data: closedDays,
-    isLoading: cdIsLoading,
-    isError: cdIsError,
-    error: cdError,
-  } = useQuery(closedDaysQueryOptions(merchantName));
+    data: disabledSettings,
+    isLoading: dsIsLoading,
+    isError: dsIsError,
+    error: dsError,
+  } = useQuery(disabledSettingsQueryOptions(merchantName));
 
-  if (atIsLoading || cdIsLoading) {
+  if (atIsLoading || dsIsLoading) {
     return <Loading />;
   }
 
-  if (atIsError || cdIsError) {
-    const error = atError || cdError;
+  if (atIsError || dsIsError) {
+    const error = atError || dsError;
     return <ServerError error={error} />;
   }
 
@@ -214,7 +216,11 @@ function SelectDateTime() {
                 <SmallCalendar
                   value={day}
                   onSelect={dayChangeHandler}
-                  disabled={[{ dayOfWeek: closedDays }, { before: new Date() }]}
+                  disabled={[
+                    { dayOfWeek: disabledSettings.closed_days },
+                    { before: disabledSettings.min_date },
+                    { after: disabledSettings.max_date },
+                  ]}
                   disabledTodayStyling={true}
                 />
               </div>

@@ -45,6 +45,24 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bookingSettings, err := a.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant %s", err.Error()))
+		return
+	}
+
+	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantTz, err := time.LoadLocation(timezone)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
+		return
+	}
+
 	service, err := a.Postgresdb.GetServiceWithPhasesById(r.Context(), newApp.ServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
@@ -72,6 +90,18 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	timeStamp, err := time.Parse(time.RFC3339, newApp.TimeStamp)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	now := time.Now().In(merchantTz)
+
+	if timeStamp.Before(now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("appointment must be booked at least %d minutes in advance", bookingSettings.BookingWindowMin))
+		return
+	}
+
+	if timeStamp.After(now.AddDate(0, bookingSettings.BookingWindowMax, 0)) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("appointment cannot be booked more than %d months in advance", bookingSettings.BookingWindowMax))
 		return
 	}
 
@@ -135,18 +165,6 @@ func (a *Appointment) Create(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := a.Postgresdb.GetUserById(r.Context(), userID)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not get email for the user: %s", err.Error()))
-		return
-	}
-
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -485,6 +503,20 @@ func (a *Appointment) CancelAppointmentByUser(w http.ResponseWriter, r *http.Req
 	customerId, err := a.Postgresdb.GetCustomerIdByUserIdAndMerchantId(r.Context(), merchantId, userId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer id: %s", err.Error()))
+	}
+
+	//TODO: write seperate query for getting only fromDate and cancel deadline
+	emailData, err := a.Postgresdb.GetAppointmentDataForEmail(r.Context(), appId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
+		return
+	}
+
+	latestCancelTime := emailData.FromDate.Add(-time.Duration(emailData.CancelDeadline) * time.Minute)
+
+	if time.Now().After(latestCancelTime) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("it's too late to cancel this appointments"))
+		return
 	}
 
 	emailId, err := a.Postgresdb.CancelAppointmentByUser(r.Context(), customerId, appId)
