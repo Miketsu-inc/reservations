@@ -719,17 +719,6 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) {
-	type MerchantFileds struct {
-		Introduction     string                      `json:"introduction"`
-		Announcement     string                      `json:"announcement"`
-		AboutUs          string                      `json:"about_us"`
-		ParkingInfo      string                      `json:"parking_info"`
-		PaymentInfo      string                      `json:"payment_info"`
-		CancelDeadline   int                         `json:"cancel_deadline"`
-		BookingWindowMin int                         `json:"booking_window_min"`
-		BufferTime       int                         `json:"buffer_time"`
-		BusinessHours    map[int][]database.TimeSlot `json:"business_hours"`
-	}
 	var data database.MerchantSettingFields
 
 	if err := validate.ParseStruct(r, &data); err != nil {
