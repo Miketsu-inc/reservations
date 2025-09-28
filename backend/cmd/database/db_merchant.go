@@ -604,10 +604,11 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
         (bd.total_price).number as price,
 		(bd.total_price).currency as currency,
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
-		(status in ('no-show')) as cancelled_by_user,
-        (status in ('cancelled')) as cancelled
-    FROM "Booking"
+		(bp.status in ('cancelled')) as cancelled_by_user,
+        (b.status in ('cancelled')) as cancelled
+    FROM "Booking" b
 	join "BookingDetails" bd on booking_details_id = bd.id
+	join "BookingParticipant" bp on bp.booking_id = group_id
     WHERE merchant_id = $1
 	order by group_id
 	),
