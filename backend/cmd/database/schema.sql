@@ -9,6 +9,8 @@ create type price as (
 );
 
 create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
+create type booking_type as ENUM ('appointment', 'event', 'class');
+create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -52,15 +54,18 @@ create table if not exists "Service" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) not null,
     category_id              integer         references "ServiceCategory" (ID) on delete set null,
+    booking_type             booking_type    not null,
     name                     varchar(30)     not null,
     description              varchar(200),
     color                    char(7)         not null,
     total_duration           integer         not null,
-    price                    price,
+    price_per_person         price,
+    cost_per_person          price,
     price_note               varchar(30),
-    cost                     price,
     is_active                boolean         not null,
     sequence                 integer         not null default 0,
+    min_participants         integer         not null,
+    max_participants         integer         not null,
     deleted_on               timestamptz
 );
 
@@ -100,25 +105,46 @@ create table if not exists "Customer" (
     constraint unique_merchant_user unique (merchant_id, user_id)
 );
 
+create table if not exists "BookingDetails" (
+    ID                       serial           primary key unique not null,
+    price_per_person         price            not null,
+    cost_per_person          price            not null,
+    total_price              price            not null,
+    total_cost               price            not null,
+    merchant_note            text,
+    min_participants         integer          not null,
+    max_participants         integer          not null,
+    current_participants     integer          not null,
+    email_id                 uuid,
+    cancelled_by_merchant_on timestamptz,
+    cancellation_reason      text
+);
+
 create table if not exists "Booking" (
     ID                       serial          primary key unique not null,
-    customer_id              uuid            references "Customer" (ID) not null,
+    group_id                 integer         not null,
+    status                   booking_status  not null default 'booked',
+    booking_type             booking_type    not null,
+    booking_details_id       integer         references "BookingDetails" (ID) on delete cascade not null, -- delete all bookings that reference the deleted BookingDetails id
     merchant_id              uuid            references "Merchant" (ID) not null,
     service_id               integer         references "Service" (ID) not null,
     service_phase_id         integer         references "ServicePhase" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
-    group_id                 integer         not null,
     from_date                timestamptz     not null,
-    to_date                  timestamptz     not null,
+    to_date                  timestamptz     not null
+);
+
+create table if not exists "BookingParticipant" (
+    ID                       serial           primary key unique not null,
+    status                   booking_status   not null default 'booked',
+    booking_id               integer          references "Booking" (ID) not null,
+    customer_id              uuid             references "Customer" (ID) not null,
     customer_note            text,
-    merchant_note            text,
-    price_then               price           not null,
-    cost_then                price           not null,
-    cancelled_by_user_on     timestamptz,
-    cancelled_by_merchant_on timestamptz,
+    cancelled_on             timestamptz,
     cancellation_reason      text,
     transferred_to           uuid,
-    email_id                 uuid
+
+    constraint unique_booking_participant unique (booking_id, customer_id)
 );
 
 create table if not exists "Preferences" (

@@ -164,6 +164,9 @@ func (s *service) NewCustomer(ctx context.Context, merchantId uuid.UUID, custome
 	return nil
 }
 
+// TODO: we should ask if they want to delete their booking history as well or not
+// also letting them delete customers who are user's by just deleting their bookings
+// we should also decide what to do with deleted class/event participants
 func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -172,20 +175,48 @@ func (s *service) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, 
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
+	// on cascade will delete bookings associated with the BookingDetails ids
 	deleteBookingsQuery := `
-	delete from "Booking" where customer_id = $1 and merchant_id = $2`
+	delete from "BookingDetails" bd
+	using "Booking" b, "BookingParticipant" bp
+	where b.booking_details_id = bd.id and bp.booking_id = b.group_id and bp.customer_id = $1 and b.merchant_id = $2 and b.booking_type = 'appointment'
+	`
 
 	_, err = tx.Exec(ctx, deleteBookingsQuery, customerId, merchantId)
 	if err != nil {
 		return err
 	}
 
-	deleteCcustomerQuery := `
+	updateParticipantCountQuery := `
+	update "BookingDetails" bd
+	set current_participants = current_participants - 1
+	from "Booking" b
+	left join "BookingParticipant" bp on b.group_id = bp.booking_id and bp.customer_id = $1
+	where b.booking_details_id = bd.id and b.merchant_id = $2 and b.booking_type in ('event', 'class')
+	`
+
+	_, err = tx.Exec(ctx, updateParticipantCountQuery, customerId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	deleteBookingParticipantQuery := `
+	delete from "BookingParticipant" bp
+	using "Booking" b
+	where bp.booking_id = b.group_id and bp.customer_id = $1 and b.merchant_id = $2
+	`
+
+	_, err = tx.Exec(ctx, deleteBookingParticipantQuery, customerId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	deleteCustomerQuery := `
 	delete from "Customer"
 	where user_id is null and id = $1 and merchant_id = $2
 	`
 
-	_, err = tx.Exec(ctx, deleteCcustomerQuery, customerId, merchantId)
+	_, err = tx.Exec(ctx, deleteCustomerQuery, customerId, merchantId)
 	if err != nil {
 		return err
 	}
@@ -302,18 +333,21 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 					'from_date', b.from_date,
 					'to_date', b.to_date,
 					'service_name', s.name,
-					'price', b.price_then,
+					'price', b.cost_per_person,
 					'price_note', s.price_note,
 					'merchant_name', m.name,
 					'short_location', l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country,
-					'cancelled_by_user', b.cancelled_by_user_on IS NOT NULL,
+					'cancelled_by_user', b.status in ('cancelled'),
 					'cancelled_by_merchant', b.cancelled_by_merchant_on IS NOT NULL
 				) order by b.from_date desc
 			) as bookings
 		from (
-			select distinct on (b.group_id) b.customer_id, b.group_id, min(b.from_date) over (partition by b.group_id) as from_date,
-			max(b.to_date) over (partition by b.group_id) as to_date, b.merchant_id, b.location_id, b.service_id, b.price_then, b.cancelled_by_user_on, b.cancelled_by_merchant_on
-			from "Booking" b where b.merchant_id = $1 and (customer_id = $2 or b.transferred_to = $2)
+			select distinct on (b.group_id) bp.customer_id, b.group_id, min(b.from_date) over (partition by b.group_id) as from_date,
+			max(b.to_date) over (partition by b.group_id) as to_date, b.merchant_id, b.location_id, b.service_id, bd.cost_per_person, bp.status, bd.cancelled_by_merchant_on
+			from "Booking" b
+			join "BookingParticipant" bp on bp.booking_id = b.group_id
+			join "BookingDetails" bd on b.booking_details_id = bd.id
+			where b.merchant_id = $1 and (bp.customer_id = $2 or bp.transferred_to = $2)
 		) b
 		join "Service" s on s.id = b.service_id
 		join "Merchant" m on m.id = b.merchant_id
@@ -321,14 +355,16 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 		group by b.customer_id
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-	count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled_by_user,
-	count(distinct case when b.cancelled_by_merchant_on is not null then b.group_id end) as times_cancelled_by_merchant,
-	count(distinct case when b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null and b.from_date >= now() then b.group_id end) as times_upcoming,
-	coalesce(ca.bookings, '[]'::jsonb) as bookings
+		coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
+		count(distinct b.group_id) as times_booked, count(distinct case when bp.status in ('cancelled') then b.group_id end) as times_cancelled_by_user,
+		count(distinct case when bd.cancelled_by_merchant_on is not null then b.group_id end) as times_cancelled_by_merchant,
+		count(distinct case when bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date >= now() then b.group_id end) as times_upcoming,
+		coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
-	left join "Booking" b on c.id = b.customer_id and b.merchant_id = $1
+	join "BookingParticipant" bp on bp.customer_id = c.id
+	left join "Booking" b on bp.booking_id = b.group_id and b.merchant_id = $1
+	join "BookingDetails" bd on b.booking_details_id = bd.id
 	left join bookings ca on c.id = ca.customer_id
 	where c.id = $2 and c.merchant_id = $1
 	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.bookings

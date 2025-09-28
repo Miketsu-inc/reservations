@@ -161,21 +161,22 @@ type PublicCustomer struct {
 	TimesCancelled  int     `json:"times_cancelled" db:"times_cancelled"`
 }
 
-func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
+func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error) {
 	query := `
 	select c.id,
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled
+		count(distinct b.group_id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "Booking" b on (c.id = b.customer_id or b.transferred_to = c.id) and b.merchant_id = $1
-	where c.merchant_id = $1 and c.is_blacklisted is false
+	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	left join "Booking" b on bp.booking_id = b.group_id and b.merchant_id = $1
+	where c.merchant_id = $1 and c.is_blacklisted = $2
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
 
-	rows, _ := s.db.Query(ctx, query, merchantId)
+	rows, _ := s.db.Query(ctx, query, merchantId, isBlacklisted)
 	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicCustomer])
 	if err != nil {
 		return []PublicCustomer{}, err
@@ -183,33 +184,6 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 
 	// if customers array is empty the encoded json field will be null
 	// unless an empty slice is supplied to it
-	if len(customers) == 0 {
-		customers = []PublicCustomer{}
-	}
-
-	return customers, nil
-}
-
-func (s *service) GetBlacklistedCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]PublicCustomer, error) {
-	query := `
-	select c.id,
-		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,  c.birthday, c.note,
-		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(distinct b.group_id) as times_booked, count(distinct case when b.cancelled_by_user_on is not null then b.group_id end) as times_cancelled
-	from "Customer" c
-	left join "User" u on c.user_id = u.id
-	left join "Booking" b on (c.id = b.customer_id or b.transferred_to = c.id) and b.merchant_id = $1
-	where c.merchant_id = $1 and c.is_blacklisted is true
-	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
-	`
-
-	rows, _ := s.db.Query(ctx, query, merchantId)
-	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicCustomer])
-	if err != nil {
-		return customers, nil
-	}
-
 	if len(customers) == 0 {
 		customers = []PublicCustomer{}
 	}
@@ -508,12 +482,12 @@ type LowStockProduct struct {
 }
 
 type DashboardData struct {
-	PeriodStart      time.Time           `json:"period_start"`
-	PeriodEnd        time.Time           `json:"period_end"`
-	UpcomingBookings []BookingDetails    `json:"upcoming_bookings"`
-	LatestBookings   []BookingDetails    `json:"latest_bookings"`
-	LowStockProducts []LowStockProduct   `json:"low_stock_products"`
-	Statistics       DashboardStatistics `json:"statistics"`
+	PeriodStart      time.Time              `json:"period_start"`
+	PeriodEnd        time.Time              `json:"period_end"`
+	UpcomingBookings []PublicBookingDetails `json:"upcoming_bookings"`
+	LatestBookings   []PublicBookingDetails `json:"latest_bookings"`
+	LowStockProducts []LowStockProduct      `json:"low_stock_products"`
+	Statistics       DashboardStatistics    `json:"statistics"`
 }
 
 func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, date time.Time, period int) (DashboardData, error) {
@@ -526,22 +500,24 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	select distinct on (b.group_id) b.id, b.group_id,
 		min(b.from_date) over (partition by b.group_id) as from_date,
 		max(b.to_date) over (partition by b.group_id) as to_date,
-		b.customer_note, b.merchant_note, b.price_then as price, b.cost_then as cost, s.name as service_name,
+		bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "Customer" c on b.customer_id = c.id
+	join "BookingDetails" bd on b.booking_details_id = bd.id
+	join "BookingParticipant" bp on bp.booking_id = b.group_id
+	join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
-	where b.merchant_id = $1 and b.from_date >= $2 AND b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null
+	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
 	order by b.group_id, b.from_date
 	limit 5`
 
 	var err error
 	rows, _ := s.db.Query(ctx, query, merchantId, utcDate)
-	dd.UpcomingBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[BookingDetails])
+	dd.UpcomingBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[PublicBookingDetails])
 	if err != nil {
 		return DashboardData{}, err
 	}
@@ -551,21 +527,23 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	select distinct on (b.group_id) b.id, b.group_id,
 		min(b.from_date) over (partition by b.group_id) as from_date,
 		max(b.to_date) over (partition by b.group_id) as to_date,
-		b.customer_note, b.merchant_note, b.price_then as price, b.cost_then as cost, s.name as service_name,
+		bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "Customer" c on b.customer_id = c.id
+	join "BookingDetails" bd on b.booking_details_id = bd.id
+	join "BookingParticipant" bp on bp.booking_id = b.group_id
+	join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
-	where b.merchant_id = $1 and b.from_date >= $2 AND b.cancelled_by_user_on is null and b.cancelled_by_merchant_on is null
+	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
 	order by b.group_id, b.id desc
 	limit 5`
 
 	rows, _ = s.db.Query(ctx, query2, merchantId, utcDate)
-	dd.LatestBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[BookingDetails])
+	dd.LatestBookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[PublicBookingDetails])
 	if err != nil {
 		return DashboardData{}, err
 	}
@@ -623,14 +601,15 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
     SELECT
 		distinct on (group_id)
         to_date,
-        (price_then).number as price,
-		(price_then).currency as currency,
+        (bd.total_price).number as price,
+		(bd.total_price).currency as currency,
         EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
-        cancelled_by_user_on is not null as cancelled_by_user,
-        (cancelled_by_user_on is not null or cancelled_by_merchant_on is not null) as cancelled
-    FROM "Booking" b
+		(status in ('no-show')) as cancelled_by_user,
+        (status in ('cancelled')) as cancelled
+    FROM "Booking"
+	join "BookingDetails" bd on booking_details_id = bd.id
     WHERE merchant_id = $1
-	order by group_id, id
+	order by group_id
 	),
 	current AS (
 		SELECT
@@ -722,17 +701,18 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	stats.CancellationsChange = utils.CalculatePercentChange(prevCancellations, currCancellations) * -1
 	stats.AverageDurationChange = utils.CalculatePercentChange(prevAvgDuration, currAvgDuration)
 
+	// TODO: in the future only completed bookings should count towards revenue
 	query2 := `
 	SELECT
-		DATE(from_date) AS day,
-		COALESCE(SUM(price), 0) AS value
+		DATE(bookings.from_date) AS day,
+		COALESCE(SUM(bookings.price), 0) AS value
 	FROM (
-		select distinct on (group_id) from_date, (price_then).number as price
-		from "Booking"
-		WHERE merchant_id = $1 AND from_date >= $2 AND from_date < $3
-		AND cancelled_by_user_on IS NULL AND cancelled_by_merchant_on IS NULL
-		order by group_id
-	)
+		select distinct on (b.group_id) b.from_date, (bd.total_price).number as price
+		from "Booking" b
+		join "BookingDetails" bd on b.booking_details_id = bd.id
+		where b.merchant_id = $1 AND b.from_date >= $2 AND b.from_date < $3 and b.status not in ('cancelled')
+		order by b.group_id
+	) as bookings
 	GROUP BY day
 	ORDER BY day
 	`

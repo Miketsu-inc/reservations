@@ -9,6 +9,7 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
@@ -23,23 +24,23 @@ type Booking struct {
 }
 
 func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
-	type NewBooking struct {
+	type BookingData struct {
 		MerchantName string `json:"merchant_name" validate:"required"`
 		ServiceId    int    `json:"service_id" validate:"required"`
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
 		CustomerNote string `json:"customer_note"`
 	}
-	var newBook NewBooking
+	var bookData BookingData
 
-	if err := validate.ParseStruct(r, &newBook); err != nil {
+	if err := validate.ParseStruct(r, &bookData); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
 	userID := jwt.UserIDFromContext(r.Context())
 
-	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), newBook.MerchantName)
+	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), bookData.MerchantName)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching merchant by this name: %s", err.Error()))
 		return
@@ -63,7 +64,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, err := a.Postgresdb.GetServiceWithPhasesById(r.Context(), newBook.ServiceId, merchantId)
+	service, err := a.Postgresdb.GetServiceWithPhasesById(r.Context(), bookData.ServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
 		return
@@ -74,7 +75,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location, err := a.Postgresdb.GetLocationById(r.Context(), newBook.LocationId)
+	location, err := a.Postgresdb.GetLocationById(r.Context(), bookData.LocationId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
 		return
@@ -87,7 +88,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
 
-	timeStamp, err := time.Parse(time.RFC3339, newBook.TimeStamp)
+	timeStamp, err := time.Parse(time.RFC3339, bookData.TimeStamp)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to time: %s", err.Error()))
 		return
@@ -116,7 +117,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 	// prevent null booking price and cost to avoid a lot of headaches
 	var price currencyx.Price
 	var cost currencyx.Price
-	if service.Price == nil || service.Cost == nil {
+	if service.PricePerPerson == nil || service.CostPerPerson == nil {
 		curr, err := a.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
@@ -128,35 +129,37 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new amount: %s", err.Error()))
 		}
 
-		if service.Price != nil {
-			price = *service.Price
+		if service.PricePerPerson != nil {
+			price = *service.PricePerPerson
 		} else {
 			price = currencyx.Price{Amount: zeroAmount}
 		}
 
-		if service.Cost != nil {
-			cost = *service.Cost
+		if service.CostPerPerson != nil {
+			cost = *service.CostPerPerson
 		} else {
 			cost = currencyx.Price{Amount: zeroAmount}
 		}
 	} else {
-		price = *service.Price
-		cost = *service.Cost
+		price = *service.PricePerPerson
+		cost = *service.CostPerPerson
 	}
 
-	bookingId, err := a.Postgresdb.NewBooking(r.Context(), database.Booking{
-		Id:           0,
-		MerchantId:   merchantId,
-		ServiceId:    newBook.ServiceId,
-		LocationId:   newBook.LocationId,
-		GroupId:      0,
-		FromDate:     timeStamp,
-		ToDate:       toDate,
-		CustomerNote: newBook.CustomerNote,
-		MerchantNote: "",
-		PriceThen:    price,
-		CostThen:     cost,
-	}, service.Phases, userID, customerId)
+	bookingId, err := a.Postgresdb.NewBooking(r.Context(), database.NewBooking{
+		Status:         booking.Booked,
+		BookingType:    booking.Appointment,
+		MerchantId:     merchantId,
+		ServiceId:      bookData.ServiceId,
+		LocationId:     bookData.LocationId,
+		FromDate:       timeStamp,
+		ToDate:         toDate,
+		CustomerNote:   &bookData.CustomerNote,
+		PricePerPerson: price,
+		CostPerPerson:  cost,
+		UserId:         userID,
+		CustomerId:     customerId,
+		Phases:         service.Phases,
+	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new booking: %s", err.Error()))
 		return
@@ -177,7 +180,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		Location:    location.PostalCode + " " + location.City + " " + location.Address,
 		ServiceName: service.Name,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  "http://localhost:5173/m/" + newBook.MerchantName + "/cancel/" + strconv.Itoa(bookingId),
+		ModifyLink:  "http://localhost:5173/m/" + bookData.MerchantName + "/cancel/" + strconv.Itoa(bookingId),
 	}
 
 	lang := lang.LangFromContext(r.Context())

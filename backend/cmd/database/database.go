@@ -29,9 +29,9 @@ type PostgreSQL interface {
 	// -- Booking --
 
 	// Insert a new Booking to the database.
-	NewBooking(context.Context, Booking, []PublicServicePhase, uuid.UUID, uuid.UUID) (int, error)
+	NewBooking(context.Context, NewBooking) (int, error)
 	// Get all Bookings assigned to a Merchant.
-	GetBookingsByMerchant(context.Context, uuid.UUID, string, string) ([]BookingDetails, error)
+	GetBookingsByMerchant(context.Context, uuid.UUID, string, string) ([]PublicBookingDetails, error)
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]BookingTime, error)
 	// Get all reserved times for reservations in a given period
@@ -153,9 +153,7 @@ type PostgreSQL interface {
 	// -- Customer --
 
 	// Get all customers for a mechant by it's id
-	GetCustomersByMerchantId(context.Context, uuid.UUID) ([]PublicCustomer, error)
-	// Get all blacklisted customers for a merchant by it's id
-	GetBlacklistedCustomersByMerchantId(context.Context, uuid.UUID) ([]PublicCustomer, error)
+	GetCustomersByMerchantId(context.Context, uuid.UUID, bool) ([]PublicCustomer, error)
 	// Insert a new customer to the database
 	NewCustomer(context.Context, uuid.UUID, Customer) error
 	// Delete customer by it's id
