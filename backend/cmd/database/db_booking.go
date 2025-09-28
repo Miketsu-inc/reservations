@@ -200,7 +200,7 @@ func (s *service) UpdateBookingData(ctx context.Context, merchantId uuid.UUID, b
 		return err
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 type PublicBookingDetails struct {
@@ -315,7 +315,7 @@ func (s *service) CancelBookingByMerchant(ctx context.Context, merchantId uuid.U
 	update "BookingDetails" bd
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
 	from "Booking" b
-	where b.group_id = $4 and b.group_id = bd.booking_details_id and b.merchant_id = $3 and b.status not in ('cancelled', 'completed') and b.from_date > $1
+	where b.group_id = $4 and b.booking_details_id = bd.id and b.merchant_id = $3 and b.status not in ('cancelled', 'completed') and b.from_date > $1
 	`
 
 	_, err = tx.Exec(ctx, bookingDetailsQuery, time.Now().UTC(), cancellationReason, merchantId, bookingId)
@@ -334,7 +334,7 @@ func (s *service) CancelBookingByMerchant(ctx context.Context, merchantId uuid.U
 		return err
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *service) CancelBookingByUser(ctx context.Context, customerId uuid.UUID, bookingId int) (uuid.UUID, error) {
@@ -381,6 +381,11 @@ func (s *service) CancelBookingByUser(ctx context.Context, customerId uuid.UUID,
 	`
 
 	_, err = tx.Exec(ctx, bookingQuery, bookingId, cancellationTime)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	err = tx.Commit(ctx)
 	if err != nil {
 		return uuid.Nil, err
 	}

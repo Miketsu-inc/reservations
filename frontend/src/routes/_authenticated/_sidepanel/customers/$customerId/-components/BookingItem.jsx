@@ -17,18 +17,11 @@ export default function BookingItem({ booking, customerName }) {
   const toDate = new Date(booking.to_date);
   const { data: preferences } = useQuery(preferencesQueryOptions());
 
-  const isCancelled =
-    booking.cancelled_by_user || booking.cancelled_by_merchant;
-
   let statusLabel = "Completed";
   let statusStyle = "bg-green-600/20 text-green-600";
 
-  if (isCancelled) {
-    if (booking.cancelled_by_user) {
-      statusLabel = `Cancelled by ${customerName}`;
-    } else if (booking.cancelled_by_merchant) {
-      statusLabel = "Cancelled by You";
-    }
+  if (booking.is_cancelled) {
+    statusLabel = `Cancelled by ${customerName}`;
     statusStyle = "bg-red-600/20 text-red-600";
   } else if (toDate > now) {
     statusLabel = "Upcoming";

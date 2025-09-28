@@ -5,12 +5,13 @@ import BookingDonutChart from "./BookingDonutChart";
 export default function CustomerStats({ customer }) {
   const completed =
     customer.times_booked -
-    (customer.times_upcoming +
-      customer.times_cancelled_by_user +
-      customer.times_cancelled_by_merchant);
+    (customer.times_upcoming + customer.times_cancelled_by_user);
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start sm:gap-0">
+    <div
+      className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start
+        sm:gap-0"
+    >
       {customer.times_booked !== 0 && (
         <div className="flex h-[180px] w-full justify-center sm:ml-10 sm:w-1/3">
           <BookingDonutChart
@@ -21,7 +22,8 @@ export default function CustomerStats({ customer }) {
         </div>
       )}
       <div
-        className={`flex w-full flex-col justify-center gap-2 ${customer.times_booked !== 0 ? "sm:w-2/3" : "mt-2"}`}
+        className={`flex w-full flex-col justify-center gap-2
+          ${customer.times_booked !== 0 ? "sm:w-2/3" : "mt-2"}`}
       >
         <div className="text-text_color flex items-center justify-center gap-4">
           <span className="text-lg font-bold">Total Bookings:</span>
@@ -57,7 +59,8 @@ function StatElement({ children, value, color, label }) {
   return (
     <div className="text-center">
       <div
-        className={`flex items-center justify-center gap-2 text-2xl font-bold text-${color}`}
+        className={`flex items-center justify-center gap-2 text-2xl font-bold
+          text-${color}`}
       >
         {children}
         {value}

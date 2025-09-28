@@ -114,9 +114,7 @@ function CustomerDetailsPage() {
   const completedBookings = queryResults[0].data.bookings
     .filter((booking) => {
       const toDate = new Date(booking.to_date);
-      const wasCancelled =
-        booking.cancelled_by_user || booking.cancelled_by_merchant;
-      return toDate < now && !wasCancelled;
+      return toDate < now && !booking.is_cancelled;
     })
     .sort((a, b) => new Date(b.to_date) - new Date(a.to_date));
 
