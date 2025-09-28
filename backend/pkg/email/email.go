@@ -21,8 +21,6 @@ import (
 )
 
 var templates *template.Template
-var cfg *config.Config = config.LoadEnvVars()
-
 var bundle *i18n.Bundle
 
 func init() {
@@ -95,11 +93,11 @@ func getSubject(templateName string, lang language.Tag) string {
 }
 
 func send(ctx context.Context, to string, body string, subjectText string) error {
-	if !cfg.ENABLE_EMAILS {
+	if !config.LoadEnvVars().ENABLE_EMAILS {
 		return nil
 	}
 
-	client := resend.NewClient(cfg.RESEND_API_TEST)
+	client := resend.NewClient(config.LoadEnvVars().RESEND_API_TEST)
 
 	//todo: sending from our own domain, replace resend test email with address parameter of the function
 	params := &resend.SendEmailRequest{
@@ -118,11 +116,11 @@ func send(ctx context.Context, to string, body string, subjectText string) error
 }
 
 func schedule(ctx context.Context, to string, body string, subjectText string, date string) (string, error) {
-	if !cfg.ENABLE_EMAILS {
+	if !config.LoadEnvVars().ENABLE_EMAILS {
 		return "", nil
 	}
 
-	client := resend.NewClient(cfg.RESEND_API_TEST)
+	client := resend.NewClient(config.LoadEnvVars().RESEND_API_TEST)
 
 	params := &resend.SendEmailRequest{
 		From:        "Acme <onboarding@resend.dev>",
@@ -141,11 +139,11 @@ func schedule(ctx context.Context, to string, body string, subjectText string, d
 }
 
 func Cancel(emailId string) error {
-	if !cfg.ENABLE_EMAILS {
+	if !config.LoadEnvVars().ENABLE_EMAILS {
 		return nil
 	}
 
-	client := resend.NewClient(cfg.RESEND_API_TEST)
+	client := resend.NewClient(config.LoadEnvVars().RESEND_API_TEST)
 
 	_, err := client.Emails.Cancel(emailId)
 	if err != nil {
@@ -155,11 +153,11 @@ func Cancel(emailId string) error {
 }
 
 func ReSchedule(emailId string, newDate string) error {
-	if !cfg.ENABLE_EMAILS {
+	if !config.LoadEnvVars().ENABLE_EMAILS {
 		return nil
 	}
 
-	client := resend.NewClient(cfg.RESEND_API_TEST)
+	client := resend.NewClient(config.LoadEnvVars().RESEND_API_TEST)
 
 	updateParams := &resend.UpdateEmailRequest{
 		Id:          emailId,

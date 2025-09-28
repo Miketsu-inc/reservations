@@ -131,15 +131,13 @@ func New(secret []byte, claims jwtlib.MapClaims) (string, error) {
 	return tokenString, nil
 }
 
-var cfg *config.Config = config.LoadEnvVars()
-
 // Create a new access token and set it in cookies
 func NewAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
-	expMin := cfg.JWT_ACCESS_EXP_MIN
+	expMin := config.LoadEnvVars().JWT_ACCESS_EXP_MIN
 
 	expMinDuration := time.Minute * time.Duration(expMin)
 
-	token, err := New([]byte(cfg.JWT_ACCESS_SECRET), jwtlib.MapClaims{
+	token, err := New([]byte(config.LoadEnvVars().JWT_ACCESS_SECRET), jwtlib.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(expMinDuration).Unix(),
 	})
@@ -165,11 +163,11 @@ func NewAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
 
 // Create a new refresh token and set it in cookies
 func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, refreshVersion int) error {
-	expMin := cfg.JWT_REFRESH_EXP_MIN
+	expMin := config.LoadEnvVars().JWT_REFRESH_EXP_MIN
 
 	expMinDuration := time.Minute * time.Duration(expMin)
 
-	token, err := New([]byte(cfg.JWT_REFRESH_SECRET), jwtlib.MapClaims{
+	token, err := New([]byte(config.LoadEnvVars().JWT_REFRESH_SECRET), jwtlib.MapClaims{
 		"sub":             userID,
 		"exp":             time.Now().Add(expMinDuration).Unix(),
 		"refresh_version": refreshVersion,
@@ -259,9 +257,9 @@ func verifyToken(tokenString string, tokenType JwtType) (jwtlib.MapClaims, error
 	token, err := jwtlib.ParseWithClaims(tokenString, jwtlib.MapClaims{}, func(token *jwtlib.Token) (interface{}, error) {
 		switch tokenType {
 		case AccessToken:
-			return []byte(cfg.JWT_ACCESS_SECRET), nil
+			return []byte(config.LoadEnvVars().JWT_ACCESS_SECRET), nil
 		case RefreshToken:
-			return []byte(cfg.JWT_REFRESH_SECRET), nil
+			return []byte(config.LoadEnvVars().JWT_REFRESH_SECRET), nil
 		default:
 			assert.Never("Jwt token type can be either refresh or access", tokenType)
 			return "", fmt.Errorf("Jwt token type can be either refresh or access")
