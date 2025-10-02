@@ -153,7 +153,7 @@ func (m *Merchant) InfoByName(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(UrlName))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
@@ -390,7 +390,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
@@ -402,7 +402,7 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 
 	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service: %s", err.Error()))
 		return
 	}
 
@@ -448,13 +448,13 @@ func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving services for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving services for merchant: %s", err.Error()))
 		return
 	}
 
@@ -479,13 +479,13 @@ func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	service, err := m.Postgresdb.GetAllServicePageData(r.Context(), serviceId, merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service for merchant: %s", err.Error()))
 		return
 	}
 
@@ -497,13 +497,13 @@ func (m *Merchant) GetServiceFormOptions(w http.ResponseWriter, r *http.Request)
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	formOptions, err := m.Postgresdb.GetServicePageFormOptions(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service form options for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service form options for merchant: %s", err.Error()))
 		return
 	}
 
@@ -528,7 +528,7 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -573,7 +573,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -615,7 +615,7 @@ func (m *Merchant) DeactivateService(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -639,7 +639,7 @@ func (m *Merchant) ActivateService(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -668,7 +668,7 @@ func (m *Merchant) ReorderServices(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -684,13 +684,13 @@ func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId, false)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving customers for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error()))
 		return
 	}
 
@@ -702,13 +702,13 @@ func (m *Merchant) GetBlacklistedCustomers(w http.ResponseWriter, r *http.Reques
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId, true)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving blacklisted customers for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving blacklisted customers for merchant: %s", err.Error()))
 		return
 	}
 
@@ -741,7 +741,7 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -779,7 +779,7 @@ func (m *Merchant) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -829,7 +829,7 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -860,7 +860,7 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -876,7 +876,7 @@ func (m *Merchant) GetPreferences(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -901,7 +901,7 @@ func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -933,7 +933,7 @@ func (m *Merchant) TransferCustomerBookings(w http.ResponseWriter, r *http.Reque
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -979,7 +979,7 @@ func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1008,7 +1008,7 @@ func (m *Merchant) UnBlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1078,13 +1078,13 @@ func (m *Merchant) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving products for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving products for merchant: %s", err.Error()))
 		return
 	}
 
@@ -1109,7 +1109,7 @@ func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1160,7 +1160,7 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1185,13 +1185,13 @@ func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
 	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving booking settings by merchant id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving booking settings by merchant id: %s", err.Error()))
 		return
 	}
 
@@ -1214,7 +1214,7 @@ func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http
 
 	businessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error()))
 		return
 	}
 
@@ -1244,13 +1244,13 @@ func (m *Merchant) GetBusinessHours(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	buseinessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving business hours by merchant id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error()))
 		return
 	}
 
@@ -1282,13 +1282,13 @@ func (m *Merchant) GetDashboardData(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	dashboardData, err := m.Postgresdb.GetDashboardData(r.Context(), merchantId, date, period)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving dashboard data: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving dashboard data: %s", err.Error()))
 		return
 	}
 
@@ -1311,7 +1311,7 @@ func (m *Merchant) NewServiceCategory(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1350,7 +1350,7 @@ func (m *Merchant) UpdateServiceCategory(w http.ResponseWriter, r *http.Request)
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1377,7 +1377,7 @@ func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request)
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1405,7 +1405,7 @@ func (m *Merchant) ReorderServiceCategories(w http.ResponseWriter, r *http.Reque
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -1486,13 +1486,13 @@ func (m *Merchant) GetCustomerStatistics(w http.ResponseWriter, r *http.Request)
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	customer, err := m.Postgresdb.GetCustomerStatsByMerchant(r.Context(), merchantId, customerId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving customer stats for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving customer stats for merchant: %s", err.Error()))
 		return
 	}
 
@@ -1518,13 +1518,13 @@ func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
 	customer, err := m.Postgresdb.GetCustomerInfoByMerchant(r.Context(), merchantId, customerId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving customer info for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving customer info for merchant: %s", err.Error()))
 		return
 	}
 
@@ -1553,13 +1553,13 @@ func (m *Merchant) GetPublicServiceDetails(w http.ResponseWriter, r *http.Reques
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
 	service, err := m.Postgresdb.GetServiceDetailsForMerchantPage(r.Context(), merchantId, serviceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service info: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service info: %s", err.Error()))
 		return
 	}
 
@@ -1583,13 +1583,13 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving the merchant's id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
 	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving service: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service: %s", err.Error()))
 		return
 	}
 

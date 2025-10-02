@@ -259,7 +259,7 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 
 	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 		return
 	}
 
@@ -277,7 +277,7 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 
 	emailData, err := a.Postgresdb.GetBookingDataForEmail(r.Context(), bookingId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving data for email sending: %s", err.Error()))
 		return
 	}
 
@@ -366,7 +366,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 
 	oldEmailData, err := a.Postgresdb.GetBookingDataForEmail(r.Context(), bookingId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving data for email sending: %s", err.Error()))
 		return
 	}
 
@@ -467,7 +467,7 @@ func (a *Booking) GetPublicBookingData(w http.ResponseWriter, r *http.Request) {
 
 	bookingInfo, err := a.Postgresdb.GetPublicBookingInfo(r.Context(), bookingId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving public data for booking: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving public data for booking: %s", err.Error()))
 		return
 	}
 
@@ -511,7 +511,7 @@ func (a *Booking) CancelBookingByUser(w http.ResponseWriter, r *http.Request) {
 	//TODO: write seperate query for getting only fromDate and cancel deadline
 	emailData, err := a.Postgresdb.GetBookingDataForEmail(r.Context(), bookingId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retriving data for email sending: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving data for email sending: %s", err.Error()))
 		return
 	}
 

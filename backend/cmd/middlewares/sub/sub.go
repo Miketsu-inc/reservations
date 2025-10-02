@@ -23,7 +23,7 @@ func SubscriptionMiddleware(tiers ...subscription.Tier) func(next http.Handler) 
 
 			merchantId, err := db.GetMerchantIdByOwnerId(r.Context(), userId)
 			if err != nil {
-				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retriving merchant from owner id: %s", err.Error()))
+				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
 				return
 			}
 
