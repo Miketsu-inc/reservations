@@ -269,7 +269,7 @@ func (s *service) UpdateMerchantFieldsById(ctx context.Context, merchantId uuid.
 
 	merchantQuery := `
 	update "Merchant"
-	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, 
+	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5,
 	parking_info = $6, cancel_deadline = $7, booking_window_min = $8, booking_window_max = $9, buffer_time = $10
 	where id = $1;`
 

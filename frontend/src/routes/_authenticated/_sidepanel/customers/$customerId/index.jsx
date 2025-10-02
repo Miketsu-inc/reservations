@@ -219,7 +219,7 @@ function CustomerDetailsPage() {
         setServerError(result.error.message);
       } else {
         showToast({
-          message: "Appointments transferred successfully",
+          message: "Bookings transferred successfully",
           variant: "success",
         });
         await queryClient.invalidateQueries({
@@ -372,7 +372,7 @@ function CustomerDetailsPage() {
                     </PopoverClose>
                     {queryResults[0].data.is_dummy && (
                       <>
-                        {queryResults[0].data.appointments.length !== 0 ? (
+                        {queryResults[0].data.bookings.length !== 0 ? (
                           <PopoverClose asChild>
                             <button
                               className="hover:bg-hvr_gray cursor-pointer gap-3"

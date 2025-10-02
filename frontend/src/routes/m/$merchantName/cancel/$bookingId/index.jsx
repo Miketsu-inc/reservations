@@ -100,13 +100,13 @@ function CancelPage() {
 
   let cancelMessage = "";
   if (alreadyCancelled) {
-    cancelMessage = "This appointment has already been cancelled.";
+    cancelMessage = "This booking has already been cancelled.";
   } else if (bookingData.cancel_deadline === 0 || fromDate <= now) {
     cancelMessage =
-      "You cannot cancel this appointment because it has already passed.";
+      "You cannot cancel this booking because it has already passed.";
   } else {
     const deadlineLabel = cancelDeadlineLabels[bookingData.cancel_deadline];
-    cancelMessage = `You cannot cancel this appointment less than ${deadlineLabel} before it starts.`;
+    cancelMessage = `You cannot cancel this booking less than ${deadlineLabel} before it starts.`;
   }
 
   async function handleCancel() {
