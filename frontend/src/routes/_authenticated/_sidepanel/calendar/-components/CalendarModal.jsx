@@ -85,7 +85,7 @@ export default function CalendarModal({
 
     try {
       const response = await fetch(
-        `/api/v1/bookings/${bookingInfo.extendedProps.group_id}`,
+        `/api/v1/bookings/${bookingInfo.extendedProps.id}`,
         {
           method: "PATCH",
           headers: {
@@ -93,7 +93,7 @@ export default function CalendarModal({
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            id: bookingInfo.extendedProps.group_id,
+            id: bookingInfo.extendedProps.id,
             merchant_note: merchantNote,
             from_date: start_date.toISOString(),
             to_date: addTimeToDate(

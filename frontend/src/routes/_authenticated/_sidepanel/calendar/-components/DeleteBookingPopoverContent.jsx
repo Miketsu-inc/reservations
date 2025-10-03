@@ -15,7 +15,7 @@ export default function DeleteBookingPopoverContent({ booking, onDeleted }) {
     const deletion_reason = e.target.elements.deletion_reason.value;
 
     try {
-      const response = await fetch(`/api/v1/bookings/${booking.group_id}`, {
+      const response = await fetch(`/api/v1/bookings/${booking.id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",

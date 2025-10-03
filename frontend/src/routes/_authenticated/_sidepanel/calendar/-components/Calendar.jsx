@@ -67,7 +67,6 @@ function formatData(data) {
     extendedProps: {
       // this is a number unlike the normal 'id' which get's converted to a string
       booking_id: booking.id,
-      group_id: booking.group_id,
       first_name: booking.first_name,
       last_name: booking.last_name,
       phone_number: booking.phone_number,
@@ -82,7 +81,6 @@ function formatData(data) {
 
 const defaultBookingInfo = {
   id: 0,
-  group_id: 0,
   title: "",
   start: new Date(),
   end: new Date(),

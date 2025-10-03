@@ -34,9 +34,9 @@ create table if not exists "Merchant" (
     about_us                 text,
     parking_info             text,
     payment_info             text,
-    cancel_deadline          integer not null default 0, 
+    cancel_deadline          integer not null default 0,
     booking_window_min       integer not null default 0,
-    booking_window_max       integer not null default 5, --  in months 
+    booking_window_max       integer not null default 5, --  in months
     buffer_time              integer not null default 0,
     timezone                 text,
     currency_code            char(3)           not null,
@@ -105,8 +105,30 @@ create table if not exists "Customer" (
     constraint unique_merchant_user unique (merchant_id, user_id)
 );
 
+create table if not exists "Booking" (
+    ID                       serial          primary key unique not null,
+    status                   booking_status  not null default 'booked',
+    booking_type             booking_type    not null,
+    merchant_id              uuid            references "Merchant" (ID) not null,
+    service_id               integer         references "Service" (ID) not null,
+    location_id              integer         references "Location" (ID) not null,
+    from_date                timestamptz     not null,
+    to_date                  timestamptz     not null
+);
+
+create table if not exists "BookingPhase" (
+    ID                       serial           primary key unique not null,
+    booking_id               integer          references "Booking" (ID) on delete cascade not null,
+    service_phase_id         integer          references "ServicePhase" (ID) not null,
+    from_date                timestamptz      not null,
+    to_date                  timestamptz      not null,
+
+    constraint unique_booking_phase unique (booking_id, service_phase_id)
+);
+
 create table if not exists "BookingDetails" (
     ID                       serial           primary key unique not null,
+    booking_id               integer          unique references "Booking" (ID) on delete cascade not null,
     price_per_person         price            not null,
     cost_per_person          price            not null,
     total_price              price            not null,
@@ -120,24 +142,10 @@ create table if not exists "BookingDetails" (
     cancellation_reason      text
 );
 
-create table if not exists "Booking" (
-    ID                       serial          primary key unique not null,
-    group_id                 integer         not null,
-    status                   booking_status  not null default 'booked',
-    booking_type             booking_type    not null,
-    booking_details_id       integer         references "BookingDetails" (ID) on delete cascade not null, -- delete all bookings that reference the deleted BookingDetails id
-    merchant_id              uuid            references "Merchant" (ID) not null,
-    service_id               integer         references "Service" (ID) not null,
-    service_phase_id         integer         references "ServicePhase" (ID) not null,
-    location_id              integer         references "Location" (ID) not null,
-    from_date                timestamptz     not null,
-    to_date                  timestamptz     not null
-);
-
 create table if not exists "BookingParticipant" (
     ID                       serial           primary key unique not null,
     status                   booking_status   not null default 'booked',
-    booking_id               integer          references "Booking" (ID) not null,
+    booking_id               integer          references "Booking" (ID) on delete cascade not null,
     customer_id              uuid             references "Customer" (ID) not null,
     customer_note            text,
     cancelled_on             timestamptz,

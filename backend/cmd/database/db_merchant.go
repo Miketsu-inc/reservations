@@ -167,11 +167,11 @@ func (s *service) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(distinct b.group_id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
+		count(b.id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
 	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
-	left join "Booking" b on bp.booking_id = b.group_id and b.merchant_id = $1
+	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	where c.merchant_id = $1 and c.is_blacklisted = $2
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
@@ -497,22 +497,19 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// UpcomingBookings
 	query := `
-	select distinct on (b.group_id) b.id, b.group_id,
-		min(b.from_date) over (partition by b.group_id) as from_date,
-		max(b.to_date) over (partition by b.group_id) as to_date,
-		bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "BookingDetails" bd on b.booking_details_id = bd.id
-	join "BookingParticipant" bp on bp.booking_id = b.group_id
+	join "BookingDetails" bd on bd.booking_id = b.id
+	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
-	order by b.group_id, b.from_date
+	order by b.from_date
 	limit 5`
 
 	var err error
@@ -524,22 +521,19 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 
 	// LatestBookings
 	query2 := `
-	select distinct on (b.group_id) b.id, b.group_id,
-		min(b.from_date) over (partition by b.group_id) as from_date,
-		max(b.to_date) over (partition by b.group_id) as to_date,
-		bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "BookingDetails" bd on b.booking_details_id = bd.id
-	join "BookingParticipant" bp on bp.booking_id = b.group_id
+	join "BookingDetails" bd on bd.booking_id = b.id
+	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
-	order by b.group_id, b.id desc
+	order by b.id desc
 	limit 5`
 
 	rows, _ = s.db.Query(ctx, query2, merchantId, utcDate)
@@ -599,7 +593,6 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 	query := `
 	WITH base AS (
     SELECT
-		distinct on (group_id)
         to_date,
         (bd.total_price).number as price,
 		(bd.total_price).currency as currency,
@@ -607,10 +600,10 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		(bp.status in ('cancelled')) as cancelled_by_user,
         (b.status in ('cancelled')) as cancelled
     FROM "Booking" b
-	join "BookingDetails" bd on booking_details_id = bd.id
-	join "BookingParticipant" bp on bp.booking_id = group_id
+	join "BookingDetails" bd on bd.booking_id = b.id
+	join "BookingParticipant" bp on bp.booking_id = b.id
     WHERE merchant_id = $1
-	order by group_id
+	order by b.id
 	),
 	current AS (
 		SELECT
@@ -708,11 +701,11 @@ func (s *service) getDashboardStatistics(ctx context.Context, merchantId uuid.UU
 		DATE(bookings.from_date) AS day,
 		COALESCE(SUM(bookings.price), 0) AS value
 	FROM (
-		select distinct on (b.group_id) b.from_date, (bd.total_price).number as price
+		select b.from_date, (bd.total_price).number as price
 		from "Booking" b
-		join "BookingDetails" bd on b.booking_details_id = bd.id
+		join "BookingDetails" bd on bd.booking_id = b.id
 		where b.merchant_id = $1 AND b.from_date >= $2 AND b.from_date < $3 and b.status not in ('cancelled')
-		order by b.group_id
+		order by b.id
 	) as bookings
 	GROUP BY day
 	ORDER BY day
