@@ -66,6 +66,10 @@ create table if not exists "Service" (
     sequence                 integer         not null default 0,
     min_participants         integer         not null,
     max_participants         integer         not null,
+    cancel_deadline          integer,
+    booking_window_min       integer,
+    booking_window_max       integer,
+    buffer_time              integer,  
     deleted_on               timestamptz
 );
 
@@ -195,3 +199,4 @@ create table if not exists "BusinessHours" (
 
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
 );
+

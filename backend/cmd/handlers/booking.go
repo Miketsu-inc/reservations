@@ -46,12 +46,6 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookingSettings, err := a.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant %s", err.Error()))
-		return
-	}
-
 	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
@@ -72,6 +66,12 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 
 	if service.MerchantId != merchantId {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
+		return
+	}
+
+	bookingSettings, err := a.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant %s", err.Error()))
 		return
 	}
 

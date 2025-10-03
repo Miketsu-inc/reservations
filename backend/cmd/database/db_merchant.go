@@ -755,13 +755,17 @@ type MerchantBookingSettings struct {
 	BufferTime       int `json:"buffer_time" db:"buffer_time"`
 }
 
-func (s *service) GetBookingSettingsByMerchant(ctx context.Context, merchantId uuid.UUID) (MerchantBookingSettings, error) {
+func (s *service) GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error) {
 	query := `
-	select buffer_time, booking_window_max, booking_window_min from "Merchant"
-	where id = $1`
+	select coalesce(s.buffer_time, m.buffer_time) as buffer_time, 
+	       coalesce(s.booking_window_max, m.booking_window_max) as booking_window_max, 
+		   coalesce(s.booking_window_min, m.booking_window_min) as booking_window_min
+	from "Merchant" m
+	join "Service" s on s.merchant_id = $1
+	where m.id = $1 and s.id = $2`
 
 	var mbs MerchantBookingSettings
-	err := s.db.QueryRow(ctx, query, merchantId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin)
+	err := s.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin)
 	if err != nil {
 		return MerchantBookingSettings{}, err
 	}

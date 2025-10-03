@@ -429,7 +429,8 @@ type BookingEmailData struct {
 
 func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error) {
 	query := `
-	select b.from_date, b.to_date, bd.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name, m.cancel_deadline,
+	select b.from_date, b.to_date, bd.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
+	coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline,
 		l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location
 	from "Booking" b
 	join "Service" s on s.id = b.service_id

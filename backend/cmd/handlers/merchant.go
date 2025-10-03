@@ -245,6 +245,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		PriceNote    *string                  `json:"price_note"`
 		CategoryId   *int                     `json:"category_id"`
 		IsActive     bool                     `json:"is_active"`
+		Settings     database.ServiceSettings `json:"settings"`
 		Phases       []newPhase               `json:"phases" validate:"required"`
 		UsedProducts []newConnectedProducts   `json:"used_products" validate:"required"`
 	}
@@ -326,6 +327,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Sequence:        0,
 		MinParticipants: 1,
 		MaxParticipants: 1,
+		Settings:        service.Settings,
 	}, dbPhases, dbProducts); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
@@ -394,12 +396,6 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error()))
-		return
-	}
-
 	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), urlServiceId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service: %s", err.Error()))
@@ -408,6 +404,12 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 
 	if service.MerchantId != merchantId {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
+		return
+	}
+
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error()))
 		return
 	}
 
@@ -540,7 +542,7 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
-	var pubServ database.PublicServiceWithPhases
+	var pubServ database.ServiceWithPhasesAndSettings
 
 	if err := validate.ParseStruct(r, &pubServ); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
@@ -594,6 +596,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		Cost:          pubServ.Cost,
 		PriceNote:     pubServ.PriceNote,
 		IsActive:      pubServ.IsActive,
+		Settings:      pubServ.Settings,
 		Phases:        pubServ.Phases,
 	})
 	if err != nil {
@@ -1183,13 +1186,19 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http.Request) {
 	urlName := r.URL.Query().Get("name")
 
+	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("serviceId should be a number: %s", err.Error()))
+		return
+	}
+
 	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, urlServiceId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving booking settings by merchant id: %s", err.Error()))
 		return
@@ -1598,6 +1607,12 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error()))
+		return
+	}
+
 	startDate := time.Now()
 	endDate := startDate.AddDate(0, 3, 0)
 
@@ -1610,12 +1625,6 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
-		return
-	}
-
-	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchant(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error()))
 		return
 	}
 

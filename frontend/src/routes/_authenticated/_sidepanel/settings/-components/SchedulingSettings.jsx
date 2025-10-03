@@ -1,65 +1,10 @@
 import Select from "@components/Select";
-
-const cancelOptions = [
-  { value: 0, label: "Anytime" },
-  { value: 30, label: "30 minutes" },
-  { value: 60, label: "1 hour" },
-  { value: 120, label: "2 hours" },
-  { value: 180, label: "3 hours" },
-  { value: 240, label: "4 hours" },
-  { value: 300, label: "5 hours" },
-  { value: 360, label: "6 hours" },
-  { value: 720, label: "12 hours" },
-  { value: 1440, label: "1 day" },
-  { value: 2880, label: "2 days" },
-  { value: 5760, label: "3 days" },
-];
-
-const bookingOptions = [
-  { value: 0, label: "Anytime" },
-  { value: 15, label: "15 minutes" },
-  { value: 30, label: "30 minutes" },
-  { value: 60, label: "1 hour" },
-  { value: 120, label: "2 hours" },
-  { value: 180, label: "3 hours" },
-  { value: 240, label: "4 hours" },
-  { value: 300, label: "5 hours" },
-  { value: 360, label: "6 hours" },
-  { value: 720, label: "12 hours" },
-  { value: 1440, label: "1 day" },
-  { value: 2880, label: "2 days" },
-  { value: 4320, label: "3 days" },
-  { value: 5760, label: "4 days" },
-  { value: 7200, label: "5 days" },
-  { value: 8640, label: "6 days" },
-  { value: 10080, label: "1 week" },
-  { value: 20160, label: "2 weeks" },
-];
-
-const bookAheadOptions = [
-  { value: 1, label: "1 month" },
-  { value: 2, label: "2 months" },
-  { value: 3, label: "3 months" },
-  { value: 4, label: "4 months" },
-  { value: 5, label: "5 months" },
-  { value: 6, label: "6 months" },
-  { value: 7, label: "7 months" },
-  { value: 8, label: "8 months" },
-  { value: 9, label: "9 months" },
-  { value: 10, label: "10 months" },
-  { value: 11, label: "11 months" },
-  { value: 12, label: "1 year" },
-];
-
-const bufferOptions = [
-  { value: 0, label: "No buffer time" },
-  { value: 5, label: "5 minutes" },
-  { value: 10, label: "10 minutes" },
-  { value: 15, label: "15 minutes" },
-  { value: 20, label: "20 minutes" },
-  { value: 25, label: "25 minutes" },
-  { value: 30, label: "30 minutes" },
-];
+import {
+  BOOKING_WINDOW_MAX_OPTIONS,
+  BOOKING_WINDOW_MIN_OPTIONS,
+  BUFFER_TIME_OPTIONS,
+  CANCEL_DEADLINE_OPTIONS,
+} from "@lib/constants";
 
 export default function BookingSettings({ settings, onChange }) {
   return (
@@ -75,7 +20,7 @@ export default function BookingSettings({ settings, onChange }) {
               Minimum time required for cancellation
             </label>
             <Select
-              options={cancelOptions}
+              options={CANCEL_DEADLINE_OPTIONS}
               value={settings.cancel_deadline}
               onSelect={(option) =>
                 onChange({ name: "cancel_deadline", value: option.value })
@@ -105,7 +50,7 @@ export default function BookingSettings({ settings, onChange }) {
                 Minimum advance booking time
               </label>
               <Select
-                options={bookingOptions}
+                options={BOOKING_WINDOW_MIN_OPTIONS}
                 value={settings.booking_window_min}
                 onSelect={(option) =>
                   onChange({ name: "booking_window_min", value: option.value })
@@ -122,7 +67,7 @@ export default function BookingSettings({ settings, onChange }) {
                 Maximum advance booking time
               </label>
               <Select
-                options={bookAheadOptions}
+                options={BOOKING_WINDOW_MAX_OPTIONS}
                 value={settings.booking_window_max}
                 onSelect={(option) =>
                   onChange({ name: "booking_window_max", value: option.value })
@@ -146,7 +91,7 @@ export default function BookingSettings({ settings, onChange }) {
               Buffer time between appointments
             </label>
             <Select
-              options={bufferOptions}
+              options={BUFFER_TIME_OPTIONS}
               value={settings.buffer_time}
               onSelect={(option) =>
                 onChange({ name: "buffer_time", value: option.value })

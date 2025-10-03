@@ -12,8 +12,9 @@ import { invalidateLocalStorageAuth } from "@lib/lib";
 import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import ProductAdder from "./ProductAdder";
-import ServicePhases from "./ServicePhases";
 import { useServicePhases } from "./servicehooks";
+import ServicePhases from "./ServicePhases";
+import ServiceSchedulingSettings from "./ServiceSchedulingSettings";
 
 export default function ServicePage({
   service,
@@ -33,6 +34,12 @@ export default function ServicePage({
       cost: service?.cost ?? null,
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
+      settings: {
+        cancel_deadline: service?.settings?.cancel_deadline || null,
+        booking_window_min: service?.settings?.booking_window_min || null,
+        booking_window_max: service?.settings?.booking_window_max || null,
+        buffer_time: service?.settings?.buffer_time || null,
+      },
       phases: service?.phases || [],
       used_products: service?.used_products || [],
     }),
@@ -311,6 +318,10 @@ export default function ServicePage({
               onUpdate={(updated) =>
                 updateServiceData({ used_products: updated })
               }
+            />
+            <ServiceSchedulingSettings
+              onUpdate={updateServiceData}
+              settings={serviceData.settings}
             />
             {service && (
               <Button

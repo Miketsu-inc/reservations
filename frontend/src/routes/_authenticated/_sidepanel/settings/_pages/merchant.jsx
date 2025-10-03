@@ -7,10 +7,10 @@ import { preferencesQueryOptions } from "@lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import BookingSettings from "../-components/BookingSettings";
 import BusinessHours from "../-components/BusinessHours";
 import DangerZoneItem from "../-components/DangerZoneItem";
 import ImageUploader from "../-components/ImageUploader";
+import SchedulingSettings from "../-components/SchedulingSettings";
 import SectionHeader from "../-components/SectionHeader";
 
 const daysOfWeek = {
@@ -270,7 +270,7 @@ function MerchantPage() {
           />
           {errorMessage && <span className="text-red-500">{errorMessage}</span>}
         </div>
-        <BookingSettings
+        <SchedulingSettings
           settings={{
             booking_window_max: merchantInfo.booking_window_max,
             booking_window_min: merchantInfo.booking_window_min,

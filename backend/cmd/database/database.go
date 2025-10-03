@@ -104,7 +104,7 @@ type PostgreSQL interface {
 	// Get the merchant's subscription tier
 	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
 	// Get necessary booking settings by a merchnat's id
-	GetBookingSettingsByMerchant(context.Context, uuid.UUID) (MerchantBookingSettings, error)
+	GetBookingSettingsByMerchantAndService(context.Context, uuid.UUID, int) (MerchantBookingSettings, error)
 
 	// -- Location --
 
@@ -124,7 +124,7 @@ type PostgreSQL interface {
 	// Delete a Service by it's id
 	DeleteServiceById(context.Context, uuid.UUID, int) error
 	// Update a Service and it's phases by it's id
-	UpdateServiceWithPhaseseById(context.Context, PublicServiceWithPhases) error
+	UpdateServiceWithPhaseseById(context.Context, ServiceWithPhasesAndSettings) error
 	// Deactivate a service by it's id
 	DeactivateServiceById(context.Context, uuid.UUID, int) error
 	// Activate a service by it's id

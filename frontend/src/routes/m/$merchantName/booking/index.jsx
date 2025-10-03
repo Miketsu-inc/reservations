@@ -44,9 +44,9 @@ function availableTimesQueryOptions(merchantName, locationId, serviceId, day) {
   });
 }
 
-async function fetchDisabledSettings(merchantName) {
+async function fetchDisabledSettings(merchantName, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/disabled-settings?name=${merchantName}`,
+    `/api/v1/merchants/disabled-settings?name=${merchantName}&serviceId=${serviceId}`,
     {
       method: "GET",
       headers: {
@@ -65,10 +65,10 @@ async function fetchDisabledSettings(merchantName) {
   }
 }
 
-function disabledSettingsQueryOptions(merchantName) {
+function disabledSettingsQueryOptions(merchantName, serviceId) {
   return queryOptions({
-    queryKey: ["disabled-settings", merchantName],
-    queryFn: () => fetchDisabledSettings(merchantName),
+    queryKey: ["disabled-settings", merchantName, serviceId],
+    queryFn: () => fetchDisabledSettings(merchantName, serviceId),
   });
 }
 
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
       availableTimesQueryOptions(merchantName, locationId, serviceId, day)
     );
     await queryClient.ensureQueryData(
-      disabledSettingsQueryOptions(merchantName)
+      disabledSettingsQueryOptions(merchantName, serviceId)
     );
   },
   errorComponent: ({ error }) => {
@@ -120,7 +120,7 @@ function SelectDateTime() {
     isLoading: dsIsLoading,
     isError: dsIsError,
     error: dsError,
-  } = useQuery(disabledSettingsQueryOptions(merchantName));
+  } = useQuery(disabledSettingsQueryOptions(merchantName, serviceId));
 
   if (atIsLoading || dsIsLoading) {
     return <Loading />;

@@ -29,9 +29,9 @@ type Service struct {
 	Sequence        int              `json:"sequence"`
 	MinParticipants int              `json:"min_participants"`
 	MaxParticipants int              `json:"max_participants"`
+	Settings        ServiceSettings  `json:"settings"`
 	DeletedOn       *string          `json:"deleted_on"`
 }
-
 type ServicePhase struct {
 	Id        int     `json:"ID"`
 	ServiceId int     `json:"service_id"`
@@ -48,6 +48,13 @@ type ServiceCategory struct {
 	Sequence int    `json:"sequence"`
 }
 
+type ServiceSettings struct {
+	CancelDeadline   *int `json:"cancel_deadline"`
+	BookingWindowMin *int `json:"booking_window_min"`
+	BookingWindowMax *int `json:"booking_window_max"`
+	BufferTime       *int `json:"buffer_time"`
+}
+
 func (s *service) NewService(ctx context.Context, serv Service, servPhases []ServicePhase, ConnProducts []ConnectedProducts) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -58,16 +65,17 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 	serviceQuery := `
 	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person, cost_per_person,
-		price_note, is_active, sequence, min_participants, max_participants)
+		price_note, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, coalesce((
 		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1 and deleted_on is null
-		), 1), $12, $13)
+		), 1), $12, $13, $14, $15, $16, $17)
 	returning id
 	`
 
 	var serviceId int
 	err = tx.QueryRow(ctx, serviceQuery, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
-		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceNote, serv.IsActive, serv.MinParticipants, serv.MaxParticipants).Scan(&serviceId)
+		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceNote, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
+		serv.Settings.CancelDeadline, serv.Settings.BookingWindowMin, serv.Settings.BookingWindowMax, serv.Settings.BufferTime).Scan(&serviceId)
 	if err != nil {
 		return err
 	}
@@ -385,7 +393,24 @@ func servicePhasesEqual(a, b PublicServicePhase) bool {
 		a.PhaseType == b.PhaseType
 }
 
-func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp PublicServiceWithPhases) error {
+type ServiceWithPhasesAndSettings struct {
+	Id            int                  `json:"id"`
+	MerchantId    uuid.UUID            `json:"merchant_id"`
+	CategoryId    *int                 `json:"category_id"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description"`
+	Color         string               `json:"color"`
+	TotalDuration int                  `json:"total_duration"`
+	Price         *currencyx.Price     `json:"price"`
+	Cost          *currencyx.Price     `json:"cost"`
+	PriceNote     *string              `json:"price_note"`
+	IsActive      bool                 `json:"is_active"`
+	Sequence      int                  `json:"sequence"`
+	Settings      ServiceSettings      `json:"settings"`
+	Phases        []PublicServicePhase `json:"phases"`
+}
+
+func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp ServiceWithPhasesAndSettings) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -471,7 +496,7 @@ func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp PublicS
 	)
 	update "Service"
 	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8, cost_per_person = $9,
-		price_note = $10, is_active = $11,
+		price_note = $10, is_active = $11, cancel_deadline = $12, booking_window_min = $13, booking_window_max = $14, buffer_time =$15,
 		sequence = case
 			when old.category_id is distinct from $3 then (
 				coalesce((
@@ -487,7 +512,8 @@ func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp PublicS
 
 	var oldCategoryId *int
 	err = tx.QueryRow(ctx, updateServiceQuery, pswp.Id, pswp.MerchantId, pswp.CategoryId, pswp.Name, pswp.Description, pswp.Color, pswp.TotalDuration,
-		pswp.Price, pswp.Cost, pswp.PriceNote, pswp.IsActive).Scan(&oldCategoryId)
+		pswp.Price, pswp.Cost, pswp.PriceNote, pswp.IsActive, pswp.Settings.CancelDeadline, pswp.Settings.BookingWindowMin,
+		pswp.Settings.BookingWindowMax, pswp.Settings.BufferTime).Scan(&oldCategoryId)
 	if err != nil {
 		return err
 	}
@@ -636,6 +662,7 @@ type ServicePageData struct {
 	PriceNote     *string                       `json:"price_note"`
 	IsActive      bool                          `json:"is_active"`
 	Sequence      int                           `json:"sequence"`
+	Settings      ServiceSettings               `json:"settings"`
 	Phases        []PublicServicePhase          `json:"phases"`
 	Products      []MinimalProductInfoWithUsage `json:"used_products"`
 }
@@ -674,6 +701,12 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 		group by sprod.service_id
 	)
 	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost, s.price_note, s.is_active, s.sequence,
+		jsonb_build_object(
+		 	'cancel_deadline', s.cancel_deadline,
+         	'booking_window_min', s.booking_window_min,
+         	'booking_window_max', s.booking_window_max,
+         	'buffer_time', s.buffer_time
+		) as settings,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s
@@ -683,13 +716,20 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 	`
 
 	var spd ServicePageData
+	var settingsJson []byte
 	var phaseJson []byte
 	var productJson []byte
 
 	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
-		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.Cost, &spd.PriceNote, &spd.IsActive, &spd.Sequence, &phaseJson, &productJson)
+		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.Cost, &spd.PriceNote, &spd.IsActive, &spd.Sequence, &settingsJson, &phaseJson, &productJson)
 	if err != nil {
 		return ServicePageData{}, err
+	}
+
+	if len(settingsJson) > 0 {
+		if err := json.Unmarshal(settingsJson, &spd.Settings); err != nil {
+			return ServicePageData{}, err
+		}
 	}
 
 	if len(phaseJson) > 0 {
