@@ -22,8 +22,8 @@ type Service struct {
 	Description     string           `json:"description"`
 	Color           string           `json:"color"`
 	TotalDuration   int              `json:"total_duration"`
-	PricePerPerson  *currencyx.Price `json:"price_per_person"`
-	CostPerPerson   *currencyx.Price `json:"cost_per_person"`
+	Price           *currencyx.Price `json:"price"`
+	Cost            *currencyx.Price `json:"cost"`
 	PriceNote       *string          `json:"price_note"`
 	IsActive        bool             `json:"is_active"`
 	Sequence        int              `json:"sequence"`
@@ -67,7 +67,7 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 	var serviceId int
 	err = tx.QueryRow(ctx, serviceQuery, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
-		serv.TotalDuration, serv.PricePerPerson, serv.CostPerPerson, serv.PriceNote, serv.IsActive, serv.MinParticipants, serv.MaxParticipants).Scan(&serviceId)
+		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceNote, serv.IsActive, serv.MinParticipants, serv.MaxParticipants).Scan(&serviceId)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, merchantId uuid.UUID) (PublicServiceWithPhases, error) {
 	query := `
-	select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.cost_per_person,
+	select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost,
 		s.price_note, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
 	from "Service" s
 	left join "ServicePhase" sp on s.id = sp.service_id
@@ -124,24 +124,24 @@ func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, m
 		var spId *int
 
 		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
-			&ts.PricePerPerson, &ts.CostPerPerson, &ts.PriceNote, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
+			&ts.Price, &ts.Cost, &ts.PriceNote, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
 		if err != nil {
 			return PublicServiceWithPhases{}, err
 		}
 
 		if firstRow {
 			pswp = PublicServiceWithPhases{
-				Id:             ts.Id,
-				MerchantId:     ts.MerchantId,
-				CategoryId:     ts.CategoryId,
-				Name:           ts.Name,
-				Description:    ts.Description,
-				Color:          ts.Color,
-				TotalDuration:  ts.TotalDuration,
-				PricePerPerson: ts.PricePerPerson,
-				CostPerPerson:  ts.CostPerPerson,
-				PriceNote:      ts.PriceNote,
-				IsActive:       ts.IsActive,
+				Id:            ts.Id,
+				MerchantId:    ts.MerchantId,
+				CategoryId:    ts.CategoryId,
+				Name:          ts.Name,
+				Description:   ts.Description,
+				Color:         ts.Color,
+				TotalDuration: ts.TotalDuration,
+				Price:         ts.Price,
+				Cost:          ts.Cost,
+				PriceNote:     ts.PriceNote,
+				IsActive:      ts.IsActive,
 			}
 			firstRow = false
 		}
@@ -165,19 +165,19 @@ type PublicServicePhase struct {
 }
 
 type PublicServiceWithPhases struct {
-	Id             int                  `json:"id"`
-	MerchantId     uuid.UUID            `json:"merchant_id"`
-	CategoryId     *int                 `json:"category_id"`
-	Name           string               `json:"name"`
-	Description    string               `json:"description"`
-	Color          string               `json:"color"`
-	TotalDuration  int                  `json:"total_duration"`
-	PricePerPerson *currencyx.Price     `json:"price_per_person"`
-	CostPerPerson  *currencyx.Price     `json:"cost_per_person"`
-	PriceNote      *string              `json:"price_note"`
-	IsActive       bool                 `json:"is_active"`
-	Sequence       int                  `json:"sequence"`
-	Phases         []PublicServicePhase `json:"phases"`
+	Id            int                  `json:"id"`
+	MerchantId    uuid.UUID            `json:"merchant_id"`
+	CategoryId    *int                 `json:"category_id"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description"`
+	Color         string               `json:"color"`
+	TotalDuration int                  `json:"total_duration"`
+	Price         *currencyx.Price     `json:"price"`
+	Cost          *currencyx.Price     `json:"cost"`
+	PriceNote     *string              `json:"price_note"`
+	IsActive      bool                 `json:"is_active"`
+	Sequence      int                  `json:"sequence"`
+	Phases        []PublicServicePhase `json:"phases"`
 }
 
 type ServicesGroupedByCategory struct {
@@ -220,8 +220,8 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 				'description', s.description,
 				'color', s.color,
 				'total_duration', s.total_duration,
-				'price_per_person', s.price_per_person,
-				'cost_per_person', s.cost_per_person,
+				'price', s.price_per_person,
+				'cost', s.cost_per_person,
 				'price_note', s.price_note,
 				'is_active', s.is_active,
 				'sequence', s.sequence,
@@ -271,20 +271,20 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 }
 
 type MerchantPageService struct {
-	Id             int                       `json:"id"`
-	CategoryId     *int                      `json:"category_id"`
-	Name           string                    `json:"name"`
-	Description    string                    `json:"description"`
-	TotalDuration  int                       `json:"total_duration"`
-	PricePerPerson *currencyx.FormattedPrice `json:"price_per_person"`
-	PriceNote      *string                   `json:"price_note"`
-	Sequence       int                       `json:"sequence"`
+	Id            int                       `json:"id"`
+	CategoryId    *int                      `json:"category_id"`
+	Name          string                    `json:"name"`
+	Description   string                    `json:"description"`
+	TotalDuration int                       `json:"total_duration"`
+	Price         *currencyx.FormattedPrice `json:"price"`
+	PriceNote     *string                   `json:"price_note"`
+	Sequence      int                       `json:"sequence"`
 }
 
 type MerchantPageServicesGroupedByCategory struct {
-	Id       int                   `json:"id"`
-	Name     string                `json:"name"`
-	Sequence int                   `json:"sequence"`
+	Id       *int                  `json:"id"`
+	Name     *string               `json:"name"`
+	Sequence *int                  `json:"sequence"`
 	Services []MerchantPageService `json:"services"`
 }
 
@@ -298,15 +298,15 @@ func (s *service) GetServicesForMerchantPage(ctx context.Context, merchantId uui
 				'name', s.name,
 				'description', s.description,
 				'total_duration', s.total_duration,
-				'price_per_person', s.price_per_person,
+				'price', s.price_per_person,
 				'price_note', s.price_note,
 				'sequence', s.sequence
 			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
-	from "ServiceCategory" sc
-	inner join "Service" s on s.category_id = sc.id
-	where sc.merchant_id = $1 and s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	from "Service" s
+	left join "ServiceCategory" sc on s.category_id = sc.id
+	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
@@ -487,7 +487,7 @@ func (s *service) UpdateServiceWithPhaseseById(ctx context.Context, pswp PublicS
 
 	var oldCategoryId *int
 	err = tx.QueryRow(ctx, updateServiceQuery, pswp.Id, pswp.MerchantId, pswp.CategoryId, pswp.Name, pswp.Description, pswp.Color, pswp.TotalDuration,
-		pswp.PricePerPerson, pswp.CostPerPerson, pswp.PriceNote, pswp.IsActive).Scan(&oldCategoryId)
+		pswp.Price, pswp.Cost, pswp.PriceNote, pswp.IsActive).Scan(&oldCategoryId)
 	if err != nil {
 		return err
 	}
@@ -625,19 +625,19 @@ type MinimalProductInfoWithUsage struct {
 }
 
 type ServicePageData struct {
-	Id             int                           `json:"id"`
-	CategoryId     *int                          `json:"category_id"`
-	Name           string                        `json:"name"`
-	Description    string                        `json:"description"`
-	Color          string                        `json:"color"`
-	TotalDuration  int                           `json:"total_duration"`
-	PricePerPerson *currencyx.Price              `json:"price_per_person"`
-	CostPerPerson  *currencyx.Price              `json:"cost_per_person"`
-	PriceNote      *string                       `json:"price_note"`
-	IsActive       bool                          `json:"is_active"`
-	Sequence       int                           `json:"sequence"`
-	Phases         []PublicServicePhase          `json:"phases"`
-	Products       []MinimalProductInfoWithUsage `json:"used_products"`
+	Id            int                           `json:"id"`
+	CategoryId    *int                          `json:"category_id"`
+	Name          string                        `json:"name"`
+	Description   string                        `json:"description"`
+	Color         string                        `json:"color"`
+	TotalDuration int                           `json:"total_duration"`
+	Price         *currencyx.Price              `json:"price"`
+	Cost          *currencyx.Price              `json:"cost"`
+	PriceNote     *string                       `json:"price_note"`
+	IsActive      bool                          `json:"is_active"`
+	Sequence      int                           `json:"sequence"`
+	Phases        []PublicServicePhase          `json:"phases"`
+	Products      []MinimalProductInfoWithUsage `json:"used_products"`
 }
 
 func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error) {
@@ -673,7 +673,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 		where p.deleted_on is null
 		group by sprod.service_id
 	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person, s.cost_per_person, s.price_note, s.is_active, s.sequence,
+	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost, s.price_note, s.is_active, s.sequence,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s
@@ -687,7 +687,7 @@ func (s *service) GetAllServicePageData(ctx context.Context, serviceId int, merc
 	var productJson []byte
 
 	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
-		&spd.Color, &spd.TotalDuration, &spd.PricePerPerson, &spd.CostPerPerson, &spd.PriceNote, &spd.IsActive, &spd.Sequence, &phaseJson, &productJson)
+		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.Cost, &spd.PriceNote, &spd.IsActive, &spd.Sequence, &phaseJson, &productJson)
 	if err != nil {
 		return ServicePageData{}, err
 	}
@@ -900,18 +900,18 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 }
 
 type PublicServiceDetails struct {
-	Id             int                       `json:"id"`
-	Name           string                    `json:"name"`
-	Description    string                    `json:"description"`
-	TotalDuration  int                       `json:"total_duration"`
-	PricePerPerson *currencyx.FormattedPrice `json:"price_per_person"`
-	PriceNote      *string                   `json:"price_note"`
-	Phases         []PublicServicePhase      `json:"phases"`
+	Id            int                       `json:"id"`
+	Name          string                    `json:"name"`
+	Description   string                    `json:"description"`
+	TotalDuration int                       `json:"total_duration"`
+	Price         *currencyx.FormattedPrice `json:"price"`
+	PriceNote     *string                   `json:"price_note"`
+	Phases        []PublicServicePhase      `json:"phases"`
 }
 
 func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int) (PublicServiceDetails, error) {
 	query := `
-	select s.id, s.name, s.description, s.total_duration, s.price_per_person, s.price_note,
+	select s.id, s.name, s.description, s.total_duration, s.price_per_person as price, s.price_note,
 	coalesce(
 		jsonb_agg(
 			jsonb_build_object(
@@ -933,7 +933,7 @@ func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchant
 	var data PublicServiceDetails
 	var phaseJson []byte
 
-	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration, &data.PricePerPerson, &data.PriceNote, &phaseJson)
+	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration, &data.Price, &data.PriceNote, &phaseJson)
 	if err != nil {
 		return PublicServiceDetails{}, err
 	}

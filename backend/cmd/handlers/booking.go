@@ -117,7 +117,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 	// prevent null booking price and cost to avoid a lot of headaches
 	var price currencyx.Price
 	var cost currencyx.Price
-	if service.PricePerPerson == nil || service.CostPerPerson == nil {
+	if service.Price == nil || service.Cost == nil {
 		curr, err := a.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
@@ -129,20 +129,20 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new amount: %s", err.Error()))
 		}
 
-		if service.PricePerPerson != nil {
-			price = *service.PricePerPerson
+		if service.Price != nil {
+			price = *service.Price
 		} else {
 			price = currencyx.Price{Amount: zeroAmount}
 		}
 
-		if service.CostPerPerson != nil {
-			cost = *service.CostPerPerson
+		if service.Cost != nil {
+			cost = *service.Cost
 		} else {
 			cost = currencyx.Price{Amount: zeroAmount}
 		}
 	} else {
-		price = *service.PricePerPerson
-		cost = *service.CostPerPerson
+		price = *service.Price
+		cost = *service.Cost
 	}
 
 	bookingId, err := a.Postgresdb.NewBooking(r.Context(), database.NewBooking{

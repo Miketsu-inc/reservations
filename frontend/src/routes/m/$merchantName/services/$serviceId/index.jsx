@@ -134,7 +134,9 @@ function ServiceDetailsPage() {
         <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
           <div className="flex w-full flex-col gap-8">
             <div className="flex items-center gap-6">
-              <div className="shrink-0 overflow-hidden rounded-lg xl:size-[120px]">
+              <div
+                className="shrink-0 overflow-hidden rounded-lg xl:size-[120px]"
+              >
                 <img
                   className="size-full object-cover"
                   src="https://dummyimage.com/120x120/d156c3/000000.jpg"
@@ -180,17 +182,29 @@ function ServiceDetailsPage() {
             )}
           </div>
           <div className="flex flex-col gap-6 md:mt-3 md:gap-8">
-            <div className="border-primary bg-primary/20 rounded-md border-2 border-dashed p-4">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div
+              className="border-primary bg-primary/20 rounded-md border-2
+                border-dashed p-4"
+            >
+              <div
+                className="flex flex-col gap-6 sm:flex-row sm:items-center
+                  sm:justify-between"
+              >
                 <div className="flex flex-col gap-2 sm:gap-4">
                   <div className="flex items-center gap-2">
                     <CalendarIcon styles="size-5 mb-0.5 text-text_color" />
-                    <span className="text-text_color text-sm font-medium tracking-wide">
+                    <span
+                      className="text-text_color text-sm font-medium
+                        tracking-wide"
+                    >
                       NEXT AVAILABLE
                     </span>
                   </div>
                   {hasAvailableSlot ? (
-                    <div className="text-text_color flex items-center gap-4 text-base font-semibold">
+                    <div
+                      className="text-text_color flex items-center gap-4
+                        text-base font-semibold"
+                    >
                       <div className="flex items-center gap-2">
                         <span>{formatDate(nextAvailable.date)}</span>
                       </div>

@@ -331,7 +331,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 					'from_date', b.from_date,
 					'to_date', b.to_date,
 					'service_name', s.name,
-					'price', b.cost_per_person,
+					'price', b.price_per_person,
 					'price_note', s.price_note,
 					'merchant_name', m.name,
 					'short_location', l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country,
@@ -339,7 +339,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 				) order by b.from_date desc
 			) as bookings
 		from (
-			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id, b.location_id, b.service_id, bd.cost_per_person, bp.status
+			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id, b.location_id, b.service_id, bd.price_per_person, bp.status
 			from "Booking" b
 			join "BookingParticipant" bp on bp.booking_id = b.id
 			join "BookingDetails" bd on bd.booking_id = b.id

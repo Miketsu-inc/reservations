@@ -237,16 +237,16 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type newService struct {
-		Name           string                 `json:"name" validate:"required"`
-		Description    string                 `json:"description"`
-		Color          string                 `json:"color" validate:"required,hexcolor"`
-		PricePerPerson *currencyx.Price       `json:"price_per_person"`
-		CostPerPerson  *currencyx.Price       `json:"cost_per_person"`
-		PriceNote      *string                `json:"price_note"`
-		CategoryId     *int                   `json:"category_id"`
-		IsActive       bool                   `json:"is_active"`
-		Phases         []newPhase             `json:"phases" validate:"required"`
-		UsedProducts   []newConnectedProducts `json:"used_products" validate:"required"`
+		Name         string                   `json:"name" validate:"required"`
+		Description  string                   `json:"description"`
+		Color        string                   `json:"color" validate:"required,hexcolor"`
+		Price        *currencyx.Price         `json:"price"`
+		Cost         *currencyx.Price         `json:"cost"`
+		PriceNote    *string                  `json:"price_note"`
+		CategoryId   *int                     `json:"category_id"`
+		IsActive     bool                     `json:"is_active"`
+		Phases       []newPhase               `json:"phases" validate:"required"`
+		UsedProducts []newConnectedProducts   `json:"used_products" validate:"required"`
 	}
 	var service newService
 
@@ -296,15 +296,15 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if service.PricePerPerson != nil {
-		if service.PricePerPerson.CurrencyCode() != curr {
+	if service.Price != nil {
+		if service.Price.CurrencyCode() != curr {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service price's currency does not match merchant's currency"))
 			return
 		}
 	}
 
-	if service.CostPerPerson != nil {
-		if service.CostPerPerson.CurrencyCode() != curr {
+	if service.Cost != nil {
+		if service.Cost.CurrencyCode() != curr {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service cost's currency does not match merchant's currency"))
 			return
 		}
@@ -319,8 +319,8 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Description:     service.Description,
 		Color:           service.Color,
 		TotalDuration:   durationSum,
-		PricePerPerson:  service.PricePerPerson,
-		CostPerPerson:   service.CostPerPerson,
+		Price:           service.Price,
+		Cost:            service.Cost,
 		PriceNote:       service.PriceNote,
 		IsActive:        service.IsActive,
 		Sequence:        0,
@@ -582,19 +582,19 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		durationSum += phase.Duration
 	}
 
-	err = m.Postgresdb.UpdateServiceWithPhaseseById(r.Context(), database.PublicServiceWithPhases{
-		Id:             pubServ.Id,
-		MerchantId:     merchantId,
-		CategoryId:     pubServ.CategoryId,
-		Name:           pubServ.Name,
-		Description:    pubServ.Description,
-		Color:          pubServ.Color,
-		TotalDuration:  durationSum,
-		PricePerPerson: pubServ.PricePerPerson,
-		CostPerPerson:  pubServ.CostPerPerson,
-		PriceNote:      pubServ.PriceNote,
-		IsActive:       pubServ.IsActive,
-		Phases:         pubServ.Phases,
+	err = m.Postgresdb.UpdateServiceWithPhaseseById(r.Context(), database.ServiceWithPhasesAndSettings{
+		Id:            pubServ.Id,
+		MerchantId:    merchantId,
+		CategoryId:    pubServ.CategoryId,
+		Name:          pubServ.Name,
+		Description:   pubServ.Description,
+		Color:         pubServ.Color,
+		TotalDuration: durationSum,
+		Price:         pubServ.Price,
+		Cost:          pubServ.Cost,
+		PriceNote:     pubServ.PriceNote,
+		IsActive:      pubServ.IsActive,
+		Phases:        pubServ.Phases,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating service for merchant: %s", err.Error()))
