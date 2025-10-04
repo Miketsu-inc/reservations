@@ -1671,7 +1671,7 @@ func (m *Merchant) DeleteMerchant(w http.ResponseWriter, r *http.Request) {
 
 	err := m.Postgresdb.DeleteMerchantByOwner(r.Context(), userID)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("Error while deleting merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting merchant: %s", err.Error()))
 		return
 	}
 }
@@ -1709,7 +1709,7 @@ func (m *Merchant) ChangeMerchantName(w http.ResponseWriter, r *http.Request) {
 
 	err = m.Postgresdb.ChangeMerchantNameAndURL(r.Context(), merchantId, data.Name, urlName)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("Error while updating merchant's name: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating merchant's name: %s", err.Error()))
 		return
 	}
 }
