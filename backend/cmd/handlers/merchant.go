@@ -1183,7 +1183,7 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) GetDisabledDaysForCalendar(w http.ResponseWriter, r *http.Request) {
 	urlName := r.URL.Query().Get("name")
 
 	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
@@ -1235,13 +1235,13 @@ func (m *Merchant) GetDisabledSettingsForCalendar(w http.ResponseWriter, r *http
 		}
 	}
 
-	type disabledSettings struct {
+	type disabledDays struct {
 		ClosedDays []int     `json:"closed_days"`
 		MinDate    time.Time `json:"min_date"`
 		MaxDate    time.Time `json:"max_date"`
 	}
 
-	httputil.Success(w, http.StatusOK, disabledSettings{
+	httputil.Success(w, http.StatusOK, disabledDays{
 		ClosedDays: closedDays,
 		MinDate:    minDate,
 		MaxDate:    maxDate,
@@ -1664,4 +1664,52 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, na)
+}
+
+func (m *Merchant) DeleteMerchant(w http.ResponseWriter, r *http.Request) {
+	userID := jwt.UserIDFromContext(r.Context())
+
+	err := m.Postgresdb.DeleteMerchantByOwner(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("Error while deleting merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) ChangeMerchantName(w http.ResponseWriter, r *http.Request) {
+	type merchantName struct {
+		Name string `json:"name" validate:"required"`
+	}
+
+	var data merchantName
+
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+	}
+
+	urlName, err := validate.MerchantNameToUrlName(data.Name)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error()))
+		return
+	}
+
+	err = m.Postgresdb.IsMerchantUrlUnique(r.Context(), urlName)
+	if err != nil {
+		httputil.Error(w, http.StatusConflict, err)
+		return
+	}
+
+	userID := jwt.UserIDFromContext(r.Context())
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = m.Postgresdb.ChangeMerchantNameAndURL(r.Context(), merchantId, data.Name, urlName)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("Error while updating merchant's name: %s", err.Error()))
+		return
+	}
 }

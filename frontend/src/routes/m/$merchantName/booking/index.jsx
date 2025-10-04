@@ -44,9 +44,9 @@ function availableTimesQueryOptions(merchantName, locationId, serviceId, day) {
   });
 }
 
-async function fetchDisabledSettings(merchantName, serviceId) {
+async function fetchDisabledDays(merchantName, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/disabled-settings?name=${merchantName}&serviceId=${serviceId}`,
+    `/api/v1/merchants/disabled-days?name=${merchantName}&serviceId=${serviceId}`,
     {
       method: "GET",
       headers: {
@@ -65,10 +65,10 @@ async function fetchDisabledSettings(merchantName, serviceId) {
   }
 }
 
-function disabledSettingsQueryOptions(merchantName, serviceId) {
+function disabledDaysQueryOptions(merchantName, serviceId) {
   return queryOptions({
-    queryKey: ["disabled-settings", merchantName, serviceId],
-    queryFn: () => fetchDisabledSettings(merchantName, serviceId),
+    queryKey: ["disabled-days", merchantName, serviceId],
+    queryFn: () => fetchDisabledDays(merchantName, serviceId),
   });
 }
 
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
       availableTimesQueryOptions(merchantName, locationId, serviceId, day)
     );
     await queryClient.ensureQueryData(
-      disabledSettingsQueryOptions(merchantName, serviceId)
+      disabledDaysQueryOptions(merchantName, serviceId)
     );
   },
   errorComponent: ({ error }) => {
@@ -116,11 +116,11 @@ function SelectDateTime() {
   });
 
   const {
-    data: disabledSettings,
+    data: disabledDays,
     isLoading: dsIsLoading,
     isError: dsIsError,
     error: dsError,
-  } = useQuery(disabledSettingsQueryOptions(merchantName, serviceId));
+  } = useQuery(disabledDaysQueryOptions(merchantName, serviceId));
 
   if (atIsLoading || dsIsLoading) {
     return <Loading />;
@@ -217,9 +217,9 @@ function SelectDateTime() {
                   value={day}
                   onSelect={dayChangeHandler}
                   disabled={[
-                    { dayOfWeek: disabledSettings.closed_days },
-                    { before: disabledSettings.min_date },
-                    { after: disabledSettings.max_date },
+                    { dayOfWeek: disabledDays.closed_days },
+                    { before: disabledDays.min_date },
+                    { after: disabledDays.max_date },
                   ]}
                   disabledTodayStyling={true}
                 />

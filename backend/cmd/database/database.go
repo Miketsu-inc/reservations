@@ -105,6 +105,10 @@ type PostgreSQL interface {
 	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
 	// Get necessary booking settings by a merchnat's id
 	GetBookingSettingsByMerchantAndService(context.Context, uuid.UUID, int) (MerchantBookingSettings, error)
+	// Delete Merchant from the database by owner id
+	DeleteMerchantByOwner(context.Context, uuid.UUID) error
+	// Change merchant's name and url name
+	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
 
 	// -- Location --
 

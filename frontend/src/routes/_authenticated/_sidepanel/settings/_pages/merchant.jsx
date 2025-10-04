@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import BusinessHours from "../-components/BusinessHours";
-import DangerZoneItem from "../-components/DangerZoneItem";
+import DangerZone from "../-components/DangerZone";
 import ImageUploader from "../-components/ImageUploader";
 import SchedulingSettings from "../-components/SchedulingSettings";
 import SectionHeader from "../-components/SectionHeader";
@@ -341,30 +341,7 @@ function MerchantPage() {
           buttonText="Change location"
         />
       </div>
-      <div className="flex flex-col gap-4">
-        <SectionHeader styles="text-red-600" title="Danger zone" />
-        <DangerZoneItem
-          title="Change Merchant Name"
-          description="By changing the name the URL of your page will change as well."
-          buttonText="Change name"
-        />
-        <DangerZoneItem
-          title="Change Visibility"
-          description="Make this merchant private or public."
-          buttonText="Change visibility"
-        />
-        <DangerZoneItem
-          title="Transfer Ownership"
-          description="Transfer this merchant to another account."
-          buttonText="Transfer ownership"
-        />
-
-        <DangerZoneItem
-          title="Delete Merchant"
-          description="Once you delete your Merchant there is no going back! Please be certain."
-          buttonText="Delete your merchant"
-        />
-      </div>
+      <DangerZone />
     </div>
   );
 }

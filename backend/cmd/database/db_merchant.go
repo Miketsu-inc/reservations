@@ -50,6 +50,18 @@ func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
 	return nil
 }
 
+func (s *service) DeleteMerchantByOwner(ctx context.Context, OwnerId uuid.UUID) error {
+	query := `
+	delete from "Merchant" where owner_id = $1`
+
+	_, err := s.db.Exec(ctx, query, OwnerId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *service) GetMerchantIdByUrlName(ctx context.Context, UrlName string) (uuid.UUID, error) {
 	query := `
 	select id from "Merchant"
@@ -771,4 +783,18 @@ func (s *service) GetBookingSettingsByMerchantAndService(ctx context.Context, me
 	}
 
 	return mbs, nil
+}
+
+func (s *service) ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, MerchantName, urlName string) error {
+	query := `
+	update "Merchant" 
+	set name = $2, url_name = $3 
+	where id = $1`
+
+	_, err := s.db.Exec(ctx, query, merchantId, MerchantName, urlName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

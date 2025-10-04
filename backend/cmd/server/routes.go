@@ -149,14 +149,24 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Get("/info", merchantHandler.InfoByName)
 		r.Get("/available-times", merchantHandler.GetHours)
 		r.Get("/next-available", merchantHandler.GetNextAvailable)
-		r.Get("/disabled-settings", merchantHandler.GetDisabledSettingsForCalendar)
+		r.Get("/disabled-days", merchantHandler.GetDisabledDaysForCalendar)
 		r.Get("/services/public/{id}/{merchantName}", merchantHandler.GetPublicServiceDetails)
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 		r.Use(lang.LangMiddleware)
+
+		r.Post("/check-url", merchantHandler.CheckUrl)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(jwt.JwtMiddleware)
+		r.Use(lang.LangMiddleware)
 		r.Use(sub.SubscriptionMiddleware(subscription.Free))
+
+		r.Delete("/", merchantHandler.DeleteMerchant)
+		r.Patch("/name", merchantHandler.ChangeMerchantName)
 
 		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
 		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
@@ -165,7 +175,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Patch("/preferences", merchantHandler.UpdatePreferences)
 
 		r.Post("/location", merchantHandler.NewLocation)
-		r.Post("/check-url", merchantHandler.CheckUrl)
 
 		r.Get("/services", merchantHandler.GetServices)
 		r.Get("/services/form-options", merchantHandler.GetServiceFormOptions)
