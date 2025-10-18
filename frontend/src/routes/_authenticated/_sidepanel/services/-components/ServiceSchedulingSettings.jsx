@@ -61,11 +61,11 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
         className={`flex flex-col gap-6 px-4 transition-[max-height,opacity]
           duration-200 ease-in-out ${
             isOpen
-              ? "max-h-[1000px] py-4 opacity-100"
+              ? "max-h-[1000px] pb-4 opacity-100"
               : "max-h-0 overflow-hidden opacity-0"
           }`}
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 pt-4">
           <div className="flex items-center gap-4">
             <span className="font-medium">Use Custom Settings</span>
             <Switch defaultValue={!areSettingsNull} onSwitch={handleSwitch} />
@@ -88,7 +88,7 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           className={`grid grid-cols-1 gap-6 transition-[max-height,opacity]
             ease-in-out lg:grid-cols-2 ${
               showCustomSettings
-                ? "max-h-[1000px] py-4 opacity-100"
+                ? "max-h-[1000px] pb-4 opacity-100"
                 : "max-h-0 overflow-hidden opacity-0"
             }`}
         >
@@ -152,7 +152,7 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
             </p>
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             <label className="text-text_color text-sm font-medium">
               Maximum advance booking
             </label>

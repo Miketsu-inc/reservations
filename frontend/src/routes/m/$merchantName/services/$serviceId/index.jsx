@@ -6,9 +6,16 @@ import CalendarIcon from "@icons/CalendarIcon";
 import ClockIcon from "@icons/ClockIcon";
 import MapPinIcon from "@icons/MapPinIcon";
 import { formatDuration } from "@lib/datetime";
+import { useWindowSize } from "@lib/hooks";
 import { invalidateLocalStorageAuth } from "@lib/lib";
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { businessHoursQueryOptions } from "@lib/queries";
+import {
+  queryOptions,
+  useQueries,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import DropDownBusinessHours from "./-components/DropDownBusinessHours";
 import PhaseItem from "./-components/PhaseItem";
 
 async function fetchServiceDetails(merchantName, serviceId) {
@@ -102,6 +109,11 @@ const formatDate = (dateString) => {
 function ServiceDetailsPage() {
   const { locationId } = Route.useSearch({ from: Route.id });
   const { merchantName, serviceId } = Route.useParams({ from: Route.id });
+  const windowSize = useWindowSize();
+  const isWindowSmall =
+    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
+
+  const businessHours = useSuspenseQuery(businessHoursQueryOptions());
 
   const queryResults = useQueries({
     queries: [
@@ -129,9 +141,9 @@ function ServiceDetailsPage() {
   );
 
   return (
-    <div className="p-4">
-      <Card styles="md:mx-auto min-h-screen max-w-7xl md:p-6 p-4">
-        <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
+    <div className="flex justify-center">
+      <div className="flex w-fit flex-col p-3 lg:flex-row lg:gap-4 lg:p-6">
+        <Card styles="flex-1 lg:max-w-2xl min-h-screen lg:p-6 p-4">
           <div className="flex w-full flex-col gap-8">
             <div className="flex items-center gap-6">
               <div
@@ -143,17 +155,22 @@ function ServiceDetailsPage() {
                   alt="service photo"
                 ></img>
               </div>
-              <div className="flex flex-col gap-4">
-                <span className="text-2xl font-bold">
+              <div className="flex flex-col gap-5">
+                <span className="text-3xl font-bold">
                   {serviceDetails.name}
                 </span>
-                <div className="flex flex-col gap-2">
-                  {serviceDetails.price}
-                  {serviceDetails?.price_note}
-                  <div className="flex items-center justify-start gap-3">
+                <div
+                  className={`flex
+                    ${windowSize === "sm" ? "flex-col gap-3" : "gap-6"}`}
+                >
+                  <div className="flex items-center justify-start gap-2">
                     <ClockIcon styles="size-4 fill-text_color" />
                     {formatDuration(serviceDetails.total_duration)}
                   </div>
+                  <span>
+                    {serviceDetails.price}
+                    {serviceDetails?.price_note}
+                  </span>
                 </div>
               </div>
             </div>
@@ -162,6 +179,16 @@ function ServiceDetailsPage() {
                 <div className="text-lg font-semibold">Description</div>
                 <p>{serviceDetails.description}</p>
               </div>
+            )}
+            {isWindowSmall && (
+              <NextAvailable
+                hasAvailableSlot={hasAvailableSlot}
+                nextAvailable={nextAvailable}
+                locationId={locationId}
+                serviceDetails={serviceDetails}
+                businessHours={businessHours.data}
+                isWindowSmall={isWindowSmall}
+              />
             )}
 
             {sortedPhases.length > 1 && (
@@ -180,64 +207,6 @@ function ServiceDetailsPage() {
                 </div>
               </div>
             )}
-          </div>
-          <div className="flex flex-col gap-6 md:mt-3 md:gap-8">
-            <div
-              className="border-primary bg-primary/20 rounded-md border-2
-                border-dashed p-4"
-            >
-              <div
-                className="flex flex-col gap-6 sm:flex-row sm:items-center
-                  sm:justify-between"
-              >
-                <div className="flex flex-col gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon styles="size-5 mb-0.5 text-text_color" />
-                    <span
-                      className="text-text_color text-sm font-medium
-                        tracking-wide"
-                    >
-                      NEXT AVAILABLE
-                    </span>
-                  </div>
-                  {hasAvailableSlot ? (
-                    <div
-                      className="text-text_color flex items-center gap-4
-                        text-base font-semibold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{formatDate(nextAvailable.date)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ClockIcon styles="size-4 stroke-text_color" />
-                        <span>{nextAvailable.time}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-text_color text-base font-semibold">
-                      Fully booked for the next 3 months
-                    </p>
-                  )}
-                </div>
-                <Link
-                  from={Route.fullPath}
-                  to="../../booking"
-                  search={{
-                    locationId: locationId,
-                    serviceId: serviceDetails.id,
-                    day:
-                      nextAvailable.date ||
-                      new Date().toISOString().split("T")[0],
-                  }}
-                >
-                  <Button
-                    variant="primary"
-                    styles="py-2 px-4 w-full sm:w-fit text-nowrap"
-                    buttonText={hasAvailableSlot ? "Reserve" : "Check Calendar"}
-                  />
-                </Link>
-              </div>
-            </div>
             <div className="flex h-64 flex-col gap-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <MapPinIcon styles="size-5" />
@@ -246,8 +215,106 @@ function ServiceDetailsPage() {
               <div className="border-text_color h-full rounded-md border"></div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+        {!isWindowSmall && (
+          <div className="sticky top-6 w-96 flex-shrink-0 self-start">
+            <NextAvailable
+              hasAvailableSlot={hasAvailableSlot}
+              nextAvailable={nextAvailable}
+              locationId={locationId}
+              serviceDetails={serviceDetails}
+              businessHours={businessHours.data}
+              isWindowSmall={isWindowSmall}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NextAvailable({
+  hasAvailableSlot,
+  nextAvailable,
+  locationId,
+  serviceDetails,
+  businessHours,
+  isWindowSmall,
+}) {
+  return (
+    <div
+      className="lg:border-border_color bg-layer_bg flex w-full flex-col
+        items-center gap-5 rounded-xl md:shadow-sm lg:gap-6 lg:border lg:p-6"
+    >
+      <div className="flex w-full items-center gap-2">
+        <CalendarIcon styles="size-6 mb-0.5 text-text_color" />
+        <h2 className="text-text_color text-lg font-semibold">
+          Next Available
+        </h2>
+      </div>
+
+      <div
+        className={`flex w-full flex-col gap-4 rounded-md border-2 p-4 ${
+          hasAvailableSlot
+            ? `border-green-200 bg-green-100/40 dark:border-green-800/50
+              dark:bg-green-900/10`
+            : `border-gray-200 bg-gray-100 dark:border-gray-800
+              dark:bg-gray-900/20`
+          }`}
+      >
+        {hasAvailableSlot ? (
+          <>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="text-2xl font-bold text-green-700
+                    dark:text-green-400"
+                >
+                  {nextAvailable.time}
+                </span>
+              </div>
+              <div
+                className="flex items-center gap-2 text-base text-gray-700
+                  dark:text-gray-300"
+              >
+                <span className="font-medium">
+                  {formatDate(nextAvailable.date)}
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-3 text-center">
+            <p className="text-gray-600 dark:text-gray-400">
+              No available slots for the next 3 months. Check the calendar for
+              future availability.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <Link
+        from={Route.fullPath}
+        to="../../booking"
+        search={{
+          locationId: locationId,
+          serviceId: serviceDetails.id,
+          day: nextAvailable.date || new Date().toISOString().split("T")[0],
+        }}
+        className="w-full"
+      >
+        <Button
+          variant="primary"
+          styles="w-full py-3 px-4 font-semibold"
+          buttonText={hasAvailableSlot ? "Book Now" : "Check Calendar"}
+        />
+      </Link>
+      {!isWindowSmall && (
+        <>
+          <hr className="border-border_color w-full border-b" />
+          <DropDownBusinessHours hoursData={businessHours} />
+        </>
+      )}
     </div>
   );
 }

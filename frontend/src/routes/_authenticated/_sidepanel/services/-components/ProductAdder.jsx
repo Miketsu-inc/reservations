@@ -56,8 +56,8 @@ export default function ProductAdder({
       <div
         role="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`${isOpen ? "border-border_color border-b" : ""} flex cursor-pointer items-center
-          justify-between p-4`}
+        className={`${isOpen ? "border-border_color border-b" : ""} flex
+          cursor-pointer items-center justify-between p-4`}
       >
         <div className="flex items-center justify-center gap-2">
           <ProductIcon styles="size-6 mb-0.5 text-text_color" />
@@ -69,20 +69,21 @@ export default function ProductAdder({
           className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
         >
           <BackArrowIcon
-            styles={`size-6 stroke-text_color transition-transform duration-200 ${
-              isOpen ? "rotate-90" : "-rotate-90" }`}
+            styles={`size-6 stroke-text_color transition-transform duration-200
+              ${isOpen ? "rotate-90" : "-rotate-90"}`}
           />
         </button>
       </div>
       {/* TODO: same issue as with dropdowns in the recurSection */}
       <div
-        className={`px-4 transition-[max-height,opacity] duration-200 ease-in-out ${
-          isOpen
-            ? "max-h-[1000px] py-4 opacity-100"
-            : "max-h-0 overflow-hidden opacity-0"
+        className={`px-4 transition-[max-height,opacity] duration-200
+          ease-in-out ${
+            isOpen
+              ? "max-h-[1000px] opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
           }`}
       >
-        <div className="flex flex-col gap-5 xl:flex-row xl:gap-10">
+        <div className="flex flex-col gap-5 py-4 xl:flex-row xl:gap-10">
           <ProductForm
             product={editProduct || {}}
             onSubmit={handleAddProduct}
@@ -97,13 +98,17 @@ export default function ProductAdder({
           {usedProducts.length > 0 ? (
             <div className="flex flex-col gap-2 xl:w-1/2">
               <p className="font-medium">Connected Products</p>
-              <div className="flex flex-col gap-2 overflow-y-auto xl:pr-2 dark:scheme-dark">
+              <div
+                className="flex flex-col gap-2 overflow-y-auto xl:pr-2
+                  dark:scheme-dark"
+              >
                 {usedProducts.map((product) => {
                   return (
                     <div
                       key={product.id}
-                      className="border-border_color flex flex-row items-center justify-center gap-4 rounded-md
-                        border px-4 py-2 dark:border-gray-600"
+                      className="border-border_color flex flex-row items-center
+                        justify-center gap-4 rounded-md border px-4 py-2
+                        dark:border-gray-600"
                     >
                       <span className="text-text_color flex-1 font-medium">
                         {product?.name}
@@ -133,8 +138,14 @@ export default function ProductAdder({
               </div>
             </div>
           ) : (
-            <div className="mb-4 flex flex-col items-center justify-center xl:w-1/2">
-              <div className="mb-4 flex w-min items-center justify-center rounded-full">
+            <div
+              className="mb-4 flex flex-col items-center justify-center
+                xl:w-1/2"
+            >
+              <div
+                className="mb-4 flex w-min items-center justify-center
+                  rounded-full"
+              >
                 <ProductIcon styles="size-12 dark:text-gray-500 text-gray-400" />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -235,10 +246,11 @@ function ProductForm({
         />
       </div>
       <div
-        className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${
-          productData.id !== 0 || !isWindowSmall
-            ? "max-h-[300px] opacity-100"
-            : "pointer-events-none max-h-0 opacity-0"
+        className={`w-full overflow-hidden transition-all duration-300
+          ease-in-out ${
+            productData.id !== 0 || !isWindowSmall
+              ? "max-h-[300px] opacity-100"
+              : "pointer-events-none max-h-0 opacity-0"
           }`}
       >
         <div className="flex w-full flex-col gap-4">
@@ -256,7 +268,10 @@ function ProductForm({
             }
           >
             {productData.unit && (
-              <p className="border-input_border_color rounded-r-lg border px-4 py-2">
+              <p
+                className="border-input_border_color rounded-r-lg border px-4
+                  py-2"
+              >
                 {productData.unit}
               </p>
             )}

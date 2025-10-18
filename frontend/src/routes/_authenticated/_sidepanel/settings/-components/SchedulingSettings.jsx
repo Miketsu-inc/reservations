@@ -6,7 +6,7 @@ import {
   CANCEL_DEADLINE_OPTIONS,
 } from "@lib/constants";
 
-export default function BookingSettings({ settings, onChange }) {
+export default function SchedulingSettings({ settings, onChange }) {
   return (
     <>
       <div className="flex flex-col gap-8">
