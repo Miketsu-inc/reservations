@@ -43,17 +43,6 @@ func (ts *TimeString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *service) CreatePreferences(ctx context.Context, merchantId uuid.UUID) error {
-	query := `
-	insert into "Preferences" (merchant_id) values ($1)`
-
-	_, err := s.db.Exec(ctx, query, merchantId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 type PreferenceData struct {
 	FirstDayOfWeek     string     `json:"first_day_of_week"`
 	TimeFormat         string     `json:"time_format"`

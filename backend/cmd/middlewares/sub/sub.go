@@ -17,17 +17,11 @@ func SubscriptionMiddleware(tiers ...subscription.Tier) func(next http.Handler) 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			userId := jwt.UserIDFromContext(r.Context())
+			employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 			db := database.New()
 
-			merchantId, err := db.GetMerchantIdByOwnerId(r.Context(), userId)
-			if err != nil {
-				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-				return
-			}
-
-			tier, err := db.GetMerchantSubscriptionTier(r.Context(), merchantId)
+			tier, err := db.GetMerchantSubscriptionTier(r.Context(), employee.MerchantId)
 			if err != nil {
 				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during getting merchant's subscription tier: %s", err.Error()))
 				return

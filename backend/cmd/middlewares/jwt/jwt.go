@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
 
@@ -31,24 +32,72 @@ type contextKey struct {
 }
 
 var userIDCtxKey = &contextKey{"UserID"}
+var merchantIDCtxKey = &contextKey{"MerchnatID"}
+var employeeIDCtxKey = &contextKey{"EmployeeID"}
+var employeeRoleCtxKey = &contextKey{"EmployeeRole"}
 
-// Returns UserID from the request's context.
-// Should be only called in authenticated routes!
-func UserIDFromContext(ctx context.Context) uuid.UUID {
+// Returns UserID from the request's context. Panics if not present!
+func MustGetUserIDFromContext(ctx context.Context) uuid.UUID {
 	userID, ok := ctx.Value(userIDCtxKey).(uuid.UUID)
 	assert.True(ok, "Authenticated route called without jwt user id", ctx.Value(userIDCtxKey), userID)
 
 	return userID
 }
 
-// TODO: temporary as I don't want to rename the main function 'UserIDFromContext' everywhere
-func UserIDFromContextLight(ctx context.Context) (uuid.UUID, bool) {
+// Returns UserID from the request's context
+func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	userID, ok := ctx.Value(userIDCtxKey).(uuid.UUID)
 	if !ok {
 		return uuid.Nil, false
 	}
 
 	return userID, true
+}
+
+type EmployeeContext struct {
+	Id         int
+	Role       employee.Role
+	UserId     uuid.UUID
+	MerchantId uuid.UUID
+}
+
+// Get employee details from the request's context. Panics if not present!
+func MustGetEmployeeFromContext(ctx context.Context) EmployeeContext {
+	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
+	role, hasRole := ctx.Value(employeeRoleCtxKey).(employee.Role)
+	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
+	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
+
+	assert.True(hasEmpId, "employee id not in context", ctx.Value(employeeIDCtxKey), employeeId, hasEmpId)
+	assert.True(hasRole, "employee role not in context", ctx.Value(employeeRoleCtxKey), role, hasRole)
+	assert.True(hasUsrId, "user id not in context", ctx.Value(userIDCtxKey), userId, hasUsrId)
+	assert.True(hasMerchId, "merchant id not in context", ctx.Value(merchantIDCtxKey), merchantId, hasMerchId)
+
+	return EmployeeContext{
+		Id:         employeeId,
+		Role:       role,
+		UserId:     userId,
+		MerchantId: merchantId,
+	}
+}
+
+// Returns employee details from the request's context
+func GetEmployeeFromContext(ctx context.Context) (EmployeeContext, bool) {
+	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
+	role, hasRole := ctx.Value(employeeRoleCtxKey).(employee.Role)
+	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
+	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
+
+	if !hasEmpId || !hasRole || !hasUsrId || !hasMerchId {
+		return EmployeeContext{}, false
+	}
+
+	return EmployeeContext{
+		Id:         employeeId,
+		Role:       role,
+		UserId:     userId,
+		MerchantId: merchantId,
+	}, true
 }
 
 // Jwt authentication middleware. Uses refresh and access tokens
@@ -73,13 +122,12 @@ func JwtMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			userID := getUserIdFromClaims(claims)
-			if userID == uuid.Nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims"))
+			userID, err := getUserIdFromClaims(claims)
+			if err != nil {
+				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims: %s", err.Error()))
 				return
 			}
 
-			// TODO: Is this ( database.New() ) okay? can it cause problems? race conditions?
 			dbRefreshVersion, err := database.PostgreSQL.GetUserJwtRefreshVersion(database.New(), ctx, userID)
 			if err != nil {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("unexpected error when reading jwt refresh version %s", err.Error()))
@@ -100,26 +148,43 @@ func JwtMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			err = NewAccessToken(w, userID)
+			merchantId := getMerchantIdFromClaims(claims)
+			employeeId := getEmployeeIdFromClaims(claims)
+			role := getEmployeeRoleFromCalims(claims)
+
+			err = NewAccessToken(w, userID, merchantId, employeeId, role)
 			if err != nil {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not create new access jwt"))
 				return
 			}
 		}
 
-		userID := getUserIdFromClaims(claims)
-		if userID == uuid.Nil {
-			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims"))
+		userID, err := getUserIdFromClaims(claims)
+		if err != nil {
+			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims: %s", err.Error()))
 			return
 		}
 
 		ctx = context.WithValue(ctx, userIDCtxKey, userID)
+
+		if merchantID := getMerchantIdFromClaims(claims); merchantID != nil {
+			ctx = context.WithValue(ctx, merchantIDCtxKey, *merchantID)
+		}
+
+		if employeeID := getEmployeeIdFromClaims(claims); employeeID != nil {
+			ctx = context.WithValue(ctx, employeeIDCtxKey, *employeeID)
+		}
+
+		if employeeRole := getEmployeeRoleFromCalims(claims); employeeRole != nil {
+			ctx = context.WithValue(ctx, employeeRoleCtxKey, *employeeRole)
+		}
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // Create a new jwt, with HS256 signing method
-func New(secret []byte, claims jwtlib.MapClaims) (string, error) {
+func new(secret []byte, claims jwtlib.MapClaims) (string, error) {
 	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString(secret)
@@ -131,17 +196,33 @@ func New(secret []byte, claims jwtlib.MapClaims) (string, error) {
 	return tokenString, nil
 }
 
-// Create a new access token and set it in cookies
-func NewAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
-	expMin := config.LoadEnvVars().JWT_ACCESS_EXP_MIN
+// Adds the employee relevant fields to the claim if they are not nil
+func addEmployeeClaims(claims jwtlib.MapClaims, merchantId *uuid.UUID, employeeId *int, role *employee.Role) {
+	if merchantId == nil {
+		return
+	}
 
+	assert.NotNil(employeeId, "jwt: employeeId can't be nil if merchantId is not nil", employeeId, merchantId)
+	assert.NotNil(role, "jwt: role can't be nil if merchantId is not nil", role, merchantId)
+
+	claims["merchant_id"] = merchantId.String()
+	claims["employee_id"] = *employeeId
+	claims["employee_role"] = role.String()
+}
+
+// Create a new access token and set it in cookies
+func NewAccessToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, role *employee.Role) error {
+	expMin := config.LoadEnvVars().JWT_ACCESS_EXP_MIN
 	expMinDuration := time.Minute * time.Duration(expMin)
 
-	token, err := New([]byte(config.LoadEnvVars().JWT_ACCESS_SECRET), jwtlib.MapClaims{
+	claims := jwtlib.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(expMinDuration).Unix(),
-	})
+	}
 
+	addEmployeeClaims(claims, merchantId, employeeId, role)
+
+	token, err := new([]byte(config.LoadEnvVars().JWT_ACCESS_SECRET), claims)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
 	}
@@ -162,17 +243,19 @@ func NewAccessToken(w http.ResponseWriter, userID uuid.UUID) error {
 }
 
 // Create a new refresh token and set it in cookies
-func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, refreshVersion int) error {
+func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, role *employee.Role, refreshVersion int) error {
 	expMin := config.LoadEnvVars().JWT_REFRESH_EXP_MIN
-
 	expMinDuration := time.Minute * time.Duration(expMin)
 
-	token, err := New([]byte(config.LoadEnvVars().JWT_REFRESH_SECRET), jwtlib.MapClaims{
+	claims := jwtlib.MapClaims{
 		"sub":             userID,
 		"exp":             time.Now().Add(expMinDuration).Unix(),
 		"refresh_version": refreshVersion,
-	})
+	}
 
+	addEmployeeClaims(claims, merchantId, employeeId, role)
+
+	token, err := new([]byte(config.LoadEnvVars().JWT_REFRESH_SECRET), claims)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
 	}
@@ -219,18 +302,18 @@ func DeleteJwts(w http.ResponseWriter) {
 	})
 }
 
-func getUserIdFromClaims(claims jwtlib.MapClaims) uuid.UUID {
+func getUserIdFromClaims(claims jwtlib.MapClaims) (uuid.UUID, error) {
 	uuidStr, err := claims.GetSubject()
 	if err != nil {
-		return uuid.Nil
+		return uuid.Nil, err
 	}
 
 	userID, err := uuid.Parse(uuidStr)
 	if err != nil {
-		return uuid.Nil
+		return uuid.Nil, err
 	}
 
-	return userID
+	return userID, nil
 }
 
 func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, error) {
@@ -250,6 +333,63 @@ func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, error) {
 	}
 
 	return 0, nil
+}
+
+func getMerchantIdFromClaims(claims jwtlib.MapClaims) *uuid.UUID {
+	val, ok := claims["merchant_id"]
+	if !ok {
+		return nil
+	}
+
+	merchantIdStr, ok := val.(string)
+	if !ok {
+		return nil
+	}
+
+	merchantId, err := uuid.Parse(merchantIdStr)
+	if err != nil {
+		return nil
+	}
+
+	return &merchantId
+}
+
+func getEmployeeIdFromClaims(claims jwtlib.MapClaims) *int {
+	val, ok := claims["employee_id"]
+	if !ok {
+		return nil
+	}
+
+	switch id := val.(type) {
+	case float64:
+		employeeId := int(id)
+		return &employeeId
+	case json.Number:
+		num, _ := id.Float64()
+		employeeId := int(num)
+		return &employeeId
+	}
+
+	return nil
+}
+
+func getEmployeeRoleFromCalims(claims jwtlib.MapClaims) *employee.Role {
+	val, ok := claims["employee_role"]
+	if !ok {
+		return nil
+	}
+
+	roleStr, ok := val.(string)
+	if !ok {
+		return nil
+	}
+
+	role, err := employee.NewRole(roleStr)
+	if err != nil {
+		return nil
+	}
+
+	return &role
 }
 
 // parse and validate jwt, returning the claims if valid

@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 )
 
@@ -21,7 +22,6 @@ type Merchant struct {
 	Id               uuid.UUID         `json:"ID"`
 	Name             string            `json:"name"`
 	UrlName          string            `json:"url_name"`
-	OwnerId          uuid.UUID         `json:"owner_id"`
 	ContactEmail     string            `json:"contact_email"`
 	Introduction     string            `json:"introduction"`
 	Announcement     string            `json:"announcement"`
@@ -33,28 +33,71 @@ type Merchant struct {
 	SubscriptionTier subscription.Tier `json:"subscription_tier"`
 }
 
-func (s *service) NewMerchant(ctx context.Context, merchant Merchant) error {
-	query := `
-	insert into "Merchant" (ID, name, url_name, owner_id, contact_email, introduction, announcement, about_us, parking_info,
+type Employee struct {
+	Id          int           `json:"id"`
+	UserId      *uuid.UUID    `json:"user_id"`
+	MerchantId  uuid.UUID     `json:"merchant_id"`
+	Role        employee.Role `json:"employee_role"`
+	FirstName   *string       `json:"first_name"`
+	LastName    *string       `json:"last_name"`
+	Email       *string       `json:"email"`
+	PhoneNumber *string       `json:"phone_number"`
+	IsActive    bool          `json:"is_active"`
+	InvitedOn   *time.Time    `json:"invited_on"`
+	AcceptedOn  *time.Time    `json:"accpeted_on"`
+}
+
+func (s *service) NewMerchant(ctx context.Context, userId uuid.UUID, merchant Merchant) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	newMerchantQuery := `
+	insert into "Merchant" (ID, name, url_name, contact_email, introduction, announcement, about_us, parking_info,
 		payment_info, timezone, currency_code, subscription_tier)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
-	_, err := s.db.Exec(ctx, query, merchant.Id, merchant.Name, merchant.UrlName, merchant.OwnerId, merchant.ContactEmail,
+	_, err = tx.Exec(ctx, newMerchantQuery, merchant.Id, merchant.Name, merchant.UrlName, merchant.ContactEmail,
 		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo,
 		merchant.Timezone, merchant.CurrencyCode, merchant.SubscriptionTier)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	newPreferencesQuery := `
+	insert into "Preferences" (merchant_id) values ($1)
+	`
+
+	_, err = tx.Exec(ctx, newPreferencesQuery, merchant.Id)
+	if err != nil {
+		return err
+	}
+
+	newEmployeeQuery := `
+	insert into "Employee" (user_id, merchant_id, role, is_active)
+	values ($1, $2, $3, $4)
+	`
+
+	_, err = tx.Exec(ctx, newEmployeeQuery, userId, merchant.Id, employee.Owner, true)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (s *service) DeleteMerchantByOwner(ctx context.Context, OwnerId uuid.UUID) error {
+func (s *service) DeleteMerchant(ctx context.Context, employeeId int, merchantId uuid.UUID) error {
 	query := `
-	delete from "Merchant" where owner_id = $1`
+	delete from "Merchant" m
+	using "Employee" e
+	where e.user_id = $1 and e.role = 'owner' and m.id = $2
+	`
 
-	_, err := s.db.Exec(ctx, query, OwnerId)
+	_, err := s.db.Exec(ctx, query, employeeId, merchantId)
 	if err != nil {
 		return err
 	}
@@ -72,21 +115,6 @@ func (s *service) GetMerchantIdByUrlName(ctx context.Context, UrlName string) (u
 	err := s.db.QueryRow(ctx, query, UrlName).Scan(&merchantId)
 	if err != nil {
 		return uuid.Nil, err
-	}
-
-	return merchantId, nil
-}
-
-func (s *service) GetMerchantIdByOwnerId(ctx context.Context, ownerId uuid.UUID) (uuid.UUID, error) {
-	query := `
-	select id from "Merchant"
-	where owner_id = $1
-	`
-
-	var merchantId uuid.UUID
-	err := s.db.QueryRow(ctx, query, ownerId).Scan(&merchantId)
-	if err != nil {
-		return uuid.UUID{}, err
 	}
 
 	return merchantId, nil
@@ -769,8 +797,8 @@ type MerchantBookingSettings struct {
 
 func (s *service) GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error) {
 	query := `
-	select coalesce(s.buffer_time, m.buffer_time) as buffer_time, 
-	       coalesce(s.booking_window_max, m.booking_window_max) as booking_window_max, 
+	select coalesce(s.buffer_time, m.buffer_time) as buffer_time,
+	       coalesce(s.booking_window_max, m.booking_window_max) as booking_window_max,
 		   coalesce(s.booking_window_min, m.booking_window_min) as booking_window_min
 	from "Merchant" m
 	join "Service" s on s.merchant_id = $1
@@ -787,8 +815,8 @@ func (s *service) GetBookingSettingsByMerchantAndService(ctx context.Context, me
 
 func (s *service) ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, MerchantName, urlName string) error {
 	query := `
-	update "Merchant" 
-	set name = $2, url_name = $3 
+	update "Merchant"
+	set name = $2, url_name = $3
 	where id = $1`
 
 	_, err := s.db.Exec(ctx, query, merchantId, MerchantName, urlName)

@@ -17,6 +17,7 @@ type Booking struct {
 	Status      booking.Status `json:"status"`
 	BookingType booking.Type   `json:"booking_type"`
 	MerchantId  uuid.UUID      `json:"merchant_id" db:"merchant_id"`
+	EmployeeId  *int           `json:"employee_id" db:"employee_id"`
 	ServiceId   int            `json:"service_id" db:"service_id"`
 	LocationId  int            `json:"location_id" db:"location_id"`
 	FromDate    time.Time      `json:"from_date" db:"from_date"`

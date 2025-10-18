@@ -42,7 +42,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
+	userID := jwt.MustGetUserIDFromContext(r.Context())
 
 	merchantID, err := uuid.NewV7()
 	if err != nil {
@@ -53,11 +53,10 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 	language := lang.LangFromContext(r.Context())
 	curr := currencyx.FindBest(language)
 
-	err = m.Postgresdb.NewMerchant(r.Context(), database.Merchant{
+	err = m.Postgresdb.NewMerchant(r.Context(), userID, database.Merchant{
 		Id:               merchantID,
 		Name:             signup.Name,
 		UrlName:          urlName,
-		OwnerId:          userID,
 		ContactEmail:     signup.ContactEmail,
 		Introduction:     "",
 		Announcement:     "",
@@ -69,13 +68,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		SubscriptionTier: subscription.Free,
 	})
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding merchant to database: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.CreatePreferences(r.Context(), merchantID)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating preferences for merchant: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error creating a merchant: %s", err.Error()))
 		return
 	}
 

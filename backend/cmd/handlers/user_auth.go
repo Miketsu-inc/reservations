@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
@@ -43,18 +44,18 @@ func hashCompare(password, hash string) error {
 }
 
 // Creates and sets both the resfresh and access jwt cookies
-func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID) error {
+func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, role *employee.Role) error {
 	refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
 	}
 
-	err = jwt.NewRefreshToken(w, userID, refreshVersion)
+	err = jwt.NewRefreshToken(w, userID, merchantId, employeeId, role, refreshVersion)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating refresh jwt token: %s", err.Error())
 	}
 
-	err = jwt.NewAccessToken(w, userID)
+	err = jwt.NewAccessToken(w, userID, merchantId, employeeId, role)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating access jwt token: %s", err.Error())
 	}
@@ -86,9 +87,26 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.newJwts(w, r.Context(), userID)
+	employeeAuthInfo, err := u.Postgresdb.GetEmployeesByUser(r.Context(), userID)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, err)
+		httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("unexpected error when reading employees associated with user: %s", err.Error()))
+		return
+	}
+
+	var merchantId *uuid.UUID
+	var employeeId *int
+	var role *employee.Role
+
+	// TODO: later user should be able to select which merchant to log into
+	if len(employeeAuthInfo) >= 1 {
+		merchantId = &employeeAuthInfo[0].MerchantId
+		employeeId = &employeeAuthInfo[0].Id
+		role = &employeeAuthInfo[0].Role
+	}
+
+	err = u.newJwts(w, r.Context(), userID, merchantId, employeeId, role)
+	if err != nil {
+		httputil.Error(w, http.StatusUnauthorized, err)
 		return
 	}
 }
@@ -146,7 +164,7 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.newJwts(w, r.Context(), userID)
+	err = u.newJwts(w, r.Context(), userID, nil, nil, nil)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
@@ -165,7 +183,7 @@ func (u *UserAuth) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserAuth) LogoutAllDevices(w http.ResponseWriter, r *http.Request) {
-	userID := jwt.UserIDFromContext(r.Context())
+	userID := jwt.MustGetUserIDFromContext(r.Context())
 
 	err := u.Postgresdb.IncrementUserJwtRefreshVersion(r.Context(), userID)
 	if err != nil {

@@ -11,6 +11,7 @@ create type price as (
 create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
 create type booking_type as ENUM ('appointment', 'event', 'class');
 create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
+create type employee_role as ENUM ('owner', 'admin', 'staff');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -27,7 +28,6 @@ create table if not exists "Merchant" (
     ID                       uuid            primary key unique not null,
     name                     varchar(30)     not null,
     url_name                 varchar(30)     unique not null,
-    owner_id                 uuid            references "User" (ID) not null,
     contact_email            varchar(320)    not null,
     introduction             varchar(150),
     announcement             varchar(200),
@@ -41,6 +41,22 @@ create table if not exists "Merchant" (
     timezone                 text,
     currency_code            char(3)           not null,
     subscription_tier        subscription_tier not null
+);
+
+create table if not exists "Employee" (
+    ID                       serial          primary key unique not null,
+    user_id                  uuid            references "User" (ID) on delete set null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    role                     employee_role   not null default 'staff',
+    first_name               varchar(30),
+    last_name                varchar(30),
+    email                    varchar(320),
+    phone_number             varchar(30),
+    is_active                boolean         not null default true,
+    invited_on               timestamptz,
+    accepted_on              timestamptz,
+
+    constraint unique_merchant_user_employee unique (merchant_id, user_id)
 );
 
 create table if not exists "ServiceCategory" (
@@ -69,7 +85,7 @@ create table if not exists "Service" (
     cancel_deadline          integer,
     booking_window_min       integer,
     booking_window_max       integer,
-    buffer_time              integer,  
+    buffer_time              integer,
     deleted_on               timestamptz
 );
 
@@ -114,6 +130,7 @@ create table if not exists "Booking" (
     status                   booking_status  not null default 'booked',
     booking_type             booking_type    not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    employee_id              serial          references "Employee" (ID) on delete set null,
     service_id               integer         references "Service" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
     from_date                timestamptz     not null,

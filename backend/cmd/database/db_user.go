@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"golang.org/x/text/language"
 )
 
@@ -419,4 +420,25 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 	}
 
 	return customer, nil
+}
+
+type EmployeeAuthInfo struct {
+	Id         int           `db:"id"`
+	MerchantId uuid.UUID     `db:"merchant_id"`
+	Role       employee.Role `db:"role"`
+}
+
+func (s *service) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error) {
+	query := `
+	select id, merchant_id, role from "Employee"
+	where user_id = $1
+	`
+
+	rows, _ := s.db.Query(ctx, query, userId)
+	employeeAuthInfo, err := pgx.CollectRows(rows, pgx.RowToStructByName[EmployeeAuthInfo])
+	if err != nil {
+		return []EmployeeAuthInfo{}, err
+	}
+
+	return employeeAuthInfo, nil
 }

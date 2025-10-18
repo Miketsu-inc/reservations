@@ -41,7 +41,7 @@ func LangMiddleware(next http.Handler) http.Handler {
 
 		// if the userId is not in the context assume that
 		// the request did not come from a user
-		userId, ok := jwt.UserIDFromContextLight(ctx)
+		userId, ok := jwt.GetUserIDFromContext(ctx)
 		if !ok {
 			langTag = getLangFromHeader(r)
 		} else {

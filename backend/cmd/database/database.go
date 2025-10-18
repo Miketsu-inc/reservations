@@ -70,15 +70,15 @@ type PostgreSQL interface {
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
 	// Get a user's preferred language
 	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
+	// Get all employees associated with to a user
+	GetEmployeesByUser(context.Context, uuid.UUID) ([]EmployeeAuthInfo, error)
 
 	// -- Merchant --
 
-	// Insert a new Merchant to the database
-	NewMerchant(context.Context, Merchant) error
+	// Insert a new Merchant to the database, creates the default preferences and an owner employee
+	NewMerchant(context.Context, uuid.UUID, Merchant) error
 	// Get a Merchant's id by the Merchant's url name
 	GetMerchantIdByUrlName(context.Context, string) (uuid.UUID, error)
-	// Get a Merchant's owner id by the merchantId
-	GetMerchantIdByOwnerId(context.Context, uuid.UUID) (uuid.UUID, error)
 	// Get all publicly available merchant info that will be displayed
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
 	// Check if a merchant url exists in the database
@@ -105,8 +105,8 @@ type PostgreSQL interface {
 	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
 	// Get necessary booking settings by a merchnat's id
 	GetBookingSettingsByMerchantAndService(context.Context, uuid.UUID, int) (MerchantBookingSettings, error)
-	// Delete Merchant from the database by owner id
-	DeleteMerchantByOwner(context.Context, uuid.UUID) error
+	// Delete Merchant from the database by the employee and merchant id
+	DeleteMerchant(context.Context, int, uuid.UUID) error
 	// Change merchant's name and url name
 	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
 
@@ -175,8 +175,6 @@ type PostgreSQL interface {
 
 	// -- Preferences --
 
-	// Create default preferences for merchant
-	CreatePreferences(context.Context, uuid.UUID) error
 	// Get all preferences for a merchant by it's id
 	GetPreferencesByMerchantId(context.Context, uuid.UUID) (PreferenceData, error)
 	// Update preferences for a merchant

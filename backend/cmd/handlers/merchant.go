@@ -167,15 +167,9 @@ func (m *Merchant) InfoByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) MerchantSettingsInfoByOwner(w http.ResponseWriter, r *http.Request) {
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	settingsInfo, err := m.Postgresdb.GetMerchantSettingsInfo(r.Context(), merchantId)
+	settingsInfo, err := m.Postgresdb.GetMerchantSettingsInfo(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while accessing settings merchant info: %s", err.Error()))
 		return
@@ -199,17 +193,11 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.NewLocation(r.Context(), database.Location{
+	err := m.Postgresdb.NewLocation(r.Context(), database.Location{
 		Id:         0,
-		MerchantId: merchantId,
+		MerchantId: employee.MerchantId,
 		Country:    location.Country,
 		City:       location.City,
 		PostalCode: location.PostalCode,
@@ -256,13 +244,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
-
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
-		return
-	}
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	if len(service.Phases) == 0 {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("service phases can not be empty"))
@@ -291,7 +273,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
+	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
 		return
@@ -313,7 +295,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 
 	if err := m.Postgresdb.NewService(r.Context(), database.Service{
 		Id:              0,
-		MerchantId:      merchantId,
+		MerchantId:      employee.MerchantId,
 		CategoryId:      service.CategoryId,
 		BookingType:     booking.Appointment,
 		Name:            service.Name,
@@ -446,15 +428,9 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetServices(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), merchantId)
+	services, err := m.Postgresdb.GetServicesByMerchantId(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving services for merchant: %s", err.Error()))
 		return
@@ -477,15 +453,9 @@ func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	service, err := m.Postgresdb.GetAllServicePageData(r.Context(), serviceId, merchantId)
+	service, err := m.Postgresdb.GetAllServicePageData(r.Context(), serviceId, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service for merchant: %s", err.Error()))
 		return
@@ -495,15 +465,9 @@ func (m *Merchant) GetService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetServiceFormOptions(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	formOptions, err := m.Postgresdb.GetServicePageFormOptions(r.Context(), merchantId)
+	formOptions, err := m.Postgresdb.GetServicePageFormOptions(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service form options for merchant: %s", err.Error()))
 		return
@@ -526,15 +490,9 @@ func (m *Merchant) DeleteService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.DeleteServiceById(r.Context(), merchantId, serviceId)
+	err = m.Postgresdb.DeleteServiceById(r.Context(), employee.MerchantId, serviceId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting service for merchant: %s", err.Error()))
 		return
@@ -571,13 +529,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("service phases can not be empty"))
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
-
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	durationSum := 0
 	for _, phase := range pubServ.Phases {
@@ -586,7 +538,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 
 	err = m.Postgresdb.UpdateServiceWithPhaseseById(r.Context(), database.ServiceWithPhasesAndSettings{
 		Id:            pubServ.Id,
-		MerchantId:    merchantId,
+		MerchantId:    employee.MerchantId,
 		CategoryId:    pubServ.CategoryId,
 		Name:          pubServ.Name,
 		Description:   pubServ.Description,
@@ -614,15 +566,9 @@ func (m *Merchant) DeactivateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.DeactivateServiceById(r.Context(), merchantId, serviceId)
+	err = m.Postgresdb.DeactivateServiceById(r.Context(), employee.MerchantId, serviceId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deactivating service: %s", err.Error()))
 		return
@@ -638,15 +584,9 @@ func (m *Merchant) ActivateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.ActivateServiceById(r.Context(), merchantId, serviceId)
+	err = m.Postgresdb.ActivateServiceById(r.Context(), employee.MerchantId, serviceId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deactivating service: %s", err.Error()))
 		return
@@ -667,15 +607,9 @@ func (m *Merchant) ReorderServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.ReorderServices(r.Context(), merchantId, so.CategoryId, so.Services)
+	err = m.Postgresdb.ReorderServices(r.Context(), employee.MerchantId, so.CategoryId, so.Services)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while ordering services: %s", err.Error()))
 		return
@@ -683,15 +617,9 @@ func (m *Merchant) ReorderServices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId, false)
+	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), employee.MerchantId, false)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error()))
 		return
@@ -701,15 +629,9 @@ func (m *Merchant) GetCustomers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetBlacklistedCustomers(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), merchantId, true)
+	customers, err := m.Postgresdb.GetCustomersByMerchantId(r.Context(), employee.MerchantId, true)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving blacklisted customers for merchant: %s", err.Error()))
 		return
@@ -740,15 +662,9 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	if err := m.Postgresdb.NewCustomer(r.Context(), merchantId, database.Customer{
+	if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
 		Id:          customerId,
 		FirstName:   customer.FirstName,
 		LastName:    customer.LastName,
@@ -778,15 +694,9 @@ func (m *Merchant) DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.DeleteCustomerById(r.Context(), customerId, merchantId)
+	err = m.Postgresdb.DeleteCustomerById(r.Context(), customerId, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting customer for merchant: %s", err.Error()))
 		return
@@ -828,15 +738,9 @@ func (m *Merchant) UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.UpdateCustomerById(r.Context(), merchantId, database.Customer{
+	err = m.Postgresdb.UpdateCustomerById(r.Context(), employee.MerchantId, database.Customer{
 		Id:          customer.Id,
 		FirstName:   customer.FirstName,
 		LastName:    customer.LastName,
@@ -859,15 +763,9 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.UpdateMerchantFieldsById(r.Context(), merchantId, data)
+	err := m.Postgresdb.UpdateMerchantFieldsById(r.Context(), employee.MerchantId, data)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error()))
 		return
@@ -875,15 +773,9 @@ func (m *Merchant) UpdateMerchantFields(w http.ResponseWriter, r *http.Request) 
 }
 
 func (m *Merchant) GetPreferences(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	preferences, err := m.Postgresdb.GetPreferencesByMerchantId(r.Context(), merchantId)
+	preferences, err := m.Postgresdb.GetPreferencesByMerchantId(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while accessing merchant preferences: %s", err.Error()))
 		return
@@ -900,15 +792,9 @@ func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.UpdatePreferences(r.Context(), merchantId, p)
+	err := m.Postgresdb.UpdatePreferences(r.Context(), employee.MerchantId, p)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating preferences: %s", err.Error()))
 		return
@@ -932,15 +818,9 @@ func (m *Merchant) TransferCustomerBookings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.TransferDummyBookings(r.Context(), merchantId, from, to)
+	err = m.Postgresdb.TransferDummyBookings(r.Context(), employee.MerchantId, from, to)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while transfering bookings: %s", err.Error()))
 		return
@@ -978,15 +858,9 @@ func (m *Merchant) BlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), merchantId, customerId, true, data.BlacklistReason)
+	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), employee.MerchantId, customerId, true, data.BlacklistReason)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while adding customer to blacklist: %s", err.Error()))
 		return
@@ -1007,15 +881,9 @@ func (m *Merchant) UnBlacklistCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), merchantId, customerId, false, nil)
+	err = m.Postgresdb.SetBlacklistStatusForCustomer(r.Context(), employee.MerchantId, customerId, false, nil)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting customer from blacklist: %s", err.Error()))
 		return
@@ -1038,15 +906,9 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("no merchant found for this user: %s", err.Error()))
-		return
-	}
-
-	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), merchantId)
+	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
 		return
@@ -1061,7 +923,7 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 
 	if err := m.Postgresdb.NewProduct(r.Context(), database.Product{
 		Id:            0,
-		MerchantId:    merchantId,
+		MerchantId:    employee.MerchantId,
 		Name:          product.Name,
 		Description:   product.Description,
 		Price:         product.Price,
@@ -1077,15 +939,9 @@ func (m *Merchant) NewProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetProducts(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), merchantId)
+	products, err := m.Postgresdb.GetProductsByMerchant(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while retrieving products for merchant: %s", err.Error()))
 		return
@@ -1108,15 +964,9 @@ func (m *Merchant) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.DeleteProductById(r.Context(), merchantId, productId)
+	err = m.Postgresdb.DeleteProductById(r.Context(), employee.MerchantId, productId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting product for merchant: %s", err.Error()))
 		return
@@ -1159,17 +1009,11 @@ func (m *Merchant) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
-
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	err = m.Postgresdb.UpdateProduct(r.Context(), database.Product{
 		Id:            prod.Id,
-		MerchantId:    merchantId,
+		MerchantId:    employee.MerchantId,
 		Name:          prod.Name,
 		Description:   prod.Description,
 		Price:         prod.Price,
@@ -1249,15 +1093,9 @@ func (m *Merchant) GetDisabledDaysForCalendar(w http.ResponseWriter, r *http.Req
 }
 
 func (m *Merchant) GetBusinessHours(w http.ResponseWriter, r *http.Request) {
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	buseinessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), merchantId)
+	buseinessHours, err := m.Postgresdb.GetNormalizedBusinessHours(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error()))
 		return
@@ -1287,15 +1125,9 @@ func (m *Merchant) GetDashboardData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	dashboardData, err := m.Postgresdb.GetDashboardData(r.Context(), merchantId, date, period)
+	dashboardData, err := m.Postgresdb.GetDashboardData(r.Context(), employee.MerchantId, date, period)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving dashboard data: %s", err.Error()))
 		return
@@ -1316,15 +1148,9 @@ func (m *Merchant) NewServiceCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.NewServiceCategory(r.Context(), merchantId, database.ServiceCategory{
+	err = m.Postgresdb.NewServiceCategory(r.Context(), employee.MerchantId, database.ServiceCategory{
 		Name:     nc.Name,
 		Sequence: 0,
 	})
@@ -1355,15 +1181,9 @@ func (m *Merchant) UpdateServiceCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.UpdateServiceCategoryById(r.Context(), merchantId, database.ServiceCategory{
+	err = m.Postgresdb.UpdateServiceCategoryById(r.Context(), employee.MerchantId, database.ServiceCategory{
 		Id:   categoryId,
 		Name: cd.Name,
 	})
@@ -1382,15 +1202,9 @@ func (m *Merchant) DeleteServiceCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.DeleteServiceCategoryById(r.Context(), merchantId, categoryId)
+	err = m.Postgresdb.DeleteServiceCategoryById(r.Context(), employee.MerchantId, categoryId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deleting service category: %s", err.Error()))
 		return
@@ -1410,21 +1224,16 @@ func (m *Merchant) ReorderServiceCategories(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	err = m.Postgresdb.ReorderServiceCategories(r.Context(), merchantId, co.Categories)
+	err = m.Postgresdb.ReorderServiceCategories(r.Context(), employee.MerchantId, co.Categories)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while ordering services: %s", err.Error()))
 		return
 	}
 }
 
+// TODO: this does not check wether the service and product belong to the merchant updating it
 func (m *Merchant) UpdateServiceProductConnections(w http.ResponseWriter, r *http.Request) {
 	type updatedProductConnections struct {
 		ProductId  int `json:"id" validate:"required"`
@@ -1491,15 +1300,9 @@ func (m *Merchant) GetCustomerStatistics(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	customer, err := m.Postgresdb.GetCustomerStatsByMerchant(r.Context(), merchantId, customerId)
+	customer, err := m.Postgresdb.GetCustomerStatsByMerchant(r.Context(), employee.MerchantId, customerId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving customer stats for merchant: %s", err.Error()))
 		return
@@ -1523,15 +1326,9 @@ func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	customer, err := m.Postgresdb.GetCustomerInfoByMerchant(r.Context(), merchantId, customerId)
+	customer, err := m.Postgresdb.GetCustomerInfoByMerchant(r.Context(), employee.MerchantId, customerId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving customer info for merchant: %s", err.Error()))
 		return
@@ -1667,9 +1464,9 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) DeleteMerchant(w http.ResponseWriter, r *http.Request) {
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	err := m.Postgresdb.DeleteMerchantByOwner(r.Context(), userID)
+	err := m.Postgresdb.DeleteMerchant(r.Context(), employee.Id, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting merchant: %s", err.Error()))
 		return
@@ -1699,15 +1496,9 @@ func (m *Merchant) ChangeMerchantName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	err = m.Postgresdb.ChangeMerchantNameAndURL(r.Context(), merchantId, data.Name, urlName)
+	err = m.Postgresdb.ChangeMerchantNameAndURL(r.Context(), employee.MerchantId, data.Name, urlName)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating merchant's name: %s", err.Error()))
 		return

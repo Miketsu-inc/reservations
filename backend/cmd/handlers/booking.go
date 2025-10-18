@@ -38,7 +38,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
+	userID := jwt.MustGetUserIDFromContext(r.Context())
 
 	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), bookData.MerchantName)
 	if err != nil {
@@ -218,15 +218,9 @@ func (a *Booking) GetBookings(w http.ResponseWriter, r *http.Request) {
 	start := r.URL.Query().Get("start")
 	end := r.URL.Query().Get("end")
 
-	userID := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	bookings, err := a.Postgresdb.GetBookingsByMerchant(r.Context(), merchantId, start, end)
+	bookings, err := a.Postgresdb.GetBookingsByMerchant(r.Context(), employee.MerchantId, start, end)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
@@ -255,15 +249,9 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving merchant from owner id: %s", err.Error()))
-		return
-	}
-
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
 		return
@@ -289,7 +277,7 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 	toDateMerchantTz := emailData.ToDate.In(merchantTz)
 	fromDateMerchantTz := emailData.FromDate.In(merchantTz)
 
-	err = a.Postgresdb.CancelBookingByMerchant(r.Context(), merchantId, bookingId, cancelData.CancellationReason)
+	err = a.Postgresdb.CancelBookingByMerchant(r.Context(), employee.MerchantId, bookingId, cancelData.CancellationReason)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling booking by merchant: %s", err.Error()))
 		return
@@ -344,13 +332,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := jwt.UserIDFromContext(r.Context())
-
-	merchantId, err := a.Postgresdb.GetMerchantIdByOwnerId(r.Context(), userID)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching for the merchant by this owner id: %s", err.Error()))
-		return
-	}
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	fromDate, err := time.Parse(time.RFC3339, bookData.FromDate)
 	if err != nil {
@@ -378,12 +360,12 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := a.Postgresdb.UpdateBookingData(r.Context(), merchantId, bookingId, bookData.MerchantNote, fromDateOffset); err != nil {
+	if err := a.Postgresdb.UpdateBookingData(r.Context(), employee.MerchantId, bookingId, bookData.MerchantNote, fromDateOffset); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
 		return
@@ -407,7 +389,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		Date:        fromDate.Format("Monday, January 2"),
 		Location:    oldEmailData.ShortLocation,
 		ServiceName: oldEmailData.ServiceName,
-		TimeZone:    merchantId.String(),
+		TimeZone:    employee.MerchantId.String(),
 		ModifyLink:  fmt.Sprintf("http://localhost:5173/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
 		OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
 		OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
@@ -495,7 +477,7 @@ func (a *Booking) CancelBookingByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := jwt.UserIDFromContext(r.Context())
+	userId := jwt.MustGetUserIDFromContext(r.Context())
 
 	merchantId, err := a.Postgresdb.GetMerchantIdByUrlName(r.Context(), data.MerchantName)
 	if err != nil {
