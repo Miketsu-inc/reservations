@@ -19,14 +19,14 @@ air:
 	@air -build.cmd "go build -o backend/bin/reservations.exe backend/cmd/main.go" -build.bin "backend\bin\reservations.exe"
 
 go-build:
-	@go build -o backend/bin/reservations.exe backend/cmd/main.go
+	@go build -tags=prod -o backend/bin/reservations.exe backend/cmd/main.go
 
 else
 air:
 	@air
 
 go-build:
-	@go build -o backend/bin/reservations backend/cmd/main.go
+	@go build -tags=prod -o backend/bin/reservations backend/cmd/main.go
 
 endif
 
