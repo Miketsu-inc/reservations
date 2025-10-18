@@ -12,7 +12,7 @@ import (
 )
 
 // Subscription middleware that check's if the merchant subscription tier
-// allowes them to access the http route, should not be called before the jwt middleware
+// allowes them to access the http route, should be called after the jwt middleware
 func SubscriptionMiddleware(tiers ...subscription.Tier) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

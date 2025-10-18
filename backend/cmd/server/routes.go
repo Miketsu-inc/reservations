@@ -7,8 +7,8 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
-	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/sub"
-	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/rbac"
+	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"github.com/miketsu-inc/reservations/frontend"
 
 	"github.com/go-chi/chi/v5"
@@ -163,52 +163,59 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 		r.Use(lang.LangMiddleware)
-		r.Use(sub.SubscriptionMiddleware(subscription.Free))
 
-		r.Delete("/", merchantHandler.DeleteMerchant)
-		r.Patch("/name", merchantHandler.ChangeMerchantName)
+		r.Group(func(r chi.Router) {
+			r.Use(rbac.RoleBasedAccessControlMiddleware(employee.Owner))
 
-		r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
-		r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
+			r.Delete("/", merchantHandler.DeleteMerchant)
+			r.Patch("/name", merchantHandler.ChangeMerchantName)
+		})
 
-		r.Get("/preferences", merchantHandler.GetPreferences)
-		r.Patch("/preferences", merchantHandler.UpdatePreferences)
+		r.Group(func(r chi.Router) {
+			r.Use(rbac.RoleBasedAccessControlMiddleware(employee.Staff, employee.Admin, employee.Owner))
 
-		r.Post("/location", merchantHandler.NewLocation)
+			r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
+			r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)
 
-		r.Get("/services", merchantHandler.GetServices)
-		r.Get("/services/form-options", merchantHandler.GetServiceFormOptions)
-		r.Post("/services", merchantHandler.NewService)
-		r.Get("/services/{id}", merchantHandler.GetService)
-		r.Delete("/services/{id}", merchantHandler.DeleteService)
-		r.Put("/services/{id}", merchantHandler.UpdateService)
-		r.Put("/services/{id}/products", merchantHandler.UpdateServiceProductConnections)
-		r.Post("/services/{id}/deactivate", merchantHandler.DeactivateService)
-		r.Post("/services/{id}/activate", merchantHandler.ActivateService)
-		r.Put("/services/reorder", merchantHandler.ReorderServices)
+			r.Get("/preferences", merchantHandler.GetPreferences)
+			r.Patch("/preferences", merchantHandler.UpdatePreferences)
 
-		r.Post("/services/categories", merchantHandler.NewServiceCategory)
-		r.Put("/services/categories/{id}", merchantHandler.UpdateServiceCategory)
-		r.Delete("/services/categories/{id}", merchantHandler.DeleteServiceCategory)
-		r.Put("/services/categories/reorder", merchantHandler.ReorderServiceCategories)
+			r.Post("/location", merchantHandler.NewLocation)
 
-		r.Get("/customers", merchantHandler.GetCustomers)
-		r.Post("/customers", merchantHandler.NewCustomer)
-		r.Delete("/customers/{id}", merchantHandler.DeleteCustomer)
-		r.Put("/customers/{id}", merchantHandler.UpdateCustomer)
-		r.Get("/customers/{id}", merchantHandler.GetCustomerInfo)
-		r.Get("/customers/stats/{id}", merchantHandler.GetCustomerStatistics)
-		r.Put("/customers/transfer", merchantHandler.TransferCustomerBookings)
-		r.Get("/customers/blacklist", merchantHandler.GetBlacklistedCustomers)
-		r.Post("/customers/blacklist/{id}", merchantHandler.BlacklistCustomer)
-		r.Delete("/customers/blacklist/{id}", merchantHandler.UnBlacklistCustomer)
+			r.Get("/services", merchantHandler.GetServices)
+			r.Get("/services/form-options", merchantHandler.GetServiceFormOptions)
+			r.Post("/services", merchantHandler.NewService)
+			r.Get("/services/{id}", merchantHandler.GetService)
+			r.Delete("/services/{id}", merchantHandler.DeleteService)
+			r.Put("/services/{id}", merchantHandler.UpdateService)
+			r.Put("/services/{id}/products", merchantHandler.UpdateServiceProductConnections)
+			r.Post("/services/{id}/deactivate", merchantHandler.DeactivateService)
+			r.Post("/services/{id}/activate", merchantHandler.ActivateService)
+			r.Put("/services/reorder", merchantHandler.ReorderServices)
 
-		r.Get("/products", merchantHandler.GetProducts)
-		r.Post("/products", merchantHandler.NewProduct)
-		r.Delete("/products/{id}", merchantHandler.DeleteProduct)
-		r.Put("/products/{id}", merchantHandler.UpdateProduct)
-		r.Get("/business-hours", merchantHandler.GetBusinessHours)
+			r.Post("/services/categories", merchantHandler.NewServiceCategory)
+			r.Put("/services/categories/{id}", merchantHandler.UpdateServiceCategory)
+			r.Delete("/services/categories/{id}", merchantHandler.DeleteServiceCategory)
+			r.Put("/services/categories/reorder", merchantHandler.ReorderServiceCategories)
 
-		r.Get("/dashboard", merchantHandler.GetDashboardData)
+			r.Get("/customers", merchantHandler.GetCustomers)
+			r.Post("/customers", merchantHandler.NewCustomer)
+			r.Delete("/customers/{id}", merchantHandler.DeleteCustomer)
+			r.Put("/customers/{id}", merchantHandler.UpdateCustomer)
+			r.Get("/customers/{id}", merchantHandler.GetCustomerInfo)
+			r.Get("/customers/stats/{id}", merchantHandler.GetCustomerStatistics)
+			r.Put("/customers/transfer", merchantHandler.TransferCustomerBookings)
+			r.Get("/customers/blacklist", merchantHandler.GetBlacklistedCustomers)
+			r.Post("/customers/blacklist/{id}", merchantHandler.BlacklistCustomer)
+			r.Delete("/customers/blacklist/{id}", merchantHandler.UnBlacklistCustomer)
+
+			r.Get("/products", merchantHandler.GetProducts)
+			r.Post("/products", merchantHandler.NewProduct)
+			r.Delete("/products/{id}", merchantHandler.DeleteProduct)
+			r.Put("/products/{id}", merchantHandler.UpdateProduct)
+			r.Get("/business-hours", merchantHandler.GetBusinessHours)
+
+			r.Get("/dashboard", merchantHandler.GetDashboardData)
+		})
 	})
 }
