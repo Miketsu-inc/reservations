@@ -1,0 +1,24 @@
+{
+  "files.readonlyInclude": {
+    "**/frontend/apps/jabulani/src/routeTree.gen.ts": true,
+    "**/frontend/apps/jabulani/src/routeTree.gen.js": true,
+    "**/frontend/apps/tango/src/routeTree.gen.ts": true,
+    "**/frontend/apps/tango/src/routeTree.gen.js": true
+  },
+  "files.watcherExclude": {
+    "**/frontend/apps/jabulani/src/routeTree.gen.ts": true,
+    "**/frontend/apps/jabulani/src/routeTree.gen.js": true,
+    "**/frontend/apps/tango/src/routeTree.gen.ts": true,
+    "**/frontend/apps/tango/src/routeTree.gen.js": true
+  },
+  "search.exclude": {
+    "**/frontend/apps/jabulani/src/routeTree.gen.ts": true,
+    "**/frontend/apps/jabulani/src/routeTree.gen.js": true,
+    "**/frontend/apps/tango/src/routeTree.gen.ts": true,
+    "**/frontend/apps/tango/src/routeTree.gen.js": true
+  },
+  "tailwindCSS.classAttributes": ["class", "className", "styles"],
+  "emmet.showAbbreviationSuggestions": false,
+  "emmet.showExpandedAbbreviation": "never",
+  "eslint.workingDirectories": [{ "directory": "frontend", "!cwd": true }]
+}

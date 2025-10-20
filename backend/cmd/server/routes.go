@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
@@ -9,7 +10,8 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/rbac"
 	"github.com/miketsu-inc/reservations/backend/pkg/employee"
-	"github.com/miketsu-inc/reservations/frontend"
+	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
+	"github.com/miketsu-inc/reservations/frontend/apps/tango"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,8 +23,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.AllowContentType("application/json"))
 	// r.Use(middleware.Recoverer)
 
-	staticFilesHandler(r)
-
 	var rh = RouteHandlers{&s.db}
 	r.Route("/api/v1/auth/user", rh.userAuthRoutes)
 	r.Route("/api/v1/auth/merchant", rh.merchantAuthRoutes)
@@ -30,11 +30,26 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/api/v1/merchants", rh.merchantRoutes)
 	r.Route("/api/v1/bookings", rh.bookingRoutes)
 
+	jabulani := jabulaniRouter()
+	tango := tangoRouter()
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		host := r.Host
+
+		if strings.HasPrefix(host, "app.") {
+			jabulani.ServeHTTP(w, r)
+		} else {
+			tango.ServeHTTP(w, r)
+		}
+	})
+
 	return r
 }
 
-func staticFilesHandler(r *chi.Mux) {
-	frontendRoutes := []string{
+func jabulaniRouter() chi.Router {
+	r := chi.NewRouter()
+
+	jabulaniRoutes := []string{
 		"/",
 		"/login",
 		"/signup",
@@ -54,17 +69,11 @@ func staticFilesHandler(r *chi.Mux) {
 		"/products",
 		"/dashboard",
 		"/merchantsignup",
-		"/m/{merchant_url}",
-		"/m/{merchant_url}/booking",
-		"/m/{merchant_url}/booking/completed",
-		"/m/{merchant_url}/services/{serviceId}",
-		"/m/{merchant_url}/cancel/{bookingId}",
-		"/m/{merchant_url}/cancel/{bookingId}/completed",
 	}
 
-	dist, assets := frontend.StaticFilesPath()
+	dist, assets := jabulani.StaticFilesPath()
 
-	for _, route := range frontendRoutes {
+	for _, route := range jabulaniRoutes {
 		r.Get(route, func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFileFS(w, r, dist, "index.html")
 		})
@@ -77,6 +86,42 @@ func staticFilesHandler(r *chi.Mux) {
 	r.Get("/theme.js", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFileFS(w, r, dist, "theme.js")
 	})
+
+	return r
+}
+
+func tangoRouter() chi.Router {
+	r := chi.NewRouter()
+
+	tangoRoutes := []string{
+		"/",
+		"/login",
+		"/signup",
+		"/m/{merchant_url}",
+		"/m/{merchant_url}/booking",
+		"/m/{merchant_url}/booking/completed",
+		"/m/{merchant_url}/services/{serviceId}",
+		"/m/{merchant_url}/cancel/{bookingId}",
+		"/m/{merchant_url}/cancel/{bookingId}/completed",
+	}
+
+	dist, assets := tango.StaticFilesPath()
+
+	for _, route := range tangoRoutes {
+		r.Get(route, func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFileFS(w, r, dist, "index.html")
+		})
+	}
+
+	r.Get("/assets/*", func(w http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/assets/", http.FileServerFS(assets)).ServeHTTP(w, r)
+	})
+
+	r.Get("/theme.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, dist, "theme.js")
+	})
+
+	return r
 }
 
 type RouteHandlers struct {

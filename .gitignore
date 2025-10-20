@@ -7,15 +7,14 @@ node_modules
 dist
 
 # Editor directories and files
-.vscode/*
 !.vscode/extensions.json
 
 # tailwindcss
 frontend/src/assets/output.css
 
 # tanstack generated routes
-frontend/src/routeTree.gen.ts
-frontend/src/routeTree.gen.js
+routeTree.gen.ts
+routeTree.gen.js
 .tanstack
 
 # backend

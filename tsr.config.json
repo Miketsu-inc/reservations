@@ -1,9 +1,0 @@
-{
-  "routesDirectory": "./frontend/src/routes",
-  "generatedRouteTree": "./frontend/src/routeTree.gen.ts",
-  "routeFileIgnorePrefix": "-",
-  "quoteStyle": "double",
-  "semicolons": true,
-  "disableTypes": true,
-  "autoCodeSplitting": true
-}

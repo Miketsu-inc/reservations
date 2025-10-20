@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@reservations/components": ["packages/components/index.js"],
+      "@reservations/assets": ["packages/assets/index.js"],
+      "@reservations/lib": ["packages/lib/index.js"]
+    }
+  },
+  "include": ["apps/**/*", "packages/**/*"]
+}

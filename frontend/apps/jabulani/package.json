@@ -1,0 +1,17 @@
+{
+  "name": "jabulani",
+  "private": true,
+  "version": "0.6.0",
+  "type": "module",
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.18",
+    "@fullcalendar/daygrid": "^6.1.18",
+    "@fullcalendar/interaction": "^6.1.18",
+    "@fullcalendar/list": "^6.1.18",
+    "@fullcalendar/react": "^6.1.18",
+    "@fullcalendar/timegrid": "^6.1.18",
+    "ag-grid-react": "^34.0.1",
+    "recharts": "^3.1.0"
+  },
+  "devDependencies": {}
+}

@@ -3,29 +3,27 @@
   "private": true,
   "version": "0.6.0",
   "type": "module",
+  "workspaces": [
+    "frontend/apps/*",
+    "frontend/packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev-jabulani": "vite --config frontend/apps/jabulani/vite.config.js --port 5173",
+    "dev-tango": "vite --config frontend/apps/tango/vite.config.js --port 5174",
+    "build-jabulani": "vite build --config frontend/apps/jabulani/vite.config.js",
+    "build-tango": "vite build --config frontend/apps/tango/vite.config.js",
     "test": "vitest run",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint frontend --ext js,jsx --config frontend/eslint.config.js --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fullcalendar/core": "^6.1.18",
-    "@fullcalendar/daygrid": "^6.1.18",
-    "@fullcalendar/interaction": "^6.1.18",
-    "@fullcalendar/list": "^6.1.18",
-    "@fullcalendar/react": "^6.1.18",
-    "@fullcalendar/timegrid": "^6.1.18",
     "@radix-ui/react-popover": "^1.1.14",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.127.3",
-    "ag-grid-react": "^34.0.1",
     "react": "^19.1.0",
     "react-day-picker": "^9.8.0",
-    "react-dom": "^19.1.0",
-    "recharts": "^3.1.0"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

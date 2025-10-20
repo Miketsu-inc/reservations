@@ -3,16 +3,21 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 4 tailwindcss vite air db
+	@make -j 3 tailwindcss air db
 
 build:
-	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
-	@npm run build
+	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
+	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --minify
+	@npm run build-jabulani
+	@npm run build-tango
 	@make email-build
 	@make go-build
 
-vite:
-	@npm run dev
+jabulani:
+	@npm run dev-jabulani
+
+tango:
+	@npm run dev-tango
 
 ifeq ($(OS),Windows_NT)
 air:
@@ -31,7 +36,8 @@ go-build:
 endif
 
 tailwindcss:
-	@npx @tailwindcss/cli -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --watch
+	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --watch
+	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --watch
 
 email:
 	@npx email dev --dir "backend/emails/templates"

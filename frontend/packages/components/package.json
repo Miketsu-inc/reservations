@@ -1,0 +1,6 @@
+{
+  "name": "@reservations/components",
+  "version": "0.6.0",
+  "type": "module",
+  "main": "./index.js"
+}
