@@ -3,7 +3,7 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 3 tailwindcss air db
+	@make -j 4 tailwindcss-jabulani tailwindcss-tango air db
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
@@ -35,8 +35,10 @@ go-build:
 
 endif
 
-tailwindcss:
+tailwindcss-jabulani:
 	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --watch
+
+tailwindcss-tango:
 	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --watch
 
 email:
