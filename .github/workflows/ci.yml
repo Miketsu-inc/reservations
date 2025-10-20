@@ -41,11 +41,17 @@ jobs:
       - name: Node lint
         run: npm run lint
 
-      - name: Tailwind build
-        run: npx tailwindcss -i ./frontend/src/assets/input.css -o ./frontend/src/assets/output.css --minify
+      - name: Jabulani tailwind build
+        run: npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
 
-      - name: Node build
-        run: npm run build
+      - name: Jabulani node build
+        run: npm run build-jabulani
+
+      - name: Tango tailwind build
+        run: npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --minify
+
+      - name: Tango node build
+        run: npm run build-tango
 
       - name: Node test
         run: npm run test
