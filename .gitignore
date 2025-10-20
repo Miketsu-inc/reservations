@@ -10,7 +10,8 @@ dist
 !.vscode/extensions.json
 
 # tailwindcss
-frontend/src/assets/output.css
+frontend/apps/tango/src/output.css
+frontend/apps/jabulani/src/output.css
 
 # tanstack generated routes
 routeTree.gen.ts
