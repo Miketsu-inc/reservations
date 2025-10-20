@@ -1,5 +1,5 @@
+import { ToastContext } from "@reservations/components";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { ToastContext } from "../../packages/components/ToastProvider";
 import "./autofill/detect-autofill";
 import { getBreakPoint } from "./utils";
 

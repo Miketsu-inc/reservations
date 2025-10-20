@@ -2,7 +2,7 @@ import {
   formatToDateString,
   getMonthFromCalendarStart,
   isDurationValid,
-} from "@reservations/lib";
+} from "@reservations/lib/datetime";
 import { describe, expect, it } from "vitest";
 
 describe("isDurationValid", () => {

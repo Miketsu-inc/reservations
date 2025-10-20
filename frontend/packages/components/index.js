@@ -24,6 +24,5 @@ export { default as SmallCalendar } from "./SmallCalendar.jsx";
 export { default as Switch } from "./Switch.jsx";
 export { default as Table } from "./Table.jsx";
 export { default as Textarea } from "./Textarea.jsx";
-export { default as ToastElement } from "./ToastElement.jsx";
 export { ToastContext, default as ToastProvider } from "./ToastProvider.jsx";
 export { TooltipContent, TooltipTrigger, Tootlip } from "./Tooltip.jsx";
