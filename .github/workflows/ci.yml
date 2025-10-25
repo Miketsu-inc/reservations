@@ -30,10 +30,10 @@ jobs:
       - name: Install node dependencies
         run: npm ci
 
-      - name: Go 1.24.1 setup
+      - name: Go 1.25.1 setup
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.1"
+          go-version: "1.25.1"
 
       - name: Install go dependencies
         run: go mod download
