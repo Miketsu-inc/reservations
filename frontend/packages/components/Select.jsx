@@ -21,6 +21,8 @@ export default function Select({
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [isUsingKeyboard, setIsUsingKeyboard] = useState(false);
+  const [triggerWidth, setTriggerWidth] = useState(null);
+
   const containerRef = useRef(null);
   const dropDownListRef = useRef(null);
 
@@ -33,6 +35,10 @@ export default function Select({
   function handleOpen() {
     setIsOpen(true);
     setHighlightedIndex(selectedIndex > -1 ? selectedIndex : 0);
+
+    if (containerRef.current) {
+      setTriggerWidth(containerRef.current.offsetWidth);
+    }
   }
 
   function handleClose() {
@@ -135,7 +141,7 @@ export default function Select({
         styles="p-0!"
         onKeyDown={handleKeyDown}
         style={{
-          width: containerRef.current?.offsetWidth || "auto",
+          width: triggerWidth || "auto",
         }}
       >
         {extraContent && <div className="p-2">{extraContent}</div>}

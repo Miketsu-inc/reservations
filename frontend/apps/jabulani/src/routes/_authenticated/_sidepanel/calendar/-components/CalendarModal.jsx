@@ -14,7 +14,7 @@ import {
   timeStringFromDate,
   useToast,
 } from "@reservations/lib";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import BookingInfoSection from "./BookingInfoSection";
 import DeleteBookingPopoverContent from "./DeleteBookingPopoverContent";
 import NotesSection from "./NotesSection";
@@ -36,7 +36,9 @@ export default function CalendarModal({
   //     bookingInfo.start.getDate()
   //   ),
   // });
-  const [merchantNote, setMerchantNote] = useState("");
+  const [merchantNote, setMerchantNote] = useState(
+    bookingInfo.extendedProps.merchant_note
+  );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isDeletePopoverOpen, setIsDeletePopoverOpen] = useState(false);
   const [isDatepickerOpen, setIsDatepickerOpen] = useState(false);
@@ -49,23 +51,6 @@ export default function CalendarModal({
 
   // startEditable is false when the end date is higher than the current date
   const disabled = !bookingInfo.startEditable;
-
-  useEffect(() => {
-    setMerchantNote(bookingInfo.extendedProps.merchant_note);
-    setBookingDatetime({
-      date: bookingInfo.start,
-      start_time: timeStringFromDate(bookingInfo.start).split(" ")[0],
-    });
-    // setRecurData({
-    //   isRecurring: false,
-    //   frequency: "weekly",
-    //   endDate: new Date(
-    //     bookingInfo.start.getFullYear(),
-    //     bookingInfo.start.getMonth() + 1,
-    //     bookingInfo.start.getDate()
-    //   ),
-    // });
-  }, [bookingInfo]);
 
   // function updateRecurData(data) {
   //   setRecurData((prev) => ({ ...prev, ...data }));

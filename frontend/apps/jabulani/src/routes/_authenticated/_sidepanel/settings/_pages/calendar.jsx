@@ -5,7 +5,7 @@ import {
 } from "@reservations/lib";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import RadioInputGroup from "../-components/RadioInputGroup";
 import SectionHeader from "../-components/SectionHeader";
 
@@ -73,7 +73,7 @@ export const Route = createFileRoute(
 });
 
 function CalendarPage() {
-  const [preferences, setPreferences] = useState(defaultPreferences);
+  const [unsavedChanges, setUnsavedChanges] = useState({});
   const [serverError, setServerError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -82,10 +82,13 @@ function CalendarPage() {
     preferencesQueryOptions()
   );
 
+  const preferences = { ...(data || defaultPreferences), ...unsavedChanges };
+
   const updateMutation = useMutation({
     mutationFn: updatePreferences,
     onSuccess: () => {
       queryClient.setQueryData(["preferences"], preferences);
+      setUnsavedChanges({});
       setServerError("");
     },
     onError: (error) => {
@@ -93,14 +96,8 @@ function CalendarPage() {
     },
   });
 
-  useEffect(() => {
-    if (data) {
-      setPreferences(data);
-    }
-  }, [data]);
-
   function handleUpdate() {
-    if (JSON.stringify(preferences) === JSON.stringify(data)) {
+    if (Object.keys(unsavedChanges).length === 0) {
       return;
     }
 
@@ -108,8 +105,9 @@ function CalendarPage() {
   }
 
   function handleInputChange(key, value) {
-    setPreferences((prev) => {
-      const newPreferences = { ...prev, [key]: value };
+    setUnsavedChanges((prev) => {
+      const newChanges = { ...prev, [key]: value };
+      const newPreferences = { ...(data || defaultPreferences), ...newChanges };
 
       if (key === "start_hour" || key === "end_hour") {
         const startHour = key === "start_hour" ? value : prev.start_hour;

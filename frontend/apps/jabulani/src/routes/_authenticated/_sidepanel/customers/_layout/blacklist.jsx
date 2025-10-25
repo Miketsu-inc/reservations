@@ -113,6 +113,7 @@ function BlacklistPage() {
   return (
     <div className="flex h-screen justify-center">
       <BlacklistModal
+        key={blacklistModalData?.id || "new"}
         data={blacklistModalData}
         isOpen={showBlacklistModal}
         onClose={() => setShowBlacklistModal(false)}

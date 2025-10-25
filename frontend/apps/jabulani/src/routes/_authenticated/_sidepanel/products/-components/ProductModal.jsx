@@ -12,7 +12,7 @@ import {
   unitConversionMap,
   unitOptions,
 } from "@reservations/lib";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const defaultProductData = {
   id: null,
@@ -31,31 +31,24 @@ const defaultProductData = {
 };
 
 export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
-  const [productData, setProductData] = useState(defaultProductData);
+  const [productData, setProductData] = useState(
+    data
+      ? {
+          ...data,
+          current_amount: convertFromBaseUnit(data.current_amount, data.unit)
+            .value,
+          current_amount_unit: convertFromBaseUnit(
+            data.current_amount,
+            data.unit
+          ).unit,
+          max_amount: convertFromBaseUnit(data.max_amount, data.unit).value,
+          max_amount_unit: convertFromBaseUnit(data.max_amount, data.unit).unit,
+          services: data.services || [],
+        }
+      : defaultProductData
+  );
   const [unitError, setUnitError] = useState();
   const [isSelectOpen, setIsSelectOpen] = useState(false);
-
-  useEffect(() => {
-    if (!data) {
-      setProductData(defaultProductData);
-      return;
-    }
-
-    const convertedCurrent = convertFromBaseUnit(
-      data.current_amount,
-      data.unit
-    );
-    const convertedMax = convertFromBaseUnit(data.max_amount, data.unit);
-
-    setProductData({
-      ...data,
-      current_amount: convertedCurrent.value,
-      current_amount_unit: convertedCurrent.unit,
-      max_amount: convertedMax.value,
-      max_amount_unit: convertedMax.unit,
-      services: data.services || [],
-    });
-  }, [data]);
 
   async function submitHandler(e) {
     e.preventDefault();

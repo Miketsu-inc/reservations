@@ -7,7 +7,7 @@ import {
 } from "@reservations/assets";
 import { Button, Card, ComboBox, Input } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function ProductAdder({
   availableProducts = [],
@@ -84,6 +84,7 @@ export default function ProductAdder({
       >
         <div className="flex flex-col gap-5 py-4 xl:flex-row xl:gap-10">
           <ProductForm
+            key={editProduct?.id || "new"}
             product={editProduct || {}}
             onSubmit={handleAddProduct}
             availableProducts={filteredAvailableProducts}
@@ -166,9 +167,9 @@ function ProductForm({
   usedProducts,
 }) {
   const [productData, setProductData] = useState({
-    id: 0,
-    unit: "",
-    amount_used: "",
+    id: product?.id || 0,
+    unit: product?.unit || "",
+    amount_used: product?.amount_used || "",
   });
   const windowSize = useWindowSize();
   const isWindowSmall = ["sm", "md", "lg"].includes(windowSize);
@@ -182,16 +183,6 @@ function ProductForm({
   );
 
   const isEdit = usedProducts.some((p) => p.id === productData.id);
-
-  useEffect(() => {
-    if (product?.id) {
-      setProductData({
-        id: product.id,
-        unit: product.unit,
-        amount_used: product.amount_used,
-      });
-    }
-  }, [product]);
 
   function submitHandler(e) {
     e.preventDefault();

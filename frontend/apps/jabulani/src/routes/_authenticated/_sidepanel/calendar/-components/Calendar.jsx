@@ -358,6 +358,7 @@ export default function Calendar({ router, route, search }) {
         />
       </div>
       <CalendarModal
+        key={bookingInfo?.id}
         bookingInfo={bookingInfo}
         isOpen={isModalOpen}
         onClose={() => {

@@ -1,13 +1,13 @@
 import { Button, Input, Modal, ServerError } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
   const [newName, setNewName] = useState("");
   const [merchantUrl, setMerchantUrl] = useState({ valid: false, url: "" });
   const [serverError, setServerError] = useState("");
 
-  let keyUpTimer;
+  const keyUpTimer = useRef(null);
 
   const checkMerchantUrl = useCallback(async (name) => {
     if (name !== "") {
@@ -38,11 +38,12 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
 
   function handleInputData(data) {
     setNewName(data.value);
-    if (keyUpTimer) {
-      clearTimeout(keyUpTimer);
+
+    if (keyUpTimer.current) {
+      clearTimeout(keyUpTimer.current);
     }
 
-    keyUpTimer = setTimeout(() => checkMerchantUrl(data.value), 600);
+    keyUpTimer.current = setTimeout(() => checkMerchantUrl(data.value), 600);
   }
 
   async function handleSubmit(e) {
@@ -97,7 +98,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
             buttonText="Cancel"
             onClick={() => {
               setNewName("");
-              setMerchantUrl("");
+              setMerchantUrl({ valid: false, url: "" });
               onClose();
             }}
           />

@@ -1,6 +1,6 @@
 import { Button, Input, ServerError } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const defaultFormData = {
   name: "",
@@ -12,13 +12,13 @@ const defaultMerchantUrl = {
   url: "",
 };
 
-var keyUpTimer;
-
 export default function MerchantInfoForm({ isCompleted }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
+
+  const keyUpTimer = useRef(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -103,11 +103,11 @@ export default function MerchantInfoForm({ isCompleted }) {
     }));
 
     if (data.name === "name" && formData.name !== data.value) {
-      if (keyUpTimer) {
-        clearTimeout(keyUpTimer);
+      if (keyUpTimer.current) {
+        clearTimeout(keyUpTimer.current);
       }
 
-      keyUpTimer = setTimeout(() => checkMerchantUrl(data.value), 600);
+      keyUpTimer.current = setTimeout(() => checkMerchantUrl(data.value), 600);
     }
   }
   return (

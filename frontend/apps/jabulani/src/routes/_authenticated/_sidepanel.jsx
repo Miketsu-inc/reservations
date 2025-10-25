@@ -26,7 +26,7 @@ import {
   useWindowSize,
 } from "@reservations/lib";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel")({
   component: SidePanelLayout,
@@ -42,10 +42,12 @@ export const Route = createFileRoute("/_authenticated/_sidepanel")({
 function SidePanelLayout() {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
-  const [isOpen, setIsOpen] = useState(isWindowSmall ? false : true);
+  const [isOpenend, setIsOpened] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(
     localStorage.getItem("sidepanel_collapsed") === "true"
   );
+
+  const isOpen = isWindowSmall ? isOpenend : true;
 
   const { isDarkTheme, switchTheme } = useTheme();
 
@@ -63,17 +65,9 @@ function SidePanelLayout() {
     }
   }, []);
 
-  useEffect(() => {
-    if (windowSize === "sm" || windowSize === "md") {
-      setIsOpen(false);
-    } else {
-      setIsOpen(true);
-    }
-  }, [windowSize]);
-
   function closeSidePanelHandler() {
     if (isWindowSmall) {
-      setIsOpen(false);
+      setIsOpened(false);
     }
   }
 
@@ -144,7 +138,7 @@ function SidePanelLayout() {
               aria-controls="sidepanel"
               type="button"
               className="text-text_color hover:bg-primary/20 rounded-lg text-sm"
-              onClick={() => setIsOpen(true)}
+              onClick={() => setIsOpened(true)}
             >
               <span className="sr-only">Open sidepanel</span>
               <HamburgerMenuIcon styles="h-6 w-6" />
@@ -201,7 +195,7 @@ function SidePanelLayout() {
               src="https://dummyimage.com/160x40/d156c3/000000.jpg"
             />
           </div>
-          <ol className="flex flex-1 flex-col space-y-2 pt-8 font-medium">
+          <ol className="flex flex-1 flex-col space-y-2 pt-8">
             {navigation.map((item, index) => (
               <li
                 className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}

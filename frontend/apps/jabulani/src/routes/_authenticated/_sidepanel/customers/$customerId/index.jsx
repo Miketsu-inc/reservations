@@ -253,6 +253,7 @@ function CustomerDetailsPage() {
         onSubmit={transferHandler}
       />
       <BlacklistModal
+        key={queryResults[0].data?.id || "new"}
         data={queryResults[0].data}
         isOpen={showBlacklistModal}
         onClose={() => setShowBlacklistModal(false)}

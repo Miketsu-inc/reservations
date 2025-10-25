@@ -1,15 +1,8 @@
 import { Button, Modal, Textarea } from "@reservations/components";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
-  const [reason, setReason] = useState("");
-
-  // without useEffect data is undefined on first render
-  useEffect(() => {
-    if (isOpen) {
-      setReason(data?.blacklist_reason || "");
-    }
-  }, [isOpen, data]);
+  const [reason, setReason] = useState(data?.blacklist_reason || "");
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -44,9 +37,9 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             styles="p-2 max-h-20 min-h-20"
             id="blacklist_reason"
             name="blacklist_reason"
-            labelText={data?.is_blacklisted ? "Your Reson for blacklist" : ""}
+            labelText={data?.is_blacklisted ? "Your Reason for blacklist" : ""}
             required={false}
-            placeholder="Add your reson here..."
+            placeholder="Add your reason here..."
             value={reason}
             inputData={(data) => setReason(data.value)}
           />
