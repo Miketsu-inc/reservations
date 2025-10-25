@@ -236,6 +236,7 @@ func NewAccessToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UU
 		Path:     "/",
 		// needs to be true in production
 		Secure:   false,
+		Domain:   ".reservations.local",
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -269,6 +270,7 @@ func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.U
 		Path:     "/",
 		// needs to be true in production
 		Secure:   false,
+		Domain:   ".reservations.local",
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -286,6 +288,7 @@ func DeleteJwts(w http.ResponseWriter) {
 		Expires:  time.Now().UTC(),
 		// needs to be true in production
 		Secure:   false,
+		Domain:   ".reservations.local",
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -298,6 +301,7 @@ func DeleteJwts(w http.ResponseWriter) {
 		Expires:  time.Now().UTC(),
 		// needs to be true in production
 		Secure:   false,
+		Domain:   ".reservations.local",
 		SameSite: http.SameSiteLaxMode,
 	})
 }

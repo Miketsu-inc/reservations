@@ -1,0 +1,11 @@
+{
+    auto_https off
+}
+
+http://app.reservations.local:3000 {
+    reverse_proxy localhost:5173
+}
+
+http://reservations.local:3000 {
+    reverse_proxy localhost:5174
+}

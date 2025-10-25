@@ -150,15 +150,14 @@ function SidePanelLayout() {
               <HamburgerMenuIcon styles="h-6 w-6" />
             </button>
             <div className="flex flex-row gap-4">
-              <Link
+              <a
                 className="hover:bg-primary/20 flex flex-row items-center gap-2
                   rounded-lg p-2"
-                from={Route.fullPath}
-                to="/m/bwnet"
+                href="http://reservations.local:3000/m/bwnet"
               >
                 <LinkIcon styles="size-5" />
                 <span>Live booking page</span>
-              </Link>
+              </a>
               <button
                 className="cursor-pointer transition-transform duration-300"
                 onClick={switchTheme}
@@ -293,15 +292,14 @@ function SidePanelLayout() {
               <Breadcrumbs /> */}
             </div>
             <div className="flex flex-row gap-4">
-              <Link
+              <a
                 className="hover:bg-primary/20 flex flex-row items-center gap-2
                   rounded-lg p-2"
-                from={Route.fullPath}
-                to="/m/bwnet"
+                href="http://reservations.local:3000/m/bwnet"
               >
                 <LinkIcon styles="size-5" />
                 <span>Live booking page</span>
-              </Link>
+              </a>
               <button
                 className="cursor-pointer transition-transform duration-300"
                 onClick={switchTheme}

@@ -3,7 +3,13 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 4 tailwindcss-jabulani tailwindcss-tango air db
+	@make -j 5 run-jabulani run-tango air db caddy
+
+run-jabulani:
+	@make -j 2 vite-jabulani tailwindcss-jabulani
+
+run-tango:
+	@make -j 2 vite-tango tailwindcss-tango
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
@@ -13,10 +19,10 @@ build:
 	@make email-build
 	@make go-build
 
-jabulani:
+vite-jabulani:
 	@npm run dev-jabulani
 
-tango:
+vite-tango:
 	@npm run dev-tango
 
 ifeq ($(OS),Windows_NT)
@@ -46,6 +52,9 @@ email:
 
 email-build:
 	@npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty
+
+caddy:
+	@caddy run --config Caddyfile
 
 db:
 	@docker start postgresdb

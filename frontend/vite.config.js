@@ -34,6 +34,7 @@ const createBaseConfig = ({ appRoot }) =>
                   secure: false,
                 },
               },
+              allowedHosts: [".reservations.local"],
             },
       // Keeping for debug purposes
       // build: {

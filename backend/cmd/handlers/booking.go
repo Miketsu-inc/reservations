@@ -180,7 +180,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		Location:    location.PostalCode + " " + location.City + " " + location.Address,
 		ServiceName: service.Name,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  "http://localhost:5173/m/" + bookData.MerchantName + "/cancel/" + strconv.Itoa(bookingId),
+		ModifyLink:  "http://reservations.local:3000/m/" + bookData.MerchantName + "/cancel/" + strconv.Itoa(bookingId),
 	}
 
 	lang := lang.LangFromContext(r.Context())
@@ -292,7 +292,7 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 		ServiceName:    emailData.ServiceName,
 		TimeZone:       merchantTz.String(),
 		Reason:         cancelData.CancellationReason,
-		NewBookingLink: "http://localhost:5173/m/" + emailData.MerchantName,
+		NewBookingLink: "http://reservations.local:3000/m/" + emailData.MerchantName,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while sending cancellation email: %s", err.Error()))
@@ -390,7 +390,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		Location:    oldEmailData.ShortLocation,
 		ServiceName: oldEmailData.ServiceName,
 		TimeZone:    employee.MerchantId.String(),
-		ModifyLink:  fmt.Sprintf("http://localhost:5173/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
+		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
 		OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
 		OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
 	})
@@ -420,7 +420,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 			Location:    oldEmailData.ShortLocation,
 			ServiceName: oldEmailData.ServiceName,
 			TimeZone:    merchantTz.String(),
-			ModifyLink:  fmt.Sprintf("http://localhost:5173/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
+			ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
 		}, reminderDate)
 		if err != nil {
 			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))

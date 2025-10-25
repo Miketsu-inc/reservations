@@ -79,7 +79,7 @@ export default function BookingConfirmation() {
 
             <Section className="mb-8 text-left">
               <Button
-                href="http://localhost:5173/calendar"
+                href="http://reservations.local:3000/calendar"
                 className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3
                   text-[14px] font-medium text-white"
                 style={{
