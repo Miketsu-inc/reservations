@@ -63,9 +63,9 @@ jobs:
         run: go build -tags=prod -o backend/bin/reservations backend/cmd/main.go
 
       - name: Go lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.0.2
+          version: v2.5.0
 
       - name: Go test
         run: go test -v ./backend/...
