@@ -497,7 +497,7 @@ func (s *service) GetNormalizedBusinessHours(ctx context.Context, merchantId uui
 	return result, nil
 }
 
-func (s *service) GetMerchantTimezoneById(ctx context.Context, merchantId uuid.UUID) (string, error) {
+func (s *service) GetMerchantTimezoneById(ctx context.Context, merchantId uuid.UUID) (*time.Location, error) {
 	query := `
 	select timezone from "Merchant"
 	where id = $1
@@ -506,10 +506,15 @@ func (s *service) GetMerchantTimezoneById(ctx context.Context, merchantId uuid.U
 	var timzone string
 	err := s.db.QueryRow(ctx, query, merchantId).Scan(&timzone)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return timzone, nil
+	tz, err := time.LoadLocation(timzone)
+	if err != nil {
+		return nil, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error())
+	}
+
+	return tz, nil
 }
 
 type LowStockProduct struct {
@@ -825,4 +830,20 @@ func (s *service) ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.
 	}
 
 	return nil
+}
+
+func (s *service) GetMerchantUrlNameById(ctx context.Context, merchantId uuid.UUID) (string, error) {
+	query := `
+	select url_name
+	from "Merchant"
+	where id = $1
+	`
+
+	var urlName string
+	err := s.db.QueryRow(ctx, query, merchantId).Scan(&urlName)
+	if err != nil {
+		return "", err
+	}
+
+	return urlName, nil
 }

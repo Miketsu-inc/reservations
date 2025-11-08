@@ -14,6 +14,7 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/resend/resend-go/v2 v2.27.0
 	github.com/stretchr/testify v1.11.1
+	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/crypto v0.43.0
 	golang.org/x/text v0.30.0
 )

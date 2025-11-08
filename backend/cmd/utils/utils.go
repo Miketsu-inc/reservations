@@ -94,3 +94,20 @@ func CalculatePercentChange(previous int, current int) int {
 func TruncateToDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
+
+// Repeats the given slice for the given times
+func RepeatSlice[T any](s []T, times int) []T {
+	if times <= 0 || len(s) == 0 {
+		return s
+	}
+
+	n := len(s)
+	result := make([]T, n*times)
+	copy(result, s)
+
+	for copied := n; copied < len(result); copied *= 2 {
+		copy(result[copied:], result[:copied])
+	}
+
+	return result
+}

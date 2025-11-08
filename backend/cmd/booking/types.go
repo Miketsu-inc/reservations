@@ -2,6 +2,7 @@ package booking
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -104,6 +105,25 @@ func (t *Type) Scan(src any) error {
 	}
 
 	btype, err := NewType(typeStr)
+	if err != nil {
+		return err
+	}
+
+	*t = btype
+	return nil
+}
+
+func (t Type) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.btype)
+}
+
+func (t *Type) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	btype, err := NewType(s)
 	if err != nil {
 		return err
 	}

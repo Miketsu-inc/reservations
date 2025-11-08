@@ -29,14 +29,14 @@ func (s *service) NewLocation(ctx context.Context, location Location) error {
 	return nil
 }
 
-func (s *service) GetLocationById(ctx context.Context, locationId int) (Location, error) {
+func (s *service) GetLocationById(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error) {
 	query := `
 	select * from "Location"
-	where id = $1
+	where id = $1 and merchant_id = $2
 	`
 
 	var location Location
-	err := s.db.QueryRow(ctx, query, locationId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City,
+	err := s.db.QueryRow(ctx, query, locationId, merchantId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City,
 		&location.PostalCode, &location.Address)
 	if err != nil {
 		return Location{}, err

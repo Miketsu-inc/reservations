@@ -442,3 +442,20 @@ func (s *service) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]E
 
 	return employeeAuthInfo, nil
 }
+
+func (s *service) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (string, error) {
+	query := `
+	select coalesce(c.email, u.email)
+	from "Customer" c
+	join "User" u on u.id = c.user_id
+	where c.id = $1 and c.merchant_id = $2
+	`
+
+	var email string
+	err := s.db.QueryRow(ctx, query, customerId, merchantId).Scan(&email)
+	if err != nil {
+		return "", err
+	}
+
+	return email, nil
+}

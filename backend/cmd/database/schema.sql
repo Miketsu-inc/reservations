@@ -125,14 +125,52 @@ create table if not exists "Customer" (
     constraint unique_merchant_user unique (merchant_id, user_id)
 );
 
-create table if not exists "Booking" (
+create table if not exists "BookingSeries" (
     ID                       serial          primary key unique not null,
-    status                   booking_status  not null default 'booked',
     booking_type             booking_type    not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              serial          references "Employee" (ID) on delete set null,
     service_id               integer         references "Service" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
+    rrule                    text            not null,
+    dstart                   timestamptz     not null,
+    timezone                 text            not null,
+    is_active                boolean         not null default true
+);
+
+create table if not exists "BookingSeriesDetails" (
+    ID                       serial          primary key unique not null,
+    booking_series_id        integer         references "BookingSeries" (ID) on delete cascade not null,
+    price_per_person         price           not null,
+    cost_per_person          price           not null,
+    total_price              price           not null,
+    total_cost               price           not null,
+    min_participants         integer         not null,
+    max_participants         integer         not null,
+    current_participants     integer         not null
+);
+
+create table if not exists "BookingSeriesParticipant" (
+    ID                       serial          primary key unique not null,
+    booking_series_id        integer         references "BookingSeries" (ID) on delete cascade not null,
+    customer_id              uuid            references "Customer" (ID) on delete cascade not null,
+    is_active                boolean         not null default true,
+    dropped_out_on           timestamptz,
+
+    constraint unique_booking_series_participant unique (booking_series_id, customer_id)
+);
+
+create table if not exists "Booking" (
+    ID                       serial          primary key unique not null,
+    status                   booking_status  not null default 'booked',
+    booking_type             booking_type    not null,
+    is_recurring             boolean         not null default false,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    employee_id              serial          references "Employee" (ID) on delete set null,
+    service_id               integer         references "Service" (ID) not null,
+    location_id              integer         references "Location" (ID) not null,
+    booking_series_id        integer         references "BookingSeries" (ID) on delete set null,
+    series_original_date     timestamptz,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null
 );

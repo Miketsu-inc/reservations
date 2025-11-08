@@ -23,7 +23,7 @@ type Booking struct {
 	Postgresdb database.PostgreSQL
 }
 
-func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
+func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	type BookingData struct {
 		MerchantName string `json:"merchant_name" validate:"required"`
 		ServiceId    int    `json:"service_id" validate:"required"`
@@ -46,15 +46,9 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	merchantTz, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -64,25 +58,15 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if service.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
-		return
-	}
-
 	bookingSettings, err := a.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant %s", err.Error()))
 		return
 	}
 
-	location, err := a.Postgresdb.GetLocationById(r.Context(), bookData.LocationId)
+	location, err := a.Postgresdb.GetLocationById(r.Context(), bookData.LocationId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
-		return
-	}
-
-	if location.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this location id does not belong to this merchant"))
 		return
 	}
 
@@ -145,7 +129,7 @@ func (a *Booking) Create(w http.ResponseWriter, r *http.Request) {
 		cost = *service.Cost
 	}
 
-	bookingId, err := a.Postgresdb.NewBooking(r.Context(), database.NewBooking{
+	bookingId, err := a.Postgresdb.NewBookingByCustomer(r.Context(), database.NewCustomerBooking{
 		Status:         booking.Booked,
 		BookingType:    booking.Appointment,
 		MerchantId:     merchantId,
@@ -251,15 +235,9 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
+	merchantTz, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -365,15 +343,9 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timezone, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
+	merchantTz, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 

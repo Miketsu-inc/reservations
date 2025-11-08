@@ -8,20 +8,24 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Booking struct {
-	Id          int            `json:"ID" db:"id"`
-	Status      booking.Status `json:"status"`
-	BookingType booking.Type   `json:"booking_type"`
-	MerchantId  uuid.UUID      `json:"merchant_id" db:"merchant_id"`
-	EmployeeId  *int           `json:"employee_id" db:"employee_id"`
-	ServiceId   int            `json:"service_id" db:"service_id"`
-	LocationId  int            `json:"location_id" db:"location_id"`
-	FromDate    time.Time      `json:"from_date" db:"from_date"`
-	ToDate      time.Time      `json:"to_date" db:"to_date"`
+	Id                 int            `json:"ID" db:"id"`
+	Status             booking.Status `json:"status" db:"status"`
+	BookingType        booking.Type   `json:"booking_type" db:"booking_type"`
+	IsRecurring        bool           `json:"is_recurring" db:"is_recurring"`
+	MerchantId         uuid.UUID      `json:"merchant_id" db:"merchant_id"`
+	EmployeeId         *int           `json:"employee_id" db:"employee_id"`
+	ServiceId          int            `json:"service_id" db:"service_id"`
+	LocationId         int            `json:"location_id" db:"location_id"`
+	BookingSeriesId    int            `json:"booking_series_id" db:"booking_series_id"`
+	SeriesOriginalDate time.Time      `json:"series_original_date" db:"series_original_date"`
+	FromDate           time.Time      `json:"from_date" db:"from_date"`
+	ToDate             time.Time      `json:"to_date" db:"to_date"`
 }
 
 type BookingDetails struct {
@@ -59,7 +63,40 @@ type BookingPhase struct {
 	ToDate         time.Time `json:"to_date"`
 }
 
-type NewBooking struct {
+type BookingSeries struct {
+	Id          int          `json:"id" db:"id"`
+	BookingType booking.Type `json:"booking_type" db:"booking_type"`
+	MerchantId  uuid.UUID    `json:"merchant_id" db:"merchant_id"`
+	EmployeeId  int          `json:"employee_id" db:"employee_id"`
+	ServiceId   int          `json:"service_id" db:"service_id"`
+	LocationId  int          `json:"location_id" db:"location_id"`
+	Rrule       string       `json:"rrule" db:"rrule"`
+	Dstart      time.Time    `json:"dstart" db:"dstart"`
+	Timezone    string       `json:"timezone" db:"timezone"`
+	IsActive    bool         `json:"is_active" db:"is_active"`
+}
+
+type BookingSeriesDetails struct {
+	Id                  int             `json:"id" db:"id"`
+	BookingSeriesId     int             `json:"booking_series_id" db:"booking_series_id"`
+	PricePerPerson      currencyx.Price `json:"price_per_person" db:"price_per_person"`
+	CostPerPerson       currencyx.Price `json:"cost_per_person" db:"cost_per_person"`
+	TotalPrice          currencyx.Price `json:"total_price" db:"total_price"`
+	TotalCost           currencyx.Price `json:"total_cost" db:"total_cost"`
+	MinParticipants     int             `json:"min_participants" db:"min_participants"`
+	MaxParticipants     int             `json:"max_participants" db:"max_participants"`
+	CurrentParticipants int             `json:"current_participants" db:"current_participants"`
+}
+
+type BookingSeriesParticipant struct {
+	Id              int        `json:"id" db:"id"`
+	BookingSeriesId int        `json:"booking_series_id" db:"booking_series_id"`
+	CustomerId      uuid.UUID  `json:"customer_id" db:"customer_id"`
+	IsActive        bool       `json:"is_active" db:"is_active"`
+	DroppedOutOn    *time.Time `json:"dropped_out_on" db:"dropped_out_on"`
+}
+
+type newBookingData struct {
 	Status         booking.Status       `json:"status"`
 	BookingType    booking.Type         `json:"booking_type"`
 	MerchantId     uuid.UUID            `json:"merchant_id"`
@@ -68,37 +105,14 @@ type NewBooking struct {
 	FromDate       time.Time            `json:"from_date"`
 	ToDate         time.Time            `json:"to_date"`
 	CustomerNote   *string              `json:"customer_note"`
+	MerchantNote   *string              `json:"merchant_note"`
 	PricePerPerson currencyx.Price      `json:"price_per_person"`
 	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	UserId         uuid.UUID            `json:"user_id"`
 	CustomerId     uuid.UUID            `json:"customer_id"`
 	Phases         []PublicServicePhase `json:"phases"`
 }
 
-func (s *service) NewBooking(ctx context.Context, nb NewBooking) (int, error) {
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
-	// nolint:errcheck
-	defer tx.Rollback(ctx)
-
-	var IsBlacklisted bool
-	ensureCustomerQuery := `
-	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
-	on conflict (merchant_id, user_id) do update
-	set merchant_id = excluded.merchant_id
-	returning id, is_blacklisted`
-
-	var customerId uuid.UUID
-	err = tx.QueryRow(ctx, ensureCustomerQuery, nb.CustomerId, nb.MerchantId, nb.UserId).Scan(&customerId, &IsBlacklisted)
-	if err != nil {
-		return 0, err
-	}
-	if IsBlacklisted {
-		return 0, fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
-	}
-
+func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) {
 	var bookingId int
 
 	if nb.BookingType == booking.Appointment {
@@ -108,7 +122,7 @@ func (s *service) NewBooking(ctx context.Context, nb NewBooking) (int, error) {
 		returning id
 		`
 
-		err = tx.QueryRow(ctx, insertBookingQuery, nb.Status, nb.BookingType, nb.MerchantId, nb.ServiceId, nb.LocationId, nb.FromDate, nb.ToDate).Scan(&bookingId)
+		err := tx.QueryRow(ctx, insertBookingQuery, nb.Status, nb.BookingType, nb.MerchantId, nb.ServiceId, nb.LocationId, nb.FromDate, nb.ToDate).Scan(&bookingId)
 		if err != nil {
 			return bookingId, err
 		}
@@ -136,7 +150,7 @@ func (s *service) NewBooking(ctx context.Context, nb NewBooking) (int, error) {
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
 
-		_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, nb.PricePerPerson, nb.CostPerPerson, "", 1, 1, 1)
+		_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, nb.PricePerPerson, nb.CostPerPerson, nb.MerchantNote, 1, 1, 1)
 		if err != nil {
 			return 0, err
 		}
@@ -146,13 +160,125 @@ func (s *service) NewBooking(ctx context.Context, nb NewBooking) (int, error) {
 		values ($1, $2, $3, $4)
 		`
 
-		_, err = tx.Exec(ctx, insertBookingParticipantQuery, nb.Status, bookingId, customerId, nb.CustomerNote)
+		_, err = tx.Exec(ctx, insertBookingParticipantQuery, nb.Status, bookingId, nb.CustomerId, nb.CustomerNote)
 		if err != nil {
 			return 0, err
 		}
 
 	} else {
 		assert.Never("TODO: Booking events or classes are not implemented yet!", nb)
+	}
+
+	return bookingId, nil
+}
+
+type NewCustomerBooking struct {
+	Status         booking.Status       `json:"status"`
+	BookingType    booking.Type         `json:"booking_type"`
+	MerchantId     uuid.UUID            `json:"merchant_id"`
+	ServiceId      int                  `json:"service_id"`
+	LocationId     int                  `json:"location_id"`
+	FromDate       time.Time            `json:"from_date"`
+	ToDate         time.Time            `json:"to_date"`
+	CustomerNote   *string              `json:"customer_note"`
+	PricePerPerson currencyx.Price      `json:"price_per_person"`
+	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
+	UserId         uuid.UUID            `json:"user_id"`
+	CustomerId     uuid.UUID            `json:"customer_id"`
+	Phases         []PublicServicePhase `json:"phases"`
+}
+
+func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBooking) (int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	var IsBlacklisted bool
+	ensureCustomerQuery := `
+	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
+	on conflict (merchant_id, user_id) do update
+	set merchant_id = excluded.merchant_id
+	returning id, is_blacklisted`
+
+	var customerId uuid.UUID
+	err = tx.QueryRow(ctx, ensureCustomerQuery, nb.CustomerId, nb.MerchantId, nb.UserId).Scan(&customerId, &IsBlacklisted)
+	if err != nil {
+		return 0, err
+	}
+	if IsBlacklisted {
+		return 0, fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
+	}
+
+	bookingId, err := newBooking(ctx, tx, newBookingData{
+		Status:         nb.Status,
+		BookingType:    nb.BookingType,
+		MerchantId:     nb.MerchantId,
+		ServiceId:      nb.ServiceId,
+		LocationId:     nb.LocationId,
+		FromDate:       nb.FromDate,
+		ToDate:         nb.ToDate,
+		CustomerNote:   nb.CustomerNote,
+		MerchantNote:   nil,
+		PricePerPerson: nb.PricePerPerson,
+		CostPerPerson:  nb.CostPerPerson,
+		CustomerId:     customerId,
+		Phases:         nb.Phases,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return bookingId, nil
+}
+
+type NewMerchantBooking struct {
+	Status         booking.Status       `json:"status"`
+	BookingType    booking.Type         `json:"booking_type"`
+	MerchantId     uuid.UUID            `json:"merchant_id"`
+	ServiceId      int                  `json:"service_id"`
+	LocationId     int                  `json:"location_id"`
+	FromDate       time.Time            `json:"from_date"`
+	ToDate         time.Time            `json:"to_date"`
+	MerchantNote   *string              `json:"merchant_note"`
+	PricePerPerson currencyx.Price      `json:"price_per_person"`
+	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
+	CustomerId     uuid.UUID            `json:"customer_id"`
+	Phases         []PublicServicePhase `json:"phases"`
+}
+
+func (s *service) NewBookingByMerchant(ctx context.Context, nb NewMerchantBooking) (int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	bookingId, err := newBooking(ctx, tx, newBookingData{
+		Status:         nb.Status,
+		BookingType:    nb.BookingType,
+		MerchantId:     nb.MerchantId,
+		ServiceId:      nb.ServiceId,
+		LocationId:     nb.LocationId,
+		FromDate:       nb.FromDate,
+		ToDate:         nb.ToDate,
+		CustomerNote:   nil,
+		MerchantNote:   nb.MerchantNote,
+		PricePerPerson: nb.PricePerPerson,
+		CostPerPerson:  nb.CostPerPerson,
+		CustomerId:     nb.CustomerId,
+		Phases:         nb.Phases,
+	})
+	if err != nil {
+		return 0, err
 	}
 
 	err = tx.Commit(ctx)
@@ -487,4 +613,201 @@ func (s *service) GetPublicBookingInfo(ctx context.Context, bookingId int) (Publ
 	}
 
 	return data, nil
+}
+
+type NewRecurringBookings struct {
+	BookingSeriesId int
+	BookingStatus   booking.Status
+	BookingType     booking.Type
+	MerchantId      uuid.UUID
+	EmployeeId      int
+	ServiceId       int
+	LocationId      int
+	FromDates       []time.Time
+	ToDates         []time.Time
+	Phases          []PublicServicePhase `json:"phases"`
+	Details         BookingSeriesDetails
+	Participants    []BookingSeriesParticipant
+}
+
+func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecurringBookings) (int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	assert.True(len(nrb.FromDates) == len(nrb.ToDates), "Length of fromDates and toDates slices should be equal!", len(nrb.FromDates), len(nrb.ToDates), nrb)
+	var bookingIds []int
+
+	if nrb.BookingType == booking.Appointment {
+		insertBookingsQuery := `
+		insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date)
+		select $1, $2, $3, $4, $5, $6, $7, $8, unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[])
+		returning id
+		`
+
+		rows, _ := tx.Query(ctx, insertBookingsQuery, nrb.BookingStatus, nrb.BookingType, true, nrb.MerchantId, nrb.EmployeeId, nrb.ServiceId, nrb.LocationId,
+			nrb.BookingSeriesId, nrb.FromDates, nrb.FromDates, nrb.ToDates)
+		bookingIds, err = pgx.CollectRows(rows, pgx.RowTo[int])
+		if err != nil {
+			return 0, err
+		}
+
+		insertBookingPhasesQuery := `
+		insert into "BookingPhase" (booking_id, service_phase_id, from_date, to_date)
+		select unnest($1::int[]), unnest($2::int[]), unnest($3::timestamptz[]), unnest($4::timestamptz[])
+		`
+
+		assert.True(len(nrb.FromDates) == len(bookingIds), "Length of fromDate and bookingIds slices should be equal!", len(nrb.FromDates), len(bookingIds), nrb)
+
+		var phaseIds []int
+		var phaseFromDates []time.Time
+		var phaseToDates []time.Time
+
+		bookingStart := nrb.FromDates[0]
+		for _, phase := range nrb.Phases {
+			phaseDuration := time.Duration(phase.Duration) * time.Minute
+			bookingEnd := bookingStart.Add(phaseDuration)
+
+			phaseIds = append(phaseIds, phase.Id)
+			phaseFromDates = append(phaseFromDates, bookingStart)
+			phaseToDates = append(phaseToDates, bookingEnd)
+
+			bookingStart = bookingEnd
+		}
+
+		times := len(bookingIds)
+
+		phaseIds = utils.RepeatSlice(phaseIds, times)
+		phaseFromDates = utils.RepeatSlice(phaseFromDates, times)
+		phaseToDates = utils.RepeatSlice(phaseToDates, times)
+
+		_, err = tx.Exec(ctx, insertBookingPhasesQuery, bookingIds, phaseIds, phaseFromDates, phaseToDates)
+		if err != nil {
+			return 0, err
+		}
+
+		insertBookingDetailsQuery := `
+		insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
+		select unnest($1::int[]), $2, $3, $4, $5, $6, $7, $8, $9
+		`
+
+		_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingIds, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson,
+			"", nrb.Details.MinParticipants, nrb.Details.MaxParticipants, nrb.Details.CurrentParticipants)
+		if err != nil {
+			return 0, err
+		}
+
+		insertBookingParticipantsQuery := `
+		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note)
+		select $1, unnest($2::int[]), $3, $4
+		`
+
+		_, err = tx.Exec(ctx, insertBookingParticipantsQuery, booking.Booked, bookingIds, nrb.Participants[0].CustomerId, "")
+		if err != nil {
+			return 0, err
+		}
+
+	} else {
+		assert.Never("TODO: Booking events or classes are not implemented yet!", nrb)
+	}
+
+	return bookingIds[0], tx.Commit(ctx)
+}
+
+func (s *service) GetExistingOccurrenceDates(ctx context.Context, seriesId int, fromDate, toDate time.Time) ([]time.Time, error) {
+	query := `
+	select series_original_date
+	from "Booking"
+	where booking_series_id = $1 and series_original_date >= $2 and series_original_date <= $3
+	`
+
+	rows, _ := s.db.Query(ctx, query, seriesId, fromDate, toDate)
+	dates, err := pgx.CollectRows(rows, pgx.RowTo[time.Time])
+	if err != nil {
+		return []time.Time{}, nil
+	}
+
+	return dates, nil
+}
+
+type CompleteBookingSeries struct {
+	BookingSeries
+	Details      BookingSeriesDetails
+	Participants []BookingSeriesParticipant
+}
+
+type NewBookingSeries struct {
+	BookingType    booking.Type
+	MerchantId     uuid.UUID
+	EmployeeId     int
+	ServiceId      int
+	LocationId     int
+	Rrule          string
+	Dstart         time.Time
+	Timezone       *time.Location
+	PricePerPerson currencyx.Price
+	CostPerPerson  currencyx.Price
+	Participants   []uuid.UUID
+}
+
+func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (CompleteBookingSeries, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return CompleteBookingSeries{}, err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	var booking CompleteBookingSeries
+
+	insertBookingSeriesQuery := `
+	insert into "BookingSeries" (booking_type, merchant_id, employee_id, service_id, location_id, rrule, dstart, timezone, is_active)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	returning *
+	`
+
+	rows, _ := tx.Query(ctx, insertBookingSeriesQuery, nbs.BookingType, nbs.MerchantId, nbs.EmployeeId, nbs.ServiceId, nbs.LocationId, nbs.Rrule, nbs.Dstart,
+		nbs.Timezone.String(), true)
+	bookingSeries, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[BookingSeries])
+	if err != nil {
+		return CompleteBookingSeries{}, err
+	}
+
+	insertBookingSeriesDetailsQuery := `
+	insert into "BookingSeriesDetails" (booking_series_id, price_per_person, cost_per_person, total_price, total_cost, min_participants, max_participants, current_participants)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
+	returning *
+	`
+
+	rows, _ = tx.Query(ctx, insertBookingSeriesDetailsQuery, bookingSeries.Id, nbs.PricePerPerson, nbs.CostPerPerson, nbs.PricePerPerson, nbs.CostPerPerson, 1, 1, 1)
+	bookingSeriesDetails, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[BookingSeriesDetails])
+	if err != nil {
+		return CompleteBookingSeries{}, err
+	}
+
+	insertBookingSeriesParticipantsQuery := `
+	insert into "BookingSeriesParticipant" (booking_series_id, customer_id, is_active)
+	select $1, unnest($2::uuid[]), $3
+	returning *
+	`
+
+	rows, _ = tx.Query(ctx, insertBookingSeriesParticipantsQuery, bookingSeries.Id, nbs.Participants, true)
+	bookingSeriesParticipants, err := pgx.CollectRows(rows, pgx.RowToStructByName[BookingSeriesParticipant])
+	if err != nil {
+		return CompleteBookingSeries{}, err
+	}
+
+	booking.BookingSeries = bookingSeries
+	booking.Details = bookingSeriesDetails
+	booking.Participants = bookingSeriesParticipants
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return CompleteBookingSeries{}, err
+	}
+
+	return booking, nil
 }

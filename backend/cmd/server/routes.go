@@ -140,7 +140,7 @@ func (rh *RouteHandlers) bookingRoutes(r chi.Router) {
 		r.Delete("/{id}", bookingHandler.CancelBookingByMerchant)
 		r.Patch("/{id}", bookingHandler.UpdateBookingData)
 
-		r.Post("/new", bookingHandler.Create)
+		r.Post("/new", bookingHandler.CreateByCustomer)
 		r.Get("/all", bookingHandler.GetBookings)
 
 		r.Get("/public/{id}", bookingHandler.GetPublicBookingData)
@@ -261,6 +261,8 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Get("/business-hours", merchantHandler.GetBusinessHours)
 
 			r.Get("/dashboard", merchantHandler.GetDashboardData)
+
+			r.Post("/bookings", merchantHandler.NewBookingByMerchant)
 		})
 	})
 }

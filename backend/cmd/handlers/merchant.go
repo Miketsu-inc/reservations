@@ -1,20 +1,25 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
+	"github.com/teambition/rrule-go"
 )
 
 type Merchant struct {
@@ -409,15 +414,9 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -1048,15 +1047,9 @@ func (m *Merchant) GetDisabledDaysForCalendar(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -1399,11 +1392,6 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if service.MerchantId != merchantId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("this service id does not belong to this merchant"))
-		return
-	}
-
 	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error()))
@@ -1425,15 +1413,9 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timezone, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
-	merchantTz, err := time.LoadLocation(timezone)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error()))
 		return
 	}
 
@@ -1503,4 +1485,351 @@ func (m *Merchant) ChangeMerchantName(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating merchant's name: %s", err.Error()))
 		return
 	}
+}
+
+func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) {
+	type recurringRule struct {
+		Frequency string `json:"frequency"`
+		Interval  int    `json:"interval"`
+		Weekday   string `json:"weekday"`
+		Until     string `json:"until"`
+		Mode      string `json:"mode"`
+	}
+
+	type customer struct {
+		CustomerId  *uuid.UUID `json:"customer_id"`
+		FirstName   *string    `json:"first_name"`
+		LastName    *string    `json:"last_name"`
+		Email       *string    `json:"email"`
+		PhoneNumber *string    `json:"phone_number"`
+	}
+
+	type newBooking struct {
+		BookingType  booking.Type   `json:"booking_type"`
+		Customers    []customer     `json:"customers"`
+		ServiceId    int            `json:"service_id"`
+		LocationId   int            `json:"location_id"`
+		TimeStamp    string         `json:"timestamp"`
+		MerchantNote *string        `json:"merchant_note"`
+		IsRecurring  bool           `json:"is_recurring"`
+		Rrule        *recurringRule `json:"recurrence_rule"`
+	}
+
+	var nb newBooking
+
+	if err := validate.ParseStruct(r, &nb); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if nb.BookingType == booking.Appointment {
+		if len(nb.Customers) > 1 {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("booking type does not match amount of customers"))
+			return
+		}
+	} else {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("events/classes are not implemented yet"))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	location, err := m.Postgresdb.GetLocationById(r.Context(), nb.LocationId, employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
+		return
+	}
+
+	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), nb.ServiceId, employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
+		return
+	}
+
+	// TODO: this should be a separate function
+	// prevent null booking price and cost to avoid a lot of headaches
+	var price currencyx.Price
+	var cost currencyx.Price
+	if service.Price == nil || service.Cost == nil {
+		curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), employee.MerchantId)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
+			return
+		}
+
+		zeroAmount, err := currency.NewAmount("0", curr)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new amount: %s", err.Error()))
+		}
+
+		if service.Price != nil {
+			price = *service.Price
+		} else {
+			price = currencyx.Price{Amount: zeroAmount}
+		}
+
+		if service.Cost != nil {
+			cost = *service.Cost
+		} else {
+			cost = currencyx.Price{Amount: zeroAmount}
+		}
+	} else {
+		price = *service.Price
+		cost = *service.Cost
+	}
+
+	timeStamp, err := time.Parse(time.RFC3339, nb.TimeStamp)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	var customerId uuid.UUID
+
+	if nb.Customers[0].CustomerId == nil {
+		customerId, err = uuid.NewV7()
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
+			return
+		}
+
+		if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
+			Id:          customerId,
+			FirstName:   nb.Customers[0].FirstName,
+			LastName:    nb.Customers[0].LastName,
+			Email:       nb.Customers[0].Email,
+			PhoneNumber: nb.Customers[0].PhoneNumber,
+			Birthday:    nil,
+			Note:        nil,
+		}); err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
+			return
+		}
+	} else {
+		customerId = *nb.Customers[0].CustomerId
+	}
+
+	duration := time.Duration(service.TotalDuration) * time.Minute
+
+	fromDate := timeStamp
+	toDate := timeStamp.Add(duration)
+
+	var bookingId int
+
+	if nb.IsRecurring {
+		var freq rrule.Frequency
+
+		switch strings.ToUpper(nb.Rrule.Frequency) {
+		case "DAILY":
+			freq = rrule.DAILY
+		case "WEEKLY":
+			freq = rrule.WEEKLY
+		case "MONTHLY":
+			freq = rrule.MONTHLY
+		default:
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("recurring rule frequency is invalid"))
+			return
+		}
+
+		untilTimeStamp, err := time.Parse(time.RFC3339, nb.Rrule.Until)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("until timestamp could not be converted to time: %s", err.Error()))
+			return
+		}
+
+		var weekday rrule.Weekday
+		switch strings.ToUpper(nb.Rrule.Weekday) {
+		case rrule.MO.String():
+			weekday = rrule.MO
+		case rrule.TU.String():
+			weekday = rrule.TU
+		case rrule.WE.String():
+			weekday = rrule.WE
+		case rrule.TH.String():
+			weekday = rrule.TH
+		case rrule.FR.String():
+			weekday = rrule.FR
+		case rrule.SA.String():
+			weekday = rrule.SA
+		case rrule.SU.String():
+			weekday = rrule.SU
+		default:
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("incorrect weekday"))
+			return
+		}
+
+		rrule, err := rrule.NewRRule(rrule.ROption{
+			Freq:     freq,
+			Dtstart:  fromDate,
+			Interval: nb.Rrule.Interval,
+			Wkst:     weekday,
+			Until:    untilTimeStamp,
+		})
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating rrule: %s", err.Error()))
+			return
+		}
+
+		// recurring bookings have to be stored in local time and converted to UTC during generation
+		fromDate = timeStamp.In(merchantTz)
+
+		series, err := m.Postgresdb.NewBookingSeries(r.Context(), database.NewBookingSeries{
+			BookingType:    booking.Appointment,
+			MerchantId:     employee.MerchantId,
+			EmployeeId:     employee.Id,
+			ServiceId:      service.Id,
+			LocationId:     location.Id,
+			Rrule:          rrule.String(),
+			Dstart:         fromDate,
+			Timezone:       merchantTz,
+			PricePerPerson: price,
+			CostPerPerson:  cost,
+			Participants:   []uuid.UUID{customerId},
+		})
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new booking series: %s", err.Error()))
+			return
+		}
+
+		bookingId, err = m.generateRecurringBookings(r.Context(), series, service.Phases)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while generating recurring bookings: %s", err.Error()))
+			return
+		}
+	} else {
+		bookingId, err = m.Postgresdb.NewBookingByMerchant(r.Context(), database.NewMerchantBooking{
+			Status:         booking.Booked,
+			BookingType:    booking.Appointment,
+			MerchantId:     employee.MerchantId,
+			ServiceId:      service.Id,
+			LocationId:     location.Id,
+			FromDate:       fromDate,
+			ToDate:         toDate,
+			MerchantNote:   nb.MerchantNote,
+			PricePerPerson: price,
+			CostPerPerson:  cost,
+			CustomerId:     customerId,
+			Phases:         service.Phases,
+		})
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new booking: %s", err.Error()))
+			return
+		}
+	}
+
+	customerEmail, err := m.Postgresdb.GetCustomerEmailById(r.Context(), employee.MerchantId, customerId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer's email: %s", err.Error()))
+		return
+	}
+
+	urlName, err := m.Postgresdb.GetMerchantUrlNameById(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's url name: %s", err.Error()))
+		return
+	}
+
+	toDateMerchantTz := toDate.In(merchantTz)
+	fromDateMerchantTz := timeStamp.In(merchantTz)
+
+	emailData := email.BookingConfirmationData{
+		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
+		Date:        fromDateMerchantTz.Format("Monday, January 2"),
+		Location:    location.PostalCode + " " + location.City + " " + location.Address,
+		ServiceName: service.Name,
+		TimeZone:    merchantTz.String(),
+		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", urlName, bookingId),
+	}
+
+	lang := lang.LangFromContext(r.Context())
+
+	err = email.BookingConfirmation(r.Context(), lang, customerEmail, emailData)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the booking: %s", err.Error()))
+		return
+	}
+
+	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
+
+	if hoursUntilBooking >= 24 {
+
+		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+		email_id, err := email.BookingReminder(r.Context(), lang, customerEmail, emailData, reminderDate)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+			return
+		}
+
+		if email_id != "" { //check because return "" when email sending is off
+			err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id)
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+				return
+			}
+		}
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) generateRecurringBookings(ctx context.Context, series database.CompleteBookingSeries, serivePhases []database.PublicServicePhase) (int, error) {
+	tz, err := time.LoadLocation(series.Timezone)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing location from booking series: %s", err.Error())
+	}
+
+	now := time.Now().UTC()
+	end := now.AddDate(0, 3, 0)
+
+	rrule, err := rrule.StrToRRule(series.Rrule)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing rrule string: %s", err.Error())
+	}
+
+	occurrences := rrule.Between(now, end, true)
+
+	existingOccurrences, err := m.Postgresdb.GetExistingOccurrenceDates(ctx, series.Id, now, end)
+	if err != nil {
+		return 0, fmt.Errorf("could not get existing occurrence dates: %s", err.Error())
+	}
+
+	existingMap := make(map[string]bool)
+	for _, date := range existingOccurrences {
+		existingMap[date.Format("2006-01-02")] = true
+	}
+
+	var fromDates []time.Time
+	var toDates []time.Time
+	for _, date := range occurrences {
+		if existingMap[date.Format("2006-01-02")] {
+			continue
+		}
+
+		fromDate := time.Date(date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), 0, 0, tz)
+		toDate := time.Date(date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), 0, 0, tz)
+
+		fromDates = append(fromDates, fromDate.UTC())
+		toDates = append(toDates, toDate.UTC())
+	}
+
+	return m.Postgresdb.BatchCreateRecurringBookings(ctx, database.NewRecurringBookings{
+		BookingSeriesId: series.Id,
+		BookingStatus:   booking.Booked,
+		BookingType:     series.BookingType,
+		MerchantId:      series.MerchantId,
+		EmployeeId:      series.EmployeeId,
+		ServiceId:       series.ServiceId,
+		LocationId:      series.LocationId,
+		FromDates:       fromDates,
+		ToDates:         toDates,
+		Phases:          serivePhases,
+		Details:         series.Details,
+		Participants:    series.Participants,
+	})
 }

@@ -28,8 +28,10 @@ type PostgreSQL interface {
 
 	// -- Booking --
 
-	// Insert a new Booking to the database.
-	NewBooking(context.Context, NewBooking) (int, error)
+	// Insert a new Booking made by the customer.
+	NewBookingByCustomer(context.Context, NewCustomerBooking) (int, error)
+	// Insert a new Booking made by the merchant.
+	NewBookingByMerchant(context.Context, NewMerchantBooking) (int, error)
 	// Get all Bookings assigned to a Merchant.
 	GetBookingsByMerchant(context.Context, uuid.UUID, string, string) ([]PublicBookingDetails, error)
 	// Get all available times for reservations
@@ -50,6 +52,12 @@ type PostgreSQL interface {
 	GetPublicBookingInfo(context.Context, int) (PublicBookingInfo, error)
 	// Cancel booking by user
 	CancelBookingByUser(context.Context, uuid.UUID, int) (uuid.UUID, error)
+	// Cretate recurring booking instances in batch
+	BatchCreateRecurringBookings(context.Context, NewRecurringBookings) (int, error)
+	// Get all existing booking dates for a booking series in a time range
+	GetExistingOccurrenceDates(context.Context, int, time.Time, time.Time) ([]time.Time, error)
+	// Create a new booking series and related tables
+	NewBookingSeries(context.Context, NewBookingSeries) (CompleteBookingSeries, error)
 
 	// -- User --
 
@@ -96,7 +104,7 @@ type PostgreSQL interface {
 	// Get business hours for merchant including only the first start and last ending time
 	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlot, error)
 	// Get the merchant's timezone by it's id
-	GetMerchantTimezoneById(context.Context, uuid.UUID) (string, error)
+	GetMerchantTimezoneById(context.Context, uuid.UUID) (*time.Location, error)
 	// Get the dashboard data by the merchant's id for a period of days
 	GetDashboardData(context.Context, uuid.UUID, time.Time, int) (DashboardData, error)
 	// Get the merchant's currency
@@ -109,13 +117,15 @@ type PostgreSQL interface {
 	DeleteMerchant(context.Context, int, uuid.UUID) error
 	// Change merchant's name and url name
 	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
+	// Get the merchant's url name by id
+	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
 
 	// -- Location --
 
 	// Insert a new Location to the database
 	NewLocation(context.Context, Location) error
 	// Get location by it's id
-	GetLocationById(context.Context, int) (Location, error)
+	GetLocationById(context.Context, int, uuid.UUID) (Location, error)
 
 	// -- Service --
 
@@ -172,6 +182,8 @@ type PostgreSQL interface {
 	GetCustomerIdByUserIdAndMerchantId(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error)
 	// Get one customer's info for a merchant
 	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerInfo, error)
+	// Get a customer's email by id
+	GetCustomerEmailById(context.Context, uuid.UUID, uuid.UUID) (string, error)
 
 	// -- Preferences --
 
