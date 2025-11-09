@@ -1590,6 +1590,11 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	duration := time.Duration(service.TotalDuration) * time.Minute
+
+	fromDate := timeStamp
+	toDate := timeStamp.Add(duration)
+
 	var customerId uuid.UUID
 
 	if nb.Customers[0].CustomerId == nil {
@@ -1614,11 +1619,6 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	} else {
 		customerId = *nb.Customers[0].CustomerId
 	}
-
-	duration := time.Duration(service.TotalDuration) * time.Minute
-
-	fromDate := timeStamp
-	toDate := timeStamp.Add(duration)
 
 	var bookingId int
 
@@ -1804,6 +1804,13 @@ func (m *Merchant) generateRecurringBookings(ctx context.Context, series databas
 		existingMap[date.Format("2006-01-02")] = true
 	}
 
+	var duration time.Duration
+	for _, phase := range serivePhases {
+		duration += time.Duration(phase.Duration)
+	}
+
+	duration = duration * time.Minute
+
 	var fromDates []time.Time
 	var toDates []time.Time
 	for _, date := range occurrences {
@@ -1813,6 +1820,7 @@ func (m *Merchant) generateRecurringBookings(ctx context.Context, series databas
 
 		fromDate := time.Date(date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), 0, 0, tz)
 		toDate := time.Date(date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), 0, 0, tz)
+		toDate = toDate.Add(duration)
 
 		fromDates = append(fromDates, fromDate.UTC())
 		toDates = append(toDates, toDate.UTC())

@@ -337,8 +337,8 @@ type PublicBookingDetails struct {
 	ID              int                      `json:"id" db:"id"`
 	FromDate        time.Time                `json:"from_date" db:"from_date"`
 	ToDate          time.Time                `json:"to_date" db:"to_date"`
-	CustomerNote    string                   `json:"customer_note" db:"customer_note"`
-	MerchantNote    string                   `json:"merchant_note" db:"merchant_note"`
+	CustomerNote    *string                  `json:"customer_note" db:"customer_note"`
+	MerchantNote    *string                  `json:"merchant_note" db:"merchant_note"`
 	ServiceName     string                   `json:"service_name" db:"service_name"`
 	ServiceColor    string                   `json:"service_color" db:"service_color"`
 	ServiceDuration int                      `json:"service_duration" db:"service_duration"`

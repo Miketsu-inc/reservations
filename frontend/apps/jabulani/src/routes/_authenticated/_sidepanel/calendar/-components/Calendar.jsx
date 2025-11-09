@@ -259,8 +259,8 @@ export default function Calendar({ router, route, search }) {
         </div>
       </div>
       <div
-        className="light bg-bg_color text-text_color max-h-full w-full
-          overflow-auto rounded-lg"
+        className="max-h-full w-full overflow-auto rounded-lg bg-white
+          text-black"
       >
         <FullCalendar
           ref={calendarRef}
