@@ -7,7 +7,6 @@ export { default as BriefcaseIcon } from "./icons/BriefcaseIcon.jsx";
 export { default as CakeIcon } from "./icons/CakeIcon.jsx";
 export { default as CalendarIcon } from "./icons/CalendarIcon.jsx";
 export { default as CalendarPlusIcon } from "./icons/CalendarPlusIcon.jsx";
-export { default as CalendarXIcon } from "./icons/CalendarXIcon.jsx";
 export { default as ChartIcon } from "./icons/ChartIcon.jsx";
 export { default as ClockIcon } from "./icons/ClockIcon.jsx";
 export { default as CreditCardIcon } from "./icons/CreditCardIcon.jsx";
