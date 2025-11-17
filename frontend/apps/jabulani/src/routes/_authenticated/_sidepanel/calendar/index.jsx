@@ -18,7 +18,7 @@ async function fetchBookings(start, end) {
   end = new Date(end).toJSON();
 
   const response = await fetch(
-    `/api/v1/bookings/all?start=${start}&end=${end}`,
+    `/api/v1/bookings/calendar/events?start=${start}&end=${end}`,
     {
       method: "GET",
     }
@@ -38,7 +38,7 @@ async function fetchBookings(start, end) {
 
 export function bookingsQueryOptions(start, end) {
   return queryOptions({
-    queryKey: ["bookings", start, end],
+    queryKey: ["events", start, end],
     queryFn: () => fetchBookings(start, end),
   });
 }

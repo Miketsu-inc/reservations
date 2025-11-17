@@ -31,7 +31,7 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimes(reserved []database.BookingTime, servicePhases []database.PublicServicePhase, serviceDuration int, BufferTime int,
+func CalculateAvailableTimes(reserved []database.BookingTime, blockedTimes []database.BlockedTimes, servicePhases []database.PublicServicePhase, serviceDuration int, BufferTime int,
 	BookingWindowMin int, bookingDay time.Time, businessHours []database.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
 
 	year, month, day := bookingDay.Date()
@@ -41,6 +41,15 @@ func CalculateAvailableTimes(reserved []database.BookingTime, servicePhases []da
 
 	morning := []string{}
 	afternoon := []string{}
+
+	for _, blocked := range blockedTimes {
+		if blocked.AllDay {
+			return FormattedAvailableTimes{
+				Morning:   morning,
+				Afternoon: afternoon,
+			}
+		}
+	}
 
 	now := currentTime.In(merchantTz)
 
@@ -72,6 +81,24 @@ func CalculateAvailableTimes(reserved []database.BookingTime, servicePhases []da
 				phaseEnd := phaseStart.Add(phaseDuration)
 
 				if phase.PhaseType == "active" {
+
+					for _, blocked := range blockedTimes {
+						if !blocked.AllDay {
+							blockedFrom := blocked.FromDate.In(merchantTz)
+							blockedTo := blocked.ToDate.In(merchantTz)
+
+							if phaseStart.Before(blockedTo) && phaseEnd.After(blockedFrom) {
+								bookingStart = bookingStart.Add(stepSize)
+
+								available = false
+								break
+							}
+						}
+					}
+
+					if !available {
+						break
+					}
 
 					for _, booking := range reserved {
 						reservedFromDate := booking.From_date.In(merchantTz).Add(-bufferDuration)
@@ -121,7 +148,7 @@ type MultiDayAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
+func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, blockedTimes []database.BlockedTimes, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
 	startDate time.Time, endDate time.Time, businessHours map[int][]database.TimeSlot, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}
@@ -132,7 +159,7 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, ser
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
-	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
+	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 		if len(businessHoursForDay) == 0 {
 			continue
@@ -141,7 +168,9 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, ser
 		day := d.Format("2006-01-02")
 		reservedForDay := reservationsByDate[day]
 
-		dayResult := CalculateAvailableTimes(reservedForDay, servicePhases, serviceDuration, bufferTime, bookingindowMin, d, businessHoursForDay, currentTime, merchantTz)
+		blockedForDay := filterBlockedTimesForDay(blockedTimes, d, merchantTz)
+
+		dayResult := CalculateAvailableTimes(reservedForDay, blockedForDay, servicePhases, serviceDuration, bufferTime, bookingindowMin, d, businessHoursForDay, currentTime, merchantTz)
 
 		results = append(results, MultiDayAvailableTimes{
 			Date:      d.Format("2006-01-02"),
@@ -151,6 +180,22 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, ser
 	}
 
 	return results
+}
+
+func filterBlockedTimesForDay(blockedTimes []database.BlockedTimes, day time.Time, tz *time.Location) []database.BlockedTimes {
+	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, tz)
+	dayEnd := dayStart.AddDate(0, 0, 1)
+
+	filtered := []database.BlockedTimes{}
+	for _, blocked := range blockedTimes {
+		blockedFrom := blocked.FromDate.In(tz)
+		blockedTo := blocked.ToDate.In(tz)
+		if blockedFrom.Before(dayEnd) && blockedTo.After(dayStart) {
+			filtered = append(filtered, blocked)
+		}
+	}
+
+	return filtered
 }
 
 func (m *Merchant) InfoByName(w http.ResponseWriter, r *http.Request) {
@@ -406,6 +451,25 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
+
+	merchantDay := day.In(merchantTz)
+	dayStartMerchant := time.Date(merchantDay.Year(), merchantDay.Month(), merchantDay.Day(), 0, 0, 0, 0, merchantTz)
+	dayEndMerchant := dayStartMerchant.AddDate(0, 0, 1)
+
+	dayStartUTC := dayStartMerchant.UTC()
+	dayEndUTC := dayEndMerchant.UTC()
+
+	blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, dayStartUTC, dayEndUTC)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error()))
+		return
+	}
+
 	dayOfWeek := int(day.Weekday())
 
 	businessHours, err := m.Postgresdb.GetBusinessHoursByDay(r.Context(), merchantId, dayOfWeek)
@@ -414,14 +478,8 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-		return
-	}
-
 	now := time.Now()
-	availableSlots := CalculateAvailableTimes(reservedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, day, businessHours, now, merchantTz)
+	availableSlots := CalculateAvailableTimes(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, day, businessHours, now, merchantTz)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -1398,7 +1456,7 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startDate := time.Now()
+	startDate := time.Now().In(time.UTC)
 	endDate := startDate.AddDate(0, 3, 0)
 
 	reservedTimes, err := m.Postgresdb.GetReservedTimesForPeriod(r.Context(), merchantId, urlLocationId, startDate, endDate)
@@ -1407,9 +1465,9 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
+	blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, startDate, endDate)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error()))
 		return
 	}
 
@@ -1419,8 +1477,14 @@ func (m *Merchant) GetNextAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
+		return
+	}
+
 	now := time.Now()
-	availableSlots := CalculateAvailableTimesPeriod(reservedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+	availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
 
 	type nextAvailable struct {
 		Date string `json:"date"`
@@ -1840,4 +1904,161 @@ func (m *Merchant) generateRecurringBookings(ctx context.Context, series databas
 		Details:         series.Details,
 		Participants:    series.Participants,
 	})
+}
+
+func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
+	type newBlockedTime struct {
+		Name        string `json:"name" validate:"required"`
+		EmployeeIds []int  `json:"employee_ids" validate:"required"`
+		FromDate    string `json:"from_date" validate:"required"`
+		ToDate      string `json:"to_date" validate:"required"`
+		AllDay      bool   `json:"all_day"`
+	}
+
+	var nbt newBlockedTime
+
+	if err := validate.ParseStruct(r, &nbt); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	fromDate, err := time.Parse(time.RFC3339, nbt.FromDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("fromDate timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	toDate, err := time.Parse(time.RFC3339, nbt.ToDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("toDate timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	if !toDate.After(fromDate) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("toDate must be after fromDate"))
+		return
+	}
+
+	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, nbt.EmployeeIds, nbt.Name, fromDate, toDate, nbt.AllDay)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new blocked time %s", err.Error()))
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) DeleteBlockedTime(w http.ResponseWriter, r *http.Request) {
+	type deleteData struct {
+		EmployeeId int `json:"employee_id" validate:"required"`
+	}
+
+	var dd deleteData
+	fmt.Println(r)
+	if err := validate.ParseStruct(r, &dd); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	blockedTimeId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err = m.Postgresdb.DeleteBlockedTime(r.Context(), blockedTimeId, employee.MerchantId, dd.EmployeeId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting blocked time for merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
+	// employee id not ids but its a front end issue
+	type blockedTimeData struct {
+		Id         int    `json:"id" validate:"required"`
+		Name       string `json:"name" validate:"required"`
+		EmployeeId int    `json:"employee_id" validate:"required"`
+		FromDate   string `json:"from_date" validate:"required"`
+		ToDate     string `json:"to_date" validate:"required"`
+		AllDay     bool   `json:"all_day"`
+	}
+
+	var data blockedTimeData
+	if err := validate.ParseStruct(r, &data); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid blocekd time id provided"))
+		return
+	}
+
+	blockedTimeId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting blocked time id to int: %s", err.Error()))
+		return
+	}
+
+	if blockedTimeId != data.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid blocked time id provided"))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	fromDate, err := time.Parse(time.RFC3339, data.FromDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("fromDate timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	toDate, err := time.Parse(time.RFC3339, data.ToDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("toDate timestamp could not be converted to time: %s", err.Error()))
+		return
+	}
+
+	if !toDate.After(fromDate) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("toDate must be after fromDate"))
+		return
+	}
+
+	err = m.Postgresdb.UpdateBlockedTime(r.Context(), database.BlockedTime{
+		Id:         blockedTimeId,
+		MerchantId: employee.MerchantId,
+		EmployeeId: data.EmployeeId,
+		Name:       data.Name,
+		FromDate:   fromDate,
+		ToDate:     toDate,
+		AllDay:     data.AllDay,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating blocked time for merchant: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) GetEmployeesForCalendar(w http.ResponseWriter, r *http.Request) {
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	employees, err := m.Postgresdb.GetEmployeesByMerchant(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, employees)
 }

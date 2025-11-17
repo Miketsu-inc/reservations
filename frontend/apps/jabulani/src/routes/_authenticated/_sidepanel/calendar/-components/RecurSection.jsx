@@ -90,7 +90,7 @@ export default function RecurSection({
         <p className="text-sm">Recur until</p>
         <DatePicker
           styles="w-full"
-          defaultDate={
+          value={
             new Date(
               booking.start.getFullYear(),
               booking.start.getMonth() + 1,

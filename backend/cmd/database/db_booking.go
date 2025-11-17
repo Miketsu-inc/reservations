@@ -349,8 +349,32 @@ type PublicBookingDetails struct {
 	PhoneNumber     string                   `json:"phone_number" db:"phone_number"`
 }
 
-func (s *service) GetBookingsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) ([]PublicBookingDetails, error) {
-	query := `
+type BlockedTimeEvent struct {
+	ID         int       `json:"id" db:"id"`
+	EmployeeId int       `json:"employee_id" db:"employee_id"`
+	Name       string    `json:"name" db:"name"`
+	FromDate   time.Time `json:"from_date" db:"from_date"`
+	ToDate     time.Time `json:"to_date" db:"to_date"`
+	AllDay     bool      `json:"all_day" db:"all_day"`
+}
+
+type CalcendarEvents struct {
+	Bookings     []PublicBookingDetails `json:"bookings"`
+	BlockedTimes []BlockedTimeEvent     `json:"blocked_times"`
+}
+
+func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) (CalcendarEvents, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return CalcendarEvents{}, err
+	}
+
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	var events CalcendarEvents
+
+	bookingQuery := `
 	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost,
 		s.name as service_name, s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, coalesce(c.phone_number, u.phone_number) as phone_number
@@ -363,14 +387,29 @@ func (s *service) GetBookingsByMerchant(ctx context.Context, merchantId uuid.UUI
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.to_date <= $3 AND b.status not in ('cancelled')
 	order by b.id
 	`
-
-	rows, _ := s.db.Query(ctx, query, merchantId, start, end)
-	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicBookingDetails])
+	rows, _ := tx.Query(ctx, bookingQuery, merchantId, start, end)
+	events.Bookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[PublicBookingDetails])
 	if err != nil {
-		return nil, err
+		return CalcendarEvents{}, err
 	}
 
-	return bookings, nil
+	blockedTimeQuery := `
+	select id, employee_id, name, from_date, to_date, all_day from "BlockedTime"
+	where merchant_id = $1 and ((from_date >= $2 and from_date <= $3) or (to_date >= $2 and to_date <= $3))
+	order by id
+	`
+
+	rows, _ = tx.Query(ctx, blockedTimeQuery, merchantId, start, end)
+	events.BlockedTimes, err = pgx.CollectRows(rows, pgx.RowToStructByName[BlockedTimeEvent])
+	if err != nil {
+		return CalcendarEvents{}, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return CalcendarEvents{}, err
+	}
+
+	return events, nil
 }
 
 type BookingTime struct {

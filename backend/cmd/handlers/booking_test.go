@@ -58,7 +58,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := handlers.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		blocked := []database.BlockedTimes{}
+
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, expectedAfternoon, result.Afternoon, "Afternoon times do not match")
@@ -96,9 +98,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ct(year, month, day, "15:00", tz),
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := handlers.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -138,9 +142,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ct(year, month, day, "15:30", tz),
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := handlers.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -177,9 +183,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ct(year, month, day, "14:30", tz),
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		result := handlers.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -211,9 +219,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ct(year, month, day, "14:30", tz),
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.July, 1, "14:20", tz)
 
-		result := handlers.CalculateAvailableTimes(reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
 		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
@@ -247,14 +257,133 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			"11:30",
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
 		result := handlers.CalculateAvailableTimes(
-			reserved, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz,
+			reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz,
 		)
 
 		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
 		assert.Empty(t, result.Afternoon, "Afternoon should be empty")
+	})
+
+	t.Run("All day blocked time", func(t *testing.T) {
+		tz, _ := time.LoadLocation("Europe/Budapest")
+
+		bookingDay := ct(year, month, day, "00:00", tz)
+
+		reserved := []database.BookingTime{}
+
+		blocked := []database.BlockedTimes{
+			{
+				AllDay:   true,
+				FromDate: ct(year, month, day, "00:00", tz),
+				ToDate:   ct(year, month, day+1, "00:00", tz),
+			},
+		}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30},
+		}
+
+		businessHours := []database.TimeSlot{
+			{StartTime: "09:00:00", EndTime: "17:00:00"},
+		}
+
+		serviceDuration := 30
+		bookingWindowMin, bufferTime := 0, 0
+
+		currentTime := ct(year, time.June, 15, "00:00", tz)
+
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+
+		assert.Empty(t, result.Morning, "Expected no morning slots due to full block")
+		assert.Empty(t, result.Afternoon, "Expected no afternoon slots due to full block")
+	})
+
+	t.Run("Business hours blocked partially", func(t *testing.T) {
+		tz, _ := time.LoadLocation("Europe/Budapest")
+
+		bookingDay := ct(year, month, day, "00:00", tz)
+
+		reserved := []database.BookingTime{}
+
+		blocked := []database.BlockedTimes{
+			{
+				AllDay:   false,
+				FromDate: ct(year, month, day-1, "10:00", tz),
+				ToDate:   ct(year, month, day, "11:00", tz),
+			},
+		}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30},
+		}
+
+		businessHours := []database.TimeSlot{
+			{StartTime: "08:00:00", EndTime: "12:00:00"},
+		}
+
+		serviceDuration := 30
+		bookingWindowMin, bufferTime := 0, 0
+
+		currentTime := ct(year, month, day, "00:00", tz)
+
+		expected := []string{
+			"11:00", "11:15", "11:30",
+		}
+
+		result := handlers.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+
+		assert.ElementsMatch(t, expected, result.Morning, "Unexpected available slots for partial block")
+	})
+
+	t.Run("Blocked time overlaps only wait inside multi-phase service", func(t *testing.T) {
+		tz, _ := time.LoadLocation("Europe/Budapest")
+
+		bookingDay := ct(year, month, day, "00:00", tz)
+
+		reserved := []database.BookingTime{}
+
+		blocked := []database.BlockedTimes{
+			{
+				AllDay:   false,
+				FromDate: ct(year, month, day, "09:30", tz),
+				ToDate:   ct(year, month, day, "10:00", tz),
+			},
+		}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30}, // 1st active
+			{PhaseType: "wait", Duration: 30},   // wait
+			{PhaseType: "active", Duration: 15}, // 2nd active
+		}
+
+		businessHours := []database.TimeSlot{
+			{StartTime: "09:00:00", EndTime: "12:00:00"},
+		}
+
+		serviceDuration := 75
+		bookingWindowMin, bufferTime := 0, 0
+
+		currentTime := ct(year, month, day, "00:00", tz)
+
+		expected := []string{
+			"09:00", // allowed: active phases do NOT intersect block
+			"10:00",
+			"10:15",
+			"10:30",
+			"10:45",
+		}
+
+		result := handlers.CalculateAvailableTimes(
+			reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin,
+			bookingDay, businessHours, currentTime, tz,
+		)
+
+		assert.ElementsMatch(t, expected, result.Morning, "Unexpected available slots for WAIT-overlap test")
 	})
 }
 
@@ -265,17 +394,35 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		startDate := ct(2025, time.July, 1, "00:00", tz)
 		endDate := ct(2025, time.June, 30, "23:59", tz)
 
+		serviceDuration := 30
 		bookingWindowMin, bufferTime := 0, 0
 
+		blocked := []database.BlockedTimes{}
+
+		reserved := []database.BookingTime{}
+
+		servicePhases := []database.PublicServicePhase{
+			{PhaseType: "active", Duration: 30},
+		}
+
+		businessHours := map[int][]database.TimeSlot{
+			3: {
+				{StartTime: "09:00:00", EndTime: "11:00:00"},
+			},
+		}
+
+		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
+
 		results := handlers.CalculateAvailableTimesPeriod(
-			[]database.BookingTime{},
-			[]database.PublicServicePhase{{PhaseType: "active", Duration: 30}},
-			30,
+			reserved,
+			blocked,
+			servicePhases,
+			serviceDuration,
 			bufferTime,
 			bookingWindowMin,
 			startDate, endDate,
-			map[int][]database.TimeSlot{},
-			ct(2025, time.June, 12, "00:00", time.UTC),
+			businessHours,
+			currentTime,
 			tz,
 		)
 
@@ -306,10 +453,13 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			},
 		}
 
+		blocked := []database.BlockedTimes{}
+
 		currentTime := ct(2025, time.June, 12, "00:00", tz)
 
 		results := handlers.CalculateAvailableTimesPeriod(
 			reserved,
+			blocked,
 			servicePhases,
 			serviceDuration,
 			bufferTime,

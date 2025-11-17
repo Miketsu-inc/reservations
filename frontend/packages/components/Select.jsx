@@ -106,9 +106,10 @@ export default function Select({
     >
       <PopoverTrigger asChild>
         <button
-          className={`${styles} border-input_border_color w-full min-w-fit
-            rounded-lg border py-2 pr-2 pl-3 text-left transition-opacity
-            disabled:opacity-70`}
+          className={`${styles} border-input_border_color
+            disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
+            border py-2 pr-2 pl-3 text-left transition-opacity
+            disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20`}
           type="button"
           ref={containerRef}
           disabled={disabled}
@@ -116,7 +117,7 @@ export default function Select({
           <div className="flex items-center justify-between">
             <span
               className={`${selectedOption ? "text-text_color" : "text-gray-500"}
-                min-h-6 flex-1 truncate`}
+                min-h-6 flex-1 truncate ${disabled ? "text-text_color/70" : ""}`}
             >
               {!selectedOption ? (
                 placeholder
@@ -159,7 +160,7 @@ export default function Select({
             setHighlightedIndex(null);
           }}
         >
-          {options.length === 0 ? (
+          {options?.length === 0 ? (
             <li
               className="px-4 py-6 text-center text-gray-500 select-none
                 dark:text-gray-400"
@@ -167,7 +168,7 @@ export default function Select({
               {emptyText || "No results found"}
             </li>
           ) : (
-            options.map((option, index) => {
+            options?.map((option, index) => {
               const isSelected = value === option.value;
               const isHighlighted = index === highlightedIndex;
 

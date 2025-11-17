@@ -13,7 +13,7 @@ function formatDate(date) {
 
 export default function DatePicker({
   styles,
-  defaultDate,
+  value,
   palaceHolderText,
   disabledBefore,
   disabled = false,
@@ -27,7 +27,8 @@ export default function DatePicker({
   onSelect,
 }) {
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(defaultDate);
+  const [internalDate, setInternalDate] = useState();
+  const selectedDate = value || internalDate;
 
   return (
     <>
@@ -46,7 +47,7 @@ export default function DatePicker({
             type="button"
             onClick={() => {
               setShowCalendar(!showCalendar);
-              if (clearAfterClose) setSelectedDate();
+              if (clearAfterClose) setInternalDate();
             }}
           >
             <div className="flex items-center justify-between">
@@ -69,10 +70,12 @@ export default function DatePicker({
             onSelect={(date) => {
               if (!date) {
                 if (preventUnselect) return;
-                if (resetOnUnselect) date = defaultDate;
+                if (resetOnUnselect) date = value;
               }
 
-              setSelectedDate(date);
+              if (!value) {
+                setInternalDate(date);
+              }
               onSelect(date);
 
               if (closeOnSelect) {
@@ -82,9 +85,7 @@ export default function DatePicker({
             firstDayOfWeek={firstDayOfWeek}
             disabled={{ before: disabledBefore }}
             disabledSelectedModifier={
-              disabledBefore?.getTime() > selectedDate?.getTime()
-                ? selectedDate
-                : undefined
+              disabledBefore?.getTime() > value?.getTime() ? value : undefined
             }
           />
         </PopoverContent>

@@ -847,3 +847,99 @@ func (s *service) GetMerchantUrlNameById(ctx context.Context, merchantId uuid.UU
 
 	return urlName, nil
 }
+
+type BlockedTime struct {
+	Id         int       `json:"id"`
+	MerchantId uuid.UUID `json:"merchant_id"`
+	EmployeeId int       `json:"employee_id"`
+	Name       string    `json:"name"`
+	FromDate   time.Time `json:"from_date"`
+	ToDate     time.Time `json:"to_date"`
+	AllDay     bool      `json:"all_day"`
+}
+
+func (s *service) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool) error {
+
+	query := `
+	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6)`
+
+	for _, empId := range employeeIds {
+		_, err := s.db.Exec(ctx, query, merchantId, empId, name, fromDate, toDate, allDay)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *service) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merchantId uuid.UUID, employeeId int) error {
+	query := `
+	delete from "BlockedTime"
+	where merchant_id = $1 and employee_id = $2 and ID = $3`
+
+	_, err := s.db.Exec(ctx, query, merchantId, employeeId, blockedTimeId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdateBlockedTime(ctx context.Context, bt BlockedTime) error {
+	query := `
+	update "BlockedTime" 
+	set name = $4, from_date = $5, to_date = $6, all_day = $7
+	where merchant_id = $1 and employee_id = $2 and ID = $3`
+
+	_, err := s.db.Exec(ctx, query, bt.MerchantId, bt.EmployeeId, bt.Id, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type BlockedTimes struct {
+	FromDate time.Time `db:"from_date"`
+	ToDate   time.Time `db:"to_date"`
+	AllDay   bool      `db:"all_day"`
+}
+
+func (s *service) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, start, end time.Time) ([]BlockedTimes, error) {
+	query := `
+	select from_date, to_date, all_day from "BlockedTime" 
+	where merchant_id = $1 and to_date > $2 and from_date < $3
+	order by from_date`
+
+	rows, _ := s.db.Query(ctx, query, merchantId, start, end)
+	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlockedTimes])
+	if err != nil {
+		return nil, err
+	}
+
+	return blockedTimes, nil
+
+}
+
+type EmployeeForCalendar struct {
+	Id        int    `json:"id" db:"id"`
+	FirstName string `json:"first_name" db:"first_name"`
+	LastName  string `json:"last_name" db:"last_name"`
+}
+
+func (s *service) GetEmployeesByMerchant(ctx context.Context, merchantId uuid.UUID) ([]EmployeeForCalendar, error) {
+	query := `
+	select e.id, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name
+	 from "Employee" e
+	left join "User" u on u.id = e.user_id
+	where merchant_id = $1`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	employees, err := pgx.CollectRows(rows, pgx.RowToStructByName[EmployeeForCalendar])
+	if err != nil {
+		return []EmployeeForCalendar{}, err
+	}
+
+	return employees, nil
+}

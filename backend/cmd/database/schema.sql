@@ -129,7 +129,7 @@ create table if not exists "BookingSeries" (
     ID                       serial          primary key unique not null,
     booking_type             booking_type    not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    employee_id              serial          references "Employee" (ID) on delete set null,
+    employee_id              integer         references "Employee" (ID) on delete set null,
     service_id               integer         references "Service" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
     rrule                    text            not null,
@@ -166,7 +166,7 @@ create table if not exists "Booking" (
     booking_type             booking_type    not null,
     is_recurring             boolean         not null default false,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    employee_id              serial          references "Employee" (ID) on delete set null,
+    employee_id              integer         references "Employee" (ID) on delete set null,
     service_id               integer         references "Service" (ID) not null,
     location_id              integer         references "Location" (ID) not null,
     booking_series_id        integer         references "BookingSeries" (ID) on delete set null,
@@ -255,3 +255,12 @@ create table if not exists "BusinessHours" (
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
 );
 
+create table if not exists "BlockedTime" (
+    ID                       serial          primary key unique not null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    employee_id              integer         references "Employee" (ID) on delete cascade not null, 
+    name                     varchar(50)     not null,
+    from_date                timestamptz     not null,
+    to_date                  timestamptz     not null,
+    all_day                  boolean         not null
+);

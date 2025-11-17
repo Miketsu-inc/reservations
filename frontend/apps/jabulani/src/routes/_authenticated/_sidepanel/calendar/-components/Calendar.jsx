@@ -24,7 +24,9 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
+import BlockedTimeModal from "./BlockedTimeModal";
 import CalendarModal from "./CalendarModal";
+import CreateMenu from "./CreateMenu";
 import DragConfirmationModal from "./DragConfirmationModal";
 
 const calendarViewOptions = [
@@ -55,7 +57,7 @@ function transformBusinessHours(businessHours) {
   }));
 }
 
-function formatData(data) {
+function formatBookings(data) {
   if (data === undefined) return;
 
   return data.map((booking) => ({
@@ -70,6 +72,7 @@ function formatData(data) {
     extendedProps: {
       // this is a number unlike the normal 'id' which get's converted to a string
       booking_id: booking.id,
+      type: "booking",
       first_name: booking.first_name,
       last_name: booking.last_name,
       phone_number: booking.phone_number,
@@ -78,6 +81,28 @@ function formatData(data) {
       service_name: booking.service_name,
       service_duration: booking.service_duration,
       price: booking.price,
+    },
+  }));
+}
+
+function formatBlockedTimes(data) {
+  if (data === undefined) return;
+
+  return data.map((blockedTime) => ({
+    id: blockedTime.id,
+    title: blockedTime.name,
+    start: blockedTime.from_date,
+    end: blockedTime.to_date,
+    color: "rgba(0, 0, 0, 0.6)",
+    textColor: getContrastColor("#333333"),
+    durationEditable: true,
+    allDay: blockedTime.all_day,
+    startEditable: new Date(blockedTime.to_date) > new Date() ? true : false,
+    extendedProps: {
+      blocked_id: blockedTime.id,
+      type: "blocked",
+      employee_id: blockedTime.employee_id,
+      allDay: blockedTime.all_day,
     },
   }));
 }
@@ -103,6 +128,8 @@ export default function Calendar({ router, route, search }) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookingInfo, setBookingInfo] = useState(defaultBookingInfo);
+  const [isBlockedTimeModalOpen, setIsBlockedTimeModalOpen] = useState(false);
+  const [blockedTimeModalData, setBlockedTimeModalData] = useState(null);
   const [dragModalOpen, setDragModalOpen] = useState(false);
   const [dragModalData, setDragModalData] = useState({
     booking: {},
@@ -112,7 +139,7 @@ export default function Calendar({ router, route, search }) {
 
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
-    data: bookings,
+    data: events = { bookings: [], blocked_times: [] },
     isError,
     error,
   } = useQuery({
@@ -122,7 +149,6 @@ export default function Calendar({ router, route, search }) {
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
     queries: [preferencesQueryOptions(), businessHoursQueryOptions()],
   });
-
   const [calendarView, setCalendarView] = useState(search.view);
 
   const windowSize = useWindowSize();
@@ -133,7 +159,7 @@ export default function Calendar({ router, route, search }) {
 
   const invalidateBookingsQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["bookings", search.start, search.end],
+      queryKey: ["events", search.start, search.end],
     });
   }, [queryClient, search]);
 
@@ -211,7 +237,7 @@ export default function Calendar({ router, route, search }) {
       className="flex h-[85svh] flex-col px-4 py-2 md:h-fit md:max-h-[90svh]
         md:px-0 md:py-0"
     >
-      <div className="flex flex-col py-4 md:flex-row md:gap-2">
+      <div className="relative flex flex-col py-4 md:flex-row md:gap-2">
         <div
           className="flex w-full flex-col justify-between md:flex-row
             md:items-center"
@@ -221,6 +247,12 @@ export default function Calendar({ router, route, search }) {
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
             <div className="flex flex-row items-center gap-2">
+              {!isWindowSmall && (
+                <CreateMenu
+                  onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
+                  onCreateBooking={() => setIsModalOpen(true)}
+                />
+              )}
               <DatePicker
                 styles="w-fit"
                 hideText={true}
@@ -285,8 +317,19 @@ export default function Calendar({ router, route, search }) {
           }
           height="auto"
           headerToolbar={false}
-          events={formatData(bookings)}
+          events={[
+            ...formatBookings(events.bookings),
+            ...formatBlockedTimes(events.blocked_times),
+          ]}
           eventClick={(e) => {
+            const type = e.event.extendedProps.type;
+
+            if (type === "blocked") {
+              setBlockedTimeModalData(e.event);
+              setTimeout(() => setIsBlockedTimeModalOpen(true), 0);
+              return;
+            }
+
             setBookingInfo(e.event);
             setTimeout(() => setIsModalOpen(true), 0);
           }}
@@ -308,10 +351,17 @@ export default function Calendar({ router, route, search }) {
           }}
           titleRangeSeparator=" - "
           fixedWeekCount={false}
-          allDaySlot={false}
+          allDaySlot={true}
           displayEventEnd={false}
           snapDuration={{ minutes: 5 }}
           eventDrop={(e) => {
+            const type = e.event.extendedProps.type;
+
+            if (type === "blocked") {
+              e.revert();
+              return;
+            }
+
             setDragModalData({
               booking: e.event,
               old_booking: e.oldEvent,
@@ -379,6 +429,27 @@ export default function Calendar({ router, route, search }) {
           setDragModalOpen(false);
         }}
       />
+
+      <BlockedTimeModal
+        key={blockedTimeModalData?.extendedProps?.blocked_id || "new"}
+        isOpen={isBlockedTimeModalOpen}
+        onClose={() => {
+          setBlockedTimeModalData(null);
+          setIsBlockedTimeModalOpen(false);
+        }}
+        blockedTime={blockedTimeModalData}
+        preferences={preferences}
+        onDeleted={invalidateBookingsQuery}
+        onSubmitted={invalidateBookingsQuery}
+      />
+
+      {isWindowSmall && (
+        <CreateMenu
+          isFloating={true}
+          onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
+          onCreateBooking={() => setIsModalOpen(true)}
+        />
+      )}
     </div>
   );
 }

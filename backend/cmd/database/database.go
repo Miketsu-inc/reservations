@@ -32,8 +32,8 @@ type PostgreSQL interface {
 	NewBookingByCustomer(context.Context, NewCustomerBooking) (int, error)
 	// Insert a new Booking made by the merchant.
 	NewBookingByMerchant(context.Context, NewMerchantBooking) (int, error)
-	// Get all Bookings assigned to a Merchant.
-	GetBookingsByMerchant(context.Context, uuid.UUID, string, string) ([]PublicBookingDetails, error)
+	// Get all calendar events assigned to a Merchant ina given time period.
+	GetCalendarEventsByMerchant(context.Context, uuid.UUID, string, string) (CalcendarEvents, error)
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]BookingTime, error)
 	// Get all reserved times for reservations in a given period
@@ -78,7 +78,7 @@ type PostgreSQL interface {
 	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
 	// Get a user's preferred language
 	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
-	// Get all employees associated with to a user
+	// Get all employees associated with a user
 	GetEmployeesByUser(context.Context, uuid.UUID) ([]EmployeeAuthInfo, error)
 
 	// -- Merchant --
@@ -119,6 +119,16 @@ type PostgreSQL interface {
 	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
 	// Get the merchant's url name by id
 	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
+	// Create new blocked time for one or multiple employees
+	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool) error
+	// Delete bloced time for an employee by id
+	DeleteBlockedTime(context.Context, int, uuid.UUID, int) error
+	// Update blocked time for an employee
+	UpdateBlockedTime(context.Context, BlockedTime) error
+	// Get blocked times for available calculation
+	GetBlockedTimes(context.Context, uuid.UUID, time.Time, time.Time) ([]BlockedTimes, error)
+	// Get employees by merchant
+	GetEmployeesByMerchant(context.Context, uuid.UUID) ([]EmployeeForCalendar, error)
 
 	// -- Location --
 

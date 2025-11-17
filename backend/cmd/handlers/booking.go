@@ -198,13 +198,13 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (a *Booking) GetBookings(w http.ResponseWriter, r *http.Request) {
+func (a *Booking) GetCalendarEvents(w http.ResponseWriter, r *http.Request) {
 	start := r.URL.Query().Get("start")
 	end := r.URL.Query().Get("end")
 
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	bookings, err := a.Postgresdb.GetBookingsByMerchant(r.Context(), employee.MerchantId, start, end)
+	bookings, err := a.Postgresdb.GetCalendarEventsByMerchant(r.Context(), employee.MerchantId, start, end)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return

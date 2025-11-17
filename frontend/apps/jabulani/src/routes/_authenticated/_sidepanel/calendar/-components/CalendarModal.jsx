@@ -138,7 +138,7 @@ export default function CalendarModal({
                   <p>Date</p>
                   <DatePicker
                     styles="sm:w-40 w-36"
-                    defaultDate={bookingInfo.start}
+                    value={bookingInfo.start}
                     disabledBefore={new Date()}
                     disabled={disabled}
                     onSelect={(date) => {
