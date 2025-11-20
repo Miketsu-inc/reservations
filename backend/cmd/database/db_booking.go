@@ -395,7 +395,7 @@ func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uu
 
 	blockedTimeQuery := `
 	select id, employee_id, name, from_date, to_date, all_day from "BlockedTime"
-	where merchant_id = $1 and ((from_date >= $2 and from_date <= $3) or (to_date >= $2 and to_date <= $3))
+	where merchant_id = $1 and from_date <= $3 and to_date >= $2
 	order by id
 	`
 
