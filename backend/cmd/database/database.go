@@ -50,8 +50,8 @@ type PostgreSQL interface {
 	GetBookingDataForEmail(context.Context, int) (BookingEmailData, error)
 	// Get public booking info for user
 	GetPublicBookingInfo(context.Context, int) (PublicBookingInfo, error)
-	// Cancel booking by user
-	CancelBookingByUser(context.Context, uuid.UUID, int) (uuid.UUID, error)
+	// Cancel booking by customer
+	CancelBookingByCustomer(context.Context, uuid.UUID, int) (uuid.UUID, error)
 	// Cretate recurring booking instances in batch
 	BatchCreateRecurringBookings(context.Context, NewRecurringBookings) (int, error)
 	// Get all existing booking dates for a booking series in a time range

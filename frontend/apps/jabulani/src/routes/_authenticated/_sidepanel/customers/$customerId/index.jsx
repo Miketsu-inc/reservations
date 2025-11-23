@@ -313,7 +313,7 @@ function CustomerDetailsPage() {
                       className="bg-hvr_gray text-text_color/90 w-fit
                         rounded-full px-2 py-0.5 text-xs font-medium"
                     >
-                      User Added by You
+                      Customer Added by You
                     </span>
                   )}
                 </div>

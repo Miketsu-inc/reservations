@@ -344,7 +344,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 			from "Booking" b
 			join "BookingParticipant" bp on bp.booking_id = b.id
 			join "BookingDetails" bd on bd.booking_id = b.id
-			where b.merchant_id = $1 and (bp.customer_id = $2 or bp.transferred_to = $2) and b.status not in ('cancelled')
+			where b.merchant_id = $1 and (bp.customer_id = $2 or bp.transferred_to = $2) and bd.cancelled_by_merchant_on is null
 		) b
 		join "Service" s on s.id = b.service_id
 		join "Merchant" m on m.id = b.merchant_id
@@ -359,7 +359,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
 	left join "BookingParticipant" bp on bp.customer_id = c.id
-	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1 and b.status not in ('cancelled')
+	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	left join bookings ca on c.id = ca.customer_id
 	where c.id = $2 and c.merchant_id = $1
 	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.bookings

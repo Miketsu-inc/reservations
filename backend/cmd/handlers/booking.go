@@ -428,7 +428,7 @@ func (a *Booking) GetPublicBookingData(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, bookingInfo)
 }
 
-func (a *Booking) CancelBookingByUser(w http.ResponseWriter, r *http.Request) {
+func (a *Booking) CancelBookingByCustomer(w http.ResponseWriter, r *http.Request) {
 	type cancelData struct {
 		BookingId    int    `json:"booking_id" validate:"required"`
 		MerchantName string `json:"merchant_name" validate:"required"`
@@ -476,7 +476,7 @@ func (a *Booking) CancelBookingByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailId, err := a.Postgresdb.CancelBookingByUser(r.Context(), customerId, bookingId)
+	emailId, err := a.Postgresdb.CancelBookingByCustomer(r.Context(), customerId, bookingId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the booking by user: %s", err.Error()))
 		return

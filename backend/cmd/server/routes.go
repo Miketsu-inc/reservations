@@ -144,7 +144,7 @@ func (rh *RouteHandlers) bookingRoutes(r chi.Router) {
 		r.Get("/calendar/events", bookingHandler.GetCalendarEvents)
 
 		r.Get("/public/{id}", bookingHandler.GetPublicBookingData)
-		r.Delete("/public/{id}", bookingHandler.CancelBookingByUser)
+		r.Delete("/public/{id}", bookingHandler.CancelBookingByCustomer)
 	})
 }
 

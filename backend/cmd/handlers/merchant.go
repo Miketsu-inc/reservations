@@ -715,7 +715,7 @@ func (m *Merchant) NewCustomer(w http.ResponseWriter, r *http.Request) {
 
 	customerId, err := uuid.NewV7()
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
 		return
 	}
 
@@ -1664,7 +1664,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	if nb.Customers[0].CustomerId == nil {
 		customerId, err = uuid.NewV7()
 		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating user id: %s", err.Error()))
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
 			return
 		}
 

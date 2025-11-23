@@ -506,7 +506,7 @@ func (s *service) CancelBookingByMerchant(ctx context.Context, merchantId uuid.U
 	return tx.Commit(ctx)
 }
 
-func (s *service) CancelBookingByUser(ctx context.Context, customerId uuid.UUID, bookingId int) (uuid.UUID, error) {
+func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.UUID, bookingId int) (uuid.UUID, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, err
@@ -518,7 +518,7 @@ func (s *service) CancelBookingByUser(ctx context.Context, customerId uuid.UUID,
 
 	bookingParticipantQuery := `
 	update "BookingParticipant" bp
-	set cancelled_on = $1
+	set cancelled_on = $1, status = ('cancelled')
 	from "Booking" b
 	where bp.customer_id = $2 and bp.booking_id = $3 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $1
 	`
