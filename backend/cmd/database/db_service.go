@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -19,7 +19,7 @@ type Service struct {
 	CategoryId      *int             `json:"category_id"`
 	BookingType     booking.Type     `json:"booking_type"`
 	Name            string           `json:"name"`
-	Description     string           `json:"description"`
+	Description     *string          `json:"description"`
 	Color           string           `json:"color"`
 	TotalDuration   int              `json:"total_duration"`
 	Price           *currencyx.Price `json:"price"`
@@ -29,23 +29,25 @@ type Service struct {
 	Sequence        int              `json:"sequence"`
 	MinParticipants int              `json:"min_participants"`
 	MaxParticipants int              `json:"max_participants"`
-	Settings        ServiceSettings  `json:"settings"`
-	DeletedOn       *string          `json:"deleted_on"`
+	ServiceSettings
+	DeletedOn *time.Time `json:"deleted_on"`
 }
 type ServicePhase struct {
-	Id        int     `json:"ID"`
-	ServiceId int     `json:"service_id"`
-	Name      string  `json:"name"`
-	Sequence  int     `json:"sequence"`
-	Duration  int     `json:"duration"`
-	PhaseType string  `json:"phase_type"`
-	DeletedOn *string `json:"deleted_on"`
+	Id        int        `json:"ID"`
+	ServiceId int        `json:"service_id"`
+	Name      string     `json:"name"`
+	Sequence  int        `json:"sequence"`
+	Duration  int        `json:"duration"`
+	PhaseType string     `json:"phase_type"`
+	DeletedOn *time.Time `json:"deleted_on"`
 }
 
 type ServiceCategory struct {
-	Id       int    `json:"id" db:"id"`
-	Name     string `json:"name" db:"name"`
-	Sequence int    `json:"sequence"`
+	Id         int       `json:"id" db:"id"`
+	MerchantId uuid.UUID `json:"merchant_id"`
+	LocationId int       `json:"location_id"`
+	Name       string    `json:"name" db:"name"`
+	Sequence   int       `json:"sequence"`
 }
 
 type ServiceSettings struct {
@@ -75,7 +77,7 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 	var serviceId int
 	err = tx.QueryRow(ctx, serviceQuery, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
 		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceNote, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
-		serv.Settings.CancelDeadline, serv.Settings.BookingWindowMin, serv.Settings.BookingWindowMax, serv.Settings.BufferTime).Scan(&serviceId)
+		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime).Scan(&serviceId)
 	if err != nil {
 		return err
 	}
@@ -177,7 +179,7 @@ type PublicServiceWithPhases struct {
 	MerchantId    uuid.UUID            `json:"merchant_id"`
 	CategoryId    *int                 `json:"category_id"`
 	Name          string               `json:"name"`
-	Description   string               `json:"description"`
+	Description   *string              `json:"description"`
 	Color         string               `json:"color"`
 	TotalDuration int                  `json:"total_duration"`
 	Price         *currencyx.Price     `json:"price"`
@@ -282,7 +284,7 @@ type MerchantPageService struct {
 	Id            int                       `json:"id"`
 	CategoryId    *int                      `json:"category_id"`
 	Name          string                    `json:"name"`
-	Description   string                    `json:"description"`
+	Description   *string                   `json:"description"`
 	TotalDuration int                       `json:"total_duration"`
 	Price         *currencyx.FormattedPrice `json:"price"`
 	PriceNote     *string                   `json:"price_note"`
@@ -398,7 +400,7 @@ type ServiceWithPhasesAndSettings struct {
 	MerchantId    uuid.UUID            `json:"merchant_id"`
 	CategoryId    *int                 `json:"category_id"`
 	Name          string               `json:"name"`
-	Description   string               `json:"description"`
+	Description   *string              `json:"description"`
 	Color         string               `json:"color"`
 	TotalDuration int                  `json:"total_duration"`
 	Price         *currencyx.Price     `json:"price"`
@@ -654,7 +656,7 @@ type ServicePageData struct {
 	Id            int                           `json:"id"`
 	CategoryId    *int                          `json:"category_id"`
 	Name          string                        `json:"name"`
-	Description   string                        `json:"description"`
+	Description   *string                       `json:"description"`
 	Color         string                        `json:"color"`
 	TotalDuration int                           `json:"total_duration"`
 	Price         *currencyx.Price              `json:"price"`
@@ -942,7 +944,7 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 type PublicServiceDetails struct {
 	Id            int                       `json:"id"`
 	Name          string                    `json:"name"`
-	Description   string                    `json:"description"`
+	Description   *string                   `json:"description"`
 	TotalDuration int                       `json:"total_duration"`
 	Price         *currencyx.FormattedPrice `json:"price"`
 	PriceNote     *string                   `json:"price_note"`

@@ -9,10 +9,10 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/cmd/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -64,7 +64,7 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location, err := a.Postgresdb.GetLocationById(r.Context(), bookData.LocationId, merchantId)
+	bookedLocation, err := a.Postgresdb.GetLocationById(r.Context(), bookData.LocationId, merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
 		return
@@ -161,7 +161,7 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	emailData := email.BookingConfirmationData{
 		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
-		Location:    location.PostalCode + " " + location.City + " " + location.Address,
+		Location:    bookedLocation.FormattedLocation,
 		ServiceName: service.Name,
 		TimeZone:    merchantTz.String(),
 		ModifyLink:  "http://reservations.local:3000/m/" + bookData.MerchantName + "/cancel/" + strconv.Itoa(bookingId),

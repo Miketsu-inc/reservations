@@ -47,6 +47,12 @@ type Employee struct {
 	AcceptedOn  *time.Time    `json:"accpeted_on"`
 }
 
+type EmployeeLocation struct {
+	EmployeeId int  `json:"employee_id"`
+	LocationId int  `json:"location_id"`
+	IsPrimary  bool `json:"is_primary"`
+}
+
 func (s *service) NewMerchant(ctx context.Context, userId uuid.UUID, merchant Merchant) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {

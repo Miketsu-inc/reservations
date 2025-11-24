@@ -68,7 +68,7 @@ func jabulaniRouter() chi.Router {
 		"/customers/{customerId}",
 		"/products",
 		"/dashboard",
-		"/merchantsignup",
+		"/signup",
 	}
 
 	dist, assets := jabulani.StaticFilesPath()

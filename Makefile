@@ -3,13 +3,7 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 5 run-jabulani run-tango air db caddy
-
-run-jabulani:
-	@make -j 2 vite-jabulani tailwindcss-jabulani
-
-run-tango:
-	@make -j 2 vite-tango tailwindcss-tango
+	@make -j 7 vite-jabulani tailwindcss-jabulani vite-tango tailwindcss-tango air db caddy
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
@@ -60,7 +54,7 @@ db:
 	@docker start postgresdb
 
 create-db:
-	@docker run --name postgresdb -p ${DB_PORT}:${DB_PORT} -d -e POSTGRES_PASSWORD=${DB_PASSWORD} -e POSTGRES_USER=${DB_USERNAME} -e POSTGRES_DB=${DB_DATABASE} -v pgdata:/var/lib/postgresql/data postgres
+	@docker run --name postgresdb -p ${DB_PORT}:${DB_PORT} -d -e POSTGRES_PASSWORD=${DB_PASSWORD} -e POSTGRES_USER=${DB_USERNAME} -e POSTGRES_DB=${DB_DATABASE} -v pgdata:/var/lib/postgresql/data postgis/postgis
 
 connect-db:
 	@docker exec -it postgresdb psql -U ${DB_USERNAME} ${DB_DATABASE}

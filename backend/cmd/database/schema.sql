@@ -3,15 +3,19 @@
 alter database reservations set timezone to 'UTC';
 select pg_reload_conf();
 
+create extension postgis;
+
 create type price as (
     number                   numeric,
     currency                 char(3)
 );
 
+create type service_phase_type as ENUM ('active', 'wait');
 create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
 create type booking_type as ENUM ('appointment', 'event', 'class');
 create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
 create type employee_role as ENUM ('owner', 'admin', 'staff');
+create type location_type as ENUM ('physical', 'online');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -43,6 +47,20 @@ create table if not exists "Merchant" (
     subscription_tier        subscription_tier not null
 );
 
+create table if not exists "Location" (
+    ID                       serial           primary key unique not null,
+    merchant_id              uuid             references "Merchant" (ID) on delete cascade not null,
+    country                  varchar(50),
+    city                     varchar(50),
+    postal_code              varchar(10),
+    address                  varchar(100),
+    geo_point                geography(Point) not null,
+    place_id                 text,
+    formatted_location       text             not null,
+    is_primary               boolean          not null,
+    is_active                boolean          not null default true
+);
+
 create table if not exists "Employee" (
     ID                       serial          primary key unique not null,
     user_id                  uuid            references "User" (ID) on delete set null,
@@ -62,6 +80,7 @@ create table if not exists "Employee" (
 create table if not exists "ServiceCategory" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    location_id              integer         references "Location" (ID) on delete cascade,
     name                     varchar(30)     not null,
     sequence                 integer         not null default 0
 );
@@ -90,22 +109,15 @@ create table if not exists "Service" (
 );
 
 create table if not exists "ServicePhase" (
-    ID                       serial          primary key unique not null,
-    service_id               integer         references "Service" (ID) on delete cascade not null,
-    name                     varchar(30)     not null,
-    sequence                 integer         not null,
-    duration                 integer         not null,
-    phase_type               text            check (phase_type in ('active', 'wait')) not null,
-    deleted_on               timestamptz
-);
+    ID                       serial                 primary key unique not null,
+    service_id               integer                references "Service" (ID) on delete cascade not null,
+    name                     varchar(30)            not null,
+    sequence                 integer                not null,
+    duration                 integer                not null,
+    phase_type               service_phase_type     not null,
+    deleted_on               timestamptz,
 
-create table if not exists "Location" (
-    ID                       serial          primary key unique not null,
-    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    country                  varchar(50)     not null,
-    city                     varchar(50)     not null,
-    postal_code              varchar(10)     not null,
-    address                  varchar(100)    not null
+    constraint unique_service_phase_sequence unique (service_id, sequence)
 );
 
 -- constraint is neccessary for the on conflict
@@ -258,7 +270,7 @@ create table if not exists "BusinessHours" (
 create table if not exists "BlockedTime" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    employee_id              integer         references "Employee" (ID) on delete cascade not null, 
+    employee_id              integer         references "Employee" (ID) on delete cascade not null,
     name                     varchar(50)     not null,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,

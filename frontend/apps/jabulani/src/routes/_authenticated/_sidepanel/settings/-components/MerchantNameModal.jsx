@@ -58,7 +58,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <Modal styles="md:max-w-1/2" isOpen={isOpen} onClose={onClose}>
+    <Modal styles="md:max-w-1/2 max-w-md" isOpen={isOpen} onClose={onClose}>
       <form className="m-4 flex flex-col gap-4" onSubmit={handleSubmit}>
         <h2 className="text-xl font-semibold">Change Merchant Name</h2>
         <p className="text-gray-700 dark:text-gray-300">

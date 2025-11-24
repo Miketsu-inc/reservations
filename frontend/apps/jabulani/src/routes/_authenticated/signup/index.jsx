@@ -1,10 +1,10 @@
 import { useMultiStepForm } from "@reservations/lib";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import LocationForm from "./-components/LocationForm";
+import LocationPicker from "./-components/LocationPicker";
 import MerchantInfoForm from "./-components/MerchantInfoForm";
 
-export const Route = createFileRoute("/_authenticated/merchantsignup/")({
+export const Route = createFileRoute("/_authenticated/signup/")({
   component: MerchantSignup,
 });
 
@@ -12,8 +12,8 @@ function MerchantSignup() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [isSubmitDone, setIsSubmitDone] = useState(false);
   const { step, _, nextStep } = useMultiStepForm([
-    <MerchantInfoForm key="companyInfoForm" isCompleted={isCompletedHandler} />,
-    <LocationForm
+    // <MerchantInfoForm key="companyInfoForm" isCompleted={isCompletedHandler} />,
+    <LocationPicker
       key="locationForm"
       isCompleted={isCompletedHandler}
       isSubmitDone={setIsSubmitDone}
@@ -30,18 +30,18 @@ function MerchantSignup() {
   return (
     <div
       className={`${!isSubmitDone ? "min-h-screen min-w-min items-center" : ""}
-        flex flex-col justify-center`}
+        flex flex-col justify-center px-4`}
     >
-      <div
+      {/* <div
         className={`${
           !isSubmitDone
-            ? `sm:bg-layer_bg flex w-full max-w-md flex-col px-8 shadow-sm
-              sm:rounded-xl sm:pt-6 sm:pb-10 sm:shadow-lg`
+            ? `sm:bg-layer_bg flex w-full flex-col px-8 shadow-sm sm:rounded-xl
+              sm:pt-6 sm:pb-10 sm:shadow-lg`
             : ""
           } `}
-      >
-        {step}
-      </div>
+      > */}
+      {step}
+      {/* </div> */}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"

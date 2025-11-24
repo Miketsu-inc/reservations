@@ -1,11 +1,13 @@
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vite";
 
 /** @type {import('vite').UserConfig} */
 const createBaseConfig = ({ appRoot }) =>
   defineConfig(({ mode }) => {
     return {
+      envDir: path.resolve(__dirname, ".."),
       plugins: [
         tanstackRouter({
           target: "react",

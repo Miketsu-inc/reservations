@@ -63,6 +63,25 @@ func (s *Status) Scan(src any) error {
 	return nil
 }
 
+func (s Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.status)
+}
+
+func (s *Status) UnmarshalJSON(data []byte) error {
+	var statusStr string
+	if err := json.Unmarshal(data, &statusStr); err != nil {
+		return err
+	}
+
+	status, err := NewStatus(statusStr)
+	if err != nil {
+		return err
+	}
+
+	*s = status
+	return nil
+}
+
 type Type struct {
 	btype string
 }

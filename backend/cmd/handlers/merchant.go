@@ -11,10 +11,11 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/cmd/booking"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -231,14 +232,19 @@ func (m *Merchant) MerchantSettingsInfoByOwner(w http.ResponseWriter, r *http.Re
 
 func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 	type newLocation struct {
-		Country    string `json:"country" validate:"required"`
-		City       string `json:"city" validate:"required"`
-		PostalCode string `json:"postal_code" validate:"required"`
-		Address    string `json:"address" validate:"required"`
+		Country           *string           `json:"country"`
+		City              *string           `json:"city"`
+		PostalCode        *string           `json:"postal_code"`
+		Address           *string           `json:"address"`
+		GeoPoint          location.GeoPoint `json:"geo_point"`
+		PlaceId           *string           `json:"place_id"`
+		FormattedLocation string            `json:"formatted_location"`
+		IsPrimary         bool              `json:"is_primary"`
+		IsActive          bool              `json:"is_active"`
 	}
-	var location newLocation
+	var nl newLocation
 
-	if err := validate.ParseStruct(r, &location); err != nil {
+	if err := validate.ParseStruct(r, &nl); err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
@@ -246,12 +252,16 @@ func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	err := m.Postgresdb.NewLocation(r.Context(), database.Location{
-		Id:         0,
-		MerchantId: employee.MerchantId,
-		Country:    location.Country,
-		City:       location.City,
-		PostalCode: location.PostalCode,
-		Address:    location.Address,
+		MerchantId:        employee.MerchantId,
+		Country:           nl.Country,
+		City:              nl.City,
+		PostalCode:        nl.PostalCode,
+		Address:           nl.Address,
+		GeoPoint:          nl.GeoPoint,
+		PlaceId:           nl.PlaceId,
+		FormattedLocation: nl.FormattedLocation,
+		IsPrimary:         nl.IsPrimary,
+		IsActive:          nl.IsActive,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during adding location to database: %s", err.Error()))
@@ -276,7 +286,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 
 	type newService struct {
 		Name         string                   `json:"name" validate:"required"`
-		Description  string                   `json:"description"`
+		Description  *string                  `json:"description"`
 		Color        string                   `json:"color" validate:"required,hexcolor"`
 		Price        *currencyx.Price         `json:"price"`
 		Cost         *currencyx.Price         `json:"cost"`
@@ -359,7 +369,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Sequence:        0,
 		MinParticipants: 1,
 		MaxParticipants: 1,
-		Settings:        service.Settings,
+		ServiceSettings: service.Settings,
 	}, dbPhases, dbProducts); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
 		return
@@ -1604,7 +1614,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	location, err := m.Postgresdb.GetLocationById(r.Context(), nb.LocationId, employee.MerchantId)
+	bookedLocation, err := m.Postgresdb.GetLocationById(r.Context(), nb.LocationId, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
 		return
@@ -1748,7 +1758,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			MerchantId:     employee.MerchantId,
 			EmployeeId:     employee.Id,
 			ServiceId:      service.Id,
-			LocationId:     location.Id,
+			LocationId:     bookedLocation.Id,
 			Rrule:          rrule.String(),
 			Dstart:         fromDate,
 			Timezone:       merchantTz,
@@ -1772,7 +1782,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			BookingType:    booking.Appointment,
 			MerchantId:     employee.MerchantId,
 			ServiceId:      service.Id,
-			LocationId:     location.Id,
+			LocationId:     bookedLocation.Id,
 			FromDate:       fromDate,
 			ToDate:         toDate,
 			MerchantNote:   nb.MerchantNote,
@@ -1805,7 +1815,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	emailData := email.BookingConfirmationData{
 		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
-		Location:    location.PostalCode + " " + location.City + " " + location.Address,
+		Location:    bookedLocation.FormattedLocation,
 		ServiceName: service.Name,
 		TimeZone:    merchantTz.String(),
 		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", urlName, bookingId),
