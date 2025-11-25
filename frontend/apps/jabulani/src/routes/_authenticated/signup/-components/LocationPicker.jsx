@@ -41,20 +41,23 @@ export default function LocationPicker({
       // Use dragged coordinates for display if provided, otherwise use geometry coordinates
       const displayCoordinates = draggedCoordinates || coordinates;
 
+      let formatted_location = properties.full_address;
+
+      if (context.place?.name && context.address?.name) {
+        formatted_location = `${context.place?.name}, ${context.address?.name}`;
+      }
+
       return {
         country: context.country?.name || null,
         city: context.place?.name || null,
         postal_code: context.postcode?.name || null,
-        address: properties.address || null,
+        address: context.address?.name || null,
         geo_point: {
           latitude: finalGeoPoint[1],
           longitude: finalGeoPoint[0],
         }, // Routable point for backend
         place_id: properties.mapbox_id || null,
-        formatted_location:
-          properties.full_address ||
-          properties.name ||
-          `${displayCoordinates[1].toFixed(6)}, ${displayCoordinates[0].toFixed(6)}`,
+        formatted_location: formatted_location,
         // Keep these for UI/map purposes - use dragged coordinates
         coordinates: displayCoordinates,
       };
@@ -266,7 +269,6 @@ export default function LocationPicker({
 
   async function submitHandler() {
     setIsLoading(true);
-    console.log(selectedLocation);
     try {
       const response = await fetch("/api/v1/merchants/location", {
         method: "POST",
@@ -321,7 +323,6 @@ export default function LocationPicker({
           <SearchBox
             accessToken={accessToken}
             map={mapInstance}
-            marker={true}
             mapboxgl={mapboxgl}
             onRetrieve={handleRetrieve}
             placeholder="Search for an address..."
@@ -341,10 +342,12 @@ export default function LocationPicker({
                   Selected Location
                 </p>
                 <p className="mb-2 text-sm text-gray-700 dark:text-gray-400">
-                  {selectedLocation.formatted_location}
+                  {selectedLocation.address}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {selectedLocation.city && `${selectedLocation.city}, `}
+                  {selectedLocation.city && `${selectedLocation.city} `}
+                  {selectedLocation.postal_code &&
+                    `${selectedLocation.postal_code}, `}
                   {selectedLocation.country || "Unknown location"}
                 </p>
               </div>

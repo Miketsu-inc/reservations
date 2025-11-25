@@ -114,16 +114,14 @@ export default function MerchantInfoForm({ isCompleted }) {
     <>
       <form
         noValidate
-        className="flex w-full flex-col items-center justify-center gap-4
-          *:w-full"
+        className="bg-layer_bg flex h-fit w-full max-w-md flex-col gap-4
+          rounded-lg px-4 py-6 shadow-lg"
         onSubmit={handleSubmit}
       >
-        <h1 className="mb-8 text-center text-xl font-semibold sm:mb-4">
+        <h1 className="mb-2 text-3xl font-bold">
           Start signing up your company
         </h1>
-        <p className="mt-4 text-center">
-          Something about the data the user gives or idk
-        </p>
+        <p className="mb-6">Something about the data the user gives or idk</p>
         <ServerError styles="mt-4 mb-2" error={serverError} />
         <Input
           type="text"
@@ -149,7 +147,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         </p>
         <Input
           type="email"
-          styles="p-2 mt-2"
+          styles="p-2"
           placeholder="mycompany@gmail.com"
           pattern=".{0,254}@.*"
           name="contact_email"
@@ -160,7 +158,7 @@ export default function MerchantInfoForm({ isCompleted }) {
         />
         <Button
           variant="primary"
-          styles="py-2 sm:mt-10 mt-14"
+          styles="py-2 mt-8 w-full"
           type="submit"
           buttonText="Continue"
           isLoading={isLoading}
