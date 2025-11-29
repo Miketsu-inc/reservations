@@ -12,12 +12,13 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import MapboxMap from "../../-components/MapboxMap";
 import DropDownBusinessHours from "./-components/DropDownBusinessHours";
 import PhaseItem from "./-components/PhaseItem";
 
-async function fetchServiceDetails(merchantName, serviceId) {
+async function fetchServiceDetails(merchantName, serviceId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/services/public/${serviceId}/${merchantName}`,
+    `/api/v1/merchants/${merchantName}/${locationId}/services/public/${serviceId}`,
     {
       method: "GET",
       headers: {
@@ -36,10 +37,10 @@ async function fetchServiceDetails(merchantName, serviceId) {
   }
 }
 
-function publicServiceDetailsQueryOptions(merchantName, serviceId) {
+function publicServiceDetailsQueryOptions(merchantName, serviceId, locationId) {
   return queryOptions({
-    queryKey: ["public-service-details", merchantName, serviceId],
-    queryFn: () => fetchServiceDetails(merchantName, serviceId),
+    queryKey: ["public-service-details", merchantName, serviceId, locationId],
+    queryFn: () => fetchServiceDetails(merchantName, serviceId, locationId),
   });
 }
 
@@ -82,7 +83,7 @@ export const Route = createFileRoute("/m/$merchantName/services/$serviceId/")({
     context: { queryClient },
   }) => {
     await queryClient.ensureQueryData(
-      publicServiceDetailsQueryOptions(merchantName, serviceId)
+      publicServiceDetailsQueryOptions(merchantName, serviceId, locationId)
     );
     await queryClient.ensureQueryData(
       nextAvailableQueryOptions(merchantName, serviceId, locationId)
@@ -114,7 +115,7 @@ function ServiceDetailsPage() {
 
   const queryResults = useQueries({
     queries: [
-      publicServiceDetailsQueryOptions(merchantName, serviceId),
+      publicServiceDetailsQueryOptions(merchantName, serviceId, locationId),
       nextAvailableQueryOptions(merchantName, serviceId, locationId),
     ],
   });
@@ -139,8 +140,11 @@ function ServiceDetailsPage() {
 
   return (
     <div className="flex justify-center">
-      <div className="flex w-fit flex-col p-3 lg:flex-row lg:gap-4 lg:p-6">
-        <Card styles="flex-1 lg:max-w-2xl min-h-screen lg:p-6 p-4">
+      <div
+        className="flex w-full flex-col justify-center p-3 lg:flex-row lg:gap-4
+          lg:p-6"
+      >
+        <Card styles="flex-1 lg:max-w-2xl min-h-fit lg:p-6 p-4">
           <div className="flex w-full flex-col gap-8">
             <div className="flex items-center gap-6">
               <div
@@ -204,17 +208,27 @@ function ServiceDetailsPage() {
                 </div>
               </div>
             )}
-            <div className="flex h-64 flex-col gap-3">
+            <div className="flex flex-col gap-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <MapPinIcon styles="size-5" />
                 Location
               </h2>
-              <div className="border-text_color h-full rounded-md border"></div>
+              <div className="flex flex-col gap-2">
+                <p>{serviceDetails.formatted_location}</p>
+                <MapboxMap
+                  coordinates={[
+                    serviceDetails.geo_point.longitude,
+                    serviceDetails.geo_point.latitude,
+                  ]}
+                  minHeight={300}
+                  zoom={13}
+                />
+              </div>
             </div>
           </div>
         </Card>
         {!isWindowSmall && (
-          <div className="sticky top-6 w-96 flex-shrink-0 self-start">
+          <div className="sticky top-6 w-96 shrink-0 self-start">
             <NextAvailable
               hasAvailableSlot={hasAvailableSlot}
               nextAvailable={nextAvailable}

@@ -1399,32 +1399,43 @@ func (m *Merchant) GetCustomerInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) GetPublicServiceDetails(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
+	urlName := strings.ToLower(chi.URLParam(r, "merchantName"))
 	if urlName == "" {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name provided"))
 		return
 	}
 
-	id := chi.URLParam(r, "id")
-
-	if id == "" {
+	serviceIdStr := chi.URLParam(r, "serviceId")
+	if serviceIdStr == "" {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
 		return
 	}
 
-	serviceId, err := strconv.Atoi(id)
+	serviceId, err := strconv.Atoi(serviceIdStr)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
 		return
 	}
 
-	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	locationIdStr := chi.URLParam(r, "locationId")
+	if locationIdStr == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid location id provided"))
+		return
+	}
+
+	locationId, err := strconv.Atoi(locationIdStr)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting location id to int: %s", err.Error()))
+		return
+	}
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), urlName)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
 		return
 	}
 
-	service, err := m.Postgresdb.GetServiceDetailsForMerchantPage(r.Context(), merchantId, serviceId)
+	service, err := m.Postgresdb.GetServiceDetailsForMerchantPage(r.Context(), merchantId, serviceId, locationId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service info: %s", err.Error()))
 		return

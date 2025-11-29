@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -942,18 +943,20 @@ func (s *service) UpdateConnectedProducts(ctx context.Context, serviceId int, pr
 }
 
 type PublicServiceDetails struct {
-	Id            int                       `json:"id"`
-	Name          string                    `json:"name"`
-	Description   *string                   `json:"description"`
-	TotalDuration int                       `json:"total_duration"`
-	Price         *currencyx.FormattedPrice `json:"price"`
-	PriceNote     *string                   `json:"price_note"`
-	Phases        []PublicServicePhase      `json:"phases"`
+	Id                int                       `json:"id"`
+	Name              string                    `json:"name"`
+	Description       *string                   `json:"description"`
+	TotalDuration     int                       `json:"total_duration"`
+	Price             *currencyx.FormattedPrice `json:"price"`
+	PriceNote         *string                   `json:"price_note"`
+	FormattedLocation string                    `json:"formatted_location"`
+	GeoPoint          location.GeoPoint         `json:"geo_point"`
+	Phases            []PublicServicePhase      `json:"phases"`
 }
 
-func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int) (PublicServiceDetails, error) {
+func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error) {
 	query := `
-	select s.id, s.name, s.description, s.total_duration, s.price_per_person as price, s.price_note,
+	select s.id, s.name, s.description, s.total_duration, s.price_per_person as price, s.price_note, l.formatted_location, l.geo_point,
 	coalesce(
 		jsonb_agg(
 			jsonb_build_object(
@@ -969,13 +972,15 @@ func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchant
 	) as phases
 	from "Service" s
 	left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
+	left join "Location" l on l.merchant_id = $2 and l.id = $3
 	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
-	group by s.id`
+	group by s.id, l.formatted_location, l.geo_point`
 
 	var data PublicServiceDetails
 	var phaseJson []byte
 
-	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration, &data.Price, &data.PriceNote, &phaseJson)
+	err := s.db.QueryRow(ctx, query, serviceId, merchantId, locationId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration,
+		&data.Price, &data.PriceNote, &data.FormattedLocation, &data.GeoPoint, &phaseJson)
 	if err != nil {
 		return PublicServiceDetails{}, err
 	}

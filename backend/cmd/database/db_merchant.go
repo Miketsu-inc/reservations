@@ -12,6 +12,7 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/employee"
@@ -137,11 +138,13 @@ type MerchantInfo struct {
 	PaymentInfo  string `json:"payment_info"`
 	Timezone     string `json:"timezone"`
 
-	LocationId int    `json:"location_id"`
-	Country    string `json:"country"`
-	City       string `json:"city"`
-	PostalCode string `json:"postal_code"`
-	Address    string `json:"address"`
+	LocationId        int               `json:"location_id"`
+	Country           *string           `json:"country"`
+	City              *string           `json:"city"`
+	PostalCode        *string           `json:"postal_code"`
+	Address           *string           `json:"address"`
+	FormattedLocation string            `json:"formatted_location"`
+	GeoPoint          location.GeoPoint `json:"geo_point"`
 
 	Services []MerchantPageServicesGroupedByCategory `json:"services"`
 
@@ -152,14 +155,15 @@ type MerchantInfo struct {
 func (s *service) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error) {
 	query := `
 	select m.name, m.url_name, m.contact_email, m.introduction, m.announcement, m.about_us, m.parking_info, m.payment_info, m.timezone,
-	l.id as location_id, l.country, l.city, l.postal_code, l.address from "Merchant" m
+	l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
 	inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1
 	`
 
 	var mi MerchantInfo
 	err := s.db.QueryRow(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Introduction, &mi.Announcement,
-		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address)
+		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address,
+		&mi.FormattedLocation, &mi.GeoPoint)
 	if err != nil {
 		return MerchantInfo{}, err
 	}
@@ -257,11 +261,12 @@ type MerchantSettingsInfo struct {
 	Timezone         string             `json:"timezone" db:"timezone"`
 	BusinessHours    map[int][]TimeSlot `json:"business_hours" db:"business_hours"`
 
-	LocationId int    `json:"location_id" db:"location_id"`
-	Country    string `json:"country" db:"country"`
-	City       string `json:"city" db:"city"`
-	PostalCode string `json:"postal_code" db:"postal_code"`
-	Address    string `json:"address" db:"address"`
+	LocationId        int     `json:"location_id" db:"location_id"`
+	Country           *string `json:"country" db:"country"`
+	City              *string `json:"city" db:"city"`
+	PostalCode        *string `json:"postal_code" db:"postal_code"`
+	Address           *string `json:"address" db:"address"`
+	FormattedLocation string  `json:"formatted_location" db:"formatted_location"`
 }
 
 func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error) {
@@ -271,12 +276,13 @@ func (s *service) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.U
 	merchantQuery := `
 	select m.name, m.contact_email, m.introduction, m.announcement,
 		   m.about_us, m.parking_info, m.payment_info, m.cancel_deadline, m.booking_window_min, m.booking_window_max, m.buffer_time, m.timezone,
-	       l.id as location_id, l.country, l.city, l.postal_code, l.address
+	       l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location
 	from "Merchant" m inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1;`
 
 	err := s.db.QueryRow(ctx, merchantQuery, merchantId).Scan(&msi.Name, &msi.ContactEmail, &msi.Introduction, &msi.Announcement,
-		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address)
+		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.Timezone,
+		&msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address, &msi.FormattedLocation)
 	if err != nil {
 		return MerchantSettingsInfo{}, err
 	}
@@ -894,7 +900,7 @@ func (s *service) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merc
 
 func (s *service) UpdateBlockedTime(ctx context.Context, bt BlockedTime) error {
 	query := `
-	update "BlockedTime" 
+	update "BlockedTime"
 	set name = $4, from_date = $5, to_date = $6, all_day = $7
 	where merchant_id = $1 and employee_id = $2 and ID = $3`
 
@@ -914,7 +920,7 @@ type BlockedTimes struct {
 
 func (s *service) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, start, end time.Time) ([]BlockedTimes, error) {
 	query := `
-	select from_date, to_date, all_day from "BlockedTime" 
+	select from_date, to_date, all_day from "BlockedTime"
 	where merchant_id = $1 and to_date > $2 and from_date < $3
 	order by from_date`
 

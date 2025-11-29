@@ -335,7 +335,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 					'price', b.price_per_person,
 					'price_note', s.price_note,
 					'merchant_name', m.name,
-					'short_location', l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country,
+					'formatted_location', l.formatted_location,
 					'is_cancelled', b.status in ('cancelled')
 				) order by b.from_date desc
 			) as bookings

@@ -2,10 +2,12 @@ package location
 
 import (
 	"database/sql/driver"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
+
+	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/ewkb"
 )
 
 type GeoPoint struct {
@@ -18,35 +20,42 @@ func (g GeoPoint) Value() (driver.Value, error) {
 }
 
 func (g *GeoPoint) Scan(src any) error {
-	s, ok := src.(string)
-	if !ok {
-		b, ok := src.([]byte)
-		if !ok {
-			return fmt.Errorf("value cannot be converted to GeoPoint: %v", src)
+	if src == nil {
+		return nil
+	}
+
+	var data []byte
+
+	switch v := src.(type) {
+
+	case []byte:
+		data = v
+
+	case string:
+		d, err := hex.DecodeString(v)
+		if err != nil {
+			return fmt.Errorf("invalid EWKB hex: %w", err)
 		}
+		data = d
 
-		s = string(b)
+	default:
+		return fmt.Errorf("cannot scan type %T into GeoPoint", src)
 	}
 
-	s = strings.TrimPrefix(s, "POINT(")
-	s = strings.TrimSuffix(s, ")")
-	parts := strings.Split(s, " ")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid POINT format: %s", s)
-	}
-
-	lon, err := strconv.ParseFloat(parts[0], 64)
+	geometry, err := ewkb.Unmarshal(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("EWKB decode error: %w", err)
 	}
 
-	lat, err := strconv.ParseFloat(parts[1], 64)
-	if err != nil {
-		return err
+	point, ok := geometry.(*geom.Point)
+	if !ok {
+		return fmt.Errorf("EWKB is not a POINT")
 	}
 
-	g.Lat = lat
-	g.Lon = lon
+	coords := point.Coords()
+	g.Lon = coords.X()
+	g.Lat = coords.Y()
+
 	return nil
 }
 

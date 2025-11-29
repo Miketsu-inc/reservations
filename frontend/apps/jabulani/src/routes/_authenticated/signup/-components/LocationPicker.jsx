@@ -41,17 +41,22 @@ export default function LocationPicker({
       // Use dragged coordinates for display if provided, otherwise use geometry coordinates
       const displayCoordinates = draggedCoordinates || coordinates;
 
+      const address = context.address?.name || properties.address;
       let formatted_location = properties.full_address;
 
-      if (context.place?.name && context.address?.name) {
-        formatted_location = `${context.place?.name}, ${context.address?.name}`;
+      if (context.place?.name && address) {
+        formatted_location = `${context.place?.name}, ${address}`;
+
+        if (context.postcode?.name) {
+          formatted_location = `${context.postcode?.name} ${formatted_location}`;
+        }
       }
 
       return {
         country: context.country?.name || null,
         city: context.place?.name || null,
         postal_code: context.postcode?.name || null,
-        address: context.address?.name || null,
+        address: address || null,
         geo_point: {
           latitude: finalGeoPoint[1],
           longitude: finalGeoPoint[0],

@@ -266,7 +266,7 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 	err = email.BookingCancellation(r.Context(), lang, emailData.CustomerEmail, email.BookingCancellationData{
 		Time:           fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:           fromDateMerchantTz.Format("Monday, January 2"),
-		Location:       emailData.ShortLocation,
+		Location:       emailData.FormattedLocation,
 		ServiceName:    emailData.ServiceName,
 		TimeZone:       merchantTz.String(),
 		Reason:         cancelData.CancellationReason,
@@ -359,7 +359,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 	err = email.BookingModification(r.Context(), lang, oldEmailData.CustomerEmail, email.BookingModificationData{
 		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 		Date:        fromDate.Format("Monday, January 2"),
-		Location:    oldEmailData.ShortLocation,
+		Location:    oldEmailData.FormattedLocation,
 		ServiceName: oldEmailData.ServiceName,
 		TimeZone:    employee.MerchantId.String(),
 		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
@@ -389,7 +389,7 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		email_id, err := email.BookingReminder(r.Context(), lang, oldEmailData.CustomerEmail, email.BookingConfirmationData{
 			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
 			Date:        fromDateMerchantTz.Format("Monday, January 2"),
-			Location:    oldEmailData.ShortLocation,
+			Location:    oldEmailData.FormattedLocation,
 			ServiceName: oldEmailData.ServiceName,
 			TimeZone:    merchantTz.String(),
 			ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),

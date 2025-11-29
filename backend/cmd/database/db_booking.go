@@ -583,21 +583,20 @@ func (s *service) UpdateEmailIdForBooking(ctx context.Context, bookingId int, em
 }
 
 type BookingEmailData struct {
-	FromDate       time.Time `json:"from_date" db:"from_date"`
-	ToDate         time.Time `json:"to_date" db:"to_date"`
-	ServiceName    string    `json:"service_name" db:"service_name"`
-	ShortLocation  string    `json:"short_location" db:"short_location"`
-	CustomerEmail  string    `json:"customer_email" db:"customer_email"`
-	EmailId        uuid.UUID `json:"email_id" db:"email_id"`
-	MerchantName   string    `json:"merchant_name" db:"merchant_name"`
-	CancelDeadline int       `json:"cancel_deadline" db:"cancel_deadline"`
+	FromDate          time.Time `json:"from_date" db:"from_date"`
+	ToDate            time.Time `json:"to_date" db:"to_date"`
+	ServiceName       string    `json:"service_name" db:"service_name"`
+	FormattedLocation string    `json:"formatted_location" db:"formatted_location"`
+	CustomerEmail     string    `json:"customer_email" db:"customer_email"`
+	EmailId           uuid.UUID `json:"email_id" db:"email_id"`
+	MerchantName      string    `json:"merchant_name" db:"merchant_name"`
+	CancelDeadline    int       `json:"cancel_deadline" db:"cancel_deadline"`
 }
 
 func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error) {
 	query := `
 	select b.from_date, b.to_date, bd.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
-	coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline,
-		l.address || ', ' || l.city || ', ' || l.postal_code || ', ' || l.country as short_location
+	coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
 	join "BookingParticipant" bp on bp.booking_id = b.id
@@ -611,7 +610,7 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 
 	var data BookingEmailData
 	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
-		&data.CustomerEmail, &data.MerchantName, &data.CancelDeadline, &data.ShortLocation)
+		&data.CustomerEmail, &data.MerchantName, &data.CancelDeadline, &data.FormattedLocation)
 	if err != nil {
 		return BookingEmailData{}, err
 	}
@@ -620,22 +619,22 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 }
 
 type PublicBookingInfo struct {
-	FromDate       time.Time                `json:"from_date" db:"from_date"`
-	ToDate         time.Time                `json:"to_date" db:"to_date"`
-	ServiceName    string                   `json:"service_name" db:"service_name"`
-	CancelDeadline int                      `json:"cancel_deadline" db:"cancel_deadline"`
-	ShortLocation  string                   `json:"short_location" db:"short_location"`
-	Price          currencyx.FormattedPrice `json:"price" db:"price"`
-	PriceNote      *string                  `json:"price_note"`
-	MerchantName   string                   `json:"merchant_name" db:"merchant_name"`
-	IsCancelled    bool                     `json:"is_cancelled" db:"is_cancelled"`
+	FromDate          time.Time                `json:"from_date" db:"from_date"`
+	ToDate            time.Time                `json:"to_date" db:"to_date"`
+	ServiceName       string                   `json:"service_name" db:"service_name"`
+	CancelDeadline    int                      `json:"cancel_deadline" db:"cancel_deadline"`
+	FormattedLocation string                   `json:"formatted_location" db:"formatted_location"`
+	Price             currencyx.FormattedPrice `json:"price" db:"price"`
+	PriceNote         *string                  `json:"price_note"`
+	MerchantName      string                   `json:"merchant_name" db:"merchant_name"`
+	IsCancelled       bool                     `json:"is_cancelled" db:"is_cancelled"`
 }
 
 func (s *service) GetPublicBookingInfo(ctx context.Context, bookingId int) (PublicBookingInfo, error) {
 	query := `
 	select b.from_date, b.to_date, bd.price_per_person as price, m.name as merchant_name, s.name as service_name, m.cancel_deadline, s.price_note,
 		b.status = 'cancelled' as is_cancelled,
-		l.address || ', ' || l.city || ' ' || l.postal_code || ', ' || l.country as short_location
+		l.formatted_location
 	from "Booking" b
 	join "BookingDetails" bd on bd.booking_id = b.id
 	join "Service" s on s.id = b.service_id
@@ -646,7 +645,7 @@ func (s *service) GetPublicBookingInfo(ctx context.Context, bookingId int) (Publ
 
 	var data PublicBookingInfo
 	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
-		&data.ServiceName, &data.CancelDeadline, &data.PriceNote, &data.IsCancelled, &data.ShortLocation)
+		&data.ServiceName, &data.CancelDeadline, &data.PriceNote, &data.IsCancelled, &data.FormattedLocation)
 	if err != nil {
 		return PublicBookingInfo{}, err
 	}

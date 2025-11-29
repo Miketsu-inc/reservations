@@ -172,7 +172,7 @@ type PostgreSQL interface {
 	// Get all services grouped by category for the merchant page
 	GetServicesForMerchantPage(context.Context, uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
 	// get public details about a service for the merchant page service details section
-	GetServiceDetailsForMerchantPage(context.Context, uuid.UUID, int) (PublicServiceDetails, error)
+	GetServiceDetailsForMerchantPage(context.Context, uuid.UUID, int, int) (PublicServiceDetails, error)
 
 	// -- Customer --
 

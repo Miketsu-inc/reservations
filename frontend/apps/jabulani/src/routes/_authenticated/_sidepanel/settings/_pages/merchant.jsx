@@ -71,7 +71,7 @@ const defaultMerchantInfo = {
   merchant_name: "",
   location_id: 0,
   contact_email: "",
-  short_location: "",
+  formatted_location: "",
   introduction: "",
   announcement: "",
   about_us: "",
@@ -107,7 +107,7 @@ function MerchantPage() {
         merchant_name: loaderData.merchant_name,
         location_id: loaderData.location_id,
         contact_email: loaderData.contact_email,
-        short_location: `${loaderData.address}, ${loaderData.city} ${loaderData.postal_code}`,
+        formatted_location: `${loaderData.address}, ${loaderData.city} ${loaderData.postal_code}`,
         introduction: loaderData.introduction,
         announcement: loaderData.announcement,
         about_us: loaderData.about_us,
@@ -334,7 +334,7 @@ function MerchantPage() {
       </div>
       <div className="flex flex-col gap-4">
         <SectionHeader title="Change location" styles="" />
-        <span>Current location: {merchantInfo.short_location}</span>
+        <span>Current location: {merchantInfo.formatted_location}</span>
         <Button
           variant="tertiary"
           styles="w-min text-nowrap px-2 py-1"

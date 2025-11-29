@@ -213,7 +213,7 @@ function CancelPage() {
               "mt-2 text-sm font-medium text-gray-500 dark:text-gray-400"
             }
           >
-            {bookingData.short_location}
+            {bookingData.formatted_location}
           </p>
         </div>
         {bookingData.price && (

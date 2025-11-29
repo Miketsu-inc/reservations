@@ -8,6 +8,7 @@ import {
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import MapboxMap from "./-components/MapboxMap";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceCategoryItem from "./-components/ServiceCategoryItem";
 import ServiceItem from "./-components/ServiceItem";
@@ -73,8 +74,6 @@ function MerchantPage() {
     return <ServerError error={error} />;
   }
 
-  const short_location = `${merchantInfo.address}, ${merchantInfo.city} ${merchantInfo.postal_code}`;
-
   const filteredServicesGroupedByCategories = merchantInfo.services.map(
     (category) => ({
       ...category,
@@ -102,7 +101,7 @@ function MerchantPage() {
               <h1 className="text-2xl font-bold lg:text-4xl">
                 {merchantInfo.merchant_name}
               </h1>
-              <p className="text-sm">{short_location}</p>
+              <p className="text-sm">{merchantInfo.formatted_location}</p>
             </div>
           </div>
           <div
@@ -193,8 +192,21 @@ function MerchantPage() {
           <ReservationSection name="Payment" show={merchantInfo.payment_info}>
             <p>{merchantInfo.payment_info}</p>
           </ReservationSection>
-          <ReservationSection name="Location" show={short_location}>
-            <p>{short_location}</p>
+          <ReservationSection
+            name="Location"
+            show={merchantInfo.formatted_location}
+          >
+            <div className="flex flex-col gap-2">
+              <p>{merchantInfo.formatted_location}</p>
+              <MapboxMap
+                coordinates={[
+                  merchantInfo.geo_point.longitude,
+                  merchantInfo.geo_point.latitude,
+                ]}
+                minHeight={300}
+                zoom={13}
+              />
+            </div>
           </ReservationSection>
           <ReservationSection name="Parking" show={merchantInfo.parking_info}>
             <p>{merchantInfo.parking_info}</p>
