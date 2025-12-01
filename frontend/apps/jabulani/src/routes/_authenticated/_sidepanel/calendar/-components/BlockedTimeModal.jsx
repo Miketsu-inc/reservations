@@ -88,7 +88,7 @@ export default function BlockedTimeModal({
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
-    id: blockedTime?.extendedProps?.blocked_id || null,
+    id: blockedTime?.extendedProps?.id || null,
     name: blockedTime?.title || "",
     employee_id: blockedTime?.extendedProps.employee_id || "",
     from_date: blockedTime?.start || new Date(),
@@ -117,7 +117,7 @@ export default function BlockedTimeModal({
     }
 
     const body = {
-      id: blockedTime?.extendedProps?.blocked_id ?? undefined,
+      id: blockedTime?.extendedProps?.id ?? undefined,
       name: formData.name,
       all_day: formData.all_day,
     };

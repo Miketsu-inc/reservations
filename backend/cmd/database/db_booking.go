@@ -310,8 +310,8 @@ func (s *service) UpdateBookingData(ctx context.Context, merchantId uuid.UUID, b
 
 	bookingQuery := `
 	update "Booking"
-	from_date = from_date + $3, to_date = to_date + $3
-	where id = $1 and merchant_id = $2 and b.status not in ('cancelled', 'completed')
+	set from_date = from_date + $3, to_date = to_date + $3
+	where id = $1 and merchant_id = $2 and status not in ('cancelled', 'completed')
 	`
 
 	_, err = s.db.Exec(ctx, bookingQuery, bookingId, merchantId, offset)
@@ -321,7 +321,7 @@ func (s *service) UpdateBookingData(ctx context.Context, merchantId uuid.UUID, b
 
 	bookingPhaseQuery := `
 	update "BookingPhase"
-	from_date = from_date + $2, to_date = to_date + $2
+	set from_date = from_date + $2, to_date = to_date + $2
 	where booking_id = $1
 	`
 

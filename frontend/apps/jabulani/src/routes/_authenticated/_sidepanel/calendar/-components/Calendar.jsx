@@ -71,7 +71,7 @@ function formatBookings(data) {
     startEditable: new Date(booking.to_date) > new Date() ? true : false,
     extendedProps: {
       // this is a number unlike the normal 'id' which get's converted to a string
-      booking_id: booking.id,
+      id: booking.id,
       type: "booking",
       first_name: booking.first_name,
       last_name: booking.last_name,
@@ -99,7 +99,7 @@ function formatBlockedTimes(data) {
     allDay: blockedTime.all_day,
     startEditable: new Date(blockedTime.to_date) > new Date() ? true : false,
     extendedProps: {
-      blocked_id: blockedTime.id,
+      id: blockedTime.id,
       type: "blocked",
       employee_id: blockedTime.employee_id,
       allDay: blockedTime.all_day,
@@ -114,7 +114,7 @@ const defaultBookingInfo = {
   end: new Date(),
   startEditable: true,
   extendedProps: {
-    booking_id: 0,
+    id: 0,
     first_name: "",
     last_name: "",
     phone_number: "",
@@ -431,7 +431,7 @@ export default function Calendar({ router, route, search }) {
       />
 
       <BlockedTimeModal
-        key={blockedTimeModalData?.extendedProps?.blocked_id || "new"}
+        key={blockedTimeModalData?.extendedProps?.id || "new"}
         isOpen={isBlockedTimeModalOpen}
         onClose={() => {
           setBlockedTimeModalData(null);
