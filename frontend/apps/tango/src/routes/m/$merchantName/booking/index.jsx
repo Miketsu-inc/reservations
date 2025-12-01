@@ -72,7 +72,7 @@ async function fetchDisabledDays(merchantName, serviceId) {
       method: "GET",
       headers: {
         Accept: "application/json",
-        "constent-type": "application/json",
+        "content-type": "application/json",
       },
     }
   );
@@ -93,6 +93,34 @@ function disabledDaysQueryOptions(merchantName, serviceId) {
   });
 }
 
+async function fetchSummaryInfo(merchantName, serviceId, locationId) {
+  const response = await fetch(
+    `/api/v1/merchants/summary-info?name=${merchantName}&serviceId=${serviceId}&locationId=${locationId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+function summaryInfoQueryOptions(merchantName, serviceId, locationId) {
+  return queryOptions({
+    queryKey: ["summary-info", merchantName, serviceId, locationId],
+    queryFn: () => fetchSummaryInfo(merchantName, serviceId, locationId),
+  });
+}
+
 export const Route = createFileRoute("/m/$merchantName/booking/")({
   component: SelectDateTime,
   loaderDeps: ({ search: { locationId, serviceId } }) => ({
@@ -102,8 +130,12 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
   loader: async ({
     params: { merchantName },
     context: { queryClient },
-    deps: { serviceId },
+    deps: { serviceId, locationId },
   }) => {
+    await queryClient.ensureQueryData(
+      summaryInfoQueryOptions(merchantName, serviceId, locationId)
+    );
+
     await queryClient.ensureQueryData(
       disabledDaysQueryOptions(merchantName, serviceId)
     );
@@ -164,6 +196,15 @@ function SelectDateTime() {
   }, [availableTimesWindow, currentMonth, isInitialSkipDone, skipCount]);
 
   const {
+    data: summaryInfo,
+    isLoading: siIsLoading,
+    isError: siIsError,
+    error: siError,
+  } = useQuery(
+    summaryInfoQueryOptions(merchantName, search.serviceId, search.locationId)
+  );
+
+  const {
     data: disabledDays,
     isLoading: dsIsLoading,
     isError: dsIsError,
@@ -180,8 +221,8 @@ function SelectDateTime() {
     setWindowRange(GetDayPickerWindow(month));
   }
 
-  if (atIsError || dsIsError) {
-    const error = atError || dsError;
+  if (atIsError || dsIsError || siIsError) {
+    const error = atError || dsError || siError;
     return <ServerError error={error} />;
   }
 
@@ -255,6 +296,10 @@ function SelectDateTime() {
     setSelectedHour(e.target.value);
   }
 
+  if (siIsLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="bg-layer_bg mx-auto min-h-screen max-w-7xl px-8">
       <div className="py-5">
@@ -325,11 +370,14 @@ function SelectDateTime() {
                   </div>
                   <div>
                     <p>Service:</p>
-                    <p>{search.serviceId}</p>
+                    <p>
+                      {summaryInfo.name} - {summaryInfo.price}
+                      {summaryInfo.price_note}
+                    </p>
                   </div>
                   <div>
                     <p>Location:</p>
-                    <p>{search.locationId}</p>
+                    <p>{summaryInfo.formatted_location}</p>
                   </div>
                   <div className={`${selectedDay?.date ? "" : "invisible"}`}>
                     <p>date:</p>

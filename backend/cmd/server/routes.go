@@ -196,6 +196,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Get("/next-available", merchantHandler.GetNextAvailable)
 		r.Get("/disabled-days", merchantHandler.GetDisabledDaysForCalendar)
 		r.Get("/{merchantName}/{locationId}/services/public/{serviceId}", merchantHandler.GetPublicServiceDetails)
+		r.Get("/summary-info", merchantHandler.GetSummaryInfo)
 	})
 
 	r.Group(func(r chi.Router) {

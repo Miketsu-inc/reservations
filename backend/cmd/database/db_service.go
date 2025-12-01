@@ -33,6 +33,7 @@ type Service struct {
 	ServiceSettings
 	DeletedOn *time.Time `json:"deleted_on"`
 }
+
 type ServicePhase struct {
 	Id        int        `json:"ID"`
 	ServiceId int        `json:"service_id"`
@@ -995,5 +996,28 @@ func (s *service) GetServiceDetailsForMerchantPage(ctx context.Context, merchant
 	}
 
 	return data, nil
+}
 
+type MinimalServiceInfo struct {
+	Name              string                    `json:"name"`
+	TotalDuration     int                       `json:"total_duration"`
+	Price             *currencyx.FormattedPrice `json:"price"`
+	PriceNote         *string                   `json:"price_note"`
+	FormattedLocation string                    `json:"formatted_location"`
+}
+
+func (s *service) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int) (MinimalServiceInfo, error) {
+	query := `
+	select s.name, s.total_duration, s.price_per_person as price, s.price_note, l.formatted_location
+	from "Service" s
+	left join "Location" l on l.merchant_id = $1 and l.id = $3
+	where s.merchant_id = $1 and s.id = $2
+	`
+	var msi MinimalServiceInfo
+	err := s.db.QueryRow(ctx, query, merchantId, serviceId, locationId).Scan(&msi.Name, &msi.TotalDuration, &msi.Price, &msi.PriceNote, &msi.FormattedLocation)
+	if err != nil {
+		return MinimalServiceInfo{}, err
+	}
+
+	return msi, nil
 }

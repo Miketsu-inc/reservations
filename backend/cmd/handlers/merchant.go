@@ -2087,3 +2087,33 @@ func (m *Merchant) GetEmployeesForCalendar(w http.ResponseWriter, r *http.Reques
 
 	httputil.Success(w, http.StatusOK, employees)
 }
+
+func (m *Merchant) GetSummaryInfo(w http.ResponseWriter, r *http.Request) {
+	urlName := r.URL.Query().Get("name")
+
+	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("serviceId should be a number: %s", err.Error()))
+		return
+	}
+
+	urlLocationId, err := strconv.Atoi(r.URL.Query().Get("locationId"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("locationId should be a number: %s", err.Error()))
+		return
+	}
+
+	merchantId, err := m.Postgresdb.GetMerchantIdByUrlName(r.Context(), strings.ToLower(urlName))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error()))
+		return
+	}
+
+	info, err := m.Postgresdb.GetMinimalServiceInfo(r.Context(), merchantId, urlServiceId, urlLocationId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving minimal service info: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, info)
+}
