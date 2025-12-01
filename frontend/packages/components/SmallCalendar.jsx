@@ -7,11 +7,16 @@ export default function SmallCalendar({
   firstDayOfWeek,
   disabledSelectedModifier,
   disabledTodayStyling = false,
+  onMonthChange,
+  startMonth,
+  endMonth,
+  month,
 }) {
   return (
     <DayPicker
       mode="single"
       showOutsideDays={true}
+      animate
       weekStartsOn={
         firstDayOfWeek === "Monday"
           ? 1
@@ -29,13 +34,15 @@ export default function SmallCalendar({
           "rounded-md bg-primary/80 focus:bg-primary/80! hover:bg-primary/80! hover:text-white text-white",
       }}
       onSelect={(date) => onSelect(date)}
+      onMonthChange={onMonthChange}
+      month={month}
+      startMonth={startMonth}
+      endMonth={endMonth}
       classNames={{
         month: "space-y-4 pb-2",
         month_caption: "flex justify-center items-center w-full pt-3",
         caption_label: "font-medium",
         nav: "absolute flex items-center justify-between w-full p-2",
-        button_previous: "rounded-md hover:bg-hvr_gray cursor-pointer",
-        button_next: "rounded-md hover:bg-hvr_gray cursor-pointer",
         weekdays: "flex px-2",
         weekday:
           "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
@@ -44,7 +51,7 @@ export default function SmallCalendar({
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
         today: !disabledTodayStyling ? "bg-hvr_gray" : "",
-        outside: "text-gray-500",
+        outside: "text-white",
         disabled: "hover:bg-transparent text-gray-300! dark:text-gray-800!",
         hidden: "invisible",
         chevron:

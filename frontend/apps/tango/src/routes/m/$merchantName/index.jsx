@@ -144,7 +144,6 @@ function MerchantPage() {
                             search={{
                               locationId: merchantInfo.location_id,
                               serviceId: service.id,
-                              day: new Date().toISOString().split("T")[0],
                             }}
                           >
                             <Button

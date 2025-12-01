@@ -195,3 +195,24 @@ export function formatDuration(duration) {
 
   return `${hours > 0 ? `${hours}h ` : ""}${minutes > 0 ? `${minutes}m` : ""}`;
 }
+
+export function GetDayPickerWindow(month, firstDayOfWeek = "Monday") {
+  const weekStartsOn = firstDayOfWeek === "Monday" ? 1 : 0;
+
+  const year = month.getFullYear();
+  const m = month.getMonth();
+
+  const monthStart = new Date(year, m, 1);
+  const monthEnd = new Date(year, m + 1, 0);
+
+  const startOffset = (monthStart.getDay() - weekStartsOn + 7) % 7;
+  const endOffset = (weekStartsOn + 6 - monthEnd.getDay() + 7) % 7;
+
+  const start = new Date(year, m, 1 - startOffset);
+  const end = new Date(year, m + 1, endOffset);
+
+  return {
+    start: formatToDateString(start),
+    end: formatToDateString(end),
+  };
+}

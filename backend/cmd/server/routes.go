@@ -192,7 +192,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Use(lang.LangMiddleware)
 
 		r.Get("/info", merchantHandler.InfoByName)
-		r.Get("/available-times", merchantHandler.GetHours)
+		r.Get("/available-times", merchantHandler.GetAvailableTimes)
 		r.Get("/next-available", merchantHandler.GetNextAvailable)
 		r.Get("/disabled-days", merchantHandler.GetDisabledDaysForCalendar)
 		r.Get("/{merchantName}/{locationId}/services/public/{serviceId}", merchantHandler.GetPublicServiceDetails)

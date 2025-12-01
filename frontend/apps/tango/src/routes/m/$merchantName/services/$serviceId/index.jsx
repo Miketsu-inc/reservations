@@ -310,7 +310,6 @@ function NextAvailable({
         search={{
           locationId: locationId,
           serviceId: serviceDetails.id,
-          day: nextAvailable.date || new Date().toISOString().split("T")[0],
         }}
         className="w-full"
       >

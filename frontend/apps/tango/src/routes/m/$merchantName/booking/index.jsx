@@ -8,6 +8,7 @@ import {
 } from "@reservations/components";
 import {
   formatToDateString,
+  GetDayPickerWindow,
   invalidateLocalStorageAuth,
 } from "@reservations/lib";
 import {
@@ -16,13 +17,16 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./-components/AvailableTimeSection";
 
-async function fetchHours(merchantName, locationId, serviceId, day) {
+async function fetchHours(merchantName, locationId, serviceId, start, end) {
+  start = new Date(start).toJSON();
+  end = new Date(end).toJSON();
+
   const response = await fetch(
-    `/api/v1/merchants/available-times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&day=${day}`,
+    `/api/v1/merchants/available-times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&start=${start}&end=${end}`,
     {
       method: "GET",
       headers: {
@@ -41,10 +45,23 @@ async function fetchHours(merchantName, locationId, serviceId, day) {
   }
 }
 
-function availableTimesQueryOptions(merchantName, locationId, serviceId, day) {
+function availableTimesQueryOptions(
+  merchantName,
+  locationId,
+  serviceId,
+  start,
+  end
+) {
   return queryOptions({
-    queryKey: ["available-times", merchantName, locationId, serviceId, day],
-    queryFn: () => fetchHours(merchantName, locationId, serviceId, day),
+    queryKey: [
+      "available-times",
+      merchantName,
+      locationId,
+      serviceId,
+      start,
+      end,
+    ],
+    queryFn: () => fetchHours(merchantName, locationId, serviceId, start, end),
   });
 }
 
@@ -78,19 +95,15 @@ function disabledDaysQueryOptions(merchantName, serviceId) {
 
 export const Route = createFileRoute("/m/$merchantName/booking/")({
   component: SelectDateTime,
-  loaderDeps: ({ search: { locationId, serviceId, day } }) => ({
+  loaderDeps: ({ search: { locationId, serviceId } }) => ({
     locationId,
     serviceId,
-    day,
   }),
   loader: async ({
     params: { merchantName },
     context: { queryClient },
-    deps: { locationId, serviceId, day },
+    deps: { serviceId },
   }) => {
-    await queryClient.ensureQueryData(
-      availableTimesQueryOptions(merchantName, locationId, serviceId, day)
-    );
     await queryClient.ensureQueryData(
       disabledDaysQueryOptions(merchantName, serviceId)
     );
@@ -102,32 +115,69 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
 
 function SelectDateTime() {
   const { merchantName } = Route.useParams();
-  const { locationId, serviceId, day } = Route.useSearch();
+  const search = Route.useSearch();
   const router = useRouter();
   const [selectedHour, setSelectedHour] = useState();
+  const [selectedDay, setSelectedDay] = useState(null);
   const [serverError, setServerError] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [customerNote, setCustomerNote] = useState("");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [skipCount, setSkipCount] = useState(0);
+  const [isInitialSkipDone, setIsInitialSkipDone] = useState(false);
+  const [windowRange, setWindowRange] = useState(() =>
+    GetDayPickerWindow(new Date())
+  );
 
   const {
-    data: availableTimes,
+    data: availableTimesWindow,
     isLoading: atIsLoading,
     isError: atIsError,
     error: atError,
   } = useQuery({
-    ...availableTimesQueryOptions(merchantName, locationId, serviceId, day),
+    ...availableTimesQueryOptions(
+      merchantName,
+      search.locationId,
+      search.serviceId,
+      windowRange.start,
+      windowRange.end
+    ),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (!availableTimesWindow || skipCount > 3 || isInitialSkipDone) return;
+
+    const first = availableTimesWindow.find((d) => d.is_available);
+
+    if (!first) {
+      const nextMonth = new Date(currentMonth);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      setCurrentMonth(nextMonth);
+      setSkipCount((prev) => prev + 1);
+      setWindowRange(GetDayPickerWindow(nextMonth));
+    } else {
+      setSelectedDay(first);
+      setIsInitialSkipDone(true);
+    }
+  }, [availableTimesWindow, currentMonth, isInitialSkipDone, skipCount]);
 
   const {
     data: disabledDays,
     isLoading: dsIsLoading,
     isError: dsIsError,
     error: dsError,
-  } = useQuery(disabledDaysQueryOptions(merchantName, serviceId));
+  } = useQuery(disabledDaysQueryOptions(merchantName, search.serviceId));
 
-  if (atIsLoading || dsIsLoading) {
-    return <Loading />;
+  const unavailableDays = availableTimesWindow
+    ?.filter((day) => !day.is_available)
+    .map((day) => day.date);
+  const unavailableDaysAsDates = unavailableDays?.map((date) => new Date(date));
+
+  function handleMonthChange(month) {
+    setCurrentMonth(month);
+    setWindowRange(GetDayPickerWindow(month));
   }
 
   if (atIsError || dsIsError) {
@@ -137,7 +187,13 @@ function SelectDateTime() {
 
   async function onSubmitHandler(e) {
     e.preventDefault();
-    const date = new Date(day);
+
+    if (!selectedDay || !selectedHour) {
+      setServerError("Please select a day and a time.");
+      return;
+    }
+
+    const date = new Date(selectedDay.date);
 
     const [hours, minutes] = selectedHour.split(":").map(Number);
     date.setHours(hours, minutes, 0, 0);
@@ -153,8 +209,8 @@ function SelectDateTime() {
         },
         body: JSON.stringify({
           merchant_name: merchantName,
-          service_id: serviceId,
-          location_id: locationId,
+          service_id: search.serviceId,
+          location_id: search.locationId,
           timeStamp: timeStamp,
           customer_note: customerNote,
         }),
@@ -189,10 +245,10 @@ function SelectDateTime() {
   }
 
   function dayChangeHandler(date) {
+    const dayString = formatToDateString(date);
     setSelectedHour();
-    router.navigate({
-      search: (prev) => ({ ...prev, day: formatToDateString(date) }),
-    });
+    const selected = availableTimesWindow.find((d) => d.date === dayString);
+    setSelectedDay(selected);
   }
 
   function selectedHourHandler(e) {
@@ -211,42 +267,54 @@ function SelectDateTime() {
         <ServerError error={serverError} />
         <form method="POST" onSubmit={onSubmitHandler}>
           <div className="flex flex-col pt-5 md:flex-row md:gap-10 lg:pt-10">
-            <div className="flex flex-col gap-6 md:w-1/2">
-              <p className="text-xl sm:py-5">Pick a date</p>
-              <div
-                className="flex items-center justify-center self-center bg-white
-                  shadow-lg dark:bg-neutral-950"
-              >
-                <SmallCalendar
-                  value={day}
-                  onSelect={dayChangeHandler}
-                  disabled={[
-                    { dayOfWeek: disabledDays.closed_days },
-                    { before: disabledDays.min_date },
-                    { after: disabledDays.max_date },
-                  ]}
-                  disabledTodayStyling={true}
-                />
+            {!(atIsLoading || dsIsLoading) ? (
+              <div className="flex flex-col gap-6 md:w-1/2">
+                <p className="text-xl sm:py-5">Pick a date</p>
+                <div
+                  className="flex items-center justify-center self-center
+                    bg-white shadow-lg dark:bg-neutral-950"
+                >
+                  <SmallCalendar
+                    value={selectedDay?.date}
+                    onSelect={dayChangeHandler}
+                    disabled={[
+                      { dayOfWeek: disabledDays.closed_days },
+                      { before: disabledDays.min_date },
+                      { after: disabledDays.max_date },
+                      ...unavailableDaysAsDates,
+                    ]}
+                    disabledTodayStyling={true}
+                    firstDayOfWeek={"Monday"}
+                    month={currentMonth}
+                    onMonthChange={handleMonthChange}
+                    startMonth={new Date()}
+                    endMonth={disabledDays.max_date}
+                  />
+                </div>
+                <hr className="border-gray-500" />
+                <p className="text-xl sm:py-5">Pick a Time</p>
+                <div className="flex flex-col gap-3">
+                  <p className="text-lg font-bold">Morning</p>
+                  <AvailableTimeSection
+                    availableTimes={selectedDay?.morning || []}
+                    timeSection="morning"
+                    selectedHour={selectedHour}
+                    clickedHour={selectedHourHandler}
+                  />
+                  <p className="text-lg font-bold">Afternoon</p>
+                  <AvailableTimeSection
+                    availableTimes={selectedDay?.afternoon || []}
+                    timeSection="afternoon"
+                    selectedHour={selectedHour}
+                    clickedHour={selectedHourHandler}
+                  />
+                </div>
               </div>
-              <hr className="border-gray-500" />
-              <p className="text-xl sm:py-5">Pick a Time</p>
-              <div className="flex flex-col gap-3">
-                <p className="text-lg font-bold">Morning</p>
-                <AvailableTimeSection
-                  availableTimes={availableTimes.morning}
-                  timeSection="morning"
-                  selectedHour={selectedHour}
-                  clickedHour={selectedHourHandler}
-                />
-                <p className="text-lg font-bold">Afternoon</p>
-                <AvailableTimeSection
-                  availableTimes={availableTimes.afternoon}
-                  timeSection="afternoon"
-                  selectedHour={selectedHour}
-                  clickedHour={selectedHourHandler}
-                />
+            ) : (
+              <div className="flex h-dvh items-center justify-center sm:w-1/2">
+                <Loading />
               </div>
-            </div>
+            )}
             <div className="pt-8 md:flex md:w-1/2 md:flex-col md:pt-0 md:pr-14">
               <div className="hidden md:flex md:flex-col md:gap-6">
                 <p className="py-5 text-xl">Summary</p>
@@ -257,15 +325,15 @@ function SelectDateTime() {
                   </div>
                   <div>
                     <p>Service:</p>
-                    <p>{serviceId}</p>
+                    <p>{search.serviceId}</p>
                   </div>
                   <div>
                     <p>Location:</p>
-                    <p>{locationId}</p>
+                    <p>{search.locationId}</p>
                   </div>
-                  <div className={`${day ? "" : "invisible"}`}>
-                    <p>Date:</p>
-                    <p>{day}</p>
+                  <div className={`${selectedDay?.date ? "" : "invisible"}`}>
+                    <p>date:</p>
+                    <p>{selectedDay?.date}</p>
                   </div>
                   <div className={`${selectedHour ? "" : "invisible"}`}>
                     <p>Time:</p>
@@ -284,7 +352,6 @@ function SelectDateTime() {
                 value={customerNote}
                 inputData={(data) => setCustomerNote(data.value)}
               />
-
               <div
                 className="bg-hvr_gray dark:bg-layer_bg fixed right-0 bottom-0
                   left-0 px-8 py-3 md:static md:bg-transparent md:px-0 md:pt-10
@@ -293,7 +360,7 @@ function SelectDateTime() {
                 <Button
                   variant="primary"
                   type="submit"
-                  disabled={day && selectedHour ? false : true}
+                  disabled={selectedDay && selectedHour ? false : true}
                   isLoading={isLoading}
                   buttonText="Reserve"
                   styles="w-full py-2"

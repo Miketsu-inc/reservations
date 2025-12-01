@@ -144,9 +144,10 @@ func CalculateAvailableTimes(reserved []database.BookingTime, blockedTimes []dat
 }
 
 type MultiDayAvailableTimes struct {
-	Date      string   `json:"date"`
-	Morning   []string `json:"morning"`
-	Afternoon []string `json:"afternoon"`
+	Date        string   `json:"date"`
+	IsAvailable bool     `json:"is_available"`
+	Morning     []string `json:"morning"`
+	Afternoon   []string `json:"afternoon"`
 }
 
 func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, blockedTimes []database.BlockedTimes, servicePhases []database.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
@@ -173,10 +174,13 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []database.BookingTime, blo
 
 		dayResult := CalculateAvailableTimes(reservedForDay, blockedForDay, servicePhases, serviceDuration, bufferTime, bookingindowMin, d, businessHoursForDay, currentTime, merchantTz)
 
+		isAvailable := len(dayResult.Morning) > 0 || len(dayResult.Afternoon) > 0
+
 		results = append(results, MultiDayAvailableTimes{
-			Date:      d.Format("2006-01-02"),
-			Morning:   dayResult.Morning,
-			Afternoon: dayResult.Afternoon,
+			Date:        d.Format("2006-01-02"),
+			IsAvailable: isAvailable,
+			Morning:     dayResult.Morning,
+			Afternoon:   dayResult.Afternoon,
 		})
 	}
 
@@ -410,15 +414,25 @@ func (m *Merchant) CheckUrl(w http.ResponseWriter, r *http.Request) {
 	httputil.Success(w, http.StatusOK, merchantUrl)
 }
 
-func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
+func (m *Merchant) GetAvailableTimes(w http.ResponseWriter, r *http.Request) {
 	urlName := r.URL.Query().Get("name")
+	urlStartDate := r.URL.Query().Get("start")
+	urlEndDate := r.URL.Query().Get("end")
 
-	urlDay := r.URL.Query().Get("day")
-	day, err := time.Parse("2006-01-02", urlDay)
+	startDate, err := time.Parse(time.RFC3339, urlStartDate)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid day format: %s", err.Error()))
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
 		return
 	}
+
+	endDate, err := time.Parse(time.RFC3339, urlEndDate)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
+		return
+	}
+
+	startDate = startDate.UTC()
+	endDate = endDate.UTC()
 
 	urlServiceId, err := strconv.Atoi(r.URL.Query().Get("serviceId"))
 	if err != nil {
@@ -455,41 +469,32 @@ func (m *Merchant) GetHours(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reservedTimes, err := m.Postgresdb.GetReservedTimes(r.Context(), merchantId, urlLocationId, day)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
-		return
-	}
-
 	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
 		return
 	}
 
-	merchantDay := day.In(merchantTz)
-	dayStartMerchant := time.Date(merchantDay.Year(), merchantDay.Month(), merchantDay.Day(), 0, 0, 0, 0, merchantTz)
-	dayEndMerchant := dayStartMerchant.AddDate(0, 0, 1)
+	reservedTimes, err := m.Postgresdb.GetReservedTimesForPeriod(r.Context(), merchantId, urlLocationId, startDate, endDate)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
+		return
+	}
 
-	dayStartUTC := dayStartMerchant.UTC()
-	dayEndUTC := dayEndMerchant.UTC()
-
-	blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, dayStartUTC, dayEndUTC)
+	blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, startDate, endDate)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error()))
 		return
 	}
 
-	dayOfWeek := int(day.Weekday())
-
-	businessHours, err := m.Postgresdb.GetBusinessHoursByDay(r.Context(), merchantId, dayOfWeek)
+	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours for the day: %s", err.Error()))
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
 		return
 	}
 
 	now := time.Now()
-	availableSlots := CalculateAvailableTimes(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, day, businessHours, now, merchantTz)
+	availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -866,7 +871,6 @@ func (m *Merchant) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating preferences: %s", err.Error()))
 		return
 	}
-
 }
 
 func (m *Merchant) TransferCustomerBookings(w http.ResponseWriter, r *http.Request) {
