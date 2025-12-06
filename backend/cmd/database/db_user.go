@@ -424,13 +424,16 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 
 type EmployeeAuthInfo struct {
 	Id         int           `db:"id"`
+	LocationId int           `db:"location_id"`
 	MerchantId uuid.UUID     `db:"merchant_id"`
 	Role       employee.Role `db:"role"`
 }
 
 func (s *service) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error) {
 	query := `
-	select id, merchant_id, role from "Employee"
+	select e.id, l.id as location_id, e.merchant_id, e.role
+	from "Employee" e
+	join "Location" l on l.merchant_id = e.merchant_id
 	where user_id = $1
 	`
 

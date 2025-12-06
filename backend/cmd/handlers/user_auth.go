@@ -44,18 +44,18 @@ func hashCompare(password, hash string) error {
 }
 
 // Creates and sets both the resfresh and access jwt cookies
-func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, role *employee.Role) error {
+func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *employee.Role) error {
 	refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
 	}
 
-	err = jwt.NewRefreshToken(w, userID, merchantId, employeeId, role, refreshVersion)
+	err = jwt.NewRefreshToken(w, userID, merchantId, employeeId, locationId, role, refreshVersion)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating refresh jwt token: %s", err.Error())
 	}
 
-	err = jwt.NewAccessToken(w, userID, merchantId, employeeId, role)
+	err = jwt.NewAccessToken(w, userID, merchantId, employeeId, locationId, role)
 	if err != nil {
 		return fmt.Errorf("unexpected error when creating access jwt token: %s", err.Error())
 	}
@@ -95,16 +95,18 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 
 	var merchantId *uuid.UUID
 	var employeeId *int
+	var locationId *int
 	var role *employee.Role
 
 	// TODO: later user should be able to select which merchant to log into
 	if len(employeeAuthInfo) >= 1 {
 		merchantId = &employeeAuthInfo[0].MerchantId
 		employeeId = &employeeAuthInfo[0].Id
+		locationId = &employeeAuthInfo[0].LocationId
 		role = &employeeAuthInfo[0].Role
 	}
 
-	err = u.newJwts(w, r.Context(), userID, merchantId, employeeId, role)
+	err = u.newJwts(w, r.Context(), userID, merchantId, employeeId, locationId, role)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err)
 		return
@@ -164,7 +166,7 @@ func (u *UserAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.newJwts(w, r.Context(), userID, nil, nil, nil)
+	err = u.newJwts(w, r.Context(), userID, nil, nil, nil, nil)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
