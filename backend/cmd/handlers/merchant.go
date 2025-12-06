@@ -1933,11 +1933,11 @@ func (m *Merchant) generateRecurringBookings(ctx context.Context, series databas
 
 func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 	type newBlockedTime struct {
-		Name        string `json:"name" validate:"required"`
-		EmployeeIds []int  `json:"employee_ids" validate:"required"`
-		FromDate    string `json:"from_date" validate:"required"`
-		ToDate      string `json:"to_date" validate:"required"`
-		AllDay      bool   `json:"all_day"`
+		Name string `json:"name" validate:"required"`
+		// EmployeeIds []int  `json:"employee_ids" validate:"required"`
+		FromDate string `json:"from_date" validate:"required"`
+		ToDate   string `json:"to_date" validate:"required"`
+		AllDay   bool   `json:"all_day"`
 	}
 
 	var nbt newBlockedTime
@@ -1966,7 +1966,8 @@ func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, nbt.EmployeeIds, nbt.Name, fromDate, toDate, nbt.AllDay)
+	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, []int{employee.Id}, nbt.Name, fromDate, toDate, nbt.AllDay)
+	// err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, nbt.EmployeeIds, nbt.Name, fromDate, toDate, nbt.AllDay)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new blocked time %s", err.Error()))
 	}
@@ -1975,16 +1976,16 @@ func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Merchant) DeleteBlockedTime(w http.ResponseWriter, r *http.Request) {
-	type deleteData struct {
-		EmployeeId int `json:"employee_id" validate:"required"`
-	}
+	// type deleteData struct {
+	// 	EmployeeId int `json:"employee_id" validate:"required"`
+	// }
 
-	var dd deleteData
-	fmt.Println(r)
-	if err := validate.ParseStruct(r, &dd); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
+	// var dd deleteData
+
+	// if err := validate.ParseStruct(r, &dd); err != nil {
+	// 	httputil.Error(w, http.StatusBadRequest, err)
+	// 	return
+	// }
 	id := chi.URLParam(r, "id")
 
 	if id == "" {
@@ -2000,7 +2001,8 @@ func (m *Merchant) DeleteBlockedTime(w http.ResponseWriter, r *http.Request) {
 
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	err = m.Postgresdb.DeleteBlockedTime(r.Context(), blockedTimeId, employee.MerchantId, dd.EmployeeId)
+	err = m.Postgresdb.DeleteBlockedTime(r.Context(), blockedTimeId, employee.MerchantId, employee.Id)
+	// err = m.Postgresdb.DeleteBlockedTime(r.Context(), blockedTimeId, employee.MerchantId, dd.EmployeeId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while deleting blocked time for merchant: %s", err.Error()))
 		return
@@ -2010,12 +2012,12 @@ func (m *Merchant) DeleteBlockedTime(w http.ResponseWriter, r *http.Request) {
 func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
 	// employee id not ids but its a front end issue
 	type blockedTimeData struct {
-		Id         int    `json:"id" validate:"required"`
-		Name       string `json:"name" validate:"required"`
-		EmployeeId int    `json:"employee_id" validate:"required"`
-		FromDate   string `json:"from_date" validate:"required"`
-		ToDate     string `json:"to_date" validate:"required"`
-		AllDay     bool   `json:"all_day"`
+		Id   int    `json:"id" validate:"required"`
+		Name string `json:"name" validate:"required"`
+		// EmployeeId int    `json:"employee_id" validate:"required"`
+		FromDate string `json:"from_date" validate:"required"`
+		ToDate   string `json:"to_date" validate:"required"`
+		AllDay   bool   `json:"all_day"`
 	}
 
 	var data blockedTimeData
@@ -2064,7 +2066,8 @@ func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
 	err = m.Postgresdb.UpdateBlockedTime(r.Context(), database.BlockedTime{
 		Id:         blockedTimeId,
 		MerchantId: employee.MerchantId,
-		EmployeeId: data.EmployeeId,
+		// EmployeeId: data.EmployeeId,
+		EmployeeId: employee.Id,
 		Name:       data.Name,
 		FromDate:   fromDate,
 		ToDate:     toDate,

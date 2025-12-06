@@ -13,7 +13,7 @@ import {
   timeStringFromDate,
   useToast,
 } from "@reservations/lib";
-import { useQuery } from "@tanstack/react-query";
+// import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 const generateTimeOptions = (time_format) => {
@@ -51,22 +51,29 @@ function endOfDay(date) {
   return d;
 }
 
-async function fetchEmployees() {
-  const response = await fetch(`/api/v1/merchants/calendar/employees`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "constent-type": "application/json",
-    },
-  });
+// async function fetchEmployees() {
+//   const response = await fetch(`/api/v1/merchants/calendar/employees`, {
+//     method: "GET",
+//     headers: {
+//       Accept: "application/json",
+//       "constent-type": "application/json",
+//     },
+//   });
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
+//   const result = await response.json();
+//   if (!response.ok) {
+//     throw result.error;
+//   } else {
+//     return result.data;
+//   }
+// }
+
+// function employeeQueryOptions() {
+//   return queryOptions({
+//     queryKey: ["calendar-employees"],
+//     queryFn: fetchEmployees,
+//   });
+// }
 
 export default function BlockedTimeModal({
   isOpen,
@@ -76,11 +83,7 @@ export default function BlockedTimeModal({
   onDeleted,
   onSubmitted,
 }) {
-  const { data: employees = [] } = useQuery({
-    queryKey: ["calendar-employees"],
-    queryFn: fetchEmployees,
-    enabled: isOpen,
-  });
+  // const { data: employees = [] } = useQuery(employeeQueryOptions());
 
   const isEditing = blockedTime !== null;
   const timeOptions = generateTimeOptions(preferences?.time_format);
@@ -104,10 +107,10 @@ export default function BlockedTimeModal({
     all_day: blockedTime?.extendedProps?.allDay ?? true,
   });
 
-  const employeeOptions = employees?.map((employee) => ({
-    value: employee.id,
-    label: employee.first_name + " " + employee.last_name,
-  }));
+  // const employeeOptions = employees?.map((employee) => ({
+  //   value: employee.id,
+  //   label: employee.first_name + " " + employee.last_name,
+  // }));
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -151,13 +154,13 @@ export default function BlockedTimeModal({
     // when three is more than one employee the ids at insert are sent as an array but the updating is not (not implemented yet)
     // means that the blocek time was already added and now should be modified
     if (formData.id != null) {
-      body.employee_id = blockedTime?.extendedProps?.employee_id;
+      // body.employee_id = blockedTime?.extendedProps?.employee_id;
       url = `/api/v1/merchants/blocked-times/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
-      body.employee_ids = [formData.employee_id];
+      // body.employee_ids = [formData.employee_id];
       url = "/api/v1/merchants/blocked-times";
       method = "POST";
     }
@@ -200,9 +203,9 @@ export default function BlockedTimeModal({
           Accept: "application/json",
           "content-type": "application/json",
         },
-        body: JSON.stringify({
-          employee_id: bt.employee_id,
-        }),
+        // body: JSON.stringify({
+        //   employee_id: bt.employee_id,
+        // }),
       });
 
       if (!response.ok) {
@@ -327,7 +330,7 @@ export default function BlockedTimeModal({
               </div>
             </div>
           )}
-          <div className="flex w-full flex-col gap-1">
+          {/* <div className="flex w-full flex-col gap-1">
             <label className="text-text_color text-sm">Team members</label>
             <Select
               options={employeeOptions}
@@ -340,7 +343,7 @@ export default function BlockedTimeModal({
               disabled={isEditing}
               onOpenChange={(open) => setIsSelectOpen(open)}
             />
-          </div>
+          </div> */}
           <div className="flex items-center justify-end gap-2 pt-2">
             {isEditing && (
               <Button
