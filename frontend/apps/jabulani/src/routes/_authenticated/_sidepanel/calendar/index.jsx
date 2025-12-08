@@ -31,7 +31,7 @@ function normalizeDateString(dateStr) {
     const day = String(date.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
-  } catch (e) {
+  } catch (_) {
     return undefined;
   }
 }
