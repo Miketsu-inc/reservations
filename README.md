@@ -9,6 +9,8 @@ Required binaries
 - [Docker](https://www.docker.com/)
 - [Air](https://github.com/air-verse/air)
 - [Make](https://www.gnu.org/software/make/)
+- [Caddy](https://caddyserver.com/)
+- [Golangci-lint](https://golangci-lint.run/) (for local linting)
 
 Installing dependencies
 
@@ -36,6 +38,9 @@ JWT_REFRESH_SECRET
 JWT_REFRESH_EXP_MIN
 
 RESEND_API_TEST
+ENABLE_EMAILS
+
+VITE_MAPBOX_TOKEN
 ```
 
 Create a PostgreSQL database in docker using the create-db command.
