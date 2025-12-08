@@ -13,6 +13,29 @@ import { globalQueryClient } from "../../../../main";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
+function normalizeDateString(dateStr) {
+  if (!dateStr) return undefined;
+
+  try {
+    // Parse the date string (handles various formats)
+    const date = new Date(dateStr);
+
+    // Check if valid date
+    if (isNaN(date.getTime())) {
+      return undefined;
+    }
+
+    // Return in YYYY-MM-DD format
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return undefined;
+  }
+}
+
 async function fetchBookings(start, end) {
   start = new Date(start).toJSON();
   end = new Date(end).toJSON();
@@ -79,10 +102,10 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
       ? search.view
       : defaultView;
 
-    let start = search.start;
-    let end = search.end;
+    let start = normalizeDateString(search.start);
+    let end = normalizeDateString(search.end);
 
-    if (!start && !end && !isDurationValid(view, start, end)) {
+    if (!start || !end || !isDurationValid(view, start, end)) {
       const calculated = calculateStartEndTime(
         view,
         preferences?.first_day_of_week
