@@ -16,6 +16,8 @@ export default function DatePicker({
   value,
   palaceHolderText,
   disabledBefore,
+  labelText,
+  required,
   disabled = false,
   hideText = false,
   clearAfterClose = false,
@@ -40,29 +42,39 @@ export default function DatePicker({
         }}
       >
         <PopoverTrigger disabled={disabled} asChild>
-          <button
-            className={`${styles} ${disabled ? "outline-none" : ""}
-              border-input_border_color w-full rounded-lg border px-3 py-2
-              text-left`}
-            type="button"
-            onClick={() => {
-              setShowCalendar(!showCalendar);
-              if (clearAfterClose) setInternalDate();
-            }}
-          >
-            <div className="flex items-center justify-between">
-              {!hideText && (
-                <span className="text-text_color h-5 flex-1 truncate">
-                  {selectedDate
-                    ? formatDate(selectedDate)
-                    : palaceHolderText || "Pick a date"}
-                </span>
-              )}
-              <DatePickerIcon
-                styles="stroke-gray-700 dark:stroke-gray-300 shrink-0 h-4 w-4"
-              />
-            </div>
-          </button>
+          <label className="w-full">
+            {labelText && (
+              <span className="flex items-center gap-1 pb-1 text-sm">
+                {labelText}
+                {required !== false && (
+                  <span className="text-base leading-none text-red-500">*</span>
+                )}
+              </span>
+            )}
+            <button
+              className={`${styles} ${disabled ? "outline-none" : ""}
+                border-input_border_color w-full rounded-lg border px-3 py-2
+                text-left`}
+              type="button"
+              onClick={() => {
+                setShowCalendar(!showCalendar);
+                if (clearAfterClose) setInternalDate();
+              }}
+            >
+              <div className="flex items-center justify-between">
+                {!hideText && (
+                  <span className="text-text_color h-5 flex-1 truncate">
+                    {selectedDate
+                      ? formatDate(selectedDate)
+                      : palaceHolderText || "Pick a date"}
+                  </span>
+                )}
+                <DatePickerIcon
+                  styles="stroke-gray-700 dark:stroke-gray-300 shrink-0 h-4 w-4"
+                />
+              </div>
+            </button>
+          </label>
         </PopoverTrigger>
         <PopoverContent styles="w-fit p-0!">
           <SmallCalendar

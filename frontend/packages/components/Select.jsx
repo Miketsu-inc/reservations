@@ -10,6 +10,8 @@ export default function Select({
   value,
   onSelect,
   placeholder,
+  labelText,
+  required,
   styles,
   maxVisibleItems = 7,
   extraContent,
@@ -105,37 +107,49 @@ export default function Select({
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          className={`${styles} border-input_border_color
-            disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
-            border py-2 pr-2 pl-3 text-left transition-opacity
-            disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20`}
-          type="button"
-          ref={containerRef}
-          disabled={disabled}
-        >
-          <div className="flex items-center justify-between">
-            <span
-              className={`${selectedOption ? "text-text_color" : "text-gray-500"}
-                min-h-6 flex-1 truncate ${disabled ? "text-text_color/70" : ""}`}
-            >
-              {!selectedOption ? (
-                placeholder
-              ) : selectedOption.icon ? (
-                <span className="flex items-center gap-2">
-                  <span className="shrink-0">{selectedOption.icon}</span>
-                  <span className="truncate">{selectedOption.label}</span>
-                </span>
-              ) : (
-                selectedOption.label
+        <label>
+          {labelText && (
+            <span className="flex items-center gap-1 pb-1 text-sm">
+              {labelText}
+              {required !== false && (
+                <span className="text-base leading-none text-red-500">*</span>
               )}
             </span>
-            <BackArrowIcon
-              styles={`stroke-gray-700 dark:stroke-gray-300 transition-transform
-                -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} h-5 w-5`}
-            />
-          </div>
-        </button>
+          )}
+          <button
+            className={`${styles} border-input_border_color
+              disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
+              border py-2 pr-2 pl-3 text-left transition-opacity
+              disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20`}
+            type="button"
+            ref={containerRef}
+            disabled={disabled}
+          >
+            <div className="flex items-center justify-between">
+              <span
+                className={`${selectedOption ? "text-text_color" : "text-gray-500"}
+                  min-h-6 flex-1 truncate
+                  ${disabled ? "text-text_color/70" : ""}`}
+              >
+                {!selectedOption ? (
+                  placeholder
+                ) : selectedOption.icon ? (
+                  <span className="flex items-center gap-2">
+                    <span className="shrink-0">{selectedOption.icon}</span>
+                    <span className="truncate">{selectedOption.label}</span>
+                  </span>
+                ) : (
+                  selectedOption.label
+                )}
+              </span>
+              <BackArrowIcon
+                styles={`stroke-gray-700 dark:stroke-gray-300
+                  transition-transform -rotate-90 shrink-0
+                  ${isOpen ? "rotate-90" : ""} h-5 w-5`}
+              />
+            </div>
+          </button>
+        </label>
       </PopoverTrigger>
       <PopoverContent
         forceMount

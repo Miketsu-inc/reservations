@@ -28,6 +28,7 @@ import BlockedTimeModal from "./BlockedTimeModal";
 import CalendarModal from "./CalendarModal";
 import CreateMenu from "./CreateMenu";
 import DragConfirmationModal from "./DragConfirmationModal";
+import NewBookingModal from "./NewBookingModal";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -136,6 +137,7 @@ export default function Calendar({ router, route, search }) {
     old_booking: {},
     revert: {},
   });
+  const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
 
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
@@ -247,12 +249,11 @@ export default function Calendar({ router, route, search }) {
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
             <div className="flex flex-row items-center gap-2">
-              {!isWindowSmall && (
-                <CreateMenu
-                  onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
-                  onCreateBooking={() => setIsModalOpen(true)}
-                />
-              )}
+              <CreateMenu
+                isFloating={isWindowSmall}
+                onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
+                onCreateBooking={() => setIsNewBookingModalOpen(true)}
+              />
               <DatePicker
                 styles="w-fit"
                 hideText={true}
@@ -429,7 +430,6 @@ export default function Calendar({ router, route, search }) {
           setDragModalOpen(false);
         }}
       />
-
       <BlockedTimeModal
         key={blockedTimeModalData?.extendedProps?.id || "new"}
         isOpen={isBlockedTimeModalOpen}
@@ -442,14 +442,11 @@ export default function Calendar({ router, route, search }) {
         onDeleted={invalidateBookingsQuery}
         onSubmitted={invalidateBookingsQuery}
       />
-
-      {isWindowSmall && (
-        <CreateMenu
-          isFloating={true}
-          onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
-          onCreateBooking={() => setIsModalOpen(true)}
-        />
-      )}
+      <NewBookingModal
+        isOpen={isNewBookingModalOpen}
+        onClose={() => setIsNewBookingModalOpen(false)}
+        onNewBooking={invalidateBookingsQuery}
+      />
     </div>
   );
 }

@@ -462,3 +462,26 @@ func (s *service) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID
 
 	return email, nil
 }
+
+type CustomerForCalendar struct {
+	Id        uuid.UUID `json:"id" db:"id"`
+	FirstName string    `json:"first_name" db:"first_name"`
+	LastName  string    `json:"last_name" db:"last_name"`
+}
+
+func (s *service) GetCustomersForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]CustomerForCalendar, error) {
+	query := `
+	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name
+	from "Customer" c
+	join "User" u on c.user_id = u.id
+	where c.merchant_id = $1
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[CustomerForCalendar])
+	if err != nil {
+		return []CustomerForCalendar{}, err
+	}
+
+	return customers, nil
+}

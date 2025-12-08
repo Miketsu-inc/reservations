@@ -1578,11 +1578,10 @@ func (m *Merchant) ChangeMerchantName(w http.ResponseWriter, r *http.Request) {
 
 func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) {
 	type recurringRule struct {
-		Frequency string `json:"frequency"`
-		Interval  int    `json:"interval"`
-		Weekday   string `json:"weekday"`
-		Until     string `json:"until"`
-		Mode      string `json:"mode"`
+		Frequency string   `json:"frequency"`
+		Interval  int      `json:"interval"`
+		Weekdays  []string `json:"weekdays"`
+		Until     string   `json:"until"`
 	}
 
 	type customer struct {
@@ -1594,11 +1593,10 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type newBooking struct {
-		BookingType  booking.Type   `json:"booking_type"`
-		Customers    []customer     `json:"customers"`
+		BookingType  booking.Type   `json:"booking_type" validate:"required"`
+		Customers    []customer     `json:"customers" validate:"required"`
 		ServiceId    int            `json:"service_id"`
-		LocationId   int            `json:"location_id"`
-		TimeStamp    string         `json:"timestamp"`
+		TimeStamp    string         `json:"timestamp" validate:"required"`
 		MerchantNote *string        `json:"merchant_note"`
 		IsRecurring  bool           `json:"is_recurring"`
 		Rrule        *recurringRule `json:"recurrence_rule"`
@@ -1629,7 +1627,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	bookedLocation, err := m.Postgresdb.GetLocationById(r.Context(), nb.LocationId, employee.MerchantId)
+	bookedLocation, err := m.Postgresdb.GetLocationById(r.Context(), employee.LocationId, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
 		return
@@ -1681,7 +1679,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
 
-	fromDate := timeStamp
+	fromDate := timeStamp.Truncate(time.Second)
 	toDate := timeStamp.Add(duration)
 
 	var customerId uuid.UUID
@@ -1732,33 +1730,36 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		var weekday rrule.Weekday
-		switch strings.ToUpper(nb.Rrule.Weekday) {
-		case rrule.MO.String():
-			weekday = rrule.MO
-		case rrule.TU.String():
-			weekday = rrule.TU
-		case rrule.WE.String():
-			weekday = rrule.WE
-		case rrule.TH.String():
-			weekday = rrule.TH
-		case rrule.FR.String():
-			weekday = rrule.FR
-		case rrule.SA.String():
-			weekday = rrule.SA
-		case rrule.SU.String():
-			weekday = rrule.SU
-		default:
-			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("incorrect weekday"))
-			return
+		var weekdays []rrule.Weekday
+
+		for _, wkd := range nb.Rrule.Weekdays {
+			switch strings.ToUpper(wkd) {
+			case rrule.MO.String():
+				weekdays = append(weekdays, rrule.MO)
+			case rrule.TU.String():
+				weekdays = append(weekdays, rrule.TU)
+			case rrule.WE.String():
+				weekdays = append(weekdays, rrule.WE)
+			case rrule.TH.String():
+				weekdays = append(weekdays, rrule.TH)
+			case rrule.FR.String():
+				weekdays = append(weekdays, rrule.FR)
+			case rrule.SA.String():
+				weekdays = append(weekdays, rrule.SA)
+			case rrule.SU.String():
+				weekdays = append(weekdays, rrule.SU)
+			default:
+				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("incorrect weekday"))
+				return
+			}
 		}
 
 		rrule, err := rrule.NewRRule(rrule.ROption{
-			Freq:     freq,
-			Dtstart:  fromDate,
-			Interval: nb.Rrule.Interval,
-			Wkst:     weekday,
-			Until:    untilTimeStamp,
+			Freq:      freq,
+			Dtstart:   fromDate,
+			Interval:  nb.Rrule.Interval,
+			Byweekday: weekdays,
+			Until:     untilTimeStamp,
 		})
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating rrule: %s", err.Error()))
@@ -2119,4 +2120,28 @@ func (m *Merchant) GetSummaryInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, info)
+}
+
+func (m *Merchant) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) {
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	services, err := m.Postgresdb.GetServicesForCalendarByMerchant(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving services for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, services)
+}
+
+func (m *Merchant) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) {
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	customers, err := m.Postgresdb.GetCustomersForCalendarByMerchant(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, customers)
 }

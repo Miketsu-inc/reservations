@@ -1021,3 +1021,25 @@ func (s *service) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUI
 
 	return msi, nil
 }
+
+type ServiceForCalendar struct {
+	Id            int    `json:"id" db:"id"`
+	Name          string `json:"name" db:"name"`
+	TotalDuration int    `json:"total_duration" db:"total_duration"`
+}
+
+func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ServiceForCalendar, error) {
+	query := `
+	select id, name, total_duration
+	from "Service"
+	where merchant_id = $1
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	services, err := pgx.CollectRows(rows, pgx.RowToStructByName[ServiceForCalendar])
+	if err != nil {
+		return []ServiceForCalendar{}, err
+	}
+
+	return services, nil
+}

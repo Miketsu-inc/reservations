@@ -3,6 +3,7 @@ import { DayPicker } from "react-day-picker";
 export default function SmallCalendar({
   value,
   disabled,
+  animate,
   onSelect,
   firstDayOfWeek,
   disabledSelectedModifier,
@@ -16,7 +17,7 @@ export default function SmallCalendar({
     <DayPicker
       mode="single"
       showOutsideDays={true}
-      animate
+      animate={animate}
       weekStartsOn={
         firstDayOfWeek === "Monday"
           ? 1

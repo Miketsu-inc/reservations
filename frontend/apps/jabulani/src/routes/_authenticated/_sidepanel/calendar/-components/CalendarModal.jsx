@@ -18,7 +18,6 @@ import { useState } from "react";
 import BookingInfoSection from "./BookingInfoSection";
 import DeleteBookingPopoverContent from "./DeleteBookingPopoverContent";
 import NotesSection from "./NotesSection";
-// import RecurSection from "./RecurSection";
 
 export default function CalendarModal({
   bookingInfo,
@@ -27,15 +26,6 @@ export default function CalendarModal({
   onDeleted,
   onEdit,
 }) {
-  // const [recurData, setRecurData] = useState({
-  //   isRecurring: false,
-  //   frequency: "weekly",
-  //   endDate: new Date(
-  //     bookingInfo.start.getFullYear(),
-  //     bookingInfo.start.getMonth() + 1,
-  //     bookingInfo.start.getDate()
-  //   ),
-  // });
   const [merchantNote, setMerchantNote] = useState(
     bookingInfo.extendedProps.merchant_note
   );
@@ -51,10 +41,6 @@ export default function CalendarModal({
 
   // startEditable is false when the end date is higher than the current date
   const disabled = !bookingInfo.startEditable;
-
-  // function updateRecurData(data) {
-  //   setRecurData((prev) => ({ ...prev, ...data }));
-  // }
 
   function updateMerchantNote(note) {
     setMerchantNote(note);
@@ -179,12 +165,6 @@ export default function CalendarModal({
                 </div>
               </div>
             </div>
-            {/* <RecurSection
-              booking={bookingInfo}
-              recurData={recurData}
-              updateRecurData={updateRecurData}
-              disabled={disabled}
-            /> */}
             <NotesSection
               booking={bookingInfo}
               merchantNote={merchantNote}

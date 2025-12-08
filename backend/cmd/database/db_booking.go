@@ -721,8 +721,9 @@ func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecur
 		phaseIds = utils.RepeatSlice(phaseIds, times)
 		phaseFromDates = utils.RepeatSlice(phaseFromDates, times)
 		phaseToDates = utils.RepeatSlice(phaseToDates, times)
+		bookingIdsForPhases := utils.RepeatEach(bookingIds, len(nrb.Phases))
 
-		_, err = tx.Exec(ctx, insertBookingPhasesQuery, bookingIds, phaseIds, phaseFromDates, phaseToDates)
+		_, err = tx.Exec(ctx, insertBookingPhasesQuery, bookingIdsForPhases, phaseIds, phaseFromDates, phaseToDates)
 		if err != nil {
 			return 0, err
 		}

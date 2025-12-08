@@ -270,6 +270,8 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Delete("/blocked-times/{id}", merchantHandler.DeleteBlockedTime)
 
 			r.Get("/calendar/employees", merchantHandler.GetEmployeesForCalendar)
+			r.Get("/calendar/services", merchantHandler.GetServicesForCalendar)
+			r.Get("/calendar/customers", merchantHandler.GetCustomersForCalendar)
 		})
 	})
 }

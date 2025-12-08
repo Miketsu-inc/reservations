@@ -111,3 +111,20 @@ func RepeatSlice[T any](s []T, times int) []T {
 
 	return result
 }
+
+// Repeats each element for given times
+func RepeatEach[T any](s []T, times int) []T {
+	if times <= 0 || len(s) == 0 {
+		return s
+	}
+
+	n := len(s)
+	result := make([]T, 0, n*times)
+	for _, v := range s {
+		for i := 0; i < times; i++ {
+			result = append(result, v)
+		}
+	}
+
+	return result
+}

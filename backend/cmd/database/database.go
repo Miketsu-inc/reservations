@@ -175,6 +175,8 @@ type PostgreSQL interface {
 	GetServiceDetailsForMerchantPage(context.Context, uuid.UUID, int, int) (PublicServiceDetails, error)
 	// get simple service info for the merchant page booking summary
 	GetMinimalServiceInfo(context.Context, uuid.UUID, int, int) (MinimalServiceInfo, error)
+	// Get all services for calendar
+	GetServicesForCalendarByMerchant(context.Context, uuid.UUID) ([]ServiceForCalendar, error)
 
 	// -- Customer --
 
@@ -196,6 +198,8 @@ type PostgreSQL interface {
 	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerInfo, error)
 	// Get a customer's email by id
 	GetCustomerEmailById(context.Context, uuid.UUID, uuid.UUID) (string, error)
+	// Get all customers for calendar
+	GetCustomersForCalendarByMerchant(context.Context, uuid.UUID) ([]CustomerForCalendar, error)
 
 	// -- Preferences --
 

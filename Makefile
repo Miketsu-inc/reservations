@@ -36,10 +36,10 @@ go-build:
 endif
 
 tailwindcss-jabulani:
-	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --watch
+	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --watch=always
 
 tailwindcss-tango:
-	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --watch
+	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --watch=always
 
 email:
 	@npx email dev --dir "backend/emails/templates"

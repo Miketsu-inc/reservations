@@ -334,6 +334,7 @@ function SelectDateTime() {
                     onMonthChange={handleMonthChange}
                     startMonth={new Date()}
                     endMonth={disabledDays.max_date}
+                    animate={true}
                   />
                 </div>
                 <hr className="border-gray-500" />
