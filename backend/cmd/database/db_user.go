@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/pkg/employee"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"golang.org/x/text/language"
 )
 
@@ -423,10 +423,10 @@ func (s *service) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid
 }
 
 type EmployeeAuthInfo struct {
-	Id         int           `db:"id"`
-	LocationId int           `db:"location_id"`
-	MerchantId uuid.UUID     `db:"merchant_id"`
-	Role       employee.Role `db:"role"`
+	Id         int                `db:"id"`
+	LocationId int                `db:"location_id"`
+	MerchantId uuid.UUID          `db:"merchant_id"`
+	Role       types.EmployeeRole `db:"role"`
 }
 
 func (s *service) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error) {

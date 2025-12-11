@@ -9,7 +9,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/rbac"
-	"github.com/miketsu-inc/reservations/backend/pkg/employee"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
 	"github.com/miketsu-inc/reservations/frontend/apps/tango"
 
@@ -211,14 +211,14 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Use(lang.LangMiddleware)
 
 		r.Group(func(r chi.Router) {
-			r.Use(rbac.RoleBasedAccessControlMiddleware(employee.Owner))
+			r.Use(rbac.RoleBasedAccessControlMiddleware(types.EmployeeRoleOwner))
 
 			r.Delete("/", merchantHandler.DeleteMerchant)
 			r.Patch("/name", merchantHandler.ChangeMerchantName)
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(rbac.RoleBasedAccessControlMiddleware(employee.Staff, employee.Admin, employee.Owner))
+			r.Use(rbac.RoleBasedAccessControlMiddleware(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
 
 			r.Get("/settings-info", merchantHandler.MerchantSettingsInfoByOwner)
 			r.Patch("/reservation-fields", merchantHandler.UpdateMerchantFields)

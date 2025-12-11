@@ -12,40 +12,38 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
-	"github.com/miketsu-inc/reservations/backend/pkg/employee"
-	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 )
 
 type Merchant struct {
-	Id               uuid.UUID         `json:"ID"`
-	Name             string            `json:"name"`
-	UrlName          string            `json:"url_name"`
-	ContactEmail     string            `json:"contact_email"`
-	Introduction     string            `json:"introduction"`
-	Announcement     string            `json:"announcement"`
-	AboutUs          string            `json:"about_us"`
-	ParkingInfo      string            `json:"parking_info"`
-	PaymentInfo      string            `json:"payment_info"`
-	Timezone         string            `json:"timezone"`
-	CurrencyCode     string            `json:"currency_code"`
-	SubscriptionTier subscription.Tier `json:"subscription_tier"`
+	Id               uuid.UUID     `json:"ID"`
+	Name             string        `json:"name"`
+	UrlName          string        `json:"url_name"`
+	ContactEmail     string        `json:"contact_email"`
+	Introduction     string        `json:"introduction"`
+	Announcement     string        `json:"announcement"`
+	AboutUs          string        `json:"about_us"`
+	ParkingInfo      string        `json:"parking_info"`
+	PaymentInfo      string        `json:"payment_info"`
+	Timezone         string        `json:"timezone"`
+	CurrencyCode     string        `json:"currency_code"`
+	SubscriptionTier types.SubTier `json:"subscription_tier"`
 }
 
 type Employee struct {
-	Id          int           `json:"id"`
-	UserId      *uuid.UUID    `json:"user_id"`
-	MerchantId  uuid.UUID     `json:"merchant_id"`
-	Role        employee.Role `json:"employee_role"`
-	FirstName   *string       `json:"first_name"`
-	LastName    *string       `json:"last_name"`
-	Email       *string       `json:"email"`
-	PhoneNumber *string       `json:"phone_number"`
-	IsActive    bool          `json:"is_active"`
-	InvitedOn   *time.Time    `json:"invited_on"`
-	AcceptedOn  *time.Time    `json:"accpeted_on"`
+	Id          int                `json:"id"`
+	UserId      *uuid.UUID         `json:"user_id"`
+	MerchantId  uuid.UUID          `json:"merchant_id"`
+	Role        types.EmployeeRole `json:"employee_role"`
+	FirstName   *string            `json:"first_name"`
+	LastName    *string            `json:"last_name"`
+	Email       *string            `json:"email"`
+	PhoneNumber *string            `json:"phone_number"`
+	IsActive    bool               `json:"is_active"`
+	InvitedOn   *time.Time         `json:"invited_on"`
+	AcceptedOn  *time.Time         `json:"accpeted_on"`
 }
 
 type EmployeeLocation struct {
@@ -89,7 +87,7 @@ func (s *service) NewMerchant(ctx context.Context, userId uuid.UUID, merchant Me
 	values ($1, $2, $3, $4)
 	`
 
-	_, err = tx.Exec(ctx, newEmployeeQuery, userId, merchant.Id, employee.Owner, true)
+	_, err = tx.Exec(ctx, newEmployeeQuery, userId, merchant.Id, types.EmployeeRoleOwner, true)
 	if err != nil {
 		return err
 	}
@@ -138,13 +136,13 @@ type MerchantInfo struct {
 	PaymentInfo  string `json:"payment_info"`
 	Timezone     string `json:"timezone"`
 
-	LocationId        int               `json:"location_id"`
-	Country           *string           `json:"country"`
-	City              *string           `json:"city"`
-	PostalCode        *string           `json:"postal_code"`
-	Address           *string           `json:"address"`
-	FormattedLocation string            `json:"formatted_location"`
-	GeoPoint          location.GeoPoint `json:"geo_point"`
+	LocationId        int            `json:"location_id"`
+	Country           *string        `json:"country"`
+	City              *string        `json:"city"`
+	PostalCode        *string        `json:"postal_code"`
+	Address           *string        `json:"address"`
+	FormattedLocation string         `json:"formatted_location"`
+	GeoPoint          types.GeoPoint `json:"geo_point"`
 
 	Services []MerchantPageServicesGroupedByCategory `json:"services"`
 
@@ -791,16 +789,16 @@ func (s *service) GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID)
 	return curr, nil
 }
 
-func (s *service) GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (subscription.Tier, error) {
+func (s *service) GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (types.SubTier, error) {
 	query := `
 	select subscription_tier from "Merchant"
 	where id = $1
 	`
 
-	var tier subscription.Tier
+	var tier types.SubTier
 	err := s.db.QueryRow(ctx, query, merchantId).Scan(&tier)
 	if err != nil {
-		return subscription.Tier{}, err
+		return types.SubTier{}, err
 	}
 
 	return tier, nil

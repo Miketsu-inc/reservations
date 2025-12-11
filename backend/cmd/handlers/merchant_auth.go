@@ -8,9 +8,9 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
-	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -65,7 +65,7 @@ func (m *MerchantAuth) Signup(w http.ResponseWriter, r *http.Request) {
 		PaymentInfo:      "",
 		Timezone:         signup.Timezone,
 		CurrencyCode:     curr,
-		SubscriptionTier: subscription.Free,
+		SubscriptionTier: types.SubTierFree,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error creating a merchant: %s", err.Error()))

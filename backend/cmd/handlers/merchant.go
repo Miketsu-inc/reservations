@@ -14,8 +14,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -81,7 +80,7 @@ func CalculateAvailableTimes(reserved []database.BookingTime, blockedTimes []dat
 				phaseDuration := time.Duration(phase.Duration) * time.Minute
 				phaseEnd := phaseStart.Add(phaseDuration)
 
-				if phase.PhaseType == "active" {
+				if phase.PhaseType == types.ServicePhaseTypeActive {
 
 					for _, blocked := range blockedTimes {
 						if !blocked.AllDay {
@@ -236,15 +235,15 @@ func (m *Merchant) MerchantSettingsInfoByOwner(w http.ResponseWriter, r *http.Re
 
 func (m *Merchant) NewLocation(w http.ResponseWriter, r *http.Request) {
 	type newLocation struct {
-		Country           *string           `json:"country"`
-		City              *string           `json:"city"`
-		PostalCode        *string           `json:"postal_code"`
-		Address           *string           `json:"address"`
-		GeoPoint          location.GeoPoint `json:"geo_point"`
-		PlaceId           *string           `json:"place_id"`
-		FormattedLocation string            `json:"formatted_location"`
-		IsPrimary         bool              `json:"is_primary"`
-		IsActive          bool              `json:"is_active"`
+		Country           *string        `json:"country"`
+		City              *string        `json:"city"`
+		PostalCode        *string        `json:"postal_code"`
+		Address           *string        `json:"address"`
+		GeoPoint          types.GeoPoint `json:"geo_point"`
+		PlaceId           *string        `json:"place_id"`
+		FormattedLocation string         `json:"formatted_location"`
+		IsPrimary         bool           `json:"is_primary"`
+		IsActive          bool           `json:"is_active"`
 	}
 	var nl newLocation
 
@@ -282,10 +281,10 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type newPhase struct {
-		Name      string `json:"name" validate:"required"`
-		Sequence  int    `json:"sequence" validate:"required"`
-		Duration  int    `json:"duration" validate:"required,min=1,max=1440"`
-		PhaseType string `json:"phase_type" validate:"required,eq=wait|eq=active"`
+		Name      string                 `json:"name" validate:"required"`
+		Sequence  int                    `json:"sequence" validate:"required"`
+		Duration  int                    `json:"duration" validate:"required,min=1,max=1440"`
+		PhaseType types.ServicePhaseType `json:"phase_type" validate:"required,eq=wait|eq=active"`
 	}
 
 	type newService struct {
@@ -361,7 +360,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Id:              0,
 		MerchantId:      employee.MerchantId,
 		CategoryId:      service.CategoryId,
-		BookingType:     booking.Appointment,
+		BookingType:     types.BookingTypeAppointment,
 		Name:            service.Name,
 		Description:     service.Description,
 		Color:           service.Color,
@@ -1593,13 +1592,13 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type newBooking struct {
-		BookingType  booking.Type   `json:"booking_type" validate:"required"`
-		Customers    []customer     `json:"customers" validate:"required"`
-		ServiceId    int            `json:"service_id"`
-		TimeStamp    string         `json:"timestamp" validate:"required"`
-		MerchantNote *string        `json:"merchant_note"`
-		IsRecurring  bool           `json:"is_recurring"`
-		Rrule        *recurringRule `json:"recurrence_rule"`
+		BookingType  types.BookingType `json:"booking_type" validate:"required"`
+		Customers    []customer        `json:"customers" validate:"required"`
+		ServiceId    int               `json:"service_id"`
+		TimeStamp    string            `json:"timestamp" validate:"required"`
+		MerchantNote *string           `json:"merchant_note"`
+		IsRecurring  bool              `json:"is_recurring"`
+		Rrule        *recurringRule    `json:"recurrence_rule"`
 	}
 
 	var nb newBooking
@@ -1609,7 +1608,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if nb.BookingType == booking.Appointment {
+	if nb.BookingType == types.BookingTypeAppointment {
 		if len(nb.Customers) > 1 {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("booking type does not match amount of customers"))
 			return
@@ -1770,7 +1769,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		fromDate = timeStamp.In(merchantTz)
 
 		series, err := m.Postgresdb.NewBookingSeries(r.Context(), database.NewBookingSeries{
-			BookingType:    booking.Appointment,
+			BookingType:    types.BookingTypeAppointment,
 			MerchantId:     employee.MerchantId,
 			EmployeeId:     employee.Id,
 			ServiceId:      service.Id,
@@ -1794,8 +1793,8 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		}
 	} else {
 		bookingId, err = m.Postgresdb.NewBookingByMerchant(r.Context(), database.NewMerchantBooking{
-			Status:         booking.Booked,
-			BookingType:    booking.Appointment,
+			Status:         types.BookingStatusBooked,
+			BookingType:    types.BookingTypeAppointment,
 			MerchantId:     employee.MerchantId,
 			ServiceId:      service.Id,
 			LocationId:     bookedLocation.Id,
@@ -1918,7 +1917,7 @@ func (m *Merchant) generateRecurringBookings(ctx context.Context, series databas
 
 	return m.Postgresdb.BatchCreateRecurringBookings(ctx, database.NewRecurringBookings{
 		BookingSeriesId: series.Id,
-		BookingStatus:   booking.Booked,
+		BookingStatus:   types.BookingStatusBooked,
 		BookingType:     series.BookingType,
 		MerchantId:      series.MerchantId,
 		EmployeeId:      series.EmployeeId,

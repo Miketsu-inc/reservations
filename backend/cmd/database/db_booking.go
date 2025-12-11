@@ -7,25 +7,25 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Booking struct {
-	Id                 int            `json:"ID" db:"id"`
-	Status             booking.Status `json:"status" db:"status"`
-	BookingType        booking.Type   `json:"booking_type" db:"booking_type"`
-	IsRecurring        bool           `json:"is_recurring" db:"is_recurring"`
-	MerchantId         uuid.UUID      `json:"merchant_id" db:"merchant_id"`
-	EmployeeId         *int           `json:"employee_id" db:"employee_id"`
-	ServiceId          int            `json:"service_id" db:"service_id"`
-	LocationId         int            `json:"location_id" db:"location_id"`
-	BookingSeriesId    int            `json:"booking_series_id" db:"booking_series_id"`
-	SeriesOriginalDate time.Time      `json:"series_original_date" db:"series_original_date"`
-	FromDate           time.Time      `json:"from_date" db:"from_date"`
-	ToDate             time.Time      `json:"to_date" db:"to_date"`
+	Id                 int                 `json:"ID" db:"id"`
+	Status             types.BookingStatus `json:"status" db:"status"`
+	BookingType        types.BookingType   `json:"booking_type" db:"booking_type"`
+	IsRecurring        bool                `json:"is_recurring" db:"is_recurring"`
+	MerchantId         uuid.UUID           `json:"merchant_id" db:"merchant_id"`
+	EmployeeId         *int                `json:"employee_id" db:"employee_id"`
+	ServiceId          int                 `json:"service_id" db:"service_id"`
+	LocationId         int                 `json:"location_id" db:"location_id"`
+	BookingSeriesId    int                 `json:"booking_series_id" db:"booking_series_id"`
+	SeriesOriginalDate time.Time           `json:"series_original_date" db:"series_original_date"`
+	FromDate           time.Time           `json:"from_date" db:"from_date"`
+	ToDate             time.Time           `json:"to_date" db:"to_date"`
 }
 
 type BookingDetails struct {
@@ -45,14 +45,14 @@ type BookingDetails struct {
 }
 
 type BookingParticipant struct {
-	Id                 int            `json:"id"`
-	Status             booking.Status `json:"status"`
-	BookingId          int            `json:"booking_id"`
-	CustomerId         uuid.UUID      `json:"customer_id"`
-	CustomerNote       *string        `json:"customer_note"`
-	CancelledOn        *time.Time     `json:"cancelled_on"`
-	CancellationReason *string        `json:"cancellation_reason"`
-	TransferredTo      *uuid.UUID     `json:"transferred_to"`
+	Id                 int                 `json:"id"`
+	Status             types.BookingStatus `json:"status"`
+	BookingId          int                 `json:"booking_id"`
+	CustomerId         uuid.UUID           `json:"customer_id"`
+	CustomerNote       *string             `json:"customer_note"`
+	CancelledOn        *time.Time          `json:"cancelled_on"`
+	CancellationReason *string             `json:"cancellation_reason"`
+	TransferredTo      *uuid.UUID          `json:"transferred_to"`
 }
 
 type BookingPhase struct {
@@ -64,16 +64,16 @@ type BookingPhase struct {
 }
 
 type BookingSeries struct {
-	Id          int          `json:"id" db:"id"`
-	BookingType booking.Type `json:"booking_type" db:"booking_type"`
-	MerchantId  uuid.UUID    `json:"merchant_id" db:"merchant_id"`
-	EmployeeId  int          `json:"employee_id" db:"employee_id"`
-	ServiceId   int          `json:"service_id" db:"service_id"`
-	LocationId  int          `json:"location_id" db:"location_id"`
-	Rrule       string       `json:"rrule" db:"rrule"`
-	Dstart      time.Time    `json:"dstart" db:"dstart"`
-	Timezone    string       `json:"timezone" db:"timezone"`
-	IsActive    bool         `json:"is_active" db:"is_active"`
+	Id          int               `json:"id" db:"id"`
+	BookingType types.BookingType `json:"booking_type" db:"booking_type"`
+	MerchantId  uuid.UUID         `json:"merchant_id" db:"merchant_id"`
+	EmployeeId  int               `json:"employee_id" db:"employee_id"`
+	ServiceId   int               `json:"service_id" db:"service_id"`
+	LocationId  int               `json:"location_id" db:"location_id"`
+	Rrule       string            `json:"rrule" db:"rrule"`
+	Dstart      time.Time         `json:"dstart" db:"dstart"`
+	Timezone    string            `json:"timezone" db:"timezone"`
+	IsActive    bool              `json:"is_active" db:"is_active"`
 }
 
 type BookingSeriesDetails struct {
@@ -97,8 +97,8 @@ type BookingSeriesParticipant struct {
 }
 
 type newBookingData struct {
-	Status         booking.Status       `json:"status"`
-	BookingType    booking.Type         `json:"booking_type"`
+	Status         types.BookingStatus  `json:"status"`
+	BookingType    types.BookingType    `json:"booking_type"`
 	MerchantId     uuid.UUID            `json:"merchant_id"`
 	ServiceId      int                  `json:"service_id"`
 	LocationId     int                  `json:"location_id"`
@@ -115,7 +115,7 @@ type newBookingData struct {
 func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) {
 	var bookingId int
 
-	if nb.BookingType == booking.Appointment {
+	if nb.BookingType == types.BookingTypeAppointment {
 		insertBookingQuery := `
 		insert into "Booking" (status, booking_type, merchant_id, service_id, location_id, from_date, to_date)
 		values ($1, $2, $3, $4, $5, $6, $7)
@@ -173,8 +173,8 @@ func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) 
 }
 
 type NewCustomerBooking struct {
-	Status         booking.Status       `json:"status"`
-	BookingType    booking.Type         `json:"booking_type"`
+	Status         types.BookingStatus  `json:"status"`
+	BookingType    types.BookingType    `json:"booking_type"`
 	MerchantId     uuid.UUID            `json:"merchant_id"`
 	ServiceId      int                  `json:"service_id"`
 	LocationId     int                  `json:"location_id"`
@@ -240,8 +240,8 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 }
 
 type NewMerchantBooking struct {
-	Status         booking.Status       `json:"status"`
-	BookingType    booking.Type         `json:"booking_type"`
+	Status         types.BookingStatus  `json:"status"`
+	BookingType    types.BookingType    `json:"booking_type"`
 	MerchantId     uuid.UUID            `json:"merchant_id"`
 	ServiceId      int                  `json:"service_id"`
 	LocationId     int                  `json:"location_id"`
@@ -655,8 +655,8 @@ func (s *service) GetPublicBookingInfo(ctx context.Context, bookingId int) (Publ
 
 type NewRecurringBookings struct {
 	BookingSeriesId int
-	BookingStatus   booking.Status
-	BookingType     booking.Type
+	BookingStatus   types.BookingStatus
+	BookingType     types.BookingType
 	MerchantId      uuid.UUID
 	EmployeeId      int
 	ServiceId       int
@@ -679,7 +679,7 @@ func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecur
 	assert.True(len(nrb.FromDates) == len(nrb.ToDates), "Length of fromDates and toDates slices should be equal!", len(nrb.FromDates), len(nrb.ToDates), nrb)
 	var bookingIds []int
 
-	if nrb.BookingType == booking.Appointment {
+	if nrb.BookingType == types.BookingTypeAppointment {
 		insertBookingsQuery := `
 		insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date)
 		select $1, $2, $3, $4, $5, $6, $7, $8, unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[])
@@ -744,7 +744,7 @@ func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecur
 		select $1, unnest($2::int[]), $3, $4
 		`
 
-		_, err = tx.Exec(ctx, insertBookingParticipantsQuery, booking.Booked, bookingIds, nrb.Participants[0].CustomerId, "")
+		_, err = tx.Exec(ctx, insertBookingParticipantsQuery, types.BookingStatusBooked, bookingIds, nrb.Participants[0].CustomerId, "")
 		if err != nil {
 			return 0, err
 		}
@@ -779,7 +779,7 @@ type CompleteBookingSeries struct {
 }
 
 type NewBookingSeries struct {
-	BookingType    booking.Type
+	BookingType    types.BookingType
 	MerchantId     uuid.UUID
 	EmployeeId     int
 	ServiceId      int

@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
-	"github.com/miketsu-inc/reservations/backend/pkg/employee"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
 
@@ -57,7 +57,7 @@ func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 
 type EmployeeContext struct {
 	Id         int
-	Role       employee.Role
+	Role       types.EmployeeRole
 	LocationId int
 	UserId     uuid.UUID
 	MerchantId uuid.UUID
@@ -67,7 +67,7 @@ type EmployeeContext struct {
 func MustGetEmployeeFromContext(ctx context.Context) EmployeeContext {
 	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
 	locationId, hasLocId := ctx.Value(locationIDCtxKey).(int)
-	role, hasRole := ctx.Value(employeeRoleCtxKey).(employee.Role)
+	role, hasRole := ctx.Value(employeeRoleCtxKey).(types.EmployeeRole)
 	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
 	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
 
@@ -90,7 +90,7 @@ func MustGetEmployeeFromContext(ctx context.Context) EmployeeContext {
 func GetEmployeeFromContext(ctx context.Context) (EmployeeContext, bool) {
 	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
 	locationId, hasLocId := ctx.Value(locationIDCtxKey).(int)
-	role, hasRole := ctx.Value(employeeRoleCtxKey).(employee.Role)
+	role, hasRole := ctx.Value(employeeRoleCtxKey).(types.EmployeeRole)
 	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
 	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
 
@@ -209,7 +209,7 @@ func new(secret []byte, claims jwtlib.MapClaims) (string, error) {
 }
 
 // Adds the employee relevant fields to the claim if they are not nil
-func addEmployeeClaims(claims jwtlib.MapClaims, merchantId *uuid.UUID, employeeId *int, locationId *int, role *employee.Role) {
+func addEmployeeClaims(claims jwtlib.MapClaims, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole) {
 	if merchantId == nil {
 		return
 	}
@@ -225,7 +225,7 @@ func addEmployeeClaims(claims jwtlib.MapClaims, merchantId *uuid.UUID, employeeI
 }
 
 // Create a new access token and set it in cookies
-func NewAccessToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *employee.Role) error {
+func NewAccessToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole) error {
 	expMin := config.LoadEnvVars().JWT_ACCESS_EXP_MIN
 	expMinDuration := time.Minute * time.Duration(expMin)
 
@@ -258,7 +258,7 @@ func NewAccessToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UU
 }
 
 // Create a new refresh token and set it in cookies
-func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *employee.Role, refreshVersion int) error {
+func NewRefreshToken(w http.ResponseWriter, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole, refreshVersion int) error {
 	expMin := config.LoadEnvVars().JWT_REFRESH_EXP_MIN
 	expMinDuration := time.Minute * time.Duration(expMin)
 
@@ -410,7 +410,7 @@ func getLocationIdFromClaims(claims jwtlib.MapClaims) *int {
 	return nil
 }
 
-func getEmployeeRoleFromCalims(claims jwtlib.MapClaims) *employee.Role {
+func getEmployeeRoleFromCalims(claims jwtlib.MapClaims) *types.EmployeeRole {
 	val, ok := claims["employee_role"]
 	if !ok {
 		return nil
@@ -421,7 +421,7 @@ func getEmployeeRoleFromCalims(claims jwtlib.MapClaims) *employee.Role {
 		return nil
 	}
 
-	role, err := employee.NewRole(roleStr)
+	role, err := types.NewEmployeeRole(roleStr)
 	if err != nil {
 		return nil
 	}

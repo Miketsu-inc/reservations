@@ -9,39 +9,38 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/location"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 type Service struct {
-	Id              int              `json:"ID"`
-	MerchantId      uuid.UUID        `json:"merchant_id"`
-	CategoryId      *int             `json:"category_id"`
-	BookingType     booking.Type     `json:"booking_type"`
-	Name            string           `json:"name"`
-	Description     *string          `json:"description"`
-	Color           string           `json:"color"`
-	TotalDuration   int              `json:"total_duration"`
-	Price           *currencyx.Price `json:"price"`
-	Cost            *currencyx.Price `json:"cost"`
-	PriceNote       *string          `json:"price_note"`
-	IsActive        bool             `json:"is_active"`
-	Sequence        int              `json:"sequence"`
-	MinParticipants int              `json:"min_participants"`
-	MaxParticipants int              `json:"max_participants"`
+	Id              int               `json:"ID"`
+	MerchantId      uuid.UUID         `json:"merchant_id"`
+	CategoryId      *int              `json:"category_id"`
+	BookingType     types.BookingType `json:"booking_type"`
+	Name            string            `json:"name"`
+	Description     *string           `json:"description"`
+	Color           string            `json:"color"`
+	TotalDuration   int               `json:"total_duration"`
+	Price           *currencyx.Price  `json:"price"`
+	Cost            *currencyx.Price  `json:"cost"`
+	PriceNote       *string           `json:"price_note"`
+	IsActive        bool              `json:"is_active"`
+	Sequence        int               `json:"sequence"`
+	MinParticipants int               `json:"min_participants"`
+	MaxParticipants int               `json:"max_participants"`
 	ServiceSettings
 	DeletedOn *time.Time `json:"deleted_on"`
 }
 
 type ServicePhase struct {
-	Id        int        `json:"ID"`
-	ServiceId int        `json:"service_id"`
-	Name      string     `json:"name"`
-	Sequence  int        `json:"sequence"`
-	Duration  int        `json:"duration"`
-	PhaseType string     `json:"phase_type"`
-	DeletedOn *time.Time `json:"deleted_on"`
+	Id        int                    `json:"ID"`
+	ServiceId int                    `json:"service_id"`
+	Name      string                 `json:"name"`
+	Sequence  int                    `json:"sequence"`
+	Duration  int                    `json:"duration"`
+	PhaseType types.ServicePhaseType `json:"phase_type"`
+	DeletedOn *time.Time             `json:"deleted_on"`
 }
 
 type ServiceCategory struct {
@@ -168,12 +167,12 @@ func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, m
 }
 
 type PublicServicePhase struct {
-	Id        int    `json:"id" db:"id"`
-	ServiceId int    `json:"service_id" db:"service_id"`
-	Name      string `json:"name" db:"name"`
-	Sequence  int    `json:"sequence" db:"sequence"`
-	Duration  int    `json:"duration" db:"duration"`
-	PhaseType string `json:"phase_type" db:"phase_type"`
+	Id        int                    `json:"id" db:"id"`
+	ServiceId int                    `json:"service_id" db:"service_id"`
+	Name      string                 `json:"name" db:"name"`
+	Sequence  int                    `json:"sequence" db:"sequence"`
+	Duration  int                    `json:"duration" db:"duration"`
+	PhaseType types.ServicePhaseType `json:"phase_type" db:"phase_type"`
 }
 
 type PublicServiceWithPhases struct {
@@ -951,7 +950,7 @@ type PublicServiceDetails struct {
 	Price             *currencyx.FormattedPrice `json:"price"`
 	PriceNote         *string                   `json:"price_note"`
 	FormattedLocation string                    `json:"formatted_location"`
-	GeoPoint          location.GeoPoint         `json:"geo_point"`
+	GeoPoint          types.GeoPoint            `json:"geo_point"`
 	Phases            []PublicServicePhase      `json:"phases"`
 }
 

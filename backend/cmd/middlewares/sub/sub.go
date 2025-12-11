@@ -7,13 +7,13 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
-	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 )
 
 // Subscription middleware that check's if the merchant subscription tier
 // allowes them to access the http route, should be called after the jwt middleware
-func SubscriptionMiddleware(tiers ...subscription.Tier) func(next http.Handler) http.Handler {
+func SubscriptionMiddleware(tiers ...types.SubTier) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

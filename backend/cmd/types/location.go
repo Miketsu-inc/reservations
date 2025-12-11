@@ -1,4 +1,4 @@
-package location
+package types
 
 import (
 	"database/sql/driver"

@@ -12,7 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
-	"github.com/miketsu-inc/reservations/backend/cmd/types/booking"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/email"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -130,8 +130,8 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bookingId, err := a.Postgresdb.NewBookingByCustomer(r.Context(), database.NewCustomerBooking{
-		Status:         booking.Booked,
-		BookingType:    booking.Appointment,
+		Status:         types.BookingStatusBooked,
+		BookingType:    types.BookingTypeAppointment,
 		MerchantId:     merchantId,
 		ServiceId:      bookData.ServiceId,
 		LocationId:     bookData.LocationId,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/handlers"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +42,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		reserved := []database.BookingTime{}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30
 		bookingWindowMin, bufferTime := 0, 0
@@ -74,7 +75,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 60},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 60},
 		}
 		serviceDuration := 60
 		bookingWindowMin, bufferTime := 0, 0
@@ -116,8 +117,8 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "wait", Duration: 30},
-			{PhaseType: "active", Duration: 15},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
 		}
 		serviceDuration := 45
 		bookingWindowMin, bufferTime := 0, 0
@@ -160,9 +161,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 15},
-			{PhaseType: "wait", Duration: 30},
-			{PhaseType: "active", Duration: 45},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
 		}
 		serviceDuration := 90
 		bookingWindowMin, bufferTime := 0, 0
@@ -201,9 +202,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 15},
-			{PhaseType: "wait", Duration: 30},
-			{PhaseType: "active", Duration: 45},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
 		}
 		serviceDuration := 90
 		bookingWindowMin, bufferTime := 0, 0
@@ -235,7 +236,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30
 		bookingWindowMin, bufferTime := 0, 15
@@ -285,7 +286,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
 		businessHours := []database.TimeSlot{
@@ -319,7 +320,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
 		businessHours := []database.TimeSlot{
@@ -356,9 +357,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30}, // 1st active
-			{PhaseType: "wait", Duration: 30},   // wait
-			{PhaseType: "active", Duration: 15}, // 2nd active
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30}, // 1st active
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},   // wait
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15}, // 2nd active
 		}
 
 		businessHours := []database.TimeSlot{
@@ -402,7 +403,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		reserved := []database.BookingTime{}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
 		businessHours := map[int][]database.TimeSlot{
@@ -438,7 +439,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		}
 
 		servicePhases := []database.PublicServicePhase{
-			{PhaseType: "active", Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30
 		bookingWindowMin, bufferTime := 0, 0

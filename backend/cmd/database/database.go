@@ -12,8 +12,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
-	"github.com/miketsu-inc/reservations/backend/pkg/subscription"
 	"golang.org/x/text/language"
 )
 
@@ -110,7 +110,7 @@ type PostgreSQL interface {
 	// Get the merchant's currency
 	GetMerchantCurrency(context.Context, uuid.UUID) (string, error)
 	// Get the merchant's subscription tier
-	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (subscription.Tier, error)
+	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (types.SubTier, error)
 	// Get necessary booking settings by a merchnat's id
 	GetBookingSettingsByMerchantAndService(context.Context, uuid.UUID, int) (MerchantBookingSettings, error)
 	// Delete Merchant from the database by the employee and merchant id

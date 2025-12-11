@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
-	"github.com/miketsu-inc/reservations/backend/pkg/employee"
+	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
@@ -44,7 +44,7 @@ func hashCompare(password, hash string) error {
 }
 
 // Creates and sets both the resfresh and access jwt cookies
-func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *employee.Role) error {
+func (u *UserAuth) newJwts(w http.ResponseWriter, ctx context.Context, userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole) error {
 	refreshVersion, err := u.Postgresdb.GetUserJwtRefreshVersion(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
@@ -96,7 +96,7 @@ func (u *UserAuth) Login(w http.ResponseWriter, r *http.Request) {
 	var merchantId *uuid.UUID
 	var employeeId *int
 	var locationId *int
-	var role *employee.Role
+	var role *types.EmployeeRole
 
 	// TODO: later user should be able to select which merchant to log into
 	if len(employeeAuthInfo) >= 1 {

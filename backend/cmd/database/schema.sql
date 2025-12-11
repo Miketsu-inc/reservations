@@ -15,7 +15,6 @@ create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
 create type booking_type as ENUM ('appointment', 'event', 'class');
 create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
 create type employee_role as ENUM ('owner', 'admin', 'staff');
-create type location_type as ENUM ('physical', 'online');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
