@@ -1,4 +1,3 @@
-import { PopoverClose } from "@radix-ui/react-popover";
 import {
   ArrowIcon,
   ClockIcon,
@@ -9,6 +8,7 @@ import {
 import {
   Button,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
   Switch,

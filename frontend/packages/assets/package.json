@@ -2,5 +2,6 @@
   "name": "@reservations/assets",
   "version": "0.6.0",
   "type": "module",
-  "main": "./index.js"
+  "main": "./index.js",
+  "sideEffects": []
 }

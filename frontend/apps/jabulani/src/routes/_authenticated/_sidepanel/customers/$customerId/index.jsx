@@ -1,4 +1,3 @@
-import { PopoverClose } from "@radix-ui/react-popover";
 import {
   ApproveIcon,
   BanIcon,
@@ -15,6 +14,7 @@ import {
   DeleteModal,
   Loading,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
   ServerError,

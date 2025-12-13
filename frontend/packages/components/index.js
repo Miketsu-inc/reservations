@@ -13,6 +13,7 @@ export { default as Modal } from "./Modal.jsx";
 export {
   Popover,
   PopoverAnchor,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
 } from "./Popover.jsx";

@@ -17,9 +17,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mapbox/search-js-react": "^1.5.0",
-    "@radix-ui/react-popover": "^1.1.15",
-    "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-query": "^5.90.5",
     "@tanstack/react-router": "^1.133.27",
     "mapbox-gl": "^3.16.0",

@@ -2,5 +2,11 @@
   "name": "@reservations/components",
   "version": "0.6.0",
   "type": "module",
-  "main": "./index.js"
+  "main": "./index.js",
+  "sideEffects": [],
+  "dependencies": {
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "ag-grid-react": "^35.0.0"
+  }
 }

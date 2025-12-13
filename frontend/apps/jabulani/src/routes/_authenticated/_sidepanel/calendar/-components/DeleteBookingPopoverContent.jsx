@@ -1,5 +1,4 @@
-import { PopoverClose } from "@radix-ui/react-popover";
-import { Button, Textarea } from "@reservations/components";
+import { Button, PopoverClose, Textarea } from "@reservations/components";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useRef } from "react";
 

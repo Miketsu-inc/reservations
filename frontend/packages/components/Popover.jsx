@@ -4,6 +4,10 @@ export function Popover({ ...props }) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
+export function PopoverClose({ ...props }) {
+  return <PopoverPrimitive.PopoverClose {...props} />;
+}
+
 export function PopoverTrigger({ asChild, ...props }) {
   return (
     <PopoverPrimitive.Trigger

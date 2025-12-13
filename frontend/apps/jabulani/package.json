@@ -10,7 +10,7 @@
     "@fullcalendar/list": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
     "@fullcalendar/timegrid": "^6.1.19",
-    "ag-grid-react": "^34.3.0",
+    "@mapbox/search-js-react": "^1.5.1",
     "recharts": "^3.3.0"
   }
 }

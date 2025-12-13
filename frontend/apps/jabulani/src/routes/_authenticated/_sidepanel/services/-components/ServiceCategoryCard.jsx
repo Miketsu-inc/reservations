@@ -1,4 +1,3 @@
-import { PopoverClose } from "@radix-ui/react-popover";
 import {
   ArrowIcon,
   BackArrowIcon,
@@ -9,6 +8,7 @@ import {
 import {
   DeleteModal,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
