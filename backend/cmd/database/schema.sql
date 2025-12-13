@@ -164,7 +164,7 @@ create table if not exists "BookingSeriesDetails" (
 create table if not exists "BookingSeriesParticipant" (
     ID                       serial          primary key unique not null,
     booking_series_id        integer         references "BookingSeries" (ID) on delete cascade not null,
-    customer_id              uuid            references "Customer" (ID) on delete cascade not null,
+    customer_id              uuid            references "Customer" (ID) on delete cascade,
     is_active                boolean         not null default true,
     dropped_out_on           timestamptz,
 
@@ -216,7 +216,7 @@ create table if not exists "BookingParticipant" (
     ID                       serial           primary key unique not null,
     status                   booking_status   not null default 'booked',
     booking_id               integer          references "Booking" (ID) on delete cascade not null,
-    customer_id              uuid             references "Customer" (ID) on delete cascade not null,
+    customer_id              uuid             references "Customer" (ID) on delete cascade,
     customer_note            text,
     cancelled_on             timestamptz,
     cancellation_reason      text,

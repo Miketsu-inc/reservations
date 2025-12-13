@@ -48,7 +48,7 @@ type BookingParticipant struct {
 	Id                 int                 `json:"id"`
 	Status             types.BookingStatus `json:"status"`
 	BookingId          int                 `json:"booking_id"`
-	CustomerId         uuid.UUID           `json:"customer_id"`
+	CustomerId         *uuid.UUID          `json:"customer_id"`
 	CustomerNote       *string             `json:"customer_note"`
 	CancelledOn        *time.Time          `json:"cancelled_on"`
 	CancellationReason *string             `json:"cancellation_reason"`
@@ -91,7 +91,7 @@ type BookingSeriesDetails struct {
 type BookingSeriesParticipant struct {
 	Id              int        `json:"id" db:"id"`
 	BookingSeriesId int        `json:"booking_series_id" db:"booking_series_id"`
-	CustomerId      uuid.UUID  `json:"customer_id" db:"customer_id"`
+	CustomerId      *uuid.UUID `json:"customer_id" db:"customer_id"`
 	IsActive        bool       `json:"is_active" db:"is_active"`
 	DroppedOutOn    *time.Time `json:"dropped_out_on" db:"dropped_out_on"`
 }
@@ -108,7 +108,7 @@ type newBookingData struct {
 	MerchantNote   *string              `json:"merchant_note"`
 	PricePerPerson currencyx.Price      `json:"price_per_person"`
 	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	CustomerId     uuid.UUID            `json:"customer_id"`
+	CustomerId     *uuid.UUID           `json:"customer_id"`
 	Phases         []PublicServicePhase `json:"phases"`
 }
 
@@ -224,7 +224,7 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 		MerchantNote:   nil,
 		PricePerPerson: nb.PricePerPerson,
 		CostPerPerson:  nb.CostPerPerson,
-		CustomerId:     customerId,
+		CustomerId:     &customerId,
 		Phases:         nb.Phases,
 	})
 	if err != nil {
@@ -250,7 +250,7 @@ type NewMerchantBooking struct {
 	MerchantNote   *string              `json:"merchant_note"`
 	PricePerPerson currencyx.Price      `json:"price_per_person"`
 	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	CustomerId     uuid.UUID            `json:"customer_id"`
+	CustomerId     *uuid.UUID           `json:"customer_id"`
 	Phases         []PublicServicePhase `json:"phases"`
 }
 
@@ -344,9 +344,9 @@ type PublicBookingDetails struct {
 	ServiceDuration int                      `json:"service_duration" db:"service_duration"`
 	Price           currencyx.FormattedPrice `json:"price" db:"price"`
 	Cost            currencyx.FormattedPrice `json:"cost" db:"cost"`
-	FirstName       string                   `json:"first_name" db:"first_name"`
-	LastName        string                   `json:"last_name" db:"last_name"`
-	PhoneNumber     string                   `json:"phone_number" db:"phone_number"`
+	FirstName       *string                  `json:"first_name" db:"first_name"`
+	LastName        *string                  `json:"last_name" db:"last_name"`
+	PhoneNumber     *string                  `json:"phone_number" db:"phone_number"`
 }
 
 type BlockedTimeEvent struct {
@@ -382,7 +382,7 @@ func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uu
 	join "Service" s on b.service_id = s.id
 	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "BookingDetails" bd on bd.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.to_date <= $3 AND b.status not in ('cancelled')
 	order by b.id
@@ -587,7 +587,7 @@ type BookingEmailData struct {
 	ToDate            time.Time `json:"to_date" db:"to_date"`
 	ServiceName       string    `json:"service_name" db:"service_name"`
 	FormattedLocation string    `json:"formatted_location" db:"formatted_location"`
-	CustomerEmail     string    `json:"customer_email" db:"customer_email"`
+	CustomerEmail     *string   `json:"customer_email" db:"customer_email"`
 	EmailId           uuid.UUID `json:"email_id" db:"email_id"`
 	MerchantName      string    `json:"merchant_name" db:"merchant_name"`
 	CancelDeadline    int       `json:"cancel_deadline" db:"cancel_deadline"`
@@ -600,8 +600,8 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on c.id = bp.customer_id
 	join "BookingDetails" bd on bd.booking_id = b.id
+	left join "Customer" c on c.id = bp.customer_id
 	left join "User" u on u.id = c.user_id
 	join "Merchant" m on m.id = b.merchant_id
 	join "Location" l on l.id = b.location_id
@@ -789,7 +789,7 @@ type NewBookingSeries struct {
 	Timezone       *time.Location
 	PricePerPerson currencyx.Price
 	CostPerPerson  currencyx.Price
-	Participants   []uuid.UUID
+	Participants   []*uuid.UUID
 }
 
 func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (CompleteBookingSeries, error) {

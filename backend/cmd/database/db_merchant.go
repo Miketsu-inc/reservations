@@ -561,7 +561,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	join "Service" s on b.service_id = s.id
 	join "BookingDetails" bd on bd.booking_id = b.id
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
 	order by b.from_date
@@ -585,7 +585,7 @@ func (s *service) GetDashboardData(ctx context.Context, merchantId uuid.UUID, da
 	join "Service" s on b.service_id = s.id
 	join "BookingDetails" bd on bd.booking_id = b.id
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled') and bp.status not in ('completed', 'cancelled')
 	order by b.id desc

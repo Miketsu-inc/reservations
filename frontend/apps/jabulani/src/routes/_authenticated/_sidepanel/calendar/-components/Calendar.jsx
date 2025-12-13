@@ -63,7 +63,10 @@ function formatBookings(data) {
 
   return data.map((booking) => ({
     id: booking.id,
-    title: booking.first_name + " " + booking.last_name,
+    title:
+      booking.first_name && booking.last_name
+        ? `${booking.first_name} ${booking.last_name}`
+        : "Walk-in",
     start: booking.from_date,
     end: booking.to_date,
     color: booking.service_color,

@@ -25,10 +25,12 @@ export default function BookingInfoSection({ booking }) {
           <PersonIcon styles="fill-white size-4" />
           <p>{booking.title}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <PhoneIcon styles="fill-white size-4" />
-          <p>{booking.extendedProps.phone_number}</p>
-        </div>
+        {booking.extendedProps.phone_number && (
+          <div className="flex items-center gap-2">
+            <PhoneIcon styles="fill-white size-4" />
+            <p>{booking.extendedProps.phone_number}</p>
+          </div>
+        )}
       </div>
       <div className="flex justify-between">
         <div className="flex items-center gap-3">

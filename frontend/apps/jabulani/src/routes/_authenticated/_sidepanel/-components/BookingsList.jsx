@@ -82,7 +82,11 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
             lg:justify-between lg:pr-3 xl:pr-6"
         >
           <div className="flex flex-col gap-2 py-1">
-            <span className="dark:font-semibold">{`${booking.last_name} ${booking.first_name}`}</span>
+            <span className="dark:font-semibold">
+              {booking.first_name && booking.last_name
+                ? `${booking.first_name} ${booking.last_name}`
+                : "Walk-in"}
+            </span>
             <div className="flex flex-row items-center gap-3">
               <span className="text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">

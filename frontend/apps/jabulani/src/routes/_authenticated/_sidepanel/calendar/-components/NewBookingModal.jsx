@@ -113,10 +113,6 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
     updateBookingData({ serviceId: services[0].id });
   }
 
-  if (customers.length === 1 && !bookingData.customerId) {
-    updateBookingData({ customerId: customers[0].id });
-  }
-
   const selectedServiceDuration = useCallback(() => {
     return services.filter((service) => service.id === bookingData.serviceId)[0]
       ?.total_duration;
@@ -233,7 +229,7 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
           labelText="Customer"
           options={customerOptions}
           value={bookingData.customerId}
-          required={true}
+          required={false}
           onSelect={(option) => updateBookingData({ customerId: option.value })}
           onOpenChange={(open) => setIsSelectOpen(open)}
         />

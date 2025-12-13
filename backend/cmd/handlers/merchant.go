@@ -1681,29 +1681,38 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	fromDate := timeStamp.Truncate(time.Second)
 	toDate := timeStamp.Add(duration)
 
-	var customerId uuid.UUID
+	var customerId *uuid.UUID
 
-	if nb.Customers[0].CustomerId == nil {
-		customerId, err = uuid.NewV7()
-		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
-			return
-		}
+	isWalkIn := false
+	customerId = nb.Customers[0].CustomerId
 
-		if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
-			Id:          customerId,
-			FirstName:   nb.Customers[0].FirstName,
-			LastName:    nb.Customers[0].LastName,
-			Email:       nb.Customers[0].Email,
-			PhoneNumber: nb.Customers[0].PhoneNumber,
-			Birthday:    nil,
-			Note:        nil,
-		}); err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
-			return
+	if customerId == nil {
+
+		if nb.Customers[0].FirstName != nil || nb.Customers[0].LastName != nil || nb.Customers[0].Email != nil || nb.Customers[0].PhoneNumber != nil {
+
+			newId, err := uuid.NewV7()
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
+				return
+			}
+
+			customerId = &newId
+
+			if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
+				Id:          *customerId,
+				FirstName:   nb.Customers[0].FirstName,
+				LastName:    nb.Customers[0].LastName,
+				Email:       nb.Customers[0].Email,
+				PhoneNumber: nb.Customers[0].PhoneNumber,
+				Birthday:    nil,
+				Note:        nil,
+			}); err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
+				return
+			}
+		} else {
+			isWalkIn = true
 		}
-	} else {
-		customerId = *nb.Customers[0].CustomerId
 	}
 
 	var bookingId int
@@ -1779,7 +1788,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			Timezone:       merchantTz,
 			PricePerPerson: price,
 			CostPerPerson:  cost,
-			Participants:   []uuid.UUID{customerId},
+			Participants:   []*uuid.UUID{customerId},
 		})
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new booking series: %s", err.Error()))
@@ -1812,54 +1821,56 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	customerEmail, err := m.Postgresdb.GetCustomerEmailById(r.Context(), employee.MerchantId, customerId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer's email: %s", err.Error()))
-		return
-	}
-
-	urlName, err := m.Postgresdb.GetMerchantUrlNameById(r.Context(), employee.MerchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's url name: %s", err.Error()))
-		return
-	}
-
-	toDateMerchantTz := toDate.In(merchantTz)
-	fromDateMerchantTz := timeStamp.In(merchantTz)
-
-	emailData := email.BookingConfirmationData{
-		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-		Date:        fromDateMerchantTz.Format("Monday, January 2"),
-		Location:    bookedLocation.FormattedLocation,
-		ServiceName: service.Name,
-		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", urlName, bookingId),
-	}
-
-	lang := lang.LangFromContext(r.Context())
-
-	err = email.BookingConfirmation(r.Context(), lang, customerEmail, emailData)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the booking: %s", err.Error()))
-		return
-	}
-
-	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-	if hoursUntilBooking >= 24 {
-
-		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-		email_id, err := email.BookingReminder(r.Context(), lang, customerEmail, emailData, reminderDate)
+	if !isWalkIn {
+		customerEmail, err := m.Postgresdb.GetCustomerEmailById(r.Context(), employee.MerchantId, *customerId)
 		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer's email: %s", err.Error()))
 			return
 		}
 
-		if email_id != "" { //check because return "" when email sending is off
-			err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id)
+		urlName, err := m.Postgresdb.GetMerchantUrlNameById(r.Context(), employee.MerchantId)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's url name: %s", err.Error()))
+			return
+		}
+
+		toDateMerchantTz := toDate.In(merchantTz)
+		fromDateMerchantTz := timeStamp.In(merchantTz)
+
+		emailData := email.BookingConfirmationData{
+			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
+			Date:        fromDateMerchantTz.Format("Monday, January 2"),
+			Location:    bookedLocation.FormattedLocation,
+			ServiceName: service.Name,
+			TimeZone:    merchantTz.String(),
+			ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", urlName, bookingId),
+		}
+
+		lang := lang.LangFromContext(r.Context())
+
+		err = email.BookingConfirmation(r.Context(), lang, customerEmail, emailData)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the booking: %s", err.Error()))
+			return
+		}
+
+		hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
+
+		if hoursUntilBooking >= 24 {
+
+			reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+			email_id, err := email.BookingReminder(r.Context(), lang, customerEmail, emailData, reminderDate)
 			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
 				return
+			}
+
+			if email_id != "" { //check because return "" when email sending is off
+				err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id)
+				if err != nil {
+					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+					return
+				}
 			}
 		}
 	}
