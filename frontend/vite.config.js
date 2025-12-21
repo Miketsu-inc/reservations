@@ -16,11 +16,12 @@ const createBaseConfig = ({ appRoot }) =>
           disableTypes: true,
           autoCodeSplitting: false,
         }),
-        react({
-          babel: {
-            plugins: ["babel-plugin-react-compiler"],
-          },
-        }),
+        react(),
+        // react({
+        //   babel: {
+        //     plugins: ["babel-plugin-react-compiler"],
+        //   },
+        // }),
       ],
       root: appRoot,
       esbuild:
