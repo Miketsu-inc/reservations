@@ -16,7 +16,11 @@ func RoleBasedAccessControlMiddleware(roles ...types.EmployeeRole) func(next htt
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			employee := jwt.MustGetEmployeeFromContext(r.Context())
+			employee, ok := jwt.GetEmployeeFromContext(r.Context())
+			if !ok {
+				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("you need an employee account to access this"))
+				return
+			}
 
 			if !slices.Contains(roles, employee.Role) {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("this resource can only be accessed with %s roles", roles))
