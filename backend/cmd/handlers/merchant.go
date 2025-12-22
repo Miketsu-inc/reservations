@@ -462,38 +462,88 @@ func (m *Merchant) GetAvailableTimes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error()))
-		return
-	}
-
 	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), merchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
 		return
 	}
 
-	reservedTimes, err := m.Postgresdb.GetReservedTimesForPeriod(r.Context(), merchantId, urlLocationId, startDate, endDate)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
-		return
-	}
+	var availableSlots []MultiDayAvailableTimes
 
-	blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, startDate, endDate)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error()))
-		return
-	}
+	if service.BookingType == types.BookingTypeAppointment {
 
-	businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
-		return
-	}
+		bookingSettings, err := m.Postgresdb.GetBookingSettingsByMerchantAndService(r.Context(), merchantId, service.Id)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error()))
+			return
+		}
 
-	now := time.Now()
-	availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+		reservedTimes, err := m.Postgresdb.GetReservedTimesForPeriod(r.Context(), merchantId, urlLocationId, startDate, endDate)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while calculating available time slots: %s", err.Error()))
+			return
+		}
+
+		blockedTimes, err := m.Postgresdb.GetBlockedTimes(r.Context(), merchantId, startDate, endDate)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error()))
+			return
+		}
+
+		businessHours, err := m.Postgresdb.GetBusinessHours(r.Context(), merchantId)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting business hours: %s", err.Error()))
+			return
+		}
+
+		now := time.Now()
+		availableSlots = CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+
+	} else {
+
+		groupBookings, err := m.Postgresdb.GetAvailableGroupBookingsForPeriod(r.Context(), merchantId, urlServiceId, urlLocationId, startDate, endDate)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting available group bookings for period: %s", err.Error()))
+			return
+		}
+
+		bookingsByDate := make(map[string][]time.Time)
+		for _, b := range groupBookings {
+			fromDate := b.From_date.In(merchantTz)
+			date := fromDate.Format("2006-01-02")
+
+			bookingsByDate[date] = append(bookingsByDate[date], fromDate)
+		}
+
+		for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+			date := d.Format("2006-01-02")
+
+			var morning []string
+			var afternoon []string
+
+			times, ok := bookingsByDate[date]
+			if ok {
+				for _, t := range times {
+					formattedTime := fmt.Sprintf("%02d:%02d", t.Hour(), t.Minute())
+
+					if t.Hour() < 12 {
+						morning = append(morning, formattedTime)
+					} else if t.Hour() >= 12 {
+						afternoon = append(afternoon, formattedTime)
+					}
+				}
+			}
+
+			isAvailable := len(morning) > 0 || len(afternoon) > 0
+
+			availableSlots = append(availableSlots, MultiDayAvailableTimes{
+				Date:        date,
+				IsAvailable: isAvailable,
+				Morning:     morning,
+				Afternoon:   afternoon,
+			})
+		}
+	}
 
 	httputil.Success(w, http.StatusOK, availableSlots)
 }
@@ -1812,7 +1862,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			MerchantNote:   nb.MerchantNote,
 			PricePerPerson: price,
 			CostPerPerson:  cost,
-			CustomerId:     customerId,
+			Participants:   []*uuid.UUID{customerId},
 			Phases:         service.Phases,
 		})
 		if err != nil {

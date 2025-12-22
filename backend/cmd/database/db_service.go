@@ -112,7 +112,7 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 
 func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, merchantId uuid.UUID) (PublicServiceWithPhases, error) {
 	query := `
-	select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost,
+	select s.id, s.merchant_id, s.booking_type, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost,
 		s.price_note, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
 	from "Service" s
 	left join "ServicePhase" sp on s.id = sp.service_id
@@ -134,7 +134,7 @@ func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, m
 		var p PublicServicePhase
 		var spId *int
 
-		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
+		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.BookingType, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
 			&ts.Price, &ts.Cost, &ts.PriceNote, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
 		if err != nil {
 			return PublicServiceWithPhases{}, err
@@ -144,6 +144,7 @@ func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, m
 			pswp = PublicServiceWithPhases{
 				Id:            ts.Id,
 				MerchantId:    ts.MerchantId,
+				BookingType:   ts.BookingType,
 				CategoryId:    ts.CategoryId,
 				Name:          ts.Name,
 				Description:   ts.Description,
@@ -178,6 +179,7 @@ type PublicServicePhase struct {
 type PublicServiceWithPhases struct {
 	Id            int                  `json:"id"`
 	MerchantId    uuid.UUID            `json:"merchant_id"`
+	BookingType   types.BookingType    `json:"booking_type"`
 	CategoryId    *int                 `json:"category_id"`
 	Name          string               `json:"name"`
 	Description   *string              `json:"description"`
@@ -227,6 +229,7 @@ func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.U
 			jsonb_build_object(
 				'id', s.id,
 				'merchant_id', s.merchant_id,
+				'booking_type', s.booking_type,
 				'name', s.name,
 				'description', s.description,
 				'color', s.color,

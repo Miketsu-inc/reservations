@@ -33,7 +33,7 @@ type PostgreSQL interface {
 	// Insert a new Booking made by the merchant.
 	NewBookingByMerchant(context.Context, NewMerchantBooking) (int, error)
 	// Get all calendar events assigned to a Merchant ina given time period.
-	GetCalendarEventsByMerchant(context.Context, uuid.UUID, string, string) (CalcendarEvents, error)
+	GetCalendarEventsByMerchant(context.Context, uuid.UUID, string, string) (CalendarEvents, error)
 	// Get all available times for reservations
 	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]BookingTime, error)
 	// Get all reserved times for reservations in a given period
@@ -58,6 +58,8 @@ type PostgreSQL interface {
 	GetExistingOccurrenceDates(context.Context, int, time.Time, time.Time) ([]time.Time, error)
 	// Create a new booking series and related tables
 	NewBookingSeries(context.Context, NewBookingSeries) (CompleteBookingSeries, error)
+	// Get all group bookings from a merchant which is not full in a given period
+	GetAvailableGroupBookingsForPeriod(context.Context, uuid.UUID, int, int, time.Time, time.Time) ([]BookingTime, error)
 
 	// -- User --
 

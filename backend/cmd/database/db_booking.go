@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
@@ -96,77 +97,103 @@ type BookingSeriesParticipant struct {
 	DroppedOutOn    *time.Time `json:"dropped_out_on" db:"dropped_out_on"`
 }
 
+type newBookingParticipantData struct {
+	CustomerId   *uuid.UUID `json:"customer_id"`
+	CustomerNote *string    `json:"customer_note"`
+}
+
 type newBookingData struct {
-	Status         types.BookingStatus  `json:"status"`
-	BookingType    types.BookingType    `json:"booking_type"`
-	MerchantId     uuid.UUID            `json:"merchant_id"`
-	ServiceId      int                  `json:"service_id"`
-	LocationId     int                  `json:"location_id"`
-	FromDate       time.Time            `json:"from_date"`
-	ToDate         time.Time            `json:"to_date"`
-	CustomerNote   *string              `json:"customer_note"`
-	MerchantNote   *string              `json:"merchant_note"`
-	PricePerPerson currencyx.Price      `json:"price_per_person"`
-	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	CustomerId     *uuid.UUID           `json:"customer_id"`
-	Phases         []PublicServicePhase `json:"phases"`
+	Status         types.BookingStatus         `json:"status"`
+	BookingType    types.BookingType           `json:"booking_type"`
+	MerchantId     uuid.UUID                   `json:"merchant_id"`
+	ServiceId      int                         `json:"service_id"`
+	LocationId     int                         `json:"location_id"`
+	FromDate       time.Time                   `json:"from_date"`
+	ToDate         time.Time                   `json:"to_date"`
+	MerchantNote   *string                     `json:"merchant_note"`
+	PricePerPerson currencyx.Price             `json:"price_per_person"`
+	CostPerPerson  currencyx.Price             `json:"cost_per_person"`
+	Participants   []newBookingParticipantData `json:"participants"`
+	Phases         []PublicServicePhase        `json:"phases"`
 }
 
 func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) {
 	var bookingId int
 
-	if nb.BookingType == types.BookingTypeAppointment {
-		insertBookingQuery := `
+	insertBookingQuery := `
 		insert into "Booking" (status, booking_type, merchant_id, service_id, location_id, from_date, to_date)
 		values ($1, $2, $3, $4, $5, $6, $7)
 		returning id
 		`
 
-		err := tx.QueryRow(ctx, insertBookingQuery, nb.Status, nb.BookingType, nb.MerchantId, nb.ServiceId, nb.LocationId, nb.FromDate, nb.ToDate).Scan(&bookingId)
-		if err != nil {
-			return bookingId, err
-		}
+	err := tx.QueryRow(ctx, insertBookingQuery, nb.Status, nb.BookingType, nb.MerchantId, nb.ServiceId, nb.LocationId, nb.FromDate, nb.ToDate).Scan(&bookingId)
+	if err != nil {
+		return bookingId, err
+	}
 
-		insertBookingPhaseQuery := `
+	insertBookingPhaseQuery := `
 		insert into "BookingPhase" (booking_id, service_phase_id, from_date, to_date)
 		values ($1, $2, $3, $4)
 		`
 
-		bookingStart := nb.FromDate
-		for _, phase := range nb.Phases {
-			phaseDuration := time.Duration(phase.Duration) * time.Minute
-			bookingEnd := bookingStart.Add(phaseDuration)
+	bookingStart := nb.FromDate
+	for _, phase := range nb.Phases {
+		phaseDuration := time.Duration(phase.Duration) * time.Minute
+		bookingEnd := bookingStart.Add(phaseDuration)
 
-			_, err = tx.Exec(ctx, insertBookingPhaseQuery, bookingId, phase.Id, bookingStart, bookingEnd)
-			if err != nil {
-				return 0, err
-			}
-
-			bookingStart = bookingEnd
+		_, err = tx.Exec(ctx, insertBookingPhaseQuery, bookingId, phase.Id, bookingStart, bookingEnd)
+		if err != nil {
+			return 0, err
 		}
 
-		insertBookingDetailsQuery := `
+		bookingStart = bookingEnd
+	}
+
+	insertBookingDetailsQuery := `
 		insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
 
-		_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, nb.PricePerPerson, nb.CostPerPerson, nb.MerchantNote, 1, 1, 1)
-		if err != nil {
-			return 0, err
+	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, nb.PricePerPerson, nb.CostPerPerson, nb.MerchantNote, 1, 1, 1)
+	if err != nil {
+		return 0, err
+	}
+
+	if nb.BookingType == types.BookingTypeAppointment {
+		assert.True(len(nb.Participants) == 1, "Appointment type bookings must only have 1 participant!", nb)
+	}
+
+	// needed for unnest to work with nullable types in pgx
+	var participantIds []pgtype.UUID
+	var participantNotes []pgtype.Text
+	for _, bp := range nb.Participants {
+		if bp.CustomerId == nil {
+			participantIds = append(participantIds, pgtype.UUID{Valid: false})
+		} else {
+			participantIds = append(participantIds, pgtype.UUID{
+				Valid: true,
+				Bytes: *bp.CustomerId,
+			})
 		}
 
-		insertBookingParticipantQuery := `
+		if bp.CustomerNote == nil {
+			participantNotes = append(participantNotes, pgtype.Text{Valid: false})
+		} else {
+			participantNotes = append(participantNotes, pgtype.Text{
+				Valid:  true,
+				String: *bp.CustomerNote,
+			})
+		}
+	}
+
+	batchInsertBookingParticipantQuery := `
 		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note)
-		values ($1, $2, $3, $4)
+		select $1, $2, unnest($3::uuid[]), unnest($4::text[])
 		`
 
-		_, err = tx.Exec(ctx, insertBookingParticipantQuery, nb.Status, bookingId, nb.CustomerId, nb.CustomerNote)
-		if err != nil {
-			return 0, err
-		}
-
-	} else {
-		assert.Never("TODO: Booking events or classes are not implemented yet!", nb)
+	_, err = tx.Exec(ctx, batchInsertBookingParticipantQuery, nb.Status, bookingId, participantIds, participantNotes)
+	if err != nil {
+		return 0, err
 	}
 
 	return bookingId, nil
@@ -196,6 +223,8 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
+	assert.True(nb.BookingType == types.BookingTypeAppointment, "The customer should not be able to create a new event or class!", nb)
+
 	var IsBlacklisted bool
 	ensureCustomerQuery := `
 	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
@@ -220,12 +249,14 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 		LocationId:     nb.LocationId,
 		FromDate:       nb.FromDate,
 		ToDate:         nb.ToDate,
-		CustomerNote:   nb.CustomerNote,
 		MerchantNote:   nil,
 		PricePerPerson: nb.PricePerPerson,
 		CostPerPerson:  nb.CostPerPerson,
-		CustomerId:     &customerId,
-		Phases:         nb.Phases,
+		Participants: []newBookingParticipantData{{
+			CustomerId:   &customerId,
+			CustomerNote: nb.CustomerNote,
+		}},
+		Phases: nb.Phases,
 	})
 	if err != nil {
 		return 0, err
@@ -250,7 +281,7 @@ type NewMerchantBooking struct {
 	MerchantNote   *string              `json:"merchant_note"`
 	PricePerPerson currencyx.Price      `json:"price_per_person"`
 	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	CustomerId     *uuid.UUID           `json:"customer_id"`
+	Participants   []*uuid.UUID         `json:"participants"`
 	Phases         []PublicServicePhase `json:"phases"`
 }
 
@@ -262,6 +293,11 @@ func (s *service) NewBookingByMerchant(ctx context.Context, nb NewMerchantBookin
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
+	var participants []newBookingParticipantData
+	for _, customerId := range nb.Participants {
+		participants = append(participants, newBookingParticipantData{CustomerId: customerId, CustomerNote: nil})
+	}
+
 	bookingId, err := newBooking(ctx, tx, newBookingData{
 		Status:         nb.Status,
 		BookingType:    nb.BookingType,
@@ -270,11 +306,10 @@ func (s *service) NewBookingByMerchant(ctx context.Context, nb NewMerchantBookin
 		LocationId:     nb.LocationId,
 		FromDate:       nb.FromDate,
 		ToDate:         nb.ToDate,
-		CustomerNote:   nil,
 		MerchantNote:   nb.MerchantNote,
 		PricePerPerson: nb.PricePerPerson,
 		CostPerPerson:  nb.CostPerPerson,
-		CustomerId:     nb.CustomerId,
+		Participants:   participants,
 		Phases:         nb.Phases,
 	})
 	if err != nil {
@@ -358,21 +393,21 @@ type BlockedTimeEvent struct {
 	AllDay     bool      `json:"all_day" db:"all_day"`
 }
 
-type CalcendarEvents struct {
+type CalendarEvents struct {
 	Bookings     []PublicBookingDetails `json:"bookings"`
 	BlockedTimes []BlockedTimeEvent     `json:"blocked_times"`
 }
 
-func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) (CalcendarEvents, error) {
+func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uuid.UUID, start string, end string) (CalendarEvents, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
-		return CalcendarEvents{}, err
+		return CalendarEvents{}, err
 	}
 
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
-	var events CalcendarEvents
+	var events CalendarEvents
 
 	bookingQuery := `
 	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost,
@@ -390,7 +425,7 @@ func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uu
 	rows, _ := tx.Query(ctx, bookingQuery, merchantId, start, end)
 	events.Bookings, err = pgx.CollectRows(rows, pgx.RowToStructByName[PublicBookingDetails])
 	if err != nil {
-		return CalcendarEvents{}, err
+		return CalendarEvents{}, err
 	}
 
 	blockedTimeQuery := `
@@ -402,19 +437,19 @@ func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uu
 	rows, _ = tx.Query(ctx, blockedTimeQuery, merchantId, start, end)
 	events.BlockedTimes, err = pgx.CollectRows(rows, pgx.RowToStructByName[BlockedTimeEvent])
 	if err != nil {
-		return CalcendarEvents{}, err
+		return CalendarEvents{}, err
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return CalcendarEvents{}, err
+		return CalendarEvents{}, err
 	}
 
 	return events, nil
 }
 
 type BookingTime struct {
-	From_date time.Time
-	To_date   time.Time
+	From_date time.Time `db:"from_date"`
+	To_date   time.Time `db:"to_date"`
 }
 
 func (s *service) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]BookingTime, error) {
@@ -679,78 +714,89 @@ func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecur
 	assert.True(len(nrb.FromDates) == len(nrb.ToDates), "Length of fromDates and toDates slices should be equal!", len(nrb.FromDates), len(nrb.ToDates), nrb)
 	var bookingIds []int
 
-	if nrb.BookingType == types.BookingTypeAppointment {
-		insertBookingsQuery := `
+	insertBookingsQuery := `
 		insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date)
 		select $1, $2, $3, $4, $5, $6, $7, $8, unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[])
 		returning id
 		`
 
-		rows, _ := tx.Query(ctx, insertBookingsQuery, nrb.BookingStatus, nrb.BookingType, true, nrb.MerchantId, nrb.EmployeeId, nrb.ServiceId, nrb.LocationId,
-			nrb.BookingSeriesId, nrb.FromDates, nrb.FromDates, nrb.ToDates)
-		bookingIds, err = pgx.CollectRows(rows, pgx.RowTo[int])
-		if err != nil {
-			return 0, err
-		}
+	rows, _ := tx.Query(ctx, insertBookingsQuery, nrb.BookingStatus, nrb.BookingType, true, nrb.MerchantId, nrb.EmployeeId, nrb.ServiceId, nrb.LocationId,
+		nrb.BookingSeriesId, nrb.FromDates, nrb.FromDates, nrb.ToDates)
+	bookingIds, err = pgx.CollectRows(rows, pgx.RowTo[int])
+	if err != nil {
+		return 0, err
+	}
 
-		insertBookingPhasesQuery := `
+	insertBookingPhasesQuery := `
 		insert into "BookingPhase" (booking_id, service_phase_id, from_date, to_date)
 		select unnest($1::int[]), unnest($2::int[]), unnest($3::timestamptz[]), unnest($4::timestamptz[])
 		`
 
-		assert.True(len(nrb.FromDates) == len(bookingIds), "Length of fromDate and bookingIds slices should be equal!", len(nrb.FromDates), len(bookingIds), nrb)
+	assert.True(len(nrb.FromDates) == len(bookingIds), "Length of fromDate and bookingIds slices should be equal!", len(nrb.FromDates), len(bookingIds), nrb)
 
-		var phaseIds []int
-		var phaseFromDates []time.Time
-		var phaseToDates []time.Time
+	var phaseIds []int
+	var phaseFromDates []time.Time
+	var phaseToDates []time.Time
 
-		bookingStart := nrb.FromDates[0]
-		for _, phase := range nrb.Phases {
-			phaseDuration := time.Duration(phase.Duration) * time.Minute
-			bookingEnd := bookingStart.Add(phaseDuration)
+	bookingStart := nrb.FromDates[0]
+	for _, phase := range nrb.Phases {
+		phaseDuration := time.Duration(phase.Duration) * time.Minute
+		bookingEnd := bookingStart.Add(phaseDuration)
 
-			phaseIds = append(phaseIds, phase.Id)
-			phaseFromDates = append(phaseFromDates, bookingStart)
-			phaseToDates = append(phaseToDates, bookingEnd)
+		phaseIds = append(phaseIds, phase.Id)
+		phaseFromDates = append(phaseFromDates, bookingStart)
+		phaseToDates = append(phaseToDates, bookingEnd)
 
-			bookingStart = bookingEnd
-		}
+		bookingStart = bookingEnd
+	}
 
-		times := len(bookingIds)
+	times := len(bookingIds)
 
-		phaseIds = utils.RepeatSlice(phaseIds, times)
-		phaseFromDates = utils.RepeatSlice(phaseFromDates, times)
-		phaseToDates = utils.RepeatSlice(phaseToDates, times)
-		bookingIdsForPhases := utils.RepeatEach(bookingIds, len(nrb.Phases))
+	phaseIds = utils.RepeatSlice(phaseIds, times)
+	phaseFromDates = utils.RepeatSlice(phaseFromDates, times)
+	phaseToDates = utils.RepeatSlice(phaseToDates, times)
+	bookingIdsForPhases := utils.RepeatEach(bookingIds, len(nrb.Phases))
 
-		_, err = tx.Exec(ctx, insertBookingPhasesQuery, bookingIdsForPhases, phaseIds, phaseFromDates, phaseToDates)
-		if err != nil {
-			return 0, err
-		}
+	_, err = tx.Exec(ctx, insertBookingPhasesQuery, bookingIdsForPhases, phaseIds, phaseFromDates, phaseToDates)
+	if err != nil {
+		return 0, err
+	}
 
-		insertBookingDetailsQuery := `
+	insertBookingDetailsQuery := `
 		insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
 		select unnest($1::int[]), $2, $3, $4, $5, $6, $7, $8, $9
 		`
 
-		_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingIds, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson,
-			"", nrb.Details.MinParticipants, nrb.Details.MaxParticipants, nrb.Details.CurrentParticipants)
-		if err != nil {
-			return 0, err
-		}
+	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingIds, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson,
+		"", nrb.Details.MinParticipants, nrb.Details.MaxParticipants, nrb.Details.CurrentParticipants)
+	if err != nil {
+		return 0, err
+	}
 
-		insertBookingParticipantsQuery := `
+	// needed for unnest to work with nullable types in pgx
+	var participantIds []pgtype.UUID
+	for _, bp := range nrb.Participants {
+		if bp.CustomerId == nil {
+			participantIds = append(participantIds, pgtype.UUID{Valid: false})
+		} else {
+			participantIds = append(participantIds, pgtype.UUID{
+				Valid: true,
+				Bytes: *bp.CustomerId,
+			})
+		}
+	}
+
+	bookingIdsForParticipants := utils.RepeatEach(bookingIds, len(nrb.Participants))
+	participantIdsForBookings := utils.RepeatSlice(participantIds, len(bookingIds))
+
+	insertBookingParticipantsQuery := `
 		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note)
-		select $1, unnest($2::int[]), $3, $4
+		select $1, unnest($2::int[]), unnest($3::uuid[]), $4
 		`
 
-		_, err = tx.Exec(ctx, insertBookingParticipantsQuery, types.BookingStatusBooked, bookingIds, nrb.Participants[0].CustomerId, "")
-		if err != nil {
-			return 0, err
-		}
-
-	} else {
-		assert.Never("TODO: Booking events or classes are not implemented yet!", nrb)
+	_, err = tx.Exec(ctx, insertBookingParticipantsQuery, types.BookingStatusBooked, bookingIdsForParticipants, participantIdsForBookings, nil)
+	if err != nil {
+		return 0, err
 	}
 
 	return bookingIds[0], tx.Commit(ctx)
@@ -827,13 +873,26 @@ func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (C
 		return CompleteBookingSeries{}, err
 	}
 
+	// needed for unnest to work with nullable types in pgx
+	var participantIds []pgtype.UUID
+	for _, uuid := range nbs.Participants {
+		if uuid == nil {
+			participantIds = append(participantIds, pgtype.UUID{Valid: false})
+		} else {
+			participantIds = append(participantIds, pgtype.UUID{
+				Valid: true,
+				Bytes: *uuid,
+			})
+		}
+	}
+
 	insertBookingSeriesParticipantsQuery := `
 	insert into "BookingSeriesParticipant" (booking_series_id, customer_id, is_active)
 	select $1, unnest($2::uuid[]), $3
 	returning *
 	`
 
-	rows, _ = tx.Query(ctx, insertBookingSeriesParticipantsQuery, bookingSeries.Id, nbs.Participants, true)
+	rows, _ = tx.Query(ctx, insertBookingSeriesParticipantsQuery, bookingSeries.Id, participantIds, true)
 	bookingSeriesParticipants, err := pgx.CollectRows(rows, pgx.RowToStructByName[BookingSeriesParticipant])
 	if err != nil {
 		return CompleteBookingSeries{}, err
@@ -849,4 +908,22 @@ func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (C
 	}
 
 	return booking, nil
+}
+
+func (s *service) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]BookingTime, error) {
+	query := `
+	select from_date, to_date from "Booking" b
+	join "BookingDetails" bd on bd.booking_id = b.id
+	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $3 and DATE(b.to_date) <= $4
+		and b.status not in ('cancelled', 'completed') and current_participants < max_participants
+	order by from_date
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId, serviceId, locationId, startTime, endTime)
+	availableBookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[BookingTime])
+	if err != nil {
+		return nil, err
+	}
+
+	return availableBookings, nil
 }
