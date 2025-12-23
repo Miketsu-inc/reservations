@@ -1,6 +1,10 @@
 import { ClockIcon, MapPinIcon, WarningIcon } from "@reservations/assets";
 import { Button, Loading, ServerError } from "@reservations/components";
-import { preferencesQueryOptions, timeStringFromDate } from "@reservations/lib";
+import {
+  getDisplayPrice,
+  preferencesQueryOptions,
+  timeStringFromDate,
+} from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -231,7 +235,7 @@ function CancelPage() {
             </div>
 
             <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
-              {bookingData.price} {bookingData.price_note}
+              {getDisplayPrice(bookingData.price, bookingData.price_type)}
             </p>
           </div>
         )}

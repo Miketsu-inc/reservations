@@ -9,6 +9,7 @@ import {
 import {
   formatToDateString,
   GetDayPickerWindow,
+  getDisplayPrice,
   invalidateLocalStorageAuth,
 } from "@reservations/lib";
 import {
@@ -372,8 +373,11 @@ function SelectDateTime() {
                   <div>
                     <p>Service:</p>
                     <p>
-                      {summaryInfo.name} - {summaryInfo.price}
-                      {summaryInfo.price_note}
+                      {summaryInfo.name} -{" "}
+                      {getDisplayPrice(
+                        summaryInfo.price,
+                        summaryInfo.price_type
+                      )}
                     </p>
                   </div>
                   <div>

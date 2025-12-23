@@ -3,6 +3,7 @@ import { Button, Card, Loading, ServerError } from "@reservations/components";
 import {
   businessHoursQueryOptions,
   formatDuration,
+  getDisplayPrice,
   invalidateLocalStorageAuth,
   useWindowSize,
 } from "@reservations/lib";
@@ -169,8 +170,10 @@ function ServiceDetailsPage() {
                     {formatDuration(serviceDetails.total_duration)}
                   </div>
                   <span>
-                    {serviceDetails.price}
-                    {serviceDetails?.price_note}
+                    {getDisplayPrice(
+                      serviceDetails.price,
+                      serviceDetails.price_type
+                    )}
                   </span>
                 </div>
               </div>

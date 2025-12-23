@@ -19,6 +19,12 @@ import { useServicePhases } from "./servicehooks";
 import ServicePhases from "./ServicePhases";
 import ServiceSchedulingSettings from "./ServiceSchedulingSettings";
 
+const priceTypeOptions = [
+  { label: "fixed", value: "fixed" },
+  { label: "from", value: "from" },
+  { label: "free", value: "free" },
+];
+
 export default function ServicePage({
   service,
   categories,
@@ -33,7 +39,7 @@ export default function ServicePage({
       description: service?.description || "",
       color: service?.color || "#2334b8",
       price: service?.price ?? null,
-      price_note: service?.price_note || "",
+      price_type: service?.price_type || "fixed",
       cost: service?.cost ?? null,
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
@@ -187,7 +193,7 @@ export default function ServicePage({
                       />
                     </Input>
                   </div>
-                  <div className="flex flex-row gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <Input
                       styles="p-2"
                       id="price"
@@ -215,18 +221,21 @@ export default function ServicePage({
                         {serviceData.price?.currency || "HUF"}
                       </p>
                     </Input>
-                    <Input
-                      styles="p-2"
-                      id="PriceNote"
-                      name="PriceNote"
-                      type="text"
-                      labelText="Price note"
-                      placeholder="e.g. -tol"
-                      value={serviceData.price_note}
-                      inputData={(data) =>
-                        updateServiceData({ price_note: data.value })
-                      }
-                    />
+                    <label className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Price Note</span>
+                        <InfoIcon styles="size-4 stroke-gray-500
+                          dark:stroke-gray-400" />
+                      </div>
+                      <Select
+                        value={serviceData.price_type}
+                        styles="w-full"
+                        options={priceTypeOptions}
+                        onSelect={(option) =>
+                          updateServiceData({ price_type: option.value })
+                        }
+                      />
+                    </label>
                   </div>
                   <Input
                     styles="p-2"

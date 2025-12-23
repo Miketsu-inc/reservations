@@ -54,3 +54,15 @@ export function fillStatisticsWithDate(data, fromDateStr, toDateStr) {
 
   return filledStats;
 }
+
+export function getDisplayPrice(price, type) {
+  if (type === "free") {
+    return "Free";
+  }
+
+  if (type === "from") {
+    return `from ${price}`;
+  }
+
+  return price;
+}

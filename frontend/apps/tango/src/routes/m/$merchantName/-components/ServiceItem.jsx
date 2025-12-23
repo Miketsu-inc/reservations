@@ -1,5 +1,5 @@
 import { BackArrowIcon } from "@reservations/assets";
-import { formatDuration } from "@reservations/lib";
+import { formatDuration, getDisplayPrice } from "@reservations/lib";
 import { Link } from "@tanstack/react-router";
 
 export default function ServiceItem({ children, service, router, locationId }) {
@@ -45,7 +45,8 @@ export default function ServiceItem({ children, service, router, locationId }) {
           className="flex flex-row items-center justify-between gap-2 md:gap-4"
         >
           <p className="w-full font-semibold">
-            {service.price && `${service.price} ${service.price_note}`}
+            {service.price &&
+              getDisplayPrice(service.price, service.price_type)}
           </p>
           {children}
         </div>

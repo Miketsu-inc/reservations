@@ -293,7 +293,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Color        string                   `json:"color" validate:"required,hexcolor"`
 		Price        *currencyx.Price         `json:"price"`
 		Cost         *currencyx.Price         `json:"cost"`
-		PriceNote    *string                  `json:"price_note"`
+		PriceType    types.PricingModel       `json:"price_type"`
 		CategoryId   *int                     `json:"category_id"`
 		IsActive     bool                     `json:"is_active"`
 		Settings     database.ServiceSettings `json:"settings"`
@@ -367,7 +367,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		TotalDuration:   durationSum,
 		Price:           service.Price,
 		Cost:            service.Cost,
-		PriceNote:       service.PriceNote,
+		PriceType:       service.PriceType,
 		IsActive:        service.IsActive,
 		Sequence:        0,
 		MinParticipants: 1,
@@ -667,7 +667,7 @@ func (m *Merchant) UpdateService(w http.ResponseWriter, r *http.Request) {
 		TotalDuration: durationSum,
 		Price:         pubServ.Price,
 		Cost:          pubServ.Cost,
-		PriceNote:     pubServ.PriceNote,
+		PriceType:     pubServ.PriceType,
 		IsActive:      pubServ.IsActive,
 		Settings:      pubServ.Settings,
 		Phases:        pubServ.Phases,

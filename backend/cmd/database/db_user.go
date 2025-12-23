@@ -333,7 +333,7 @@ func (s *service) GetCustomerStatsByMerchant(ctx context.Context, merchantId uui
 					'to_date', b.to_date,
 					'service_name', s.name,
 					'price', b.price_per_person,
-					'price_note', s.price_note,
+					'price_type', s.price_type,
 					'merchant_name', m.name,
 					'formatted_location', l.formatted_location,
 					'is_cancelled', b.status in ('cancelled')

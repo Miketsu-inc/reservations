@@ -15,6 +15,7 @@ create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
 create type booking_type as ENUM ('appointment', 'event', 'class');
 create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
 create type employee_role as ENUM ('owner', 'admin', 'staff');
+create type pricing_model as ENUM ('fixed', 'free', 'from');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -95,7 +96,7 @@ create table if not exists "Service" (
     total_duration           integer         not null,
     price_per_person         price,
     cost_per_person          price,
-    price_note               varchar(30),
+    price_type               pricing_model   not null default 'fixed',
     is_active                boolean         not null,
     sequence                 integer         not null default 0,
     min_participants         integer         not null,
