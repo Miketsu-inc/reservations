@@ -14,21 +14,21 @@ import (
 )
 
 type Service struct {
-	Id              int                `json:"ID"`
-	MerchantId      uuid.UUID          `json:"merchant_id"`
-	CategoryId      *int               `json:"category_id"`
-	BookingType     types.BookingType  `json:"booking_type"`
-	Name            string             `json:"name"`
-	Description     *string            `json:"description"`
-	Color           string             `json:"color"`
-	TotalDuration   int                `json:"total_duration"`
-	Price           *currencyx.Price   `json:"price"`
-	Cost            *currencyx.Price   `json:"cost"`
-	PriceType       types.PricingModel `json:"price_type"`
-	IsActive        bool               `json:"is_active"`
-	Sequence        int                `json:"sequence"`
-	MinParticipants int                `json:"min_participants"`
-	MaxParticipants int                `json:"max_participants"`
+	Id              int               `json:"ID"`
+	MerchantId      uuid.UUID         `json:"merchant_id"`
+	CategoryId      *int              `json:"category_id"`
+	BookingType     types.BookingType `json:"booking_type"`
+	Name            string            `json:"name"`
+	Description     *string           `json:"description"`
+	Color           string            `json:"color"`
+	TotalDuration   int               `json:"total_duration"`
+	Price           *currencyx.Price  `json:"price"`
+	Cost            *currencyx.Price  `json:"cost"`
+	PriceType       types.PriceType   `json:"price_type"`
+	IsActive        bool              `json:"is_active"`
+	Sequence        int               `json:"sequence"`
+	MinParticipants int               `json:"min_participants"`
+	MaxParticipants int               `json:"max_participants"`
 	ServiceSettings
 	DeletedOn *time.Time `json:"deleted_on"`
 }
@@ -187,7 +187,7 @@ type PublicServiceWithPhases struct {
 	TotalDuration int                  `json:"total_duration"`
 	Price         *currencyx.Price     `json:"price"`
 	Cost          *currencyx.Price     `json:"cost"`
-	PriceType     types.PricingModel   `json:"price_type"`
+	PriceType     types.PriceType      `json:"price_type"`
 	IsActive      bool                 `json:"is_active"`
 	Sequence      int                  `json:"sequence"`
 	Phases        []PublicServicePhase `json:"phases"`
@@ -291,7 +291,7 @@ type MerchantPageService struct {
 	Description   *string                   `json:"description"`
 	TotalDuration int                       `json:"total_duration"`
 	Price         *currencyx.FormattedPrice `json:"price"`
-	PriceType     types.PricingModel        `json:"price_type"`
+	PriceType     types.PriceType           `json:"price_type"`
 	Sequence      int                       `json:"sequence"`
 }
 
@@ -409,7 +409,7 @@ type ServiceWithPhasesAndSettings struct {
 	TotalDuration int                  `json:"total_duration"`
 	Price         *currencyx.Price     `json:"price"`
 	Cost          *currencyx.Price     `json:"cost"`
-	PriceType     types.PricingModel   `json:"price_type"`
+	PriceType     types.PriceType      `json:"price_type"`
 	IsActive      bool                 `json:"is_active"`
 	Sequence      int                  `json:"sequence"`
 	Settings      ServiceSettings      `json:"settings"`
@@ -665,7 +665,7 @@ type ServicePageData struct {
 	TotalDuration int                           `json:"total_duration"`
 	Price         *currencyx.Price              `json:"price"`
 	Cost          *currencyx.Price              `json:"cost"`
-	PriceType     types.PricingModel            `json:"price_type"`
+	PriceType     types.PriceType               `json:"price_type"`
 	IsActive      bool                          `json:"is_active"`
 	Sequence      int                           `json:"sequence"`
 	Settings      ServiceSettings               `json:"settings"`
@@ -951,7 +951,7 @@ type PublicServiceDetails struct {
 	Description       *string                   `json:"description"`
 	TotalDuration     int                       `json:"total_duration"`
 	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PricingModel        `json:"price_type"`
+	PriceType         types.PriceType           `json:"price_type"`
 	FormattedLocation string                    `json:"formatted_location"`
 	GeoPoint          types.GeoPoint            `json:"geo_point"`
 	Phases            []PublicServicePhase      `json:"phases"`
@@ -1004,7 +1004,7 @@ type MinimalServiceInfo struct {
 	Name              string                    `json:"name"`
 	TotalDuration     int                       `json:"total_duration"`
 	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PricingModel        `json:"price_type"`
+	PriceType         types.PriceType           `json:"price_type"`
 	FormattedLocation string                    `json:"formatted_location"`
 }
 

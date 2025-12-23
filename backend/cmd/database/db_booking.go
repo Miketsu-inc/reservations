@@ -660,7 +660,7 @@ type PublicBookingInfo struct {
 	CancelDeadline    int                      `json:"cancel_deadline" db:"cancel_deadline"`
 	FormattedLocation string                   `json:"formatted_location" db:"formatted_location"`
 	Price             currencyx.FormattedPrice `json:"price" db:"price"`
-	PriceType         types.PricingModel       `json:"price_type"`
+	PriceType         types.PriceType          `json:"price_type"`
 	MerchantName      string                   `json:"merchant_name" db:"merchant_name"`
 	IsCancelled       bool                     `json:"is_cancelled" db:"is_cancelled"`
 }

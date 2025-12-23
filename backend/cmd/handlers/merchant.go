@@ -293,7 +293,7 @@ func (m *Merchant) NewService(w http.ResponseWriter, r *http.Request) {
 		Color        string                   `json:"color" validate:"required,hexcolor"`
 		Price        *currencyx.Price         `json:"price"`
 		Cost         *currencyx.Price         `json:"cost"`
-		PriceType    types.PricingModel       `json:"price_type"`
+		PriceType    types.PriceType          `json:"price_type"`
 		CategoryId   *int                     `json:"category_id"`
 		IsActive     bool                     `json:"is_active"`
 		Settings     database.ServiceSettings `json:"settings"`

@@ -74,38 +74,38 @@ func (t *ServicePhaseType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type PricingModel struct {
-	pmodel string
+type PriceType struct {
+	ptype string
 }
 
-func (p PricingModel) String() string {
-	return p.pmodel
+func (p PriceType) String() string {
+	return p.ptype
 }
 
 var (
-	PricingModelFree  = PricingModel{"free"}
-	PricingModelFrom  = PricingModel{"from"}
-	PricingModelFixed = PricingModel{"fixed"}
+	PriceTypeFree  = PriceType{"free"}
+	PriceTypeFrom  = PriceType{"from"}
+	PriceTypeFixed = PriceType{"fixed"}
 )
 
-func NewPricingModel(typeStr string) (PricingModel, error) {
+func NewPriceType(typeStr string) (PriceType, error) {
 	switch strings.ToLower(typeStr) {
 	case "fixed":
-		return PricingModelFixed, nil
+		return PriceTypeFixed, nil
 	case "from":
-		return PricingModelFrom, nil
+		return PriceTypeFrom, nil
 	case "free":
-		return PricingModelFree, nil
+		return PriceTypeFree, nil
 	default:
-		return PricingModel{}, fmt.Errorf("invalid PricingModel: %s", typeStr)
+		return PriceType{}, fmt.Errorf("invalid Pricetype: %s", typeStr)
 	}
 }
 
-func (p PricingModel) Value() (driver.Value, error) {
-	return p.pmodel, nil
+func (p PriceType) Value() (driver.Value, error) {
+	return p.ptype, nil
 }
 
-func (t *PricingModel) Scan(src any) error {
+func (t *PriceType) Scan(src any) error {
 	typeStr, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("value is not a string: %v", src)
@@ -115,7 +115,7 @@ func (t *PricingModel) Scan(src any) error {
 		return nil
 	}
 
-	ptype, err := NewPricingModel(typeStr)
+	ptype, err := NewPriceType(typeStr)
 	if err != nil {
 		return err
 	}
@@ -124,17 +124,17 @@ func (t *PricingModel) Scan(src any) error {
 	return nil
 }
 
-func (t PricingModel) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.pmodel)
+func (t PriceType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.ptype)
 }
 
-func (t *PricingModel) UnmarshalJSON(data []byte) error {
+func (t *PriceType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 
-	ptype, err := NewPricingModel(s)
+	ptype, err := NewPriceType(s)
 	if err != nil {
 		return err
 	}
