@@ -204,7 +204,7 @@ type ServicesGroupedByCategory struct {
 func (s *service) GetServicesByMerchantId(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error) {
 	query := `
 	with services as (
-		select s.id, s.merchant_id, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.cost_per_person,
+		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.cost_per_person,
 			s.price_type, s.is_active, s.sequence,
 		coalesce (
 			jsonb_agg(
