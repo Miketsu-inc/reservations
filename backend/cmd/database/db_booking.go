@@ -202,6 +202,7 @@ func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) 
 type NewCustomerBooking struct {
 	Status         types.BookingStatus  `json:"status"`
 	BookingType    types.BookingType    `json:"booking_type"`
+	BookingId      *int                 `json:"booking_id"`
 	MerchantId     uuid.UUID            `json:"merchant_id"`
 	ServiceId      int                  `json:"service_id"`
 	LocationId     int                  `json:"location_id"`
@@ -241,25 +242,44 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 		return 0, fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
 	}
 
-	bookingId, err := newBooking(ctx, tx, newBookingData{
-		Status:         nb.Status,
-		BookingType:    nb.BookingType,
-		MerchantId:     nb.MerchantId,
-		ServiceId:      nb.ServiceId,
-		LocationId:     nb.LocationId,
-		FromDate:       nb.FromDate,
-		ToDate:         nb.ToDate,
-		MerchantNote:   nil,
-		PricePerPerson: nb.PricePerPerson,
-		CostPerPerson:  nb.CostPerPerson,
-		Participants: []newBookingParticipantData{{
-			CustomerId:   &customerId,
-			CustomerNote: nb.CustomerNote,
-		}},
-		Phases: nb.Phases,
-	})
-	if err != nil {
-		return 0, err
+	var bookingId int
+	if nb.BookingType == types.BookingTypeAppointment {
+		bookingId, err = newBooking(ctx, tx, newBookingData{
+			Status:         nb.Status,
+			BookingType:    nb.BookingType,
+			MerchantId:     nb.MerchantId,
+			ServiceId:      nb.ServiceId,
+			LocationId:     nb.LocationId,
+			FromDate:       nb.FromDate,
+			ToDate:         nb.ToDate,
+			MerchantNote:   nil,
+			PricePerPerson: nb.PricePerPerson,
+			CostPerPerson:  nb.CostPerPerson,
+			Participants: []newBookingParticipantData{{
+				CustomerId:   &customerId,
+				CustomerNote: nb.CustomerNote,
+			}},
+			Phases: nb.Phases,
+		})
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		// TODO: update total_price
+		bookingId = *nb.BookingId
+
+		addParticipantQuery := `
+		update "BookingParticipant" bp
+		set bd.current_participants = bd.current_participants + 1
+		join "Booking" b on b.id = bp.booking_id
+		join "BookingDetails" bd on b.id = bd.booking_id
+		where b.id = $1 and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
+		`
+
+		_, err := tx.Exec(ctx, addParticipantQuery, bookingId)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	err = tx.Commit(ctx)
@@ -541,6 +561,7 @@ func (s *service) CancelBookingByMerchant(ctx context.Context, merchantId uuid.U
 	return tx.Commit(ctx)
 }
 
+// TODO: update total_price
 func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.UUID, bookingId int) (uuid.UUID, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -912,11 +933,11 @@ func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (C
 
 func (s *service) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]BookingTime, error) {
 	query := `
-	select from_date, to_date from "Booking" b
+	select b.from_date, b.to_date from "Booking" b
 	join "BookingDetails" bd on bd.booking_id = b.id
 	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $3 and DATE(b.to_date) <= $4
-		and b.status not in ('cancelled', 'completed') and current_participants < max_participants
-	order by from_date
+		and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
+	order by b.from_date
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId, serviceId, locationId, startTime, endTime)

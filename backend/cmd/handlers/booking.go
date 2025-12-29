@@ -30,6 +30,8 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 		LocationId   int    `json:"location_id" validate:"required"`
 		TimeStamp    string `json:"timeStamp" validate:"required"`
 		CustomerNote string `json:"customer_note"`
+		// only present on group bookings
+		BookingId *int `json:"booking_id"`
 	}
 	var bookData BookingData
 
@@ -132,6 +134,7 @@ func (a *Booking) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	bookingId, err := a.Postgresdb.NewBookingByCustomer(r.Context(), database.NewCustomerBooking{
 		Status:         types.BookingStatusBooked,
 		BookingType:    types.BookingTypeAppointment,
+		BookingId:      bookData.BookingId,
 		MerchantId:     merchantId,
 		ServiceId:      bookData.ServiceId,
 		LocationId:     bookData.LocationId,
