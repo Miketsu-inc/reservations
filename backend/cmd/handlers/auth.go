@@ -388,7 +388,7 @@ func (a *Auth) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := a.Postgresdb.FindOauthUser(r.Context(), types.AuthProviderTypeFacebook, g.Id)
+	userId, err := a.Postgresdb.FindOauthUser(r.Context(), types.AuthProviderTypeGoogle, g.Id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error during finding oauth user: %s", err.Error()))
@@ -403,8 +403,8 @@ func (a *Auth) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 		err = a.Postgresdb.NewUser(r.Context(), database.User{
 			Id:                userId,
-			FirstName:         g.Name,
-			LastName:          "",
+			FirstName:         g.GivenName,
+			LastName:          g.FamilyName,
 			Email:             g.Email,
 			PhoneNumber:       nil,
 			PasswordHash:      nil,
@@ -468,7 +468,7 @@ func (a *Auth) FacebookCallback(w http.ResponseWriter, r *http.Request) {
 
 	client := facebookConf.Client(r.Context(), token)
 
-	resp, err := client.Get("https://graph.facebook.com/v24.0/me?fields=id,name,email,picture")
+	resp, err := client.Get("https://graph.facebook.com/v24.0/me?fields=id,name,first_name,last_name,email,picture")
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during request to facebook user endpoint: %s", err.Error()))
 		return
@@ -477,10 +477,12 @@ func (a *Auth) FacebookCallback(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	type facebookUser struct {
-		Id      string `json:"id"`
-		Name    string `json:"name"`
-		Email   string `json:"email"`
-		Picture struct {
+		Id        string `json:"id"`
+		Name      string `json:"name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string `json:"email"`
+		Picture   struct {
 			Data struct {
 				URL string `json:"url"`
 			} `json:"data"`
@@ -510,8 +512,8 @@ func (a *Auth) FacebookCallback(w http.ResponseWriter, r *http.Request) {
 
 		err = a.Postgresdb.NewUser(r.Context(), database.User{
 			Id:                userId,
-			FirstName:         fb.Name,
-			LastName:          "",
+			FirstName:         fb.FirstName,
+			LastName:          fb.LastName,
 			Email:             fb.Email,
 			PhoneNumber:       nil,
 			PasswordHash:      nil,
