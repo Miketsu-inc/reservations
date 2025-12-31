@@ -131,6 +131,14 @@ type PostgreSQL interface {
 	UpdateBlockedTime(context.Context, BlockedTime) error
 	// Get blocked times for available calculation
 	GetBlockedTimes(context.Context, uuid.UUID, time.Time, time.Time) ([]BlockedTimes, error)
+	// Get all blocked time type by a merchant's id
+	GetAllBlockedTimeTypes(context.Context, uuid.UUID) ([]BlockedTimeType, error)
+	// Create a blocked time type for a merchant
+	NewBlockedTimeType(context.Context, uuid.UUID, BlockedTimeType) error
+	// Update blocked time type for a merchant by id
+	UpdateBlockedTimeType(context.Context, uuid.UUID, BlockedTimeType) error
+	// Delete blocked time type for a merchant by id
+	DeleteBlockedTimeType(context.Context, uuid.UUID, int) error
 	// Get employees by merchant
 	GetEmployeesByMerchant(context.Context, uuid.UUID) ([]EmployeeForCalendar, error)
 

@@ -953,3 +953,66 @@ func (s *service) GetEmployeesByMerchant(ctx context.Context, merchantId uuid.UU
 
 	return employees, nil
 }
+
+type BlockedTimeType struct {
+	Id       int    `json:"id" db:"id"`
+	Name     string `json:"name" db:"name"`
+	Duration int    `json:"duration" db:"duration"`
+	Icon     string `json:"icon" db:"icon"`
+}
+
+func (s *service) GetAllBlockedTimeTypes(ctx context.Context, merchantId uuid.UUID) ([]BlockedTimeType, error) {
+	query := `
+	select ID, name, duration, icon from "BlockedTimeType"
+	where merchant_id = $1
+	order by id asc
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	types, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlockedTimeType])
+	if err != nil {
+		return []BlockedTimeType{}, err
+	}
+
+	return types, nil
+}
+
+func (s *service) NewBlockedTimeType(ctx context.Context, merchantId uuid.UUID, btt BlockedTimeType) error {
+	query := `
+	insert into "BlockedTimeType" (merchant_id, name, duration, icon)
+	values ($1, $2, $3, $4)
+	`
+
+	_, err := s.db.Exec(ctx, query, merchantId, btt.Name, btt.Duration, btt.Icon)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdateBlockedTimeType(ctx context.Context, merchantId uuid.UUID, btt BlockedTimeType) error {
+	query := `
+	update "BlockedTimeType"
+	set name = $3, duration = $4, icon = $5
+	where merchant_id = $1 and id = $2
+	`
+	_, err := s.db.Exec(ctx, query, merchantId, btt.Id, btt.Name, btt.Duration, btt.Icon)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) DeleteBlockedTimeType(ctx context.Context, merchantId uuid.UUID, typeId int) error {
+	query := `
+	delete from "BlockedTimeType" where merchant_id = $1 and id = $2`
+
+	_, err := s.db.Exec(ctx, query, merchantId, typeId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

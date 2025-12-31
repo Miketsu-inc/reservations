@@ -74,3 +74,28 @@ export function customersQueryOptions() {
     queryFn: fetchCustomers,
   });
 }
+
+async function fetchBlockedTimeTypes() {
+  const response = await fetch(`/api/v1/merchants/blocked-time-types`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function blockedTimeTypesQueryOptions() {
+  return queryOptions({
+    queryKey: ["blocked-time-types"],
+    queryFn: fetchBlockedTimeTypes,
+  });
+}

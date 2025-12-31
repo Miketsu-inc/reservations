@@ -22,6 +22,9 @@ export default function SettingsNavigation() {
         <NavigationItem label="Billing" path="/settings/billing">
           <CreditCardIcon styles="h-6 w-6" />
         </NavigationItem>
+        <NavigationItem label="Scheduling" path="/settings/scheduling">
+          <CreditCardIcon styles="h-6 w-6" />
+        </NavigationItem>
       </ul>
     </nav>
   );

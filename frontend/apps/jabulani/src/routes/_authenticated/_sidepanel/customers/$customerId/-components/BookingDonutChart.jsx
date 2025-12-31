@@ -67,7 +67,7 @@ const TooltipContent = ({ active, payload, total }) => {
         >
           <div className="flex items-center gap-2">
             <span
-              className="size-2.5 shrink-0 rounded-[2px]"
+              className="size-2.5 shrink-0 rounded-xs"
               style={{ backgroundColor: data.fill }}
             />
             {data.name}

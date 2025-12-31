@@ -279,3 +279,11 @@ create table if not exists "BlockedTime" (
     to_date                  timestamptz     not null,
     all_day                  boolean         not null
 );
+
+create table if not exists "BlockedTimeType" (
+    ID serial primary key unique not null,
+    merchant_id uuid references "Merchant" (ID) on delete cascade,
+    name varchar(50) not null,
+    duration integer not null,
+    icon varchar(10)
+);

@@ -2140,6 +2140,104 @@ func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (m *Merchant) GetAllBlockedTimesTypes(w http.ResponseWriter, r *http.Request) {
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	types, err := m.Postgresdb.GetAllBlockedTimeTypes(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not fetch blocked time types: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, types)
+}
+
+func (m *Merchant) NewBlockedTimeType(w http.ResponseWriter, r *http.Request) {
+	type blockedType struct {
+		Name     string `json:"name" validate:"required,max=50"`
+		Duration int    `json:"duration" validate:"required,gte=1"`
+		Icon     string `json:"icon" validate:"max=20"`
+	}
+
+	var btt blockedType
+	if err := validate.ParseStruct(r, &btt); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+	fmt.Printf("here is the icon: %s\n", btt.Icon)
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err := m.Postgresdb.NewBlockedTimeType(r.Context(), employee.MerchantId, database.BlockedTimeType{
+		Id:       0,
+		Name:     btt.Name,
+		Duration: btt.Duration,
+		Icon:     btt.Icon,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not create new blocked time type: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) DeleteBlockedTimeType(w http.ResponseWriter, r *http.Request) {
+	urlID := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(urlID)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid blocked time type id provided"))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err = m.Postgresdb.DeleteBlockedTimeType(r.Context(), employee.MerchantId, id)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error deleting blocked time type: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (m *Merchant) UpdateBlockedTimeType(w http.ResponseWriter, r *http.Request) {
+	type blockedType struct {
+		Id       int    `json:"id" validate:"required"`
+		Name     string `json:"name" validate:"required,max=50"`
+		Duration int    `json:"duration" validate:"required,gte=1"`
+		Icon     string `json:"icon" validate:"max=20"`
+	}
+
+	var btt blockedType
+	if err := validate.ParseStruct(r, &btt); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	urlID := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(urlID)
+	if err != nil || id != btt.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("url id does not match body id or is invalid"))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err = m.Postgresdb.UpdateBlockedTimeType(r.Context(), employee.MerchantId, database.BlockedTimeType{
+		Id:       btt.Id,
+		Name:     btt.Name,
+		Duration: btt.Duration,
+		Icon:     btt.Icon,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error updating blocked time type: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (m *Merchant) GetEmployeesForCalendar(w http.ResponseWriter, r *http.Request) {
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 

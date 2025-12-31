@@ -56,6 +56,7 @@ func jabulaniRouter() chi.Router {
 		"/settings/merchant",
 		"/settings/billing",
 		"/settings/calendar",
+		"/settings/scheduling",
 		"/services",
 		"/services/new",
 		"/services/edit/{id}",
@@ -262,6 +263,11 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Post("/blocked-times", merchantHandler.NewBlockedTime)
 			r.Put("/blocked-times/{id}", merchantHandler.UpdateBlockedTime)
 			r.Delete("/blocked-times/{id}", merchantHandler.DeleteBlockedTime)
+
+			r.Get("/blocked-time-types", merchantHandler.GetAllBlockedTimesTypes)
+			r.Post("/blocked-time-types", merchantHandler.NewBlockedTimeType)
+			r.Put("/blocked-time-types/{id}", merchantHandler.UpdateBlockedTimeType)
+			r.Delete("/blocked-time-types/{id}", merchantHandler.DeleteBlockedTimeType)
 
 			r.Get("/calendar/employees", merchantHandler.GetEmployeesForCalendar)
 			r.Get("/calendar/services", merchantHandler.GetServicesForCalendar)
