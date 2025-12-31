@@ -17,10 +17,12 @@ require (
 	github.com/teambition/rrule-go v1.8.2
 	github.com/twpayne/go-geom v1.6.1
 	golang.org/x/crypto v0.43.0
+	golang.org/x/oauth2 v0.34.0
 	golang.org/x/text v0.30.0
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect

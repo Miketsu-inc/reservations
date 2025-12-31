@@ -16,24 +16,27 @@ import (
 )
 
 type User struct {
-	Id                uuid.UUID `json:"ID" db:"id"`
-	FirstName         string    `json:"first_name" db:"first_name"`
-	LastName          string    `json:"last_name" db:"last_name"`
-	Email             string    `json:"email" db:"email"`
-	PhoneNumber       string    `json:"phone_number" db:"phone_number"`
-	PasswordHash      string    `json:"password_hash" db:"password_hash"`
-	JwtRefreshVersion int       `json:"jwt_refresh_version" db:"jwt_refresh_version"`
-	PreferredLang     *string   `json:"preferred_lang" db:"preferred_lang"`
+	Id                uuid.UUID               `json:"ID" db:"id"`
+	FirstName         string                  `json:"first_name" db:"first_name"`
+	LastName          string                  `json:"last_name" db:"last_name"`
+	Email             string                  `json:"email" db:"email"`
+	PhoneNumber       *string                 `json:"phone_number" db:"phone_number"`
+	PasswordHash      *string                 `json:"password_hash" db:"password_hash"`
+	JwtRefreshVersion int                     `json:"jwt_refresh_version" db:"jwt_refresh_version"`
+	PreferredLang     *string                 `json:"preferred_lang" db:"preferred_lang"`
+	AuthProvider      *types.AuthProviderType `json:"auth_provider" db:"auth_provider"`
+	ProviderId        *string                 `json:"provider_id" db:"provider_id"`
 }
 
 func (s *service) NewUser(ctx context.Context, user User) error {
 	query := `
-	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version)
-	values ($1, $2, $3, $4, $5, $6, $7)
+	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, preferred_lang,
+		auth_provider, provider_id)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := s.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
-		user.JwtRefreshVersion)
+		user.JwtRefreshVersion, user.PreferredLang, user.AuthProvider, user.ProviderId)
 	if err != nil {
 		return err
 	}
@@ -49,7 +52,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 
 	var user User
 	err := s.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
-		&user.JwtRefreshVersion, &user.PreferredLang)
+		&user.JwtRefreshVersion, &user.PreferredLang, &user.PreferredLang, &user.AuthProvider, &user.ProviderId)
 	if err != nil {
 		return User{}, err
 	}
@@ -57,17 +60,17 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 	return user, nil
 }
 
-func (s *service) GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, string, error) {
+func (s *service) GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, *string, error) {
 	query := `
 	select id, password_hash from "User"
 	where email = $1
 	`
 
 	var userID uuid.UUID
-	var password string
+	var password *string
 	err := s.db.QueryRow(ctx, query, email).Scan(&userID, &password)
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, nil, err
 	}
 
 	return userID, password, nil
@@ -79,7 +82,7 @@ func (s *service) IsEmailUnique(ctx context.Context, email string) error {
 	where email = $1
 	`
 
-	var em string
+	var em *string
 	err := s.db.QueryRow(ctx, query, email).Scan(&em)
 	if !errors.Is(err, pgx.ErrNoRows) {
 		if err != nil {
@@ -98,7 +101,7 @@ func (s *service) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) e
 	where phone_number = $1
 	`
 
-	var pn string
+	var pn *string
 	err := s.db.QueryRow(ctx, query, phoneNumber).Scan(&pn)
 	if !errors.Is(err, pgx.ErrNoRows) {
 		if err != nil {
@@ -484,4 +487,19 @@ func (s *service) GetCustomersForCalendarByMerchant(ctx context.Context, merchan
 	}
 
 	return customers, nil
+}
+
+func (s *service) FindOauthUser(ctx context.Context, provider types.AuthProviderType, provider_id string) (uuid.UUID, error) {
+	query := `
+	select id from "User"
+	where auth_provider = $1 and provider_id = $2
+	`
+
+	var id uuid.UUID
+	err := s.db.QueryRow(ctx, query, provider, provider_id).Scan(&id)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return id, nil
 }

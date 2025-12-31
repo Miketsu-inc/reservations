@@ -26,6 +26,11 @@ type Config struct {
 
 	RESEND_API_TEST string
 	ENABLE_EMAILS   bool
+
+	GOOGLE_OAUTH_CLIENT_ID       string
+	GOOGLE_OAUTH_CLIENT_SECRET   string
+	FACEBOOK_OAUTH_CLIENT_ID     string
+	FACEBOOK_OAUTH_CLIENT_SECRET string
 }
 
 var instance *Config
@@ -70,26 +75,42 @@ func LoadEnvVars() *Config {
 		assert.True(jwt_refresh_exp_min != 0, "JWT_REFRESH_EXP_MIN environment variable could not be found")
 
 		resend_api_test := os.Getenv("RESEND_API_TEST")
-		assert.True(resend_api_test != "", "RESEND_API_TEST enviroment variable could not be found")
+		assert.True(resend_api_test != "", "RESEND_API_TEST environment variable could not be found")
 
 		enable_emails, err := strconv.ParseBool(os.Getenv("ENABLE_EMAILS"))
-		assert.True(err == nil, "ENABLE_EMAILS enviroment variable could not be found")
+		assert.True(err == nil, "ENABLE_EMAILS environment variable could not be found")
+
+		google_oauth_client_id := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+		assert.True(google_oauth_client_id != "", "GOOGLE_OAUTH_CLIENT_ID environment variable could not be found")
+
+		google_oauth_client_secret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+		assert.True(google_oauth_client_secret != "", "GOOGLE_OAUTH_CLIENT_SECRET environment variable could not be found")
+
+		facebook_oauth_client_id := os.Getenv("FACEBOOK_OAUTH_CLIENT_ID")
+		assert.True(facebook_oauth_client_id != "", "FACEBOOK_OAUTH_CLIENT_ID environment variable could not be found")
+
+		facebook_oauth_client_secret := os.Getenv("FACEBOOK_OAUTH_CLIENT_SECRET")
+		assert.True(facebook_oauth_client_secret != "", "FACEBOOK_OAUTH_CLIENT_SECRET environment variable could not be found")
 
 		instance = &Config{
-			PORT:                port,
-			APP_ENV:             app_env,
-			DB_HOST:             db_host,
-			DB_PORT:             db_port,
-			DB_DATABASE:         db_database,
-			DB_USERNAME:         db_username,
-			DB_PASSWORD:         db_password,
-			DB_SCHEMA:           db_schema,
-			JWT_ACCESS_SECRET:   jwt_access_secret,
-			JWT_ACCESS_EXP_MIN:  jwt_access_exp_min,
-			JWT_REFRESH_SECRET:  jwt_refresh_secret,
-			JWT_REFRESH_EXP_MIN: jwt_refresh_exp_min,
-			RESEND_API_TEST:     resend_api_test,
-			ENABLE_EMAILS:       enable_emails,
+			PORT:                         port,
+			APP_ENV:                      app_env,
+			DB_HOST:                      db_host,
+			DB_PORT:                      db_port,
+			DB_DATABASE:                  db_database,
+			DB_USERNAME:                  db_username,
+			DB_PASSWORD:                  db_password,
+			DB_SCHEMA:                    db_schema,
+			JWT_ACCESS_SECRET:            jwt_access_secret,
+			JWT_ACCESS_EXP_MIN:           jwt_access_exp_min,
+			JWT_REFRESH_SECRET:           jwt_refresh_secret,
+			JWT_REFRESH_EXP_MIN:          jwt_refresh_exp_min,
+			RESEND_API_TEST:              resend_api_test,
+			ENABLE_EMAILS:                enable_emails,
+			GOOGLE_OAUTH_CLIENT_ID:       google_oauth_client_id,
+			GOOGLE_OAUTH_CLIENT_SECRET:   google_oauth_client_secret,
+			FACEBOOK_OAUTH_CLIENT_ID:     facebook_oauth_client_id,
+			FACEBOOK_OAUTH_CLIENT_SECRET: facebook_oauth_client_secret,
 		}
 	})
 	return instance

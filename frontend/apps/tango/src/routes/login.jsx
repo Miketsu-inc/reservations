@@ -1,4 +1,4 @@
-import { GoogleIcon } from "@reservations/assets";
+import { FacebookIcon, GoogleIcon } from "@reservations/assets";
 import {
   Button,
   FloatingLabelInput,
@@ -111,7 +111,7 @@ function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/auth/user/login", {
+      const response = await fetch("/api/v1/auth/login/user", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -153,20 +153,32 @@ function LoginPage() {
         <ServerError styles="mb-2 mt-4" error={serverError} />
         <p className="text-sms mt-2 py-2">Welcome back!</p>
 
-        <Button
-          type="Button"
-          name="Goolge button"
-          styles="group flex justify-center items-center my-2 bg-transparent
-            border border-secondary hover:border-hvr_secondary text-secondary!
-            font-normal! hover:*:text-hvr_secondary focus:outline-hidden
-            focus:*:text-hvr_secondary focus:border-hvr_secondary
-            hover:bg-transparent py-2"
-          buttonText="Log in with Google"
+        <a
+          className="group border-secondary hover:border-hvr_secondary
+            text-secondary! hover:*:text-hvr_secondary
+            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
+            items-center justify-center border bg-transparent py-2 font-normal!
+            hover:bg-transparent focus:outline-hidden"
+          href="http://localhost:8080/api/v1/auth/login/google"
         >
           <GoogleIcon
             styles="group-hover:fill-hvr_secondary fill-secondary mr-3"
           />
-        </Button>
+          Login with Google
+        </a>
+        <a
+          className="group border-secondary hover:border-hvr_secondary
+            text-secondary! hover:*:text-hvr_secondary
+            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
+            items-center justify-center border bg-transparent py-2 font-normal!
+            hover:bg-transparent focus:outline-hidden"
+          href={"http://localhost:8080/api/v1/auth/login/facebook"}
+        >
+          <FacebookIcon
+            styles="group-hover:fill-hvr_secondary fill-secondary mr-1"
+          />
+          Login with Facebook
+        </a>
         <div className="my-4 grid grid-cols-3 items-center">
           <hr className="border-text_color" />
           <p className="text-center text-sm">OR</p>

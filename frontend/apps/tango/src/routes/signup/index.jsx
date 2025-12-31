@@ -54,7 +54,7 @@ function SingUpPage() {
   async function handleSubmit(firstName, lastName) {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/auth/user/signup", {
+      const response = await fetch("/api/v1/auth/signup/user", {
         method: "POST",
         headers: {
           Accept: "application/json",

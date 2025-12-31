@@ -10,7 +10,9 @@ build:
 	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --minify
 	@npm run build-jabulani
 	@npm run build-tango
+ifeq (${skip-email},)
 	@make email-build
+endif
 	@make go-build
 
 vite-jabulani:

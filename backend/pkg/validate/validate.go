@@ -18,6 +18,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+var validate = validator.New(validator.WithRequiredStructEnabled())
+
 // Parse json from the request's body then validate the parsed struct and return nil or the first error
 func ParseStruct(r *http.Request, data any) error {
 	if err := httputil.ParseJSON(r, &data); err != nil {
@@ -33,8 +35,6 @@ func ParseStruct(r *http.Request, data any) error {
 
 // Validate a struct and return nil or the first error
 func Struct(s any) error {
-	validate := validator.New(validator.WithRequiredStructEnabled())
-
 	err := validate.Struct(s)
 	if err != nil {
 

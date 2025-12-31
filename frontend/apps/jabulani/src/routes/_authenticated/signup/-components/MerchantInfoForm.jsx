@@ -30,7 +30,7 @@ export default function MerchantInfoForm({ isCompleted }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/auth/merchant/signup", {
+      const response = await fetch("/api/v1/auth/signup/merchant", {
         method: "POST",
         headers: {
           Accept: "application/json",

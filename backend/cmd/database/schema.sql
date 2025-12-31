@@ -16,16 +16,19 @@ create type booking_type as ENUM ('appointment', 'event', 'class');
 create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
 create type employee_role as ENUM ('owner', 'admin', 'staff');
 create type price_type as ENUM ('fixed', 'free', 'from');
+create type auth_provider_type as ENUM ('facebook', 'google');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
     first_name               varchar(30)     not null,
     last_name                varchar(30)     not null,
-    email                    varchar(320),
+    email                    varchar(320)    not null,
     phone_number             varchar(30),
     password_hash            varchar(72),
     jwt_refresh_version      integer,
-    preferred_lang           varchar(10)
+    preferred_lang           varchar(10),
+    auth_provider            auth_provider_type,
+    provider_id              text
 );
 
 create table if not exists "Merchant" (

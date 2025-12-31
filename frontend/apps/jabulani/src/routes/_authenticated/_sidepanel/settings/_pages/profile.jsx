@@ -15,7 +15,7 @@ function ProfilePage() {
   const [serverError, setServerError] = useState();
 
   const logOutOnAllDevices = useCallback(async () => {
-    const response = await fetch("api/v1/auth/user/logout/all", {
+    const response = await fetch("api/v1/auth/logout/all", {
       method: "POST",
       headers: {
         Accept: "application/json",

@@ -69,7 +69,7 @@ type PostgreSQL interface {
 	GetUserById(context.Context, uuid.UUID) (User, error)
 	// Get a User's password and id by the User's email.
 	// Used for comparing password hashes on login and setting jwt cookies.
-	GetUserPasswordAndIDByUserEmail(context.Context, string) (uuid.UUID, string, error)
+	GetUserPasswordAndIDByUserEmail(context.Context, string) (uuid.UUID, *string, error)
 	// Check if an email exists in the database.
 	IsEmailUnique(context.Context, string) error
 	// Check if a phone number exists in the database.
@@ -82,6 +82,8 @@ type PostgreSQL interface {
 	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
 	// Get all employees associated with a user
 	GetEmployeesByUser(context.Context, uuid.UUID) ([]EmployeeAuthInfo, error)
+	// Find Oauth user by provider type and id
+	FindOauthUser(context.Context, types.AuthProviderType, string) (uuid.UUID, error)
 
 	// -- Merchant --
 

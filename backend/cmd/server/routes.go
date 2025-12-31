@@ -24,9 +24,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// r.Use(middleware.Recoverer)
 
 	var rh = RouteHandlers{&s.db}
-	r.Route("/api/v1/auth/user", rh.userAuthRoutes)
-	r.Route("/api/v1/auth/merchant", rh.merchantAuthRoutes)
-
+	r.Route("/api/v1/auth", rh.AuthRoutes)
 	r.Route("/api/v1/merchants", rh.merchantRoutes)
 	r.Route("/api/v1/bookings", rh.bookingRoutes)
 
@@ -148,38 +146,33 @@ func (rh *RouteHandlers) bookingRoutes(r chi.Router) {
 	})
 }
 
-func (rh *RouteHandlers) userAuthRoutes(r chi.Router) {
-	userAuthHandler := &handlers.UserAuth{
+func (rh *RouteHandlers) AuthRoutes(r chi.Router) {
+	authHandler := &handlers.Auth{
 		Postgresdb: *rh.Postgresdb,
 	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(lang.LangMiddleware)
 
-		r.Post("/signup", userAuthHandler.Signup)
-		r.Post("/login", userAuthHandler.Login)
+		r.Post("/signup/user", authHandler.UserSignup)
+		r.Post("/login/user", authHandler.UserLogin)
+
+		r.Get("/login/google", authHandler.GoogleLogin)
+		r.Get("/login/facebook", authHandler.FacebookLogin)
+
+		r.Get("/callback/google", authHandler.GoogleCallback)
+		r.Get("/callback/facebook", authHandler.FacebookCallback)
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(jwt.JwtMiddleware)
 		r.Use(lang.LangMiddleware)
 
-		r.Get("/", userAuthHandler.IsAuthenticated)
-		r.Post("/logout", userAuthHandler.Logout)
-		r.Post("/logout/all", userAuthHandler.LogoutAllDevices)
-	})
-}
+		r.Get("/", authHandler.UserIsAuthenticated)
+		r.Post("/logout", authHandler.Logout)
+		r.Post("/logout/all", authHandler.LogoutAllDevices)
 
-func (rh *RouteHandlers) merchantAuthRoutes(r chi.Router) {
-	merchantAuthHandler := &handlers.MerchantAuth{
-		Postgresdb: *rh.Postgresdb,
-	}
-
-	r.Group(func(r chi.Router) {
-		r.Use(jwt.JwtMiddleware)
-		r.Use(lang.LangMiddleware)
-
-		r.Post("/signup", merchantAuthHandler.Signup)
+		r.Post("/signup/merchant", authHandler.MerchantSignup)
 	})
 }
 
@@ -204,6 +197,9 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 		r.Use(lang.LangMiddleware)
 
 		r.Post("/check-url", merchantHandler.CheckUrl)
+
+		// TODO: temp until signup flow is figured out
+		r.Post("/location", merchantHandler.NewLocation)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -225,8 +221,6 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 			r.Get("/preferences", merchantHandler.GetPreferences)
 			r.Patch("/preferences", merchantHandler.UpdatePreferences)
-
-			r.Post("/location", merchantHandler.NewLocation)
 
 			r.Get("/services", merchantHandler.GetServices)
 			r.Get("/services/form-options", merchantHandler.GetServiceFormOptions)

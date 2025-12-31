@@ -18,6 +18,7 @@ export { default as EnvelopeIcon } from "./icons/EnvelopeIcon.jsx";
 export { default as ExportIcon } from "./icons/ExportIcon.jsx";
 export { default as EyeIcon } from "./icons/EyeIcon.jsx";
 export { default as EyeSlashIcon } from "./icons/EyeSlashIcon.jsx";
+export { default as FacebookIcon } from "./icons/FacebookIcon.jsx";
 export { default as GoogleIcon } from "./icons/GoogleIcon.jsx";
 export { default as HamburgerMenuIcon } from "./icons/HamburgerMenuIcon.jsx";
 export { default as HourGlassIcon } from "./icons/HourGlassIcon.jsx";
