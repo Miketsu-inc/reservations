@@ -39,58 +39,23 @@ var once sync.Once
 func LoadEnvVars() *Config {
 	once.Do(func() {
 		port := os.Getenv("PORT")
-		assert.True(port != "", "PORT environment variable could not be found")
-
 		app_env := os.Getenv("APP_ENV")
-		assert.True(app_env != "", "APP_ENV environment variable could not be found")
-
 		db_host := os.Getenv("DB_HOST")
-		assert.True(db_host != "", "DB_HOST environment variable could not be found")
-
 		db_port := os.Getenv("DB_PORT")
-		assert.True(db_port != "", "DB_PORT environment variable could not be found")
-
 		db_database := os.Getenv("DB_DATABASE")
-		assert.True(db_database != "", "DB_DATABASE environment variable could not be found")
-
 		db_username := os.Getenv("DB_USERNAME")
-		assert.True(db_username != "", "DB_USERNAME environment variable could not be found")
-
 		db_password := os.Getenv("DB_PASSWORD")
-		assert.True(db_password != "", "DB_PASSWORD environment variable could not be found")
-
 		db_schema := os.Getenv("DB_SCHEMA")
-		assert.True(db_schema != "", "DB_SCHEMA environment variable could not be found")
-
 		jwt_access_secret := os.Getenv("JWT_ACCESS_SECRET")
-		assert.True(jwt_access_secret != "", "JWT_ACCESS_SECRET environment variable could not be found")
-
 		jwt_access_exp_min, _ := strconv.Atoi(os.Getenv("JWT_ACCESS_EXP_MIN"))
-		assert.True(jwt_access_exp_min != 0, "JWT_ACCESS_EXP_MIN environment variable could not be found")
-
 		jwt_refresh_secret := os.Getenv("JWT_REFRESH_SECRET")
-		assert.True(jwt_refresh_secret != "", "JWT_REFRESH_SECRET environment variable could not be found")
-
 		jwt_refresh_exp_min, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_EXP_MIN"))
-		assert.True(jwt_refresh_exp_min != 0, "JWT_REFRESH_EXP_MIN environment variable could not be found")
-
 		resend_api_test := os.Getenv("RESEND_API_TEST")
-		assert.True(resend_api_test != "", "RESEND_API_TEST environment variable could not be found")
-
-		enable_emails, err := strconv.ParseBool(os.Getenv("ENABLE_EMAILS"))
-		assert.True(err == nil, "ENABLE_EMAILS environment variable could not be found")
-
+		enable_emails, _ := strconv.ParseBool(os.Getenv("ENABLE_EMAILS"))
 		google_oauth_client_id := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
-		assert.True(google_oauth_client_id != "", "GOOGLE_OAUTH_CLIENT_ID environment variable could not be found")
-
 		google_oauth_client_secret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
-		assert.True(google_oauth_client_secret != "", "GOOGLE_OAUTH_CLIENT_SECRET environment variable could not be found")
-
 		facebook_oauth_client_id := os.Getenv("FACEBOOK_OAUTH_CLIENT_ID")
-		assert.True(facebook_oauth_client_id != "", "FACEBOOK_OAUTH_CLIENT_ID environment variable could not be found")
-
 		facebook_oauth_client_secret := os.Getenv("FACEBOOK_OAUTH_CLIENT_SECRET")
-		assert.True(facebook_oauth_client_secret != "", "FACEBOOK_OAUTH_CLIENT_SECRET environment variable could not be found")
 
 		instance = &Config{
 			PORT:                         port,
@@ -114,4 +79,25 @@ func LoadEnvVars() *Config {
 		}
 	})
 	return instance
+}
+
+func (c *Config) Validate() {
+	assert.True(c.PORT != "", "PORT environment variable could not be found")
+	assert.True(c.APP_ENV != "", "APP_ENV environment variable could not be found")
+	assert.True(c.DB_HOST != "", "DB_HOST environment variable could not be found")
+	assert.True(c.DB_PORT != "", "DB_PORT environment variable could not be found")
+	assert.True(c.DB_DATABASE != "", "DB_DATABASE environment variable could not be found")
+	assert.True(c.DB_USERNAME != "", "DB_USERNAME environment variable could not be found")
+	assert.True(c.DB_PASSWORD != "", "DB_PASSWORD environment variable could not be found")
+	assert.True(c.DB_SCHEMA != "", "DB_SCHEMA environment variable could not be found")
+	assert.True(c.JWT_ACCESS_SECRET != "", "JWT_ACCESS_SECRET environment variable could not be found")
+	assert.True(c.JWT_ACCESS_EXP_MIN != 0, "JWT_ACCESS_EXP_MIN environment variable could not be found")
+	assert.True(c.JWT_REFRESH_SECRET != "", "JWT_REFRESH_SECRET environment variable could not be found")
+	assert.True(c.JWT_REFRESH_EXP_MIN != 0, "JWT_REFRESH_EXP_MIN environment variable could not be found")
+	assert.True(c.RESEND_API_TEST != "", "RESEND_API_TEST environment variable could not be found")
+	assert.NotNil(c.ENABLE_EMAILS, "ENABLE_EMAILS environment variable could not be found")
+	assert.True(c.GOOGLE_OAUTH_CLIENT_ID != "", "GOOGLE_OAUTH_CLIENT_ID environment variable could not be found")
+	assert.True(c.GOOGLE_OAUTH_CLIENT_SECRET != "", "GOOGLE_OAUTH_CLIENT_SECRET environment variable could not be found")
+	assert.True(c.FACEBOOK_OAUTH_CLIENT_ID != "", "FACEBOOK_OAUTH_CLIENT_ID environment variable could not be found")
+	assert.True(c.FACEBOOK_OAUTH_CLIENT_SECRET != "", "FACEBOOK_OAUTH_CLIENT_SECRET environment variable could not be found")
 }

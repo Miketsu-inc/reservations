@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/server"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
@@ -17,6 +18,9 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
+
+	cfg := config.LoadEnvVars()
+	cfg.Validate()
 
 	server := server.NewServer()
 
