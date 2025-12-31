@@ -94,7 +94,7 @@ function formatBlockedTimes(data) {
 
   return data.map((blockedTime) => ({
     id: blockedTime.id,
-    title: blockedTime.name,
+    title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
     start: blockedTime.from_date,
     end: blockedTime.to_date,
     color: "rgba(0, 0, 0, 0.6)",
@@ -105,6 +105,8 @@ function formatBlockedTimes(data) {
     extendedProps: {
       id: blockedTime.id,
       type: "blocked",
+      name: blockedTime.name,
+      blocked_type_id: blockedTime.blocked_type_id,
       employee_id: blockedTime.employee_id,
       allDay: blockedTime.all_day,
     },

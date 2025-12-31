@@ -124,7 +124,7 @@ type PostgreSQL interface {
 	// Get the merchant's url name by id
 	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
 	// Create new blocked time for one or multiple employees
-	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool) error
+	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool, *int) error
 	// Delete bloced time for an employee by id
 	DeleteBlockedTime(context.Context, int, uuid.UUID, int) error
 	// Update blocked time for an employee

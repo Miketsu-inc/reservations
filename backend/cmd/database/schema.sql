@@ -274,6 +274,7 @@ create table if not exists "BlockedTime" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              integer         references "Employee" (ID) on delete cascade not null,
+    blocked_type_id          integer         references "BlockedTimeType" (ID) on delete set null,
     name                     varchar(50)     not null,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,

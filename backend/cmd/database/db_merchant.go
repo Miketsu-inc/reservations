@@ -859,22 +859,23 @@ func (s *service) GetMerchantUrlNameById(ctx context.Context, merchantId uuid.UU
 }
 
 type BlockedTime struct {
-	Id         int       `json:"id"`
-	MerchantId uuid.UUID `json:"merchant_id"`
-	EmployeeId int       `json:"employee_id"`
-	Name       string    `json:"name"`
-	FromDate   time.Time `json:"from_date"`
-	ToDate     time.Time `json:"to_date"`
-	AllDay     bool      `json:"all_day"`
+	Id            int       `json:"id"`
+	MerchantId    uuid.UUID `json:"merchant_id"`
+	EmployeeId    int       `json:"employee_id"`
+	BlockedTypeId *int      `json:"blocked_type_id"`
+	Name          string    `json:"name"`
+	FromDate      time.Time `json:"from_date"`
+	ToDate        time.Time `json:"to_date"`
+	AllDay        bool      `json:"all_day"`
 }
 
-func (s *service) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool) error {
+func (s *service) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool, blockedTypeId *int) error {
 
 	query := `
-	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6)`
+	insert into "BlockedTime" (merchant_id, employee_id, blocked_type_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6, $7)`
 
 	for _, empId := range employeeIds {
-		_, err := s.db.Exec(ctx, query, merchantId, empId, name, fromDate, toDate, allDay)
+		_, err := s.db.Exec(ctx, query, merchantId, empId, blockedTypeId, name, fromDate, toDate, allDay)
 		if err != nil {
 			return err
 		}
@@ -899,10 +900,10 @@ func (s *service) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merc
 func (s *service) UpdateBlockedTime(ctx context.Context, bt BlockedTime) error {
 	query := `
 	update "BlockedTime"
-	set name = $4, from_date = $5, to_date = $6, all_day = $7
+	set blocked_type_id = $4, name = $5, from_date = $6, to_date = $7, all_day = $8 
 	where merchant_id = $1 and employee_id = $2 and ID = $3`
 
-	_, err := s.db.Exec(ctx, query, bt.MerchantId, bt.EmployeeId, bt.Id, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
+	_, err := s.db.Exec(ctx, query, bt.MerchantId, bt.EmployeeId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
 	if err != nil {
 		return err
 	}

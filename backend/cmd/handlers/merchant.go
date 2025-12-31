@@ -1996,9 +1996,10 @@ func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 	type newBlockedTime struct {
 		Name string `json:"name" validate:"required"`
 		// EmployeeIds []int  `json:"employee_ids" validate:"required"`
-		FromDate string `json:"from_date" validate:"required"`
-		ToDate   string `json:"to_date" validate:"required"`
-		AllDay   bool   `json:"all_day"`
+		BlockedTypeId *int   `json:"blocked_type_id"`
+		FromDate      string `json:"from_date" validate:"required"`
+		ToDate        string `json:"to_date" validate:"required"`
+		AllDay        bool   `json:"all_day"`
 	}
 
 	var nbt newBlockedTime
@@ -2027,7 +2028,7 @@ func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, []int{employee.Id}, nbt.Name, fromDate, toDate, nbt.AllDay)
+	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, []int{employee.Id}, nbt.Name, fromDate, toDate, nbt.AllDay, nbt.BlockedTypeId)
 	// err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, nbt.EmployeeIds, nbt.Name, fromDate, toDate, nbt.AllDay)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new blocked time %s", err.Error()))
@@ -2076,9 +2077,10 @@ func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
 		Id   int    `json:"id" validate:"required"`
 		Name string `json:"name" validate:"required"`
 		// EmployeeId int    `json:"employee_id" validate:"required"`
-		FromDate string `json:"from_date" validate:"required"`
-		ToDate   string `json:"to_date" validate:"required"`
-		AllDay   bool   `json:"all_day"`
+		BlockedTypeId *int   `json:"blocked_type_id"`
+		FromDate      string `json:"from_date" validate:"required"`
+		ToDate        string `json:"to_date" validate:"required"`
+		AllDay        bool   `json:"all_day"`
 	}
 
 	var data blockedTimeData
@@ -2128,11 +2130,12 @@ func (m *Merchant) UpdateBlockedTime(w http.ResponseWriter, r *http.Request) {
 		Id:         blockedTimeId,
 		MerchantId: employee.MerchantId,
 		// EmployeeId: data.EmployeeId,
-		EmployeeId: employee.Id,
-		Name:       data.Name,
-		FromDate:   fromDate,
-		ToDate:     toDate,
-		AllDay:     data.AllDay,
+		EmployeeId:    employee.Id,
+		BlockedTypeId: data.BlockedTypeId,
+		Name:          data.Name,
+		FromDate:      fromDate,
+		ToDate:        toDate,
+		AllDay:        data.AllDay,
 	})
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while updating blocked time for merchant: %s", err.Error()))

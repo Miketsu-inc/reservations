@@ -1,3 +1,4 @@
+import { EditIcon } from "@reservations/assets";
 import {
   Button,
   CloseButton,
@@ -13,8 +14,13 @@ import {
   timeStringFromDate,
   useToast,
 } from "@reservations/lib";
-// import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+// import { queryOptions } from "@tanstack/react-query";
+import {
+  blockedTimeTypesQueryOptions,
+  formatDuration,
+} from "@reservations/lib";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 const generateTimeOptions = (time_format) => {
   const options = [];
@@ -75,6 +81,17 @@ function endOfDay(date) {
 //   });
 // }
 
+const defaultFormData = {
+  id: null,
+  blocked_type_id: null,
+  name: "",
+  employee_id: "",
+  date: new Date(),
+  from_time: "09:00",
+  to_time: "17:00",
+  all_day: false,
+};
+
 export default function BlockedTimeModal({
   isOpen,
   onClose,
@@ -92,10 +109,10 @@ export default function BlockedTimeModal({
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     id: blockedTime?.extendedProps?.id || null,
-    name: blockedTime?.title || "",
+    blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || null,
+    name: blockedTime?.extendedProps?.name || "",
     employee_id: blockedTime?.extendedProps.employee_id || "",
-    from_date: blockedTime?.start || new Date(),
-    to_date: blockedTime?.end || new Date(),
+    date: blockedTime?.start || new Date(),
     from_time:
       !blockedTime?.extendedProps?.allDay && blockedTime?.start
         ? timeStringFromDate(blockedTime?.start).split(" ")[0]
@@ -104,8 +121,15 @@ export default function BlockedTimeModal({
       !blockedTime?.extendedProps?.allDay && blockedTime?.end
         ? timeStringFromDate(blockedTime?.end).split(" ")[0]
         : "17:00",
-    all_day: blockedTime?.extendedProps?.allDay ?? true,
+    all_day: blockedTime?.extendedProps?.allDay ?? false,
   });
+  const initialActiveType =
+    isEditing && formData?.blocked_type_id === null
+      ? "custom"
+      : formData?.blocked_type_id;
+  const [activeType, setActiveType] = useState(initialActiveType);
+
+  const { data: blockedTypes = [] } = useQuery(blockedTimeTypesQueryOptions());
 
   // const employeeOptions = employees?.map((employee) => ({
   //   value: employee.id,
@@ -119,31 +143,32 @@ export default function BlockedTimeModal({
       return;
     }
 
+    if (!activeType) {
+      showToast({
+        message: "Please select a blocked time type",
+        variant: "error",
+      });
+      return;
+    }
+
     const body = {
       id: blockedTime?.extendedProps?.id ?? undefined,
+      blocked_type_id: formData.blocked_type_id,
       name: formData.name,
       all_day: formData.all_day,
     };
 
     if (formData.all_day) {
-      body.from_date = startOfDay(formData.from_date).toISOString();
-
-      const fromDateOnly = startOfDay(formData.from_date).getTime();
-      const toDateOnly = startOfDay(formData.to_date).getTime();
-
-      if (fromDateOnly === toDateOnly) {
-        body.to_date = endOfDay(formData.to_date).toISOString();
-      } else {
-        body.to_date = startOfDay(formData.to_date).toISOString();
-      }
+      body.from_date = startOfDay(formData.date).toISOString();
+      body.to_date = endOfDay(formData.date).toISOString();
     } else {
       body.from_date = combineDateTimeLocal(
-        formData.from_date,
+        formData.date,
         formData.from_time
       ).toISOString();
 
       body.to_date = combineDateTimeLocal(
-        formData.to_date,
+        formData.date,
         formData.to_time
       ).toISOString();
     }
@@ -187,6 +212,8 @@ export default function BlockedTimeModal({
               : "Blocked Time modified successfully",
           variant: "success",
         });
+        setActiveType(null);
+        setFormData(defaultFormData);
         onSubmitted();
         onClose();
       }
@@ -217,6 +244,8 @@ export default function BlockedTimeModal({
           message: "Blocked Time deleted successfully",
           variant: "success",
         });
+        setActiveType(null);
+        setFormData(defaultFormData);
         onDeleted();
         onClose();
       }
@@ -232,11 +261,37 @@ export default function BlockedTimeModal({
     });
   }
 
+  function handleTypeSelect(type) {
+    if (type === "custom") {
+      updateBlockedTimeData({ blocked_type_id: null });
+      updateBlockedTimeData({ name: "" });
+      setActiveType("custom");
+    } else {
+      updateBlockedTimeData({ blocked_type_id: type.id });
+      updateBlockedTimeData({ name: type.name });
+      setActiveType(type.id);
+
+      const [hours, minutes] = formData.from_time.split(":").map(Number);
+      const durationMinutes = type.duration;
+
+      const totalMinutes = hours * 60 + minutes + durationMinutes;
+      const endHours = Math.floor(totalMinutes / 60) % 24;
+      const endMins = totalMinutes % 60;
+      const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
+      // because the select has 30 minute gaps if a blocked type has lets say 40m than the to select will be empty
+      updateBlockedTimeData({ to_time: endTime });
+    }
+  }
+
   return (
     <Modal
       styles="w-full sm:w-fit"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        onClose();
+        setActiveType(null);
+        setFormData(defaultFormData);
+      }}
       disableFocusTrap={true}
       suspendCloseOnClickOutside={isDatepickerOpen || isSelectOpen}
     >
@@ -246,48 +301,45 @@ export default function BlockedTimeModal({
             <p className="text-lg md:text-xl">
               {isEditing ? "Edit Blocked Time" : "Add Blocked Time"}
             </p>
-            <CloseButton onClick={onClose} />
+            <CloseButton
+              onClick={() => {
+                onClose();
+                setActiveType(null);
+                setFormData(defaultFormData);
+              }}
+            />
           </div>
-          <Input
-            styles="w-full p-2"
-            type="text"
-            id="name"
-            name="name"
-            labelText="Name"
-            placeholder="Lunch Break"
-            value={formData.name}
-            inputData={(data) => {
-              updateBlockedTimeData({ name: data.value });
-            }}
+          <BlockedTypeSection
+            onSelect={handleTypeSelect}
+            blockedTypes={blockedTypes}
+            activeType={activeType}
           />
-          <div className="text-text_color flex w-full items-center gap-4">
-            <div className="flex w-full flex-col gap-1">
-              <label className="text-sm">From Date</label>
-              <DatePicker
-                styles="sm:w-40 w-36"
-                value={formData.from_date}
-                disabledBefore={new Date()}
-                onSelect={(date) => {
-                  updateBlockedTimeData({ from_date: date });
-                  if (date > formData.to_date) {
-                    updateBlockedTimeData({ to_date: date });
-                  }
-                }}
-                onOpenChange={(open) => setIsDatepickerOpen(open)}
-              />
-            </div>
-            <div className="flex w-full flex-col gap-1">
-              <label className="text-sm">To Date</label>
-              <DatePicker
-                styles="sm:w-40 w-36"
-                value={formData.to_date}
-                disabledBefore={formData.from_date}
-                onSelect={(date) => {
-                  updateBlockedTimeData({ to_date: date });
-                }}
-                onOpenChange={(open) => setIsDatepickerOpen(open)}
-              />
-            </div>
+          {activeType === "custom" && (
+            <Input
+              styles="w-full p-2"
+              type="text"
+              id="name"
+              name="name"
+              labelText="Name"
+              placeholder="Lunch Break"
+              value={formData.name}
+              inputData={(data) => {
+                updateBlockedTimeData({ name: data.value });
+              }}
+            />
+          )}
+
+          <div className="flex w-full flex-col gap-1">
+            <label className="text-sm">Date</label>
+            <DatePicker
+              styles="sm:w-80 w-36"
+              value={formData.date}
+              disabledBefore={new Date()}
+              onSelect={(date) => {
+                updateBlockedTimeData({ date: date });
+              }}
+              onOpenChange={(open) => setIsDatepickerOpen(open)}
+            />
           </div>
           <div className="my-1 flex items-center gap-4">
             <span className="text-sm">All day</span>
@@ -301,7 +353,7 @@ export default function BlockedTimeModal({
           {!formData?.all_day && (
             <div className="text-text_color flex w-full items-center gap-4">
               <div className="flex w-full flex-col gap-1">
-                <label className="text-sm">From Time</label>
+                <label className="text-sm">From</label>
                 <Select
                   options={timeOptions.filter(
                     (option) => option.value !== "23:30:00"
@@ -316,9 +368,11 @@ export default function BlockedTimeModal({
                 />
               </div>
               <div className="flex w-full flex-col gap-1">
-                <label className="text-sm">To Time</label>
+                <label className="text-sm">To</label>
                 <Select
-                  options={timeOptions}
+                  options={timeOptions.filter(
+                    (option) => option.value > formData.from_time
+                  )}
                   value={formData.to_time}
                   onSelect={(option) =>
                     updateBlockedTimeData({ to_time: option.value })
@@ -360,7 +414,11 @@ export default function BlockedTimeModal({
                 buttonText="Cancel"
                 variant="tertiary"
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  setActiveType(null);
+                  setFormData(defaultFormData);
+                }}
               />
               <Button
                 type="submit"
@@ -373,5 +431,87 @@ export default function BlockedTimeModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
+  const scrollRef = useRef(null);
+
+  let selectedIndex = -1;
+
+  if (activeType === "custom") {
+    selectedIndex = 0;
+  } else if (activeType) {
+    const typeIndex = blockedTypes.findIndex((t) => t.id === activeType);
+    if (typeIndex !== -1) {
+      // Add 1 because "Custom"
+      selectedIndex = typeIndex + 1;
+    }
+  }
+
+  useEffect(() => {
+    if (selectedIndex < 0) return;
+
+    const timeout = setTimeout(() => {
+      if (scrollRef.current?.children[selectedIndex]) {
+        scrollRef.current.children[selectedIndex].scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+      }
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [activeType, selectedIndex]);
+
+  return (
+    <div className="text-text_color flex flex-col gap-3 sm:w-80">
+      <label className="text-sm font-medium">Block time type</label>
+
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 dark:scheme-dark"
+      >
+        <button
+          type="button"
+          onClick={() => onSelect("custom")}
+          className={`flex h-26 w-28 shrink-0 flex-col items-center
+            justify-center gap-2 rounded-md border-2 transition-all ${
+              activeType === "custom"
+                ? "border-primary"
+                : "border-border_color hover:border-gray-400"
+            }`}
+        >
+          <EditIcon styles="size-6 mt-3" />
+          <div className="text-center">
+            <div className="text-sm font-medium">Custom</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              New blocked time
+            </div>
+          </div>
+        </button>
+        {blockedTypes.map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            onClick={() => onSelect(type)}
+            className={`flex h-26 w-28 shrink-0 flex-col items-center
+            justify-center gap-2 rounded-lg border-2 transition-all ${
+              activeType === type.id
+                ? "border-primary"
+                : " border-border_color hover:border-gray-400"
+            }`}
+          >
+            <span className="text-3xl">{type.icon}</span>
+            <div className="text-center">
+              <div className="text-sm font-medium">{type.name}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {formatDuration(type.duration)}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

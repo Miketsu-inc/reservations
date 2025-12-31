@@ -405,12 +405,14 @@ type PublicBookingDetails struct {
 }
 
 type BlockedTimeEvent struct {
-	ID         int       `json:"id" db:"id"`
-	EmployeeId int       `json:"employee_id" db:"employee_id"`
-	Name       string    `json:"name" db:"name"`
-	FromDate   time.Time `json:"from_date" db:"from_date"`
-	ToDate     time.Time `json:"to_date" db:"to_date"`
-	AllDay     bool      `json:"all_day" db:"all_day"`
+	ID            int       `json:"id" db:"id"`
+	EmployeeId    int       `json:"employee_id" db:"employee_id"`
+	Name          string    `json:"name" db:"name"`
+	FromDate      time.Time `json:"from_date" db:"from_date"`
+	ToDate        time.Time `json:"to_date" db:"to_date"`
+	AllDay        bool      `json:"all_day" db:"all_day"`
+	Icon          *string   `json:"icon" db:"icon"`
+	BlockedTypeId *int      `json:"blocked_type_id" db:"blocked_type_id"`
 }
 
 type CalendarEvents struct {
@@ -449,9 +451,10 @@ func (s *service) GetCalendarEventsByMerchant(ctx context.Context, merchantId uu
 	}
 
 	blockedTimeQuery := `
-	select id, employee_id, name, from_date, to_date, all_day from "BlockedTime"
-	where merchant_id = $1 and from_date <= $3 and to_date >= $2
-	order by id
+	select b.id, b.employee_id, b.name, b.from_date, b.to_date, b.all_day, btt.icon, btt.id as blocked_type_id from "BlockedTime" b
+	left join "BlockedTimeType" btt on btt.id = b.blocked_type_id
+	where b.merchant_id = $1 and b.from_date <= $3 and b.to_date >= $2
+	order by b.id
 	`
 
 	rows, _ = tx.Query(ctx, blockedTimeQuery, merchantId, start, end)
