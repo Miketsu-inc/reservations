@@ -195,16 +195,19 @@ export default function ServicePage({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      styles="p-2"
+                      styles="p-2 peer"
                       id="price"
                       name="price"
                       type="number"
                       min={0}
                       max={1000000}
                       labelText="Price"
-                      placeholder="1000"
+                      placeholder={
+                        serviceData.price_type === "free" ? "0" : "1000"
+                      }
                       required={false}
                       value={serviceData.price?.number || ""}
+                      disabled={serviceData.price_type === "free"}
                       inputData={(data) =>
                         updateServiceData({
                           price: {
@@ -215,8 +218,12 @@ export default function ServicePage({
                       }
                     >
                       <p
-                        className="border-input_border_color rounded-r-lg border
-                          px-4 py-2"
+                        className={`border-input_border_color
+                          peer-disabled:text-text_color/70
+                          peer-disabled:border-input_border_color/60
+                          rounded-r-lg border px-4 py-2
+                          peer-disabled:bg-gray-200/60
+                          peer-disabled:dark:bg-gray-700/20`}
                       >
                         {serviceData.price?.currency || "HUF"}
                       </p>
@@ -231,9 +238,15 @@ export default function ServicePage({
                         value={serviceData.price_type}
                         styles="w-full"
                         options={priceTypeOptions}
-                        onSelect={(option) =>
-                          updateServiceData({ price_type: option.value })
-                        }
+                        onSelect={(option) => {
+                          updateServiceData({
+                            price: {
+                              number: 0,
+                              currency: serviceData.price?.currency || "HUF",
+                            },
+                          });
+                          updateServiceData({ price_type: option.value });
+                        }}
                       />
                     </label>
                   </div>

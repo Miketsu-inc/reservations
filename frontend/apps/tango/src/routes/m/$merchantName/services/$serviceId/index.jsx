@@ -163,12 +163,13 @@ function ServiceDetailsPage() {
                 </span>
                 <div
                   className={`flex
-                    ${windowSize === "sm" ? "flex-col gap-3" : "gap-6"}`}
+                    ${windowSize === "sm" ? "flex-col gap-3" : "gap-2"}`}
                 >
                   <div className="flex items-center justify-start gap-2">
                     <ClockIcon styles="size-4 fill-text_color" />
                     {formatDuration(serviceDetails.total_duration)}
                   </div>
+                  {windowSize === "sm" ? "" : "•"}
                   <span>
                     {getDisplayPrice(
                       serviceDetails.price,
