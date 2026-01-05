@@ -282,9 +282,9 @@ create table if not exists "BlockedTime" (
 );
 
 create table if not exists "BlockedTimeType" (
-    ID serial primary key unique not null,
-    merchant_id uuid references "Merchant" (ID) on delete cascade,
-    name varchar(50) not null,
-    duration integer not null,
-    icon varchar(10)
+    ID                       serial          primary key unique not null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade,
+    name                     varchar(50)     not null,
+    duration                 integer         not null,
+    icon                     varchar(10)
 );

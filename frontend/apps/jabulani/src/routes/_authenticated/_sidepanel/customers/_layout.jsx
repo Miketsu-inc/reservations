@@ -44,7 +44,7 @@ function CustomersLayout() {
               activeProps={{
                 className: " bg-bg_color text-red-600! shadow-sm",
               }}
-              to="/customers/blacklist"
+              to="blacklist"
               className="text-text_color/70 rounded-md px-4 py-2 text-sm
                 font-medium"
             >
@@ -55,7 +55,7 @@ function CustomersLayout() {
             </Link>
           </nav>
           {!pathName.includes("blacklist") && (
-            <Link from={Route.fullPath} to="/customers/new">
+            <Link from={Route.fullPath} to="new">
               <Button
                 variant="primary"
                 styles="sm:py-2 sm:px-4 w-fit p-2"

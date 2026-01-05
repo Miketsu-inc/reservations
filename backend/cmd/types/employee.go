@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -48,6 +49,25 @@ func (r *EmployeeRole) Scan(src any) error {
 	}
 
 	role, err := NewEmployeeRole(roleStr)
+	if err != nil {
+		return err
+	}
+
+	*r = role
+	return nil
+}
+
+func (r EmployeeRole) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.role)
+}
+
+func (r *EmployeeRole) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	role, err := NewEmployeeRole(s)
 	if err != nil {
 		return err
 	}

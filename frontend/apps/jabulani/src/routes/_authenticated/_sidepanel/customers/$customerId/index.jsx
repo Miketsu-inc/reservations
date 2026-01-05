@@ -10,6 +10,7 @@ import {
   TrashBinIcon,
 } from "@reservations/assets";
 import {
+  Avatar,
   Card,
   DeleteModal,
   Loading,
@@ -278,13 +279,9 @@ function CustomerDetailsPage() {
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <div
-                className="from-secondary to-primary bg-primary flex size-16
-                  items-center justify-center rounded-md text-lg text-white
-                  dark:bg-linear-to-br"
-              >
-                {`${queryResults[0].data.first_name.charAt(0)}${queryResults[0].data.last_name.charAt(0)}`.toUpperCase()}
-              </div>
+              <Avatar
+                initials={`${queryResults[0].data.first_name.charAt(0)}${queryResults[0].data.last_name.charAt(0)}`}
+              />
 
               <div
                 className={`flex flex-col ${lastVisited ? "gap-2" : "gap-0"}`}

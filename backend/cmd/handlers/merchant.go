@@ -2244,7 +2244,7 @@ func (m *Merchant) UpdateBlockedTimeType(w http.ResponseWriter, r *http.Request)
 func (m *Merchant) GetEmployeesForCalendar(w http.ResponseWriter, r *http.Request) {
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	employees, err := m.Postgresdb.GetEmployeesByMerchant(r.Context(), employee.MerchantId)
+	employees, err := m.Postgresdb.GetEmployeesForCalendarByMerchant(r.Context(), employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error()))
 		return
@@ -2305,4 +2305,156 @@ func (m *Merchant) GetCustomersForCalendar(w http.ResponseWriter, r *http.Reques
 	}
 
 	httputil.Success(w, http.StatusOK, customers)
+}
+
+func (m *Merchant) GetEmployees(w http.ResponseWriter, r *http.Request) {
+	employeeAuth := jwt.MustGetEmployeeFromContext(r.Context())
+
+	employees, err := m.Postgresdb.GetEmployeesByMerchant(r.Context(), employeeAuth.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, employees)
+}
+
+func (m *Merchant) GetEmployee(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid employee id provided"))
+		return
+	}
+
+	employeeId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting employee id to int: %s", err.Error()))
+		return
+	}
+
+	employeeAuth := jwt.MustGetEmployeeFromContext(r.Context())
+
+	employee, err := m.Postgresdb.GetEmployeeById(r.Context(), employeeAuth.MerchantId, employeeId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving employee by id: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, employee)
+}
+
+func (m *Merchant) NewEmployee(w http.ResponseWriter, r *http.Request) {
+	type newEmployee struct {
+		Role        types.EmployeeRole `json:"role" validate:"required"`
+		FirstName   string             `json:"first_name" validate:"required"`
+		LastName    string             `json:"last_name" validate:"required"`
+		Email       *string            `json:"email"`
+		PhoneNumber *string            `json:"phone_number"`
+		IsActive    bool               `json:"is_active"`
+	}
+
+	var ne newEmployee
+
+	if err := validate.ParseStruct(r, &ne); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if ne.Role == types.EmployeeRoleOwner {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error there can only be 1 owner"))
+		return
+	}
+
+	employeeAuth := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err := m.Postgresdb.NewEmployee(r.Context(), employeeAuth.MerchantId, database.PublicEmployee{
+		Role:        ne.Role,
+		FirstName:   &ne.FirstName,
+		LastName:    &ne.LastName,
+		Email:       ne.Email,
+		PhoneNumber: ne.PhoneNumber,
+		IsActive:    ne.IsActive,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new employee by id: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) UpdateEmployee(w http.ResponseWriter, r *http.Request) {
+	type employeeUpdate struct {
+		Role        types.EmployeeRole `json:"role" validate:"required"`
+		FirstName   string             `json:"first_name" validate:"required"`
+		LastName    string             `json:"last_name" validate:"required"`
+		Email       *string            `json:"email"`
+		PhoneNumber *string            `json:"phone_number"`
+		IsActive    bool               `json:"is_active"`
+	}
+
+	var eu employeeUpdate
+
+	if err := validate.ParseStruct(r, &eu); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid employee id provided"))
+		return
+	}
+
+	employeeId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting employee id to int: %s", err.Error()))
+		return
+	}
+
+	if eu.Role == types.EmployeeRoleOwner {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error there can only be 1 owner"))
+		return
+	}
+
+	employeeAuth := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err = m.Postgresdb.UpdateEmployeeById(r.Context(), employeeAuth.MerchantId, database.PublicEmployee{
+		Id:          employeeId,
+		Role:        eu.Role,
+		FirstName:   &eu.FirstName,
+		LastName:    &eu.LastName,
+		Email:       eu.Email,
+		PhoneNumber: eu.PhoneNumber,
+		IsActive:    eu.IsActive,
+	})
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while updating employee by id: %s", err.Error()))
+		return
+	}
+}
+
+func (m *Merchant) DeleteEmployee(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid employee id provided"))
+		return
+	}
+
+	employeeId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting employee id to int: %s", err.Error()))
+		return
+	}
+
+	employeeAuth := jwt.MustGetEmployeeFromContext(r.Context())
+
+	err = m.Postgresdb.DeleteEmployeeById(r.Context(), employeeAuth.MerchantId, employeeId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while deleting employee by id: %s", err.Error()))
+		return
+	}
 }

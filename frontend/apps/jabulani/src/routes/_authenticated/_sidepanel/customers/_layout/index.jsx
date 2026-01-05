@@ -196,7 +196,7 @@ function CustomersPage() {
             onEdit={(customer) => {
               navigate({
                 from: Route.fullPath,
-                to: `/customers/edit/${customer.id}`,
+                to: `edit/${customer.id}`,
               });
             }}
             onDelete={deleteHandler}

@@ -36,7 +36,7 @@ type Employee struct {
 	Id          int                `json:"id"`
 	UserId      *uuid.UUID         `json:"user_id"`
 	MerchantId  uuid.UUID          `json:"merchant_id"`
-	Role        types.EmployeeRole `json:"employee_role"`
+	Role        types.EmployeeRole `json:"role"`
 	FirstName   *string            `json:"first_name"`
 	LastName    *string            `json:"last_name"`
 	Email       *string            `json:"email"`
@@ -900,7 +900,7 @@ func (s *service) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merc
 func (s *service) UpdateBlockedTime(ctx context.Context, bt BlockedTime) error {
 	query := `
 	update "BlockedTime"
-	set blocked_type_id = $4, name = $5, from_date = $6, to_date = $7, all_day = $8 
+	set blocked_type_id = $4, name = $5, from_date = $6, to_date = $7, all_day = $8
 	where merchant_id = $1 and employee_id = $2 and ID = $3`
 
 	_, err := s.db.Exec(ctx, query, bt.MerchantId, bt.EmployeeId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
@@ -939,10 +939,10 @@ type EmployeeForCalendar struct {
 	LastName  string `json:"last_name" db:"last_name"`
 }
 
-func (s *service) GetEmployeesByMerchant(ctx context.Context, merchantId uuid.UUID) ([]EmployeeForCalendar, error) {
+func (s *service) GetEmployeesForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]EmployeeForCalendar, error) {
 	query := `
 	select e.id, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name
-	 from "Employee" e
+	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1`
 
@@ -1011,6 +1011,95 @@ func (s *service) DeleteBlockedTimeType(ctx context.Context, merchantId uuid.UUI
 	delete from "BlockedTimeType" where merchant_id = $1 and id = $2`
 
 	_, err := s.db.Exec(ctx, query, merchantId, typeId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type PublicEmployee struct {
+	Id          int                `json:"id" db:"id"`
+	Role        types.EmployeeRole `json:"role" db:"role"`
+	FirstName   *string            `json:"first_name" db:"first_name"`
+	LastName    *string            `json:"last_name" db:"last_name"`
+	Email       *string            `json:"email" db:"email"`
+	PhoneNumber *string            `json:"phone_number" db:"phone_number"`
+	IsActive    bool               `json:"is_active" db:"is_active"`
+}
+
+func (s *service) GetEmployeesByMerchant(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error) {
+	query := `
+	select e.id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
+	from "Employee" e
+	left join "User" u on u.id = e.user_id
+	where merchant_id = $1`
+
+	rows, _ := s.db.Query(ctx, query, merchantId)
+	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicEmployee])
+	if err != nil {
+		return []PublicEmployee{}, err
+	}
+
+	return members, nil
+}
+
+func (s *service) GetEmployeeById(ctx context.Context, merchantId uuid.UUID, memberId int) (PublicEmployee, error) {
+	query := `
+	select e.id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
+	from "Employee" e
+	left join "User" u on u.id = e.user_id
+	where merchant_id = $1 and e.id = $2
+	`
+
+	rows, _ := s.db.Query(ctx, query, merchantId, memberId)
+	member, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[PublicEmployee])
+	if err != nil {
+		return PublicEmployee{}, err
+	}
+
+	return member, nil
+}
+
+func (s *service) NewEmployee(ctx context.Context, merchantId uuid.UUID, emp PublicEmployee) error {
+	query := `
+	insert into "Employee" (merchant_id, role, first_name, last_name, email, phone_number, is_active)
+	values ($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	_, err := s.db.Exec(ctx, query, merchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber, emp.IsActive)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) UpdateEmployeeById(ctx context.Context, merchantId uuid.UUID, employee PublicEmployee) error {
+	query := `
+	update "Employee"
+	set role = $3, first_name = $4, last_name = $5, email = $6, phone_number = $7, is_active = $8
+	where merchant_id = $1 and id = $2
+	`
+
+	_, err := s.db.Exec(ctx, query, merchantId, employee.Id, employee.Role, employee.FirstName, employee.LastName, employee.Email,
+		employee.PhoneNumber, employee.IsActive)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) DeleteEmployeeById(ctx context.Context, merchantId uuid.UUID, employeeId int) error {
+	query := `
+	delete from "Employee"
+	where merchant_id = $1 and id = $2 and role not in ('owner')
+	`
+
+	_, err := s.db.Exec(ctx, query, merchantId, employeeId)
 	if err != nil {
 		return err
 	}

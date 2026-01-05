@@ -93,6 +93,11 @@ function SidePanelLayout() {
       icon: <CustomersIcon styles="size-5" />,
     },
     {
+      href: "/team",
+      label: "Team",
+      icon: <CustomersIcon styles="size-5" />,
+    },
+    {
       href: "/products",
       label: "Products",
       icon: <ProductIcon styles="size-5" />,

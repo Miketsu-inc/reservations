@@ -3,10 +3,10 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import CustomerPage from "./-components/CustomerPage";
+import EmployeePage from "./-components/EmployeePage";
 
-async function fetchCustomerData(id) {
-  const response = await fetch(`/api/v1/merchants/customers/${id}`, {
+async function fetchEmployee(id) {
+  const response = await fetch(`/api/v1/merchants/employees/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -23,19 +23,19 @@ async function fetchCustomerData(id) {
   }
 }
 
-function customerQueryOptions(id) {
+export function employeeQueryOptions(id) {
   return queryOptions({
-    queryKey: ["customer", id],
-    queryFn: () => fetchCustomerData(id),
+    queryKey: ["employee", id],
+    queryFn: () => fetchEmployee(id),
   });
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/edit/$id"
+  "/_authenticated/_sidepanel/team/edit/$id"
 )({
   component: RouteComponent,
-  loader: ({ context: { queryClient }, params }) => {
-    return queryClient.ensureQueryData(customerQueryOptions(params.id));
+  loader: async ({ context: { queryClient }, params }) => {
+    await queryClient.ensureQueryData(employeeQueryOptions(params.id));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -43,25 +43,29 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+  const { id } = Route.useParams({ from: Route.id });
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
-  const { id } = Route.useParams();
-  const { data, isLoading, isError, error } = useQuery(
-    customerQueryOptions(id)
-  );
 
-  async function saveCustomerHandler(customer) {
+  const {
+    data: employee,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(employeeQueryOptions(id));
+
+  async function saveEmployee(employee) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/${customer.id}`,
+        `/api/v1/merchants/employees/${employee.id}`,
         {
           method: "PUT",
           headers: {
             Accept: "application/json",
             "content-type": "application/json",
           },
-          body: JSON.stringify(customer),
+          body: JSON.stringify(employee),
         }
       );
 
@@ -71,7 +75,7 @@ function RouteComponent() {
         setServerError(result.error.message);
       } else {
         showToast({
-          message: "Customer modified successfully",
+          message: "Employee modified successfully",
           variant: "success",
         });
         router.navigate({
@@ -95,7 +99,7 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <CustomerPage customer={data} onSave={saveCustomerHandler} />
+      <EmployeePage employee={employee} onSave={saveEmployee} />
     </>
   );
 }

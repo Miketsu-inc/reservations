@@ -1,3 +1,4 @@
+export { default as Avatar } from "./Avatar.jsx";
 export { default as Breadcrumbs } from "./Breadcrumbs.jsx";
 export { default as Button } from "./Button.jsx";
 export { default as Card } from "./Card.jsx";

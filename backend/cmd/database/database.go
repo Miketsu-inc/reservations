@@ -140,7 +140,17 @@ type PostgreSQL interface {
 	// Delete blocked time type for a merchant by id
 	DeleteBlockedTimeType(context.Context, uuid.UUID, int) error
 	// Get employees by merchant
-	GetEmployeesByMerchant(context.Context, uuid.UUID) ([]EmployeeForCalendar, error)
+	GetEmployeesForCalendarByMerchant(context.Context, uuid.UUID) ([]EmployeeForCalendar, error)
+	// Get employees for merchant
+	GetEmployeesByMerchant(context.Context, uuid.UUID) ([]PublicEmployee, error)
+	// Get employee by id
+	GetEmployeeById(context.Context, uuid.UUID, int) (PublicEmployee, error)
+	// Create new employee
+	NewEmployee(context.Context, uuid.UUID, PublicEmployee) error
+	// Update employee by id
+	UpdateEmployeeById(context.Context, uuid.UUID, PublicEmployee) error
+	// Delete employee by id
+	DeleteEmployeeById(context.Context, uuid.UUID, int) error
 
 	// -- Location --
 

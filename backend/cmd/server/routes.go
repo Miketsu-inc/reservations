@@ -272,6 +272,12 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Get("/calendar/employees", merchantHandler.GetEmployeesForCalendar)
 			r.Get("/calendar/services", merchantHandler.GetServicesForCalendar)
 			r.Get("/calendar/customers", merchantHandler.GetCustomersForCalendar)
+
+			r.Get("/employees", merchantHandler.GetEmployees)
+			r.Post("/employees", merchantHandler.NewEmployee)
+			r.Get("/employees/{id}", merchantHandler.GetEmployee)
+			r.Put("/employees/{id}", merchantHandler.UpdateEmployee)
+			r.Delete("/employees/{id}", merchantHandler.DeleteEmployee)
 		})
 	})
 }
