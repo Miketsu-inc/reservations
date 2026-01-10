@@ -51,35 +51,31 @@ export default function BookingDonutChart({ upcoming, cancelled, completed }) {
   );
 }
 
-const TooltipContent = ({ active, payload, total }) => {
-  if (active && payload && payload.length) {
-    const data = payload[0]?.payload;
-    const percentage = total > 0 ? Math.round((data.value / total) * 100) : 0;
+const TooltipContent = ({ payload, total }) => {
+  const data = payload[0]?.payload;
+  const percentage = total > 0 ? Math.round((data?.value / total) * 100) : 0;
 
-    return (
+  return (
+    <div
+      className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border
+        border-gray-200 p-2 text-xs shadow-xl dark:border-gray-800"
+    >
       <div
-        className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border
-          border-gray-200 p-2 text-xs shadow-xl dark:border-gray-800"
+        className="text-text_color flex items-center justify-between
+          font-semibold"
       >
-        <div
-          className="text-text_color flex items-center justify-between
-            font-semibold"
-        >
-          <div className="flex items-center gap-2">
-            <span
-              className="size-2.5 shrink-0 rounded-xs"
-              style={{ backgroundColor: data.fill }}
-            />
-            {data.name}
-          </div>
-          <span>{data.value}</span>
+        <div className="flex items-center gap-2">
+          <span
+            className="size-2.5 shrink-0 rounded-xs"
+            style={{ backgroundColor: data?.fill }}
+          />
+          {data?.name}
         </div>
-        <div className="text-text_color/70 mt-1">Rate: {percentage}%</div>
+        <span>{data?.value}</span>
       </div>
-    );
-  }
-
-  return null;
+      <div className="text-text_color/70 mt-1">Rate: {percentage}%</div>
+    </div>
+  );
 };
 
 // const LabelContent = ({ viewBox, completionRate }) => {
