@@ -25,8 +25,6 @@ export default function EmployeePage({ employee, onSave }) {
   }, [employee]);
   const [employeeData, setEmployeeData] = useState(originalData);
 
-  console.log(employeeData);
-
   const router = useRouter();
 
   function updateEmployeeData(data) {
@@ -46,21 +44,14 @@ export default function EmployeePage({ employee, onSave }) {
       changes.id = employeeData.id;
     }
 
-    console.log("employeeData: ", employeeData);
-
+    // first_name, last_name and role cannot be "" as they are required fields
     employeeFields.forEach((field) => {
-      if (employeeData[field] !== originalData[field]) {
+      if (employeeData[field] === "") {
+        changes[field] = null;
+      } else {
         changes[field] = employeeData[field];
       }
     });
-
-    console.log("changes before: ", changes);
-
-    if (!changes["is_active"]) {
-      changes["is_active"] = employeeData["is_active"];
-    }
-
-    console.log("changes after: ", changes);
 
     onSave(changes);
   }
