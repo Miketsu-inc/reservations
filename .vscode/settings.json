@@ -20,5 +20,12 @@
   "tailwindCSS.classAttributes": ["class", "className", "styles"],
   "emmet.showAbbreviationSuggestions": false,
   "emmet.showExpandedAbbreviation": "never",
-  "eslint.workingDirectories": [{ "directory": "frontend", "!cwd": true }]
+  "eslint.workingDirectories": [{ "directory": "frontend", "!cwd": true }],
+  "workbench.editor.customLabels.patterns": {
+    "**/index.jsx": "${dirname}/index.jsx",
+    "**/new.jsx": "${dirname}/new.jsx",
+    "**/edit.$id.jsx": "${dirname}/edit.$id.jsx",
+    "**/index.js": "${dirname}/index.js",
+    "**/index.html": "${dirname}/index.html"
+  }
 }
