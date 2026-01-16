@@ -18,31 +18,23 @@ import {
 import {
   blockedTimeTypesQueryOptions,
   formatDuration,
+  GenerateTimeOptions,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
-const generateTimeOptions = (time_format) => {
-  const options = [];
+function getFormattedLabel(timeValue, timeFormat) {
+  if (!timeValue) return "";
+  const [hours, minutes] = timeValue.split(":").map(Number);
 
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute of [0, 30]) {
-      const value = `${hour.toString().padStart(2, "0")}:${minute === 0 ? "00" : "30"}`;
-
-      let label;
-      if (time_format === "12-hour") {
-        const period = hour >= 12 ? "PM" : "AM";
-        const hour12 = hour % 12 || 12;
-        label = `${hour12}:${minute === 0 ? "00" : "30"} ${period}`;
-      } else {
-        label = `${hour}:${minute === 0 ? "00" : "30"}`;
-      }
-
-      options.push({ label, value });
-    }
+  if (timeFormat === "12-hour") {
+    const period = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    return `${hour12}:${minutes.toString().padStart(2, "0")} ${period}`;
   }
-  return options;
-};
+
+  return `${hours}:${minutes.toString().padStart(2, "0")}`;
+}
 
 function startOfDay(date) {
   const d = new Date(date);
@@ -103,13 +95,30 @@ export default function BlockedTimeModal({
   // const { data: employees = [] } = useQuery(employeeQueryOptions());
 
   const isEditing = blockedTime !== null;
-  const timeOptions = generateTimeOptions(preferences?.time_format);
+  const originalTimeOptions = GenerateTimeOptions(preferences?.time_format);
+  const initialToTime =
+    !blockedTime?.extendedProps?.allDay && blockedTime?.end
+      ? timeStringFromDate(blockedTime?.end).split(" ")[0]
+      : "17:00";
+  const [timeOptions, setTimeOptions] = useState(() => {
+    const options = originalTimeOptions;
+    const timeExists = options.some((opt) => opt.value === initialToTime);
+
+    if (!timeExists) {
+      options.push({
+        value: initialToTime,
+        label: getFormattedLabel(initialToTime, preferences?.time_format),
+      });
+    }
+    return options;
+  });
+
   const [isDatepickerOpen, setIsDatepickerOpen] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     id: blockedTime?.extendedProps?.id || null,
-    blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || null,
+    blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
     name: blockedTime?.extendedProps?.name || "",
     employee_id: blockedTime?.extendedProps.employee_id || "",
     date: blockedTime?.start || new Date(),
@@ -117,17 +126,11 @@ export default function BlockedTimeModal({
       !blockedTime?.extendedProps?.allDay && blockedTime?.start
         ? timeStringFromDate(blockedTime?.start).split(" ")[0]
         : "09:00",
-    to_time:
-      !blockedTime?.extendedProps?.allDay && blockedTime?.end
-        ? timeStringFromDate(blockedTime?.end).split(" ")[0]
-        : "17:00",
+    to_time: initialToTime,
     all_day: blockedTime?.extendedProps?.allDay ?? false,
   });
-  const initialActiveType =
-    isEditing && formData?.blocked_type_id === null
-      ? "custom"
-      : formData?.blocked_type_id;
-  const [activeType, setActiveType] = useState(initialActiveType);
+
+  const [activeType, setActiveType] = useState(formData.blocked_type_id);
 
   const { data: blockedTypes = [] } = useQuery(blockedTimeTypesQueryOptions());
 
@@ -277,9 +280,18 @@ export default function BlockedTimeModal({
       const totalMinutes = hours * 60 + minutes + durationMinutes;
       const endHours = Math.floor(totalMinutes / 60) % 24;
       const endMins = totalMinutes % 60;
-      const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
-      // because the select has 30 minute gaps if a blocked type has lets say 40m than the to select will be empty
-      updateBlockedTimeData({ to_time: endTime });
+      const endTimeValue = `${endHours.toString().padStart(2, "0")}:${endMins
+        .toString()
+        .padStart(2, "0")}`;
+
+      const timeExists = timeOptions.some((opt) => opt.value === endTimeValue);
+
+      if (!timeExists) {
+        const label = getFormattedLabel(endTimeValue, preferences?.time_format);
+        setTimeOptions((prev) => [...prev, { label, value: endTimeValue }]);
+      }
+
+      updateBlockedTimeData({ to_time: endTimeValue });
     }
   }
 
@@ -355,7 +367,8 @@ export default function BlockedTimeModal({
               <div className="flex w-full flex-col gap-1">
                 <label className="text-sm">From</label>
                 <Select
-                  options={timeOptions.filter(
+                  allOptions={timeOptions}
+                  options={originalTimeOptions.filter(
                     (option) => option.value !== "23:30:00"
                   )}
                   value={formData.from_time}
@@ -370,7 +383,8 @@ export default function BlockedTimeModal({
               <div className="flex w-full flex-col gap-1">
                 <label className="text-sm">To</label>
                 <Select
-                  options={timeOptions.filter(
+                  allOptions={timeOptions}
+                  options={originalTimeOptions.filter(
                     (option) => option.value > formData.from_time
                   )}
                   value={formData.to_time}
@@ -436,6 +450,7 @@ export default function BlockedTimeModal({
 
 function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
   const scrollRef = useRef(null);
+  const hasTypes = blockedTypes && blockedTypes.length > 0;
 
   let selectedIndex = -1;
 
@@ -470,20 +485,23 @@ function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 dark:scheme-dark"
+        className={`flex gap-3 pb-2 dark:scheme-dark ${
+          hasTypes ? "overflow-x-auto" : "w-full"
+        }`}
       >
         <button
           type="button"
           onClick={() => onSelect("custom")}
-          className={`flex h-26 w-28 shrink-0 flex-col items-center
-            justify-center gap-2 rounded-md border-2 transition-all ${
+          className={`flex shrink-0 items-center justify-center gap-2 rounded-md
+            border-2 transition-all ${
               activeType === "custom"
                 ? "border-primary"
                 : "border-border_color hover:border-gray-400"
-            }`}
+            } ${hasTypes ? "h-26 w-28 flex-col" : "w-full flex-row p-3"}`}
         >
-          <EditIcon styles="size-6 mt-3" />
-          <div className="text-center">
+          <EditIcon styles={hasTypes ? "size-6 mt-3" : "size-5"} />
+
+          <div className={hasTypes ? "text-center" : "text-left"}>
             <div className="text-sm font-medium">Custom</div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
               New blocked time

@@ -1,27 +1,6 @@
 import { PlusIcon, TrashBinIcon } from "@reservations/assets";
 import { Select, Switch } from "@reservations/components";
-
-const generateTimeOptions = (time_format) => {
-  const options = [];
-
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute of [0, 30]) {
-      const value = `${hour.toString().padStart(2, "0")}:${minute === 0 ? "00" : "30"}:00`;
-
-      let label;
-      if (time_format === "12-hour") {
-        const period = hour >= 12 ? "PM" : "AM";
-        const hour12 = hour % 12 || 12;
-        label = `${hour12}:${minute === 0 ? "00" : "30"} ${period}`;
-      } else {
-        label = `${hour}:${minute === 0 ? "00" : "30"}`;
-      }
-
-      options.push({ label, value });
-    }
-  }
-  return options;
-};
+import { GenerateTimeOptions } from "@reservations/lib";
 
 const days = {
   1: "Monday",
@@ -34,7 +13,7 @@ const days = {
 };
 
 export default function BusinessHours({ data, setBusinessHours, preferences }) {
-  const timeOptions = generateTimeOptions(preferences?.time_format);
+  const timeOptions = GenerateTimeOptions(preferences?.time_format);
   const dayOrder =
     preferences?.first_day_of_week === "Sunday"
       ? [0, 1, 2, 3, 4, 5, 6]

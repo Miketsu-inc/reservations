@@ -216,3 +216,25 @@ export function GetDayPickerWindow(month, firstDayOfWeek = "Monday") {
     end: formatToDateString(end),
   };
 }
+
+export function GenerateTimeOptions(time_format) {
+  const options = [];
+
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute of [0, 30]) {
+      const value = `${hour.toString().padStart(2, "0")}:${minute === 0 ? "00" : "30"}`;
+
+      let label;
+      if (time_format === "12-hour") {
+        const period = hour >= 12 ? "PM" : "AM";
+        const hour12 = hour % 12 || 12;
+        label = `${hour12}:${minute === 0 ? "00" : "30"} ${period}`;
+      } else {
+        label = `${hour}:${minute === 0 ? "00" : "30"}`;
+      }
+
+      options.push({ label, value });
+    }
+  }
+  return options;
+}

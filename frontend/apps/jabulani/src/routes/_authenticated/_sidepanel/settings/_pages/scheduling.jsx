@@ -130,7 +130,7 @@ function BlockedTimesManager() {
           blockedTypes.map((type) => (
             <Card key={type.id} styles="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="text-4xl">{type.icon}</div>
+                <div className="mb-1 text-4xl">{type.icon}</div>
                 <div>
                   <div className="text-text_color font-medium">{type.name}</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">

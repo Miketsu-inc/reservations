@@ -2167,7 +2167,7 @@ func (m *Merchant) NewBlockedTimeType(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
-	fmt.Printf("here is the icon: %s\n", btt.Icon)
+
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
 	err := m.Postgresdb.NewBlockedTimeType(r.Context(), employee.MerchantId, database.BlockedTimeType{

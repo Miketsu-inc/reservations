@@ -29,10 +29,9 @@ export default function Select({
   const dropDownListRef = useRef(null);
 
   const fullOptions = allOptions || options;
-  const selectedIndex = fullOptions?.findIndex(
-    (option) => option.value === value
-  );
-  const selectedOption = fullOptions?.[selectedIndex];
+  const selectedOption = fullOptions?.find((option) => option.value === value);
+  //index should be from the actually  rendered options
+  const selectedIndex = options?.findIndex((option) => option.value === value);
 
   function handleOpen() {
     setIsOpen(true);
@@ -74,7 +73,7 @@ export default function Select({
 
     const timeout = setTimeout(() => {
       if (dropDownListRef.current?.children) {
-        dropDownListRef.current.children[selectedIndex].scrollIntoView({
+        dropDownListRef.current.children[selectedIndex]?.scrollIntoView({
           block: "center",
           behavior: "smooth",
         });

@@ -107,7 +107,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-screen px-4 md:px-0">
       <p className="py-6 text-xl font-semibold">Team members</p>
       <ServerError error={serverError} />
       <div className="h-2/3">
