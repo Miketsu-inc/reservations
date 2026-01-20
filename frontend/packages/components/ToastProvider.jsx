@@ -44,22 +44,22 @@ const icons = {
       className="w-min rounded-full border border-green-700
         dark:border-green-600"
     >
-      <TickIcon styles="h-6 w-6 dark:fill-green-600 fill-green-700" />
+      <TickIcon styles="size-6 dark:fill-green-600 fill-green-700" />
     </div>
   ),
   error: (
     <div
       className="w-min rounded-full border border-red-700 dark:border-red-600"
     >
-      <XIcon styles="h-6 w-6 dark:fill-red-600 fill-red-700" />
+      <XIcon styles="size-6 dark:fill-red-600 fill-red-700" />
     </div>
   ),
   warning: (
     <div className="w-min rounded-full">
-      <WarningIcon styles="h-6 w-6 fill-yellow-600" />
+      <WarningIcon styles="size-6 fill-yellow-600" />
     </div>
   ),
-  info: <InfoIcon styles="h-7 w-7 text-blue-600 stroke-blue-600" />,
+  info: <InfoIcon styles="size-7 text-blue-600 stroke-blue-600" />,
 };
 
 const typeStyles = {
@@ -100,7 +100,7 @@ function ToastElement({ variant, message, onClose, duration = 5000 }) {
       >
         <XIcon
           onClick={onClose}
-          styles="h-6 w-6 dark:fill-gray-400 m-1 fill-gray-500
+          styles="size-6 dark:fill-gray-400 m-1 fill-gray-500
             group-hover:fill-current cursor-pointer"
         />
       </div>

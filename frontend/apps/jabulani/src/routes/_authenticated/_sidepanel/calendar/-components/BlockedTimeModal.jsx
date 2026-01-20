@@ -363,39 +363,38 @@ export default function BlockedTimeModal({
             />
           </div>
           {!formData?.all_day && (
-            <div className="text-text_color flex w-full items-center gap-4">
-              <div className="flex w-full flex-col gap-1">
-                <label className="text-sm">From</label>
-                <Select
-                  allOptions={timeOptions}
-                  options={originalTimeOptions.filter(
-                    (option) => option.value !== "23:30:00"
-                  )}
-                  value={formData.from_time}
-                  onSelect={(option) =>
-                    updateBlockedTimeData({ from_time: option.value })
-                  }
-                  styles="flex-1"
-                  maxVisibleItems={7}
-                  onOpenChange={(open) => setIsSelectOpen(open)}
-                />
-              </div>
-              <div className="flex w-full flex-col gap-1">
-                <label className="text-sm">To</label>
-                <Select
-                  allOptions={timeOptions}
-                  options={originalTimeOptions.filter(
-                    (option) => option.value > formData.from_time
-                  )}
-                  value={formData.to_time}
-                  onSelect={(option) =>
-                    updateBlockedTimeData({ to_time: option.value })
-                  }
-                  styles="flex-1"
-                  maxVisibleItems={7}
-                  onOpenChange={(open) => setIsSelectOpen(open)}
-                />
-              </div>
+            <div className="text-text_color grid grid-cols-2 gap-4">
+              <Select
+                allOptions={timeOptions}
+                options={originalTimeOptions.filter(
+                  (option) => option.value !== "23:30:00"
+                )}
+                value={formData.from_time}
+                labelText="From"
+                required={false}
+                onSelect={(option) =>
+                  updateBlockedTimeData({ from_time: option.value })
+                }
+                styles="flex-1"
+                maxVisibleItems={7}
+                onOpenChange={(open) => setIsSelectOpen(open)}
+              />
+
+              <Select
+                allOptions={timeOptions}
+                options={originalTimeOptions.filter(
+                  (option) => option.value > formData.from_time
+                )}
+                value={formData.to_time}
+                labelText="To"
+                required={false}
+                onSelect={(option) =>
+                  updateBlockedTimeData({ to_time: option.value })
+                }
+                styles="flex-1"
+                maxVisibleItems={7}
+                onOpenChange={(open) => setIsSelectOpen(open)}
+              />
             </div>
           )}
           {/* <div className="flex w-full flex-col gap-1">

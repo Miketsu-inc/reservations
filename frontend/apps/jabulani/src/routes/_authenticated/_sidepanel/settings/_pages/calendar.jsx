@@ -165,36 +165,29 @@ function CalendarPage() {
         />
       </div>
       <div className="flex flex-col gap-6">
-        <label
-          htmlFor="desktop-view"
-          className="flex flex-col gap-2 font-semibold"
-        >
-          Desktop Default View
-          <Select
-            options={calendarViewOptions}
-            value={preferences.calendar_view}
-            onSelect={(option) =>
-              handleInputChange("calendar_view", option.value)
-            }
-            placeholder=""
-            styles="font-normal md:w-2/3"
-          />
-        </label>
-        <label
-          htmlFor="mobile-view"
-          className="flex flex-col gap-2 font-semibold"
-        >
-          Mobile Default View
-          <Select
-            options={calendarViewOptions}
-            value={preferences.calendar_view_mobile}
-            onSelect={(option) =>
-              handleInputChange("calendar_view_mobile", option.value)
-            }
-            placeholder=""
-            styles="font-normal md:w-2/3"
-          />
-        </label>
+        <Select
+          options={calendarViewOptions}
+          value={preferences.calendar_view}
+          labelText="Desktop Default View"
+          required={false}
+          onSelect={(option) =>
+            handleInputChange("calendar_view", option.value)
+          }
+          placeholder=""
+          styles="font-normal md:w-2/3"
+        />
+
+        <Select
+          options={calendarViewOptions}
+          value={preferences.calendar_view_mobile}
+          labelText="Mobile Default View"
+          required={false}
+          onSelect={(option) =>
+            handleInputChange("calendar_view_mobile", option.value)
+          }
+          placeholder=""
+          styles="font-normal md:w-2/3"
+        />
       </div>
 
       <div className="flex justify-between gap-10 md:flex-row">
@@ -232,18 +225,17 @@ function CalendarPage() {
       {errorMessage && (
         <div className="text-sm text-red-500">{errorMessage}</div>
       )}
-      <label htmlFor="time-slot" className="flex flex-col gap-2 font-semibold">
-        Time slot frequency
-        <Select
-          options={TimeFrequencyOptions}
-          value={preferences.time_frequency}
-          onSelect={(option) =>
-            handleInputChange("time_frequency", option.value)
-          }
-          placeholder=""
-          styles="font-normal md:w-2/3"
-        />
-      </label>
+
+      <Select
+        options={TimeFrequencyOptions}
+        value={preferences.time_frequency}
+        labelText="Time slot frequency"
+        required={false}
+        onSelect={(option) => handleInputChange("time_frequency", option.value)}
+        placeholder=""
+        styles="font-normal md:w-2/3"
+      />
+
       <div className="flex flex-col gap-3">
         <span className="text-text_color/70 text-sm md:w-2/3">
           Update your calendar preferences below. All fields are optional, and

@@ -59,10 +59,10 @@ export default function LowStockProductsAlert({ products, route }) {
             >
               {hasLowStock ? (
                 <WarningIcon
-                  styles="h-6 w-6 shrink-0 text-amber-600 dark:text-amber-400"
+                  styles="size-6 shrink-0 text-amber-600 dark:text-amber-400"
                 />
               ) : (
-                <ProductIcon styles="h-6 w-6 shrink-0 text-green-600" />
+                <ProductIcon styles="size-6 shrink-0 text-green-600" />
               )}
             </div>
             <div>
@@ -91,7 +91,7 @@ export default function LowStockProductsAlert({ products, route }) {
         </div>
 
         {hasLowStock ? (
-          <div className="max-h-[230px] overflow-y-auto px-2 dark:scheme-dark">
+          <div className="max-h-57.5 overflow-y-auto px-2 dark:scheme-dark">
             <div>
               {products.map((product) => {
                 const {
@@ -111,7 +111,7 @@ export default function LowStockProductsAlert({ products, route }) {
                     >
                       <div className="flex items-center">
                         <div
-                          className={`h-2 w-2 rounded-full ${getProgressColor(
+                          className={`size-2 rounded-full ${getProgressColor(
                             product.current_amount, product.fill_ratio )}`}
                         ></div>
                         <span
@@ -167,7 +167,7 @@ export default function LowStockProductsAlert({ products, route }) {
               className="mb-4 flex w-min items-center justify-center
                 rounded-full bg-green-100 p-2 dark:bg-green-500/20"
             >
-              <TickIcon styles="h-12 w-12 text-green-600" />
+              <TickIcon styles="size-12 text-green-600" />
             </div>
 
             <p className="text-sm text-gray-600 dark:text-gray-400">

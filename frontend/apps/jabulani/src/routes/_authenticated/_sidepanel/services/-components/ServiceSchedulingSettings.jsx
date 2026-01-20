@@ -58,7 +58,7 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
         className={`flex flex-col gap-6 px-4 transition-[max-height,opacity]
           duration-200 ease-in-out ${
             isOpen
-              ? "max-h-[1000px] pb-4 opacity-100"
+              ? "max-h-250 pb-4 opacity-100"
               : "max-h-0 overflow-hidden opacity-0"
           }`}
       >
@@ -85,16 +85,15 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           className={`grid grid-cols-1 gap-6 transition-[max-height,opacity]
             ease-in-out lg:grid-cols-2 ${
               showCustomSettings
-                ? "max-h-[1000px] pb-4 opacity-100"
+                ? "max-h-250 pb-4 opacity-100"
                 : "max-h-0 overflow-hidden opacity-0"
             }`}
         >
           <div className="flex flex-col gap-2">
-            <label className="text-text_color text-sm font-medium">
-              Minimum cancellation notice
-            </label>
             <Select
               options={CANCEL_DEADLINE_OPTIONS}
+              labelText="Minimum cancellation notice"
+              required={false}
               value={settings.cancel_deadline}
               onSelect={(option) =>
                 onUpdate({
@@ -110,11 +109,10 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-text_color text-sm font-medium">
-              Buffer time between appointments
-            </label>
             <Select
               options={BUFFER_TIME_OPTIONS}
+              labelText="Buffer time between appointments"
+              required={false}
               value={settings.buffer_time}
               onSelect={(option) =>
                 onUpdate({
@@ -130,11 +128,10 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-text_color text-sm font-medium">
-              Minimum advance booking
-            </label>
             <Select
               options={BOOKING_WINDOW_MIN_OPTIONS}
+              labelText="Minimum advance booking"
+              required={false}
               value={settings.booking_window_min}
               onSelect={(option) =>
                 onUpdate({
@@ -150,11 +147,10 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-text_color text-sm font-medium">
-              Maximum advance booking
-            </label>
             <Select
               options={BOOKING_WINDOW_MAX_OPTIONS}
+              labelText="Maximum advance booking"
+              required={false}
               value={settings.booking_window_max}
               onSelect={(option) =>
                 onUpdate({

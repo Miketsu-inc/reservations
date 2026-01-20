@@ -11,6 +11,7 @@ export default function ComboBox({
   maxVisibleItems = 7,
   emptyText,
   onOpenChange,
+  labelText,
 }) {
   const [searchText, setSearchText] = useState("");
 
@@ -25,6 +26,7 @@ export default function ComboBox({
       value={value}
       onSelect={onSelect}
       placeholder={placeholder}
+      labelText={labelText}
       styles={styles}
       maxVisibleItems={maxVisibleItems}
       extraContent={

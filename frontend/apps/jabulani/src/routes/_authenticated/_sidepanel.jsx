@@ -146,7 +146,7 @@ function SidePanelLayout() {
               onClick={() => setIsOpened(true)}
             >
               <span className="sr-only">Open sidepanel</span>
-              <HamburgerMenuIcon styles="h-6 w-6" />
+              <HamburgerMenuIcon styles="size-6" />
             </button>
             <div className="flex flex-row gap-4">
               <a

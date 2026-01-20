@@ -264,7 +264,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                           rounded-full px-3 py-1 text-sm md:max-w-36"
                       >
                         <span
-                          className="h-3 w-3 shrink-0 rounded-full"
+                          className="size-3 shrink-0 rounded-full"
                           style={{ backgroundColor: service.color }}
                         ></span>
                         <span className="text-text_color truncate">

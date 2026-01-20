@@ -78,7 +78,7 @@ export default function ProductAdder({
         className={`px-4 transition-[max-height,opacity] duration-200
           ease-in-out ${
             isOpen
-              ? "max-h-[1000px] opacity-100"
+              ? "max-h-250 opacity-100"
               : "max-h-0 overflow-hidden opacity-0"
           }`}
       >
@@ -208,38 +208,33 @@ function ProductForm({
       onSubmit={submitHandler}
       className="flex flex-col items-center gap-4 rounded-md xl:w-1/2"
     >
-      <div className="w-full">
-        {!isWindowSmall && (
-          <label className="mb-2 block font-medium">Product</label>
-        )}
-        <ComboBox
-          styles="w-full"
-          placeholder="Select a product to add"
-          value={productData.id}
-          options={productOptions}
-          emptyText={
-            availableProducts.length === 0 ? "You have no product to add" : ""
-          }
-          onSelect={(option) => {
-            const selected = availableProducts.find(
-              (p) => p.id === option.value
-            );
-            const used = usedProducts.find((p) => p.id === selected.id);
-            setProductData((prev) => ({
-              ...prev,
-              id: selected.id,
-              unit: selected.unit,
-              amount_used: used ? used.amount_used : "",
-            }));
-            onSelectNewProduct(selected);
-          }}
-        />
-      </div>
+      <ComboBox
+        styles=""
+        labelText={!isWindowSmall ? "Product" : ""}
+        placeholder="Select a product to add"
+        value={productData.id}
+        options={productOptions}
+        emptyText={
+          availableProducts.length === 0 ? "You have no product to add" : ""
+        }
+        onSelect={(option) => {
+          const selected = availableProducts.find((p) => p.id === option.value);
+          const used = usedProducts.find((p) => p.id === selected.id);
+          setProductData((prev) => ({
+            ...prev,
+            id: selected.id,
+            unit: selected.unit,
+            amount_used: used ? used.amount_used : "",
+          }));
+          onSelectNewProduct(selected);
+        }}
+      />
+
       <div
         className={`w-full overflow-hidden transition-all duration-300
           ease-in-out ${
             productData.id !== 0 || !isWindowSmall
-              ? "max-h-[300px] opacity-100"
+              ? "max-h-75 opacity-100"
               : "pointer-events-none max-h-0 opacity-0"
           }`}
       >

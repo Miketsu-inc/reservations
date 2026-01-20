@@ -16,12 +16,11 @@ export default function SchedulingSettings({ settings, onChange }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-text_color block text-sm font-medium">
-              Minimum time required for cancellation
-            </label>
             <Select
               options={CANCEL_DEADLINE_OPTIONS}
               value={settings.cancel_deadline}
+              labelText="Minimum time required for cancellation"
+              required={false}
               onSelect={(option) =>
                 onChange({ name: "cancel_deadline", value: option.value })
               }
@@ -46,12 +45,11 @@ export default function SchedulingSettings({ settings, onChange }) {
 
           <div className="flex w-full flex-col gap-8 md:flex-row">
             <div className="flex flex-col gap-2">
-              <label className="text-text_color block text-sm font-medium">
-                Minimum advance booking time
-              </label>
               <Select
                 options={BOOKING_WINDOW_MIN_OPTIONS}
                 value={settings.booking_window_min}
+                labelText="Minimum advance booking time"
+                required={false}
                 onSelect={(option) =>
                   onChange({ name: "booking_window_min", value: option.value })
                 }
@@ -63,12 +61,11 @@ export default function SchedulingSettings({ settings, onChange }) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-text_color block text-sm font-medium">
-                Maximum advance booking time
-              </label>
               <Select
                 options={BOOKING_WINDOW_MAX_OPTIONS}
                 value={settings.booking_window_max}
+                labelText="Maximum advance booking time"
+                required={false}
                 onSelect={(option) =>
                   onChange({ name: "booking_window_max", value: option.value })
                 }
@@ -85,14 +82,12 @@ export default function SchedulingSettings({ settings, onChange }) {
           <div className="text-text_color text-lg font-medium">
             Schedule Management
           </div>
-
           <div className="flex flex-col gap-2">
-            <label className="text-text_color block text-sm font-medium">
-              Buffer time between appointments
-            </label>
             <Select
               options={BUFFER_TIME_OPTIONS}
               value={settings.buffer_time}
+              labelText="Buffer time between appointments"
+              required={false}
               onSelect={(option) =>
                 onChange({ name: "buffer_time", value: option.value })
               }

@@ -30,7 +30,7 @@ export default function Select({
 
   const fullOptions = allOptions || options;
   const selectedOption = fullOptions?.find((option) => option.value === value);
-  //index should be from the actually  rendered options
+  //index should be from the actually rendered options
   const selectedIndex = options?.findIndex((option) => option.value === value);
 
   function handleOpen() {
@@ -106,7 +106,7 @@ export default function Select({
       }}
     >
       <PopoverTrigger asChild>
-        <label>
+        <label className="w-full flex-1">
           {labelText && (
             <span className="flex items-center gap-1 pb-1 text-sm">
               {labelText}
@@ -144,7 +144,7 @@ export default function Select({
               <BackArrowIcon
                 styles={`stroke-gray-700 dark:stroke-gray-300
                   transition-transform -rotate-90 shrink-0
-                  ${isOpen ? "rotate-90" : ""} h-5 w-5`}
+                  ${isOpen ? "rotate-90" : ""} size-5`}
               />
             </div>
           </button>
@@ -152,7 +152,7 @@ export default function Select({
       </PopoverTrigger>
       <PopoverContent
         forceMount
-        styles="p-0!"
+        styles={`p-0! ${labelText && "data-[side=top]:translate-y-6"}`}
         onKeyDown={handleKeyDown}
         style={{
           width: triggerWidth || "auto",

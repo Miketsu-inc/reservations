@@ -91,7 +91,7 @@ const TooltipContent = ({ payload, label }) => {
       {payload.map((item, index) => (
         <div key={index} className="flex flex-row justify-between">
           <div className="flex flex-row items-center gap-2">
-            <div className="bg-primary h-2.5 w-2.5 shrink-0 rounded-xs"></div>
+            <div className="bg-primary size-2.5 shrink-0 rounded-xs"></div>
             <p className="text-gray-500 dark:text-gray-400">Revenue</p>
           </div>
           <p>{item.value}</p>

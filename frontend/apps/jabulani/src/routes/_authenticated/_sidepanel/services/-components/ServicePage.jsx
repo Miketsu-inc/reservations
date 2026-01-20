@@ -157,7 +157,7 @@ export default function ServicePage({
                 <div
                   style={{ backgroundColor: serviceData.color }}
                   className="size-28 shrink-0 overflow-hidden rounded-lg
-                    xl:size-[120px]"
+                    xl:size-30"
                 >
                   <img
                     className="size-full object-cover"
@@ -193,9 +193,9 @@ export default function ServicePage({
                       />
                     </Input>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex w-full gap-4 sm:grid sm:grid-cols-2">
                     <Input
-                      styles="p-2 peer"
+                      styles="p-2 peer flex-1 w-full"
                       id="price"
                       name="price"
                       type="number"
@@ -228,15 +228,15 @@ export default function ServicePage({
                         {serviceData.price?.currency || "HUF"}
                       </p>
                     </Input>
-                    <label className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
+                    <label className="flex w-auto flex-col">
+                      <div className="flex items-center gap-2 pb-1">
                         <span className="text-sm">Price Note</span>
                         <InfoIcon styles="size-4 stroke-gray-500
                           dark:stroke-gray-400" />
                       </div>
                       <Select
                         value={serviceData.price_type}
-                        styles="w-full"
+                        styles="w-28! sm:w-full!"
                         options={priceTypeOptions}
                         onSelect={(option) => {
                           updateServiceData({
@@ -277,16 +277,15 @@ export default function ServicePage({
                       {serviceData.cost?.currency || "HUF"}
                     </p>
                   </Input>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-sm">Service category</span>
-                    <Select
-                      value={serviceData.category_id}
-                      options={categoryOptions}
-                      onSelect={(option) =>
-                        updateServiceData({ category_id: option.value })
-                      }
-                    />
-                  </label>
+                  <Select
+                    value={serviceData.category_id}
+                    labelText="Service Category"
+                    required={false}
+                    options={categoryOptions}
+                    onSelect={(option) =>
+                      updateServiceData({ category_id: option.value })
+                    }
+                  />
                   <div className="flex flex-row items-center gap-3">
                     <Switch
                       defaultValue={serviceData.is_active}

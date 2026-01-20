@@ -12,7 +12,7 @@ export default function EyeSlashIcon({ role, styles, onClick }) {
         xmlns="http://www.w3.org/2000/svg"
         //is role needed anymore?
         role={role === undefined ? "button" : role}
-        className="h-5 w-5 fill-text_color"
+        className="fill-text_color size-5"
         onClick={onClick}
         viewBox="0 0 16 16"
         aria-label="hide-password button"
