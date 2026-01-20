@@ -2,6 +2,7 @@ export { default as Avatar } from "./Avatar.jsx";
 export { default as Breadcrumbs } from "./Breadcrumbs.jsx";
 export { default as Button } from "./Button.jsx";
 export { default as Card } from "./Card.jsx";
+export { default as CeckBox } from "./CheckBox.jsx";
 export { default as CloseButton } from "./CloseButton.jsx";
 export { default as ComboBox } from "./ComboBox.jsx";
 export { default as DatePicker } from "./DatePicker.jsx";
@@ -11,6 +12,7 @@ export { default as Input } from "./Input.jsx";
 export { default as InputBase } from "./InputBase.jsx";
 export { default as Loading } from "./Loading.jsx";
 export { default as Modal } from "./Modal.jsx";
+export { default as MultiSelect } from "./MultiSelect.jsx";
 export {
   Popover,
   PopoverAnchor,
