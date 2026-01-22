@@ -1069,6 +1069,8 @@ func (s *service) UpdateGroupServiceById(ctx context.Context, serv GroupServiceW
 	if err != nil {
 		return err
 	}
+
+	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
 	updatePhaseQuery := `
