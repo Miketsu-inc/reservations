@@ -9,7 +9,7 @@ const itemHeight = 36;
 export default function MultiSelect({
   options,
   values = [],
-  onChange,
+  onSelect,
   placeholder,
   labelText,
   displayText = "items",
@@ -47,17 +47,17 @@ export default function MultiSelect({
 
   function handleToggleAll() {
     if (allSelected) {
-      onChange([]);
+      onSelect([]);
     } else {
-      onChange(options.map((option) => option.id));
+      onSelect(options.map((option) => option.id));
     }
   }
 
   function handleToggleOption(optionId) {
     if (values.includes(optionId)) {
-      onChange(values.filter((id) => id !== optionId));
+      onSelect(values.filter((id) => id !== optionId));
     } else {
-      onChange([...values, optionId]);
+      onSelect([...values, optionId]);
     }
   }
 
@@ -119,7 +119,7 @@ export default function MultiSelect({
       }}
     >
       <PopoverTrigger asChild>
-        <label className="w-full flex-1">
+        <label className={`w-full ${styles}`}>
           {labelText && (
             <span className="flex items-center gap-1 pb-1 text-sm">
               {labelText}

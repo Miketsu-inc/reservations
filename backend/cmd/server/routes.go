@@ -60,6 +60,8 @@ func jabulaniRouter() chi.Router {
 		"/services",
 		"/services/new",
 		"/services/edit/{id}",
+		"/services/group/new",
+		"/services/group/edit/{id}",
 		"/customers",
 		"/customers/blacklist",
 		"/customers/new",
@@ -233,6 +235,9 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Post("/services/{id}/deactivate", merchantHandler.DeactivateService)
 			r.Post("/services/{id}/activate", merchantHandler.ActivateService)
 			r.Put("/services/reorder", merchantHandler.ReorderServices)
+			r.Post("/group-services", merchantHandler.NewGroupService)
+			r.Put("/group-services/{id}", merchantHandler.UpdateGroupService)
+			r.Get("/group-services/{id}", merchantHandler.GetGroupService)
 
 			r.Post("/services/categories", merchantHandler.NewServiceCategory)
 			r.Put("/services/categories/{id}", merchantHandler.UpdateServiceCategory)

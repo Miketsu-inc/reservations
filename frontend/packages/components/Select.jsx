@@ -106,7 +106,7 @@ export default function Select({
       }}
     >
       <PopoverTrigger asChild>
-        <label className="w-full flex-1">
+        <label className={`w-full ${styles}`}>
           {labelText && (
             <span className="flex items-center gap-1 pb-1 text-sm">
               {labelText}

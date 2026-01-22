@@ -334,7 +334,7 @@ function SelectDateTime() {
                     month={currentMonth}
                     onMonthChange={handleMonthChange}
                     startMonth={new Date()}
-                    endMonth={disabledDays.max_date}
+                    endMonth={new Date(disabledDays.max_date)}
                     animate={true}
                   />
                 </div>

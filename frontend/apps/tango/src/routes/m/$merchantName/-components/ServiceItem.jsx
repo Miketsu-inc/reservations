@@ -45,8 +45,7 @@ export default function ServiceItem({ children, service, router, locationId }) {
           className="flex flex-row items-center justify-between gap-2 md:gap-4"
         >
           <p className="w-full font-semibold">
-            {service.price &&
-              getDisplayPrice(service.price, service.price_type)}
+            {getDisplayPrice(service.price, service.price_type)}
           </p>
           {children}
         </div>

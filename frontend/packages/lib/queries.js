@@ -99,3 +99,28 @@ export function blockedTimeTypesQueryOptions() {
     queryFn: fetchBlockedTimeTypes,
   });
 }
+
+async function fetchServiceFormOptions() {
+  const response = await fetch("/api/v1/merchants/services/form-options", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function serviceFormOptionsQueryOptions() {
+  return queryOptions({
+    queryKey: ["service-from-options"],
+    queryFn: fetchServiceFormOptions,
+  });
+}

@@ -320,7 +320,7 @@ func (s *service) GetServicesForMerchantPage(ctx context.Context, merchantId uui
 	'[]'::jsonb) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
-	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null and  s.booking_type = 'appointment'
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
@@ -1013,7 +1013,7 @@ func (s *service) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUI
 	select s.name, s.total_duration, s.price_per_person as price, s.price_type, l.formatted_location
 	from "Service" s
 	left join "Location" l on l.merchant_id = $1 and l.id = $3
-	where s.merchant_id = $1 and s.id = $2
+	where s.merchant_id = $1 and s.id = $2 and s.deleted_on is null
 	`
 	var msi MinimalServiceInfo
 	err := s.db.QueryRow(ctx, query, merchantId, serviceId, locationId).Scan(&msi.Name, &msi.TotalDuration, &msi.Price, &msi.PriceType, &msi.FormattedLocation)
@@ -1034,7 +1034,7 @@ func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchant
 	query := `
 	select id, name, total_duration
 	from "Service"
-	where merchant_id = $1
+	where merchant_id = $1 and deleted_on is null
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId)
@@ -1044,4 +1044,188 @@ func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchant
 	}
 
 	return services, nil
+}
+
+type GroupServiceWithSettings struct {
+	Id              int              `json:"id"`
+	MerchantId      uuid.UUID        `json:"merchant_id"`
+	CategoryId      *int             `json:"category_id"`
+	Name            string           `json:"name"`
+	Description     *string          `json:"description"`
+	Color           string           `json:"color"`
+	Duration        int              `json:"duration"`
+	Price           *currencyx.Price `json:"price"`
+	Cost            *currencyx.Price `json:"cost"`
+	PriceType       types.PriceType  `json:"price_type"`
+	IsActive        bool             `json:"is_active"`
+	Sequence        int              `json:"sequence"`
+	MinParticipants int              `json:"min_participants"`
+	MaxParticipants int              `json:"max_participants"`
+	Settings        ServiceSettings  `json:"settings"`
+}
+
+func (s *service) UpdateGroupServiceById(ctx context.Context, serv GroupServiceWithSettings) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	updatePhaseQuery := `
+	update "ServicePhase"
+	set duration = $2
+	where service_id = $1
+	`
+
+	_, err = tx.Exec(ctx, updatePhaseQuery, serv.Id, serv.Duration)
+	if err != nil {
+		return err
+	}
+
+	updateServiceQuery := `
+    with old as (
+        select id, category_id from "Service"
+        where id = $1 and merchant_id = $2 and deleted_on is null
+    )
+    update "Service"
+    set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, 
+        price_per_person = $8, cost_per_person = $9, price_type = $10, is_active = $11, 
+        cancel_deadline = $12, booking_window_min = $13, booking_window_max = $14, buffer_time = $15,
+        min_participants = $16, max_participants = $17, 
+        sequence = case
+            when old.category_id is distinct from $3 then (
+                coalesce((
+                    select max(sequence) + 1 from "Service" where category_id is not distinct from $3 and merchant_id = $2 and deleted_on is null
+                ), 1)
+            )
+            else sequence
+        end
+    from old
+    where "Service".id = old.id
+    returning old.category_id
+    `
+
+	var oldCategoryId *int
+	err = tx.QueryRow(ctx, updateServiceQuery,
+		serv.Id, serv.MerchantId, serv.CategoryId, serv.Name, serv.Description, serv.Color, serv.Duration,
+		serv.Price, serv.Cost, serv.PriceType, serv.IsActive, serv.Settings.CancelDeadline, serv.Settings.BookingWindowMin,
+		serv.Settings.BookingWindowMax, serv.Settings.BufferTime,
+		serv.MinParticipants, serv.MaxParticipants,
+	).Scan(&oldCategoryId)
+
+	if err != nil {
+		return err
+	}
+
+	if (oldCategoryId == nil && serv.CategoryId != nil) || (oldCategoryId != nil && (serv.CategoryId == nil || *oldCategoryId != *serv.CategoryId)) {
+		reorderOldCategoryQuery := `
+        with reordered as (
+            select id, row_number() over (order by sequence) as new_sequence
+            from "Service"
+            where category_id is not distinct from $1 and merchant_id = $2 and deleted_on is null and id != $3
+        )
+        update "Service" s
+        set sequence = r.new_sequence
+        from reordered r
+        where s.id = r.id
+        `
+		_, err := tx.Exec(ctx, reorderOldCategoryQuery, oldCategoryId, serv.MerchantId, serv.Id)
+		if err != nil {
+			return err
+		}
+
+		reorderNewCategoryQuery := `
+        with reordered as (
+            select id, row_number() over (order by sequence) as new_sequence
+            from "Service"
+            where category_id is not distinct from $1 and merchant_id = $2 and deleted_on is null
+        )
+        update "Service" s
+        set sequence = r.new_sequence
+        from reordered r
+        where s.id = r.id
+        `
+		_, err = tx.Exec(ctx, reorderNewCategoryQuery, serv.CategoryId, serv.MerchantId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+type GroupServicePageData struct {
+	Id              int                           `json:"id"`
+	CategoryId      *int                          `json:"category_id"`
+	Name            string                        `json:"name"`
+	Description     *string                       `json:"description"`
+	Color           string                        `json:"color"`
+	Duration        int                           `json:"duration"`
+	Price           *currencyx.Price              `json:"price"`
+	Cost            *currencyx.Price              `json:"cost"`
+	PriceType       types.PriceType               `json:"price_type"`
+	IsActive        bool                          `json:"is_active"`
+	Sequence        int                           `json:"sequence"`
+	MinParicipants  int                           `json:"min_participants"`
+	MaxParticipants int                           `json:"max_participants"`
+	Settings        ServiceSettings               `json:"settings"`
+	Products        []MinimalProductInfoWithUsage `json:"used_products"`
+}
+
+func (s *service) GetGroupServicePageData(ctx context.Context, merchantId uuid.UUID, serviceId int) (GroupServicePageData, error) {
+	query := `
+		with products as (
+		select sprod.service_id,
+			jsonb_agg(
+				jsonb_build_object(
+					'id', p.id,
+					'name', p.name,
+					'unit', p.unit,
+					'amount_used', sprod.amount_used
+				)
+			) as products
+		from "ServiceProduct" sprod
+		join "Product" p on sprod.product_id = p.id
+		where p.deleted_on is null
+		group by sprod.service_id
+	)
+	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration as duration, s.price_per_person as price, s.cost_per_person as cost, s.price_type, s.is_active, s.sequence, s.min_participants, s.max_participants,
+		jsonb_build_object(
+		 	'cancel_deadline', s.cancel_deadline,
+         	'booking_window_min', s.booking_window_min,
+         	'booking_window_max', s.booking_window_max,
+         	'buffer_time', s.buffer_time
+		) as settings,
+		coalesce(products.products, '[]'::jsonb) as products
+	from "Service" s
+	left join products on s.id = products.service_id
+	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null `
+
+	var gspd GroupServicePageData
+	var settingsJson []byte
+	var productJson []byte
+
+	err := s.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&gspd.Id, &gspd.Name, &gspd.CategoryId, &gspd.Description,
+		&gspd.Color, &gspd.Duration, &gspd.Price, &gspd.Cost, &gspd.PriceType, &gspd.IsActive, &gspd.Sequence,
+		&gspd.MinParicipants, &gspd.MaxParticipants, &settingsJson, &productJson)
+	if err != nil {
+		return GroupServicePageData{}, err
+	}
+
+	if len(settingsJson) > 0 {
+		if err := json.Unmarshal(settingsJson, &gspd.Settings); err != nil {
+			return GroupServicePageData{}, err
+		}
+	}
+
+	if len(productJson) > 0 {
+		err = json.Unmarshal(productJson, &gspd.Products)
+		if err != nil {
+			return GroupServicePageData{}, err
+		}
+	} else {
+		gspd.Products = []MinimalProductInfoWithUsage{}
+	}
+
+	return gspd, nil
 }

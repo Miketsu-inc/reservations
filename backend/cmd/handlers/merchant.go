@@ -2458,3 +2458,201 @@ func (m *Merchant) DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (m *Merchant) NewGroupService(w http.ResponseWriter, r *http.Request) {
+	type newConnectedProducts struct {
+		ProductId  int `json:"id" validate:"required"`
+		AmountUsed int `json:"amount_used" validate:"min=0,max=1000000"`
+	}
+
+	type newService struct {
+		Name            string                   `json:"name" validate:"required"`
+		Description     *string                  `json:"description"`
+		Color           string                   `json:"color" validate:"required,hexcolor"`
+		Price           *currencyx.Price         `json:"price"`
+		Cost            *currencyx.Price         `json:"cost"`
+		PriceType       types.PriceType          `json:"price_type"`
+		Duration        int                      `json:"duration" validate:"required"`
+		CategoryId      *int                     `json:"category_id"`
+		MinParticipants *int                     `json:"min_participants"`
+		MaxParticipants int                      `json:"max_participants" validate:"required"`
+		IsActive        bool                     `json:"is_active"`
+		Settings        database.ServiceSettings `json:"settings"`
+		UsedProducts    []newConnectedProducts   `json:"used_products" validate:"required"`
+	}
+	var groupService newService
+
+	if err := validate.ParseStruct(r, &groupService); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	var dbProducts []database.ConnectedProducts
+	for _, product := range groupService.UsedProducts {
+		dbProducts = append(dbProducts, database.ConnectedProducts{
+			ProductId:  product.ProductId,
+			ServiceId:  0,
+			AmountUsed: product.AmountUsed,
+		})
+	}
+
+	var dbPhase []database.ServicePhase
+	dbPhase = append(dbPhase, database.ServicePhase{
+		Id:        0,
+		ServiceId: 0,
+		Name:      "",
+		Sequence:  1,
+		Duration:  groupService.Duration,
+		PhaseType: types.ServicePhaseTypeActive,
+	})
+
+	curr, err := m.Postgresdb.GetMerchantCurrency(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's currency: %s", err.Error()))
+		return
+	}
+
+	if groupService.Price != nil {
+		if groupService.Price.CurrencyCode() != curr {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service price's currency does not match merchant's currency"))
+			return
+		}
+	}
+
+	if groupService.Cost != nil {
+		if groupService.Cost.CurrencyCode() != curr {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("new service cost's currency does not match merchant's currency"))
+			return
+		}
+	}
+
+	minParticipants := 1
+	if groupService.MinParticipants != nil {
+		minParticipants = *groupService.MinParticipants
+	}
+
+	if err := m.Postgresdb.NewService(r.Context(), database.Service{
+		Id:              0,
+		MerchantId:      employee.MerchantId,
+		CategoryId:      groupService.CategoryId,
+		BookingType:     types.BookingTypeClass,
+		Name:            groupService.Name,
+		Description:     groupService.Description,
+		Color:           groupService.Color,
+		TotalDuration:   groupService.Duration,
+		Price:           groupService.Price,
+		Cost:            groupService.Cost,
+		PriceType:       groupService.PriceType,
+		IsActive:        groupService.IsActive,
+		Sequence:        0,
+		MinParticipants: minParticipants,
+		MaxParticipants: groupService.MaxParticipants,
+		ServiceSettings: groupService.Settings,
+	}, dbPhase, dbProducts); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting service: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (m *Merchant) UpdateGroupService(w http.ResponseWriter, r *http.Request) {
+
+	type updatedService struct {
+		Id              int                      `json:"id" validate:"required"`
+		Name            string                   `json:"name" validate:"required"`
+		Description     *string                  `json:"description"`
+		Color           string                   `json:"color" validate:"required,hexcolor"`
+		Price           *currencyx.Price         `json:"price"`
+		Cost            *currencyx.Price         `json:"cost"`
+		PriceType       types.PriceType          `json:"price_type"`
+		Duration        int                      `json:"duration" validate:"required"`
+		CategoryId      *int                     `json:"category_id"`
+		MinParticipants *int                     `json:"min_participants"`
+		MaxParticipants int                      `json:"max_participants" validate:"required"`
+		IsActive        bool                     `json:"is_active"`
+		Settings        database.ServiceSettings `json:"settings"`
+	}
+	var groupService updatedService
+
+	if err := validate.ParseStruct(r, &groupService); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	if serviceId != groupService.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	minParticipants := 1
+	if groupService.MinParticipants != nil {
+		minParticipants = *groupService.MinParticipants
+	}
+
+	err = m.Postgresdb.UpdateGroupServiceById(r.Context(), database.GroupServiceWithSettings{
+		Id:              serviceId,
+		MerchantId:      employee.MerchantId,
+		CategoryId:      groupService.CategoryId,
+		Name:            groupService.Name,
+		Description:     groupService.Description,
+		Color:           groupService.Color,
+		Duration:        groupService.Duration,
+		Price:           groupService.Price,
+		Cost:            groupService.Cost,
+		PriceType:       groupService.PriceType,
+		IsActive:        groupService.IsActive,
+		MinParticipants: minParticipants,
+		MaxParticipants: groupService.MaxParticipants,
+		Settings:        groupService.Settings,
+	})
+
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (m *Merchant) GetGroupService(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id provided"))
+		return
+	}
+
+	serviceId, err := strconv.Atoi(id)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while converting service id to int: %s", err.Error()))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	service, err := m.Postgresdb.GetGroupServicePageData(r.Context(), employee.MerchantId, serviceId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while retrieving service for merchant: %s", err.Error()))
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, service)
+}

@@ -7,19 +7,19 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import ServicePage from "./-components/ServicePage";
+import GroupServicePage from "./-components/GroupServicePage";
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
-  {
-    component: RouteComponent,
-    loader: async ({ context: { queryClient } }) => {
-      await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
-    },
-    errorComponent: ({ error }) => {
-      return <ServerError error={error.message} />;
-    },
-  }
-);
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/services/group/new"
+)({
+  component: RouteComponent,
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
+  },
+  errorComponent: ({ error }) => {
+    return <ServerError error={error.message} />;
+  },
+});
 
 function RouteComponent() {
   const router = useRouter();
@@ -41,9 +41,9 @@ function RouteComponent() {
     return <ServerError error={error} />;
   }
 
-  async function saveServiceHandler(service) {
+  async function saveHandler(service) {
     try {
-      const response = await fetch("/api/v1/merchants/services", {
+      const response = await fetch("/api/v1/merchants/group-services", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -58,7 +58,7 @@ function RouteComponent() {
         setServerError(result.error.message);
       } else {
         showToast({
-          message: "Service added successfully",
+          message: "Group service added successfully",
           variant: "success",
         });
         setServerError();
@@ -75,10 +75,10 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <ServicePage
+      <GroupServicePage
         categories={formOptions.categories}
         products={formOptions.products}
-        onSave={saveServiceHandler}
+        onSave={saveHandler}
         route={Route}
       />
     </>

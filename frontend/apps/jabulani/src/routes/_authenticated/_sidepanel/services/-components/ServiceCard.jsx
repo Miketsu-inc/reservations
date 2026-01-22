@@ -80,7 +80,7 @@ export default function ServiceCard({
           <div className="flex flex-row gap-4">
             <div
               style={{ backgroundColor: service.color }}
-              className="flex size-[70px] shrink-0 overflow-hidden rounded-lg"
+              className="flex size-17.5 shrink-0 overflow-hidden rounded-lg"
             >
               <img
                 className="size-full object-cover"

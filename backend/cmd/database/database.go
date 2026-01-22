@@ -199,6 +199,10 @@ type PostgreSQL interface {
 	GetMinimalServiceInfo(context.Context, uuid.UUID, int, int) (MinimalServiceInfo, error)
 	// Get all services for calendar
 	GetServicesForCalendarByMerchant(context.Context, uuid.UUID) ([]ServiceForCalendar, error)
+	// Update Group Service and it's phase by id
+	UpdateGroupServiceById(context.Context, GroupServiceWithSettings) error
+	// Get all data related to a group service
+	GetGroupServicePageData(context.Context, uuid.UUID, int) (GroupServicePageData, error)
 
 	// -- Customer --
 

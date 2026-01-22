@@ -7,10 +7,10 @@ import {
 import { queryOptions, useQueries } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import ServicePage from "./-components/ServicePage";
+import GroupServicePage from "./-components/GroupServicePage";
 
-async function fetchServiceData(id) {
-  const response = await fetch(`/api/v1/merchants/services/${id}`, {
+async function fetchGroupServiceData(id) {
+  const response = await fetch(`/api/v1/merchants/group-services/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -27,19 +27,19 @@ async function fetchServiceData(id) {
   }
 }
 
-function serviceQueryOptions(id) {
+function groupServiceQueryOptions(id) {
   return queryOptions({
-    queryKey: ["service", id],
-    queryFn: () => fetchServiceData(id),
+    queryKey: ["group-service", id],
+    queryFn: () => fetchGroupServiceData(id),
   });
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/services/edit/$id"
+  "/_authenticated/_sidepanel/services/group/edit/$id"
 )({
   component: RouteComponent,
   loader: async ({ params, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(serviceQueryOptions(params.id));
+    await queryClient.ensureQueryData(groupServiceQueryOptions(params.id));
     await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
   },
   errorComponent: ({ error }) => {
@@ -55,7 +55,7 @@ function RouteComponent() {
   const { id } = Route.useParams({ from: Route.id });
 
   const queryResults = useQueries({
-    queries: [serviceQueryOptions(id), serviceFormOptionsQueryOptions()],
+    queries: [groupServiceQueryOptions(id), serviceFormOptionsQueryOptions()],
   });
 
   if (queryResults.some((r) => r.isLoading)) {
@@ -89,14 +89,17 @@ function RouteComponent() {
   }
 
   async function updateServiceData(serviceId, serviceData) {
-    const response = await fetch(`/api/v1/merchants/services/${serviceId}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(serviceData),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/group-services/${serviceId}`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(serviceData),
+      }
+    );
 
     if (!response.ok) {
       invalidateLocalStorageAuth(response.status);
@@ -131,7 +134,7 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <ServicePage
+      <GroupServicePage
         service={queryResults[0].data}
         categories={queryResults[1].data.categories}
         products={queryResults[1].data.products}

@@ -256,13 +256,16 @@ function ServicesPage() {
                     *:w-full *:rounded-lg *:p-2"
                 >
                   <Link from={Route.fullPath} to="/services/new">
-                    New service
+                    New Service
+                  </Link>
+                  <Link from={Route.fullPath} to="/services/group/new">
+                    New Group Service
                   </Link>
                   <button
                     onClick={() => setShowAddCategoryModal(true)}
                     className="cursor-pointer text-left"
                   >
-                    New category
+                    New Category
                   </button>
                 </div>
               </PopoverContent>
@@ -277,15 +280,30 @@ function ServicesPage() {
               >
                 <PlusIcon styles="size-5 mr-1" />
               </Button>
-              <Link from={Route.fullPath} to="/services/new">
-                <Button
-                  styles="py-2 px-4"
-                  variant="primary"
-                  buttonText="New service"
-                >
-                  <PlusIcon styles="size-5 mr-1" />
-                </Button>
-              </Link>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    styles="py-2 px-4"
+                    variant="primary"
+                    buttonText="New service"
+                  >
+                    <PlusIcon styles="size-5 mr-1" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div
+                    className="*:hover:bg-hvr_gray flex flex-col items-start
+                      *:w-full *:rounded-lg *:p-2"
+                  >
+                    <Link from={Route.fullPath} to="/services/new">
+                      1-on-1 service
+                    </Link>
+                    <Link from={Route.fullPath} to="/services/group/new">
+                      Group Service
+                    </Link>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>
@@ -317,12 +335,19 @@ function ServicesPage() {
                           setSelected({ name: service.name, id: service.id });
                           setShowDeleteModal(true);
                         }}
-                        onEdit={() =>
-                          router.navigate({
-                            from: Route.fullPath,
-                            to: `/services/edit/${service.id}`,
-                          })
-                        }
+                        onEdit={() => {
+                          if (service.booking_type === "appointment") {
+                            router.navigate({
+                              from: Route.fullPath,
+                              to: `/services/edit/${service.id}`,
+                            });
+                          } else {
+                            router.navigate({
+                              from: Route.fullPath,
+                              to: `/services/group/edit/${service.id}`,
+                            });
+                          }
+                        }}
                         refresh={invalidateServicesQuery}
                         onMoveForth={async (id) =>
                           await moveServiceHandler(category.id, id, "forward")
