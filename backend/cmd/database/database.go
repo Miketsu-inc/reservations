@@ -45,7 +45,7 @@ type PostgreSQL interface {
 	// Cancel booking by merchant
 	CancelBookingByMerchant(context.Context, uuid.UUID, int, string) error
 	// Update the email id for a booking
-	UpdateEmailIdForBooking(context.Context, int, string) error
+	UpdateEmailIdForBooking(context.Context, int, string, uuid.UUID) error
 	// Get booking info for email sending
 	GetBookingDataForEmail(context.Context, int) (BookingEmailData, error)
 	// Get public booking info for user

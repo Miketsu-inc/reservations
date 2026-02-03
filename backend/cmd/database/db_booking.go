@@ -580,9 +580,11 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 	set cancelled_on = $1, status = ('cancelled')
 	from "Booking" b
 	where bp.customer_id = $2 and bp.booking_id = $3 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $1
+	returning bp.email_id
 	`
 
-	_, err = tx.Exec(ctx, bookingParticipantQuery, cancellationTime, customerId, bookingId)
+	var emailId *uuid.UUID
+	err = tx.QueryRow(ctx, bookingParticipantQuery, cancellationTime, customerId, bookingId).Scan(&emailId)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -592,11 +594,9 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 	set current_participants = current_participants - 1
 	from "Booking" b
 	where b.id = bd.booking_id and b.id = $2 and b.status not in ('cancelled', 'completed') and b.from_date > $1
-	returning bd.email_id
 	`
 
-	var emailId uuid.UUID
-	err = tx.QueryRow(ctx, bookingDetailsQuery, cancellationTime, bookingId).Scan(&emailId)
+	_, err = tx.Exec(ctx, bookingDetailsQuery, cancellationTime, bookingId)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -617,23 +617,28 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 		return uuid.Nil, err
 	}
 
-	return emailId, nil
+	// in case there was no email scheduled (like booked less then 24 hour before the start)
+	if emailId == nil {
+		return uuid.Nil, nil
+	}
+
+	return *emailId, nil
 }
 
-func (s *service) UpdateEmailIdForBooking(ctx context.Context, bookingId int, emailId string) error {
+func (s *service) UpdateEmailIdForBooking(ctx context.Context, bookingId int, emailId string, customerId uuid.UUID) error {
 	emailUUID, err := uuid.Parse(emailId)
 	if err != nil {
 		return err
 	}
 
 	query := `
-	update "BookingDetails" bd
+	update "BookingParticipant"
 	set email_id = $1
 	from "Booking" b
-	where b.id = $2 and bd.booking_id = b.id
+	where booking_id = $2 and customer_id = $3
 	`
 
-	_, err = s.db.Exec(ctx, query, emailUUID, bookingId)
+	_, err = s.db.Exec(ctx, query, emailUUID, bookingId, customerId)
 	if err != nil {
 		return err
 	}
@@ -642,6 +647,7 @@ func (s *service) UpdateEmailIdForBooking(ctx context.Context, bookingId int, em
 }
 
 type BookingEmailData struct {
+	CustomerId        uuid.UUID `josn:"customer_id" db:"customer_id"`
 	FromDate          time.Time `json:"from_date" db:"from_date"`
 	ToDate            time.Time `json:"to_date" db:"to_date"`
 	ServiceName       string    `json:"service_name" db:"service_name"`
@@ -654,12 +660,11 @@ type BookingEmailData struct {
 
 func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error) {
 	query := `
-	select b.from_date, b.to_date, bd.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
+	select c.id as customer_id, b.from_date, b.to_date, bp.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
 	coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "BookingDetails" bd on bd.booking_id = b.id
 	left join "Customer" c on c.id = bp.customer_id
 	left join "User" u on u.id = c.user_id
 	join "Merchant" m on m.id = b.merchant_id
@@ -668,7 +673,7 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 	`
 
 	var data BookingEmailData
-	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
+	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.CustomerId, &data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
 		&data.CustomerEmail, &data.MerchantName, &data.CancelDeadline, &data.FormattedLocation)
 	if err != nil {
 		return BookingEmailData{}, err

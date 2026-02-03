@@ -1924,7 +1924,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 			}
 
 			if email_id != "" { //check because return "" when email sending is off
-				err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id)
+				err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id, *customerId)
 				if err != nil {
 					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
 					return

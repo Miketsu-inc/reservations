@@ -212,7 +212,6 @@ create table if not exists "BookingDetails" (
     min_participants         integer          not null,
     max_participants         integer          not null,
     current_participants     integer          not null,
-    email_id                 uuid,
     cancelled_by_merchant_on timestamptz,
     cancellation_reason      text
 );
@@ -226,6 +225,7 @@ create table if not exists "BookingParticipant" (
     cancelled_on             timestamptz,
     cancellation_reason      text,
     transferred_to           uuid,
+    email_id                 uuid,
 
     constraint unique_booking_participant unique (booking_id, customer_id)
 );
