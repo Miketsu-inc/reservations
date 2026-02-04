@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/cmd/database"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/jwt"
 	"github.com/miketsu-inc/reservations/backend/cmd/middlewares/lang"
@@ -20,6 +23,11 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"github.com/teambition/rrule-go"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 )
 
 type Merchant struct {
@@ -2028,7 +2036,7 @@ func (m *Merchant) NewBlockedTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, []int{employee.Id}, nbt.Name, fromDate, toDate, nbt.AllDay, nbt.BlockedTypeId)
+	_, err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, []int{employee.Id}, nbt.Name, fromDate, toDate, nbt.AllDay, nbt.BlockedTypeId)
 	// err = m.Postgresdb.NewBlockedTime(r.Context(), employee.MerchantId, nbt.EmployeeIds, nbt.Name, fromDate, toDate, nbt.AllDay)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not make new blocked time %s", err.Error()))
@@ -2655,4 +2663,444 @@ func (m *Merchant) GetGroupService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, service)
+}
+
+var googleCalendarConf = &oauth2.Config{
+	ClientID:     config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_ID,
+	ClientSecret: config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_SECRET,
+	RedirectURL:  "http://localhost:8080/api/v1/merchants/integrations/calendar/google/callback",
+	Scopes:       []string{"https://www.googleapis.com/auth/calendar"},
+	Endpoint:     google.Endpoint,
+}
+
+func (m *Merchant) GoogleCalendar(w http.ResponseWriter, r *http.Request) {
+	state, err := generateSate()
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	setOauthStateCookie(w, state)
+
+	// TODO: intelligent prompt consent if annoying
+	url := googleCalendarConf.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
+
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func (m *Merchant) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+
+	if err := validateOauthState(r); err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during oauth state validation: %s", err.Error()))
+		return
+	}
+
+	token, err := googleCalendarConf.Exchange(r.Context(), code)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during google oauth exchange: %s", err.Error()))
+		return
+	}
+
+	service, err := calendar.NewService(r.Context(), option.WithTokenSource(googleCalendarConf.TokenSource(r.Context(), token)))
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while creating new google calendar service: %s", err.Error()))
+		return
+	}
+
+	cal, err := service.Calendars.Get("primary").Do()
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting primary calendar: %s", err.Error()))
+		return
+	}
+
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	exists := false
+
+	externalCalendar, err := m.Postgresdb.GetExternalCalendarByEmployeeId(r.Context(), employee.Id)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting existing external calendar: %s", err.Error()))
+			return
+		}
+
+		exists = true
+	}
+
+	// TODO: optional resync here
+	if exists {
+		if token.RefreshToken != "" {
+			err = m.Postgresdb.UpdateExternalCalendarAuthTokens(r.Context(), externalCalendar.Id, token.AccessToken, token.RefreshToken, token.Expiry)
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error updating external calendar auth tokens: %s", err.Error()))
+				return
+			}
+		}
+	} else {
+
+		var calendarTz *time.Location
+		if cal.TimeZone != "" {
+			calendarTz, err = time.LoadLocation(cal.TimeZone)
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while parsing google calendar timezone: %s", err.Error()))
+				return
+			}
+		} else {
+			calendarTz, err = m.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while loading merchant timezone: %s", err.Error()))
+				return
+			}
+		}
+
+		externalCalendar := database.ExternalCalendar{
+			EmployeeId:    employee.Id,
+			CalendarId:    cal.Id,
+			AccessToken:   token.AccessToken,
+			RefreshToken:  token.RefreshToken,
+			TokenExpiry:   token.Expiry,
+			SyncToken:     nil,
+			ChannelId:     nil,
+			ResourceId:    nil,
+			ChannelExpiry: nil,
+			Timezone:      calendarTz.String(),
+		}
+
+		extCalendarId, err := m.Postgresdb.NewExternalCalendar(r.Context(), externalCalendar)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while creating new external calendar: %s", err.Error()))
+			return
+		}
+
+		err = m.initialCalendarSync(r.Context(), service, extCalendarId, calendarTz, employee.MerchantId, employee.Id)
+		if err != nil {
+			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error during initial external calendar sync: %s", err.Error()))
+			return
+		}
+	}
+
+	// TEMP for testing environment
+	http.Redirect(w, r, "http://app.reservations.local:3000/integrations", http.StatusPermanentRedirect)
+}
+
+func (m *Merchant) initialCalendarSync(ctx context.Context, service *calendar.Service, extCalendarId int, calendarTz *time.Location, merchantId uuid.UUID, employeeId int) error {
+	req := service.Events.List("primary").ShowDeleted(false).SingleEvents(true).TimeMin(time.Now().UTC().Format(time.RFC3339))
+
+	const batchSize = 200
+
+	var syncToken string
+	var blockedTimes []database.BlockedTime
+	var blockingEventsIdxs []int
+	var externalEvents []database.ExternalCalendarEvent
+
+	for {
+		events, err := req.Do()
+		if err != nil {
+			return err
+		}
+
+		for _, ev := range events.Items {
+			isBlocking := ev.Transparency == "" || ev.Transparency == "opaque"
+
+			ece, err := eventToExternalCalendarEvent(ev, extCalendarId, calendarTz)
+			if err != nil {
+				return err
+			}
+
+			// apparently 0 duration google events are valid so skip them
+			if !ece.FromDate.Before(ece.ToDate) {
+				continue
+			}
+
+			ece.IsBlocking = isBlocking
+			externalEvents = append(externalEvents, ece)
+
+			if isBlocking {
+				bt, err := eventToBlockedTime(ev, merchantId, employeeId, calendarTz)
+				if err != nil {
+					return err
+				}
+
+				blockingEventsIdxs = append(blockingEventsIdxs, len(externalEvents))
+				blockedTimes = append(blockedTimes, bt)
+			}
+
+			if len(externalEvents) >= batchSize {
+				err := m.Postgresdb.BulkInitialSyncExternalCalendarEvents(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+				if err != nil {
+					return err
+				}
+
+				blockedTimes = blockedTimes[:0]
+				externalEvents = externalEvents[:0]
+				blockingEventsIdxs = blockingEventsIdxs[:0]
+			}
+		}
+
+		if events.NextPageToken == "" {
+			syncToken = events.NextSyncToken
+			break
+		}
+
+		req.PageToken(events.NextPageToken)
+	}
+
+	err := m.Postgresdb.BulkInitialSyncExternalCalendarEvents(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+	if err != nil {
+		return err
+	}
+
+	return m.Postgresdb.UpdateExternalCalendarSyncToken(ctx, extCalendarId, syncToken)
+}
+
+func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, employeeId int, calendarTz *time.Location) (database.BlockedTime, error) {
+	fromDate, toDate, isAllDay, err := parseEventDates(event, calendarTz)
+	if err != nil {
+		return database.BlockedTime{}, err
+	}
+
+	return database.BlockedTime{
+		MerchantId:    merchantId,
+		EmployeeId:    employeeId,
+		BlockedTypeId: nil,
+		Name:          event.Summary,
+		FromDate:      fromDate,
+		ToDate:        toDate,
+		AllDay:        isAllDay,
+		Source:        &types.EventSourceGoogle,
+	}, nil
+}
+
+func eventToExternalCalendarEvent(event *calendar.Event, extCalendarId int, calendarTz *time.Location) (database.ExternalCalendarEvent, error) {
+	fromDate, toDate, isAllDay, err := parseEventDates(event, calendarTz)
+	if err != nil {
+		return database.ExternalCalendarEvent{}, err
+	}
+
+	return database.ExternalCalendarEvent{
+		ExternalCalendarId: extCalendarId,
+		ExternalEventId:    event.Id,
+		Etag:               event.Etag,
+		Status:             event.Status,
+		Title:              event.Summary,
+		Description:        event.Description,
+		FromDate:           fromDate,
+		ToDate:             toDate,
+		IsAllDay:           isAllDay,
+		BlockedTimeId:      nil,
+		IsBlocking:         false,
+		Source:             types.EventSourceGoogle,
+	}, nil
+}
+
+func parseEventDates(event *calendar.Event, calendarTz *time.Location) (time.Time, time.Time, bool, error) {
+	var fromDate time.Time
+	var toDate time.Time
+	var isAllDay bool
+
+	if event.Start.Date != "" {
+		isAllDay = true
+
+		startLocal, err := time.ParseInLocation("2006-01-02", event.Start.Date, calendarTz)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		endLocal, err := time.ParseInLocation("2006-01-02", event.End.Date, calendarTz)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		fromDate = startLocal.UTC()
+		toDate = endLocal.UTC()
+	} else {
+		isAllDay = false
+
+		startLocal, err := time.Parse(time.RFC3339, event.Start.DateTime)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		endLocal, err := time.Parse(time.RFC3339, event.End.DateTime)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		fromDate = startLocal.UTC()
+		toDate = endLocal.UTC()
+	}
+
+	return fromDate, toDate, isAllDay, nil
+}
+
+// nolint:unused
+func (m *Merchant) incrementalCalendarSync(ctx context.Context, merchantId uuid.UUID, service *calendar.Service, extCalendar database.ExternalCalendar) error {
+	req := service.Events.List("primary").SyncToken(*extCalendar.SyncToken).ShowDeleted(true)
+
+	calendarTz, err := time.LoadLocation(extCalendar.Timezone)
+	if err != nil {
+		return err
+	}
+
+	var (
+		nextSyncToken string
+
+		newExternalEvents    []database.ExternalCalendarEvent
+		newBlockedTimes      []database.BlockedTime
+		newBlockingEventIdxs []int
+
+		pendingBlockingLinks []database.ExternalEventBlockedTimeLink
+
+		deleteBlockedTimes   []int
+		updateBlockedTimes   []database.BlockedTime
+		updateExternalEvents []database.ExternalCalendarEvent
+	)
+
+	for {
+		events, err := req.Do()
+		if err != nil {
+			// TODO: handle more errors
+			if googleErr, ok := err.(*googleapi.Error); ok && googleErr.Code == 410 {
+				err := m.Postgresdb.ResetExternalCalendar(ctx, extCalendar.Id)
+				if err != nil {
+					return err
+				}
+
+				return m.initialCalendarSync(ctx, service, extCalendar.Id, calendarTz, merchantId, extCalendar.EmployeeId)
+			}
+			return err
+		}
+
+		if len(events.Items) == 0 {
+			if events.NextPageToken == "" {
+				nextSyncToken = events.NextSyncToken
+				break
+			}
+
+			req.PageToken(events.NextPageToken)
+
+			continue
+		}
+
+		eventIds := make([]string, 0, len(events.Items))
+		for _, ev := range events.Items {
+			eventIds = append(eventIds, ev.Id)
+		}
+
+		existingEvents, err := m.Postgresdb.GetExternalCalendarEventsByIds(ctx, extCalendar.Id, eventIds)
+		if err != nil {
+			return err
+		}
+
+		existingEventsMap := make(map[string]database.ExternalCalendarEvent, len(existingEvents))
+
+		for _, e := range existingEvents {
+			existingEventsMap[e.ExternalEventId] = e
+		}
+
+		for _, ev := range events.Items {
+			existing, ok := existingEventsMap[ev.Id]
+
+			isBlocking := ev.Transparency == "" || ev.Transparency == "opaque"
+
+			ece, err := eventToExternalCalendarEvent(ev, extCalendar.Id, calendarTz)
+			if err != nil {
+				return err
+			}
+
+			// apparently 0 duration google events are valid so skip them
+			if !ece.FromDate.Before(ece.ToDate) {
+				continue
+			}
+
+			ece.IsBlocking = isBlocking
+
+			// event has been cancelled, delete corresponding BlockedTime
+			if ev.Status == "cancelled" {
+				if ok {
+					if existing.BlockedTimeId != nil {
+						deleteBlockedTimes = append(deleteBlockedTimes, *existing.BlockedTimeId)
+					}
+
+					updateExternalEvents = append(updateExternalEvents, ece)
+				}
+
+				continue
+			}
+
+			// etag indicates wether the event has changed
+			// apparently cancelling event does not trigger a change
+			if ok && existing.Etag == ev.Etag {
+				continue
+			}
+
+			var bt database.BlockedTime
+			if isBlocking {
+				bt, err = eventToBlockedTime(ev, merchantId, extCalendar.EmployeeId, calendarTz)
+				if err != nil {
+					return err
+				}
+			}
+
+			// event does not exist, insert new rows
+			if !ok {
+
+				if isBlocking {
+					newBlockedTimes = append(newBlockedTimes, bt)
+					newBlockingEventIdxs = append(newBlockingEventIdxs, len(newExternalEvents))
+				}
+
+				newExternalEvents = append(newExternalEvents, ece)
+
+				continue
+			}
+
+			switch {
+			// event was not blocking but now is, insert new BlockedTime
+			case !existing.IsBlocking && isBlocking:
+				newBlockedTimes = append(newBlockedTimes, bt)
+
+				pendingBlockingLinks = append(pendingBlockingLinks, database.ExternalEventBlockedTimeLink{
+					// the externalEvent to update is the next one that will be appended to updateExternalEvents
+					ExternalEventIdx: len(updateExternalEvents),
+					BlockedTimeIdx:   len(newBlockedTimes) - 1,
+				})
+
+			// event was blocking but now isn't, delete corresponding BlockedTime
+			case existing.IsBlocking && !isBlocking:
+				if existing.BlockedTimeId != nil {
+					deleteBlockedTimes = append(deleteBlockedTimes, *existing.BlockedTimeId)
+				}
+
+				ece.BlockedTimeId = nil
+
+			// blocking event, update BlockedTime as it has probably changed
+			case existing.IsBlocking && isBlocking:
+				bt.Id = *existing.BlockedTimeId
+				updateBlockedTimes = append(updateBlockedTimes, bt)
+
+				ece.BlockedTimeId = existing.BlockedTimeId
+			}
+
+			// It's important to note that the switch statement's first case relies on the fact
+			// that this append happens after getting the length of updateExternalEvents
+			updateExternalEvents = append(updateExternalEvents, ece)
+		}
+
+		if events.NextPageToken == "" {
+			nextSyncToken = events.NextSyncToken
+			break
+		}
+
+		req.PageToken(events.NextPageToken)
+	}
+
+	err = m.Postgresdb.BulkIncrementalSyncExternalCalendarEvents(ctx, newBlockedTimes, updateBlockedTimes, deleteBlockedTimes,
+		newBlockingEventIdxs, newExternalEvents, updateExternalEvents, pendingBlockingLinks)
+	if err != nil {
+		return err
+	}
+
+	return m.Postgresdb.UpdateExternalCalendarSyncToken(ctx, extCalendar.Id, nextSyncToken)
 }

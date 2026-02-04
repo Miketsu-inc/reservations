@@ -124,7 +124,7 @@ type PostgreSQL interface {
 	// Get the merchant's url name by id
 	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
 	// Create new blocked time for one or multiple employees
-	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool, *int) error
+	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool, *int) ([]int, error)
 	// Delete bloced time for an employee by id
 	DeleteBlockedTime(context.Context, int, uuid.UUID, int) error
 	// Update blocked time for an employee
@@ -151,6 +151,24 @@ type PostgreSQL interface {
 	UpdateEmployeeById(context.Context, uuid.UUID, PublicEmployee) error
 	// Delete employee by id
 	DeleteEmployeeById(context.Context, uuid.UUID, int) error
+	// New external calendar
+	NewExternalCalendar(context.Context, ExternalCalendar) (int, error)
+	// Update external calendar sync token
+	UpdateExternalCalendarSyncToken(context.Context, int, string) error
+	// Bulk insert rows for initial calendar sync (BlockedTime, ExternalCalendarEvent)
+	BulkInitialSyncExternalCalendarEvents(context.Context, []BlockedTime, []int, []ExternalCalendarEvent) error
+	// Bulk insert, update, delete rows from incremental calendar sync (BlockedTime, ExternalCalendarEvent)
+	BulkIncrementalSyncExternalCalendarEvents(context.Context, []BlockedTime, []BlockedTime, []int, []int, []ExternalCalendarEvent,
+		[]ExternalCalendarEvent, []ExternalEventBlockedTimeLink) error
+	// Get all external calendar events by external event ids
+	GetExternalCalendarEventsByIds(context.Context, int, []string) ([]ExternalCalendarEvent, error)
+	// Delete all external calendar related data (BlockedTime, ExternalCalendarEvent) and reset sync state
+	// should be called for 410 GONE response before full initial sync
+	ResetExternalCalendar(context.Context, int) error
+	// Get the external calendar for an employee by their id
+	GetExternalCalendarByEmployeeId(context.Context, int) (ExternalCalendar, error)
+	// Update access, refresh tokens and their expiry for an external calendar
+	UpdateExternalCalendarAuthTokens(context.Context, int, string, string, time.Time) error
 
 	// -- Location --
 

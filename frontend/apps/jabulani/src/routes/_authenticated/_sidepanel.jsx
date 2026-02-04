@@ -103,6 +103,11 @@ function SidePanelLayout() {
       icon: <ProductIcon styles="size-5" />,
     },
     {
+      href: "/integrations",
+      label: "Integrations",
+      icon: <CalendarIcon styles="size-5" />,
+    },
+    {
       href: "#",
       label: "Statistics",
       icon: <ChartIcon styles="size-5" />,

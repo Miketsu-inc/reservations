@@ -32,7 +32,7 @@ type contextKey struct {
 }
 
 var userIDCtxKey = &contextKey{"UserID"}
-var merchantIDCtxKey = &contextKey{"MerchnatID"}
+var merchantIDCtxKey = &contextKey{"MerchantID"}
 var employeeIDCtxKey = &contextKey{"EmployeeID"}
 var locationIDCtxKey = &contextKey{"LocationID"}
 var employeeRoleCtxKey = &contextKey{"EmployeeRole"}

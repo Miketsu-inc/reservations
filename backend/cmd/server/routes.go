@@ -67,6 +67,7 @@ func jabulaniRouter() chi.Router {
 		"/customers/new",
 		"/customers/edit/{id}",
 		"/customers/{customerId}",
+		"/integrations",
 		"/products",
 		"/dashboard",
 		"/signup",
@@ -283,6 +284,9 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 			r.Get("/employees/{id}", merchantHandler.GetEmployee)
 			r.Put("/employees/{id}", merchantHandler.UpdateEmployee)
 			r.Delete("/employees/{id}", merchantHandler.DeleteEmployee)
+
+			r.Get("/integrations/calendar/google", merchantHandler.GoogleCalendar)
+			r.Get("/integrations/calendar/google/callback", merchantHandler.GoogleCalendarCallback)
 		})
 	})
 }

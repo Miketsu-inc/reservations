@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/types"
 	"github.com/miketsu-inc/reservations/backend/cmd/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -859,29 +860,36 @@ func (s *service) GetMerchantUrlNameById(ctx context.Context, merchantId uuid.UU
 }
 
 type BlockedTime struct {
-	Id            int       `json:"id"`
-	MerchantId    uuid.UUID `json:"merchant_id"`
-	EmployeeId    int       `json:"employee_id"`
-	BlockedTypeId *int      `json:"blocked_type_id"`
-	Name          string    `json:"name"`
-	FromDate      time.Time `json:"from_date"`
-	ToDate        time.Time `json:"to_date"`
-	AllDay        bool      `json:"all_day"`
+	Id            int                `json:"id"`
+	MerchantId    uuid.UUID          `json:"merchant_id"`
+	EmployeeId    int                `json:"employee_id"`
+	BlockedTypeId *int               `json:"blocked_type_id"`
+	Name          string             `json:"name"`
+	FromDate      time.Time          `json:"from_date"`
+	ToDate        time.Time          `json:"to_date"`
+	AllDay        bool               `json:"all_day"`
+	Source        *types.EventSource `json:"source"`
 }
 
-func (s *service) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool, blockedTypeId *int) error {
-
+func (s *service) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool, blockedTypeId *int) ([]int, error) {
 	query := `
-	insert into "BlockedTime" (merchant_id, employee_id, blocked_type_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6, $7)`
+	insert into "BlockedTime" (merchant_id, employee_id, blocked_type_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6, $7)
+	returning id`
+
+	var ids []int
 
 	for _, empId := range employeeIds {
-		_, err := s.db.Exec(ctx, query, merchantId, empId, blockedTypeId, name, fromDate, toDate, allDay)
+		var id int
+
+		err := s.db.QueryRow(ctx, query, merchantId, empId, blockedTypeId, name, fromDate, toDate, allDay).Scan(&id)
 		if err != nil {
-			return err
+			return []int{}, err
 		}
+
+		ids = append(ids, id)
 	}
 
-	return nil
+	return ids, nil
 }
 
 func (s *service) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merchantId uuid.UUID, employeeId int) error {
@@ -1100,6 +1108,425 @@ func (s *service) DeleteEmployeeById(ctx context.Context, merchantId uuid.UUID, 
 	`
 
 	_, err := s.db.Exec(ctx, query, merchantId, employeeId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ExternalCalendar struct {
+	Id            int        `json:"id" db:"id"`
+	EmployeeId    int        `json:"employee_id" db:"employee_id"`
+	CalendarId    string     `json:"calendar_id" db:"calendar_id"`
+	AccessToken   string     `json:"access_token" db:"access_token"`
+	RefreshToken  string     `json:"refresh_token" db:"refresh_token"`
+	TokenExpiry   time.Time  `json:"token_expiry" db:"token_expiry"`
+	SyncToken     *string    `json:"sync_token" db:"sync_token"`
+	ChannelId     *string    `json:"channel_id" db:"channel_id"`
+	ResourceId    *string    `json:"resource_id" db:"resource_id"`
+	ChannelExpiry *time.Time `json:"channel_expiry" db:"channel_expiry"`
+	Timezone      string     `json:"timezone" db:"timezone"`
+}
+
+type ExternalCalendarEvent struct {
+	Id                 int               `json:"id" db:"id"`
+	ExternalCalendarId int               `json:"external_calendar_id" db:"external_calendar_id"`
+	ExternalEventId    string            `json:"external_event_id" db:"external_event_id"`
+	Etag               string            `json:"etag" db:"etag"`
+	Status             string            `json:"status" db:"status"`
+	Title              string            `json:"title" db:"title"`
+	Description        string            `json:"description" db:"description"`
+	FromDate           time.Time         `json:"from_date" db:"from_date"`
+	ToDate             time.Time         `json:"to_date" db:"to_date"`
+	IsAllDay           bool              `json:"is_all_day" db:"is_all_day"`
+	BlockedTimeId      *int              `json:"blocked_time_id" db:"blocked_time_id"`
+	IsBlocking         bool              `json:"is_blocking" db:"is_blocking"`
+	Source             types.EventSource `json:"source" db:"source"`
+	LastSyncedAt       time.Time         `json:"last_synced_at" db:"last_synced_at"`
+}
+
+func (s *service) NewExternalCalendar(ctx context.Context, ec ExternalCalendar) (int, error) {
+	query := `
+	insert into "ExternalCalendar" (employee_id, calendar_id, access_token, refresh_token, token_expiry, channel_id, resource_id, channel_expiry, timezone)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	returning id
+	`
+
+	var extCalendarId int
+	err := s.db.QueryRow(ctx, query, ec.EmployeeId, ec.CalendarId, ec.AccessToken, ec.RefreshToken, ec.TokenExpiry, ec.ChannelId,
+		ec.ResourceId, ec.ChannelExpiry, ec.Timezone).Scan(&extCalendarId)
+	if err != nil {
+		return 0, err
+	}
+
+	return extCalendarId, nil
+}
+
+func (s *service) UpdateExternalCalendarSyncToken(ctx context.Context, extCalendarId int, syncToken string) error {
+	query := `
+	update "ExternalCalendar"
+	set sync_token = $2
+	where id = $1
+	`
+
+	_, err := s.db.Exec(ctx, query, extCalendarId, syncToken)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func bulkInsertBlockedTime(ctx context.Context, tx pgx.Tx, bt []BlockedTime) ([]int, error) {
+	query := `
+	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day, source)
+	select $1, $2, unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
+	`
+
+	merchantId := bt[0].MerchantId
+	employeeId := bt[0].EmployeeId
+	source := bt[0].Source
+
+	var names []string
+	var fromDates []time.Time
+	var toDates []time.Time
+	var isAllDay []bool
+
+	for _, blockedTime := range bt {
+		names = append(names, blockedTime.Name)
+		fromDates = append(fromDates, blockedTime.FromDate)
+		toDates = append(toDates, blockedTime.ToDate)
+		isAllDay = append(isAllDay, blockedTime.AllDay)
+	}
+
+	var btIds []int
+
+	rows, _ := tx.Query(ctx, query, merchantId, employeeId, names, fromDates, toDates, isAllDay, source)
+	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
+	if err != nil {
+		return []int{}, err
+	}
+
+	return btIds, nil
+}
+
+func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEvents []ExternalCalendarEvent) error {
+	query := `
+	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date, is_all_day,
+		blocked_time_id, is_blocking, source)
+	select $1, unnest($2::text[]), unnest($3::text[]), unnest($4::text[]), unnest($5::text[]), unnest($6::text[]), unnest($7::timestamptz[]),
+		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::boolean[])
+	`
+
+	var extEventIds []string
+	var etags []string
+	var statuses []string
+	var titles []string
+	var descriptions []string
+	var fromDates []time.Time
+	var toDates []time.Time
+	var isAllDays []bool
+	var blockedTimeIds []*int
+	var isBlockings []bool
+
+	for _, ee := range externalEvents {
+		extEventIds = append(extEventIds, ee.ExternalEventId)
+		etags = append(etags, ee.Etag)
+		statuses = append(statuses, ee.Status)
+		titles = append(titles, ee.Title)
+		descriptions = append(descriptions, ee.Description)
+		fromDates = append(fromDates, ee.FromDate)
+		toDates = append(toDates, ee.ToDate)
+		isAllDays = append(isAllDays, ee.IsAllDay)
+		blockedTimeIds = append(blockedTimeIds, ee.BlockedTimeId)
+		isBlockings = append(isBlockings, ee.IsBlocking)
+	}
+
+	_, err := tx.Exec(ctx, query, externalEvents[0].ExternalCalendarId, extEventIds, etags, statuses, titles, descriptions, fromDates, toDates,
+		isAllDays, blockedTimeIds, isBlockings, externalEvents[0].Source)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) BulkInitialSyncExternalCalendarEvents(ctx context.Context, bt []BlockedTime, blockingEventIdxs []int, ece []ExternalCalendarEvent) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	var btIds []int
+
+	if len(bt) > 0 {
+		btIds, err = bulkInsertBlockedTime(ctx, tx, bt)
+		if err != nil {
+			return err
+		}
+
+		btPos := 0
+		for _, idx := range blockingEventIdxs {
+			ece[idx].BlockedTimeId = &btIds[btPos]
+			btPos++
+		}
+	}
+
+	if len(ece) > 0 {
+		err = bulkInsertExternalCalendarEvent(ctx, tx, ece)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func bulkUpdateBlockedTime(ctx context.Context, tx pgx.Tx, bt []BlockedTime) error {
+	query := `
+	update "BlockedTime" b
+	set name = u.name, from_date = u.from_date, to_date = u.to_date, all_day = u.all_day
+	from unnest($1::int[], $2::text[], $3::timestamptz[], $4::timestamptz[], $5::boolean[])
+	as u(id, name, from_date, to_date, all_day)
+	where b.id = u.id
+	`
+
+	var ids []int
+	var names []string
+	var fromDates []time.Time
+	var toDates []time.Time
+	var isAllDay []bool
+
+	for _, blockedTime := range bt {
+		ids = append(ids, blockedTime.Id)
+		names = append(names, blockedTime.Name)
+		fromDates = append(fromDates, blockedTime.FromDate)
+		toDates = append(toDates, blockedTime.ToDate)
+		isAllDay = append(isAllDay, blockedTime.AllDay)
+	}
+
+	_, err := tx.Exec(ctx, query, ids, names, fromDates, toDates, isAllDay)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func bulkDeleteBlockedTime(ctx context.Context, tx pgx.Tx, btIds []int) error {
+	query := `
+	delete from "BlockedTime" b
+	from unnest($1::int[]) as d(id)
+	where b.id = d.id
+	`
+
+	_, err := tx.Exec(ctx, query, btIds)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []ExternalCalendarEvent) error {
+	query := `
+	update "ExternalCalendarEvent" e
+	set etag = u.etag, status = u.status, title = u.title, description = u.description, from_date = u.from_date, to_date = u.to_date,
+		is_all_day = u.is_all_day, blocked_time_id = u.blocked_time_id, is_blocking = u.is_blocking, last_synced_at = $5
+	from unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::text[], $6::timestamptz[], $7::timestamptz[], $8::boolean[], $9::int[], $10::boolean[])
+	as u(id, status, title, description, from_date, to_date, is_all_day, blocked_time_id, is_blocking)
+	where external_calendar_id = $6 and e.id = u.id
+	`
+
+	var ids []int
+	var etags []string
+	var statuses []string
+	var titles []string
+	var descriptions []string
+	var fromDates []time.Time
+	var toDates []time.Time
+	var isAllDays []bool
+	var blockedTimeIds []*int
+	var isBlockings []bool
+
+	for _, event := range ece {
+		ids = append(ids, event.Id)
+		etags = append(etags, event.Etag)
+		statuses = append(statuses, event.Status)
+		titles = append(titles, event.Title)
+		descriptions = append(descriptions, event.Description)
+		fromDates = append(fromDates, event.FromDate)
+		toDates = append(toDates, event.ToDate)
+		isAllDays = append(isAllDays, event.IsAllDay)
+		blockedTimeIds = append(blockedTimeIds, event.BlockedTimeId)
+		isBlockings = append(isBlockings, event.IsBlocking)
+	}
+
+	_, err := tx.Exec(ctx, query, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, blockedTimeIds, isBlockings,
+		time.Now().UTC(), ece[0].ExternalCalendarId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ExternalEventBlockedTimeLink struct {
+	ExternalEventIdx int
+	BlockedTimeIdx   int
+}
+
+func (s *service) BulkIncrementalSyncExternalCalendarEvents(ctx context.Context, newBlockedTimes []BlockedTime, updateBlockedTimes []BlockedTime,
+	deleteBlockedTimes []int, blockingEventIdxs []int, newExtEvents []ExternalCalendarEvent, updateExtEvents []ExternalCalendarEvent,
+	pendingBlockingLinks []ExternalEventBlockedTimeLink) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	assert.True(len(blockingEventIdxs)+len(pendingBlockingLinks) == len(newBlockedTimes), "ExternalCalendarEvent and BlockedTime link mismatch!",
+		len(blockingEventIdxs), len(pendingBlockingLinks), len(newBlockedTimes))
+
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	var btIds []int
+
+	if len(newBlockedTimes) > 0 {
+		btIds, err = bulkInsertBlockedTime(ctx, tx, newBlockedTimes)
+		if err != nil {
+			return err
+		}
+
+		btPos := 0
+		for _, idx := range blockingEventIdxs {
+			newExtEvents[idx].BlockedTimeId = &btIds[btPos]
+			btPos++
+		}
+
+		for _, link := range pendingBlockingLinks {
+			updateExtEvents[link.ExternalEventIdx].BlockedTimeId = &btIds[link.BlockedTimeIdx]
+		}
+	}
+
+	if len(updateBlockedTimes) > 0 {
+		err = bulkUpdateBlockedTime(ctx, tx, updateBlockedTimes)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(deleteBlockedTimes) > 0 {
+		err = bulkDeleteBlockedTime(ctx, tx, deleteBlockedTimes)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(newExtEvents) > 0 {
+		err = bulkInsertExternalCalendarEvent(ctx, tx, newExtEvents)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(updateExtEvents) > 0 {
+		err = bulkUpdateExternalCalendarEvent(ctx, tx, updateExtEvents)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *service) GetExternalCalendarEventsByIds(ctx context.Context, extCalendarId int, eventIds []string) ([]ExternalCalendarEvent, error) {
+	query := `
+	select id, external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date, is_all_day, blocked_time_id,
+		is_blocking, source, last_synced_at
+	from "ExternalCalendarEvent"
+	where external_calendar_id = $1 and external_event_id = any($2)
+	`
+
+	rows, _ := s.db.Query(ctx, query, extCalendarId, eventIds)
+	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[ExternalCalendarEvent])
+	if err != nil {
+		return []ExternalCalendarEvent{}, err
+	}
+
+	return events, nil
+}
+
+func (s *service) ResetExternalCalendar(ctx context.Context, extCalendarId int) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// nolint:errcheck
+	defer tx.Rollback(ctx)
+
+	blockedTimesQuery := `
+	delete from "BlockedTime"
+	where id in (
+		select blocked_time_id
+		from "ExternalCalendarEvent"
+		where external_calendar_id = $1 and blocked_time_id is not null
+	)
+	`
+
+	_, err = tx.Exec(ctx, blockedTimesQuery, extCalendarId)
+	if err != nil {
+		return err
+	}
+
+	externalEventsQuery := `
+	delete from "ExternalCalendarEvent"
+	where external_calendar_id = $1
+	`
+
+	_, err = tx.Exec(ctx, externalEventsQuery, extCalendarId)
+	if err != nil {
+		return err
+	}
+
+	externalCalendarSyncStateQuery := `
+	update "ExternalCalendar"
+	set sync_token = null, channel_id = null, resource_id = null, channel_expiry = null
+	where id = $1
+	`
+
+	_, err = tx.Exec(ctx, externalEventsQuery, externalCalendarSyncStateQuery)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *service) GetExternalCalendarByEmployeeId(ctx context.Context, employeeId int) (ExternalCalendar, error) {
+	query := `
+	select
+	`
+
+	rows, _ := s.db.Query(ctx, query, employeeId)
+	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[ExternalCalendar])
+	if err != nil {
+		return ExternalCalendar{}, err
+	}
+
+	return extCalendar, nil
+}
+
+func (s *service) UpdateExternalCalendarAuthTokens(ctx context.Context, extCalendarId int, accessToken, refreshToken string, tokenExpiry time.Time) error {
+	query := `
+	update "ExternalCalendar"
+	set access_token = $2, refresh_token = $3, token_expiry = $4
+	where id = $1
+	`
+
+	_, err := s.db.Exec(ctx, query, extCalendarId, accessToken, refreshToken, tokenExpiry)
 	if err != nil {
 		return err
 	}
