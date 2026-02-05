@@ -1507,7 +1507,9 @@ func (s *service) ResetExternalCalendar(ctx context.Context, extCalendarId int) 
 
 func (s *service) GetExternalCalendarByEmployeeId(ctx context.Context, employeeId int) (ExternalCalendar, error) {
 	query := `
-	select
+	select * from "ExternalCalendar" ec
+	join "Employee" e on e.id = ec.employee_id
+	where employee_id = $1
 	`
 
 	rows, _ := s.db.Query(ctx, query, employeeId)
