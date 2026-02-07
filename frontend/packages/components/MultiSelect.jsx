@@ -49,15 +49,15 @@ export default function MultiSelect({
     if (allSelected) {
       onSelect([]);
     } else {
-      onSelect(options.map((option) => option.id));
+      onSelect(options.map((option) => option.value));
     }
   }
 
-  function handleToggleOption(optionId) {
-    if (values.includes(optionId)) {
-      onSelect(values.filter((id) => id !== optionId));
+  function handleToggleOption(optionValue) {
+    if (values.includes(optionValue)) {
+      onSelect(values.filter((id) => id !== optionValue));
     } else {
-      onSelect([...values, optionId]);
+      onSelect([...values, optionValue]);
     }
   }
 
@@ -66,7 +66,7 @@ export default function MultiSelect({
     if (values.length === options.length) return `All ${displayText}`;
     if (values.length === 1) {
       const selectedItem = options.find((o) => o.id === values[0]);
-      return selectedItem ? selectedItem.name : `1 ${displayText} selected`;
+      return selectedItem ? selectedItem.label : `1 ${displayText} selected`;
     }
     return `${values.length} ${displayText} selected`;
   }
@@ -84,7 +84,7 @@ export default function MultiSelect({
           handleToggleAll();
         } else {
           const option = options[highlightedIndex - 1];
-          if (option) handleToggleOption(option.id);
+          if (option) handleToggleOption(option.value);
         }
       }
     } else if (e.key === "ArrowUp" && isOpen) {
@@ -212,13 +212,13 @@ export default function MultiSelect({
 
               {options.map((option, index) => {
                 const listIndex = index + 1;
-                const isSelected = values.includes(option.id);
+                const isSelected = values.includes(option.value);
                 const isHighlighted = highlightedIndex === listIndex;
 
                 return (
                   <li
                     key={index}
-                    onClick={() => handleToggleOption(option.id)}
+                    onClick={() => handleToggleOption(option.value)}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
                       dark:text-text_color cursor-pointer rounded-sm py-2 pr-0.5
                       pl-2 text-gray-700 select-none`}
@@ -237,12 +237,12 @@ export default function MultiSelect({
                         <Avatar
                           img={option.img}
                           initials={
-                            option.initials || option.name?.substring(0, 2)
+                            option.initials || option.label?.substring(0, 2)
                           }
                           styles="!size-6 !text-[10px] shrink-0 !rounded-full"
                         />
                         <span className="mb-0.5 truncate text-sm">
-                          {option.name}
+                          {option.label}
                         </span>
                       </div>
                     </div>

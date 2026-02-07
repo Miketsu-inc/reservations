@@ -148,9 +148,7 @@ function ServiceDetailsPage() {
         <Card styles="flex-1 lg:max-w-2xl min-h-fit lg:p-6 p-4">
           <div className="flex w-full flex-col gap-8">
             <div className="flex items-center gap-6">
-              <div
-                className="shrink-0 overflow-hidden rounded-lg xl:size-[120px]"
-              >
+              <div className="shrink-0 overflow-hidden rounded-lg xl:size-30">
                 <img
                   className="size-full object-cover"
                   src="https://dummyimage.com/120x120/d156c3/000000.jpg"

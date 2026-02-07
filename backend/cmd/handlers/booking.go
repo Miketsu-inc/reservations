@@ -257,6 +257,9 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 
 	toDateMerchantTz := emailData.ToDate.In(merchantTz)
 	fromDateMerchantTz := emailData.FromDate.In(merchantTz)
+	formattedTime := fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04")
+	formattedDate := fromDateMerchantTz.Format("Monday, January 2")
+	newBookingLink := "http://reservations.local:3000/m/" + emailData.MerchantName
 
 	err = a.Postgresdb.CancelBookingByMerchant(r.Context(), employee.MerchantId, bookingId, cancelData.CancellationReason)
 	if err != nil {
@@ -264,35 +267,38 @@ func (a *Booking) CancelBookingByMerchant(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// email is nil if it's a walk-in
-	if emailData.CustomerEmail != nil {
+	for _, participant := range emailData.Participants {
 
-		lang := lang.LangFromContext(r.Context())
+		// email is nil if it's a walk-in
+		if participant.Email != nil {
+			lang := lang.LangFromContext(r.Context())
 
-		err = email.BookingCancellation(r.Context(), lang, *emailData.CustomerEmail, email.BookingCancellationData{
-			Time:           fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-			Date:           fromDateMerchantTz.Format("Monday, January 2"),
-			Location:       emailData.FormattedLocation,
-			ServiceName:    emailData.ServiceName,
-			TimeZone:       merchantTz.String(),
-			Reason:         cancelData.CancellationReason,
-			NewBookingLink: "http://reservations.local:3000/m/" + emailData.MerchantName,
-		})
-		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while sending cancellation email: %s", err.Error()))
-			return
-		}
-
-		if emailData.EmailId != uuid.Nil {
-			err = email.Cancel(emailData.EmailId.String())
+			err = email.BookingCancellation(r.Context(), lang, *participant.Email, email.BookingCancellationData{
+				Time:           formattedTime,
+				Date:           formattedDate,
+				Location:       emailData.FormattedLocation,
+				ServiceName:    emailData.ServiceName,
+				TimeZone:       merchantTz.String(),
+				Reason:         cancelData.CancellationReason,
+				NewBookingLink: newBookingLink,
+			})
 			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the scheduled email for the booking: %s", err.Error()))
+				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while sending cancellation email: %s", err.Error()))
 				return
+			}
+
+			if participant.EmailId != uuid.Nil {
+				err = email.Cancel(participant.EmailId.String())
+				if err != nil {
+					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while cancelling the scheduled email for the booking: %s", err.Error()))
+					return
+				}
 			}
 		}
 	}
 }
 
+// TODO: updating the participants as well
 func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 	// validate:"required" on MerchantNote would fail
 	// if an empty string arrives as a note
@@ -350,70 +356,77 @@ func (a *Booking) UpdateBookingData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// email is nil if it's a walk-in
-	if oldEmailData.CustomerEmail != nil {
+	merchantTz, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
+		return
+	}
 
-		merchantTz, err := a.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
-		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("error while getting merchant's timezone: %s", err.Error()))
-			return
-		}
+	toDateMerchantTz := toDate.In(merchantTz)
+	fromDateMerchantTz := fromDate.In(merchantTz)
+	oldToDateMerchantTz := oldEmailData.ToDate.In(merchantTz)
+	oldFromDateMerchantTz := oldEmailData.FromDate.In(merchantTz)
 
-		toDateMerchantTz := toDate.In(merchantTz)
-		fromDateMerchantTz := fromDate.In(merchantTz)
-		oldToDateMerchantTz := oldEmailData.ToDate.In(merchantTz)
-		oldFromDateMerchantTz := oldEmailData.FromDate.In(merchantTz)
+	oldFormattedDate := oldEmailData.FromDate.Format("Monday, January 2")
+	oldFormattedTime := oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04")
+	formattedTime := fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04")
+	formattedDate := fromDate.Format("Monday, January 2")
+	modifyLink := fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId)
 
-		lang := lang.LangFromContext(r.Context())
+	for _, participant := range oldEmailData.Participants {
+		// email is nil if it's a walk-in or if a customer doesnt have an email
+		if participant.Email != nil {
+			lang := lang.LangFromContext(r.Context())
 
-		err = email.BookingModification(r.Context(), lang, *oldEmailData.CustomerEmail, email.BookingModificationData{
-			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-			Date:        fromDate.Format("Monday, January 2"),
-			Location:    oldEmailData.FormattedLocation,
-			ServiceName: oldEmailData.ServiceName,
-			TimeZone:    employee.MerchantId.String(),
-			ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
-			OldTime:     oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04"),
-			OldDate:     oldEmailData.FromDate.Format("Monday, January 2"),
-		})
-		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-		if oldEmailData.EmailId != uuid.Nil {
-			// Always cancel the old email — content might be outdated
-			err := email.Cancel(oldEmailData.EmailId.String())
-			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not cancel old reminder email: %s", err.Error()))
-				return
-			}
-		}
-
-		// Only schedule new one if new time is valid
-		if hoursUntilBooking >= 24 {
-			reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-
-			email_id, err := email.BookingReminder(r.Context(), lang, *oldEmailData.CustomerEmail, email.BookingConfirmationData{
-				Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-				Date:        fromDateMerchantTz.Format("Monday, January 2"),
+			err = email.BookingModification(r.Context(), lang, *participant.Email, email.BookingModificationData{
+				Time:        formattedTime,
+				Date:        formattedDate,
 				Location:    oldEmailData.FormattedLocation,
 				ServiceName: oldEmailData.ServiceName,
 				TimeZone:    merchantTz.String(),
-				ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId),
-			}, reminderDate)
+				ModifyLink:  modifyLink,
+				OldTime:     oldFormattedTime,
+				OldDate:     oldFormattedDate,
+			})
 			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+				httputil.Error(w, http.StatusInternalServerError, err)
 				return
 			}
 
-			if email_id != "" { //check because return "" when email sending is off
-				err = a.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id, oldEmailData.CustomerId)
+			hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
+
+			if participant.EmailId != uuid.Nil {
+				// Always cancel the old email — content might be outdated
+				err := email.Cancel(participant.EmailId.String())
 				if err != nil {
-					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not cancel old reminder email: %s", err.Error()))
 					return
+				}
+			}
+
+			// Only schedule new one if new time is valid
+			if hoursUntilBooking >= 24 {
+				reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+
+				new_email_id, err := email.BookingReminder(r.Context(), lang, *participant.Email, email.BookingConfirmationData{
+					Time:        formattedTime,
+					Date:        formattedDate,
+					Location:    oldEmailData.FormattedLocation,
+					ServiceName: oldEmailData.ServiceName,
+					TimeZone:    merchantTz.String(),
+					ModifyLink:  modifyLink,
+				}, reminderDate)
+				if err != nil {
+					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+					return
+				}
+
+				if new_email_id != "" { //check because return "" when email sending is off
+					err = a.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, new_email_id, participant.CustomerId)
+					if err != nil {
+						httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+						return
+					}
 				}
 			}
 		}

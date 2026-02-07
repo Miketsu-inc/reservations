@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -449,7 +450,7 @@ func (s *service) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]E
 	return employeeAuthInfo, nil
 }
 
-func (s *service) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (string, error) {
+func (s *service) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (*string, error) {
 	query := `
 	select coalesce(c.email, u.email)
 	from "Customer" c
@@ -457,10 +458,13 @@ func (s *service) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID
 	where c.id = $1 and c.merchant_id = $2
 	`
 
-	var email string
+	var email *string
 	err := s.db.QueryRow(ctx, query, customerId, merchantId).Scan(&email)
 	if err != nil {
-		return "", err
+		if errors.Is(err, sql.ErrNoRows) {
+			return email, nil
+		}
+		return nil, err
 	}
 
 	return email, nil
@@ -476,7 +480,7 @@ func (s *service) GetCustomersForCalendarByMerchant(ctx context.Context, merchan
 	query := `
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name
 	from "Customer" c
-	join "User" u on c.user_id = u.id
+	left join "User" u on c.user_id = u.id
 	where c.merchant_id = $1
 	`
 

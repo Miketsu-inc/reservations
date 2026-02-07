@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,7 +42,6 @@ type BookingDetails struct {
 	MinParticipants       int             `json:"min_participants"`
 	MaxParticipants       int             `json:"max_participants"`
 	CurrentParticipants   int             `json:"current_participants"`
-	EmailId               *uuid.UUID      `json:"email_id"`
 	CancelledByMerchantOn *time.Time      `json:"cancelled_by_merchant_on"`
 	CancellationReason    *string         `json:"cancellation_reason"`
 }
@@ -54,6 +55,7 @@ type BookingParticipant struct {
 	CancelledOn        *time.Time          `json:"cancelled_on"`
 	CancellationReason *string             `json:"cancellation_reason"`
 	TransferredTo      *uuid.UUID          `json:"transferred_to"`
+	EmailId            *uuid.UUID          `json:"email_id"`
 }
 
 type BookingPhase struct {
@@ -103,18 +105,20 @@ type newBookingParticipantData struct {
 }
 
 type newBookingData struct {
-	Status         types.BookingStatus         `json:"status"`
-	BookingType    types.BookingType           `json:"booking_type"`
-	MerchantId     uuid.UUID                   `json:"merchant_id"`
-	ServiceId      int                         `json:"service_id"`
-	LocationId     int                         `json:"location_id"`
-	FromDate       time.Time                   `json:"from_date"`
-	ToDate         time.Time                   `json:"to_date"`
-	MerchantNote   *string                     `json:"merchant_note"`
-	PricePerPerson currencyx.Price             `json:"price_per_person"`
-	CostPerPerson  currencyx.Price             `json:"cost_per_person"`
-	Participants   []newBookingParticipantData `json:"participants"`
-	Phases         []PublicServicePhase        `json:"phases"`
+	Status          types.BookingStatus         `json:"status"`
+	BookingType     types.BookingType           `json:"booking_type"`
+	MerchantId      uuid.UUID                   `json:"merchant_id"`
+	ServiceId       int                         `json:"service_id"`
+	LocationId      int                         `json:"location_id"`
+	FromDate        time.Time                   `json:"from_date"`
+	ToDate          time.Time                   `json:"to_date"`
+	MerchantNote    *string                     `json:"merchant_note"`
+	PricePerPerson  currencyx.Price             `json:"price_per_person"`
+	CostPerPerson   currencyx.Price             `json:"cost_per_person"`
+	MinParticipants int                         `json:"min_participants"`
+	MaxParticipants int                         `json:"max_participants"`
+	Participants    []newBookingParticipantData `json:"participants"`
+	Phases          []PublicServicePhase        `json:"phases"`
 }
 
 func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) {
@@ -154,13 +158,32 @@ func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) 
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`
 
-	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, nb.PricePerPerson, nb.CostPerPerson, nb.MerchantNote, 1, 1, 1)
+	participantCount := len(nb.Participants)
+	if participantCount == 0 {
+		participantCount = 1
+	}
+
+	countStr := strconv.Itoa(participantCount)
+
+	totalPrice, err := nb.PricePerPerson.Mul(countStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate total price: %w", err)
+	}
+
+	totalCost, err := nb.CostPerPerson.Mul(countStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate total cost: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingId, nb.PricePerPerson, nb.CostPerPerson, totalPrice, totalCost, nb.MerchantNote, nb.MinParticipants, nb.MaxParticipants, participantCount)
 	if err != nil {
 		return 0, err
 	}
 
 	if nb.BookingType == types.BookingTypeAppointment {
-		assert.True(len(nb.Participants) == 1, "Appointment type bookings must only have 1 participant!", nb)
+		if len(nb.Participants) != 1 {
+			return 0, fmt.Errorf("appointment type bookings must have only 1 participant")
+		}
 	}
 
 	// needed for unnest to work with nullable types in pgx
@@ -224,8 +247,6 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 	// nolint:errcheck
 	defer tx.Rollback(ctx)
 
-	assert.True(nb.BookingType == types.BookingTypeAppointment, "The customer should not be able to create a new event or class!", nb)
-
 	var IsBlacklisted bool
 	ensureCustomerQuery := `
 	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
@@ -245,16 +266,18 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 	var bookingId int
 	if nb.BookingType == types.BookingTypeAppointment {
 		bookingId, err = newBooking(ctx, tx, newBookingData{
-			Status:         nb.Status,
-			BookingType:    nb.BookingType,
-			MerchantId:     nb.MerchantId,
-			ServiceId:      nb.ServiceId,
-			LocationId:     nb.LocationId,
-			FromDate:       nb.FromDate,
-			ToDate:         nb.ToDate,
-			MerchantNote:   nil,
-			PricePerPerson: nb.PricePerPerson,
-			CostPerPerson:  nb.CostPerPerson,
+			Status:          nb.Status,
+			BookingType:     nb.BookingType,
+			MerchantId:      nb.MerchantId,
+			ServiceId:       nb.ServiceId,
+			LocationId:      nb.LocationId,
+			FromDate:        nb.FromDate,
+			ToDate:          nb.ToDate,
+			MerchantNote:    nil,
+			PricePerPerson:  nb.PricePerPerson,
+			CostPerPerson:   nb.CostPerPerson,
+			MinParticipants: 1,
+			MaxParticipants: 1,
 			Participants: []newBookingParticipantData{{
 				CustomerId:   &customerId,
 				CustomerNote: nb.CustomerNote,
@@ -265,18 +288,49 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 			return 0, err
 		}
 	} else {
-		// TODO: update total_price
-		bookingId = *nb.BookingId
+		if nb.BookingId == nil {
+			return 0, fmt.Errorf("booking_id is required for a class or event")
+		}
 
+		bookingId = *nb.BookingId
 		addParticipantQuery := `
-		update "BookingParticipant" bp
-		set bd.current_participants = bd.current_participants + 1
-		join "Booking" b on b.id = bp.booking_id
-		join "BookingDetails" bd on b.id = bd.booking_id
-		where b.id = $1 and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
+		update "BookingDetails" bd
+		set current_participants = current_participants + 1
+		from "Booking" b
+		where b.id = bd.booking_id and b.id = $1 and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
+		returning bd.total_price, bd.total_cost
 		`
 
-		_, err := tx.Exec(ctx, addParticipantQuery, bookingId)
+		var totalPrice, totalCost currencyx.Price
+
+		err := tx.QueryRow(ctx, addParticipantQuery, bookingId).Scan(&totalPrice, &totalCost)
+		if err != nil {
+			return 0, err
+		}
+
+		insertParticipantQuery := `
+		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note) 
+		values ($1, $2, $3, $4)`
+
+		_, err = tx.Exec(ctx, insertParticipantQuery, nb.Status, bookingId, customerId, nb.CustomerNote)
+		if err != nil {
+			return 0, err
+		}
+
+		newTotalPrice, err := totalPrice.Add(nb.PricePerPerson.Amount)
+		if err != nil {
+			return 0, err
+		}
+		newTotalCost, err := totalCost.Add(nb.CostPerPerson.Amount)
+		if err != nil {
+			return 0, err
+		}
+
+		updateDetailsQuery := `
+		update "BookingDetails" set total_price = $2, total_cost = $3
+		where booking_id = $1`
+
+		_, err = tx.Exec(ctx, updateDetailsQuery, bookingId, newTotalPrice, newTotalCost)
 		if err != nil {
 			return 0, err
 		}
@@ -291,18 +345,20 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 }
 
 type NewMerchantBooking struct {
-	Status         types.BookingStatus  `json:"status"`
-	BookingType    types.BookingType    `json:"booking_type"`
-	MerchantId     uuid.UUID            `json:"merchant_id"`
-	ServiceId      int                  `json:"service_id"`
-	LocationId     int                  `json:"location_id"`
-	FromDate       time.Time            `json:"from_date"`
-	ToDate         time.Time            `json:"to_date"`
-	MerchantNote   *string              `json:"merchant_note"`
-	PricePerPerson currencyx.Price      `json:"price_per_person"`
-	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	Participants   []*uuid.UUID         `json:"participants"`
-	Phases         []PublicServicePhase `json:"phases"`
+	Status          types.BookingStatus  `json:"status"`
+	BookingType     types.BookingType    `json:"booking_type"`
+	MerchantId      uuid.UUID            `json:"merchant_id"`
+	ServiceId       int                  `json:"service_id"`
+	LocationId      int                  `json:"location_id"`
+	FromDate        time.Time            `json:"from_date"`
+	ToDate          time.Time            `json:"to_date"`
+	MerchantNote    *string              `json:"merchant_note"`
+	PricePerPerson  currencyx.Price      `json:"price_per_person"`
+	CostPerPerson   currencyx.Price      `json:"cost_per_person"`
+	MinParticipants int                  `json:"min_participants"`
+	MaxParticipants int                  `json:"max_participants"`
+	Participants    []*uuid.UUID         `json:"participants"`
+	Phases          []PublicServicePhase `json:"phases"`
 }
 
 func (s *service) NewBookingByMerchant(ctx context.Context, nb NewMerchantBooking) (int, error) {
@@ -319,18 +375,20 @@ func (s *service) NewBookingByMerchant(ctx context.Context, nb NewMerchantBookin
 	}
 
 	bookingId, err := newBooking(ctx, tx, newBookingData{
-		Status:         nb.Status,
-		BookingType:    nb.BookingType,
-		MerchantId:     nb.MerchantId,
-		ServiceId:      nb.ServiceId,
-		LocationId:     nb.LocationId,
-		FromDate:       nb.FromDate,
-		ToDate:         nb.ToDate,
-		MerchantNote:   nb.MerchantNote,
-		PricePerPerson: nb.PricePerPerson,
-		CostPerPerson:  nb.CostPerPerson,
-		Participants:   participants,
-		Phases:         nb.Phases,
+		Status:          nb.Status,
+		BookingType:     nb.BookingType,
+		MerchantId:      nb.MerchantId,
+		ServiceId:       nb.ServiceId,
+		LocationId:      nb.LocationId,
+		FromDate:        nb.FromDate,
+		ToDate:          nb.ToDate,
+		MerchantNote:    nb.MerchantNote,
+		PricePerPerson:  nb.PricePerPerson,
+		CostPerPerson:   nb.CostPerPerson,
+		MinParticipants: nb.MinParticipants,
+		MaxParticipants: nb.MaxParticipants,
+		Participants:    participants,
+		Phases:          nb.Phases,
 	})
 	if err != nil {
 		return 0, err
@@ -369,7 +427,7 @@ func (s *service) UpdateBookingData(ctx context.Context, merchantId uuid.UUID, b
 	where id = $1 and merchant_id = $2 and status not in ('cancelled', 'completed')
 	`
 
-	_, err = s.db.Exec(ctx, bookingQuery, bookingId, merchantId, offset)
+	_, err = tx.Exec(ctx, bookingQuery, bookingId, merchantId, offset)
 	if err != nil {
 		return err
 	}
@@ -380,7 +438,7 @@ func (s *service) UpdateBookingData(ctx context.Context, merchantId uuid.UUID, b
 	where booking_id = $1
 	`
 
-	_, err = s.db.Exec(ctx, bookingPhaseQuery, bookingId, offset)
+	_, err = tx.Exec(ctx, bookingPhaseQuery, bookingId, offset)
 	if err != nil {
 		return err
 	}
@@ -564,7 +622,6 @@ func (s *service) CancelBookingByMerchant(ctx context.Context, merchantId uuid.U
 	return tx.Commit(ctx)
 }
 
-// TODO: update total_price
 func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.UUID, bookingId int) (uuid.UUID, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -579,24 +636,35 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 	update "BookingParticipant" bp
 	set cancelled_on = $1, status = ('cancelled')
 	from "Booking" b
+	join "BookingDetails" bd on b.id = bd.booking_id
 	where bp.customer_id = $2 and bp.booking_id = $3 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $1
-	returning bp.email_id
+	returning bp.email_id, bd.price_per_person, bd.cost_per_person, bd.total_price, bd.cost_price
 	`
 
 	var emailId *uuid.UUID
-	err = tx.QueryRow(ctx, bookingParticipantQuery, cancellationTime, customerId, bookingId).Scan(&emailId)
+	var pricePerPerson, costPerPerson, totalPrice, totalCost currencyx.Price
+	err = tx.QueryRow(ctx, bookingParticipantQuery, cancellationTime, customerId, bookingId).Scan(&emailId, &pricePerPerson, &costPerPerson, &totalPrice, &totalCost)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	bookingDetailsQuery := `
 	update "BookingDetails" bd
-	set current_participants = current_participants - 1
+	set current_participants = current_participants - 1, total_price = $3, total_cost = $4
 	from "Booking" b
 	where b.id = bd.booking_id and b.id = $2 and b.status not in ('cancelled', 'completed') and b.from_date > $1
 	`
 
-	_, err = tx.Exec(ctx, bookingDetailsQuery, cancellationTime, bookingId)
+	newTotalPrice, err := totalPrice.Sub(pricePerPerson.Amount)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to calculate total price: %w", err)
+	}
+	newTotalCost, err := totalCost.Sub(costPerPerson.Amount)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to calculate total cost: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, bookingDetailsQuery, cancellationTime, bookingId, newTotalPrice, newTotalCost)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -647,21 +715,34 @@ func (s *service) UpdateEmailIdForBooking(ctx context.Context, bookingId int, em
 }
 
 type BookingEmailData struct {
-	CustomerId        uuid.UUID `josn:"customer_id" db:"customer_id"`
-	FromDate          time.Time `json:"from_date" db:"from_date"`
-	ToDate            time.Time `json:"to_date" db:"to_date"`
-	ServiceName       string    `json:"service_name" db:"service_name"`
-	FormattedLocation string    `json:"formatted_location" db:"formatted_location"`
-	CustomerEmail     *string   `json:"customer_email" db:"customer_email"`
-	EmailId           uuid.UUID `json:"email_id" db:"email_id"`
-	MerchantName      string    `json:"merchant_name" db:"merchant_name"`
-	CancelDeadline    int       `json:"cancel_deadline" db:"cancel_deadline"`
+	FromDate          time.Time              `json:"from_date" db:"from_date"`
+	ToDate            time.Time              `json:"to_date" db:"to_date"`
+	ServiceName       string                 `json:"service_name" db:"service_name"`
+	FormattedLocation string                 `json:"formatted_location" db:"formatted_location"`
+	MerchantName      string                 `json:"merchant_name" db:"merchant_name"`
+	CancelDeadline    int                    `json:"cancel_deadline" db:"cancel_deadline"`
+	Participants      []ParticipantEmailData `json:"participants"`
+}
+
+type ParticipantEmailData struct {
+	CustomerId uuid.UUID `josn:"customer_id" db:"customer_id"`
+	Email      *string   `json:"email" db:"email"`
+	EmailId    uuid.UUID `json:"email_id" db:"email_id"`
 }
 
 func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error) {
 	query := `
-	select c.id as customer_id, b.from_date, b.to_date, bp.email_id, s.name as service_name, coalesce(u.email, c.email) as customer_email, m.name as merchant_name,
-	coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location
+	select b.from_date, b.to_date, s.name as service_name, m.name as merchant_name, coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location,
+	coalesce(
+		jsonb_agg(
+			jsonb_build_object(
+				'customer_id', c.id,
+				'email_id', bp.email_id,
+				'email', coalesce(u.email, c.email)
+			)
+		) filter (where bp.id is not null), 
+		'[]'::jsonb
+	) as participants
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
 	join "BookingParticipant" bp on bp.booking_id = b.id
@@ -670,13 +751,24 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 	join "Merchant" m on m.id = b.merchant_id
 	join "Location" l on l.id = b.location_id
 	where b.id = $1
-	`
+	group by b.id, s.id, m.id, l.id`
 
 	var data BookingEmailData
-	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.CustomerId, &data.FromDate, &data.ToDate, &data.EmailId, &data.ServiceName,
-		&data.CustomerEmail, &data.MerchantName, &data.CancelDeadline, &data.FormattedLocation)
+	var participantJson []byte
+
+	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.ServiceName,
+		&data.FormattedLocation, &data.MerchantName, &data.CancelDeadline, &participantJson)
 	if err != nil {
 		return BookingEmailData{}, err
+	}
+
+	if len(participantJson) > 0 {
+		err = json.Unmarshal(participantJson, &data.Participants)
+		if err != nil {
+			return BookingEmailData{}, err
+		}
+	} else {
+		data.Participants = []ParticipantEmailData{}
 	}
 
 	return data, nil
@@ -796,7 +888,7 @@ func (s *service) BatchCreateRecurringBookings(ctx context.Context, nrb NewRecur
 		select unnest($1::int[]), $2, $3, $4, $5, $6, $7, $8, $9
 		`
 
-	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingIds, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson,
+	_, err = tx.Exec(ctx, insertBookingDetailsQuery, bookingIds, nrb.Details.PricePerPerson, nrb.Details.CostPerPerson, nrb.Details.TotalPrice, nrb.Details.TotalCost,
 		"", nrb.Details.MinParticipants, nrb.Details.MaxParticipants, nrb.Details.CurrentParticipants)
 	if err != nil {
 		return 0, err
@@ -854,17 +946,19 @@ type CompleteBookingSeries struct {
 }
 
 type NewBookingSeries struct {
-	BookingType    types.BookingType
-	MerchantId     uuid.UUID
-	EmployeeId     int
-	ServiceId      int
-	LocationId     int
-	Rrule          string
-	Dstart         time.Time
-	Timezone       *time.Location
-	PricePerPerson currencyx.Price
-	CostPerPerson  currencyx.Price
-	Participants   []*uuid.UUID
+	BookingType     types.BookingType
+	MerchantId      uuid.UUID
+	EmployeeId      int
+	ServiceId       int
+	LocationId      int
+	Rrule           string
+	Dstart          time.Time
+	Timezone        *time.Location
+	PricePerPerson  currencyx.Price
+	CostPerPerson   currencyx.Price
+	MinParticipants int
+	MaxParticipants int
+	Participants    []*uuid.UUID
 }
 
 func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (CompleteBookingSeries, error) {
@@ -896,7 +990,25 @@ func (s *service) NewBookingSeries(ctx context.Context, nbs NewBookingSeries) (C
 	returning *
 	`
 
-	rows, _ = tx.Query(ctx, insertBookingSeriesDetailsQuery, bookingSeries.Id, nbs.PricePerPerson, nbs.CostPerPerson, nbs.PricePerPerson, nbs.CostPerPerson, 1, 1, 1)
+	participantCount := len(nbs.Participants)
+	if participantCount == 0 {
+		participantCount = 1
+	}
+
+	countStr := strconv.Itoa(participantCount)
+
+	totalPrice, err := nbs.PricePerPerson.Mul(countStr)
+	if err != nil {
+		return CompleteBookingSeries{}, fmt.Errorf("failed to calculate total price: %w", err)
+	}
+
+	totalCost, err := nbs.CostPerPerson.Mul(countStr)
+	if err != nil {
+		return CompleteBookingSeries{}, fmt.Errorf("failed to calculate total cost: %w", err)
+	}
+
+	rows, _ = tx.Query(ctx, insertBookingSeriesDetailsQuery, bookingSeries.Id, nbs.PricePerPerson, nbs.CostPerPerson,
+		totalPrice, totalCost, nbs.MinParticipants, nbs.MaxParticipants, participantCount)
 	bookingSeriesDetails, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[BookingSeriesDetails])
 	if err != nil {
 		return CompleteBookingSeries{}, err
@@ -943,7 +1055,7 @@ func (s *service) GetAvailableGroupBookingsForPeriod(ctx context.Context, mercha
 	query := `
 	select b.from_date, b.to_date from "Booking" b
 	join "BookingDetails" bd on bd.booking_id = b.id
-	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $3 and DATE(b.to_date) <= $4
+	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $4 and DATE(b.to_date) <= $5
 		and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
 	order by b.from_date
 	`

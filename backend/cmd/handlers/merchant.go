@@ -1650,13 +1650,12 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type newBooking struct {
-		BookingType  types.BookingType `json:"booking_type" validate:"required"`
-		Customers    []customer        `json:"customers" validate:"required"`
-		ServiceId    int               `json:"service_id"`
-		TimeStamp    string            `json:"timestamp" validate:"required"`
-		MerchantNote *string           `json:"merchant_note"`
-		IsRecurring  bool              `json:"is_recurring"`
-		Rrule        *recurringRule    `json:"recurrence_rule"`
+		Customers    []customer     `json:"customers"`
+		ServiceId    int            `json:"service_id" validate:"required"`
+		TimeStamp    string         `json:"timestamp" validate:"required"`
+		MerchantNote *string        `json:"merchant_note"`
+		IsRecurring  bool           `json:"is_recurring"`
+		Rrule        *recurringRule `json:"recurrence_rule"`
 	}
 
 	var nb newBooking
@@ -1666,17 +1665,27 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if nb.BookingType == types.BookingTypeAppointment {
-		if len(nb.Customers) > 1 {
-			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("booking type does not match amount of customers"))
-			return
-		}
-	} else {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("events/classes are not implemented yet"))
+	employee := jwt.MustGetEmployeeFromContext(r.Context())
+
+	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), nb.ServiceId, employee.MerchantId)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
 		return
 	}
 
-	employee := jwt.MustGetEmployeeFromContext(r.Context())
+	if service.BookingType == types.BookingTypeAppointment {
+		if len(nb.Customers) > 1 {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("appointments cannot have more than 1 customer"))
+			return
+		}
+	}
+
+	if service.BookingType != types.BookingTypeAppointment {
+		if len(nb.Customers) > service.MaxParticipants {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("customer count (%d) exceeds class limit of %d", len(nb.Customers), service.MaxParticipants))
+			return
+		}
+	}
 
 	merchantTz, err := m.Postgresdb.GetMerchantTimezoneById(r.Context(), employee.MerchantId)
 	if err != nil {
@@ -1687,12 +1696,6 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	bookedLocation, err := m.Postgresdb.GetLocationById(r.Context(), employee.LocationId, employee.MerchantId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching location by this id: %s", err.Error()))
-		return
-	}
-
-	service, err := m.Postgresdb.GetServiceWithPhasesById(r.Context(), nb.ServiceId, employee.MerchantId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while searching service by this id: %s", err.Error()))
 		return
 	}
 
@@ -1739,43 +1742,52 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	fromDate := timeStamp.Truncate(time.Second)
 	toDate := timeStamp.Add(duration)
 
-	var customerId *uuid.UUID
-
+	var participantIds []*uuid.UUID
+	var emailsToSend []*uuid.UUID
 	isWalkIn := false
-	customerId = nb.Customers[0].CustomerId
 
-	if customerId == nil {
+	//maybe check if the customers without an id have first and last name
+	if len(nb.Customers) == 0 {
+		isWalkIn = true
+	} else {
+		for _, customer := range nb.Customers {
+			if customer.CustomerId != nil {
+				participantIds = append(participantIds, customer.CustomerId)
+				emailsToSend = append(emailsToSend, customer.CustomerId)
+			} else {
+				if customer.FirstName != nil && customer.LastName != nil {
+					newId, err := uuid.NewV7()
+					if err != nil {
+						httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
+						return
+					}
 
-		if nb.Customers[0].FirstName != nil || nb.Customers[0].LastName != nil || nb.Customers[0].Email != nil || nb.Customers[0].PhoneNumber != nil {
+					customerId := &newId
 
-			newId, err := uuid.NewV7()
-			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error during creating customer id: %s", err.Error()))
-				return
+					if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
+						Id:          *customerId,
+						FirstName:   customer.FirstName,
+						LastName:    customer.LastName,
+						Email:       customer.Email,
+						PhoneNumber: customer.PhoneNumber,
+						Birthday:    nil,
+						Note:        nil,
+					}); err != nil {
+						httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
+						return
+					}
+					participantIds = append(participantIds, customerId)
+					if customer.Email != nil {
+						emailsToSend = append(emailsToSend, customerId)
+					}
+				}
 			}
-
-			customerId = &newId
-
-			if err := m.Postgresdb.NewCustomer(r.Context(), employee.MerchantId, database.Customer{
-				Id:          *customerId,
-				FirstName:   nb.Customers[0].FirstName,
-				LastName:    nb.Customers[0].LastName,
-				Email:       nb.Customers[0].Email,
-				PhoneNumber: nb.Customers[0].PhoneNumber,
-				Birthday:    nil,
-				Note:        nil,
-			}); err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error()))
-				return
-			}
-		} else {
-			isWalkIn = true
 		}
 	}
 
 	var bookingId int
 
-	if nb.IsRecurring {
+	if nb.IsRecurring && nb.Rrule != nil {
 		var freq rrule.Frequency
 
 		switch strings.ToUpper(nb.Rrule.Frequency) {
@@ -1836,17 +1848,19 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		fromDate = timeStamp.In(merchantTz)
 
 		series, err := m.Postgresdb.NewBookingSeries(r.Context(), database.NewBookingSeries{
-			BookingType:    types.BookingTypeAppointment,
-			MerchantId:     employee.MerchantId,
-			EmployeeId:     employee.Id,
-			ServiceId:      service.Id,
-			LocationId:     bookedLocation.Id,
-			Rrule:          rrule.String(),
-			Dstart:         fromDate,
-			Timezone:       merchantTz,
-			PricePerPerson: price,
-			CostPerPerson:  cost,
-			Participants:   []*uuid.UUID{customerId},
+			BookingType:     service.BookingType,
+			MerchantId:      employee.MerchantId,
+			EmployeeId:      employee.Id,
+			ServiceId:       service.Id,
+			LocationId:      bookedLocation.Id,
+			Rrule:           rrule.String(),
+			Dstart:          fromDate,
+			Timezone:        merchantTz,
+			PricePerPerson:  price,
+			CostPerPerson:   cost,
+			MinParticipants: service.MinParticipants,
+			MaxParticipants: service.MaxParticipants,
+			Participants:    participantIds,
 		})
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new booking series: %s", err.Error()))
@@ -1860,18 +1874,20 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		}
 	} else {
 		bookingId, err = m.Postgresdb.NewBookingByMerchant(r.Context(), database.NewMerchantBooking{
-			Status:         types.BookingStatusBooked,
-			BookingType:    types.BookingTypeAppointment,
-			MerchantId:     employee.MerchantId,
-			ServiceId:      service.Id,
-			LocationId:     bookedLocation.Id,
-			FromDate:       fromDate,
-			ToDate:         toDate,
-			MerchantNote:   nb.MerchantNote,
-			PricePerPerson: price,
-			CostPerPerson:  cost,
-			Participants:   []*uuid.UUID{customerId},
-			Phases:         service.Phases,
+			Status:          types.BookingStatusBooked,
+			BookingType:     service.BookingType,
+			MerchantId:      employee.MerchantId,
+			ServiceId:       service.Id,
+			LocationId:      bookedLocation.Id,
+			FromDate:        fromDate,
+			ToDate:          toDate,
+			MerchantNote:    nb.MerchantNote,
+			PricePerPerson:  price,
+			CostPerPerson:   cost,
+			MinParticipants: service.MinParticipants,
+			MaxParticipants: service.MaxParticipants,
+			Participants:    participantIds,
+			Phases:          service.Phases,
 		})
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while creating new booking: %s", err.Error()))
@@ -1880,12 +1896,6 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !isWalkIn {
-		customerEmail, err := m.Postgresdb.GetCustomerEmailById(r.Context(), employee.MerchantId, *customerId)
-		if err != nil {
-			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer's email: %s", err.Error()))
-			return
-		}
-
 		urlName, err := m.Postgresdb.GetMerchantUrlNameById(r.Context(), employee.MerchantId)
 		if err != nil {
 			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting merchant's url name: %s", err.Error()))
@@ -1905,29 +1915,39 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 		}
 
 		lang := lang.LangFromContext(r.Context())
-
-		err = email.BookingConfirmation(r.Context(), lang, customerEmail, emailData)
-		if err != nil {
-			httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the booking: %s", err.Error()))
-			return
-		}
-
 		hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
 
-		if hoursUntilBooking >= 24 {
-
-			reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-			email_id, err := email.BookingReminder(r.Context(), lang, customerEmail, emailData, reminderDate)
+		for _, customerId := range emailsToSend {
+			customerEmail, err := m.Postgresdb.GetCustomerEmailById(r.Context(), employee.MerchantId, *customerId)
 			if err != nil {
-				httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error while getting customer's email: %s", err.Error()))
 				return
 			}
 
-			if email_id != "" { //check because return "" when email sending is off
-				err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id, *customerId)
+			if customerEmail != nil {
+
+				err = email.BookingConfirmation(r.Context(), lang, *customerEmail, emailData)
 				if err != nil {
-					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+					httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not send confirmation email for the booking: %s", err.Error()))
 					return
+				}
+
+				if hoursUntilBooking >= 24 {
+
+					reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+					email_id, err := email.BookingReminder(r.Context(), lang, *customerEmail, emailData, reminderDate)
+					if err != nil {
+						httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("could not schedule reminder email: %s", err.Error()))
+						return
+					}
+
+					if email_id != "" { //check because return "" when email sending is off
+						err = m.Postgresdb.UpdateEmailIdForBooking(r.Context(), bookingId, email_id, *customerId)
+						if err != nil {
+							httputil.Error(w, http.StatusInternalServerError, fmt.Errorf("failed to update email ID: %s", err.Error()))
+							return
+						}
+					}
 				}
 			}
 		}

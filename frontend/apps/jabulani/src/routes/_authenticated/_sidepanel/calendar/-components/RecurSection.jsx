@@ -126,10 +126,10 @@ export default function RecurSection({
                     onClick={() => toggleDay(value)}
                     className={`${
                       isSelected
-                        ? "bg-primary"
-                        : "hover:bg-primary bg-gray-300 dark:bg-gray-800"
-                    } flex-1 cursor-pointer rounded-full p-2 text-center text-sm
-                    transition-colors duration-300`}
+                        ? "border-primary"
+                        : "border-border_color hover:border-gray-400"
+                    } size-10 flex-1 cursor-pointer rounded-full border-2 p-2
+                    text-center text-sm transition-colors duration-300`}
                   >
                     {label}
                   </button>

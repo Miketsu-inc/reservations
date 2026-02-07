@@ -113,7 +113,7 @@ func (s *service) NewService(ctx context.Context, serv Service, servPhases []Ser
 func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, merchantId uuid.UUID) (PublicServiceWithPhases, error) {
 	query := `
 	select s.id, s.merchant_id, s.booking_type, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost,
-		s.price_type, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
+		s.price_type, s.min_participants, s.max_participants, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
 	from "Service" s
 	left join "ServicePhase" sp on s.id = sp.service_id
 	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null and sp.deleted_on is null
@@ -135,25 +135,27 @@ func (s *service) GetServiceWithPhasesById(ctx context.Context, serviceID int, m
 		var spId *int
 
 		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.BookingType, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
-			&ts.Price, &ts.Cost, &ts.PriceType, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
+			&ts.Price, &ts.Cost, &ts.PriceType, &ts.MinParticipants, &ts.MaxParticipants, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
 		if err != nil {
 			return PublicServiceWithPhases{}, err
 		}
 
 		if firstRow {
 			pswp = PublicServiceWithPhases{
-				Id:            ts.Id,
-				MerchantId:    ts.MerchantId,
-				BookingType:   ts.BookingType,
-				CategoryId:    ts.CategoryId,
-				Name:          ts.Name,
-				Description:   ts.Description,
-				Color:         ts.Color,
-				TotalDuration: ts.TotalDuration,
-				Price:         ts.Price,
-				Cost:          ts.Cost,
-				PriceType:     ts.PriceType,
-				IsActive:      ts.IsActive,
+				Id:              ts.Id,
+				MerchantId:      ts.MerchantId,
+				BookingType:     ts.BookingType,
+				CategoryId:      ts.CategoryId,
+				Name:            ts.Name,
+				Description:     ts.Description,
+				Color:           ts.Color,
+				TotalDuration:   ts.TotalDuration,
+				Price:           ts.Price,
+				Cost:            ts.Cost,
+				PriceType:       ts.PriceType,
+				IsActive:        ts.IsActive,
+				MinParticipants: ts.MinParticipants,
+				MaxParticipants: ts.MaxParticipants,
 			}
 			firstRow = false
 		}
@@ -177,20 +179,22 @@ type PublicServicePhase struct {
 }
 
 type PublicServiceWithPhases struct {
-	Id            int                  `json:"id"`
-	MerchantId    uuid.UUID            `json:"merchant_id"`
-	BookingType   types.BookingType    `json:"booking_type"`
-	CategoryId    *int                 `json:"category_id"`
-	Name          string               `json:"name"`
-	Description   *string              `json:"description"`
-	Color         string               `json:"color"`
-	TotalDuration int                  `json:"total_duration"`
-	Price         *currencyx.Price     `json:"price"`
-	Cost          *currencyx.Price     `json:"cost"`
-	PriceType     types.PriceType      `json:"price_type"`
-	IsActive      bool                 `json:"is_active"`
-	Sequence      int                  `json:"sequence"`
-	Phases        []PublicServicePhase `json:"phases"`
+	Id              int                  `json:"id"`
+	MerchantId      uuid.UUID            `json:"merchant_id"`
+	BookingType     types.BookingType    `json:"booking_type"`
+	CategoryId      *int                 `json:"category_id"`
+	Name            string               `json:"name"`
+	Description     *string              `json:"description"`
+	Color           string               `json:"color"`
+	TotalDuration   int                  `json:"total_duration"`
+	Price           *currencyx.Price     `json:"price"`
+	Cost            *currencyx.Price     `json:"cost"`
+	PriceType       types.PriceType      `json:"price_type"`
+	IsActive        bool                 `json:"is_active"`
+	MinParticipants int                  `json:"min_participants"`
+	MaxParticipants int                  `json:"max_participants"`
+	Sequence        int                  `json:"sequence"`
+	Phases          []PublicServicePhase `json:"phases"`
 }
 
 type ServicesGroupedByCategory struct {
@@ -1025,14 +1029,15 @@ func (s *service) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUI
 }
 
 type ServiceForCalendar struct {
-	Id            int    `json:"id" db:"id"`
-	Name          string `json:"name" db:"name"`
-	TotalDuration int    `json:"total_duration" db:"total_duration"`
+	Id            int               `json:"id" db:"id"`
+	Name          string            `json:"name" db:"name"`
+	TotalDuration int               `json:"total_duration" db:"total_duration"`
+	BookingType   types.BookingType `json:"booking_type" db:"booking_type"`
 }
 
 func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ServiceForCalendar, error) {
 	query := `
-	select id, name, total_duration
+	select id, name, total_duration, booking_type
 	from "Service"
 	where merchant_id = $1 and deleted_on is null
 	`

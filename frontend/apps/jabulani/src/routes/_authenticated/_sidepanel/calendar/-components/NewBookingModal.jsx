@@ -1,7 +1,10 @@
+import { CustomersIcon } from "@reservations/assets";
 import {
+  Avatar,
   Button,
   DatePicker,
   Modal,
+  MultiSelect,
   Select,
   ServerError,
   Textarea,
@@ -82,20 +85,12 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
     date: new Date(),
     time: timeStringFromDate(new Date()).split(" ")[0],
     serviceId: null,
-    customerId: null,
+    customerIds: [],
     // employeeId: 0,
     merchantNote: "",
   });
   const [isDatepickerOpen, setIsDatepickerOpen] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
-
-  function updateRecurData(data) {
-    setRecurData((prev) => ({ ...prev, ...data }));
-  }
-
-  function updateBookingData(data) {
-    setBookingData((prev) => ({ ...prev, ...data }));
-  }
 
   const {
     data: customers = [],
@@ -108,6 +103,19 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
     isError: servicesIsError,
     error: servicesError,
   } = useQuery(servicesForCalendarQueryOptions());
+
+  const selectedService = services?.find(
+    (service) => service.id === bookingData.serviceId
+  );
+  const isGroupBooking = selectedService?.booking_type === "class";
+
+  function updateRecurData(data) {
+    setRecurData((prev) => ({ ...prev, ...data }));
+  }
+
+  function updateBookingData(data) {
+    setBookingData((prev) => ({ ...prev, ...data }));
+  }
 
   if (services.length === 1 && !bookingData.serviceId) {
     updateBookingData({ serviceId: services[0].id });
@@ -124,10 +132,22 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
     );
   }
 
-  const customerOptions = customers?.map((customer) => ({
-    value: customer.id,
-    label: customer.last_name + " " + customer.first_name,
-  }));
+  const customerOptions = customers?.map((customer) => {
+    const initials =
+      customer.last_name.substring(0, 1) + customer.first_name.substring(0, 1);
+
+    return {
+      value: customer.id,
+      label: customer.last_name + " " + customer.first_name,
+      initials: initials,
+      icon: (
+        <Avatar
+          initials={initials}
+          styles="size-6! text-[10px]! shrink-0 rounded-full!"
+        />
+      ),
+    };
+  });
 
   const serviceOptions = services?.map((service) => ({
     value: service.id,
@@ -163,12 +183,9 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          booking_type: "appointment",
-          customers: [
-            {
-              customer_id: bookingData.customerId,
-            },
-          ],
+          customers: bookingData.customerIds.map((id) => ({
+            customer_id: id,
+          })),
           service_id: bookingData.serviceId,
           timestamp: timestamp,
           merchant_note: bookingData.merchantNote,
@@ -211,7 +228,9 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
           labelText="Service"
           options={serviceOptions}
           value={bookingData.serviceId}
-          onSelect={(option) => updateBookingData({ serviceId: option.value })}
+          onSelect={(option) =>
+            updateBookingData({ serviceId: option.value, customerIds: [] })
+          }
           onOpenChange={(open) => setIsSelectOpen(open)}
         />
         <RecurSection
@@ -225,14 +244,31 @@ export default function NewBookingModal({ isOpen, onClose, onNewBooking }) {
           onSelectOpenChange={(open) => setIsSelectOpen(open)}
           onDatePickerOpenChange={(open) => setIsDatepickerOpen(open)}
         />
-        <Select
-          labelText="Customer"
-          options={customerOptions}
-          value={bookingData.customerId}
-          required={false}
-          onSelect={(option) => updateBookingData({ customerId: option.value })}
-          onOpenChange={(open) => setIsSelectOpen(open)}
-        />
+        {isGroupBooking ? (
+          <MultiSelect
+            labelText="Customers"
+            options={customerOptions}
+            values={bookingData.customerIds}
+            required={false}
+            onOpenChange={(open) => setIsSelectOpen(open)}
+            onSelect={(option) => updateBookingData({ customerIds: option })}
+            placeholder="Select customers"
+            icon={<CustomersIcon styles="size-5 text-text_color" />}
+            displayText="customer"
+          />
+        ) : (
+          <Select
+            labelText="Customer"
+            placeholder="Select a customer"
+            options={customerOptions}
+            value={bookingData.customerIds[0]}
+            required={false}
+            onSelect={(option) =>
+              updateBookingData({ customerIds: [option.value] })
+            }
+            onOpenChange={(open) => setIsSelectOpen(open)}
+          />
+        )}
         {/* <Select
           labelText="Team member"
           options={[]}

@@ -241,7 +241,7 @@ type PostgreSQL interface {
 	// Get one customer's info for a merchant
 	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerInfo, error)
 	// Get a customer's email by id
-	GetCustomerEmailById(context.Context, uuid.UUID, uuid.UUID) (string, error)
+	GetCustomerEmailById(context.Context, uuid.UUID, uuid.UUID) (*string, error)
 	// Get all customers for calendar
 	GetCustomersForCalendarByMerchant(context.Context, uuid.UUID) ([]CustomerForCalendar, error)
 
