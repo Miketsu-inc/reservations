@@ -637,8 +637,8 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 	set cancelled_on = $1, status = ('cancelled')
 	from "Booking" b
 	join "BookingDetails" bd on b.id = bd.booking_id
-	where bp.customer_id = $2 and bp.booking_id = $3 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $1
-	returning bp.email_id, bd.price_per_person, bd.cost_per_person, bd.total_price, bd.cost_price
+	where bp.customer_id = $2 and bp.booking_id = $3 and b.id = $3 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $1
+	returning bp.email_id, bd.price_per_person, bd.cost_per_person, bd.total_price, bd.total_cost
 	`
 
 	var emailId *uuid.UUID
@@ -653,6 +653,7 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 	set current_participants = current_participants - 1, total_price = $3, total_cost = $4
 	from "Booking" b
 	where b.id = bd.booking_id and b.id = $2 and b.status not in ('cancelled', 'completed') and b.from_date > $1
+	returning b.booking_type
 	`
 
 	newTotalPrice, err := totalPrice.Sub(pricePerPerson.Amount)
@@ -664,20 +665,23 @@ func (s *service) CancelBookingByCustomer(ctx context.Context, customerId uuid.U
 		return uuid.Nil, fmt.Errorf("failed to calculate total cost: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, bookingDetailsQuery, cancellationTime, bookingId, newTotalPrice, newTotalCost)
+	var bookingType types.BookingType
+	err = tx.QueryRow(ctx, bookingDetailsQuery, cancellationTime, bookingId, newTotalPrice, newTotalCost).Scan(&bookingType)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	bookingQuery := `
-	update "Booking"
-	set status = 'cancelled'
-	where id = $1 and booking_type = 'appointment' and status not in ('cancelled', 'completed') and from_date > $2
-	`
+	if bookingType == types.BookingTypeAppointment {
+		bookingQuery := `
+		update "Booking"
+		set status = 'cancelled'
+		where id = $1 and booking_type = 'appointment' and status not in ('cancelled', 'completed') and from_date > $2
+		`
 
-	_, err = tx.Exec(ctx, bookingQuery, bookingId, cancellationTime)
-	if err != nil {
-		return uuid.Nil, err
+		_, err = tx.Exec(ctx, bookingQuery, bookingId, cancellationTime)
+		if err != nil {
+			return uuid.Nil, err
+		}
 	}
 
 	err = tx.Commit(ctx)
