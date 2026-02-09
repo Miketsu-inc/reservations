@@ -2737,7 +2737,7 @@ func (m *Merchant) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request
 
 	employee := jwt.MustGetEmployeeFromContext(r.Context())
 
-	exists := false
+	exists := true
 
 	externalCalendar, err := m.Postgresdb.GetExternalCalendarByEmployeeId(r.Context(), employee.Id)
 	if err != nil {
@@ -2746,7 +2746,7 @@ func (m *Merchant) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		exists = true
+		exists = false
 	}
 
 	// TODO: optional resync here
@@ -2825,6 +2825,11 @@ func (m *Merchant) initialCalendarSync(ctx context.Context, service *calendar.Se
 		}
 
 		for _, ev := range events.Items {
+			// skip birthday events as they are all-day non-blocking and unnecessary
+			if ev.EventType == "birthday" {
+				continue
+			}
+
 			isBlocking := ev.Transparency == "" || ev.Transparency == "opaque"
 
 			ece, err := eventToExternalCalendarEvent(ev, extCalendar.Id, calendarTz)
@@ -2838,7 +2843,6 @@ func (m *Merchant) initialCalendarSync(ctx context.Context, service *calendar.Se
 			}
 
 			ece.IsBlocking = isBlocking
-			externalEvents = append(externalEvents, ece)
 
 			if isBlocking {
 				bt, err := eventToBlockedTime(ev, merchantId, extCalendar.EmployeeId, calendarTz)
@@ -2849,6 +2853,8 @@ func (m *Merchant) initialCalendarSync(ctx context.Context, service *calendar.Se
 				blockingEventsIdxs = append(blockingEventsIdxs, len(externalEvents))
 				blockedTimes = append(blockedTimes, bt)
 			}
+
+			externalEvents = append(externalEvents, ece)
 
 			if len(externalEvents) >= batchSize {
 				err := m.Postgresdb.BulkInitialSyncExternalCalendarEvents(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
@@ -2919,13 +2925,15 @@ func eventToExternalCalendarEvent(event *calendar.Event, extCalendarId int, cale
 		return database.ExternalCalendarEvent{}, err
 	}
 
-	_, ok := event.ExtendedProperties.Private["internal_type"]
-	if ok {
-		assert.Never("Internal source events should not end up here!", event, extCalendarId)
-	}
-	_, ok = event.ExtendedProperties.Private["internal_id"]
-	if ok {
-		assert.Never("Internal source events should not end up here!", event, extCalendarId)
+	if event.ExtendedProperties != nil {
+		_, ok := event.ExtendedProperties.Private["internal_type"]
+		if ok {
+			assert.Never("Internal source events should not end up here!", event, extCalendarId)
+		}
+		_, ok = event.ExtendedProperties.Private["internal_id"]
+		if ok {
+			assert.Never("Internal source events should not end up here!", event, extCalendarId)
+		}
 	}
 
 	return database.ExternalCalendarEvent{
@@ -3054,16 +3062,16 @@ func (m *Merchant) incrementalCalendarSync(ctx context.Context, extCalendar data
 		if err != nil {
 			// TODO: handle more errors
 			if googleErr, ok := err.(*googleapi.Error); ok && googleErr.Code == 410 {
-				err := m.Postgresdb.ResetExternalCalendar(ctx, extCalendar.Id)
-				if err != nil {
-					return err
-				}
-
 				// Stop channel, new gets created in initial sync
 				err = service.Channels.Stop(&calendar.Channel{
 					Id:         *extCalendar.ChannelId,
 					ResourceId: *extCalendar.ResourceId,
 				}).Do()
+				if err != nil {
+					return err
+				}
+
+				err := m.Postgresdb.ResetExternalCalendar(ctx, extCalendar.Id)
 				if err != nil {
 					return err
 				}
@@ -3105,6 +3113,11 @@ func (m *Merchant) incrementalCalendarSync(ctx context.Context, extCalendar data
 
 			// skip events that came from us
 			if ok && existing.Source == types.EventSourceInternal {
+				continue
+			}
+
+			// skip birthday events as they are all-day non-blocking and unnecessary
+			if ev.EventType == "birthday" {
 				continue
 			}
 

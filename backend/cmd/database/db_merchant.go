@@ -1216,6 +1216,7 @@ func bulkInsertBlockedTime(ctx context.Context, tx pgx.Tx, bt []BlockedTime) ([]
 	query := `
 	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day, source)
 	select $1, $2, unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
+	returning id
 	`
 
 	merchantId := bt[0].MerchantId
@@ -1250,7 +1251,7 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date, is_all_day,
 		internal_id, internal_type, is_blocking, source, last_synced_at)
 	select $1, unnest($2::text[]), unnest($3::text[]), unnest($4::text[]), unnest($5::text[]), unnest($6::text[]), unnest($7::timestamptz[]),
-		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::text[]), unnest($12::boolean[])
+		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::event_internal_type[]), unnest($12::boolean[]), $13, $14
 	`
 
 	var extEventIds []string
@@ -1262,7 +1263,7 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 	var toDates []time.Time
 	var isAllDays []bool
 	var InternalIds []*int
-	var InternalTypes []*types.EventInternalType
+	var InternalTypes []*string
 	var isBlockings []bool
 
 	for _, ee := range externalEvents {
@@ -1275,7 +1276,12 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 		toDates = append(toDates, ee.ToDate)
 		isAllDays = append(isAllDays, ee.IsAllDay)
 		InternalIds = append(InternalIds, ee.InternalId)
-		InternalTypes = append(InternalTypes, ee.InternalType)
+		if ee.InternalType != nil {
+			str := ee.InternalType.String()
+			InternalTypes = append(InternalTypes, &str)
+		} else {
+			InternalTypes = append(InternalTypes, nil)
+		}
 		isBlockings = append(isBlockings, ee.IsBlocking)
 	}
 
@@ -1371,10 +1377,10 @@ func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []Exter
 	query := `
 	update "ExternalCalendarEvent" e
 	set etag = u.etag, status = u.status, title = u.title, description = u.description, from_date = u.from_date, to_date = u.to_date,
-		is_all_day = u.is_all_day, internal_id = u.internal_id, internal_type = u.internal_type, is_blocking = u.is_blocking, last_synced_at = $5
-	from unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::text[], $6::timestamptz[], $7::timestamptz[], $8::boolean[], $9::int[], $10::text[], $10::boolean[])
-	as u(id, status, title, description, from_date, to_date, is_all_day, internal_id, internal_type, is_blocking)
-	where external_calendar_id = $6 and e.id = u.id
+		is_all_day = u.is_all_day, internal_id = u.internal_id, internal_type = u.internal_type, is_blocking = u.is_blocking, last_synced_at = $13
+	from unnest($2::int[], $3::text[], $4::text[], $5::text[], $6::text[], $7::timestamptz[], $8::timestamptz[], $9::boolean[], $10::int[], $11::event_internal_type[], $12::boolean[])
+	as u(id, etag, status, title, description, from_date, to_date, is_all_day, internal_id, internal_type, is_blocking)
+	where external_calendar_id = $1 and e.id = u.id
 	`
 
 	var ids []int
@@ -1386,7 +1392,7 @@ func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []Exter
 	var toDates []time.Time
 	var isAllDays []bool
 	var InternalIds []*int
-	var InternalTypes []*types.EventInternalType
+	var InternalTypes []*string
 	var isBlockings []bool
 
 	for _, event := range ece {
@@ -1399,12 +1405,17 @@ func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []Exter
 		toDates = append(toDates, event.ToDate)
 		isAllDays = append(isAllDays, event.IsAllDay)
 		InternalIds = append(InternalIds, event.InternalId)
-		InternalTypes = append(InternalTypes, event.InternalType)
+		if event.InternalType != nil {
+			str := event.InternalType.String()
+			InternalTypes = append(InternalTypes, &str)
+		} else {
+			InternalTypes = append(InternalTypes, nil)
+		}
 		isBlockings = append(isBlockings, event.IsBlocking)
 	}
 
-	_, err := tx.Exec(ctx, query, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,
-		isBlockings, time.Now().UTC(), ece[0].ExternalCalendarId)
+	_, err := tx.Exec(ctx, query, ece[0].ExternalCalendarId, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,
+		isBlockings, time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -1591,11 +1602,12 @@ func (s *service) NewExternalCalendarEvent(ctx context.Context, event ExternalCa
 func (s *service) UpdateExternalCalendarEvent(ctx context.Context, event ExternalCalendarEvent) error {
 	query := `
 	update "ExternalCalendarEvent"
-	set etag = $1, status = $2, title = $3, description = $4, from_date = $5, to_date = $6, is_all_day = $7, internal_id = $8,
-		internal_type = $9, is_blocking = $10, last_synced_at = $11
+	set etag = $2, status = $3, title = $4, description = $5, from_date = $6, to_date = $7, is_all_day = $8, internal_id = $9,
+		internal_type = $10, is_blocking = $11, last_synced_at = $12
+	where id = $1
 	`
 
-	_, err := s.db.Exec(ctx, query, event.Etag, event.Status, event.Title, event.Description, event.FromDate, event.ToDate, event.IsAllDay,
+	_, err := s.db.Exec(ctx, query, event.Id, event.Etag, event.Status, event.Title, event.Description, event.FromDate, event.ToDate, event.IsAllDay,
 		event.InternalId, event.InternalType, event.IsBlocking, time.Now().UTC())
 	if err != nil {
 		return err
