@@ -309,7 +309,7 @@ func (s *service) NewBookingByCustomer(ctx context.Context, nb NewCustomerBookin
 		}
 
 		insertParticipantQuery := `
-		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note) 
+		insert into "BookingParticipant" (status, booking_id, customer_id, customer_note)
 		values ($1, $2, $3, $4)`
 
 		_, err = tx.Exec(ctx, insertParticipantQuery, nb.Status, bookingId, customerId, nb.CustomerNote)
@@ -744,7 +744,7 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 				'email_id', bp.email_id,
 				'email', coalesce(u.email, c.email)
 			)
-		) filter (where bp.id is not null), 
+		) filter (where bp.id is not null),
 		'[]'::jsonb
 	) as participants
 	from "Booking" b
@@ -1071,4 +1071,41 @@ func (s *service) GetAvailableGroupBookingsForPeriod(ctx context.Context, mercha
 	}
 
 	return availableBookings, nil
+}
+
+type BookingForExternalCalendar struct {
+	Id                  int                 `json:"id" db:"id"`
+	Status              types.BookingStatus `json:"status" db:"status"`
+	BookingType         types.BookingType   `json:"booking_type" db:"booking_type"`
+	EmployeeId          *int                `json:"employee_id" db:"employee_id"`
+	ServiceName         string              `json:"service_name" db:"service_name"`
+	ServiceDescription  *string             `json:"service_description" db:"service_description"`
+	PriceType           types.PriceType     `json:"price_type" db:"price_type"`
+	FormattedLocation   string              `json:"formatted_location" db:"formatted_location"`
+	FromDate            time.Time           `json:"from_date" db:"from_date"`
+	ToDate              time.Time           `json:"to_date" db:"to_date"`
+	TotalPrice          currencyx.Price     `json:"total_price" db:"total_price"`
+	TotalCost           currencyx.Price     `json:"total_cost" db:"total_cost"`
+	MerchantNote        *string             `json:"merchant_note" db:"merchant_note"`
+	CurrentParticipants int                 `json:"current_participants" db:"current_participants"`
+}
+
+func (s *service) GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error) {
+	query := `
+	select b.id, b.status, b.booking_type, b.employee_id, s.name as service_name, s.description as service_description, s.price_type,
+		l.formatted_location, b.from_date, b.to_date, bd.total_price, bd.total_cost, bd.merchant_note, bd.current_participants
+	from "Booking" b
+	join "BookingDetails" bd on b.id = bd.booking_id
+	join "Service" s on b.service_id = s.id
+	join "Location" l on b.location_id = l.id
+	where b.id = $1
+	`
+
+	rows, _ := s.db.Query(ctx, query, bookingId)
+	bookingData, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[BookingForExternalCalendar])
+	if err != nil {
+		return BookingForExternalCalendar{}, nil
+	}
+
+	return bookingData, nil
 }

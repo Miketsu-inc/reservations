@@ -17,7 +17,8 @@ create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancell
 create type employee_role as ENUM ('owner', 'admin', 'staff');
 create type price_type as ENUM ('fixed', 'free', 'from');
 create type auth_provider_type as ENUM ('facebook', 'google');
-create type event_source as ENUM ('google');
+create type event_source as ENUM ('internal', 'google');
+create type event_internal_type as ENUM ('booking', 'blocked_time');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -306,20 +307,21 @@ create table if not exists "ExternalCalendar" (
 );
 
 create table if not exists "ExternalCalendarEvent" (
-    ID                       serial           primary key unique not null,
-    external_calendar_id     integer          references "ExternalCalendar" (ID) on delete cascade not null,
-    external_event_id        text             not null,
-    etag                     text             not null,
-    status                   text             not null,
-    title                    text             not null,
-    description              text             not null,
-    from_date                timestamptz      not null,
-    to_date                  timestamptz      not null,
-    is_all_day               boolean          not null,
-    blocked_time_id          integer          references "BlockedTime" (ID) on delete cascade,
-    is_blocking              boolean          not null,
-    source                   event_source     not null,
-    last_synced_at           timestamptz      not null default now(),
+    ID                       serial              primary key unique not null,
+    external_calendar_id     integer             references "ExternalCalendar" (ID) on delete cascade not null,
+    external_event_id        text                not null,
+    etag                     text                not null,
+    status                   text                not null,
+    title                    text                not null,
+    description              text                not null,
+    from_date                timestamptz         not null,
+    to_date                  timestamptz         not null,
+    is_all_day               boolean             not null,
+    internal_id              integer,
+    internal_type            event_internal_type,
+    is_blocking              boolean             not null,
+    source                   event_source        not null,
+    last_synced_at           timestamptz         not null default now(),
 
     unique (external_calendar_id, external_event_id)
 );

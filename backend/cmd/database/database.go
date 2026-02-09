@@ -60,6 +60,8 @@ type PostgreSQL interface {
 	NewBookingSeries(context.Context, NewBookingSeries) (CompleteBookingSeries, error)
 	// Get all group bookings from a merchant which is not full in a given period
 	GetAvailableGroupBookingsForPeriod(context.Context, uuid.UUID, int, int, time.Time, time.Time) ([]BookingTime, error)
+	// Get all booking data for external calendar
+	GetBookingForExternalCalendar(context.Context, int) (BookingForExternalCalendar, error)
 
 	// -- User --
 
@@ -131,6 +133,8 @@ type PostgreSQL interface {
 	UpdateBlockedTime(context.Context, BlockedTime) error
 	// Get blocked times for available calculation
 	GetBlockedTimes(context.Context, uuid.UUID, time.Time, time.Time) ([]BlockedTimes, error)
+	// Get blocked time by it's id
+	GetBlockedTimeById(context.Context, int) (BlockedTime, error)
 	// Get all blocked time type by a merchant's id
 	GetAllBlockedTimeTypes(context.Context, uuid.UUID) ([]BlockedTimeType, error)
 	// Create a blocked time type for a merchant
@@ -151,6 +155,8 @@ type PostgreSQL interface {
 	UpdateEmployeeById(context.Context, uuid.UUID, PublicEmployee) error
 	// Delete employee by id
 	DeleteEmployeeById(context.Context, uuid.UUID, int) error
+	// Get merchant id by employee id
+	GetMerchantIdByEmployee(context.Context, int) (uuid.UUID, error)
 	// New external calendar
 	NewExternalCalendar(context.Context, ExternalCalendar) (int, error)
 	// Update external calendar sync token
@@ -169,6 +175,22 @@ type PostgreSQL interface {
 	GetExternalCalendarByEmployeeId(context.Context, int) (ExternalCalendar, error)
 	// Update access, refresh tokens and their expiry for an external calendar
 	UpdateExternalCalendarAuthTokens(context.Context, int, string, string, time.Time) error
+	// Insert a new external calendar event
+	NewExternalCalendarEvent(context.Context, ExternalCalendarEvent) error
+	// Update an external calendar event
+	UpdateExternalCalendarEvent(context.Context, ExternalCalendarEvent) error
+	// Delete an external calendar event
+	DeleteExternalCalendarEvent(context.Context, int) error
+	// Get external calendar event by internal type and id
+	GetExternalCalendarEventByInternal(context.Context, types.EventInternalType, int) (ExternalCalendarEvent, error)
+	// Get external calendar by id
+	GetExternalCalendarById(context.Context, int) (ExternalCalendar, error)
+	// Get external calendar by channel
+	GetExternalCalendarByChannel(context.Context, string, string) (ExternalCalendar, error)
+	// Get external calendars that have a channel expiry of less than 24 hours
+	GetExpiringExternalCalendars(context.Context) ([]ExternalCalendar, error)
+	// Update the external calendar's channel_id, resource_id and channel_expiration
+	UpdateExternalCalendarChannel(context.Context, int, string, string, time.Time) error
 
 	// -- Location --
 

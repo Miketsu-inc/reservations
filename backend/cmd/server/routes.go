@@ -287,6 +287,7 @@ func (rh *RouteHandlers) merchantRoutes(r chi.Router) {
 
 			r.Get("/integrations/calendar/google", merchantHandler.GoogleCalendar)
 			r.Get("/integrations/calendar/google/callback", merchantHandler.GoogleCalendarCallback)
+			r.Post("/integrations/calendar/google/watch", merchantHandler.GoogleCalendarWatch)
 		})
 	})
 }
