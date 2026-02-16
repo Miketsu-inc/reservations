@@ -53,7 +53,7 @@ func (s *service) GetUserById(ctx context.Context, user_id uuid.UUID) (User, err
 
 	var user User
 	err := s.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
-		&user.JwtRefreshVersion, &user.PreferredLang, &user.PreferredLang, &user.AuthProvider, &user.ProviderId)
+		&user.JwtRefreshVersion, &user.PreferredLang, &user.AuthProvider, &user.ProviderId)
 	if err != nil {
 		return User{}, err
 	}
