@@ -24,12 +24,10 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
-import BlockedTimeModal from "./BlockedTimeModal";
 import CalendarModal from "./CalendarModal";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu from "./CreateMenu";
 import DragConfirmationModal from "./DragConfirmationModal";
-import NewBookingModal from "./NewBookingModal";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -140,15 +138,12 @@ export default function Calendar({ router, route, search }) {
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookingInfo, setBookingInfo] = useState(defaultBookingInfo);
-  const [isBlockedTimeModalOpen, setIsBlockedTimeModalOpen] = useState(false);
-  const [blockedTimeModalData, setBlockedTimeModalData] = useState(null);
   const [dragModalOpen, setDragModalOpen] = useState(false);
   const [dragModalData, setDragModalData] = useState({
     booking: {},
     old_booking: {},
     revert: {},
   });
-  const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
 
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
@@ -468,23 +463,6 @@ export default function Calendar({ router, route, search }) {
           await invalidateBookingsQuery();
           setDragModalOpen(false);
         }}
-      />
-      <BlockedTimeModal
-        key={blockedTimeModalData?.extendedProps?.id || "new"}
-        isOpen={isBlockedTimeModalOpen}
-        onClose={() => {
-          setBlockedTimeModalData(null);
-          setIsBlockedTimeModalOpen(false);
-        }}
-        blockedTime={blockedTimeModalData}
-        preferences={preferences}
-        onDeleted={invalidateBookingsQuery}
-        onSubmitted={invalidateBookingsQuery}
-      />
-      <NewBookingModal
-        isOpen={isNewBookingModalOpen}
-        onClose={() => setIsNewBookingModalOpen(false)}
-        onNewBooking={invalidateBookingsQuery}
       />
     </div>
   );
