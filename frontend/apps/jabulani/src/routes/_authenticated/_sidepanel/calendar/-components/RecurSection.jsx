@@ -1,12 +1,14 @@
-import { RefreshIcon } from "@reservations/assets";
-import { DatePicker, Input, Select, Switch } from "@reservations/components";
+import { Button, DatePicker, Input, Select } from "@reservations/components";
 import {
   dayNameFromDate,
   getDaySuffix,
   timeStringFromDate,
 } from "@reservations/lib";
+import { useState } from "react";
 
 function recurUntiText(startDate, endDate) {
+  if (!startDate || !endDate) return "";
+
   const showYear =
     startDate.getFullYear() === endDate.getFullYear() ? false : true;
 
@@ -36,18 +38,27 @@ function recurFreqText(startDate, freq) {
     case "custom":
       return "";
     default:
-      console.error("frequency does not match any of the expected values");
+      return "does not repeat";
   }
 }
 
-export default function RecurSection({
-  booking,
-  recurData,
-  updateRecurData,
-  disabled,
-  onSelectOpenChange,
-  onDatePickerOpenChange,
-}) {
+const currentDate = new Date();
+const defaultRecurData = {
+  isRecurring: false,
+  frequency: "weekly",
+  endDate: new Date(currentDate.setMonth(currentDate.getMonth() + 1)),
+  interval: 1,
+  intervalUnit: "weeks",
+  days: [],
+};
+
+export default function RecurSection({ booking, recurringData, onSave }) {
+  const [recurData, setRecurData] = useState(recurringData || defaultRecurData);
+
+  function updateRecurData(data) {
+    setRecurData((prev) => ({ ...prev, ...data }));
+  }
+
   const days = [
     { label: "Mo", value: "MO" },
     { label: "Tu", value: "TU" },
@@ -66,109 +77,134 @@ export default function RecurSection({
     updateRecurData({ days: newDays });
   }
 
-  return (
-    <div>
-      <div
-        className="border-text_color flex flex-row items-center justify-between"
-      >
-        <div className="flex flex-row items-center gap-2">
-          <RefreshIcon styles="size-5" />
-          <p>Recurring booking</p>
-        </div>
-        <Switch
-          size="large"
-          defaultValue={recurData.isRecurring}
-          onSwitch={() =>
-            updateRecurData({ isRecurring: !recurData.isRecurring })
-          }
-          disabled={disabled}
-        />
-      </div>
-      {/* TODO: this should have overflow-hidden on it to hide the content while transitioning
-                but it causes the dropdowns to not open. This could be solved by only applying
-                overflow-hidden while transitioning or reworking the dropdowns */}
-      <div
-        className={`${
-          recurData.isRecurring
-            ? `${recurData.frequency !== "custom" ? "max-h-60" : "max-h-96"} p-2
-              opacity-100`
-            : "max-h-0 overflow-hidden p-0 opacity-0"
-          } flex flex-col gap-3 transition-all duration-300 sm:w-86`}
-      >
-        <p className="max-w-5/6 text-sm">
-          {`Repeats ${recurFreqText(booking.start, recurData.frequency)} at ${timeStringFromDate(booking.start)} - ${timeStringFromDate(booking.end)}
-                      from ${recurUntiText(booking.start, recurData.endDate)}`}
-        </p>
-        <Select
-          labelText="Frequency"
-          required={false}
-          styles="w-full"
-          options={[
-            { value: "daily", label: "Daily" },
-            { value: "weekly", label: "Weekly" },
-            { value: "monthly", label: "Monthly" },
-            { value: "custom", label: "Custom" },
-          ]}
-          value={recurData.frequency}
-          onSelect={(option) => updateRecurData({ frequency: option.value })}
-          onOpenChange={(open) => onSelectOpenChange(open)}
-        />
-        {recurData.frequency === "custom" && (
-          <div>
-            <p className="pb-1 text-sm">Repeat days</p>
-            <div className="flex w-full flex-row items-center gap-1 pb-3">
-              {days.map(({ label, value }) => {
-                const isSelected = recurData.days.includes(value);
+  function handleFreqSelect(option) {
+    if (option.value === "not-repeat") {
+      updateRecurData({ isRecurring: false });
+    } else {
+      updateRecurData({ isRecurring: true, frequency: option.value });
+    }
+  }
 
-                return (
-                  <button
-                    key={value}
-                    onClick={() => toggleDay(value)}
-                    className={`${
-                      isSelected
-                        ? "border-primary"
-                        : "border-border_color hover:border-gray-400"
-                    } size-10 flex-1 cursor-pointer rounded-full border-2 p-2
-                    text-center text-sm transition-colors duration-300`}
+  return (
+    <div className="relative h-full w-full">
+      <div className="flex h-full flex-1 flex-col gap-6 px-6">
+        <p className="text-2xl font-semibold">Recurring Rules</p>
+
+        <div className="flex h-full flex-1 flex-col gap-5">
+          <Select
+            labelText="Frequency"
+            required={false}
+            styles="w-full"
+            options={[
+              { value: "not-repeat", label: "Doesn't repeat" },
+              { value: "daily", label: "Daily" },
+              { value: "weekly", label: "Weekly" },
+              { value: "monthly", label: "Monthly" },
+              { value: "custom", label: "Custom" },
+            ]}
+            value={
+              !recurData?.isRecurring ? "not-repeat" : recurData?.frequency
+            }
+            onSelect={handleFreqSelect}
+          />
+
+          <div
+            className={`flex flex-col overflow-hidden transition-all
+              duration-300 ease-in-out ${
+                recurData?.isRecurring
+                  ? "max-h-125 translate-y-0 opacity-100"
+                  : "max-h-0 -translate-y-2 opacity-0"
+              }`}
+          >
+            <div className="flex flex-col gap-3">
+              <p className="text-text_color/70 px-1">
+                {`Repeats ${recurFreqText(
+                  booking.start,
+                  recurData?.frequency
+                )} at ${timeStringFromDate(booking.start)} - ${timeStringFromDate(
+                  booking.end
+                )}
+              from ${recurUntiText(booking?.start, recurData?.endDate)}`}
+              </p>
+
+              {recurData?.frequency === "custom" && (
+                <div className="flex flex-col gap-3 pt-2">
+                  <div>
+                    <p className="pb-1 text-sm">Repeat days</p>
+                    <div
+                      className="flex w-full flex-row items-center gap-1
+                        md:gap-2"
+                    >
+                      {days.map(({ label, value }) => {
+                        const isSelected = recurData?.days?.includes(value);
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => toggleDay(value)}
+                            className={`${
+                              isSelected
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border_color hover:border-gray-400"
+                            } text-text_color/70 size-10 flex-1 cursor-pointer
+                            rounded-full border-2 p-2 text-center text-sm
+                            font-medium transition-all duration-200 md:size-12
+                            md:text-base`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <Input
+                    styles="p-2"
+                    labelText="Interval"
+                    childrenSide="right"
+                    required={false}
+                    type="number"
+                    inputData={(data) =>
+                      updateRecurData({ interval: data.value })
+                    }
+                    value={recurData.interval}
                   >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <Input
-              styles="p-2"
-              labelText="Interval"
-              childrenSide="right"
-              required={false}
-              type="number"
-              inputData={(data) => updateRecurData({ interval: data.value })}
-              value={recurData.interval}
-            >
-              <Select
-                styles="rounded-l-none min-w-24!"
-                options={[
-                  { value: "days", label: "days" },
-                  { value: "weeks", label: "weeks" },
-                ]}
-                onSelect={(option) =>
-                  updateRecurData({ intervalUnit: option.value })
-                }
-                value={recurData.intervalUnit}
-                onOpenChange={(open) => onSelectOpenChange(open)}
+                    <Select
+                      styles="rounded-l-none min-w-24!"
+                      options={[
+                        { value: "days", label: "days" },
+                        { value: "weeks", label: "weeks" },
+                      ]}
+                      onSelect={(option) =>
+                        updateRecurData({ intervalUnit: option.value })
+                      }
+                      value={recurData.intervalUnit}
+                    />
+                  </Input>
+                </div>
+              )}
+
+              <DatePicker
+                labelText="End date"
+                required={false}
+                styles="w-full"
+                value={recurData.endDate}
+                disabledBefore={new Date()}
+                onSelect={(date) => updateRecurData({ endDate: date })}
               />
-            </Input>
+            </div>
           </div>
-        )}
-        <DatePicker
-          labelText="End date"
-          required={false}
-          styles="w-full"
-          value={recurData.endDate}
-          disabledBefore={new Date()}
-          onSelect={(date) => updateRecurData({ endDate: date })}
-          onOpenChange={(open) => onDatePickerOpenChange(open)}
-        />
+        </div>
+        <div
+          className="border-border_color bg-layer_bg items center fixed right-0
+            bottom-0 left-0 flex w-full border-t px-6 py-4"
+        >
+          <Button
+            styles="py-2 px-4 w-full"
+            variant="primary"
+            name="createButton"
+            buttonText="Save"
+            onClick={() => onSave(recurData)}
+          />
+        </div>
       </div>
     </div>
   );

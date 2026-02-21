@@ -1,7 +1,6 @@
 import { BackArrowIcon } from "@reservations/assets";
 import { useEffect, useRef, useState } from "react";
-import { Avatar } from ".";
-import CheckBox from "./CheckBox";
+import { Avatar, CheckBox } from ".";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 36;

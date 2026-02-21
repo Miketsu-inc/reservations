@@ -2,7 +2,7 @@ export { default as Avatar } from "./Avatar.jsx";
 export { default as Breadcrumbs } from "./Breadcrumbs.jsx";
 export { default as Button } from "./Button.jsx";
 export { default as Card } from "./Card.jsx";
-export { default as CeckBox } from "./CheckBox.jsx";
+export { default as CheckBox } from "./CheckBox.jsx";
 export { default as CloseButton } from "./CloseButton.jsx";
 export { default as ComboBox } from "./ComboBox.jsx";
 export { default as DatePicker } from "./DatePicker.jsx";

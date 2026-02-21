@@ -1643,7 +1643,7 @@ func (m *Merchant) NewBookingByMerchant(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type customer struct {
-		CustomerId  *uuid.UUID `json:"customer_id"`
+		CustomerId  *uuid.UUID `json:"id"`
 		FirstName   *string    `json:"first_name"`
 		LastName    *string    `json:"last_name"`
 		Email       *string    `json:"email"`

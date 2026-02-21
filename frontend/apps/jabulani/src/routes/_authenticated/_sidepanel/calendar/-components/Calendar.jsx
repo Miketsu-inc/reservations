@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
 import BlockedTimeModal from "./BlockedTimeModal";
 import CalendarModal from "./CalendarModal";
+import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu from "./CreateMenu";
 import DragConfirmationModal from "./DragConfirmationModal";
 import NewBookingModal from "./NewBookingModal";
@@ -131,6 +132,11 @@ const defaultBookingInfo = {
 };
 
 export default function Calendar({ router, route, search }) {
+  const [sidePanelState, setSidePanelState] = useState({
+    isOpen: false,
+    type: null,
+    data: null,
+  });
   const [calendarTitle, setCalendarTitle] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookingInfo, setBookingInfo] = useState(defaultBookingInfo);
@@ -244,6 +250,19 @@ export default function Calendar({ router, route, search }) {
       className="flex h-[85svh] flex-col px-4 py-2 md:h-fit md:max-h-[90svh]
         md:px-0 md:py-0"
     >
+      <CalendarSidePanel
+        isOpen={sidePanelState.isOpen}
+        type={sidePanelState.type}
+        data={sidePanelState.data}
+        onClose={() =>
+          setSidePanelState((prev) => ({ ...prev, isOpen: false }))
+        }
+        onSave={() => {
+          invalidateBookingsQuery();
+          setSidePanelState((prev) => ({ ...prev, isOpen: false }));
+        }}
+        preferences={preferences}
+      />
       <div className="relative flex flex-col py-4 md:flex-row md:gap-2">
         <div
           className="flex w-full flex-col justify-between md:flex-row
@@ -256,8 +275,20 @@ export default function Calendar({ router, route, search }) {
             <div className="flex flex-row items-center gap-2">
               <CreateMenu
                 isFloating={isWindowSmall}
-                onCreateBlockedTime={() => setIsBlockedTimeModalOpen(true)}
-                onCreateBooking={() => setIsNewBookingModalOpen(true)}
+                onCreateBlockedTime={() =>
+                  setSidePanelState({
+                    isOpen: true,
+                    type: "blocked-time",
+                    data: null,
+                  })
+                }
+                onCreateBooking={() =>
+                  setSidePanelState({
+                    isOpen: true,
+                    type: "new-booking",
+                    data: null,
+                  })
+                }
               />
               <DatePicker
                 styles="w-fit"
@@ -331,8 +362,11 @@ export default function Calendar({ router, route, search }) {
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
-              setBlockedTimeModalData(e.event);
-              setTimeout(() => setIsBlockedTimeModalOpen(true), 0);
+              setSidePanelState({
+                isOpen: true,
+                type: "blocked-time",
+                data: e.event,
+              });
               return;
             }
 

@@ -181,8 +181,8 @@ func newBooking(ctx context.Context, tx pgx.Tx, nb newBookingData) (int, error) 
 	}
 
 	if nb.BookingType == types.BookingTypeAppointment {
-		if len(nb.Participants) != 1 {
-			return 0, fmt.Errorf("appointment type bookings must have only 1 participant")
+		if len(nb.Participants) > 1 {
+			return 0, fmt.Errorf("appointment type bookings must not have more than 1 participant")
 		}
 	}
 
@@ -741,8 +741,8 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 		jsonb_agg(
 			jsonb_build_object(
 				'customer_id', c.id,
-				'email_id', bp.email_id,
-				'email', coalesce(u.email, c.email)
+				'email', coalesce(u.email, c.email),
+				'email_id', bp.email_id
 			)
 		) filter (where bp.id is not null),
 		'[]'::jsonb
@@ -761,7 +761,7 @@ func (s *service) GetBookingDataForEmail(ctx context.Context, bookingId int) (Bo
 	var participantJson []byte
 
 	err := s.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.ServiceName,
-		&data.FormattedLocation, &data.MerchantName, &data.CancelDeadline, &participantJson)
+		&data.MerchantName, &data.CancelDeadline, &data.FormattedLocation, &participantJson)
 	if err != nil {
 		return BookingEmailData{}, err
 	}

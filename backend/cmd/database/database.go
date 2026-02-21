@@ -238,7 +238,7 @@ type PostgreSQL interface {
 	// get simple service info for the merchant page booking summary
 	GetMinimalServiceInfo(context.Context, uuid.UUID, int, int) (MinimalServiceInfo, error)
 	// Get all services for calendar
-	GetServicesForCalendarByMerchant(context.Context, uuid.UUID) ([]ServiceForCalendar, error)
+	GetServicesForCalendarByMerchant(context.Context, uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
 	// Update Group Service and it's phase by id
 	UpdateGroupServiceById(context.Context, GroupServiceWithSettings) error
 	// Get all data related to a group service

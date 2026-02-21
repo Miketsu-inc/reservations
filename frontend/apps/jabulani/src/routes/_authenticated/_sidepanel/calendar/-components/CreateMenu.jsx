@@ -5,14 +5,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
+import { useState } from "react";
 
 export default function CreateMenu({
   onCreateBlockedTime,
   onCreateBooking,
   isFloating = false,
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   return (
-    <Popover>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        open ? setIsOpen(true) : setIsOpen(false);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="primary"
@@ -35,13 +42,19 @@ export default function CreateMenu({
             *:rounded-lg *:p-2"
         >
           <button
-            onClick={onCreateBooking}
+            onClick={() => {
+              setIsOpen(false);
+              onCreateBooking();
+            }}
             className="flex cursor-pointer items-center gap-2 text-left"
           >
             <CalendarPlusIcon styles="size-6" /> Booking
           </button>
           <button
-            onClick={onCreateBlockedTime}
+            onClick={() => {
+              setIsOpen(false);
+              onCreateBlockedTime();
+            }}
             className="cursor-pointer text-left"
           >
             Blocked Time

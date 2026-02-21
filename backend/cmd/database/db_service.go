@@ -1028,27 +1028,79 @@ func (s *service) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUI
 	return msi, nil
 }
 
-type ServiceForCalendar struct {
-	Id            int               `json:"id" db:"id"`
-	Name          string            `json:"name" db:"name"`
-	TotalDuration int               `json:"total_duration" db:"total_duration"`
-	BookingType   types.BookingType `json:"booking_type" db:"booking_type"`
+type ServicesGroupedByCategoriesForCalendar struct {
+	Id       *int              `json:"id"`
+	Name     *string           `json:"name"`
+	Services []CalendarService `json:"services"`
 }
 
-func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ServiceForCalendar, error) {
+type CalendarService struct {
+	Id              int                       `json:"id"`
+	Name            string                    `json:"name"`
+	Duration        int                       `json:"duration"`
+	Price           *currencyx.FormattedPrice `json:"price"`
+	PriceType       types.PriceType           `json:"price_type"`
+	Color           string                    `json:"color"`
+	BookingType     types.BookingType         `json:"booking_type"`
+	MaxParticipants int                       `json:"max_participants"`
+}
+
+func (s *service) GetServicesForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error) {
 	query := `
-	select id, name, total_duration, booking_type
-	from "Service"
-	where merchant_id = $1 and deleted_on is null
+	select sc.id, sc.name,
+	coalesce (
+		jsonb_agg(
+			jsonb_build_object(
+				'id', s.id,
+				'name', s.name,
+				'duration', s.total_duration,
+				'price', s.price_per_person,
+				'price_type', s.price_type,
+				'color', s.color,
+				'booking_type', s.booking_type,
+				'max_participants', s.max_participants
+			) order by s.sequence
+		) filter (where s.id is not null),
+	'[]'::jsonb) as services
+	from "Service" s
+	left join "ServiceCategory" sc on s.category_id = sc.id
+	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	group by sc.id, sc.name
+	order by sc.sequence, sc.name
 	`
 
 	rows, _ := s.db.Query(ctx, query, merchantId)
-	services, err := pgx.CollectRows(rows, pgx.RowToStructByName[ServiceForCalendar])
+	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (ServicesGroupedByCategoriesForCalendar, error) {
+		var sgby ServicesGroupedByCategoriesForCalendar
+		var services []byte
+
+		err := row.Scan(&sgby.Id, &sgby.Name, &services)
+		if err != nil {
+			return ServicesGroupedByCategoriesForCalendar{}, err
+		}
+
+		if len(services) > 0 {
+			err = json.Unmarshal(services, &sgby.Services)
+			if err != nil {
+				return ServicesGroupedByCategoriesForCalendar{}, err
+			}
+		} else {
+			sgby.Services = []CalendarService{}
+		}
+
+		return sgby, nil
+	})
 	if err != nil {
-		return []ServiceForCalendar{}, err
+		return []ServicesGroupedByCategoriesForCalendar{}, err
 	}
 
-	return services, nil
+	// if services array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(servicesGroupByCategory) == 0 {
+		servicesGroupByCategory = []ServicesGroupedByCategoriesForCalendar{}
+	}
+
+	return servicesGroupByCategory, nil
 }
 
 type GroupServiceWithSettings struct {
