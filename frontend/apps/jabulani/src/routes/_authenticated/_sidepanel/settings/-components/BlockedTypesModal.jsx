@@ -74,12 +74,12 @@ export default function BlockedTypesModal({
     let method = "";
 
     if (formData.id != null) {
-      url = `/api/v1/merchants/blocked-time-types/${formData.id}`;
+      url = `/api/v1/merchant/blocked-time-types/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
-      url = "/api/v1/merchants/blocked-time-types";
+      url = "/api/v1/merchant/blocked-time-types";
       method = "POST";
     }
 

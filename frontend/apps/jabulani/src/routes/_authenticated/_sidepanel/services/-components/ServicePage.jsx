@@ -83,7 +83,7 @@ export default function ServicePage({
   }
 
   async function deleteHandler() {
-    const response = await fetch(`/api/v1/merchants/services/${service.id}`, {
+    const response = await fetch(`/api/v1/merchant/services/${service.id}`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",

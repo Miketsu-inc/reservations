@@ -28,7 +28,7 @@ function convertTimeToMinutes(time) {
 }
 
 async function updatePreferences(preferences) {
-  const response = await fetch("/api/v1/merchants/preferences", {
+  const response = await fetch("/api/v1/merchant/preferences", {
     method: "PATCH",
     headers: {
       Accept: "application/json",

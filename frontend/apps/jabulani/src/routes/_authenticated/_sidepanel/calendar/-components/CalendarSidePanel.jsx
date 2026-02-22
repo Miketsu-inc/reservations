@@ -6,7 +6,7 @@ import BlockedTimePanel from "./BlockedTimePanel";
 import NewBookingPanel from "./NewBookingPanel";
 
 // async function fetchEmployees() {
-//   const response = await fetch(`/api/v1/merchants/calendar/employees`, {
+//   const response = await fetch(`/api/v1/merchant/calendar/employees`, {
 //     method: "GET",
 //     headers: {
 //       Accept: "application/json",
@@ -30,7 +30,7 @@ import NewBookingPanel from "./NewBookingPanel";
 // }
 
 async function fetchCustomersForCalendar() {
-  const response = await fetch("/api/v1/merchants/calendar/customers", {
+  const response = await fetch("/api/v1/merchant/calendar/customers", {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -55,7 +55,7 @@ function customersForCalendarQueryOptions() {
 }
 
 async function fetchServicesForCalendar() {
-  const response = await fetch("/api/v1/merchants/calendar/services", {
+  const response = await fetch("/api/v1/merchant/calendar/services", {
     method: "GET",
     headers: {
       Accept: "application/json",

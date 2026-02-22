@@ -61,16 +61,13 @@ function RouteComponent() {
 
   async function deleteHandler() {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/employees/${employee.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

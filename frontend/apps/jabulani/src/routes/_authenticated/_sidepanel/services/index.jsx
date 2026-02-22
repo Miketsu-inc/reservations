@@ -22,7 +22,7 @@ import ServiceCard from "./-components/ServiceCard";
 import ServiceCategoryCard from "./-components/ServiceCategoryCard";
 
 async function fetchServices() {
-  const response = await fetch(`/api/v1/merchants/services`, {
+  const response = await fetch(`/api/v1/merchant/services`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -124,16 +124,13 @@ function ServicesPage() {
 
   async function deleteHandler(selected) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/services/${selected.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/services/${selected.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -160,7 +157,7 @@ function ServicesPage() {
     if (!categoryIds) return;
 
     const response = await fetch(
-      `/api/v1/merchants/services/categories/reorder`,
+      `/api/v1/merchant/service-categories/reorder`,
       {
         method: "PUT",
         headers: {
@@ -188,15 +185,15 @@ function ServicesPage() {
   }
 
   async function moveServiceHandler(categoryId, id, direction) {
-    const services = services.find(
+    const servicesInCategory = services.find(
       (category) => category.id === categoryId
     ).services;
-    if (services.length === 1) return;
+    if (servicesInCategory.length === 1) return;
 
-    const serviceIds = reorderArray(services, id, direction);
+    const serviceIds = reorderArray(servicesInCategory, id, direction);
     if (!serviceIds) return;
 
-    const response = await fetch(`/api/v1/merchants/services/reorder`, {
+    const response = await fetch(`/api/v1/merchant/services/reorder`, {
       method: "PUT",
       headers: {
         Accept: "application/json",

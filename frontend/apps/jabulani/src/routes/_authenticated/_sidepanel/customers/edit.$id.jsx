@@ -6,7 +6,7 @@ import { useState } from "react";
 import CustomerPage from "./-components/CustomerPage";
 
 async function fetchCustomerData(id) {
-  const response = await fetch(`/api/v1/merchants/customers/${id}`, {
+  const response = await fetch(`/api/v1/merchant/customers/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -54,7 +54,7 @@ function RouteComponent() {
   async function saveCustomerHandler(customer) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/${customer.id}`,
+        `/api/v1/merchant/customers/${customer.id}`,
         {
           method: "PUT",
           headers: {

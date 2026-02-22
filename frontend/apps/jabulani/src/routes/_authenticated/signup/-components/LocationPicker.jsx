@@ -275,7 +275,7 @@ export default function LocationPicker({
   async function submitHandler() {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/merchants/location", {
+      const response = await fetch("/api/v1/merchant/locations", {
         method: "POST",
         headers: {
           Accept: "application/json",

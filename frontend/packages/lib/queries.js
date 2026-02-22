@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { invalidateLocalStorageAuth } from "./lib";
 
 async function fetchPreferences() {
-  const response = await fetch(`/api/v1/merchants/preferences`, {
+  const response = await fetch(`/api/v1/merchant/preferences`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -27,13 +27,16 @@ export function preferencesQueryOptions() {
 }
 
 async function fetchBusinessHours() {
-  const response = await fetch(`/api/v1/merchants/business-hours`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "constent-type": "application/json",
-    },
-  });
+  const response = await fetch(
+    `/api/v1/merchant/settings/business-hours/normalized`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "constent-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -45,13 +48,13 @@ async function fetchBusinessHours() {
 
 export function businessHoursQueryOptions() {
   return queryOptions({
-    queryKey: ["business-hours"],
+    queryKey: ["normalized-business-hours"],
     queryFn: fetchBusinessHours,
   });
 }
 
 async function fetchCustomers() {
-  const response = await fetch(`/api/v1/merchants/customers`, {
+  const response = await fetch(`/api/v1/merchant/customers`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -76,7 +79,7 @@ export function customersQueryOptions() {
 }
 
 async function fetchBlockedTimeTypes() {
-  const response = await fetch(`/api/v1/merchants/blocked-time-types`, {
+  const response = await fetch(`/api/v1/merchant/blocked-time-types`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -101,7 +104,7 @@ export function blockedTimeTypesQueryOptions() {
 }
 
 async function fetchServiceFormOptions() {
-  const response = await fetch("/api/v1/merchants/services/form-options", {
+  const response = await fetch("/api/v1/merchant/services/form-options", {
     method: "GET",
     headers: {
       Accept: "application/json",

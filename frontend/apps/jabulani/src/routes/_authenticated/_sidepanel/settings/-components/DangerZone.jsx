@@ -13,7 +13,7 @@ export default function DangerZone() {
   const { showToast } = useToast();
 
   async function deletehandler() {
-    const response = await fetch("/api/v1/merchants", {
+    const response = await fetch("/api/v1/merchant", {
       method: "DELETE",
     });
     if (!response.ok) {
@@ -33,7 +33,7 @@ export default function DangerZone() {
   }
 
   async function handleNameChange(newName) {
-    const response = await fetch("/api/v1/merchants/name", {
+    const response = await fetch("/api/v1/merchant/name", {
       method: "PATCH",
       headers: {
         Accept: "application/json",

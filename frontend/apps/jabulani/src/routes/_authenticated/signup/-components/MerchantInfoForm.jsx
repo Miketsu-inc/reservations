@@ -30,7 +30,7 @@ export default function MerchantInfoForm({ isCompleted }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/auth/signup/merchant", {
+      const response = await fetch("/api/v1/auth/merchants", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -61,7 +61,7 @@ export default function MerchantInfoForm({ isCompleted }) {
   const checkMerchantUrl = useCallback(async (merchantName) => {
     if (merchantName !== "") {
       try {
-        const response = await fetch("/api/v1/merchants/check-url", {
+        const response = await fetch("/api/v1/merchant/check-url", {
           method: "POST",
           headers: {
             Accept: "application/json",

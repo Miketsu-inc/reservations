@@ -27,7 +27,7 @@ export default function DragConfirmationModal({
 
     try {
       const response = await fetch(
-        `/api/v1/bookings/${bookingData.booking.extendedProps.id}`,
+        `/api/v1/bookings/merchant/${bookingData.booking.extendedProps.id}`,
         {
           method: "PATCH",
           headers: {

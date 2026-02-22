@@ -38,7 +38,7 @@ import PaginatedList from "./-components/PaginatedList";
 
 async function fetchCustomerInfo(customerId) {
   const response = await fetch(
-    `/api/v1/merchants/customers/stats/${customerId}`,
+    `/api/v1/merchant/customers/${customerId}/stats`,
     {
       method: "GET",
       headers: {
@@ -134,7 +134,7 @@ function CustomerDetailsPage() {
 
   async function deleteHandler(id) {
     try {
-      const response = await fetch(`/api/v1/merchants/customers/${id}`, {
+      const response = await fetch(`/api/v1/merchant/customers/${id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -171,7 +171,7 @@ function CustomerDetailsPage() {
       },
     };
 
-    if (data.method === "POST") {
+    if (data.method === "PUT") {
       options.body = JSON.stringify({
         id: data.id,
         reason: data.reason,
@@ -180,7 +180,7 @@ function CustomerDetailsPage() {
 
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/blacklist/${data.id}`,
+        `/api/v1/merchant/customers/${data.id}/blacklist`,
         options
       );
 
@@ -189,7 +189,7 @@ function CustomerDetailsPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        if (data.method === "POST") {
+        if (data.method === "PUT") {
           showToast({
             message: "Customer blacklisted successfully",
             variant: "success",
@@ -212,16 +212,17 @@ function CustomerDetailsPage() {
 
   async function transferHandler(data) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/customers/transfer?from=${data.from}&to=${data.to}`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/customers/transfer`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          from_customer_id: data.from,
+          to_customer_id: data.to,
+        }),
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

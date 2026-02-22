@@ -12,7 +12,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
   const checkMerchantUrl = useCallback(async (name) => {
     if (name !== "") {
       try {
-        const response = await fetch("/api/v1/merchants/check-url", {
+        const response = await fetch("/api/v1/merchant/check-url", {
           method: "POST",
           headers: {
             Accept: "application/json",

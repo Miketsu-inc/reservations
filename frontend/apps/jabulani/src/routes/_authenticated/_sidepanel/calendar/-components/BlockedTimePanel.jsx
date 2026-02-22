@@ -157,13 +157,13 @@ export default function BlockedTimePanel({
     // means that the blocek time was already added and now should be modified
     if (formData.id != null) {
       // body.employee_id = blockedTime?.extendedProps?.employee_id;
-      url = `/api/v1/merchants/blocked-times/${formData.id}`;
+      url = `/api/v1/merchant/blocked-times/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
       // body.employee_ids = [formData.employee_id];
-      url = "/api/v1/merchants/blocked-times";
+      url = "/api/v1/merchant/blocked-times";
       method = "POST";
     }
 
@@ -201,7 +201,7 @@ export default function BlockedTimePanel({
 
   async function handleDelete(bt) {
     try {
-      const response = await fetch(`/api/v1/merchants/blocked-times/${bt.id}`, {
+      const response = await fetch(`/api/v1/merchant/blocked-times/${bt.id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",

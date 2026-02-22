@@ -17,7 +17,7 @@ function RouteComponent() {
 
   async function saveCustomerHandler(customer) {
     try {
-      const response = await fetch("/api/v1/merchants/customers", {
+      const response = await fetch("/api/v1/merchant/customers", {
         method: "POST",
         headers: {
           Accept: "application/json",

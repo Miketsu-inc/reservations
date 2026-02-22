@@ -7,7 +7,7 @@ import ProductModal from "./-components/ProductModal";
 import ProductsTable from "./-components/ProductsTable";
 
 async function fetchProducts() {
-  const response = await fetch(`/api/v1/merchants/products`, {
+  const response = await fetch(`/api/v1/merchant/products`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -52,7 +52,7 @@ function ProductsPage() {
 
   async function deleteHandler(product) {
     try {
-      const response = await fetch(`/api/v1/merchants/products/${product.id}`, {
+      const response = await fetch(`/api/v1/merchant/products/${product.id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -86,12 +86,12 @@ function ProductsPage() {
 
     // means that the product was already added and now should be modified
     if (product.id != null) {
-      url = `/api/v1/merchants/products/${product.id}`;
+      url = `/api/v1/merchant/products/${product.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete product.id;
-      url = "/api/v1/merchants/products";
+      url = "/api/v1/merchant/products";
       method = "POST";
     }
 

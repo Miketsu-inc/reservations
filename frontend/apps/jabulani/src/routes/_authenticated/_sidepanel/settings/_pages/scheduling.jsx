@@ -75,7 +75,7 @@ function BlockedTimesManager() {
   async function handleDelete(id) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/blocked-time-types/${id}`,
+        `/api/v1/merchant/blocked-time-types/${id}`,
         {
           method: "DELETE",
           headers: {

@@ -6,7 +6,7 @@ import { useState } from "react";
 import EmployeePage from "./-components/EmployeePage";
 
 async function fetchEmployee(id) {
-  const response = await fetch(`/api/v1/merchants/employees/${id}`, {
+  const response = await fetch(`/api/v1/merchant/team/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -57,17 +57,14 @@ function RouteComponent() {
 
   async function saveEmployee(employee) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/employees/${employee.id}`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(employee),
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(employee),
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

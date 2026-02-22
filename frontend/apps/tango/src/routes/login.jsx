@@ -111,7 +111,7 @@ function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/auth/login/user", {
+      const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -159,7 +159,7 @@ function LoginPage() {
             focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
             items-center justify-center border bg-transparent py-2 font-normal!
             hover:bg-transparent focus:outline-hidden"
-          href="http://localhost:8080/api/v1/auth/login/google"
+          href="http://localhost:8080/api/v1/auth/oauth/google"
         >
           <GoogleIcon
             styles="group-hover:fill-hvr_secondary fill-secondary mr-3"
@@ -172,7 +172,7 @@ function LoginPage() {
             focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
             items-center justify-center border bg-transparent py-2 font-normal!
             hover:bg-transparent focus:outline-hidden"
-          href={"http://localhost:8080/api/v1/auth/login/facebook"}
+          href={"http://localhost:8080/api/v1/auth/oauth/facebook"}
         >
           <FacebookIcon
             styles="group-hover:fill-hvr_secondary fill-secondary mr-1"

@@ -6,7 +6,7 @@ import { useState } from "react";
 import EmployeeTable from "./-components/EmployeeTable";
 
 async function fetchEmployees() {
-  const response = await fetch("/api/v1/merchants/employees", {
+  const response = await fetch("/api/v1/merchant/team", {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -79,16 +79,13 @@ function RouteComponent() {
 
   async function deleteHandler(employee) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/employees/${employee.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

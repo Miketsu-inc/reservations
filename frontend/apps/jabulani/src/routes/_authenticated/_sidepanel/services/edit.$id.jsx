@@ -10,7 +10,7 @@ import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
 async function fetchServiceData(id) {
-  const response = await fetch(`/api/v1/merchants/services/${id}`, {
+  const response = await fetch(`/api/v1/merchant/services/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -89,7 +89,7 @@ function RouteComponent() {
   }
 
   async function updateServiceData(serviceId, serviceData) {
-    const response = await fetch(`/api/v1/merchants/services/${serviceId}`, {
+    const response = await fetch(`/api/v1/merchant/services/${serviceId}`, {
       method: "PUT",
       headers: {
         Accept: "application/json",
@@ -107,7 +107,7 @@ function RouteComponent() {
 
   async function updateUsedProducts(serviceId, usedProducts) {
     const response = await fetch(
-      `/api/v1/merchants/services/${serviceId}/products`,
+      `/api/v1/merchant/services/${serviceId}/products`,
       {
         method: "PUT",
         headers: {

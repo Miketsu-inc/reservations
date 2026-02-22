@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
-	"github.com/miketsu-inc/reservations/backend/cmd/server"
+	"github.com/miketsu-inc/reservations/backend/internal/app"
+	"github.com/miketsu-inc/reservations/backend/internal/repository/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
@@ -22,8 +23,12 @@ func main() {
 	cfg := config.LoadEnvVars()
 	cfg.Validate()
 
-	server := server.NewServer()
+	dbConn := db.New()
+	defer dbConn.Close()
 
-	err := server.ListenAndServe()
+	application := app.New(cfg)
+	defer application.Stop()
+
+	err := application.Start()
 	assert.Nil(err, fmt.Sprintf("cannot start server: %s", err))
 }

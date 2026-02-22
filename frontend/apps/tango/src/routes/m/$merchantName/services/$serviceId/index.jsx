@@ -19,7 +19,7 @@ import PhaseItem from "./-components/PhaseItem";
 
 async function fetchServiceDetails(merchantName, serviceId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/${locationId}/services/public/${serviceId}`,
+    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}`,
     {
       method: "GET",
       headers: {
@@ -47,7 +47,7 @@ function publicServiceDetailsQueryOptions(merchantName, serviceId, locationId) {
 
 async function fetchNextAvailable(merchantName, serviceId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/next-available?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}`,
+    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/next`,
     {
       method: "GET",
       headers: {

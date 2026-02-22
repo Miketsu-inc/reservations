@@ -139,7 +139,7 @@ export default function NewBookingPanel({
     }
 
     try {
-      const response = await fetch(`/api/v1/merchants/bookings`, {
+      const response = await fetch(`/api/v1/bookings/merchant`, {
         method: "POST",
         headers: {
           Accept: "application/json",

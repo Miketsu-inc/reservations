@@ -22,7 +22,7 @@ function RouteComponent() {
               and our system
             </p>
           </div>
-          <a href="http://app.reservations.local:3000/api/v1/merchants/integrations/calendar/google">
+          <a href="http://app.reservations.local:3000/api/v1/merchant/integrations/google/calendar">
             <Button styles="py-2 px-4" buttonText="Sync" onClick={() => {}}>
               <GoogleIcon styles="size-5 fill-text_color mr-3" />
             </Button>

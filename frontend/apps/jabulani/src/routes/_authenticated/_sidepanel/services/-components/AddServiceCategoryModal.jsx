@@ -17,7 +17,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
       return;
     }
 
-    const response = await fetch(`/api/v1/merchants/services/categories`, {
+    const response = await fetch(`/api/v1/merchant/service-categories`, {
       method: "POST",
       headers: {
         Accept: "application/json",

@@ -60,7 +60,7 @@ export default function CalendarModal({
 
     try {
       const response = await fetch(
-        `/api/v1/bookings/${bookingInfo.extendedProps.id}`,
+        `/api/v1/bookings/merchant/${bookingInfo.extendedProps.id}`,
         {
           method: "PATCH",
           headers: {

@@ -14,7 +14,7 @@ import ServiceCategoryItem from "./-components/ServiceCategoryItem";
 import ServiceItem from "./-components/ServiceItem";
 
 async function fetchMerchantInfo(name) {
-  const response = await fetch(`/api/v1/merchants/info?name=${name}`, {
+  const response = await fetch(`/api/v1/merchants/${name}`, {
     method: "GET",
   });
 

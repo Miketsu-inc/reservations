@@ -8,7 +8,7 @@ import BlacklistModal from "../-components/BlacklistModal";
 import CustomersTable from "../-components/CustomersTable";
 
 async function fetchCustomers() {
-  const response = await fetch(`/api/v1/merchants/customers/blacklist`, {
+  const response = await fetch(`/api/v1/merchant/customers/blacklist`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -80,7 +80,7 @@ function BlacklistPage() {
   async function blacklistHandler(id) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/blacklist/${id}`,
+        `/api/v1/merchant/customers/${id}/blacklist`,
         {
           method: "DELETE",
           headers: {

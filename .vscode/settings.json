@@ -26,6 +26,15 @@
     "**/new.jsx": "${dirname}/new.jsx",
     "**/edit.$id.jsx": "${dirname}/edit.$id.jsx",
     "**/index.js": "${dirname}/index.js",
-    "**/index.html": "${dirname}/index.html"
+    "**/index.html": "${dirname}/index.html",
+    "**/handler.go": "${dirname}/handler.go",
+    "**/mapper.go": "${dirname}/mapper.go",
+    "**/booking.go": "${dirname}/booking.go",
+    "**/merchant.go": "${dirname}/merchant.go",
+    "**/catalog.go": "${dirname}/catalog.go",
+    "**/customer.go": "${dirname}/customer.go",
+    "**/product.go": "${dirname}/product.go",
+    "**/user.go": "${dirname}/user.go",
+    "**/team.go": "${dirname}/team.go"
   }
 }

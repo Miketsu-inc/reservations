@@ -10,7 +10,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
 async function fetchBookingInfo(bookingId) {
-  const response = await fetch(`/api/v1/bookings/public/${bookingId}`, {
+  const response = await fetch(`/api/v1/bookings/customer/${bookingId}`, {
     method: "GET",
   });
 
@@ -111,7 +111,7 @@ function CancelPage() {
   async function handleCancel() {
     setCancelling(true);
     try {
-      const response = await fetch(`/api/v1/bookings/public/${bookingId}`, {
+      const response = await fetch(`/api/v1/bookings/customer/${bookingId}`, {
         method: "DELETE",
         headers: {
           "Content-type": "application/json; charset=UTF-8",

@@ -10,7 +10,7 @@ import { useState } from "react";
 import GroupServicePage from "./-components/GroupServicePage";
 
 async function fetchGroupServiceData(id) {
-  const response = await fetch(`/api/v1/merchants/group-services/${id}`, {
+  const response = await fetch(`/api/v1/merchant/services/group/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -90,7 +90,7 @@ function RouteComponent() {
 
   async function updateServiceData(serviceId, serviceData) {
     const response = await fetch(
-      `/api/v1/merchants/group-services/${serviceId}`,
+      `/api/v1/merchant/services/group/${serviceId}`,
       {
         method: "PUT",
         headers: {
@@ -110,7 +110,7 @@ function RouteComponent() {
 
   async function updateUsedProducts(serviceId, usedProducts) {
     const response = await fetch(
-      `/api/v1/merchants/services/${serviceId}/products`,
+      `/api/v1/merchant/services/${serviceId}/products`,
       {
         method: "PUT",
         headers: {

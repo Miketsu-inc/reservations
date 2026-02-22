@@ -43,7 +43,7 @@ function RouteComponent() {
 
   async function saveHandler(service) {
     try {
-      const response = await fetch("/api/v1/merchants/group-services", {
+      const response = await fetch("/api/v1/merchant/services/group", {
         method: "POST",
         headers: {
           Accept: "application/json",

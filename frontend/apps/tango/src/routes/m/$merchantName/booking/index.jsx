@@ -27,7 +27,7 @@ async function fetchHours(merchantName, locationId, serviceId, start, end) {
   end = new Date(end).toJSON();
 
   const response = await fetch(
-    `/api/v1/merchants/available-times?name=${merchantName}&locationId=${locationId}&serviceId=${serviceId}&start=${start}&end=${end}`,
+    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability?start=${start}&end=${end}`,
     {
       method: "GET",
       headers: {
@@ -66,9 +66,9 @@ function availableTimesQueryOptions(
   });
 }
 
-async function fetchDisabledDays(merchantName, serviceId) {
+async function fetchDisabledDays(merchantName, locationId, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/disabled-days?name=${merchantName}&serviceId=${serviceId}`,
+    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/disabled-days`,
     {
       method: "GET",
       headers: {
@@ -87,16 +87,16 @@ async function fetchDisabledDays(merchantName, serviceId) {
   }
 }
 
-function disabledDaysQueryOptions(merchantName, serviceId) {
+function disabledDaysQueryOptions(merchantName, locationId, serviceId) {
   return queryOptions({
-    queryKey: ["disabled-days", merchantName, serviceId],
-    queryFn: () => fetchDisabledDays(merchantName, serviceId),
+    queryKey: ["disabled-days", merchantName, locationId, serviceId],
+    queryFn: () => fetchDisabledDays(merchantName, locationId, serviceId),
   });
 }
 
-async function fetchSummaryInfo(merchantName, serviceId, locationId) {
+async function fetchSummaryInfo(merchantName, locationId, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/summary-info?name=${merchantName}&serviceId=${serviceId}&locationId=${locationId}`,
+    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/summary`,
     {
       method: "GET",
       headers: {
@@ -115,10 +115,10 @@ async function fetchSummaryInfo(merchantName, serviceId, locationId) {
   }
 }
 
-function summaryInfoQueryOptions(merchantName, serviceId, locationId) {
+function summaryInfoQueryOptions(merchantName, locationId, serviceId) {
   return queryOptions({
-    queryKey: ["summary-info", merchantName, serviceId, locationId],
-    queryFn: () => fetchSummaryInfo(merchantName, serviceId, locationId),
+    queryKey: ["summary-info", merchantName, locationId, serviceId],
+    queryFn: () => fetchSummaryInfo(merchantName, locationId, serviceId),
   });
 }
 
@@ -133,12 +133,15 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
     context: { queryClient },
     deps: { serviceId, locationId },
   }) => {
+    console.log(merchantName);
+    console.log(locationId);
+    console.log(serviceId);
     await queryClient.ensureQueryData(
-      summaryInfoQueryOptions(merchantName, serviceId, locationId)
+      summaryInfoQueryOptions(merchantName, locationId, serviceId)
     );
 
     await queryClient.ensureQueryData(
-      disabledDaysQueryOptions(merchantName, serviceId)
+      disabledDaysQueryOptions(merchantName, locationId, serviceId)
     );
   },
   errorComponent: ({ error }) => {
@@ -202,7 +205,7 @@ function SelectDateTime() {
     isError: siIsError,
     error: siError,
   } = useQuery(
-    summaryInfoQueryOptions(merchantName, search.serviceId, search.locationId)
+    summaryInfoQueryOptions(merchantName, search.locationId, search.serviceId)
   );
 
   const {
@@ -210,7 +213,9 @@ function SelectDateTime() {
     isLoading: dsIsLoading,
     isError: dsIsError,
     error: dsError,
-  } = useQuery(disabledDaysQueryOptions(merchantName, search.serviceId));
+  } = useQuery(
+    disabledDaysQueryOptions(merchantName, search.locationId, search.serviceId)
+  );
 
   const unavailableDays = availableTimesWindow
     ?.filter((day) => !day.is_available)
@@ -244,7 +249,7 @@ function SelectDateTime() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/v1/bookings/new", {
+      const response = await fetch("/api/v1/bookings/customer", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",

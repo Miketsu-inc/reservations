@@ -61,7 +61,7 @@ function CustomersPage() {
   async function deleteHandler(selected) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/${selected.id}`,
+        `/api/v1/merchant/customers/${selected.id}`,
         {
           method: "DELETE",
           headers: {
@@ -92,16 +92,17 @@ function CustomersPage() {
 
   async function transferHandler(data) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/customers/transfer?from=${data.from}&to=${data.to}`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/api/v1/merchant/customers/transfer`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          from_customer_id: data.from,
+          to_customer_id: data.to,
+        }),
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -126,9 +127,9 @@ function CustomersPage() {
   async function blacklistHandler(data) {
     try {
       const response = await fetch(
-        `/api/v1/merchants/customers/blacklist/${data.id}`,
+        `/api/v1/merchant/customers/${data.id}/blacklist`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
             Accept: "application/json",
             "content-type": "application/json",

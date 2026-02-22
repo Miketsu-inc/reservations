@@ -23,7 +23,7 @@ export default function EditServiceCategoryModal({
     }
 
     const response = await fetch(
-      `/api/v1/merchants/services/categories/${category.id}`,
+      `/api/v1/merchant/service-categories/${category.id}`,
       {
         method: "PUT",
         headers: {

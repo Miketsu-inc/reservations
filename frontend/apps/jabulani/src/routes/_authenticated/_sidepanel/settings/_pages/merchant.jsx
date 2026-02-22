@@ -24,7 +24,7 @@ const daysOfWeek = {
 };
 
 async function fetchMerchantData() {
-  const response = await fetch(`/api/v1/merchants/settings-info`, {
+  const response = await fetch(`/api/v1/merchant/settings`, {
     method: "GET",
   });
 
@@ -153,7 +153,7 @@ function MerchantPage() {
     }
 
     try {
-      const response = await fetch("/api/v1/merchants/reservation-fields", {
+      const response = await fetch("/api/v1/merchant/settings", {
         method: "PATCH",
         headers: {
           Accept: "application/json",

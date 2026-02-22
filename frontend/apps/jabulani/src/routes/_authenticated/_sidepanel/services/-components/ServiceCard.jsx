@@ -33,9 +33,9 @@ export default function ServiceCard({
 
   async function serviceStatusHandler(isActive) {
     const response = await fetch(
-      `/api/v1/merchants/services/${service.id}/${isActive ? "activate" : "deactivate"}`,
+      `/api/v1/merchant/services/${service.id}/${isActive ? "activate" : "deactivate"}`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: {
           Accept: "application/json",
           "content-type": "application/json",

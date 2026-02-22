@@ -20,7 +20,7 @@ async function fetchDashboardData(period) {
   const date = new Date().toJSON();
 
   const response = await fetch(
-    `/api/v1/merchants/dashboard?date=${date}&period=${period}`,
+    `/api/v1/merchant/dashboard?date=${date}&period=${period}`,
     {
       method: "GET",
       headers: {
