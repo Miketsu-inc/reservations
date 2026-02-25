@@ -135,23 +135,23 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 	return mi, nil
 }
 
-func (r *merchantRepository) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) error {
+func (r *merchantRepository) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) (bool, error) {
 	query := `
 	select 1 from "Merchant"
 	where url_name = $1
 	`
 
-	var url string
-	err := r.db.QueryRow(ctx, query, merchantUrl).Scan(&url)
-	if !errors.Is(err, pgx.ErrNoRows) {
-		if err != nil {
-			return err
-		}
-
-		return repository.ErrNotUnique
+	var exists int
+	err := r.db.QueryRow(ctx, query, merchantUrl).Scan(&exists)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return true, nil
 	}
 
-	return nil
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
 }
 
 func (r *merchantRepository) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantSettingsInfo, error) {

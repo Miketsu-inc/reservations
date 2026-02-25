@@ -445,7 +445,7 @@ function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
 
       <div
         ref={scrollRef}
-        className={'"overflow-x-auto" flex gap-4 pb-2 dark:scheme-dark'}
+        className="flex gap-4 overflow-x-auto pb-2 dark:scheme-dark"
       >
         <button
           type="button"

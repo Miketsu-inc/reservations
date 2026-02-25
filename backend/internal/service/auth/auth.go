@@ -9,7 +9,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -173,12 +172,12 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 		return fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error())
 	}
 
-	err = s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
+	unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
 	if err != nil {
-		if !errors.Is(err, repository.ErrNotUnique) {
-			return err
-		}
+		return err
+	}
 
+	if !unique {
 		return merchantServ.ErrMerchantUrlNotUnique{URL: urlName}
 	}
 

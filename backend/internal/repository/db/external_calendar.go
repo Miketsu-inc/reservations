@@ -62,16 +62,16 @@ func bulkInsertBlockedTime(ctx context.Context, tx pgx.Tx, bt []domain.BlockedTi
 	employeeId := bt[0].EmployeeId
 	source := bt[0].Source
 
-	var names []string
-	var fromDates []time.Time
-	var toDates []time.Time
-	var isAllDay []bool
+	names := make([]string, len(bt))
+	fromDates := make([]time.Time, len(bt))
+	toDates := make([]time.Time, len(bt))
+	isAllDay := make([]bool, len(bt))
 
-	for _, blockedTime := range bt {
-		names = append(names, blockedTime.Name)
-		fromDates = append(fromDates, blockedTime.FromDate)
-		toDates = append(toDates, blockedTime.ToDate)
-		isAllDay = append(isAllDay, blockedTime.AllDay)
+	for i, blockedTime := range bt {
+		names[i] = blockedTime.Name
+		fromDates[i] = blockedTime.FromDate
+		toDates[i] = blockedTime.ToDate
+		isAllDay[i] = blockedTime.AllDay
 	}
 
 	var btIds []int
@@ -93,35 +93,35 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::event_internal_type[]), unnest($12::boolean[]), $13, $14
 	`
 
-	var extEventIds []string
-	var etags []string
-	var statuses []string
-	var titles []string
-	var descriptions []string
-	var fromDates []time.Time
-	var toDates []time.Time
-	var isAllDays []bool
-	var InternalIds []*int
-	var InternalTypes []*string
-	var isBlockings []bool
+	extEventIds := make([]string, len(externalEvents))
+	etags := make([]string, len(externalEvents))
+	statuses := make([]string, len(externalEvents))
+	titles := make([]string, len(externalEvents))
+	descriptions := make([]string, len(externalEvents))
+	fromDates := make([]time.Time, len(externalEvents))
+	toDates := make([]time.Time, len(externalEvents))
+	isAllDays := make([]bool, len(externalEvents))
+	InternalIds := make([]*int, len(externalEvents))
+	InternalTypes := make([]*string, len(externalEvents))
+	isBlockings := make([]bool, len(externalEvents))
 
-	for _, ee := range externalEvents {
-		extEventIds = append(extEventIds, ee.ExternalEventId)
-		etags = append(etags, ee.Etag)
-		statuses = append(statuses, ee.Status)
-		titles = append(titles, ee.Title)
-		descriptions = append(descriptions, ee.Description)
-		fromDates = append(fromDates, ee.FromDate)
-		toDates = append(toDates, ee.ToDate)
-		isAllDays = append(isAllDays, ee.IsAllDay)
-		InternalIds = append(InternalIds, ee.InternalId)
+	for i, ee := range externalEvents {
+		extEventIds[i] = ee.ExternalEventId
+		etags[i] = ee.Etag
+		statuses[i] = ee.Status
+		titles[i] = ee.Title
+		descriptions[i] = ee.Description
+		fromDates[i] = ee.FromDate
+		toDates[i] = ee.ToDate
+		isAllDays[i] = ee.IsAllDay
+		InternalIds[i] = ee.InternalId
 		if ee.InternalType != nil {
 			str := ee.InternalType.String()
-			InternalTypes = append(InternalTypes, &str)
+			InternalTypes[i] = &str
 		} else {
-			InternalTypes = append(InternalTypes, nil)
+			InternalTypes[i] = nil
 		}
-		isBlockings = append(isBlockings, ee.IsBlocking)
+		isBlockings[i] = ee.IsBlocking
 	}
 
 	_, err := tx.Exec(ctx, query, externalEvents[0].ExternalCalendarId, extEventIds, etags, statuses, titles, descriptions, fromDates, toDates,
@@ -175,18 +175,18 @@ func bulkUpdateBlockedTime(ctx context.Context, tx pgx.Tx, bt []domain.BlockedTi
 	where b.id = u.id
 	`
 
-	var ids []int
-	var names []string
-	var fromDates []time.Time
-	var toDates []time.Time
-	var isAllDay []bool
+	ids := make([]int, len(bt))
+	names := make([]string, len(bt))
+	fromDates := make([]time.Time, len(bt))
+	toDates := make([]time.Time, len(bt))
+	isAllDay := make([]bool, len(bt))
 
-	for _, blockedTime := range bt {
-		ids = append(ids, blockedTime.Id)
-		names = append(names, blockedTime.Name)
-		fromDates = append(fromDates, blockedTime.FromDate)
-		toDates = append(toDates, blockedTime.ToDate)
-		isAllDay = append(isAllDay, blockedTime.AllDay)
+	for i, blockedTime := range bt {
+		ids[i] = blockedTime.Id
+		names[i] = blockedTime.Name
+		fromDates[i] = blockedTime.FromDate
+		toDates[i] = blockedTime.ToDate
+		isAllDay[i] = blockedTime.AllDay
 	}
 
 	_, err := tx.Exec(ctx, query, ids, names, fromDates, toDates, isAllDay)
@@ -222,35 +222,35 @@ func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []domai
 	where external_calendar_id = $1 and e.id = u.id
 	`
 
-	var ids []int
-	var etags []string
-	var statuses []string
-	var titles []string
-	var descriptions []string
-	var fromDates []time.Time
-	var toDates []time.Time
-	var isAllDays []bool
-	var InternalIds []*int
-	var InternalTypes []*string
-	var isBlockings []bool
+	ids := make([]int, len(ece))
+	etags := make([]string, len(ece))
+	statuses := make([]string, len(ece))
+	titles := make([]string, len(ece))
+	descriptions := make([]string, len(ece))
+	fromDates := make([]time.Time, len(ece))
+	toDates := make([]time.Time, len(ece))
+	isAllDays := make([]bool, len(ece))
+	InternalIds := make([]*int, len(ece))
+	InternalTypes := make([]*string, len(ece))
+	isBlockings := make([]bool, len(ece))
 
-	for _, event := range ece {
-		ids = append(ids, event.Id)
-		etags = append(etags, event.Etag)
-		statuses = append(statuses, event.Status)
-		titles = append(titles, event.Title)
-		descriptions = append(descriptions, event.Description)
-		fromDates = append(fromDates, event.FromDate)
-		toDates = append(toDates, event.ToDate)
-		isAllDays = append(isAllDays, event.IsAllDay)
-		InternalIds = append(InternalIds, event.InternalId)
+	for i, event := range ece {
+		ids[i] = event.Id
+		etags[i] = event.Etag
+		statuses[i] = event.Status
+		titles[i] = event.Title
+		descriptions[i] = event.Description
+		fromDates[i] = event.FromDate
+		toDates[i] = event.ToDate
+		isAllDays[i] = event.IsAllDay
+		InternalIds[i] = event.InternalId
 		if event.InternalType != nil {
 			str := event.InternalType.String()
-			InternalTypes = append(InternalTypes, &str)
+			InternalTypes[i] = &str
 		} else {
-			InternalTypes = append(InternalTypes, nil)
+			InternalTypes[i] = nil
 		}
-		isBlockings = append(isBlockings, event.IsBlocking)
+		isBlockings[i] = event.IsBlocking
 	}
 
 	_, err := tx.Exec(ctx, query, ece[0].ExternalCalendarId, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,

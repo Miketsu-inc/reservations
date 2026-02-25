@@ -17,7 +17,7 @@ type MerchantRepository interface {
 
 	GetMerchantIdByUrlName(context.Context, string) (uuid.UUID, error)
 	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
-	IsMerchantUrlUnique(context.Context, string) error
+	IsMerchantUrlUnique(context.Context, string) (bool, error)
 	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
 
 	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)

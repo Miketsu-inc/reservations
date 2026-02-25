@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -57,12 +56,12 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 		return fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error())
 	}
 
-	err = s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
+	unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
 	if err != nil {
-		if !errors.Is(err, repository.ErrNotUnique) {
-			return err
-		}
+		return err
+	}
 
+	if !unique {
 		return ErrMerchantUrlNotUnique{URL: urlName}
 	}
 
@@ -109,12 +108,12 @@ func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (CheckUrlIn
 		return CheckUrlInput{}, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error())
 	}
 
-	err = s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
-	if !errors.Is(err, pgx.ErrNoRows) {
-		if err != nil {
-			return CheckUrlInput{Name: urlName}, err
-		}
+	unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
+	if err != nil {
+		return CheckUrlInput{Name: urlName}, err
+	}
 
+	if !unique {
 		return CheckUrlInput{Name: urlName}, ErrMerchantUrlNotUnique{URL: urlName}
 	}
 
