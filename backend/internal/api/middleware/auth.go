@@ -223,8 +223,8 @@ func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, e
 		case jwt.RefreshToken:
 			return []byte(config.LoadEnvVars().JWT_REFRESH_SECRET), nil
 		default:
-			assert.Never("Jwt token type can be either refresh or access", tokenType)
-			return "", fmt.Errorf("Jwt token type can be either refresh or access")
+			assert.Never("jwt token type can be either refresh or access", tokenType)
+			return "", fmt.Errorf("jwt token type can be either refresh or access")
 		}
 	})
 
