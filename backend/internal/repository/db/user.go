@@ -7,18 +7,22 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"golang.org/x/text/language"
 )
 
 type userRepository struct {
-	db *pgxpool.Pool
+	db db.DBTX
 }
 
-func NewUserRepository(db *pgxpool.Pool) domain.UserRepository {
+func NewUserRepository(db db.DBTX) domain.UserRepository {
 	return &userRepository{db: db}
+}
+
+func (r *userRepository) WithTx(tx db.DBTX) domain.UserRepository {
+	return &userRepository{db: tx}
 }
 
 func (r *userRepository) NewUser(ctx context.Context, user domain.User) error {
@@ -37,7 +41,7 @@ func (r *userRepository) NewUser(ctx context.Context, user domain.User) error {
 	return nil
 }
 
-func (r *userRepository) GetUserById(ctx context.Context, user_id uuid.UUID) (domain.User, error) {
+func (r *userRepository) GetUser(ctx context.Context, user_id uuid.UUID) (domain.User, error) {
 	query := `
 	select * from "User"
 	where id = $1
@@ -67,6 +71,62 @@ func (r *userRepository) GetUserPasswordAndIDByUserEmail(ctx context.Context, em
 	}
 
 	return userID, password, nil
+}
+
+func (r *userRepository) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {
+	query := `
+	select jwt_refresh_version from "User"
+	where id = $1
+	`
+
+	var refreshVersion int
+	err := r.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
+	if err != nil {
+		return 0, err
+	}
+
+	return refreshVersion, nil
+}
+
+func (r *userRepository) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error) {
+	query := `
+	select preferred_lang from "User"
+	where id = $1
+	`
+
+	var pl *string
+	err := r.db.QueryRow(ctx, query, userId).Scan(&pl)
+	if err != nil {
+		return nil, err
+	}
+
+	if pl == nil {
+		return nil, err
+	}
+
+	tag, err := language.Parse(*pl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tag, nil
+}
+
+func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {
+	query := `
+	select e.id, l.id as location_id, e.merchant_id, e.role
+	from "Employee" e
+	join "Location" l on l.merchant_id = e.merchant_id
+	where user_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, userId)
+	employeeAuthInfo, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
+	if err != nil {
+		return []domain.EmployeeAuthInfo{}, err
+	}
+
+	return employeeAuthInfo, nil
 }
 
 func (r *userRepository) IsEmailUnique(ctx context.Context, email string) error {
@@ -122,45 +182,6 @@ func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, use
 	return nil
 }
 
-func (r *userRepository) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {
-	query := `
-	select jwt_refresh_version from "User"
-	where id = $1
-	`
-
-	var refreshVersion int
-	err := r.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
-	if err != nil {
-		return 0, err
-	}
-
-	return refreshVersion, nil
-}
-
-func (r *userRepository) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error) {
-	query := `
-	select preferred_lang from "User"
-	where id = $1
-	`
-
-	var pl *string
-	err := r.db.QueryRow(ctx, query, userId).Scan(&pl)
-	if err != nil {
-		return nil, err
-	}
-
-	if pl == nil {
-		return nil, err
-	}
-
-	tag, err := language.Parse(*pl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tag, nil
-}
-
 func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthProviderType, provider_id string) (uuid.UUID, error) {
 	query := `
 	select id from "User"
@@ -174,21 +195,4 @@ func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthP
 	}
 
 	return id, nil
-}
-
-func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {
-	query := `
-	select e.id, l.id as location_id, e.merchant_id, e.role
-	from "Employee" e
-	join "Location" l on l.merchant_id = e.merchant_id
-	where user_id = $1
-	`
-
-	rows, _ := r.db.Query(ctx, query, userId)
-	employeeAuthInfo, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
-	if err != nil {
-		return []domain.EmployeeAuthInfo{}, err
-	}
-
-	return employeeAuthInfo, nil
 }

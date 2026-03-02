@@ -5,18 +5,21 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type externalCalendarRepository struct {
-	db *pgxpool.Pool
+	db db.DBTX
 }
 
-func NewExternalCalendarRepository(db *pgxpool.Pool) domain.ExternalCalendarRepository {
+func NewExternalCalendarRepository(db db.DBTX) domain.ExternalCalendarRepository {
 	return &externalCalendarRepository{db: db}
+}
+
+func (r *externalCalendarRepository) WithTx(tx db.DBTX) domain.ExternalCalendarRepository {
+	return &externalCalendarRepository{db: tx}
 }
 
 func (r *externalCalendarRepository) NewExternalCalendar(ctx context.Context, ec domain.ExternalCalendar) (int, error) {
@@ -51,41 +54,115 @@ func (r *externalCalendarRepository) UpdateExternalCalendarSyncToken(ctx context
 	return nil
 }
 
-func bulkInsertBlockedTime(ctx context.Context, tx pgx.Tx, bt []domain.BlockedTime) ([]int, error) {
+func (r *externalCalendarRepository) UpdateExternalCalendarAuthTokens(ctx context.Context, extCalendarId int, accessToken, refreshToken string, tokenExpiry time.Time) error {
 	query := `
-	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day, source)
-	select $1, $2, unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
-	returning id
+	update "ExternalCalendar"
+	set access_token = $2, refresh_token = $3, token_expiry = $4
+	where id = $1
 	`
 
-	merchantId := bt[0].MerchantId
-	employeeId := bt[0].EmployeeId
-	source := bt[0].Source
-
-	names := make([]string, len(bt))
-	fromDates := make([]time.Time, len(bt))
-	toDates := make([]time.Time, len(bt))
-	isAllDay := make([]bool, len(bt))
-
-	for i, blockedTime := range bt {
-		names[i] = blockedTime.Name
-		fromDates[i] = blockedTime.FromDate
-		toDates[i] = blockedTime.ToDate
-		isAllDay[i] = blockedTime.AllDay
-	}
-
-	var btIds []int
-
-	rows, _ := tx.Query(ctx, query, merchantId, employeeId, names, fromDates, toDates, isAllDay, source)
-	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
+	_, err := r.db.Exec(ctx, query, extCalendarId, accessToken, refreshToken, tokenExpiry)
 	if err != nil {
-		return []int{}, err
+		return err
 	}
 
-	return btIds, nil
+	return nil
 }
 
-func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEvents []domain.ExternalCalendarEvent) error {
+func (r *externalCalendarRepository) UpdateExternalCalendarChannel(ctx context.Context, calendarId int, channelId string, resourceId string, channelExpiry time.Time) error {
+	query := `
+	update "ExternalCalendar"
+	set channel_id = $2, resource_id = $3, channel_expiry = $4
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, calendarId, channelId, resourceId, channelExpiry)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *externalCalendarRepository) ResetExternalCalendarSyncState(ctx context.Context, extCalendarId int) error {
+	query := `
+	update "ExternalCalendar"
+	set sync_token = null, channel_id = null, resource_id = null, channel_expiry = null
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, extCalendarId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *externalCalendarRepository) GetExternalCalendar(ctx context.Context, calendarId int) (domain.ExternalCalendar, error) {
+	query := `
+	select *
+	from "ExternalCalendar"
+	where id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, calendarId)
+	calendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
+	if err != nil {
+		return domain.ExternalCalendar{}, err
+	}
+
+	return calendar, nil
+}
+
+func (r *externalCalendarRepository) GetExternalCalendarByChannel(ctx context.Context, channelId string, resourceId string) (domain.ExternalCalendar, error) {
+	query := `
+	select *
+	from "ExternalCalendar"
+	where channel_id = $1 and resource_id = $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, channelId, resourceId)
+	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
+	if err != nil {
+		return domain.ExternalCalendar{}, err
+	}
+
+	return extCalendar, nil
+}
+
+func (r *externalCalendarRepository) GetExternalCalendarByEmployeeId(ctx context.Context, employeeId int) (domain.ExternalCalendar, error) {
+	query := `
+	select * from "ExternalCalendar"
+	where employee_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, employeeId)
+	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
+	if err != nil {
+		return domain.ExternalCalendar{}, err
+	}
+
+	return extCalendar, nil
+}
+
+func (r *externalCalendarRepository) NewExternalCalendarEvent(ctx context.Context, event domain.ExternalCalendarEvent) error {
+	query := `
+	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date,
+		is_all_day, internal_id, internal_type, is_blocking, source, last_synced_at)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`
+
+	_, err := r.db.Exec(ctx, query, event.ExternalCalendarId, event.ExternalEventId, event.Etag, event.Status, event.Title, event.Description,
+		event.FromDate, event.ToDate, event.IsAllDay, event.InternalId, event.InternalType, event.IsBlocking, event.Source, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *externalCalendarRepository) BulkInsertExternalCalendarEvent(ctx context.Context, externalEvents []domain.ExternalCalendarEvent) error {
 	query := `
 	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date, is_all_day,
 		internal_id, internal_type, is_blocking, source, last_synced_at)
@@ -124,7 +201,7 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 		isBlockings[i] = ee.IsBlocking
 	}
 
-	_, err := tx.Exec(ctx, query, externalEvents[0].ExternalCalendarId, extEventIds, etags, statuses, titles, descriptions, fromDates, toDates,
+	_, err := r.db.Exec(ctx, query, externalEvents[0].ExternalCalendarId, extEventIds, etags, statuses, titles, descriptions, fromDates, toDates,
 		isAllDays, InternalIds, InternalTypes, isBlockings, externalEvents[0].Source, time.Now().UTC())
 	if err != nil {
 		return err
@@ -133,63 +210,16 @@ func bulkInsertExternalCalendarEvent(ctx context.Context, tx pgx.Tx, externalEve
 	return nil
 }
 
-func (r *externalCalendarRepository) BulkInitialSyncExternalCalendarEvents(ctx context.Context, bt []domain.BlockedTime, blockingEventIdxs []int, ece []domain.ExternalCalendarEvent) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	// nolint:errcheck
-	defer tx.Rollback(ctx)
-
-	var btIds []int
-
-	if len(bt) > 0 {
-		btIds, err = bulkInsertBlockedTime(ctx, tx, bt)
-		if err != nil {
-			return err
-		}
-
-		btPos := 0
-		for _, idx := range blockingEventIdxs {
-			ece[idx].InternalId = &btIds[btPos]
-			btPos++
-		}
-	}
-
-	if len(ece) > 0 {
-		err = bulkInsertExternalCalendarEvent(ctx, tx, ece)
-		if err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit(ctx)
-}
-
-func bulkUpdateBlockedTime(ctx context.Context, tx pgx.Tx, bt []domain.BlockedTime) error {
+func (r *externalCalendarRepository) UpdateExternalCalendarEvent(ctx context.Context, event domain.ExternalCalendarEvent) error {
 	query := `
-	update "BlockedTime" b
-	set name = u.name, from_date = u.from_date, to_date = u.to_date, all_day = u.all_day
-	from unnest($1::int[], $2::text[], $3::timestamptz[], $4::timestamptz[], $5::boolean[])
-	as u(id, name, from_date, to_date, all_day)
-	where b.id = u.id
+	update "ExternalCalendarEvent"
+	set etag = $2, status = $3, title = $4, description = $5, from_date = $6, to_date = $7, is_all_day = $8, internal_id = $9,
+		internal_type = $10, is_blocking = $11, last_synced_at = $12
+	where id = $1
 	`
 
-	ids := make([]int, len(bt))
-	names := make([]string, len(bt))
-	fromDates := make([]time.Time, len(bt))
-	toDates := make([]time.Time, len(bt))
-	isAllDay := make([]bool, len(bt))
-
-	for i, blockedTime := range bt {
-		ids[i] = blockedTime.Id
-		names[i] = blockedTime.Name
-		fromDates[i] = blockedTime.FromDate
-		toDates[i] = blockedTime.ToDate
-		isAllDay[i] = blockedTime.AllDay
-	}
-
-	_, err := tx.Exec(ctx, query, ids, names, fromDates, toDates, isAllDay)
+	_, err := r.db.Exec(ctx, query, event.Id, event.Etag, event.Status, event.Title, event.Description, event.FromDate, event.ToDate, event.IsAllDay,
+		event.InternalId, event.InternalType, event.IsBlocking, time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -197,22 +227,7 @@ func bulkUpdateBlockedTime(ctx context.Context, tx pgx.Tx, bt []domain.BlockedTi
 	return nil
 }
 
-func bulkDeleteBlockedTime(ctx context.Context, tx pgx.Tx, btIds []int) error {
-	query := `
-	delete from "BlockedTime" b
-	from unnest($1::int[]) as d(id)
-	where b.id = d.id
-	`
-
-	_, err := tx.Exec(ctx, query, btIds)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []domain.ExternalCalendarEvent) error {
+func (r *externalCalendarRepository) BulkUpdateExternalCalendarEvent(ctx context.Context, ece []domain.ExternalCalendarEvent) error {
 	query := `
 	update "ExternalCalendarEvent" e
 	set etag = u.etag, status = u.status, title = u.title, description = u.description, from_date = u.from_date, to_date = u.to_date,
@@ -253,196 +268,8 @@ func bulkUpdateExternalCalendarEvent(ctx context.Context, tx pgx.Tx, ece []domai
 		isBlockings[i] = event.IsBlocking
 	}
 
-	_, err := tx.Exec(ctx, query, ece[0].ExternalCalendarId, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,
+	_, err := r.db.Exec(ctx, query, ece[0].ExternalCalendarId, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,
 		isBlockings, time.Now().UTC())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *externalCalendarRepository) BulkIncrementalSyncExternalCalendarEvents(ctx context.Context, newBlockedTimes []domain.BlockedTime,
-	updateBlockedTimes []domain.BlockedTime, deleteBlockedTimes []int, blockingEventIdxs []int, newExtEvents []domain.ExternalCalendarEvent,
-	updateExtEvents []domain.ExternalCalendarEvent, pendingBlockingLinks []domain.ExternalEventBlockedTimeLink) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	assert.True(len(blockingEventIdxs)+len(pendingBlockingLinks) == len(newBlockedTimes), "ExternalCalendarEvent and BlockedTime link mismatch!",
-		len(blockingEventIdxs), len(pendingBlockingLinks), len(newBlockedTimes))
-
-	// nolint:errcheck
-	defer tx.Rollback(ctx)
-
-	var btIds []int
-
-	if len(newBlockedTimes) > 0 {
-		btIds, err = bulkInsertBlockedTime(ctx, tx, newBlockedTimes)
-		if err != nil {
-			return err
-		}
-
-		btPos := 0
-		for _, idx := range blockingEventIdxs {
-			newExtEvents[idx].InternalId = &btIds[btPos]
-			btPos++
-		}
-
-		for _, link := range pendingBlockingLinks {
-			updateExtEvents[link.ExternalEventIdx].InternalId = &btIds[link.BlockedTimeIdx]
-		}
-	}
-
-	if len(updateBlockedTimes) > 0 {
-		err = bulkUpdateBlockedTime(ctx, tx, updateBlockedTimes)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(deleteBlockedTimes) > 0 {
-		err = bulkDeleteBlockedTime(ctx, tx, deleteBlockedTimes)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(newExtEvents) > 0 {
-		err = bulkInsertExternalCalendarEvent(ctx, tx, newExtEvents)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(updateExtEvents) > 0 {
-		err = bulkUpdateExternalCalendarEvent(ctx, tx, updateExtEvents)
-		if err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit(ctx)
-}
-
-func (r *externalCalendarRepository) GetExternalCalendarEventsByIds(ctx context.Context, extCalendarId int, eventIds []string) ([]domain.ExternalCalendarEvent, error) {
-	query := `
-	select *
-	from "ExternalCalendarEvent"
-	where external_calendar_id = $1 and external_event_id = any($2)
-	`
-
-	rows, _ := r.db.Query(ctx, query, extCalendarId, eventIds)
-	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
-	if err != nil {
-		return []domain.ExternalCalendarEvent{}, err
-	}
-
-	return events, nil
-}
-
-func (r *externalCalendarRepository) ResetExternalCalendar(ctx context.Context, extCalendarId int) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	// nolint:errcheck
-	defer tx.Rollback(ctx)
-
-	blockedTimesQuery := `
-	delete from "BlockedTime"
-	where id in (
-		select internal_id
-		from "ExternalCalendarEvent"
-		where external_calendar_id = $1 and internal_id is not null and internal_type = 'blocked_time'
-	)
-	`
-
-	_, err = tx.Exec(ctx, blockedTimesQuery, extCalendarId)
-	if err != nil {
-		return err
-	}
-
-	externalEventsQuery := `
-	delete from "ExternalCalendarEvent"
-	where external_calendar_id = $1
-	`
-
-	_, err = tx.Exec(ctx, externalEventsQuery, extCalendarId)
-	if err != nil {
-		return err
-	}
-
-	externalCalendarSyncStateQuery := `
-	update "ExternalCalendar"
-	set sync_token = null, channel_id = null, resource_id = null, channel_expiry = null
-	where id = $1
-	`
-
-	_, err = tx.Exec(ctx, externalEventsQuery, externalCalendarSyncStateQuery)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
-}
-
-func (r *externalCalendarRepository) GetExternalCalendarByEmployeeId(ctx context.Context, employeeId int) (domain.ExternalCalendar, error) {
-	query := `
-	select * from "ExternalCalendar"
-	where employee_id = $1
-	`
-
-	rows, _ := r.db.Query(ctx, query, employeeId)
-	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
-	if err != nil {
-		return domain.ExternalCalendar{}, err
-	}
-
-	return extCalendar, nil
-}
-
-func (r *externalCalendarRepository) UpdateExternalCalendarAuthTokens(ctx context.Context, extCalendarId int, accessToken, refreshToken string, tokenExpiry time.Time) error {
-	query := `
-	update "ExternalCalendar"
-	set access_token = $2, refresh_token = $3, token_expiry = $4
-	where id = $1
-	`
-
-	_, err := r.db.Exec(ctx, query, extCalendarId, accessToken, refreshToken, tokenExpiry)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *externalCalendarRepository) NewExternalCalendarEvent(ctx context.Context, event domain.ExternalCalendarEvent) error {
-	query := `
-	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date,
-		is_all_day, internal_id, internal_type, is_blocking, source, last_synced_at)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-	`
-
-	_, err := r.db.Exec(ctx, query, event.ExternalCalendarId, event.ExternalEventId, event.Etag, event.Status, event.Title, event.Description,
-		event.FromDate, event.ToDate, event.IsAllDay, event.InternalId, event.InternalType, event.IsBlocking, event.Source, time.Now().UTC())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *externalCalendarRepository) UpdateExternalCalendarEvent(ctx context.Context, event domain.ExternalCalendarEvent) error {
-	query := `
-	update "ExternalCalendarEvent"
-	set etag = $2, status = $3, title = $4, description = $5, from_date = $6, to_date = $7, is_all_day = $8, internal_id = $9,
-		internal_type = $10, is_blocking = $11, last_synced_at = $12
-	where id = $1
-	`
-
-	_, err := r.db.Exec(ctx, query, event.Id, event.Etag, event.Status, event.Title, event.Description, event.FromDate, event.ToDate, event.IsAllDay,
-		event.InternalId, event.InternalType, event.IsBlocking, time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -464,6 +291,36 @@ func (r *externalCalendarRepository) DeleteExternalCalendarEvent(ctx context.Con
 	return nil
 }
 
+func (r *externalCalendarRepository) DeleteAllExternalCalendarEvents(ctx context.Context, extCalendarId int) error {
+	query := `
+	delete from "ExternalCalendarEvent"
+	where external_calendar_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, extCalendarId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *externalCalendarRepository) GetExternalCalendarEvents(ctx context.Context, extCalendarId int, eventIds []string) ([]domain.ExternalCalendarEvent, error) {
+	query := `
+	select *
+	from "ExternalCalendarEvent"
+	where external_calendar_id = $1 and external_event_id = any($2)
+	`
+
+	rows, _ := r.db.Query(ctx, query, extCalendarId, eventIds)
+	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
+	if err != nil {
+		return []domain.ExternalCalendarEvent{}, err
+	}
+
+	return events, nil
+}
+
 func (r *externalCalendarRepository) GetExternalCalendarEventByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) (domain.ExternalCalendarEvent, error) {
 	query := `
 	select *
@@ -480,65 +337,18 @@ func (r *externalCalendarRepository) GetExternalCalendarEventByInternal(ctx cont
 	return event, err
 }
 
-func (r *externalCalendarRepository) GetExternalCalendarById(ctx context.Context, calendarId int) (domain.ExternalCalendar, error) {
-	query := `
-	select *
-	from "ExternalCalendar"
-	where id = $1
-	`
-
-	rows, _ := r.db.Query(ctx, query, calendarId)
-	calendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
-	if err != nil {
-		return domain.ExternalCalendar{}, err
-	}
-
-	return calendar, nil
-}
-
-func (r *externalCalendarRepository) GetExternalCalendarByChannel(ctx context.Context, channelId string, resourceId string) (domain.ExternalCalendar, error) {
-	query := `
-	select *
-	from "ExternalCalendar"
-	where channel_id = $1 and resource_id = $2
-	`
-
-	rows, _ := r.db.Query(ctx, query, channelId, resourceId)
-	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
-	if err != nil {
-		return domain.ExternalCalendar{}, err
-	}
-
-	return extCalendar, nil
-}
-
-func (r *externalCalendarRepository) GetExpiringExternalCalendars(ctx context.Context) ([]domain.ExternalCalendar, error) {
+func (r *externalCalendarRepository) GetExpiringExternalCalendars(ctx context.Context, timeLeft time.Time) ([]domain.ExternalCalendar, error) {
 	query := `
 	select *
 	from "ExternalCalendar"
 	where channel_expiry < $1
 	`
 
-	rows, _ := r.db.Query(ctx, query, time.Now().UTC().Add(time.Hour*24))
+	rows, _ := r.db.Query(ctx, query, timeLeft)
 	extCalendars, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendar])
 	if err != nil {
 		return []domain.ExternalCalendar{}, err
 	}
 
 	return extCalendars, nil
-}
-
-func (r *externalCalendarRepository) UpdateExternalCalendarChannel(ctx context.Context, calendarId int, channelId string, resourceId string, channelExpiry time.Time) error {
-	query := `
-	update "ExternalCalendar"
-	set channel_id = $2, resource_id = $3, channel_expiry = $4
-	where id = $1
-	`
-
-	_, err := r.db.Exec(ctx, query, calendarId, channelId, resourceId, channelExpiry)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

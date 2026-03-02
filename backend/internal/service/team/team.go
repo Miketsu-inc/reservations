@@ -66,7 +66,7 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 
 	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.teamRepo.UpdateEmployeeById(ctx, employeeAuth.MerchantId, domain.PublicEmployee{
+	err := s.teamRepo.UpdateEmployee(ctx, employeeAuth.MerchantId, domain.PublicEmployee{
 		Id:          memberId,
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
@@ -85,7 +85,7 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.teamRepo.DeleteEmployeeById(ctx, employeeAuth.MerchantId, memberId)
+	err := s.teamRepo.DeleteEmployee(ctx, employeeAuth.MerchantId, memberId)
 	if err != nil {
 		return fmt.Errorf("error while deleting employee by id: %s", err.Error())
 	}
@@ -96,7 +96,7 @@ func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmployee, error) {
 	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
 
-	teamMember, err := s.teamRepo.GetEmployeeById(ctx, employeeAuth.MerchantId, memberId)
+	teamMember, err := s.teamRepo.GetEmployee(ctx, employeeAuth.MerchantId, memberId)
 	if err != nil {
 		return domain.PublicEmployee{}, fmt.Errorf("error while retrieving employee by id: %s", err.Error())
 	}
@@ -107,7 +107,7 @@ func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmp
 func (s *Service) GetTeam(ctx context.Context) ([]domain.PublicEmployee, error) {
 	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
 
-	teamMembers, err := s.teamRepo.GetEmployeesByMerchant(ctx, employeeAuth.MerchantId)
+	teamMembers, err := s.teamRepo.GetEmployees(ctx, employeeAuth.MerchantId)
 	if err != nil {
 		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
 	}

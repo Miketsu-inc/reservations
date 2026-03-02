@@ -8,41 +8,45 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type MerchantRepository interface {
+	WithTx(tx db.DBTX) MerchantRepository
+
 	// Insert a new Merchant to the database, creates the default preferences and an owner employee
-	NewMerchant(context.Context, uuid.UUID, Merchant) error
-	DeleteMerchant(context.Context, int, uuid.UUID) error
+	NewMerchant(ctx context.Context, userId uuid.UUID, merchant Merchant) error
+	DeleteMerchant(ctx context.Context, employeeId int, merchantId uuid.UUID) error
 
-	GetMerchantIdByUrlName(context.Context, string) (uuid.UUID, error)
-	GetMerchantUrlNameById(context.Context, uuid.UUID) (string, error)
-	IsMerchantUrlUnique(context.Context, string) (bool, error)
-	ChangeMerchantNameAndURL(context.Context, uuid.UUID, string, string) error
+	ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, name string, urlName string) error
+	UpdateMerchantFields(ctx context.Context, merchantId uuid.UUID, merchantFields MerchantSettingFields) error
 
-	GetAllMerchantInfo(context.Context, uuid.UUID) (MerchantInfo, error)
-	GetMerchantSettingsInfo(context.Context, uuid.UUID) (MerchantSettingsInfo, error)
-	GetBookingSettingsByMerchantAndService(context.Context, uuid.UUID, int) (MerchantBookingSettings, error)
+	IsMerchantUrlUnique(ctx context.Context, urlName string) (bool, error)
+	GetMerchantIdByUrlName(ctx context.Context, urlName string) (uuid.UUID, error)
+	GetMerchantUrlName(ctx context.Context, merchantId uuid.UUID) (string, error)
+	GetMerchantTimezone(ctx context.Context, merchantId uuid.UUID) (*time.Location, error)
+	GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID) (string, error)
+	GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (types.SubTier, error)
+	GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error)
+	GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error)
+	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
 
-	UpdateMerchantFieldsById(context.Context, uuid.UUID, MerchantSettingFields) error
+	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
+	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time) ([]RevenueStat, error)
 
-	GetBusinessHours(context.Context, uuid.UUID) (map[int][]TimeSlot, error)
-	GetBusinessHoursByDay(context.Context, uuid.UUID, int) ([]TimeSlot, error)
+	NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]TimeSlot) error
+	DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]TimeSlot) error
+	GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int][]TimeSlot, error)
+	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, day int) ([]TimeSlot, error)
 	// Get business hours for merchant including only the first start and last ending time
-	GetNormalizedBusinessHours(context.Context, uuid.UUID) (map[int]TimeSlot, error)
-	UpdateBusinessHours(context.Context, uuid.UUID, map[int][]TimeSlot) error
+	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int]TimeSlot, error)
 
-	GetMerchantTimezoneById(context.Context, uuid.UUID) (*time.Location, error)
-	GetMerchantCurrency(context.Context, uuid.UUID) (string, error)
-	GetMerchantSubscriptionTier(context.Context, uuid.UUID) (types.SubTier, error)
+	NewLocation(ctx context.Context, location Location) error
+	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
 
-	NewLocation(context.Context, Location) error
-	GetLocationById(context.Context, int, uuid.UUID) (Location, error)
-
-	GetPreferencesByMerchantId(context.Context, uuid.UUID) (PreferenceData, error)
-	UpdatePreferences(context.Context, uuid.UUID, PreferenceData) error
-
-	GetDashboardData(context.Context, uuid.UUID, time.Time, int) (DashboardData, error)
+	NewPreferences(ctx context.Context, merchantId uuid.UUID) error
+	UpdatePreferences(ctx context.Context, merchantId uuid.UUID, preferences PreferenceData) error
+	GetPreferences(ctx context.Context, merchantId uuid.UUID) (PreferenceData, error)
 }
 
 type Merchant struct {
@@ -119,16 +123,15 @@ type MerchantBookingSettings struct {
 }
 
 type MerchantSettingFields struct {
-	Introduction     string             `json:"introduction"`
-	Announcement     string             `json:"announcement"`
-	AboutUs          string             `json:"about_us"`
-	ParkingInfo      string             `json:"parking_info"`
-	PaymentInfo      string             `json:"payment_info"`
-	CancelDeadline   int                `json:"cancel_deadline"`
-	BookingWindowMin int                `json:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time"`
-	BusinessHours    map[int][]TimeSlot `json:"business_hours"`
+	Introduction     string `json:"introduction"`
+	Announcement     string `json:"announcement"`
+	AboutUs          string `json:"about_us"`
+	ParkingInfo      string `json:"parking_info"`
+	PaymentInfo      string `json:"payment_info"`
+	CancelDeadline   int    `json:"cancel_deadline"`
+	BookingWindowMin int    `json:"booking_window_min"`
+	BookingWindowMax int    `json:"booking_window_max"`
+	BufferTime       int    `json:"buffer_time"`
 }
 
 // TODO: value is of numeric type so float might not be the best

@@ -15,28 +15,92 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/teambition/rrule-go"
 )
 
 type Service struct {
-	bookingRepo  domain.BookingRepository
-	catalogRepo  domain.CatalogRepository
-	merchantRepo domain.MerchantRepository
-	userRepo     domain.UserRepository
-	customerRepo domain.CustomerRepository
-	mailer       email.Service
+	bookingRepo     domain.BookingRepository
+	catalogRepo     domain.CatalogRepository
+	merchantRepo    domain.MerchantRepository
+	userRepo        domain.UserRepository
+	customerRepo    domain.CustomerRepository
+	blockedTimeRepo domain.BlockedTimeRepository
+	mailer          email.Service
+	txManager       db.TransactionManager
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
-	user domain.UserRepository, customer domain.CustomerRepository, mailer email.Service) *Service {
+	user domain.UserRepository, customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
+	mailer email.Service, txManager db.TransactionManager) *Service {
 	return &Service{
-		bookingRepo:  booking,
-		catalogRepo:  catalog,
-		merchantRepo: merchant,
-		userRepo:     user,
-		customerRepo: customer,
-		mailer:       mailer,
+		bookingRepo:     booking,
+		catalogRepo:     catalog,
+		merchantRepo:    merchant,
+		userRepo:        user,
+		customerRepo:    customer,
+		blockedTimeRepo: blockedTime,
+		mailer:          mailer,
+		txManager:       txManager,
 	}
+}
+
+func (s *Service) newBooking(ctx context.Context, booking domain.Booking, details domain.BookingDetails, participants []domain.BookingParticipant,
+	servicePhases []domain.PublicServicePhase) (int, error) {
+	var bookingId int
+	var err error
+
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		bookingId, err = s.bookingRepo.WithTx(tx).NewBooking(ctx, booking)
+		if err != nil {
+			return err
+		}
+
+		bookingPhases := make([]domain.BookingPhase, len(servicePhases))
+
+		bookingStart := booking.FromDate
+		for i, phase := range servicePhases {
+			phaseDuration := time.Duration(phase.Duration) * time.Minute
+			bookingEnd := bookingStart.Add(phaseDuration)
+
+			bookingPhases[i] = domain.BookingPhase{
+				BookingId:      bookingId,
+				ServicePhaseId: phase.Id,
+				FromDate:       bookingStart,
+				ToDate:         bookingEnd,
+			}
+
+			bookingStart = bookingEnd
+		}
+
+		details.BookingId = bookingId
+
+		for i := range participants {
+			participants[i].BookingId = bookingId
+		}
+
+		err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).NewBookingDetails(ctx, details)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return bookingId, nil
 }
 
 type CreateByCustomerInput struct {
@@ -57,12 +121,12 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("error while searching merchant by this name: %w", err)
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, merchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's timezone: %w", err)
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhasesById(ctx, input.ServiceId, merchantId)
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching service by this id: %w", err)
 	}
@@ -72,7 +136,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("error while getting booking settings for merchant %w", err)
 	}
 
-	bookedLocation, err := s.merchantRepo.GetLocationById(ctx, input.LocationId, merchantId)
+	bookedLocation, err := s.merchantRepo.GetLocation(ctx, input.LocationId, merchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching location by this id: %w", err)
 	}
@@ -83,6 +147,8 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 	if err != nil {
 		return fmt.Errorf("timestamp could not be converted to time: %w", err)
 	}
+
+	timeStamp = timeStamp.UTC()
 
 	now := time.Now().In(merchantTz)
 
@@ -131,27 +197,92 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		cost = *service.Cost
 	}
 
-	bookingId, err := s.bookingRepo.NewBookingByCustomer(ctx, domain.NewCustomerBooking{
-		Status:         types.BookingStatusBooked,
-		BookingType:    types.BookingTypeAppointment,
-		BookingId:      input.BookingId,
-		MerchantId:     merchantId,
-		ServiceId:      input.ServiceId,
-		LocationId:     input.LocationId,
-		FromDate:       timeStamp,
-		ToDate:         toDate,
-		CustomerNote:   &input.CustomerNote,
-		PricePerPerson: price,
-		CostPerPerson:  cost,
-		UserId:         userId,
-		CustomerId:     customerId,
-		Phases:         service.Phases,
-	})
+	var bookingId int
+
+	// inserting new customer here to avoid a nested transaction
+	customerId, isBlacklisted, err := s.customerRepo.NewCustomerFromUser(ctx, customerId, merchantId, userId)
 	if err != nil {
-		return fmt.Errorf("could not make new booking: %w", err)
+		return err
 	}
 
-	userInfo, err := s.userRepo.GetUserById(ctx, userId)
+	if isBlacklisted {
+		return fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
+	}
+
+	// means customer is booking an appointment
+	if input.BookingId == nil {
+		booking := domain.Booking{
+			Status:      types.BookingStatusBooked,
+			BookingType: types.BookingTypeAppointment,
+			MerchantId:  merchantId,
+			ServiceId:   input.ServiceId,
+			LocationId:  input.LocationId,
+			FromDate:    timeStamp,
+			ToDate:      toDate,
+		}
+
+		bookingDetails := domain.BookingDetails{
+			PricePerPerson:      price,
+			CostPerPerson:       cost,
+			TotalPrice:          price,
+			TotalCost:           cost,
+			MinParticipants:     1,
+			MaxParticipants:     1,
+			CurrentParticipants: 1,
+		}
+
+		participants := []domain.BookingParticipant{{
+			Status:       types.BookingStatusBooked,
+			CustomerId:   &customerId,
+			CustomerNote: &input.CustomerNote,
+		}}
+
+		bookingId, err = s.newBooking(ctx, booking, bookingDetails, participants, service.Phases)
+		if err != nil {
+			return fmt.Errorf("error creating new booking: %s", err.Error())
+		}
+	} else {
+		err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+			totalPrice, totalCost, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, *input.BookingId)
+			if err != nil {
+				return err
+			}
+
+			newTotalPrice, err := totalPrice.Add(price.Amount)
+			if err != nil {
+				return err
+			}
+
+			newTotalCost, err := totalCost.Add(cost.Amount)
+			if err != nil {
+				return err
+			}
+
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, *input.BookingId, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
+			if err != nil {
+				return err
+			}
+
+			participants := []domain.BookingParticipant{{
+				Status:       types.BookingStatusBooked,
+				BookingId:    *input.BookingId,
+				CustomerId:   &customerId,
+				CustomerNote: &input.CustomerNote,
+			}}
+
+			err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("error adding new participant to booking: %s", err.Error())
+		}
+	}
+
+	userInfo, err := s.userRepo.GetUser(ctx, userId)
 	if err != nil {
 		return fmt.Errorf("could not get email for the user: %w", err)
 	}
@@ -230,12 +361,56 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 		return fmt.Errorf("it's too late to cancel this appointments")
 	}
 
-	emailId, err := s.bookingRepo.CancelBookingByCustomer(ctx, customerId, bookingId)
+	var emailId *uuid.UUID
+
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		bookingDetails, err := s.bookingRepo.WithTx(tx).GetBookingDetails(ctx, bookingId)
+		if err != nil {
+			return err
+		}
+
+		var bookingType types.BookingType
+
+		emailId, bookingType, err = s.bookingRepo.WithTx(tx).CancelBookingByCustomer(ctx, bookingId, customerId)
+		if err != nil {
+			return fmt.Errorf("error while cancelling the booking by user: %s", err.Error())
+		}
+
+		newTotalPrice, err := bookingDetails.TotalPrice.Sub(bookingDetails.PricePerPerson.Amount)
+		if err != nil {
+			return fmt.Errorf("failed to calculate total price: %w", err)
+		}
+
+		newTotalCost, err := bookingDetails.TotalCost.Sub(bookingDetails.CostPerPerson.Amount)
+		if err != nil {
+			return fmt.Errorf("failed to calculate total cost: %w", err)
+		}
+
+		err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, bookingId, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
+		if err != nil {
+			return err
+		}
+
+		if bookingType == types.BookingTypeAppointment {
+			err = s.bookingRepo.WithTx(tx).UpdateBookingStatus(ctx, merchantId, bookingId, types.BookingStatusCancelled)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = s.bookingRepo.WithTx(tx).DecrementParticipantCount(ctx, bookingId)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("error while cancelling the booking by user: %s", err.Error())
+		return err
 	}
 
-	if emailId != uuid.Nil {
+	// Email id can be null in case there was no email scheduled (like booked less then 24 hour before the start)
+	if emailId != nil {
 		err = s.mailer.Cancel(emailId.String())
 		if err != nil {
 			return fmt.Errorf("error while cancelling the scheduled email for the booking: %s", err.Error())
@@ -281,7 +456,7 @@ type RecurringRuleInput struct {
 func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	service, err := s.catalogRepo.GetServiceWithPhasesById(ctx, input.ServiceId, employee.MerchantId)
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching service by this id: %s", err.Error())
 	}
@@ -298,12 +473,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		}
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, employee.MerchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
 
-	bookedLocation, err := s.merchantRepo.GetLocationById(ctx, employee.LocationId, employee.MerchantId)
+	bookedLocation, err := s.merchantRepo.GetLocation(ctx, employee.LocationId, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching location by this id: %s", err.Error())
 	}
@@ -343,6 +518,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	if err != nil {
 		return fmt.Errorf("timestamp could not be converted to time: %s", err.Error())
 	}
+	timeStamp = timeStamp.UTC()
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
 
@@ -388,6 +564,24 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				}
 			}
 		}
+	}
+
+	participantCount := len(participantIds)
+	// walk ins do not get a booking participant row but 1 person still attending the booking
+	if isWalkIn {
+		participantCount = 1
+	}
+
+	countStr := strconv.Itoa(participantCount)
+
+	totalPrice, err := price.Mul(countStr)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total price: %w", err)
+	}
+
+	totalCost, err := cost.Mul(countStr)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total cost: %w", err)
 	}
 
 	var bookingId int
@@ -448,20 +642,54 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		// recurring bookings have to be stored in local time and converted to UTC during generation
 		fromDate = timeStamp.In(merchantTz)
 
-		series, err := s.bookingRepo.NewBookingSeries(ctx, domain.NewBookingSeries{
-			BookingType:     service.BookingType,
-			MerchantId:      employee.MerchantId,
-			EmployeeId:      employee.Id,
-			ServiceId:       service.Id,
-			LocationId:      bookedLocation.Id,
-			Rrule:           rrule.String(),
-			Dstart:          fromDate,
-			Timezone:        merchantTz,
-			PricePerPerson:  price,
-			CostPerPerson:   cost,
-			MinParticipants: service.MinParticipants,
-			MaxParticipants: service.MaxParticipants,
-			Participants:    participantIds,
+		var series CompleteBookingSeries
+
+		err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+			series.BookingSeries, err = s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
+				BookingType: service.BookingType,
+				MerchantId:  employee.MerchantId,
+				EmployeeId:  employee.Id,
+				ServiceId:   service.Id,
+				LocationId:  bookedLocation.Id,
+				Rrule:       rrule.String(),
+				Dstart:      fromDate,
+				Timezone:    merchantTz.String(),
+				IsActive:    true,
+			})
+			if err != nil {
+				return err
+			}
+
+			series.Details, err = s.bookingRepo.WithTx(tx).NewBookingSeriesDetails(ctx, domain.BookingSeriesDetails{
+				BookingSeriesId:     series.Id,
+				PricePerPerson:      price,
+				CostPerPerson:       cost,
+				TotalPrice:          currencyx.Price{Amount: totalPrice},
+				TotalCost:           currencyx.Price{Amount: totalCost},
+				MinParticipants:     service.MinParticipants,
+				MaxParticipants:     service.MaxParticipants,
+				CurrentParticipants: participantCount,
+			})
+			if err != nil {
+				return err
+			}
+
+			seriesParticipants := make([]domain.BookingSeriesParticipant, len(participantIds))
+
+			for i, id := range participantIds {
+				seriesParticipants[i] = domain.BookingSeriesParticipant{
+					BookingSeriesId: series.Id,
+					CustomerId:      id,
+					IsActive:        true,
+				}
+			}
+
+			series.Participants, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipants)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		})
 		if err != nil {
 			return fmt.Errorf("error while creating new booking series: %s", err.Error())
@@ -472,29 +700,47 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
 		}
 	} else {
-		bookingId, err = s.bookingRepo.NewBookingByMerchant(ctx, domain.NewMerchantBooking{
-			Status:          types.BookingStatusBooked,
-			BookingType:     service.BookingType,
-			MerchantId:      employee.MerchantId,
-			ServiceId:       service.Id,
-			LocationId:      bookedLocation.Id,
-			FromDate:        fromDate,
-			ToDate:          toDate,
-			MerchantNote:    input.MerchantNote,
-			PricePerPerson:  price,
-			CostPerPerson:   cost,
-			MinParticipants: service.MinParticipants,
-			MaxParticipants: service.MaxParticipants,
-			Participants:    participantIds,
-			Phases:          service.Phases,
-		})
+		booking := domain.Booking{
+			Status:      types.BookingStatusBooked,
+			BookingType: service.BookingType,
+			MerchantId:  employee.MerchantId,
+			EmployeeId:  &employee.Id,
+			ServiceId:   service.Id,
+			LocationId:  bookedLocation.Id,
+			FromDate:    fromDate,
+			ToDate:      toDate,
+		}
+
+		bookingDetails := domain.BookingDetails{
+			BookingId:           bookingId,
+			PricePerPerson:      price,
+			CostPerPerson:       cost,
+			TotalPrice:          currencyx.Price{Amount: totalPrice},
+			TotalCost:           currencyx.Price{Amount: totalCost},
+			MerchantNote:        input.MerchantNote,
+			MinParticipants:     service.MinParticipants,
+			MaxParticipants:     service.MaxParticipants,
+			CurrentParticipants: participantCount,
+		}
+
+		participants := make([]domain.BookingParticipant, len(participantIds))
+		for i, custId := range participantIds {
+			participants[i] = domain.BookingParticipant{
+				Status:       types.BookingStatusBooked,
+				BookingId:    bookingId,
+				CustomerId:   custId,
+				CustomerNote: nil,
+			}
+		}
+
+		bookingId, err = s.newBooking(ctx, booking, bookingDetails, participants, service.Phases)
 		if err != nil {
-			return fmt.Errorf("error while creating new booking: %s", err.Error())
+			return fmt.Errorf("error during new booking creation: %s", err.Error())
 		}
 	}
 
 	if !isWalkIn {
-		urlName, err := s.merchantRepo.GetMerchantUrlNameById(ctx, employee.MerchantId)
+		urlName, err := s.merchantRepo.GetMerchantUrlName(ctx, employee.MerchantId)
 		if err != nil {
 			return fmt.Errorf("error while getting merchant's url name: %s", err.Error())
 		}
@@ -565,17 +811,35 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	fromDateOffset := input.FromDate.Sub(oldEmailData.FromDate)
-	toDateOffset := input.ToDate.Sub(oldEmailData.FromDate)
+	toDateOffset := input.ToDate.Sub(oldEmailData.ToDate)
 
 	if fromDateOffset != toDateOffset {
 		return fmt.Errorf("invalid from and to date supplied")
 	}
 
-	if err := s.bookingRepo.UpdateBookingData(ctx, employee.MerchantId, bookingId, input.MerchantNote, fromDateOffset); err != nil {
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.bookingRepo.WithTx(tx).UpdateBookingDetails(ctx, employee.MerchantId, bookingId, input.MerchantNote)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).UpdateBookingTime(ctx, employee.MerchantId, bookingId, fromDateOffset)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).UpdateBookingPhaseTime(ctx, bookingId, fromDateOffset)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, employee.MerchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
@@ -653,10 +917,11 @@ type CancelByMerchantInput struct {
 	CancellationReason string
 }
 
+// TODO: what should the booking participant statuses be here?
 func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input CancelByMerchantInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, employee.MerchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
@@ -676,7 +941,19 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 	formattedDate := fromDateMerchantTz.Format("Monday, January 2")
 	newBookingLink := "http://reservations.local:3000/m/" + emailData.MerchantName
 
-	err = s.bookingRepo.CancelBookingByMerchant(ctx, employee.MerchantId, bookingId, input.CancellationReason)
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err = s.bookingRepo.WithTx(tx).CancelBookingByMerchant(ctx, employee.MerchantId, bookingId, input.CancellationReason)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).UpdateBookingStatus(ctx, employee.MerchantId, bookingId, types.BookingStatusCancelled)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("error while cancelling booking by merchant: %s", err.Error())
 	}
@@ -715,10 +992,18 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 func (s *Service) GetCalendarEvents(ctx context.Context, start string, end string) (domain.CalendarEvents, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	bookings, err := s.bookingRepo.GetCalendarEventsByMerchant(ctx, employee.MerchantId, start, end)
+	var events domain.CalendarEvents
+	var err error
+
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, employee.MerchantId, start, end)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	return bookings, nil
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, employee.MerchantId, start, end)
+	if err != nil {
+		return domain.CalendarEvents{}, err
+	}
+
+	return events, nil
 }

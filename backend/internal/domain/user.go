@@ -5,25 +5,28 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"golang.org/x/text/language"
 )
 
 type UserRepository interface {
-	NewUser(context.Context, User) error
+	WithTx(tx db.DBTX) UserRepository
 
-	GetUserById(context.Context, uuid.UUID) (User, error)
-	GetUserPasswordAndIDByUserEmail(context.Context, string) (uuid.UUID, *string, error)
-	FindOauthUser(context.Context, types.AuthProviderType, string) (uuid.UUID, error)
-	GetEmployeesByUser(context.Context, uuid.UUID) ([]EmployeeAuthInfo, error)
+	NewUser(ctx context.Context, user User) error
 
-	IsEmailUnique(context.Context, string) error
-	IsPhoneNumberUnique(context.Context, string) error
+	GetUser(ctx context.Context, userId uuid.UUID) (User, error)
+	GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, *string, error)
+	GetUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
+	GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error)
+	GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error)
+
+	IsEmailUnique(ctx context.Context, email string) error
+	IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error
 
 	// Increment User's refresh version, logging out the User.
-	IncrementUserJwtRefreshVersion(context.Context, uuid.UUID) error
-	GetUserJwtRefreshVersion(context.Context, uuid.UUID) (int, error)
+	IncrementUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) error
 
-	GetUserPreferredLanguage(context.Context, uuid.UUID) (*language.Tag, error)
+	FindOauthUser(ctx context.Context, authProviderType types.AuthProviderType, providerId string) (uuid.UUID, error)
 }
 
 type User struct {

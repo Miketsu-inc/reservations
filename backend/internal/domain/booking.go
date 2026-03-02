@@ -7,67 +7,103 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type BookingRepository interface {
-	NewBookingByCustomer(context.Context, NewCustomerBooking) (int, error)
-	NewBookingByMerchant(context.Context, NewMerchantBooking) (int, error)
+	WithTx(tx db.DBTX) BookingRepository
 
-	UpdateBookingData(context.Context, uuid.UUID, int, string, time.Duration) error
+	NewBooking(ctx context.Context, booking Booking) (int, error)
+	NewBookings(ctx context.Context, bookings []Booking) ([]int, error)
+	NewBookingPhases(ctx context.Context, bookingPhases []BookingPhase) error
+	NewBookingDetails(ctx context.Context, bookingDetails BookingDetails) error
+	NewBookingDetailsBatch(ctx context.Context, bookingDetails []BookingDetails) error
+	NewBookingParticipants(ctx context.Context, bookingParticipants []BookingParticipant) error
 
-	CancelBookingByMerchant(context.Context, uuid.UUID, int, string) error
-	CancelBookingByCustomer(context.Context, uuid.UUID, int) (uuid.UUID, error)
-
-	GetCalendarEventsByMerchant(context.Context, uuid.UUID, string, string) (CalendarEvents, error)
-	GetReservedTimes(context.Context, uuid.UUID, int, time.Time) ([]BookingTime, error)
-	GetReservedTimesForPeriod(context.Context, uuid.UUID, int, time.Time, time.Time) ([]BookingTime, error)
-	GetAvailableGroupBookingsForPeriod(context.Context, uuid.UUID, int, int, time.Time, time.Time) ([]BookingTime, error)
-
-	GetPublicBooking(context.Context, int) (PublicBooking, error)
-	GetBookingDataForEmail(context.Context, int) (BookingEmailData, error)
+	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
+	UpdateBookingTime(ctx context.Context, merchantId uuid.UUID, bookingId int, offset time.Duration) error
 	UpdateEmailIdForBooking(context.Context, int, string, uuid.UUID) error
+	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error
+	UpdateBookingDetails(ctx context.Context, merchantId uuid.UUID, bookingId int, merchantNote string) error
+	UpdateBookingPhaseTime(ctx context.Context, bookingId int, offset time.Duration) error
+	IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, currencyx.Price, error)
+	DecrementParticipantCount(ctx context.Context, bookingId int) error
+	// decrements the participant count on every booking related to the customer
+	DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
+	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 
-	TransferDummyBookings(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) error
+	CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error
+	CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (*uuid.UUID, types.BookingType, error)
+	DeleteAppointmentsByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
+	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
-	NewBookingSeries(context.Context, NewBookingSeries) (CompleteBookingSeries, error)
-	BatchCreateRecurringBookings(context.Context, NewRecurringBookings) (int, error)
-	GetExistingOccurrenceDates(context.Context, int, time.Time, time.Time) ([]time.Time, error)
+	GetPublicBooking(ctx context.Context, bookingId int) (PublicBooking, error)
+	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
+	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
+	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]PublicBookingDetails, error)
+	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
+	GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error)
+	GetBookingDetails(ctx context.Context, bookingId int) (BookingDetails, error)
 
-	GetBookingForExternalCalendar(context.Context, int) (BookingForExternalCalendar, error)
+	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingTime, error)
+	GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationiId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
+	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
+
+	NewBookingSeries(ctx context.Context, bookingSeries BookingSeries) (BookingSeries, error)
+	NewBookingSeriesDetails(ctx context.Context, bookingSeriesDetails BookingSeriesDetails) (BookingSeriesDetails, error)
+	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
+
+	GetExistingOccurrenceDates(ctx context.Context, seriesId int, startDate time.Time, endDate time.Time) ([]time.Time, error)
 }
 
-type NewCustomerBooking struct {
-	Status         types.BookingStatus  `json:"status"`
-	BookingType    types.BookingType    `json:"booking_type"`
-	BookingId      *int                 `json:"booking_id"`
-	MerchantId     uuid.UUID            `json:"merchant_id"`
-	ServiceId      int                  `json:"service_id"`
-	LocationId     int                  `json:"location_id"`
-	FromDate       time.Time            `json:"from_date"`
-	ToDate         time.Time            `json:"to_date"`
-	CustomerNote   *string              `json:"customer_note"`
-	PricePerPerson currencyx.Price      `json:"price_per_person"`
-	CostPerPerson  currencyx.Price      `json:"cost_per_person"`
-	UserId         uuid.UUID            `json:"user_id"`
-	CustomerId     uuid.UUID            `json:"customer_id"`
-	Phases         []PublicServicePhase `json:"phases"`
+type Booking struct {
+	Id                 int
+	Status             types.BookingStatus
+	BookingType        types.BookingType
+	IsRecurring        bool
+	MerchantId         uuid.UUID
+	EmployeeId         *int
+	ServiceId          int
+	LocationId         int
+	BookingSeriesId    *int
+	SeriesOriginalDate *time.Time
+	FromDate           time.Time
+	ToDate             time.Time
 }
 
-type NewMerchantBooking struct {
-	Status          types.BookingStatus  `json:"status"`
-	BookingType     types.BookingType    `json:"booking_type"`
-	MerchantId      uuid.UUID            `json:"merchant_id"`
-	ServiceId       int                  `json:"service_id"`
-	LocationId      int                  `json:"location_id"`
-	FromDate        time.Time            `json:"from_date"`
-	ToDate          time.Time            `json:"to_date"`
-	MerchantNote    *string              `json:"merchant_note"`
-	PricePerPerson  currencyx.Price      `json:"price_per_person"`
-	CostPerPerson   currencyx.Price      `json:"cost_per_person"`
-	MinParticipants int                  `json:"min_participants"`
-	MaxParticipants int                  `json:"max_participants"`
-	Participants    []*uuid.UUID         `json:"participants"`
-	Phases          []PublicServicePhase `json:"phases"`
+type BookingPhase struct {
+	Id             int
+	BookingId      int
+	ServicePhaseId int
+	FromDate       time.Time
+	ToDate         time.Time
+}
+
+type BookingDetails struct {
+	Id                    int
+	BookingId             int
+	PricePerPerson        currencyx.Price
+	CostPerPerson         currencyx.Price
+	TotalPrice            currencyx.Price
+	TotalCost             currencyx.Price
+	MerchantNote          *string
+	MinParticipants       int
+	MaxParticipants       int
+	CurrentParticipants   int
+	CancelledByMerchantOn *time.Time
+	CancellationReason    *string
+}
+
+type BookingParticipant struct {
+	Id                 int
+	Status             types.BookingStatus
+	BookingId          int
+	CustomerId         *uuid.UUID
+	CustomerNote       *string
+	CancelledOn        *time.Time
+	CancellationReason *string
+	TransferredTo      *uuid.UUID
+	EmailId            *uuid.UUID
 }
 
 type PublicBooking struct {
@@ -98,17 +134,6 @@ type PublicBookingDetails struct {
 	PhoneNumber     *string                  `json:"phone_number" db:"phone_number"`
 }
 
-type BlockedTimeEvent struct {
-	ID            int       `json:"id" db:"id"`
-	EmployeeId    int       `json:"employee_id" db:"employee_id"`
-	Name          string    `json:"name" db:"name"`
-	FromDate      time.Time `json:"from_date" db:"from_date"`
-	ToDate        time.Time `json:"to_date" db:"to_date"`
-	AllDay        bool      `json:"all_day" db:"all_day"`
-	Icon          *string   `json:"icon" db:"icon"`
-	BlockedTypeId *int      `json:"blocked_type_id" db:"blocked_type_id"`
-}
-
 type CalendarEvents struct {
 	Bookings     []PublicBookingDetails `json:"bookings"`
 	BlockedTimes []BlockedTimeEvent     `json:"blocked_times"`
@@ -133,21 +158,6 @@ type ParticipantEmailData struct {
 	CustomerId uuid.UUID `josn:"customer_id" db:"customer_id"`
 	Email      *string   `json:"email" db:"email"`
 	EmailId    uuid.UUID `json:"email_id" db:"email_id"`
-}
-
-type NewRecurringBookings struct {
-	BookingSeriesId int
-	BookingStatus   types.BookingStatus
-	BookingType     types.BookingType
-	MerchantId      uuid.UUID
-	EmployeeId      int
-	ServiceId       int
-	LocationId      int
-	FromDates       []time.Time
-	ToDates         []time.Time
-	Phases          []PublicServicePhase `json:"phases"`
-	Details         BookingSeriesDetails
-	Participants    []BookingSeriesParticipant
 }
 
 type BookingSeries struct {
@@ -181,28 +191,6 @@ type BookingSeriesParticipant struct {
 	CustomerId      *uuid.UUID `json:"customer_id" db:"customer_id"`
 	IsActive        bool       `json:"is_active" db:"is_active"`
 	DroppedOutOn    *time.Time `json:"dropped_out_on" db:"dropped_out_on"`
-}
-
-type CompleteBookingSeries struct {
-	BookingSeries
-	Details      BookingSeriesDetails
-	Participants []BookingSeriesParticipant
-}
-
-type NewBookingSeries struct {
-	BookingType     types.BookingType
-	MerchantId      uuid.UUID
-	EmployeeId      int
-	ServiceId       int
-	LocationId      int
-	Rrule           string
-	Dstart          time.Time
-	Timezone        *time.Location
-	PricePerPerson  currencyx.Price
-	CostPerPerson   currencyx.Price
-	MinParticipants int
-	MaxParticipants int
-	Participants    []*uuid.UUID
 }
 
 type BookingForExternalCalendar struct {

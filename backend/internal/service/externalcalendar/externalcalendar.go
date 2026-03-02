@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -23,16 +24,19 @@ type Service struct {
 	merchantRepo         domain.MerchantRepository
 	bookingRepo          domain.BookingRepository
 	teamRepo             domain.TeamRepository
+	txManager            db.TransactionManager
 }
 
 func NewService(externalCalendar domain.ExternalCalendarRepository, blockedTime domain.BlockedTimeRepository,
-	merchant domain.MerchantRepository, booking domain.BookingRepository, team domain.TeamRepository) *Service {
+	merchant domain.MerchantRepository, booking domain.BookingRepository, team domain.TeamRepository,
+	txManager db.TransactionManager) *Service {
 	return &Service{
 		externalCalendarRepo: externalCalendar,
 		blockedTimeRepo:      blockedTime,
 		merchantRepo:         merchant,
 		bookingRepo:          booking,
 		teamRepo:             team,
+		txManager:            txManager,
 	}
 }
 
@@ -102,7 +106,7 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string) error
 				return fmt.Errorf("error while parsing google calendar timezone: %s", err.Error())
 			}
 		} else {
-			calendarTz, err = s.merchantRepo.GetMerchantTimezoneById(ctx, employee.MerchantId)
+			calendarTz, err = s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
 			if err != nil {
 				return fmt.Errorf("error while loading merchant timezone: %s", err.Error())
 			}

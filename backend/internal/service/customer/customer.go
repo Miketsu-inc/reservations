@@ -8,17 +8,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type Service struct {
 	customerRepo domain.CustomerRepository
 	bookingRepo  domain.BookingRepository
+	txManager    db.TransactionManager
 }
 
-func NewService(customer domain.CustomerRepository, booking domain.BookingRepository) *Service {
+func NewService(customer domain.CustomerRepository, booking domain.BookingRepository, txManager db.TransactionManager) *Service {
 	return &Service{
 		customerRepo: customer,
 		bookingRepo:  booking,
+		txManager:    txManager,
 	}
 }
 
@@ -71,7 +74,7 @@ func (s *Service) Update(ctx context.Context, customerId uuid.UUID, input Update
 
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.customerRepo.UpdateCustomerById(ctx, employee.MerchantId, domain.Customer{
+	err := s.customerRepo.UpdateCustomer(ctx, employee.MerchantId, domain.Customer{
 		Id:          input.Id,
 		FirstName:   input.FirstName,
 		LastName:    input.LastName,
@@ -87,21 +90,41 @@ func (s *Service) Update(ctx context.Context, customerId uuid.UUID, input Update
 	return nil
 }
 
+// TODO: we should ask if they want to delete their booking history as well or not
+// also letting them delete customers who are user's by just deleting their bookings
+// we should also decide what to do with deleted class/event participants
 func (s *Service) Delete(ctx context.Context, customerId uuid.UUID) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.customerRepo.DeleteCustomerById(ctx, customerId, employee.MerchantId)
-	if err != nil {
-		return fmt.Errorf("error while deleting customer for merchant: %s", err.Error())
-	}
+	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.bookingRepo.DeleteAppointmentsByCustomer(ctx, customerId, employee.MerchantId)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		err = s.bookingRepo.DecrementEveryParticipantCountForCustomer(ctx, customerId, employee.MerchantId)
+		if err != nil {
+			return err
+		}
+
+		err = s.bookingRepo.DeleteParticipantByCustomer(ctx, customerId, employee.MerchantId)
+		if err != nil {
+			return err
+		}
+
+		err = s.customerRepo.DeleteCustomer(ctx, customerId, employee.MerchantId)
+		if err != nil {
+			return fmt.Errorf("error while deleting customer for merchant: %s", err.Error())
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) Get(ctx context.Context, customerId uuid.UUID) (domain.CustomerInfo, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	customer, err := s.customerRepo.GetCustomerInfoByMerchant(ctx, employee.MerchantId, customerId)
+	customer, err := s.customerRepo.GetCustomerInfo(ctx, employee.MerchantId, customerId)
 	if err != nil {
 		return domain.CustomerInfo{}, fmt.Errorf("error while retrieving customer info for merchant: %s", err.Error())
 	}
@@ -112,7 +135,7 @@ func (s *Service) Get(ctx context.Context, customerId uuid.UUID) (domain.Custome
 func (s *Service) GetStats(ctx context.Context, customerId uuid.UUID) (domain.CustomerStatistics, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	customerStats, err := s.customerRepo.GetCustomerStatsByMerchant(ctx, employee.MerchantId, customerId)
+	customerStats, err := s.customerRepo.GetCustomerStats(ctx, employee.MerchantId, customerId)
 	if err != nil {
 		return domain.CustomerStatistics{}, fmt.Errorf("error while retrieving customer stats for merchant: %s", err.Error())
 	}
@@ -154,7 +177,7 @@ func (s *Service) UnBlacklist(ctx context.Context, customerId uuid.UUID) error {
 func (s *Service) GetAll(ctx context.Context) ([]domain.PublicCustomer, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	customers, err := s.customerRepo.GetCustomersByMerchantId(ctx, employee.MerchantId, false)
+	customers, err := s.customerRepo.GetCustomers(ctx, employee.MerchantId, false)
 	if err != nil {
 		return []domain.PublicCustomer{}, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error())
 	}
@@ -181,7 +204,7 @@ func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsIn
 func (s *Service) GetAllBlacklisted(ctx context.Context) ([]domain.PublicCustomer, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	blacklistedCustomers, err := s.customerRepo.GetCustomersByMerchantId(ctx, employee.MerchantId, true)
+	blacklistedCustomers, err := s.customerRepo.GetCustomers(ctx, employee.MerchantId, true)
 	if err != nil {
 		return []domain.PublicCustomer{}, fmt.Errorf("error while retrieving blacklisted customers for merchant: %s", err.Error())
 	}

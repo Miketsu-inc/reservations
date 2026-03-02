@@ -8,16 +8,20 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type productRepository struct {
-	db *pgxpool.Pool
+	db db.DBTX
 }
 
-func NewProductRepository(db *pgxpool.Pool) domain.ProductRepository {
+func NewProductRepository(db db.DBTX) domain.ProductRepository {
 	return &productRepository{db: db}
+}
+
+func (r *productRepository) WithTx(tx db.DBTX) domain.ProductRepository {
+	return &productRepository{db: tx}
 }
 
 func (r *productRepository) NewProduct(ctx context.Context, prod domain.Product) error {
@@ -49,7 +53,7 @@ func (r *productRepository) UpdateProduct(ctx context.Context, newProduct domain
 	return nil
 }
 
-func (r *productRepository) DeleteProductById(ctx context.Context, merchantId uuid.UUID, productId int) error {
+func (r *productRepository) DeleteProduct(ctx context.Context, merchantId uuid.UUID, productId int) error {
 	query := `
 		with deleted as (
 			update "Product"
@@ -70,7 +74,7 @@ func (r *productRepository) DeleteProductById(ctx context.Context, merchantId uu
 }
 
 // TODO: this should use pgx helpers
-func (r *productRepository) GetProductsByMerchant(ctx context.Context, merchantId uuid.UUID) ([]domain.ProductInfo, error) {
+func (r *productRepository) GetProducts(ctx context.Context, merchantId uuid.UUID) ([]domain.ProductInfo, error) {
 	query := `
 	select p.id, p.name, p.description, p.price, p.unit, p.max_amount, p.current_amount,
 	coalesce(
@@ -129,5 +133,21 @@ func (r *productRepository) GetProductsByMerchant(ctx context.Context, merchantI
 	if len(products) == 0 {
 		products = []domain.ProductInfo{}
 	}
+	return products, nil
+}
+
+func (r *productRepository) GetLowStockProducts(ctx context.Context, merchantId uuid.UUID) ([]domain.LowStockProduct, error) {
+	query := `
+	select p.id, p.name, p.max_amount, p.current_amount, p.unit, (p.current_amount::float / p.max_amount) as fill_ratio from "Product" p
+	where  p.merchant_id = $1 and p.deleted_on is null and p.max_amount > 0 and (p.current_amount::float / p.max_amount) < 0.4
+	order by fill_ratio asc
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	products, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.LowStockProduct])
+	if err != nil {
+		return []domain.LowStockProduct{}, err
+	}
+
 	return products, nil
 }

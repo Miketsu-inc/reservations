@@ -33,7 +33,7 @@ type UpdateCategoryInput struct {
 func (s *Service) UpdateCategory(ctx context.Context, categoryId int, req UpdateCategoryInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.catalogRepo.UpdateServiceCategoryById(ctx, employee.MerchantId, domain.ServiceCategory{
+	err := s.catalogRepo.UpdateServiceCategory(ctx, employee.MerchantId, domain.ServiceCategory{
 		Id:   categoryId,
 		Name: req.Name,
 	})
@@ -47,7 +47,7 @@ func (s *Service) UpdateCategory(ctx context.Context, categoryId int, req Update
 func (s *Service) DeleteCategory(ctx context.Context, categoryId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.catalogRepo.DeleteServiceCategoryById(ctx, employee.MerchantId, categoryId)
+	err := s.catalogRepo.DeleteServiceCategory(ctx, employee.MerchantId, categoryId)
 	if err != nil {
 		return fmt.Errorf("error while deleting service category: %s", err.Error())
 	}

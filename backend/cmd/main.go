@@ -8,8 +8,8 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/app"
-	"github.com/miketsu-inc/reservations/backend/internal/repository/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 func main() {

@@ -58,7 +58,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 		return []MultiDayAvailableTimes{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhasesById(ctx, serviceId, merchantId)
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
 	if err != nil {
 		return []MultiDayAvailableTimes{}, fmt.Errorf("error while retrieving service: %s", err.Error())
 	}
@@ -67,7 +67,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 		return []MultiDayAvailableTimes{}, fmt.Errorf("this service id does not belong to this merchant")
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, merchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
 		return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
@@ -161,7 +161,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		return NextAvailable{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhasesById(ctx, serviceId, merchantId)
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
 	if err != nil {
 		return NextAvailable{}, fmt.Errorf("error while retrieving service: %s", err.Error())
 	}
@@ -184,7 +184,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		return NextAvailable{}, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error())
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, merchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
 		return NextAvailable{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
@@ -233,7 +233,7 @@ func (s *Service) GetDisabledDays(ctx context.Context, merchantName string, serv
 		return DisabledDays{}, fmt.Errorf("error while retrieving booking settings by merchant id: %s", err.Error())
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezoneById(ctx, merchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
 		return DisabledDays{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}

@@ -5,34 +5,32 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type ExternalCalendarRepository interface {
-	NewExternalCalendar(context.Context, ExternalCalendar) (int, error)
-	UpdateExternalCalendarSyncToken(context.Context, int, string) error
-	UpdateExternalCalendarAuthTokens(context.Context, int, string, string, time.Time) error
-	UpdateExternalCalendarChannel(context.Context, int, string, string, time.Time) error
-	// Delete all external calendar related data (BlockedTime, ExternalCalendarEvent) and reset sync state
-	// should be called for 410 GONE response before full initial sync
-	ResetExternalCalendar(context.Context, int) error
+	WithTx(tx db.DBTX) ExternalCalendarRepository
 
-	GetExternalCalendarById(context.Context, int) (ExternalCalendar, error)
-	GetExternalCalendarByChannel(context.Context, string, string) (ExternalCalendar, error)
-	GetExternalCalendarByEmployeeId(context.Context, int) (ExternalCalendar, error)
+	NewExternalCalendar(ctx context.Context, extCalendar ExternalCalendar) (int, error)
+	UpdateExternalCalendarSyncToken(ctx context.Context, extCalendarId int, syncToken string) error
+	UpdateExternalCalendarAuthTokens(ctx context.Context, extCalendarId int, accessToken string, refreshToken string, tokenExpiry time.Time) error
+	UpdateExternalCalendarChannel(ctx context.Context, calendarId int, channelId string, resourceId string, channelExpiry time.Time) error
+	ResetExternalCalendarSyncState(ctx context.Context, extCalendarId int) error
 
-	BulkInitialSyncExternalCalendarEvents(context.Context, []BlockedTime, []int, []ExternalCalendarEvent) error
-	BulkIncrementalSyncExternalCalendarEvents(context.Context, []BlockedTime, []BlockedTime, []int, []int, []ExternalCalendarEvent,
-		[]ExternalCalendarEvent, []ExternalEventBlockedTimeLink) error
+	GetExternalCalendar(ctx context.Context, extCalendarId int) (ExternalCalendar, error)
+	GetExternalCalendarByChannel(ctx context.Context, channelId string, resourceId string) (ExternalCalendar, error)
+	GetExternalCalendarByEmployeeId(ctx context.Context, employeeId int) (ExternalCalendar, error)
 
-	GetExternalCalendarEventsByIds(context.Context, int, []string) ([]ExternalCalendarEvent, error)
+	NewExternalCalendarEvent(ctx context.Context, externalEvent ExternalCalendarEvent) error
+	BulkInsertExternalCalendarEvent(ctx context.Context, externalEvents []ExternalCalendarEvent) error
+	UpdateExternalCalendarEvent(ctx context.Context, externalEvent ExternalCalendarEvent) error
+	BulkUpdateExternalCalendarEvent(ctx context.Context, externalEvents []ExternalCalendarEvent) error
+	DeleteExternalCalendarEvent(ctx context.Context, externalEventId int) error
+	DeleteAllExternalCalendarEvents(ctx context.Context, extCalendarId int) error
 
-	NewExternalCalendarEvent(context.Context, ExternalCalendarEvent) error
-	UpdateExternalCalendarEvent(context.Context, ExternalCalendarEvent) error
-	DeleteExternalCalendarEvent(context.Context, int) error
-
-	GetExternalCalendarEventByInternal(context.Context, types.EventInternalType, int) (ExternalCalendarEvent, error)
-	// Get external calendars that have a channel expiry of less than 24 hours
-	GetExpiringExternalCalendars(context.Context) ([]ExternalCalendar, error)
+	GetExternalCalendarEvents(ctx context.Context, extCalendarIds int, eventIds []string) ([]ExternalCalendarEvent, error)
+	GetExternalCalendarEventByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) (ExternalCalendarEvent, error)
+	GetExpiringExternalCalendars(ctx context.Context, timeLeft time.Time) ([]ExternalCalendar, error)
 }
 
 type ExternalCalendar struct {
@@ -65,9 +63,4 @@ type ExternalCalendarEvent struct {
 	IsBlocking         bool                     `json:"is_blocking" db:"is_blocking"`
 	Source             types.EventSource        `json:"source" db:"source"`
 	LastSyncedAt       time.Time                `json:"last_synced_at" db:"last_synced_at"`
-}
-
-type ExternalEventBlockedTimeLink struct {
-	ExternalEventIdx int
-	BlockedTimeIdx   int
 }

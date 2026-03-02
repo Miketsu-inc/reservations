@@ -8,6 +8,8 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/internal/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -18,11 +20,13 @@ type Service struct {
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
 	teamRepo        domain.TeamRepository
+	productRepo     domain.ProductRepository
+	txManager       db.TransactionManager
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
-	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
-	team domain.TeamRepository) *Service {
+	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository, team domain.TeamRepository,
+	product domain.ProductRepository, txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
@@ -30,6 +34,8 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
 		teamRepo:        team,
+		productRepo:     product,
+		txManager:       txManager,
 	}
 }
 
@@ -80,9 +86,41 @@ func (s *Service) GetDashboard(ctx context.Context, date time.Time, period int) 
 
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	dashboard, err := s.merchantRepo.GetDashboardData(ctx, employee.MerchantId, date, period)
+	utcDate := date.UTC()
+
+	var dashboard domain.DashboardData
+	var err error
+
+	dashboard.LatestBookings, err = s.bookingRepo.GetLatestBookings(ctx, employee.MerchantId, utcDate, 5)
+	if err != nil {
+		return domain.DashboardData{}, err
+	}
+
+	dashboard.UpcomingBookings, err = s.bookingRepo.GetUpcomingBookings(ctx, employee.MerchantId, utcDate, 5)
+	if err != nil {
+		return domain.DashboardData{}, err
+	}
+
+	dashboard.LowStockProducts, err = s.productRepo.GetLowStockProducts(ctx, employee.MerchantId)
+	if err != nil {
+		return domain.DashboardData{}, err
+	}
+
+	// -1 because the last is the current day
+	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
+	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -(period - 1)))
+
+	dashboard.PeriodStart = currPeriodStart
+	dashboard.PeriodEnd = utils.TruncateToDay(utcDate)
+
+	dashboard.Statistics, err = s.merchantRepo.GetDashboardStats(ctx, employee.MerchantId, currPeriodStart, utcDate, prevPeriodStart)
 	if err != nil {
 		return domain.DashboardData{}, fmt.Errorf("error while retrieving dashboard data: %s", err.Error())
+	}
+
+	dashboard.Statistics.Revenue, err = s.merchantRepo.GetRevenueStats(ctx, employee.MerchantId, currPeriodStart, utcDate)
+	if err != nil {
+		return domain.DashboardData{}, err
 	}
 
 	return dashboard, nil
@@ -145,17 +183,33 @@ type UpdateSettingsInput struct {
 func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.merchantRepo.UpdateMerchantFieldsById(ctx, employee.MerchantId, domain.MerchantSettingFields{
-		Introduction:     input.Introduction,
-		Announcement:     input.Announcement,
-		AboutUs:          input.AboutUs,
-		ParkingInfo:      input.ParkingInfo,
-		PaymentInfo:      input.PaymentInfo,
-		CancelDeadline:   input.CancelDeadline,
-		BookingWindowMin: input.BookingWindowMin,
-		BookingWindowMax: input.BookingWindowMax,
-		BufferTime:       input.BufferTime,
-		BusinessHours:    input.BusinessHours,
+	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.merchantRepo.WithTx(tx).UpdateMerchantFields(ctx, employee.MerchantId, domain.MerchantSettingFields{
+			Introduction:     input.Introduction,
+			Announcement:     input.Announcement,
+			AboutUs:          input.AboutUs,
+			ParkingInfo:      input.ParkingInfo,
+			PaymentInfo:      input.PaymentInfo,
+			CancelDeadline:   input.CancelDeadline,
+			BookingWindowMin: input.BookingWindowMin,
+			BookingWindowMax: input.BookingWindowMax,
+			BufferTime:       input.BufferTime,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, employee.MerchantId, input.BusinessHours)
+		if err != nil {
+			return err
+		}
+
+		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, employee.MerchantId, input.BusinessHours)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error())
@@ -178,7 +232,7 @@ func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (map[int]domai
 func (s *Service) GetPreferences(ctx context.Context) (domain.PreferenceData, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	preferences, err := s.merchantRepo.GetPreferencesByMerchantId(ctx, employee.MerchantId)
+	preferences, err := s.merchantRepo.GetPreferences(ctx, employee.MerchantId)
 	if err != nil {
 		return domain.PreferenceData{}, fmt.Errorf("error while accessing merchant preferences: %s", err.Error())
 	}
@@ -218,7 +272,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, input UpdatePreferences
 func (s *Service) GetTeamMembersForCalendar(ctx context.Context) ([]domain.EmployeeForCalendar, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	teamMember, err := s.teamRepo.GetEmployeesForCalendarByMerchant(ctx, employee.MerchantId)
+	teamMember, err := s.teamRepo.GetEmployeesForCalendar(ctx, employee.MerchantId)
 	if err != nil {
 		return []domain.EmployeeForCalendar{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
 	}
@@ -229,7 +283,7 @@ func (s *Service) GetTeamMembersForCalendar(ctx context.Context) ([]domain.Emplo
 func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServicesForCalendarByMerchant(ctx, employee.MerchantId)
+	services, err := s.catalogRepo.GetServicesForCalendar(ctx, employee.MerchantId)
 	if err != nil {
 		return []domain.ServicesGroupedByCategoriesForCalendar{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
 	}
@@ -240,7 +294,7 @@ func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.Services
 func (s *Service) GetCustomersForCalendar(ctx context.Context) ([]domain.CustomerForCalendar, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	customers, err := s.customerRepo.GetCustomersForCalendarByMerchant(ctx, employee.MerchantId)
+	customers, err := s.customerRepo.GetCustomersForCalendar(ctx, employee.MerchantId)
 	if err != nil {
 		return []domain.CustomerForCalendar{}, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error())
 	}

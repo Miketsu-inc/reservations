@@ -6,21 +6,29 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type BlockedTimeRepository interface {
-	NewBlockedTime(context.Context, uuid.UUID, []int, string, time.Time, time.Time, bool, *int) ([]int, error)
-	UpdateBlockedTime(context.Context, BlockedTime) error
-	DeleteBlockedTime(context.Context, int, uuid.UUID, int) error
+	WithTx(db.DBTX) BlockedTimeRepository
 
-	GetBlockedTimeById(context.Context, int) (BlockedTime, error)
-	GetBlockedTimes(context.Context, uuid.UUID, time.Time, time.Time) ([]BlockedTimes, error)
+	NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate time.Time, toDate time.Time, allDay bool, blockedTypeId *int) ([]int, error)
+	BulkInsertBlockedTime(ctx context.Context, blockedTimes []BlockedTime) ([]int, error)
+	UpdateBlockedTime(ctx context.Context, blockedTime BlockedTime) error
+	BulkUpdateBlockedTime(ctx context.Context, blockedTime []BlockedTime) error
+	DeleteBlockedTime(ctx context.Context, blockedTimeId int, merchantId uuid.UUID, employeeId int) error
+	BulkDeleteBlockedTime(ctx context.Context, blockedTimeIds []int) error
+	DeleteExternalCalendarBlockedTimes(ctx context.Context, extCalendarId int) error
 
-	NewBlockedTimeType(context.Context, uuid.UUID, BlockedTimeType) error
-	UpdateBlockedTimeType(context.Context, uuid.UUID, BlockedTimeType) error
-	DeleteBlockedTimeType(context.Context, uuid.UUID, int) error
+	GetBlockedTime(ctx context.Context, blockedTimeId int) (BlockedTime, error)
+	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime string, endTime string) ([]BlockedTimeEvent, error)
+	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, start time.Time, end time.Time) ([]BlockedTimes, error)
 
-	GetAllBlockedTimeTypes(context.Context, uuid.UUID) ([]BlockedTimeType, error)
+	NewBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error
+	UpdateBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error
+	DeleteBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeId int) error
+
+	GetAllBlockedTimeTypes(ctx context.Context, merchantId uuid.UUID) ([]BlockedTimeType, error)
 }
 
 type BlockedTime struct {
@@ -46,4 +54,15 @@ type BlockedTimeType struct {
 	Name     string `json:"name" db:"name"`
 	Duration int    `json:"duration" db:"duration"`
 	Icon     string `json:"icon" db:"icon"`
+}
+
+type BlockedTimeEvent struct {
+	ID            int       `json:"id" db:"id"`
+	EmployeeId    int       `json:"employee_id" db:"employee_id"`
+	Name          string    `json:"name" db:"name"`
+	FromDate      time.Time `json:"from_date" db:"from_date"`
+	ToDate        time.Time `json:"to_date" db:"to_date"`
+	AllDay        bool      `json:"all_day" db:"all_day"`
+	Icon          *string   `json:"icon" db:"icon"`
+	BlockedTypeId *int      `json:"blocked_type_id" db:"blocked_type_id"`
 }

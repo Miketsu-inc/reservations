@@ -22,7 +22,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/team"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
-	"github.com/miketsu-inc/reservations/backend/internal/repository/db"
+	repos "github.com/miketsu-inc/reservations/backend/internal/repository/db"
 	authSrv "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	blockedtimeSrv "github.com/miketsu-inc/reservations/backend/internal/service/blockedtime"
 	bookingSrv "github.com/miketsu-inc/reservations/backend/internal/service/booking"
@@ -33,6 +33,7 @@ import (
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type App struct {
@@ -43,24 +44,26 @@ type App struct {
 func New(cfg *config.Config) *App {
 	dbConn := db.New()
 
-	blockedTimeRepo := db.NewBlockedTimeRepository(dbConn)
-	bookingRepo := db.NewBookingRepository(dbConn)
-	catalogRepo := db.NewCatalogRepository(dbConn)
-	customerRep := db.NewCustomerRepository(dbConn)
-	externalCalendarRepo := db.NewExternalCalendarRepository(dbConn)
-	merchantRepo := db.NewMerchantRepository(dbConn)
-	productRepo := db.NewProductRepository(dbConn)
-	teamRepo := db.NewTeamRepository(dbConn)
-	userRepo := db.NewUserRepository(dbConn)
+	blockedTimeRepo := repos.NewBlockedTimeRepository(dbConn)
+	bookingRepo := repos.NewBookingRepository(dbConn)
+	catalogRepo := repos.NewCatalogRepository(dbConn)
+	customerRep := repos.NewCustomerRepository(dbConn)
+	externalCalendarRepo := repos.NewExternalCalendarRepository(dbConn)
+	merchantRepo := repos.NewMerchantRepository(dbConn)
+	productRepo := repos.NewProductRepository(dbConn)
+	teamRepo := repos.NewTeamRepository(dbConn)
+	userRepo := repos.NewUserRepository(dbConn)
+
+	transactionManager := db.NewTransactionManager(dbConn)
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
-	authService := authSrv.NewService(merchantRepo, userRepo)
-	catalogService := catalog.NewService(catalogRepo, merchantRepo)
+	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, transactionManager)
+	catalogService := catalog.NewService(catalogRepo, merchantRepo, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo)
-	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, emailService)
-	customerService := customerSrv.NewService(customerRep, bookingRepo)
-	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo)
-	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo)
+	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, transactionManager)
+	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
+	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, transactionManager)
+	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	teamService := teamSrv.NewService(teamRepo)
 

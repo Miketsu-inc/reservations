@@ -5,22 +5,26 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type CustomerRepository interface {
-	NewCustomer(context.Context, uuid.UUID, Customer) error
-	UpdateCustomerById(context.Context, uuid.UUID, Customer) error
-	DeleteCustomerById(context.Context, uuid.UUID, uuid.UUID) error
+	WithTx(tx db.DBTX) CustomerRepository
 
-	GetCustomersByMerchantId(context.Context, uuid.UUID, bool) ([]PublicCustomer, error)
-	GetCustomerInfoByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerInfo, error)
-	GetCustomerStatsByMerchant(context.Context, uuid.UUID, uuid.UUID) (CustomerStatistics, error)
-	GetCustomersForCalendarByMerchant(context.Context, uuid.UUID) ([]CustomerForCalendar, error)
+	NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
+	NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, error)
+	UpdateCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
+	DeleteCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
-	SetBlacklistStatusForCustomer(context.Context, uuid.UUID, uuid.UUID, bool, *string) error
+	GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error)
+	GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error)
+	GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error)
+	GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]CustomerForCalendar, error)
 
-	GetCustomerIdByUserIdAndMerchantId(context.Context, uuid.UUID, uuid.UUID) (uuid.UUID, error)
-	GetCustomerEmailById(context.Context, uuid.UUID, uuid.UUID) (*string, error)
+	SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error
+
+	GetCustomerIdByUserIdAndMerchantId(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)
+	GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (*string, error)
 }
 
 type Customer struct {

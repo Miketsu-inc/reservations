@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/googleapi"
@@ -110,6 +111,35 @@ func parseEventDates(event *calendar.Event, calendarTz *time.Location) (time.Tim
 	return fromDate, toDate, isAllDay, nil
 }
 
+func (s *Service) initialCalendarSyncToDB(ctx context.Context, blockedTimes []domain.BlockedTime, blockingIdxs []int, externalEvents []domain.ExternalCalendarEvent) error {
+	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		var btIds []int
+		var err error
+
+		if len(blockedTimes) > 0 {
+			btIds, err = s.blockedTimeRepo.WithTx(tx).BulkInsertBlockedTime(ctx, blockedTimes)
+			if err != nil {
+				return err
+			}
+
+			btPos := 0
+			for _, idx := range blockingIdxs {
+				externalEvents[idx].InternalId = &btIds[btPos]
+				btPos++
+			}
+		}
+
+		if len(externalEvents) > 0 {
+			err = s.externalCalendarRepo.WithTx(tx).BulkInsertExternalCalendarEvent(ctx, externalEvents)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Service, extCalendar domain.ExternalCalendar,
 	calendarTz *time.Location, merchantId uuid.UUID) error {
 	req := service.Events.List("primary").ShowDeleted(false).SingleEvents(true).TimeMin(time.Now().UTC().Format(time.RFC3339))
@@ -160,7 +190,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 			externalEvents = append(externalEvents, ece)
 
 			if len(externalEvents) >= batchSize {
-				err := s.externalCalendarRepo.BulkInitialSyncExternalCalendarEvents(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+				err := s.initialCalendarSyncToDB(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
 				if err != nil {
 					return err
 				}
@@ -179,7 +209,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 		req.PageToken(events.NextPageToken)
 	}
 
-	err := s.externalCalendarRepo.BulkInitialSyncExternalCalendarEvents(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+	err := s.initialCalendarSyncToDB(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
 	if err != nil {
 		return err
 	}
@@ -202,6 +232,93 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 	channelExpiry := time.UnixMilli(googleChannel.Expiration)
 
 	return s.externalCalendarRepo.UpdateExternalCalendarChannel(ctx, extCalendar.Id, googleChannel.Id, googleChannel.ResourceId, channelExpiry)
+}
+
+type externalEventBlockedTimeLink struct {
+	ExternalEventIdx int
+	BlockedTimeIdx   int
+}
+
+func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, newBlockedTimes []domain.BlockedTime,
+	updateBlockedTimes []domain.BlockedTime, deleteBlockedTimes []int, blockingIdxs []int, newExtEvents []domain.ExternalCalendarEvent,
+	updateExtEvents []domain.ExternalCalendarEvent, pendingBlockingLinks []externalEventBlockedTimeLink) error {
+	assert.True(len(blockingIdxs)+len(pendingBlockingLinks) == len(newBlockedTimes), "ExternalCalendarEvent and BlockedTime link mismatch!",
+		len(blockingIdxs), len(pendingBlockingLinks), len(newBlockedTimes))
+
+	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		var btIds []int
+		var err error
+
+		if len(newBlockedTimes) > 0 {
+			btIds, err = s.blockedTimeRepo.WithTx(tx).BulkInsertBlockedTime(ctx, newBlockedTimes)
+			if err != nil {
+				return err
+			}
+
+			btPos := 0
+			for _, idx := range blockingIdxs {
+				newExtEvents[idx].InternalId = &btIds[btPos]
+				btPos++
+			}
+
+			for _, link := range pendingBlockingLinks {
+				updateExtEvents[link.ExternalEventIdx].InternalId = &btIds[link.BlockedTimeIdx]
+			}
+		}
+
+		if len(updateBlockedTimes) > 0 {
+			err = s.blockedTimeRepo.WithTx(tx).BulkUpdateBlockedTime(ctx, updateBlockedTimes)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(deleteBlockedTimes) > 0 {
+			err = s.blockedTimeRepo.WithTx(tx).BulkDeleteBlockedTime(ctx, deleteBlockedTimes)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(newExtEvents) > 0 {
+			err = s.externalCalendarRepo.WithTx(tx).BulkInsertExternalCalendarEvent(ctx, newExtEvents)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(updateExtEvents) > 0 {
+			err = s.externalCalendarRepo.WithTx(tx).BulkUpdateExternalCalendarEvent(ctx, updateExtEvents)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// Delete all external calendar related data (BlockedTime, ExternalCalendarEvent) and reset sync state
+// should be called for 410 GONE response before full initial sync
+func (s *Service) resetExternalCalendar(ctx context.Context, extCalendarId int) error {
+	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.blockedTimeRepo.WithTx(tx).DeleteExternalCalendarBlockedTimes(ctx, extCalendarId)
+		if err != nil {
+			return err
+		}
+
+		err = s.externalCalendarRepo.WithTx(tx).DeleteAllExternalCalendarEvents(ctx, extCalendarId)
+		if err != nil {
+			return err
+		}
+
+		err = s.externalCalendarRepo.WithTx(tx).ResetExternalCalendarSyncState(ctx, extCalendarId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domain.ExternalCalendar) error {
@@ -235,7 +352,7 @@ func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domai
 		newBlockedTimes      []domain.BlockedTime
 		newBlockingEventIdxs []int
 
-		pendingBlockingLinks []domain.ExternalEventBlockedTimeLink
+		pendingBlockingLinks []externalEventBlockedTimeLink
 
 		deleteBlockedTimes   []int
 		updateBlockedTimes   []domain.BlockedTime
@@ -256,7 +373,7 @@ func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domai
 					return err
 				}
 
-				err := s.externalCalendarRepo.ResetExternalCalendar(ctx, extCalendar.Id)
+				err := s.resetExternalCalendar(ctx, extCalendar.Id)
 				if err != nil {
 					return err
 				}
@@ -282,7 +399,7 @@ func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domai
 			eventIds = append(eventIds, ev.Id)
 		}
 
-		existingEvents, err := s.externalCalendarRepo.GetExternalCalendarEventsByIds(ctx, extCalendar.Id, eventIds)
+		existingEvents, err := s.externalCalendarRepo.GetExternalCalendarEvents(ctx, extCalendar.Id, eventIds)
 		if err != nil {
 			return err
 		}
@@ -366,7 +483,7 @@ func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domai
 			case !existing.IsBlocking && isBlocking:
 				newBlockedTimes = append(newBlockedTimes, bt)
 
-				pendingBlockingLinks = append(pendingBlockingLinks, domain.ExternalEventBlockedTimeLink{
+				pendingBlockingLinks = append(pendingBlockingLinks, externalEventBlockedTimeLink{
 					// the externalEvent to update is the next one that will be appended to updateExternalEvents
 					ExternalEventIdx: len(updateExternalEvents),
 					BlockedTimeIdx:   len(newBlockedTimes) - 1,
@@ -402,7 +519,7 @@ func (s *Service) incrementalCalendarSync(ctx context.Context, extCalendar domai
 		req.PageToken(events.NextPageToken)
 	}
 
-	err = s.externalCalendarRepo.BulkIncrementalSyncExternalCalendarEvents(ctx, newBlockedTimes, updateBlockedTimes, deleteBlockedTimes,
+	err = s.incrementalCalendarSyncToDB(ctx, newBlockedTimes, updateBlockedTimes, deleteBlockedTimes,
 		newBlockingEventIdxs, newExternalEvents, updateExternalEvents, pendingBlockingLinks)
 	if err != nil {
 		return err
@@ -643,7 +760,7 @@ func (s *Service) syncUpdateBooking(ctx context.Context, bookingId int) error {
 		}
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarById(ctx, event.ExternalCalendarId)
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
 	if err != nil {
 		return err
 	}
@@ -673,7 +790,7 @@ func (s *Service) syncDeleteBooking(ctx context.Context, bookingId int) error {
 		}
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarById(ctx, event.ExternalCalendarId)
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
 	if err != nil {
 		return err
 	}
@@ -693,7 +810,7 @@ func (s *Service) syncDeleteBooking(ctx context.Context, bookingId int) error {
 
 // nolint:unused
 func (s *Service) syncNewBlockedTime(ctx context.Context, blockedTimeId int) error {
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeById(ctx, blockedTimeId)
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTime(ctx, blockedTimeId)
 	if err != nil {
 		return err
 	}
@@ -719,7 +836,7 @@ func (s *Service) syncNewBlockedTime(ctx context.Context, blockedTimeId int) err
 
 // nolint:unused
 func (s *Service) syncUpdateBlockedTime(ctx context.Context, blockedTimeId int) error {
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeById(ctx, blockedTimeId)
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTime(ctx, blockedTimeId)
 	if err != nil {
 		return err
 	}
@@ -733,7 +850,7 @@ func (s *Service) syncUpdateBlockedTime(ctx context.Context, blockedTimeId int) 
 		}
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarById(ctx, event.ExternalCalendarId)
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
 	if err != nil {
 		return err
 	}
@@ -763,7 +880,7 @@ func (s *Service) syncDeleteBlockedTime(ctx context.Context, blockedTimeId int) 
 		}
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarById(ctx, event.ExternalCalendarId)
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
 	if err != nil {
 		return err
 	}
@@ -783,7 +900,7 @@ func (s *Service) syncDeleteBlockedTime(ctx context.Context, blockedTimeId int) 
 
 // nolint:unused
 func (s *Service) handleChannelExpiration(ctx context.Context) error {
-	extCalendars, err := s.externalCalendarRepo.GetExpiringExternalCalendars(ctx)
+	extCalendars, err := s.externalCalendarRepo.GetExpiringExternalCalendars(ctx, time.Now().UTC().Add(time.Hour*24))
 	if err != nil {
 		return err
 	}

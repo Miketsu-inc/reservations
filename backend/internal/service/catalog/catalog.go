@@ -8,17 +8,20 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type Service struct {
 	catalogRepo  domain.CatalogRepository
 	merchantRepo domain.MerchantRepository
+	txManager    db.TransactionManager
 }
 
-func NewService(catalog domain.CatalogRepository, merchant domain.MerchantRepository) *Service {
+func NewService(catalog domain.CatalogRepository, merchant domain.MerchantRepository, txManager db.TransactionManager) *Service {
 	return &Service{
 		catalogRepo:  catalog,
 		merchantRepo: merchant,
+		txManager:    txManager,
 	}
 }
 
@@ -102,33 +105,58 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		}
 	}
 
-	if err := s.catalogRepo.NewService(ctx, domain.Service{
-		Id:              0,
-		MerchantId:      employee.MerchantId,
-		CategoryId:      input.CategoryId,
-		BookingType:     types.BookingTypeAppointment,
-		Name:            input.Name,
-		Description:     input.Description,
-		Color:           input.Color,
-		TotalDuration:   durationSum,
-		Price:           input.Price,
-		Cost:            input.Cost,
-		PriceType:       input.PriceType,
-		IsActive:        input.IsActive,
-		Sequence:        0,
-		MinParticipants: 1,
-		MaxParticipants: 1,
-		ServiceSettings: domain.ServiceSettings{
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-		},
-	}, phases, connectedProducts); err != nil {
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
+			Id:              0,
+			MerchantId:      employee.MerchantId,
+			CategoryId:      input.CategoryId,
+			BookingType:     types.BookingTypeAppointment,
+			Name:            input.Name,
+			Description:     input.Description,
+			Color:           input.Color,
+			TotalDuration:   durationSum,
+			Price:           input.Price,
+			Cost:            input.Cost,
+			PriceType:       input.PriceType,
+			IsActive:        input.IsActive,
+			Sequence:        0,
+			MinParticipants: 1,
+			MaxParticipants: 1,
+			ServiceSettings: domain.ServiceSettings{
+				CancelDeadline:   input.Settings.CancelDeadline,
+				BookingWindowMin: input.Settings.BookingWindowMin,
+				BookingWindowMax: input.Settings.BookingWindowMax,
+				BufferTime:       input.Settings.BufferTime,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, serviceId, phases)
+		if err != nil {
+			return err
+		}
+
+		err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, connectedProducts)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return fmt.Errorf("unexpected error inserting service: %s", err.Error())
 	}
 
 	return nil
+}
+
+func servicePhasesEqual(a, b domain.PublicServicePhase) bool {
+	return a.Name == b.Name &&
+		a.Sequence == b.Sequence &&
+		a.Duration == b.Duration &&
+		a.PhaseType == b.PhaseType
 }
 
 type UpdateInput struct {
@@ -179,25 +207,121 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		durationSum += phase.Duration
 	}
 
-	err := s.catalogRepo.UpdateServiceWithPhaseseById(ctx, domain.ServiceWithPhasesAndSettings{
-		Id:            input.Id,
-		MerchantId:    employee.MerchantId,
-		CategoryId:    input.CategoryId,
-		Name:          input.Name,
-		Description:   input.Description,
-		Color:         input.Color,
-		TotalDuration: durationSum,
-		Price:         input.Price,
-		Cost:          input.Cost,
-		PriceType:     input.PriceType,
-		IsActive:      input.IsActive,
-		Settings: domain.ServiceSettings{
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-		},
-		Phases: phases,
+	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		existingPhases, err := s.catalogRepo.WithTx(tx).GetServicePhases(ctx, serviceId)
+		if err != nil {
+			return err
+		}
+
+		existingPhasesMap := map[int]domain.PublicServicePhase{}
+		for _, p := range existingPhases {
+			existingPhasesMap[p.Id] = domain.PublicServicePhase{
+				Id:        p.Id,
+				ServiceId: p.ServiceId,
+				Name:      p.Name,
+				Sequence:  p.Sequence,
+				Duration:  p.Duration,
+				PhaseType: p.PhaseType,
+			}
+		}
+
+		updatedPhasesMap := map[int]domain.PublicServicePhase{}
+		newPhases := []domain.PublicServicePhase{}
+		for _, p := range phases {
+			if p.Id == 0 {
+				newPhases = append(newPhases, p)
+			} else {
+				updatedPhasesMap[p.Id] = p
+			}
+		}
+
+		var phaseIdsToDelete []int
+		for id := range existingPhasesMap {
+			if _, exists := updatedPhasesMap[id]; !exists {
+				phaseIdsToDelete = append(phaseIdsToDelete, id)
+			}
+		}
+
+		err = s.catalogRepo.WithTx(tx).DeleteServicePhases(ctx, phaseIdsToDelete)
+		if err != nil {
+			return err
+		}
+
+		var phasesToUpdate []domain.ServicePhase
+		for id, phase := range updatedPhasesMap {
+			existingPhase := existingPhasesMap[id]
+			if !servicePhasesEqual(existingPhase, phase) {
+				phasesToUpdate = append(phasesToUpdate, domain.ServicePhase{
+					Id:        id,
+					ServiceId: serviceId,
+					Name:      phase.Name,
+					Sequence:  phase.Sequence,
+					Duration:  phase.Duration,
+					PhaseType: phase.PhaseType,
+				})
+			}
+		}
+
+		err = s.catalogRepo.WithTx(tx).UpdateServicePhases(ctx, phasesToUpdate)
+		if err != nil {
+			return err
+		}
+
+		var phasesToInsert []domain.ServicePhase
+		for _, p := range newPhases {
+			phasesToInsert = append(phasesToInsert, domain.ServicePhase{
+				ServiceId: serviceId,
+				Name:      p.Name,
+				Sequence:  p.Sequence,
+				Duration:  p.Duration,
+				PhaseType: p.PhaseType,
+			})
+		}
+
+		err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, serviceId, phasesToInsert)
+		if err != nil {
+			return err
+		}
+
+		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
+			Id:              serviceId,
+			MerchantId:      employee.MerchantId,
+			CategoryId:      input.CategoryId,
+			Name:            input.Name,
+			Description:     input.Description,
+			Color:           input.Color,
+			TotalDuration:   durationSum,
+			Price:           input.Price,
+			Cost:            input.Cost,
+			PriceType:       input.PriceType,
+			IsActive:        input.IsActive,
+			MinParticipants: 1,
+			MaxParticipants: 1,
+			ServiceSettings: domain.ServiceSettings{
+				CancelDeadline:   input.Settings.CancelDeadline,
+				BookingWindowMin: input.Settings.BookingWindowMin,
+				BookingWindowMax: input.Settings.BookingWindowMax,
+				BufferTime:       input.Settings.BufferTime,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		// the categoryId has changed, reordering services is needed
+		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, employee.MerchantId, &serviceId)
+			if err != nil {
+				return err
+			}
+
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, employee.MerchantId, nil)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("error while updating service for merchant: %s", err.Error())
@@ -209,7 +333,19 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 func (s *Service) Delete(ctx context.Context, serviceId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.catalogRepo.DeleteServiceById(ctx, employee.MerchantId, serviceId)
+	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.catalogRepo.WithTx(tx).DeleteService(ctx, employee.MerchantId, serviceId)
+		if err != nil {
+			return err
+		}
+
+		err = s.catalogRepo.WithTx(tx).DeleteServicePhasesForService(ctx, serviceId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("error while deleting service for merchant: %s", err.Error())
 	}
@@ -239,16 +375,56 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 		return fmt.Errorf("invalid service id")
 	}
 
+	if len(input.UsedProducts) == 0 {
+		return nil
+	}
+
 	var products []domain.ConnectedProducts
 	for _, product := range input.UsedProducts {
 		products = append(products, domain.ConnectedProducts{
 			ProductId:  product.ProductId,
-			ServiceId:  input.ServiceId,
+			ServiceId:  serviceId,
 			AmountUsed: product.AmountUsed,
 		})
 	}
 
-	err := s.catalogRepo.UpdateConnectedProducts(ctx, input.ServiceId, products)
+	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		connProducts, err := s.catalogRepo.WithTx(tx).GetServiceProducts(ctx, serviceId)
+		if err != nil {
+			return err
+		}
+
+		existing := map[int]domain.ConnectedProducts{}
+		for _, p := range connProducts {
+			existing[p.ProductId] = p
+		}
+
+		updated := map[int]domain.ConnectedProducts{}
+		for _, p := range products {
+			updated[p.ProductId] = p
+		}
+
+		var productIds []int
+		for productId := range existing {
+			if _, exists := updated[productId]; !exists {
+				productIds = append(productIds, productId)
+			}
+		}
+
+		if len(productIds) > 0 {
+			err = s.catalogRepo.WithTx(tx).DeleteServiceProducts(ctx, serviceId, productIds)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = s.catalogRepo.WithTx(tx).UpdateServiceProducts(ctx, serviceId, products)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("error while updating products connected to service for merchant: %s", err.Error())
 	}
@@ -260,7 +436,7 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 func (s *Service) Activate(ctx context.Context, serviceId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.catalogRepo.DeactivateServiceById(ctx, employee.MerchantId, serviceId)
+	err := s.catalogRepo.DeactivateService(ctx, employee.MerchantId, serviceId)
 	if err != nil {
 		return fmt.Errorf("error while activating service: %s", err.Error())
 	}
@@ -271,7 +447,7 @@ func (s *Service) Activate(ctx context.Context, serviceId int) error {
 func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.catalogRepo.ActivateServiceById(ctx, employee.MerchantId, serviceId)
+	err := s.catalogRepo.ActivateService(ctx, employee.MerchantId, serviceId)
 	if err != nil {
 		return fmt.Errorf("error while deactivating service: %s", err.Error())
 	}
@@ -282,7 +458,7 @@ func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 func (s *Service) GetAll(ctx context.Context) ([]domain.ServicesGroupedByCategory, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServicesByMerchantId(ctx, employee.MerchantId)
+	services, err := s.catalogRepo.GetServices(ctx, employee.MerchantId)
 	if err != nil {
 		return []domain.ServicesGroupedByCategory{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
 	}
@@ -345,7 +521,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		})
 	}
 
-	var phases = []domain.ServicePhase{domain.ServicePhase{
+	var phases = []domain.ServicePhase{{
 		Id:        0,
 		ServiceId: 0,
 		Name:      "",
@@ -376,29 +552,47 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		minParticipants = *input.MinParticipants
 	}
 
-	if err := s.catalogRepo.NewService(ctx, domain.Service{
-		Id:              0,
-		MerchantId:      employee.MerchantId,
-		CategoryId:      input.CategoryId,
-		BookingType:     types.BookingTypeClass,
-		Name:            input.Name,
-		Description:     input.Description,
-		Color:           input.Color,
-		TotalDuration:   input.Duration,
-		Price:           input.Price,
-		Cost:            input.Cost,
-		PriceType:       input.PriceType,
-		IsActive:        input.IsActive,
-		Sequence:        0,
-		MinParticipants: minParticipants,
-		MaxParticipants: input.MaxParticipants,
-		ServiceSettings: domain.ServiceSettings{
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-		},
-	}, phases, products); err != nil {
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
+			Id:              0,
+			MerchantId:      employee.MerchantId,
+			CategoryId:      input.CategoryId,
+			BookingType:     types.BookingTypeClass,
+			Name:            input.Name,
+			Description:     input.Description,
+			Color:           input.Color,
+			TotalDuration:   input.Duration,
+			Price:           input.Price,
+			Cost:            input.Cost,
+			PriceType:       input.PriceType,
+			IsActive:        input.IsActive,
+			Sequence:        0,
+			MinParticipants: minParticipants,
+			MaxParticipants: input.MaxParticipants,
+			ServiceSettings: domain.ServiceSettings{
+				CancelDeadline:   input.Settings.CancelDeadline,
+				BookingWindowMin: input.Settings.BookingWindowMin,
+				BookingWindowMax: input.Settings.BookingWindowMax,
+				BufferTime:       input.Settings.BufferTime,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, serviceId, phases)
+		if err != nil {
+			return err
+		}
+
+		err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, products)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return fmt.Errorf("unexpected error inserting group service: %s", err.Error())
 	}
 
@@ -433,32 +627,52 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 		minParticipants = *input.MinParticipants
 	}
 
-	err := s.catalogRepo.UpdateGroupServiceById(ctx, domain.GroupServiceWithSettings{
-		Id:              serviceId,
-		MerchantId:      employee.MerchantId,
-		CategoryId:      input.CategoryId,
-		Name:            input.Name,
-		Description:     input.Description,
-		Color:           input.Color,
-		Duration:        input.Duration,
-		Price:           input.Price,
-		Cost:            input.Cost,
-		PriceType:       input.PriceType,
-		IsActive:        input.IsActive,
-		MinParticipants: minParticipants,
-		MaxParticipants: input.MaxParticipants,
-		Settings: domain.ServiceSettings{
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-		},
-	})
-	if err != nil {
-		return err
-	}
+	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.catalogRepo.WithTx(tx).UpdateServicePhaseDuration(ctx, serviceId, input.Duration)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
+			Id:              serviceId,
+			MerchantId:      employee.MerchantId,
+			CategoryId:      input.CategoryId,
+			Name:            input.Name,
+			Description:     input.Description,
+			Color:           input.Color,
+			TotalDuration:   input.Duration,
+			Price:           input.Price,
+			Cost:            input.Cost,
+			PriceType:       input.PriceType,
+			IsActive:        input.IsActive,
+			MinParticipants: minParticipants,
+			MaxParticipants: input.MaxParticipants,
+			ServiceSettings: domain.ServiceSettings{
+				CancelDeadline:   input.Settings.CancelDeadline,
+				BookingWindowMin: input.Settings.BookingWindowMin,
+				BookingWindowMax: input.Settings.BookingWindowMax,
+				BufferTime:       input.Settings.BufferTime,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		// the categoryId has changed, reordering services is needed
+		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, employee.MerchantId, &serviceId)
+			if err != nil {
+				return err
+			}
+
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, employee.MerchantId, nil)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) GetGroup(ctx context.Context, serviceId int) (domain.GroupServicePageData, error) {

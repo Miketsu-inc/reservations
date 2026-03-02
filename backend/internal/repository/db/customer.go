@@ -11,16 +11,20 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type customerRepository struct {
-	db *pgxpool.Pool
+	db db.DBTX
 }
 
-func NewCustomerRepository(db *pgxpool.Pool) domain.CustomerRepository {
+func NewCustomerRepository(db db.DBTX) domain.CustomerRepository {
 	return &customerRepository{db: db}
+}
+
+func (r *customerRepository) WithTx(tx db.DBTX) domain.CustomerRepository {
+	return &customerRepository{db: tx}
 }
 
 func (r *customerRepository) NewCustomer(ctx context.Context, merchantId uuid.UUID, customer domain.Customer) error {
@@ -37,71 +41,26 @@ func (r *customerRepository) NewCustomer(ctx context.Context, merchantId uuid.UU
 	return nil
 }
 
-// TODO: we should ask if they want to delete their booking history as well or not
-// also letting them delete customers who are user's by just deleting their bookings
-// we should also decide what to do with deleted class/event participants
-func (r *customerRepository) DeleteCustomerById(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	// nolint:errcheck
-	defer tx.Rollback(ctx)
+func (r *customerRepository) NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, error) {
+	query := `
+	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
+	on conflict (merchant_id, user_id) do update
+	set merchant_id = excluded.merchant_id
+	returning id, is_blacklisted`
 
-	deleteBookingsQuery := `
-	delete from "Booking" b
-	using "BookingParticipant" bp
-	where bp.booking_id = b.id and bp.customer_id = $1 and b.merchant_id = $2 and b.booking_type = 'appointment'
-	`
+	var IsBlacklisted bool
+	var custId uuid.UUID
 
-	_, err = tx.Exec(ctx, deleteBookingsQuery, customerId, merchantId)
+	err := r.db.QueryRow(ctx, query, customerId, merchantId, userId).Scan(&custId, &IsBlacklisted)
 	if err != nil {
-		return err
+		return uuid.UUID{}, false, err
 	}
 
-	updateParticipantCountQuery := `
-	update "BookingDetails" bd
-	set current_participants = current_participants - 1
-	from "Booking" b
-	left join "BookingParticipant" bp on b.id = bp.booking_id and bp.customer_id = $1
-	where b.id = bd.booking_id and b.merchant_id = $2 and b.booking_type in ('event', 'class')
-	`
-
-	_, err = tx.Exec(ctx, updateParticipantCountQuery, customerId, merchantId)
-	if err != nil {
-		return err
-	}
-
-	deleteBookingParticipantQuery := `
-	delete from "BookingParticipant" bp
-	using "Booking" b
-	where bp.booking_id = b.id and bp.customer_id = $1 and b.merchant_id = $2
-	`
-
-	_, err = tx.Exec(ctx, deleteBookingParticipantQuery, customerId, merchantId)
-	if err != nil {
-		return err
-	}
-
-	deleteCustomerQuery := `
-	delete from "Customer"
-	where user_id is null and id = $1 and merchant_id = $2
-	`
-
-	_, err = tx.Exec(ctx, deleteCustomerQuery, customerId, merchantId)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return custId, IsBlacklisted, nil
 }
 
-func (r *customerRepository) UpdateCustomerById(ctx context.Context, merchantId uuid.UUID, customer domain.Customer) error {
+// TODO: this logic shouldn't live here and some of it is probably unnecessary
+func (r *customerRepository) UpdateCustomer(ctx context.Context, merchantId uuid.UUID, customer domain.Customer) error {
 	type field struct {
 		name  string
 		value interface{}
@@ -146,21 +105,69 @@ func (r *customerRepository) UpdateCustomerById(ctx context.Context, merchantId 
 	return nil
 }
 
-func (r *customerRepository) SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error {
+func (r *customerRepository) DeleteCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
 	query := `
-	update "Customer" set is_blacklisted = $3, blacklist_reason = $4
-	where merchant_id = $1 and id = $2`
+	delete from "Customer"
+	where user_id is null and id = $1 and merchant_id = $2
+	`
 
-	_, err := r.db.Exec(ctx, query, merchantId, customerId, isBlacklisted, blacklistReason)
+	_, err := r.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
-func (r *customerRepository) GetCustomerStatsByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerStatistics, error) {
+func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]domain.PublicCustomer, error) {
+	query := `
+	select c.id,
+		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
+		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
+		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
+		count(b.id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
+	from "Customer" c
+	left join "User" u on c.user_id = u.id
+	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
+	where c.merchant_id = $1 and c.is_blacklisted = $2
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId, isBlacklisted)
+	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicCustomer])
+	if err != nil {
+		return []domain.PublicCustomer{}, err
+	}
+
+	// if customers array is empty the encoded json field will be null
+	// unless an empty slice is supplied to it
+	if len(customers) == 0 {
+		customers = []domain.PublicCustomer{}
+	}
+
+	return customers, nil
+}
+
+func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerInfo, error) {
+	query := `
+	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
+	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note, c.user_id is null as is_dummy
+	from "Customer" c
+	left join "User" u on u.id = c.user_id
+	where c.id = $1 and c.merchant_id = $2`
+
+	var customer domain.CustomerInfo
+	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
+		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy)
+	if err != nil {
+		return domain.CustomerInfo{}, err
+	}
+
+	return customer, nil
+}
+
+func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerStatistics, error) {
 	query := `
 	with bookings as (
 		select b.customer_id,
@@ -223,58 +230,7 @@ func (r *customerRepository) GetCustomerStatsByMerchant(ctx context.Context, mer
 	return customer, nil
 }
 
-func (r *customerRepository) GetCustomerIdByUserIdAndMerchantId(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
-	query := `
-	select id from "Customer" where user_id = $1 and merchant_id = $2`
-
-	var customerId uuid.UUID
-	err := r.db.QueryRow(ctx, query, userId, merchantId).Scan(&customerId)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return customerId, nil
-}
-
-func (r *customerRepository) GetCustomerInfoByMerchant(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerInfo, error) {
-	query := `
-	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note, c.user_id is null as is_dummy
-	from "Customer" c
-	left join "User" u on u.id = c.user_id
-	where c.id = $1 and c.merchant_id = $2`
-
-	var customer domain.CustomerInfo
-	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
-		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy)
-	if err != nil {
-		return domain.CustomerInfo{}, err
-	}
-
-	return customer, nil
-}
-
-func (r *customerRepository) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (*string, error) {
-	query := `
-	select coalesce(c.email, u.email)
-	from "Customer" c
-	join "User" u on u.id = c.user_id
-	where c.id = $1 and c.merchant_id = $2
-	`
-
-	var email *string
-	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&email)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return email, nil
-		}
-		return nil, err
-	}
-
-	return email, nil
-}
-
-func (r *customerRepository) GetCustomersForCalendarByMerchant(ctx context.Context, merchantId uuid.UUID) ([]domain.CustomerForCalendar, error) {
+func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.CustomerForCalendar, error) {
 	query := `
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, coalesce(c.email, u.email) as email,
 		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited
@@ -295,32 +251,49 @@ func (r *customerRepository) GetCustomersForCalendarByMerchant(ctx context.Conte
 	return customers, nil
 }
 
-func (r *customerRepository) GetCustomersByMerchantId(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]domain.PublicCustomer, error) {
+func (r *customerRepository) SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error {
 	query := `
-	select c.id,
-		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
-		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(b.id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
+	update "Customer" set is_blacklisted = $3, blacklist_reason = $4
+	where merchant_id = $1 and id = $2`
+
+	_, err := r.db.Exec(ctx, query, merchantId, customerId, isBlacklisted, blacklistReason)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (r *customerRepository) GetCustomerIdByUserIdAndMerchantId(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
+	query := `
+	select id from "Customer" where user_id = $1 and merchant_id = $2`
+
+	var customerId uuid.UUID
+	err := r.db.QueryRow(ctx, query, userId, merchantId).Scan(&customerId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return customerId, nil
+}
+
+func (r *customerRepository) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (*string, error) {
+	query := `
+	select coalesce(c.email, u.email)
 	from "Customer" c
-	left join "User" u on c.user_id = u.id
-	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
-	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
-	where c.merchant_id = $1 and c.is_blacklisted = $2
-	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
+	join "User" u on u.id = c.user_id
+	where c.id = $1 and c.merchant_id = $2
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, isBlacklisted)
-	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicCustomer])
+	var email *string
+	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&email)
 	if err != nil {
-		return []domain.PublicCustomer{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return email, nil
+		}
+		return nil, err
 	}
 
-	// if customers array is empty the encoded json field will be null
-	// unless an empty slice is supplied to it
-	if len(customers) == 0 {
-		customers = []domain.PublicCustomer{}
-	}
-
-	return customers, nil
+	return email, nil
 }

@@ -12,6 +12,7 @@ import (
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,12 +20,17 @@ import (
 type Service struct {
 	merchantRepo domain.MerchantRepository
 	userRepo     domain.UserRepository
+	teamRepo     domain.TeamRepository
+	txManager    db.TransactionManager
 }
 
-func NewService(merchant domain.MerchantRepository, user domain.UserRepository) *Service {
+func NewService(merchant domain.MerchantRepository, user domain.UserRepository, team domain.TeamRepository,
+	txManager db.TransactionManager) *Service {
 	return &Service{
 		merchantRepo: merchant,
 		userRepo:     user,
+		teamRepo:     team,
+		txManager:    txManager,
 	}
 }
 
@@ -166,6 +172,7 @@ type MerchantSignupInput struct {
 }
 
 // TODO: create new jwts here... just don't know what to put as location
+// I feel like most of this should be in merchant services
 func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput) error {
 	urlName, err := validate.MerchantNameToUrlName(input.Name)
 	if err != nil {
@@ -191,37 +198,58 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 	language := lang.LangFromContext(ctx)
 	curr := currencyx.FindBest(language)
 
-	err = s.merchantRepo.NewMerchant(ctx, userID, domain.Merchant{
-		Id:               merchantID,
-		Name:             input.Name,
-		UrlName:          urlName,
-		ContactEmail:     input.ContactEmail,
-		Introduction:     "",
-		Announcement:     "",
-		AboutUs:          "",
-		ParkingInfo:      "",
-		PaymentInfo:      "",
-		Timezone:         input.Timezone,
-		CurrencyCode:     curr,
-		SubscriptionTier: types.SubTierFree,
+	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+		err := s.merchantRepo.WithTx(tx).NewMerchant(ctx, userID, domain.Merchant{
+			Id:               merchantID,
+			Name:             input.Name,
+			UrlName:          urlName,
+			ContactEmail:     input.ContactEmail,
+			Introduction:     "",
+			Announcement:     "",
+			AboutUs:          "",
+			ParkingInfo:      "",
+			PaymentInfo:      "",
+			Timezone:         input.Timezone,
+			CurrencyCode:     curr,
+			SubscriptionTier: types.SubTierFree,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = s.merchantRepo.WithTx(tx).NewPreferences(ctx, merchantID)
+		if err != nil {
+			return err
+		}
+
+		err = s.teamRepo.WithTx(tx).NewEmployee(ctx, merchantID, domain.PublicEmployee{
+			UserId:   &userID,
+			Role:     types.EmployeeRoleOwner,
+			IsActive: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		businessHours := map[int][]domain.TimeSlot{
+			0: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			1: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			2: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			3: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			4: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			5: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			6: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+		}
+
+		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, merchantID, businessHours)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("unexpected error creating a merchant: %s", err.Error())
-	}
-
-	businessHours := map[int][]domain.TimeSlot{
-		0: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		1: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		2: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		3: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		4: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		5: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-		6: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-	}
-
-	err = s.merchantRepo.UpdateBusinessHours(ctx, merchantID, businessHours)
-	if err != nil {
-		return fmt.Errorf("unexpected error during creating business hours for merchant: %s", err.Error())
 	}
 
 	return nil

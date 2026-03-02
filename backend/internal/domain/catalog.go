@@ -7,35 +7,48 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type CatalogRepository interface {
-	NewService(context.Context, Service, []ServicePhase, []ConnectedProducts) error
-	UpdateServiceWithPhaseseById(context.Context, ServiceWithPhasesAndSettings) error
-	DeleteServiceById(context.Context, uuid.UUID, int) error
+	WithTx(tx db.DBTX) CatalogRepository
 
-	GetServicesByMerchantId(context.Context, uuid.UUID) ([]ServicesGroupedByCategory, error)
-	GetServiceWithPhasesById(context.Context, int, uuid.UUID) (PublicServiceWithPhases, error)
-	GetServicesForMerchantPage(context.Context, uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
-	GetServiceDetailsForMerchantPage(context.Context, uuid.UUID, int, int) (PublicServiceDetails, error)
-	GetAllServicePageData(context.Context, int, uuid.UUID) (ServicePageData, error)
-	GetServicePageFormOptions(context.Context, uuid.UUID) (ServicePageFormOptions, error)
-	GetMinimalServiceInfo(context.Context, uuid.UUID, int, int) (MinimalServiceInfo, error)
-	GetServicesForCalendarByMerchant(context.Context, uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
+	NewService(ctx context.Context, service Service) (int, error)
+	// returns the old category id if service was under one
+	UpdateService(ctx context.Context, service Service) (*int, error)
+	DeleteService(ctx context.Context, merchantId uuid.UUID, serviceId int) error
 
-	DeactivateServiceById(context.Context, uuid.UUID, int) error
-	ActivateServiceById(context.Context, uuid.UUID, int) error
-	ReorderServices(context.Context, uuid.UUID, *int, []int) error
+	DeactivateService(ctx context.Context, merchantId uuid.UUID, serviceId int) error
+	ActivateService(ctx context.Context, merchantId uuid.UUID, serviceId int) error
+	ReorderServices(ctx context.Context, merchantId uuid.UUID, categoryId *int, serviceIds []int) error
+	ReorderServicesAfterUpdate(ctx context.Context, categoryId *int, merchantId uuid.UUID, exludeServiceId *int) error
 
-	NewServiceCategory(context.Context, uuid.UUID, ServiceCategory) error
-	UpdateServiceCategoryById(context.Context, uuid.UUID, ServiceCategory) error
-	DeleteServiceCategoryById(context.Context, uuid.UUID, int) error
-	ReorderServiceCategories(context.Context, uuid.UUID, []int) error
+	GetServices(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error)
+	GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
+	GetServiceWithPhases(ctx context.Context, serviceId int, merchantId uuid.UUID) (PublicServiceWithPhases, error)
+	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
+	GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error)
+	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
+	GetGroupServicePageData(ctx context.Context, merchantId uuid.UUID, serviceId int) (GroupServicePageData, error)
+	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
+	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
 
-	UpdateConnectedProducts(context.Context, int, []ConnectedProducts) error
+	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
+	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error
+	UpdateServicePhaseDuration(ctx context.Context, serviceId int, duration int) error
+	DeleteServicePhases(ctx context.Context, phaseIds []int) error
+	DeleteServicePhasesForService(ctx context.Context, serviceId int) error
+	GetServicePhases(ctx context.Context, serviceId int) ([]ServicePhase, error)
 
-	UpdateGroupServiceById(context.Context, GroupServiceWithSettings) error
-	GetGroupServicePageData(context.Context, uuid.UUID, int) (GroupServicePageData, error)
+	NewServiceCategory(ctx context.Context, merchantId uuid.UUID, serviceCategory ServiceCategory) error
+	UpdateServiceCategory(ctx context.Context, merchantId uuid.UUID, serviceCategory ServiceCategory) error
+	DeleteServiceCategory(ctx context.Context, merchantId uuid.UUID, serviceCategoryId int) error
+	ReorderServiceCategories(ctx context.Context, merchantId uuid.UUID, categoryIds []int) error
+
+	NewServiceProduct(ctx context.Context, merchantId uuid.UUID, connectedProducts []ConnectedProducts) error
+	UpdateServiceProducts(ctx context.Context, serviceId int, connectedProducts []ConnectedProducts) error
+	DeleteServiceProducts(ctx context.Context, serviceId int, productIds []int) error
+	GetServiceProducts(ctx context.Context, serviceId int) ([]ConnectedProducts, error)
 }
 
 type Service struct {
@@ -136,23 +149,6 @@ type MerchantPageServicesGroupedByCategory struct {
 	Services []MerchantPageService `json:"services"`
 }
 
-type ServiceWithPhasesAndSettings struct {
-	Id            int                  `json:"id"`
-	MerchantId    uuid.UUID            `json:"merchant_id"`
-	CategoryId    *int                 `json:"category_id"`
-	Name          string               `json:"name"`
-	Description   *string              `json:"description"`
-	Color         string               `json:"color"`
-	TotalDuration int                  `json:"total_duration"`
-	Price         *currencyx.Price     `json:"price"`
-	Cost          *currencyx.Price     `json:"cost"`
-	PriceType     types.PriceType      `json:"price_type"`
-	IsActive      bool                 `json:"is_active"`
-	Sequence      int                  `json:"sequence"`
-	Settings      ServiceSettings      `json:"settings"`
-	Phases        []PublicServicePhase `json:"phases"`
-}
-
 type ServicePageData struct {
 	Id            int                           `json:"id"`
 	CategoryId    *int                          `json:"category_id"`
@@ -222,24 +218,6 @@ type CalendarService struct {
 	Color           string                    `json:"color"`
 	BookingType     types.BookingType         `json:"booking_type"`
 	MaxParticipants int                       `json:"max_participants"`
-}
-
-type GroupServiceWithSettings struct {
-	Id              int              `json:"id"`
-	MerchantId      uuid.UUID        `json:"merchant_id"`
-	CategoryId      *int             `json:"category_id"`
-	Name            string           `json:"name"`
-	Description     *string          `json:"description"`
-	Color           string           `json:"color"`
-	Duration        int              `json:"duration"`
-	Price           *currencyx.Price `json:"price"`
-	Cost            *currencyx.Price `json:"cost"`
-	PriceType       types.PriceType  `json:"price_type"`
-	IsActive        bool             `json:"is_active"`
-	Sequence        int              `json:"sequence"`
-	MinParticipants int              `json:"min_participants"`
-	MaxParticipants int              `json:"max_participants"`
-	Settings        ServiceSettings  `json:"settings"`
 }
 
 type GroupServicePageData struct {

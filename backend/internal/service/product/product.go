@@ -97,7 +97,7 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 func (s *Service) Delete(ctx context.Context, productId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.productRepo.DeleteProductById(ctx, employee.MerchantId, productId)
+	err := s.productRepo.DeleteProduct(ctx, employee.MerchantId, productId)
 	if err != nil {
 		return fmt.Errorf("error while deleting product for merchant: %s", err.Error())
 	}
@@ -108,7 +108,7 @@ func (s *Service) Delete(ctx context.Context, productId int) error {
 func (s *Service) GetAll(ctx context.Context) ([]domain.ProductInfo, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	products, err := s.productRepo.GetProductsByMerchant(ctx, employee.MerchantId)
+	products, err := s.productRepo.GetProducts(ctx, employee.MerchantId)
 	if err != nil {
 		return []domain.ProductInfo{}, fmt.Errorf("error while retrieving products for merchant: %s", err.Error())
 	}

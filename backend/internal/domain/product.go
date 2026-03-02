@@ -5,14 +5,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type ProductRepository interface {
-	NewProduct(context.Context, Product) error
-	UpdateProduct(context.Context, Product) error
-	DeleteProductById(context.Context, uuid.UUID, int) error
+	WithTx(tx db.DBTX) ProductRepository
 
-	GetProductsByMerchant(context.Context, uuid.UUID) ([]ProductInfo, error)
+	NewProduct(ctx context.Context, product Product) error
+	UpdateProduct(ctx context.Context, product Product) error
+	DeleteProduct(ctx context.Context, merchantId uuid.UUID, productId int) error
+
+	GetProducts(ctx context.Context, merchantId uuid.UUID) ([]ProductInfo, error)
+
+	GetLowStockProducts(ctx context.Context, merchantId uuid.UUID) ([]LowStockProduct, error)
 }
 
 type Product struct {
