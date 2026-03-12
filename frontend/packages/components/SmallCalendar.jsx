@@ -48,7 +48,8 @@ export default function SmallCalendar({
         weekday:
           "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
         week: "flex w-full mt-2 px-2",
-        day: "h-9 w-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
+        day: "size-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
+        day_button: "size-full",
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
         today: !disabledTodayStyling ? "bg-hvr_gray" : "",
