@@ -138,9 +138,11 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
-		err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, connectedProducts)
-		if err != nil {
-			return err
+		if len(connectedProducts) != 0 {
+			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, connectedProducts)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -585,9 +587,11 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 			return err
 		}
 
-		err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, products)
-		if err != nil {
-			return err
+		if len(products) != 0 {
+			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, products)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
