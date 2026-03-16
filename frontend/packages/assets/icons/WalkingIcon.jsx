@@ -1,4 +1,4 @@
-export default function ({ styles }) {
+export default function WalkingIcon({ styles }) {
   return (
     <svg
       className={`${styles} `}
