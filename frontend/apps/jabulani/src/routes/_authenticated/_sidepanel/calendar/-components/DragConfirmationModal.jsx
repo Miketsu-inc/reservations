@@ -25,6 +25,14 @@ export default function DragConfirmationModal({
   async function submitButtonHandler(e) {
     e.preventDefault();
 
+    const customerInput = bookingData.booking.extendedProps.participants.map(
+      (p) => ({
+        id: p.customer_id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+      })
+    );
+
     try {
       const response = await fetch(
         `/api/v1/bookings/merchant/${bookingData.booking.extendedProps.id}`,
@@ -35,9 +43,12 @@ export default function DragConfirmationModal({
             "content-type": "application/json",
           },
           body: JSON.stringify({
+            service_id: bookingData.booking.extendedProps.service_id,
+            customers: customerInput,
             merchant_note: bookingData.booking.extendedProps.merchant_note,
-            from_date: bookingData.booking.start.toISOString(),
-            to_date: bookingData.booking.end.toISOString(),
+            timestamp: bookingData.booking.start.toISOString(),
+            booking_status: bookingData.booking.extendedProps.booking_status,
+            update_all_future: true,
           }),
         }
       );
