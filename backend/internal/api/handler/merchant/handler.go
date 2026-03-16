@@ -328,7 +328,7 @@ func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request)
 }
 
 type getCustomersForCalendarResp struct {
-	Id          uuid.UUID  `json:"id"`
+	CustomerId  uuid.UUID  `json:"customer_id"`
 	FirstName   string     `json:"first_name"`
 	LastName    string     `json:"last_name"`
 	Email       *string    `json:"email"`

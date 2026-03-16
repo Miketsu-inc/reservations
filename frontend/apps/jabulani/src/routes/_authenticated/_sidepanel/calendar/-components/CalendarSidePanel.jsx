@@ -3,6 +3,7 @@ import { ServerError } from "@reservations/components";
 import { invalidateLocalStorageAuth, useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import BlockedTimePanel from "./BlockedTimePanel";
+import EditBookingPanel from "./EditBookingPanel";
 import NewBookingPanel from "./NewBookingPanel";
 
 // async function fetchEmployees() {
@@ -85,7 +86,10 @@ export default function CalendarSidePanel({
   type,
   data,
   onSave,
+  onSoftUpdate,
   preferences,
+  onOpenCancelModal,
+  onOpenRecurModal,
 }) {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
@@ -120,9 +124,9 @@ export default function CalendarSidePanel({
 
       <aside
         className={`bg-layer_bg border-border_color fixed top-0 right-0 z-50
-          h-full border-l-2 shadow-2xl transition-all duration-300 ease-in-out
+          h-full shadow-2xl transition-all duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
-          ${isWindowSmall ? "w-full" : "w-fit"}`}
+          ${isWindowSmall ? "w-full" : "w-fit border-l-2"}`}
       >
         {isOpen && !isWindowSmall && (
           <button
@@ -158,7 +162,19 @@ export default function CalendarSidePanel({
               isWindowSmall={isWindowSmall}
             />
           )}
-          {type === "edit-booking" && {}}
+          {type === "edit-booking" && (
+            <EditBookingPanel
+              originalBookingData={data}
+              onClose={onClose}
+              onSave={onSave}
+              onSoftUpdate={onSoftUpdate}
+              customers={customers}
+              categories={services}
+              isWindowSmall={isWindowSmall}
+              onOpenCancelModal={onOpenCancelModal}
+              onOpenRecurModal={onOpenRecurModal}
+            />
+          )}
         </div>
       </aside>
     </>

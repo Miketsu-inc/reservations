@@ -1,8 +1,11 @@
 import {
+  BanIcon,
+  CalendarIcon,
   CustomersIcon,
   PersonIcon,
   PlusIcon,
   ThreeDotsIcon,
+  TickIcon,
   TrashBinIcon,
 } from "@reservations/assets";
 import {
@@ -17,12 +20,29 @@ import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
 import NestedSidePanel from "./NestedSidePanel";
 
+const statusMap = {
+  completed: {
+    bgColor: "bg-green-600",
+    icon: <TickIcon styles="size-4 text-white" />,
+  },
+  "no-show": {
+    bgColor: "bg-red-500",
+    icon: <BanIcon styles="size-3.5 text-white" />,
+  },
+  booked: {
+    bgColor: "bg-gray-500",
+    icon: <CalendarIcon styles="size-3.5 text-white" />,
+  },
+};
+
 export default function ParticipantManager({
   customers,
   participants = [],
   onRemove,
   onAdd,
   maxParticipants,
+  disabled,
+  onStatusChange,
 }) {
   const [nestedPageState, setNestedPageState] = useState({
     isOpen: false,
@@ -65,6 +85,7 @@ export default function ParticipantManager({
         {nestedPageState.active === "view" && activeProfile && (
           <CustomerProfile
             customer={activeProfile}
+            disabled={disabled}
             onRemove={() => {
               onRemove(activeProfile);
               setNestedPageState((prev) => ({ ...prev, isOpen: false }));
@@ -76,7 +97,9 @@ export default function ParticipantManager({
 
       <div className="flex h-full flex-col pt-16 pb-4">
         <div
-          className="border-border_color flex flex-col gap-8 border-b px-4 pb-4"
+          className={`border-border_color flex flex-col ${
+            disabled ? "gap-5" : "gap-8"
+          } border-b px-4 pb-4`}
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-text_color text-xl font-semibold">
@@ -89,24 +112,29 @@ export default function ParticipantManager({
               {participants.length} / {maxParticipants}
             </span>
           </div>
-
-          <button
-            className="hover:bg-hvr_gray/20 flex w-full items-center gap-4
-              rounded-lg px-3 py-2"
-            onClick={handleOpenAdd}
-          >
-            <div
-              className="bg-primary/20 text-primary flex size-14 shrink-0
-                items-center justify-center rounded-full"
+          {!disabled ? (
+            <button
+              className="flex w-full items-center gap-4 rounded-lg px-3 py-2
+                hover:bg-gray-200/40 dark:hover:bg-gray-700/20"
+              onClick={handleOpenAdd}
             >
-              <PlusIcon styles="size-7" />
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="text-text_color font-medium">
-                Add Participants
-              </span>
-            </div>
-          </button>
+              <div
+                className="bg-primary/20 text-primary flex size-14 shrink-0
+                  items-center justify-center rounded-full"
+              >
+                <PlusIcon styles="size-7" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-text_color font-medium">
+                  Add Participants
+                </span>
+              </div>
+            </button>
+          ) : (
+            <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">
+              View all the participants for this booking
+            </span>
+          )}
         </div>
 
         <div className="no-scrollbar flex-1 overflow-y-auto px-4 pt-6">
@@ -132,10 +160,12 @@ export default function ParticipantManager({
             <div className="flex flex-col gap-2 pb-20">
               {participants.map((participant) => (
                 <ParticipantItem
-                  key={participant.id}
+                  key={participant.customer_id}
                   customer={participant}
                   onView={() => handleViewProfile(participant)}
                   onRemove={() => onRemove(participant)}
+                  disabled={disabled}
+                  onStatusChange={onStatusChange}
                 />
               ))}
             </div>
@@ -146,13 +176,21 @@ export default function ParticipantManager({
   );
 }
 
-function ParticipantItem({ customer, onView, onRemove }) {
+function ParticipantItem({
+  customer,
+  onView,
+  onRemove,
+  disabled,
+  onStatusChange,
+}) {
+  const status = statusMap[customer?.status];
+
   return (
     <div
-      className="group relative flex w-full items-center justify-between
+      className="group relative flex w-full items-center justify-between gap-2
         rounded-xl px-3 py-2 hover:bg-gray-200/40 dark:hover:bg-gray-700/20"
     >
-      <div className="flex flex-1 items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <Avatar
           styles="size-14! text-[16px]! shrink-0 rounded-full!"
           img={customer?.avatar_url}
@@ -162,10 +200,11 @@ function ParticipantItem({ customer, onView, onRemove }) {
               : "?"
           }
         />
-        <div className="flex flex-col">
-          <span className="text-text_color font-semibold">
+        <div className="flex min-w-0 flex-col">
+          <span className="text-text_color truncate font-semibold">
             {customer.first_name} {customer.last_name}
           </span>
+
           {customer.phone_number && (
             <span className="text-sm text-gray-400 dark:text-gray-500">
               {customer.phone_number}
@@ -173,41 +212,120 @@ function ParticipantItem({ customer, onView, onRemove }) {
           )}
         </div>
       </div>
+      {customer.participant_id && (
+        <div
+          className={`ring-layer_bg absolute top-12 left-13 inline-flex size-5
+          items-center justify-center gap-2 rounded-full text-xs ring-2
+          ${status.bgColor}`}
+          title={customer.status}
+        >
+          {status.icon}
+        </div>
+      )}
 
       <Popover>
         <PopoverTrigger asChild>
-          <button
-            className="group-hover:bg-layer_bg absolute top-5 right-3 h-fit
-              cursor-pointer rounded-lg p-1"
-          >
+          <button className="cursor-pointer rounded-lg p-0.5">
             <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-500 rotate-90" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left" styles="w-auto">
-          <div
-            className="itmes-start flex flex-col *:flex *:w-full *:flex-row
-              *:items-center *:rounded-lg *:p-2"
-          >
-            <PopoverClose asChild>
-              <button
-                className="hover:bg-hvr_gray cursor-pointer gap-3"
-                onClick={onView}
+          <div className="flex flex-col gap-2">
+            {customer.participant_id && (
+              <div
+                className="border-border_color flex flex-col gap-1 border-b pt-1
+                  pb-2"
               >
-                <PersonIcon styles="size-5 fill-text_color" />
-                <p>View Customer</p>
-              </button>
-            </PopoverClose>
-            <PopoverClose asChild>
-              <button
-                onClick={onRemove}
-                className="hover:bg-hvr_gray cursor-pointer gap-3"
-              >
-                <TrashBinIcon styles="size-5 mb-0.5" />
-                <p className="text-red-600 dark:text-red-500">
-                  Remove customer
-                </p>
-              </button>
-            </PopoverClose>
+                <span className="pl-2 text-sm text-gray-500 dark:text-gray-400">
+                  Set Status
+                </span>
+                <div
+                  className="itmes-start flex flex-col *:flex *:w-full
+                    *:flex-row *:items-center *:rounded-lg *:p-2"
+                >
+                  {customer.status !== "completed" && (
+                    <PopoverClose asChild>
+                      <button
+                        className="hover:bg-hvr_gray cursor-pointer gap-3
+                          pl-1.5!"
+                        onClick={() =>
+                          onStatusChange(
+                            customer.participant_id,
+                            "completed",
+                            customer.status
+                          )
+                        }
+                      >
+                        <TickIcon styles="size-6 fill-text_color" />
+                        Completed
+                      </button>
+                    </PopoverClose>
+                  )}
+                  {customer.status !== "booked" && (
+                    <PopoverClose asChild>
+                      <button
+                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        onClick={() =>
+                          onStatusChange(
+                            customer.participant_id,
+                            "booked",
+                            customer.status
+                          )
+                        }
+                      >
+                        <CalendarIcon styles="size-5 text-text_color" />
+                        Booked
+                      </button>
+                    </PopoverClose>
+                  )}
+                  {customer.status !== "no-show" && (
+                    <PopoverClose asChild>
+                      <button
+                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        onClick={() =>
+                          onStatusChange(
+                            customer.participant_id,
+                            "no-show",
+                            customer.status
+                          )
+                        }
+                      >
+                        <BanIcon styles="size-5" />
+                        No Show
+                      </button>
+                    </PopoverClose>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div
+              className="itmes-start flex flex-col *:flex *:w-full *:flex-row
+                *:items-center *:rounded-lg *:p-2"
+            >
+              <PopoverClose asChild>
+                <button
+                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  onClick={onView}
+                >
+                  <PersonIcon styles="size-5 fill-text_color" />
+                  <p>View Customer</p>
+                </button>
+              </PopoverClose>
+              {!disabled && (
+                <PopoverClose asChild>
+                  <button
+                    onClick={onRemove}
+                    className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  >
+                    <TrashBinIcon styles="size-5 mb-0.5" />
+                    <p className="text-red-600 dark:text-red-500">
+                      Remove customer
+                    </p>
+                  </button>
+                </PopoverClose>
+              )}
+            </div>
           </div>
         </PopoverContent>
       </Popover>

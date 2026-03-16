@@ -1,4 +1,4 @@
-import { PlusIcon } from "@reservations/assets"; // Make sure you have a CheckIcon
+import { PlusIcon, WalkingIcon } from "@reservations/assets"; // Make sure you have a CheckIcon
 import {
   Avatar,
   Button,
@@ -29,10 +29,14 @@ export default function CustomerSelector({
       return;
     }
 
-    const isSelected = selectedCustomers.some((c) => c.id === customer.id);
+    const isSelected = selectedCustomers.some(
+      (c) => c.customer_id === customer.customer_id
+    );
 
     if (isSelected) {
-      setSelectedCustomers((prev) => prev.filter((c) => c.id !== customer.id));
+      setSelectedCustomers((prev) =>
+        prev.filter((c) => c.customer_id !== customer.customer_id)
+      );
     } else {
       setSelectedCustomers((prev) => [...prev, customer]);
     }
@@ -66,21 +70,7 @@ export default function CustomerSelector({
           <CustomerRow
             variant="action"
             label="Walk-In"
-            icon={
-              <svg
-                className="size-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 4.5L11 13l-4-2-2 5m8-3l4 4m0-11a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            }
+            icon={<WalkingIcon styles="size-6" />}
             onClick={() => onSave([])}
           />
         )}
@@ -93,10 +83,10 @@ export default function CustomerSelector({
         <ul className="flex flex-col gap-3">
           {filteredCustomers?.map((customer) => {
             const isSelected = selectedCustomers.some(
-              (c) => c.id === customer.id
+              (c) => c.customer_id === customer.customer_id
             );
             return (
-              <li key={customer.id}>
+              <li key={customer.customer_id}>
                 <CustomerRow
                   customer={customer}
                   variant="customer"
@@ -162,8 +152,8 @@ function CustomerRow({
         />
       )}
 
-      <div className="flex flex-1 flex-col">
-        <span className="text-text_color font-semibold">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="text-text_color truncate font-semibold">
           {isAction ? label : `${customer?.first_name} ${customer?.last_name}`}
         </span>
 

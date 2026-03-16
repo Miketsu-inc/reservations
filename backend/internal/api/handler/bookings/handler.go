@@ -40,6 +40,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Patch("/merchant/{id}", h.UpdateByMerchant)
 		r.Delete("/merchant/{id}", h.CancelByMerchant)
 
+		r.Patch("/merchant/{b_id}/participant/{p_id}", h.UpdateParticipantStatus)
+
 		r.Get("/calendar/events", h.GetCalendarEvents)
 	})
 
@@ -171,9 +173,12 @@ func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) {
 // validate:"required" on MerchantNote would fail
 // if an empty string arrives as a note
 type updateByMerchantReq struct {
-	MerchantNote string `json:"merchant_note"`
-	FromDate     string `json:"from_date" validate:"required"`
-	ToDate       string `json:"to_date" validate:"required"`
+	Customers       []customerReq       `json:"customers"`
+	ServiceId       int                 `json:"service_id" validate:"required"`
+	TimeStamp       string              `json:"timestamp" validate:"required"`
+	MerchantNote    *string             `json:"merchant_note"`
+	BookingStatus   types.BookingStatus `json:"booking_status"`
+	UpdateAllFuture bool                `json:"update_all_future"`
 }
 
 func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) {
@@ -190,13 +195,7 @@ func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := mapToUpdateByMerchantInput(req)
-	if err != nil {
-		httputil.Error(w, http.StatusBadGateway, err)
-		return
-	}
-
-	err = h.service.UpdateByMerchant(r.Context(), urlId, result)
+	err = h.service.UpdateByMerchant(r.Context(), urlId, mapToUpdateByMerchantInput(req))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
@@ -228,25 +227,67 @@ func (h *Handler) CancelByMerchant(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type getCalendarEventsResp struct {
-	Bookings     []bookingDetails `json:"bookings"`
-	BlockedTimes []blockedTime    `json:"blocked_times"`
+type updatePaticipantStatusReq struct {
+	Status types.BookingStatus `json:"status"`
 }
 
-type bookingDetails struct {
-	ID              int                      `json:"id"`
-	FromDate        time.Time                `json:"from_date"`
-	ToDate          time.Time                `json:"to_date"`
-	CustomerNote    *string                  `json:"customer_note"`
-	MerchantNote    *string                  `json:"merchant_note"`
-	ServiceName     string                   `json:"service_name"`
-	ServiceColor    string                   `json:"service_color"`
-	ServiceDuration int                      `json:"service_duration"`
-	Price           currencyx.FormattedPrice `json:"price"`
-	Cost            currencyx.FormattedPrice `json:"cost"`
-	FirstName       *string                  `json:"first_name"`
-	LastName        *string                  `json:"last_name"`
-	PhoneNumber     *string                  `json:"phone_number"`
+func (h *Handler) UpdateParticipantStatus(w http.ResponseWriter, r *http.Request) {
+	var req updatePaticipantStatusReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	urlBookingId, err := strconv.Atoi(chi.URLParam(r, "b_id"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
+		return
+	}
+
+	urlParticipantId, err := strconv.Atoi(chi.URLParam(r, "p_id"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid participant id: %w", err))
+		return
+	}
+
+	err = h.service.UpdateParticipantStatus(r.Context(), urlBookingId, urlParticipantId, mapToUpdateParticipantStatusInput(req))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+}
+
+type getCalendarEventsResp struct {
+	Bookings     []bookingForCalendar `json:"bookings"`
+	BlockedTimes []blockedTime        `json:"blocked_times"`
+}
+
+type bookingForCalendar struct {
+	ID              int                             `json:"id"`
+	BookingType     types.BookingType               `json:"booking_type"`
+	BookingStatus   types.BookingStatus             `json:"booking_status"`
+	FromDate        time.Time                       `json:"from_date"`
+	ToDate          time.Time                       `json:"to_date"`
+	IsRecurring     bool                            `json:"is_recurring"`
+	MerchantNote    *string                         `json:"merchant_note"`
+	ServiceId       int                             `json:"service_id"`
+	ServiceName     string                          `json:"service_name"`
+	ServiceColor    string                          `json:"service_color" `
+	MaxParticipants int                             `json:"max_participants"`
+	Price           currencyx.FormattedPrice        `json:"price"`
+	Cost            currencyx.FormattedPrice        `json:"cost"`
+	Participants    []bookingParticipantForCalendar `json:"participants"`
+}
+
+type bookingParticipantForCalendar struct {
+	Id           int                 `json:"id"`
+	CustomerId   uuid.UUID           `json:"customer_id"`
+	FirstName    *string             `json:"first_name"`
+	LastName     *string             `json:"last_name"`
+	CustomerNote *string             `json:"customer_note"`
+	Status       types.BookingStatus `json:"status"`
 }
 
 type blockedTime struct {

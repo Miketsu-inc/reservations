@@ -12,7 +12,7 @@ export default function CustomerStats({ customer }) {
         sm:gap-0"
     >
       {customer.times_booked !== 0 && (
-        <div className="flex h-[180px] w-full justify-center sm:ml-10 sm:w-1/3">
+        <div className="flex h-45 w-full justify-center sm:ml-10 sm:w-1/3">
           <BookingDonutChart
             cancelled={customer.times_cancelled_by_user}
             upcoming={customer.times_upcoming}

@@ -44,5 +44,6 @@ export { default as TickIcon } from "./icons/TickIcon.jsx";
 export { default as TransferIcon } from "./icons/TransferIcon.jsx";
 export { default as TrashBinIcon } from "./icons/TrashBinIcon.jsx";
 export { default as UploadIcon } from "./icons/UploadIcon.jsx";
+export { default as WalkingIcon } from "./icons/WalkingIcon.jsx";
 export { default as WarningIcon } from "./icons/WarningIcon.jsx";
 export { default as XIcon } from "./icons/XIcon.jsx";

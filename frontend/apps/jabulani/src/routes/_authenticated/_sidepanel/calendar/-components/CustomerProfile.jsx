@@ -1,6 +1,7 @@
 import {
   CakeIcon,
   EnvelopeIcon,
+  MessageIcon,
   PersonIcon,
   PhoneIcon,
 } from "@reservations/assets";
@@ -15,7 +16,12 @@ function formatBirthday(datestr) {
   });
 }
 
-export default function CustomerProfile({ customer, onRemove, styles }) {
+export default function CustomerProfile({
+  customer,
+  onRemove,
+  styles,
+  disabled,
+}) {
   return (
     <div
       className={`flex h-full w-full flex-col items-center gap-5 sm:py-10
@@ -36,8 +42,7 @@ export default function CustomerProfile({ customer, onRemove, styles }) {
           </div>
         </div>
 
-        {/* Details Section */}
-        <div className="flex w-full flex-col items-center gap-10">
+        <div className="flex w-full flex-col items-center gap-8">
           <div className="flex w-full flex-col items-center gap-2">
             {customer.email && (
               <div className="flex items-center gap-3 text-sm">
@@ -58,12 +63,14 @@ export default function CustomerProfile({ customer, onRemove, styles }) {
           </div>
 
           <div className="flex w-full items-center justify-center gap-5 pb-5">
-            <Button
-              variant="tertiary"
-              buttonText="Remove"
-              onClick={onRemove}
-              styles="px-2 py-1.5 w-28"
-            />
+            {!disabled && (
+              <Button
+                variant="tertiary"
+                buttonText="Remove"
+                onClick={onRemove}
+                styles="px-2 py-1.5 w-28"
+              />
+            )}
             <Link
               className="text-text_color w-28 rounded-lg border-2
                 border-gray-300 bg-transparent px-2 py-1.5 text-center
@@ -94,6 +101,26 @@ export default function CustomerProfile({ customer, onRemove, styles }) {
           </div>
         )}
       </div>
+      {customer.customer_note && (
+        <div className="w-full px-4 pb-4">
+          <div
+            className="rounded-md bg-gray-200/30 px-4 py-4 dark:bg-gray-500/5"
+          >
+            <div className="mb-2 flex items-center gap-3">
+              <MessageIcon styles="size-4 mt-1 fill-text_color" />
+              <span className="text-sm font-medium">
+                Note from {customer.first_name}
+              </span>
+            </div>
+            <p
+              className="text-sm leading-relaxed text-stone-500
+                dark:text-stone-300"
+            >
+              {customer.customer_note}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

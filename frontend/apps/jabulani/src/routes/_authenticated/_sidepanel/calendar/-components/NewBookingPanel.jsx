@@ -96,7 +96,7 @@ export default function NewBookingPanel({
 
   function handleRemoveParticipant(customerToRemove) {
     const newCustomers = bookingData.customers.filter(
-      (c) => c.id !== customerToRemove.id
+      (c) => c.customer_id !== customerToRemove.customer_id
     );
     updateBookingData({ customers: newCustomers });
   }

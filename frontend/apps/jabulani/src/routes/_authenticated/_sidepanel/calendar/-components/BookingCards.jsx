@@ -3,6 +3,7 @@ import {
   ClockIcon,
   CustomersIcon,
   EnvelopeIcon,
+  MessageIcon,
   PersonIcon,
   PhoneIcon,
   PlusIcon,
@@ -87,7 +88,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
   );
 }
 
-export function SelectedCustomerCard({ customer, onRemove, onView }) {
+export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
   return (
     <Card
       styles="flex justify-start border-input_border_color relative
@@ -104,7 +105,9 @@ export function SelectedCustomerCard({ customer, onRemove, onView }) {
           }
         />
         <div className="flex flex-col gap-2">
-          <span className="text-lg font-medium">{`${customer?.first_name} ${customer?.last_name}`}</span>
+          <div className="flex items-center gap-4">
+            <span className="text-lg font-medium">{`${customer?.first_name} ${customer?.last_name}`}</span>
+          </div>
           <div className="flex w-full flex-col items-start gap-2">
             {customer.email && (
               <div
@@ -129,6 +132,15 @@ export function SelectedCustomerCard({ customer, onRemove, onView }) {
           </div>
         </div>
       </div>
+      {customer.customer_note && (
+        <button
+          className="ring-layer_bg absolute top-4 left-14 inline-flex
+            items-center gap-2 rounded-full bg-yellow-300 p-1 text-xs ring-2
+            dark:bg-yellow-700"
+        >
+          <MessageIcon styles="size-3 fill-yellow-700 dark:fill-yellow-300" />
+        </button>
+      )}
       <Popover>
         <PopoverTrigger asChild>
           <button
@@ -151,10 +163,25 @@ export function SelectedCustomerCard({ customer, onRemove, onView }) {
                 className="hover:bg-hvr_gray cursor-pointer gap-3"
                 onClick={onView}
               >
-                <PersonIcon styles="size-5 fill-text_color" />
-                <p>View Customer</p>
+                <PersonIcon styles="size-5 ml-1 fill-text_color" />
+                View Customer
               </button>
             </PopoverClose>
+            {customer.customer_note && (
+              <PopoverClose asChild>
+                <button
+                  className="hover:bg-hvr_gray cursor-pointer gap-3
+                    text-yellow-600 dark:text-yellow-500"
+                  onClick={onView}
+                >
+                  <MessageIcon
+                    styles="size-4 ml-1 mt-0.5 fill-yellow-600
+                      dark:fill-yellow-500"
+                  />
+                  View Note
+                </button>
+              </PopoverClose>
+            )}
             {customer.phone_number && (
               <PopoverClose asChild>
                 <a
@@ -162,7 +189,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView }) {
                   href={`tel:${customer.phone_number}`}
                 >
                   <PhoneIcon styles="size-4 ml-1 fill-text_color" />
-                  <p>Call customer</p>
+                  Call customer
                 </a>
               </PopoverClose>
             )}
@@ -173,21 +200,23 @@ export function SelectedCustomerCard({ customer, onRemove, onView }) {
                   href={`mailto:${customer.email}`}
                 >
                   <EnvelopeIcon styles="size-4 ml-1 text-text_color" />
-                  <p>Email customer</p>
+                  Email customer
                 </a>
               </PopoverClose>
             )}
-            <PopoverClose asChild>
-              <button
-                onClick={onRemove}
-                className="hover:bg-hvr_gray cursor-pointer gap-3"
-              >
-                <TrashBinIcon styles="size-5 mb-0.5" />
-                <p className="text-red-600 dark:text-red-500">
-                  Remove customer
-                </p>
-              </button>
-            </PopoverClose>
+            {!disabled && (
+              <PopoverClose asChild>
+                <button
+                  onClick={onRemove}
+                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                >
+                  <TrashBinIcon styles="size-5 mb-0.5" />
+                  <p className="text-red-600 dark:text-red-500">
+                    Remove customer
+                  </p>
+                </button>
+              </PopoverClose>
+            )}
           </div>
         </PopoverContent>
       </Popover>
@@ -204,7 +233,8 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
       disabled={disabled}
       className={`hover:bg-hvr_gray/20 border-input_border_color relative flex
         w-full cursor-pointer items-center justify-between overflow-hidden
-        rounded-md border border-l-0 px-7 py-4 ${styles}`}
+        rounded-md border border-l-0 px-7 py-4 disabled:pointer-events-none
+        disabled:hover:bg-transparent ${styles}`}
     >
       <div
         className="absolute top-0 bottom-0 left-0 w-1.5 rounded-2xl opacity-50"

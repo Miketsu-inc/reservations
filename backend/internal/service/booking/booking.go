@@ -461,16 +461,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("error while searching service by this id: %s", err.Error())
 	}
 
-	if service.BookingType == types.BookingTypeAppointment {
-		if len(input.Customers) > 1 {
-			return fmt.Errorf("appointments cannot have more than 1 customer")
-		}
+	if service.BookingType == types.BookingTypeAppointment && len(input.Customers) > 1 {
+		return fmt.Errorf("appointments cannot have more than 1 customer")
 	}
 
-	if service.BookingType != types.BookingTypeAppointment {
-		if len(input.Customers) > service.MaxParticipants {
-			return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
-		}
+	if service.BookingType != types.BookingTypeAppointment && len(input.Customers) > service.MaxParticipants {
+		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
@@ -796,41 +792,215 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 }
 
 type UpdateByMerchantInput struct {
-	MerchantNote string
-	FromDate     time.Time
-	ToDate       time.Time
+	Customers       []CustomerInput     `json:"customers"`
+	ServiceId       int                 `json:"service_id" validate:"required"`
+	TimeStamp       string              `json:"timestamp" validate:"required"`
+	MerchantNote    *string             `json:"merchant_note"`
+	BookingStatus   types.BookingStatus `json:"booking_status"`
+	UpdateAllFuture bool                `json:"update_all_future"`
 }
 
-// TODO: updating the participants as well
+// TODO: implement UpdateAllFuture logic for recurring bookings
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	oldEmailData, err := s.bookingRepo.GetBookingDataForEmail(ctx, bookingId)
+	// old service, participants, time and date
+	oldBookingData, err := s.bookingRepo.GetBookingDataForEmail(ctx, bookingId)
 	if err != nil {
 		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
 	}
 
-	fromDateOffset := input.FromDate.Sub(oldEmailData.FromDate)
-	toDateOffset := input.ToDate.Sub(oldEmailData.ToDate)
+	if oldBookingData.BookingStatus == types.BookingStatusCompleted {
+		return fmt.Errorf("you cannot update completed bookings")
+	}
 
-	if fromDateOffset != toDateOffset {
-		return fmt.Errorf("invalid from and to date supplied")
+	newService, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, employee.MerchantId)
+	if err != nil {
+		return fmt.Errorf("error searching for new service: %s", err.Error())
+	}
+
+	if newService.BookingType == types.BookingTypeAppointment && len(input.Customers) > 1 {
+		return fmt.Errorf("appointments cannot have more than 1 customer")
+	}
+
+	if newService.BookingType != types.BookingTypeAppointment && len(input.Customers) > newService.MaxParticipants {
+		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), newService.MaxParticipants)
+	}
+
+	timeStamp, err := time.Parse(time.RFC3339, input.TimeStamp)
+	if err != nil {
+		return fmt.Errorf("timestamp could not be converted: %s", err.Error())
+	}
+
+	fromDate := timeStamp.UTC().Truncate(time.Second)
+	duration := time.Duration(newService.TotalDuration) * time.Minute
+	toDate := fromDate.Add(duration)
+	fromDateOffset := fromDate.Sub(oldBookingData.FromDate)
+
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
+	if err != nil {
+		return fmt.Errorf("error getting merchant timezone: %s", err.Error())
+	}
+
+	var finalParticipantIds []uuid.UUID
+	var newlyAddedCustomerIds []uuid.UUID
+	isWalkIn := len(input.Customers) == 0
+
+	if !isWalkIn {
+		for _, customer := range input.Customers {
+			if customer.CustomerId != nil {
+				finalParticipantIds = append(finalParticipantIds, *customer.CustomerId)
+			} else if customer.FirstName != nil && customer.LastName != nil {
+				newId, err := uuid.NewV7()
+				if err != nil {
+					return fmt.Errorf("error generating customer id: %s", err.Error())
+				}
+
+				if err := s.customerRepo.NewCustomer(ctx, employee.MerchantId, domain.Customer{
+					Id:          newId,
+					FirstName:   customer.FirstName,
+					LastName:    customer.LastName,
+					Email:       customer.Email,
+					PhoneNumber: customer.PhoneNumber,
+				}); err != nil {
+					return fmt.Errorf("error inserting new customer: %s", err.Error())
+				}
+				finalParticipantIds = append(finalParticipantIds, newId)
+				newlyAddedCustomerIds = append(newlyAddedCustomerIds, newId)
+			}
+		}
+	}
+
+	existingParticipantsMap := make(map[uuid.UUID]domain.ParticipantEmailData)
+	for _, p := range oldBookingData.Participants {
+		existingParticipantsMap[p.CustomerId] = p
+	}
+
+	finalParticipantsMap := make(map[uuid.UUID]bool)
+	for _, id := range finalParticipantIds {
+		finalParticipantsMap[id] = true
+		if _, exists := existingParticipantsMap[id]; !exists {
+
+			alreadyAdded := false
+			for _, newId := range newlyAddedCustomerIds {
+				if newId == id {
+					alreadyAdded = true
+					break
+				}
+			}
+			if !alreadyAdded {
+				newlyAddedCustomerIds = append(newlyAddedCustomerIds, id)
+			}
+		}
+	}
+
+	var participantIdsToDelete []uuid.UUID
+	var retainedParticipants []domain.ParticipantEmailData
+
+	for id, p := range existingParticipantsMap {
+		if !finalParticipantsMap[id] {
+			participantIdsToDelete = append(participantIdsToDelete, id)
+		} else {
+			retainedParticipants = append(retainedParticipants, p)
+		}
+	}
+
+	participantCount := len(finalParticipantIds)
+	// walk ins do not get a booking participant row but 1 person still attending the booking
+	if isWalkIn {
+		participantCount = 1
+	}
+
+	countStr := strconv.Itoa(participantCount)
+
+	totalPrice, err := newService.Price.Mul(countStr)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total price: %s", err.Error())
+	}
+
+	totalCost, err := newService.Cost.Mul(countStr)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total cost: %s", err.Error())
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
-		err := s.bookingRepo.WithTx(tx).UpdateBookingDetails(ctx, employee.MerchantId, bookingId, input.MerchantNote)
+		err = s.bookingRepo.WithTx(tx).UpdateBookingCore(ctx, employee.MerchantId, bookingId, newService.Id, fromDateOffset, newService.BookingType, input.BookingStatus)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to update booking core: %s", err.Error())
 		}
 
-		err = s.bookingRepo.WithTx(tx).UpdateBookingTime(ctx, employee.MerchantId, bookingId, fromDateOffset)
+		err := s.bookingRepo.WithTx(tx).UpdateBookingDetails(ctx, employee.MerchantId, domain.BookingDetails{
+			BookingId:           bookingId,
+			PricePerPerson:      *newService.Price,
+			CostPerPerson:       *newService.Cost,
+			TotalPrice:          currencyx.Price{Amount: totalPrice},
+			TotalCost:           currencyx.Price{Amount: totalCost},
+			MerchantNote:        input.MerchantNote,
+			MinParticipants:     newService.MinParticipants,
+			MaxParticipants:     newService.MaxParticipants,
+			CurrentParticipants: participantCount,
+		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to update booking details: %s", err.Error())
 		}
 
-		err = s.bookingRepo.WithTx(tx).UpdateBookingPhaseTime(ctx, bookingId, fromDateOffset)
-		if err != nil {
-			return err
+		if newService.Id != oldBookingData.ServiceId {
+			err := s.bookingRepo.WithTx(tx).DeleteBookingPhases(ctx, bookingId)
+			if err != nil {
+				return fmt.Errorf("failed to delete booking phases: %s", err.Error())
+			}
+
+			bookingPhases := make([]domain.BookingPhase, len(newService.Phases))
+
+			bookingStart := fromDate
+			for i, phase := range newService.Phases {
+				phaseDuration := time.Duration(phase.Duration) * time.Minute
+				bookingEnd := bookingStart.Add(phaseDuration)
+
+				bookingPhases[i] = domain.BookingPhase{
+					BookingId:      bookingId,
+					ServicePhaseId: phase.Id,
+					FromDate:       bookingStart,
+					ToDate:         bookingEnd,
+				}
+				bookingStart = bookingEnd
+			}
+
+			err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
+			if err != nil {
+				return fmt.Errorf("failed to insert booking phases: %s", err.Error())
+			}
+		} else {
+			err = s.bookingRepo.WithTx(tx).UpdateBookingPhaseTime(ctx, bookingId, fromDateOffset)
+			if err != nil {
+				return fmt.Errorf("failed to update booking phase time: %s", err.Error())
+			}
+		}
+
+		if len(participantIdsToDelete) > 0 {
+
+			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipants(ctx, bookingId, participantIdsToDelete)
+			if err != nil {
+				return fmt.Errorf("failed to remove participants: %s", err.Error())
+			}
+
+		}
+
+		if newService.BookingType == types.BookingTypeAppointment {
+			if !isWalkIn {
+				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, finalParticipantIds, input.BookingStatus)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			// for goup booking status mangement is individual
+			if len(newlyAddedCustomerIds) > 0 {
+				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, newlyAddedCustomerIds, types.BookingStatusBooked)
+				if err != nil {
+					return fmt.Errorf("failed to add participants: %s", err.Error())
+				}
+			}
 		}
 
 		return nil
@@ -839,46 +1009,108 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return err
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
-	if err != nil {
-		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
-	}
+	toDateMerchantTz := toDate.In(merchantTz)
+	fromDateMerchantTz := fromDate.In(merchantTz)
+	oldToDateMerchantTz := oldBookingData.ToDate.In(merchantTz)
+	oldFromDateMerchantTz := oldBookingData.FromDate.In(merchantTz)
 
-	toDateMerchantTz := input.ToDate.In(merchantTz)
-	fromDateMerchantTz := input.FromDate.In(merchantTz)
-	oldToDateMerchantTz := oldEmailData.ToDate.In(merchantTz)
-	oldFromDateMerchantTz := oldEmailData.FromDate.In(merchantTz)
-
-	oldFormattedDate := oldEmailData.FromDate.Format("Monday, January 2")
+	oldFormattedDate := oldBookingData.FromDate.Format("Monday, January 2")
 	oldFormattedTime := oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04")
 	formattedTime := fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04")
-	formattedDate := input.FromDate.Format("Monday, January 2")
-	modifyLink := fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldEmailData.MerchantName, bookingId)
+	formattedDate := fromDate.Format("Monday, January 2")
 
-	for _, participant := range oldEmailData.Participants {
+	modifyLink := fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldBookingData.MerchantName, bookingId)
+	lang := lang.LangFromContext(ctx)
+
+	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
+
+	confirmData := email.BookingConfirmationData{
+		Time:        formattedTime,
+		Date:        formattedDate,
+		Location:    oldBookingData.FormattedLocation,
+		ServiceName: newService.Name,
+		TimeZone:    merchantTz.String(),
+		ModifyLink:  modifyLink,
+	}
+
+	for _, id := range participantIdsToDelete {
+		p := existingParticipantsMap[id]
+
+		if p.EmailId != uuid.Nil {
+			err := s.mailer.Cancel(p.EmailId.String())
+			if err != nil {
+				return err
+			}
+		}
+
 		// email is nil if it's a walk-in or if a customer doesnt have an email
-		if participant.Email != nil {
-			lang := lang.LangFromContext(ctx)
-
-			err = s.mailer.BookingModification(ctx, lang, *participant.Email, email.BookingModificationData{
-				Time:        formattedTime,
-				Date:        formattedDate,
-				Location:    oldEmailData.FormattedLocation,
-				ServiceName: oldEmailData.ServiceName,
-				TimeZone:    merchantTz.String(),
-				ModifyLink:  modifyLink,
-				OldTime:     oldFormattedTime,
-				OldDate:     oldFormattedDate,
+		if p.Email != nil {
+			err := s.mailer.BookingCancellation(ctx, lang, *p.Email, email.BookingCancellationData{
+				Time:           formattedTime,
+				Date:           formattedDate,
+				Location:       oldBookingData.FormattedLocation,
+				ServiceName:    oldBookingData.ServiceName, //since he wont be at the booking for the new
+				TimeZone:       merchantTz.String(),
+				Reason:         "",
+				NewBookingLink: "http://reservations.local:3000/m/" + oldBookingData.MerchantName,
 			})
 			if err != nil {
 				return err
 			}
+		}
+	}
 
-			hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
+	for _, id := range newlyAddedCustomerIds {
+		customerEmail, err := s.customerRepo.GetCustomerEmailById(ctx, employee.MerchantId, id)
+		if err != nil {
+			return fmt.Errorf("error while getting customer's email: %s", err.Error())
+		}
 
-			if participant.EmailId != uuid.Nil {
+		if customerEmail != nil {
+			err = s.mailer.BookingConfirmation(ctx, lang, *customerEmail, confirmData)
+			if err != nil {
+				return fmt.Errorf("could not send confirmation email for the booking: %s", err.Error())
+			}
+
+			if hoursUntilBooking >= 24 {
+
+				reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+				email_id, err := s.mailer.BookingReminder(ctx, lang, *customerEmail, confirmData, reminderDate)
+				if err != nil {
+					return fmt.Errorf("could not schedule reminder email: %s", err.Error())
+				}
+
+				if email_id != "" { //check because return "" when email sending is off
+					err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, email_id, id)
+					if err != nil {
+						return fmt.Errorf("failed to update email ID: %s", err.Error())
+					}
+				}
+			}
+		}
+	}
+
+	if fromDateOffset != 0 || newService.Id != oldBookingData.ServiceId {
+		for _, p := range retainedParticipants {
+			if p.Email != nil {
+				err := s.mailer.BookingModification(ctx, lang, *p.Email, email.BookingModificationData{
+					Time:        formattedTime,
+					Date:        formattedDate,
+					Location:    oldBookingData.FormattedLocation,
+					ServiceName: oldBookingData.ServiceName,
+					TimeZone:    merchantTz.String(),
+					ModifyLink:  modifyLink,
+					OldTime:     oldFormattedTime,
+					OldDate:     oldFormattedDate,
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+			if p.EmailId != uuid.Nil {
 				// Always cancel the old email — content might be outdated
-				err := s.mailer.Cancel(participant.EmailId.String())
+				err := s.mailer.Cancel(p.EmailId.String())
 				if err != nil {
 					return fmt.Errorf("could not cancel old reminder email: %s", err.Error())
 				}
@@ -888,20 +1120,13 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if hoursUntilBooking >= 24 {
 				reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
 
-				new_email_id, err := s.mailer.BookingReminder(ctx, lang, *participant.Email, email.BookingConfirmationData{
-					Time:        formattedTime,
-					Date:        formattedDate,
-					Location:    oldEmailData.FormattedLocation,
-					ServiceName: oldEmailData.ServiceName,
-					TimeZone:    merchantTz.String(),
-					ModifyLink:  modifyLink,
-				}, reminderDate)
+				new_email_id, err := s.mailer.BookingReminder(ctx, lang, *p.Email, confirmData, reminderDate)
 				if err != nil {
 					return fmt.Errorf("could not schedule reminder email: %s", err.Error())
 				}
 
 				if new_email_id != "" { //check because return "" when email sending is off
-					err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, new_email_id, participant.CustomerId)
+					err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, new_email_id, p.CustomerId)
 					if err != nil {
 						return fmt.Errorf("failed to update email ID: %s", err.Error())
 					}
@@ -984,6 +1209,19 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+type UpdatePaticipantStatusInput struct {
+	Status types.BookingStatus
+}
+
+func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, input UpdatePaticipantStatusInput) error {
+	err := s.bookingRepo.UpdateParticipantStatus(ctx, bookingId, participantId, input.Status)
+	if err != nil {
+		return err
 	}
 
 	return nil

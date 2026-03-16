@@ -24,10 +24,11 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
-import CalendarModal from "./CalendarModal";
 import CalendarSidePanel from "./CalendarSidePanel";
+import CancelBookingModal from "./CancelBookingModal";
 import CreateMenu from "./CreateMenu";
 import DragConfirmationModal from "./DragConfirmationModal";
+import UpdateRecurringModal from "./UpdateRecurringModal";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -60,32 +61,42 @@ function transformBusinessHours(businessHours) {
 function formatBookings(data) {
   if (data === undefined) return;
 
-  return data.map((booking) => ({
-    id: booking.id,
-    title:
-      booking.first_name && booking.last_name
-        ? `${booking.first_name} ${booking.last_name}`
-        : "Walk-in",
-    start: booking.from_date,
-    end: booking.to_date,
-    color: booking.service_color,
-    textColor: getContrastColor(booking.service_color),
-    durationEditable: false,
-    startEditable: new Date(booking.to_date) > new Date() ? true : false,
-    extendedProps: {
-      // this is a number unlike the normal 'id' which get's converted to a string
+  return data.map((booking) => {
+    let title = "Walk-in";
+    const isGroup = booking.booking_type !== "appointment";
+
+    if (isGroup) {
+      title = `${booking.service_name} - ${booking.participants.length}/${booking.max_participants}`;
+    } else if (booking.participants.length > 0) {
+      const participant = booking.participants[0];
+      title = `${participant.first_name} ${participant.last_name}`;
+    }
+    return {
       id: booking.id,
-      type: "booking",
-      first_name: booking.first_name,
-      last_name: booking.last_name,
-      phone_number: booking.phone_number,
-      customer_note: booking.customer_note,
-      merchant_note: booking.merchant_note,
-      service_name: booking.service_name,
-      service_duration: booking.service_duration,
-      price: booking.price,
-    },
-  }));
+      title: title,
+      start: booking.from_date,
+      end: booking.to_date,
+      color: booking.service_color,
+      textColor: getContrastColor(booking.service_color),
+      durationEditable: false,
+      startEditable: new Date(booking.to_date) > new Date() ? true : false,
+      extendedProps: {
+        // this is a number unlike the normal 'id' which get's converted to a string
+        id: booking.id,
+        event_type: "booking",
+        booking_type: booking.booking_type,
+        booking_status: booking.booking_status,
+        is_recurring: booking.is_recurring,
+        max_participants: booking.max_participants,
+        participants: booking.participants,
+        merchant_note: booking.merchant_note,
+        service_name: booking.service_name,
+        service_id: booking.service_id,
+        service_duration: booking.service_duration,
+        price: booking.price,
+      },
+    };
+  });
 }
 
 function formatBlockedTimes(data) {
@@ -112,23 +123,6 @@ function formatBlockedTimes(data) {
   }));
 }
 
-const defaultBookingInfo = {
-  id: 0,
-  title: "",
-  start: new Date(),
-  end: new Date(),
-  startEditable: true,
-  extendedProps: {
-    id: 0,
-    first_name: "",
-    last_name: "",
-    phone_number: "",
-    customer_note: "",
-    merchant_note: "",
-    price: "",
-  },
-};
-
 export default function Calendar({ router, route, search }) {
   const [sidePanelState, setSidePanelState] = useState({
     isOpen: false,
@@ -136,8 +130,8 @@ export default function Calendar({ router, route, search }) {
     data: null,
   });
   const [calendarTitle, setCalendarTitle] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [bookingInfo, setBookingInfo] = useState(defaultBookingInfo);
+  const [cancelBookingModalData, setCancelBookingModalData] = useState(null);
+  const [recurModalData, setRecurModalData] = useState(null);
   const [dragModalOpen, setDragModalOpen] = useState(false);
   const [dragModalData, setDragModalData] = useState({
     booking: {},
@@ -256,7 +250,12 @@ export default function Calendar({ router, route, search }) {
           invalidateBookingsQuery();
           setSidePanelState((prev) => ({ ...prev, isOpen: false }));
         }}
+        onSoftUpdate={() => invalidateBookingsQuery()}
         preferences={preferences}
+        onOpenCancelModal={(booking) => setCancelBookingModalData(booking)}
+        onOpenRecurModal={(handleSave) =>
+          setRecurModalData({ handleSave: handleSave })
+        }
       />
       <div className="relative flex flex-col py-4 md:flex-row md:gap-2">
         <div
@@ -364,9 +363,11 @@ export default function Calendar({ router, route, search }) {
               });
               return;
             }
-
-            setBookingInfo(e.event);
-            setTimeout(() => setIsModalOpen(true), 0);
+            setSidePanelState({
+              isOpen: true,
+              type: "edit-booking",
+              data: e.event,
+            });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
           lazyFetching={true}
@@ -442,15 +443,24 @@ export default function Calendar({ router, route, search }) {
           businessHours={transformBusinessHours(businessHours)}
         />
       </div>
-      <CalendarModal
-        key={bookingInfo?.id}
-        bookingInfo={bookingInfo}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
+      <CancelBookingModal
+        booking={cancelBookingModalData}
+        isOpen={cancelBookingModalData !== null}
+        onClose={() => setCancelBookingModalData(null)}
+        onDeleted={() => {
+          invalidateBookingsQuery();
+          setCancelBookingModalData(null);
+          setSidePanelState((prev) => ({ ...prev, isOpen: false }));
         }}
-        onDeleted={invalidateBookingsQuery}
-        onEdit={invalidateBookingsQuery}
+      />
+      <UpdateRecurringModal
+        isOpen={recurModalData !== null}
+        onClose={() => setRecurModalData(null)}
+        onSave={(option) => {
+          // save function passed up from EditBookingPanel
+          recurModalData.handleSave(option);
+          setRecurModalData(null);
+        }}
       />
       <DragConfirmationModal
         isOpen={dragModalOpen}

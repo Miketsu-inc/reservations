@@ -260,7 +260,7 @@ func mapToGetCustomersForCalendarResp(in []domain.CustomerForCalendar) []getCust
 
 	for i, m := range in {
 		customers[i] = getCustomersForCalendarResp{
-			Id:          m.Id,
+			CustomerId:  m.CustomerId,
 			FirstName:   m.FirstName,
 			LastName:    m.LastName,
 			Email:       m.Email,

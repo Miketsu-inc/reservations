@@ -1,9 +1,6 @@
 package bookings
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 )
@@ -68,22 +65,27 @@ func mapToCreateByMerchantInput(in createByMerchantReq) bookingServ.CreateByMerc
 	}
 }
 
-func mapToUpdateByMerchantInput(in updateByMerchantReq) (bookingServ.UpdateByMerchantInput, error) {
-	fromDate, err := time.Parse(time.RFC3339, in.FromDate)
-	if err != nil {
-		return bookingServ.UpdateByMerchantInput{}, fmt.Errorf("invalid from date: %s", err.Error())
-	}
+func mapToUpdateByMerchantInput(in updateByMerchantReq) bookingServ.UpdateByMerchantInput {
+	customers := make([]bookingServ.CustomerInput, len(in.Customers))
 
-	toDate, err := time.Parse(time.RFC3339, in.ToDate)
-	if err != nil {
-		return bookingServ.UpdateByMerchantInput{}, fmt.Errorf("invalid to date: %s", err.Error())
+	for i, c := range in.Customers {
+		customers[i] = bookingServ.CustomerInput{
+			CustomerId:  c.CustomerId,
+			FirstName:   c.FirstName,
+			LastName:    c.LastName,
+			Email:       c.Email,
+			PhoneNumber: c.PhoneNumber,
+		}
 	}
 
 	return bookingServ.UpdateByMerchantInput{
-		MerchantNote: in.MerchantNote,
-		FromDate:     fromDate,
-		ToDate:       toDate,
-	}, nil
+		Customers:       customers,
+		ServiceId:       in.ServiceId,
+		TimeStamp:       in.TimeStamp,
+		MerchantNote:    in.MerchantNote,
+		BookingStatus:   in.BookingStatus,
+		UpdateAllFuture: in.UpdateAllFuture,
+	}
 }
 
 func mapToCancelByMerchantInput(in cancelByMerchantReq) bookingServ.CancelByMerchantInput {
@@ -92,25 +94,45 @@ func mapToCancelByMerchantInput(in cancelByMerchantReq) bookingServ.CancelByMerc
 	}
 }
 
+func mapToUpdateParticipantStatusInput(in updatePaticipantStatusReq) bookingServ.UpdatePaticipantStatusInput {
+	return bookingServ.UpdatePaticipantStatusInput{
+		Status: in.Status,
+	}
+}
+
 func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp {
-	bookings := make([]bookingDetails, len(in.Bookings))
+	bookings := make([]bookingForCalendar, len(in.Bookings))
 
 	for i, b := range in.Bookings {
-		bookings[i] = bookingDetails{
+		bookings[i] = bookingForCalendar{
 			ID:              b.ID,
+			BookingType:     b.BookingType,
+			BookingStatus:   b.BookingStatus,
 			FromDate:        b.FromDate,
 			ToDate:          b.ToDate,
-			CustomerNote:    b.CustomerNote,
+			IsRecurring:     b.IsRecurring,
 			MerchantNote:    b.MerchantNote,
+			ServiceId:       b.ServiceId,
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,
-			ServiceDuration: b.ServiceDuration,
+			MaxParticipants: b.MaxParticipants,
 			Price:           b.Price,
 			Cost:            b.Cost,
-			FirstName:       b.FirstName,
-			LastName:        b.LastName,
-			PhoneNumber:     b.PhoneNumber,
 		}
+
+		participants := make([]bookingParticipantForCalendar, len(b.Participants))
+		for j, p := range b.Participants {
+			participants[j] = bookingParticipantForCalendar{
+				Id:           p.Id,
+				CustomerId:   p.CustomerId,
+				FirstName:    p.FirstName,
+				LastName:     p.LastName,
+				CustomerNote: p.CustomerNote,
+				Status:       p.Status,
+			}
+		}
+
+		bookings[i].Participants = participants
 	}
 
 	blockedTimes := make([]blockedTime, len(in.BlockedTimes))
