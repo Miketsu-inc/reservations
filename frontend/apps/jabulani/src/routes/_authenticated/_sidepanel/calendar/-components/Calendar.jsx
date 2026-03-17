@@ -27,7 +27,6 @@ import { bookingsQueryOptions } from "..";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CancelBookingModal from "./CancelBookingModal";
 import CreateMenu from "./CreateMenu";
-import DragConfirmationModal from "./DragConfirmationModal";
 import UpdateRecurringModal from "./UpdateRecurringModal";
 
 const calendarViewOptions = [
@@ -128,16 +127,11 @@ export default function Calendar({ router, route, search }) {
     isOpen: false,
     type: null,
     data: null,
+    revert: null,
   });
   const [calendarTitle, setCalendarTitle] = useState("");
   const [cancelBookingModalData, setCancelBookingModalData] = useState(null);
   const [recurModalData, setRecurModalData] = useState(null);
-  const [dragModalOpen, setDragModalOpen] = useState(false);
-  const [dragModalData, setDragModalData] = useState({
-    booking: {},
-    old_booking: {},
-    revert: {},
-  });
 
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
@@ -243,9 +237,17 @@ export default function Calendar({ router, route, search }) {
         isOpen={sidePanelState.isOpen}
         type={sidePanelState.type}
         data={sidePanelState.data}
-        onClose={() =>
-          setSidePanelState((prev) => ({ ...prev, isOpen: false }))
-        }
+        onClose={() => {
+          if (sidePanelState.revert) {
+            sidePanelState.revert();
+          }
+          setSidePanelState({
+            isOpen: false,
+            type: null,
+            data: null,
+            revert: null,
+          });
+        }}
         onSave={() => {
           invalidateBookingsQuery();
           setSidePanelState((prev) => ({ ...prev, isOpen: false }));
@@ -360,6 +362,7 @@ export default function Calendar({ router, route, search }) {
                 isOpen: true,
                 type: "blocked-time",
                 data: e.event,
+                revert: null,
               });
               return;
             }
@@ -367,6 +370,7 @@ export default function Calendar({ router, route, search }) {
               isOpen: true,
               type: "edit-booking",
               data: e.event,
+              revert: null,
             });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
@@ -394,16 +398,21 @@ export default function Calendar({ router, route, search }) {
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
-              e.revert();
+              setSidePanelState({
+                isOpen: true,
+                type: "blocked-time",
+                data: e.event,
+                revert: e.revert(),
+              });
               return;
             }
 
-            setDragModalData({
-              booking: e.event,
-              old_booking: e.oldEvent,
-              revert: e.revert,
+            setSidePanelState({
+              isOpen: true,
+              type: "edit-booking",
+              data: e.event,
+              revert: e.revert(),
             });
-            setTimeout(() => setDragModalOpen(true), 0);
           }}
           eventAllow={(dropInfo) => {
             if (dropInfo.start.getTime() < Date.now()) {
@@ -460,18 +469,6 @@ export default function Calendar({ router, route, search }) {
           // save function passed up from EditBookingPanel
           recurModalData.handleSave(option);
           setRecurModalData(null);
-        }}
-      />
-      <DragConfirmationModal
-        isOpen={dragModalOpen}
-        bookingData={dragModalData}
-        onClose={() => {
-          dragModalData.revert();
-          setDragModalOpen(false);
-        }}
-        onMoved={async () => {
-          await invalidateBookingsQuery();
-          setDragModalOpen(false);
         }}
       />
     </div>

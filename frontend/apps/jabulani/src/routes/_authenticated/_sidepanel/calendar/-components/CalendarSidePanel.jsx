@@ -173,6 +173,7 @@ export default function CalendarSidePanel({
               isWindowSmall={isWindowSmall}
               onOpenCancelModal={onOpenCancelModal}
               onOpenRecurModal={onOpenRecurModal}
+              preferences={preferences}
             />
           )}
         </div>

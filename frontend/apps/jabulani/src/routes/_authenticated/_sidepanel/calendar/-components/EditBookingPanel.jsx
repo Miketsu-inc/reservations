@@ -54,6 +54,7 @@ export default function EditBookingPanel({
   onSoftUpdate,
   onOpenCancelModal,
   onOpenRecurModal,
+  preferences,
 }) {
   const { showToast } = useToast();
   const isPastBooking = new Date(originalBookingData.end) <= new Date();
@@ -494,7 +495,7 @@ export default function EditBookingPanel({
                 </div>
                 <div className="flex items-center gap-2">
                   <ClockIcon styles="size-4 fill-text_color" />
-                  <span>{`${timeStringFromDate(originalBookingData.start)} - ${timeStringFromDate(originalBookingData.end)}`}</span>{" "}
+                  <span>{`${timeStringFromDate(originalBookingData.start, preferences?.time_format)} - ${timeStringFromDate(originalBookingData.end, preferences?.time_format)}`}</span>{" "}
                 </div>
               </div>
             ) : (
@@ -609,7 +610,7 @@ function BookingHeader({
         style={{ backgroundColor: selectedService.color }}
       >
         <span className="text-[20px] font-medium text-white opacity-100!">
-          {monthDateFormat(originalBookingData.start)}
+          {monthDateFormat(bookingData.date)}
         </span>
 
         {isBookingCompleted ? (

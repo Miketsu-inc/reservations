@@ -67,20 +67,33 @@ export default function BlockedTimePanel({
 }) {
   const isEditing = blockedTime !== null;
   const originalTimeOptions = GenerateTimeOptions(preferences?.time_format);
+
+  const initialFromTime =
+    !blockedTime?.extendedProps?.allDay && blockedTime?.start
+      ? timeStringFromDate(blockedTime?.start)
+      : "09:00";
   const initialToTime =
     !blockedTime?.extendedProps?.allDay && blockedTime?.end
       ? timeStringFromDate(blockedTime?.end).split(" ")[0]
       : "17:00";
+
   const [timeOptions, setTimeOptions] = useState(() => {
     const options = originalTimeOptions;
-    const timeExists = options.some((opt) => opt.value === initialToTime);
 
-    if (!timeExists) {
+    if (!options.some((opt) => opt.value === initialFromTime)) {
+      options.push({
+        value: initialFromTime,
+        label: getFormattedLabel(initialFromTime, preferences?.time_format),
+      });
+    }
+
+    if (!options.some((opt) => opt.value === initialToTime)) {
       options.push({
         value: initialToTime,
         label: getFormattedLabel(initialToTime, preferences?.time_format),
       });
     }
+
     return options;
   });
 
@@ -91,10 +104,7 @@ export default function BlockedTimePanel({
     name: blockedTime?.extendedProps?.name || "",
     employee_id: blockedTime?.extendedProps.employee_id || "",
     date: blockedTime?.start || new Date(),
-    from_time:
-      !blockedTime?.extendedProps?.allDay && blockedTime?.start
-        ? timeStringFromDate(blockedTime?.start).split(" ")[0]
-        : "09:00",
+    from_time: initialFromTime,
     to_time: initialToTime,
     all_day: blockedTime?.extendedProps?.allDay ?? false,
   });
