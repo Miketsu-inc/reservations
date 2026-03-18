@@ -241,12 +241,11 @@ export default function Calendar({ router, route, search }) {
           if (sidePanelState.revert) {
             sidePanelState.revert();
           }
-          setSidePanelState({
+          setSidePanelState((prev) => ({
+            ...prev,
             isOpen: false,
-            type: null,
-            data: null,
             revert: null,
-          });
+          }));
         }}
         onSave={() => {
           invalidateBookingsQuery();

@@ -138,6 +138,14 @@ export default function NewBookingPanel({
       days = [];
     }
 
+    const customerInput = bookingData.customers.map((p) => ({
+      id: p?.customer_id || null,
+      first_name: p.first_name,
+      last_name: p.last_name,
+      email: p?.email || "",
+      phone_number: p?.phone_number || "",
+    }));
+
     try {
       const response = await fetch(`/api/v1/bookings/merchant`, {
         method: "POST",
@@ -146,7 +154,7 @@ export default function NewBookingPanel({
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          customers: bookingData.customers,
+          customers: customerInput,
           service_id: bookingData.serviceId,
           timestamp: timestamp,
           merchant_note: bookingData.merchantNote,
