@@ -63,7 +63,7 @@ export default function DatePicker({
             >
               <div className="flex items-center justify-between">
                 {!hideText && (
-                  <span className="text-text_color h-5 flex-1 truncate">
+                  <span className="text-text_color h-5 flex-1">
                     {selectedDate
                       ? formatDate(selectedDate)
                       : palaceHolderText || "Pick a date"}

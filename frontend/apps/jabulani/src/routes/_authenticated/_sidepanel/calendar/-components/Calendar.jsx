@@ -165,6 +165,7 @@ export default function Calendar({ router, route, search }) {
       const end = formatToDateString(api.view.activeEnd);
 
       router.navigate({
+        to: "/calendar",
         search: () => ({ view: api.view.type, start: start, end: end }),
         replace: true,
       });

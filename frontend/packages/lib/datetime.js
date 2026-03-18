@@ -17,7 +17,9 @@ export function calculateStartEndTime(view, firstDayOfWeek) {
     firstDayOfWeek = "Monday";
   }
 
-  const now = new Date();
+  const d = new Date();
+  // avoid DST problems
+  const now = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const offset = firstDayOfWeek === "Monday" ? 1 : 0;
   let start, end;
 
@@ -91,7 +93,7 @@ export function calculateStartEndTime(view, firstDayOfWeek) {
 export function isDurationValid(view, startStr, endStr) {
   const parseDate = (dateStr) => {
     const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
   };
 
   if (startStr === undefined || endStr === undefined) return false;

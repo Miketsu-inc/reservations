@@ -50,6 +50,12 @@ describe("isDurationValid", () => {
     );
   });
 
+  it("timeGridWeek during daylight savings switch", () => {
+    expect(isDurationValid("timeGridWeek", "2026-03-23", "2026-03-30")).toBe(
+      true
+    );
+  });
+
   it("timeGridDay a day", () => {
     expect(isDurationValid("timeGridDay", "2025-01-31", "2025-02-01")).toBe(
       true
