@@ -2,8 +2,10 @@ package currencyx
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/bojanz/currency"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	curr "golang.org/x/text/currency"
 	"golang.org/x/text/language"
@@ -61,10 +63,16 @@ func FindBest(lang language.Tag) string {
 
 type Price struct {
 	currency.Amount
+	stratch *priceScratch
 }
 
 type FormattedPrice struct {
 	currency.Amount
+}
+
+type priceScratch struct {
+	number       pgtype.Numeric
+	currencyCode string
 }
 
 func (f FormattedPrice) MarshalJSON() ([]byte, error) {
@@ -75,4 +83,96 @@ func (f FormattedPrice) MarshalJSON() ([]byte, error) {
 		priceStr = Format(f.Amount)
 	}
 	return json.Marshal(priceStr)
+}
+
+func (p Price) ToFormatted() FormattedPrice {
+	return FormattedPrice{Amount: p.Amount}
+}
+
+func FormatPrice(price *Price) *FormattedPrice {
+	if price == nil {
+		return nil
+	}
+
+	fp := price.ToFormatted()
+	return &fp
+}
+
+// IsNull implements pgtype.CompositeIndexGetter.
+// Price is a value type; use *Price for nullable columns.
+func (p Price) IsNull() bool {
+	return false
+}
+
+// Index implements pgtype.CompositeIndexGetter.
+func (p Price) Index(i int) any {
+	switch i {
+	case 0:
+		n := new(pgtype.Numeric)
+		if err := n.Scan(p.Number()); err != nil {
+			panic(fmt.Sprintf("price index: scanning numeric: %q: %v", p.Number(), err))
+		}
+		return n
+	case 1:
+		return p.CurrencyCode()
+	default:
+		panic(fmt.Sprintf("price index: unexpected index %d", i))
+	}
+}
+
+// ScanNull implements pgtype.CompositeIndexScanner.
+func (p *Price) ScanNull() error {
+	*p = Price{}
+	return nil
+}
+
+// ScanIndex implements pgtype.CompositeIndexScanner.
+func (p *Price) ScanIndex(i int) any {
+	if p.stratch == nil {
+		p.stratch = new(priceScratch)
+	}
+
+	switch i {
+	case 0:
+		return &p.stratch.number
+	case 1:
+		return &p.stratch.currencyCode
+	default:
+		panic(fmt.Sprintf("price scanIndex: unexpected index %d", i))
+	}
+}
+
+func (p *Price) Scan(src any) error {
+	if p.stratch == nil {
+		return fmt.Errorf("price: Scan called without prior ScanIndex (src: %T)", src)
+	}
+
+	s := p.stratch
+	p.stratch = nil
+
+	if !s.number.Valid {
+		return fmt.Errorf("price: number cannot be null")
+	}
+
+	if s.currencyCode == "" {
+		return fmt.Errorf("price: empty currency code")
+	}
+
+	v, err := s.number.Value()
+	if err != nil {
+		return fmt.Errorf("price: reading numeric value: %w", err)
+	}
+
+	numStr, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("price: unexpected numeric type: %T", v)
+	}
+
+	a, err := currency.NewAmount(numStr, s.currencyCode)
+	if err != nil {
+		return fmt.Errorf("price: error constructing amount (%q, %q): %w", numStr, s.currencyCode, err)
+	}
+
+	p.Amount = a
+	return nil
 }

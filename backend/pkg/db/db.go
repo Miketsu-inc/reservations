@@ -20,11 +20,19 @@ type DBTX interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func New() *pgxpool.Pool {
+type AfterConnectFunc func(context.Context, *pgx.Conn) error
+
+func New(ctx context.Context, afterConnect AfterConnectFunc) *pgxpool.Pool {
 	cfg := config.LoadEnvVars()
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", cfg.DB_USERNAME, cfg.DB_PASSWORD, cfg.DB_HOST, cfg.DB_PORT, cfg.DB_DATABASE, cfg.DB_SCHEMA)
-	dbpool, err := pgxpool.New(context.Background(), connStr)
+
+	poolConfig, err := pgxpool.ParseConfig(connStr)
+	assert.Nil(err, "Connection string parsing failed", err)
+
+	poolConfig.AfterConnect = afterConnect
+
+	dbpool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	assert.Nil(err, "Connection to database could not be openned", err)
 
 	return dbpool

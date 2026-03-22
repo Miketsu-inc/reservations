@@ -139,7 +139,7 @@ func (r *bookingRepository) NewBookingDetails(ctx context.Context, bookingDetail
 func (r *bookingRepository) NewBookingDetailsBatch(ctx context.Context, bookingDetails []domain.BookingDetails) error {
 	query := `
 	insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
-	select unnest($1::int[]), $2, $3, $4, $5, $6, $7, $8, $9
+	select unnest($1::int[]), unnest($2::price[]), unnest($3::price[]), unnest($4::price[]), unnest($5::price[]), unnest($6::text[]), unnest($7::int[]), unnest($8::int[]), unnest($9::int[])
 	`
 
 	bookingIds := make([]int, len(bookingDetails))
@@ -301,7 +301,7 @@ func (r *bookingRepository) UpdateBookingTotalPrice(ctx context.Context, booking
 
 func (r *bookingRepository) UpdateBookingDetails(ctx context.Context, merchantId uuid.UUID, details domain.BookingDetails) error {
 	query := `
-	update "BookingDetails" bd 
+	update "BookingDetails" bd
 	set price_per_person = $3, cost_per_person = $4, total_price = $5, total_cost = $6, merchant_note = $7, min_participants = $8, max_participants = $9, current_participants = $10
 	from "Booking" b
 	where b.id = $1 and b.id = bd.booking_id and b.merchant_id = $2 and b.status not in ('cancelled', 'completed')
@@ -575,7 +575,7 @@ func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId 
 func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]domain.BookingForCalendar, error) {
 	query := `
 	with participants as (
-		select 
+		select
 			bp.booking_id,
 			jsonb_agg(
 				jsonb_build_object(
@@ -770,7 +770,7 @@ func (r *bookingRepository) NewBookingSeriesDetails(ctx context.Context, bsd dom
 	returning *
 	`
 
-	rows, _ := r.db.Query(ctx, query, bsd.Id, bsd.PricePerPerson, bsd.CostPerPerson, bsd.TotalPrice, bsd.TotalCost,
+	rows, _ := r.db.Query(ctx, query, bsd.BookingSeriesId, bsd.PricePerPerson, bsd.CostPerPerson, bsd.TotalPrice, bsd.TotalCost,
 		bsd.MinParticipants, bsd.MaxParticipants, bsd.CurrentParticipants)
 	bookingSeriesDetails, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.BookingSeriesDetails])
 	if err != nil {

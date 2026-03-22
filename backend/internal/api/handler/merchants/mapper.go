@@ -3,6 +3,7 @@ package merchants
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
@@ -18,7 +19,7 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 				Name:          s.Name,
 				Description:   s.Description,
 				TotalDuration: s.TotalDuration,
-				Price:         s.Price,
+				Price:         currencyx.FormatPrice(s.Price),
 				PriceType:     s.PriceType,
 				Sequence:      s.Sequence,
 			}
@@ -87,7 +88,7 @@ func mapToGetServiceDetailsResp(in domain.PublicServiceDetails) getServiceDetail
 		Name:              in.Name,
 		Description:       in.Description,
 		TotalDuration:     in.TotalDuration,
-		Price:             in.Price,
+		Price:             currencyx.FormatPrice(in.Price),
 		PriceType:         in.PriceType,
 		FormattedLocation: in.FormattedLocation,
 		GeoPoint:          in.GeoPoint,
@@ -99,7 +100,7 @@ func mapToGetSummaryResp(in domain.MinimalServiceInfo) getSummaryResp {
 	return getSummaryResp{
 		Name:              in.Name,
 		TotalDuration:     in.TotalDuration,
-		Price:             in.Price,
+		Price:             currencyx.FormatPrice(in.Price),
 		PriceType:         in.PriceType,
 		FormattedLocation: in.FormattedLocation,
 	}

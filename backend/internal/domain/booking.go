@@ -112,31 +112,31 @@ type BookingParticipant struct {
 }
 
 type PublicBooking struct {
-	FromDate          time.Time                `json:"from_date" db:"from_date"`
-	ToDate            time.Time                `json:"to_date" db:"to_date"`
-	ServiceName       string                   `json:"service_name" db:"service_name"`
-	CancelDeadline    int                      `json:"cancel_deadline" db:"cancel_deadline"`
-	FormattedLocation string                   `json:"formatted_location" db:"formatted_location"`
-	Price             currencyx.FormattedPrice `json:"price" db:"price"`
-	PriceType         types.PriceType          `json:"price_type"`
-	MerchantName      string                   `json:"merchant_name" db:"merchant_name"`
-	IsCancelled       bool                     `json:"is_cancelled" db:"is_cancelled"`
+	FromDate          time.Time       `json:"from_date" db:"from_date"`
+	ToDate            time.Time       `json:"to_date" db:"to_date"`
+	ServiceName       string          `json:"service_name" db:"service_name"`
+	CancelDeadline    int             `json:"cancel_deadline" db:"cancel_deadline"`
+	FormattedLocation string          `json:"formatted_location" db:"formatted_location"`
+	Price             currencyx.Price `json:"price" db:"price"`
+	PriceType         types.PriceType `json:"price_type"`
+	MerchantName      string          `json:"merchant_name" db:"merchant_name"`
+	IsCancelled       bool            `json:"is_cancelled" db:"is_cancelled"`
 }
 
 type PublicBookingDetails struct {
-	ID              int                      `json:"id" db:"id"`
-	FromDate        time.Time                `json:"from_date" db:"from_date"`
-	ToDate          time.Time                `json:"to_date" db:"to_date"`
-	CustomerNote    *string                  `json:"customer_note" db:"customer_note"`
-	MerchantNote    *string                  `json:"merchant_note" db:"merchant_note"`
-	ServiceName     string                   `json:"service_name" db:"service_name"`
-	ServiceColor    string                   `json:"service_color" db:"service_color"`
-	ServiceDuration int                      `json:"service_duration" db:"service_duration"`
-	Price           currencyx.FormattedPrice `json:"price" db:"price"`
-	Cost            currencyx.FormattedPrice `json:"cost" db:"cost"`
-	FirstName       *string                  `json:"first_name" db:"first_name"`
-	LastName        *string                  `json:"last_name" db:"last_name"`
-	PhoneNumber     *string                  `json:"phone_number" db:"phone_number"`
+	ID              int             `json:"id" db:"id"`
+	FromDate        time.Time       `json:"from_date" db:"from_date"`
+	ToDate          time.Time       `json:"to_date" db:"to_date"`
+	CustomerNote    *string         `json:"customer_note" db:"customer_note"`
+	MerchantNote    *string         `json:"merchant_note" db:"merchant_note"`
+	ServiceName     string          `json:"service_name" db:"service_name"`
+	ServiceColor    string          `json:"service_color" db:"service_color"`
+	ServiceDuration int             `json:"service_duration" db:"service_duration"`
+	Price           currencyx.Price `json:"price" db:"price"`
+	Cost            currencyx.Price `json:"cost" db:"cost"`
+	FirstName       *string         `json:"first_name" db:"first_name"`
+	LastName        *string         `json:"last_name" db:"last_name"`
+	PhoneNumber     *string         `json:"phone_number" db:"phone_number"`
 }
 
 type BookingForCalendar struct {
@@ -151,8 +151,8 @@ type BookingForCalendar struct {
 	ServiceName     string                          `json:"service_name" db:"service_name"`
 	ServiceColor    string                          `json:"service_color" db:"service_color"`
 	MaxParticipants int                             `json:"max_participants" db:"max_participants"`
-	Price           currencyx.FormattedPrice        `json:"price" db:"price"`
-	Cost            currencyx.FormattedPrice        `json:"cost" db:"cost"`
+	Price           currencyx.Price                 `json:"price" db:"price"`
+	Cost            currencyx.Price                 `json:"cost" db:"cost"`
 	Participants    []BookingParticipantForCalendar `json:"participants" db:"participants"`
 }
 

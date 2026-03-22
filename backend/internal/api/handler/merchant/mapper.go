@@ -3,6 +3,7 @@ package merchant
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToUpdateNameInput(in updateNameReq) merchantServ.UpdateNameInput {
@@ -30,8 +31,8 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,
 			ServiceDuration: b.ServiceDuration,
-			Price:           b.Price,
-			Cost:            b.Cost,
+			Price:           b.Price.ToFormatted(),
+			Cost:            b.Cost.ToFormatted(),
 			FirstName:       b.FirstName,
 			LastName:        b.LastName,
 			PhoneNumber:     b.PhoneNumber,
@@ -50,8 +51,8 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,
 			ServiceDuration: b.ServiceDuration,
-			Price:           b.Price,
-			Cost:            b.Cost,
+			Price:           b.Price.ToFormatted(),
+			Cost:            b.Cost.ToFormatted(),
 			FirstName:       b.FirstName,
 			LastName:        b.LastName,
 			PhoneNumber:     b.PhoneNumber,
@@ -237,7 +238,7 @@ func mapToGetServicesForCalendarResp(in []domain.ServicesGroupedByCategoriesForC
 				Id:              s.Id,
 				Name:            s.Name,
 				Duration:        s.Duration,
-				Price:           s.Price,
+				Price:           currencyx.FormatPrice(s.Price),
 				PriceType:       s.PriceType,
 				Color:           s.Color,
 				BookingType:     s.BookingType,

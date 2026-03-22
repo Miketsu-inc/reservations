@@ -51,7 +51,7 @@ func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 			ServiceName:       b.ServiceName,
 			CancelDeadline:    b.CancelDeadline,
 			FormattedLocation: b.FormattedLocation,
-			Price:             b.Price,
+			Price:             b.Price.ToFormatted(),
 			PriceType:         b.PriceType,
 			MerchantName:      b.MerchantName,
 			IsCancelled:       b.IsCancelled,

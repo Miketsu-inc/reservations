@@ -33,6 +33,10 @@ func (s *Service) generateRecurringBookings(ctx context.Context, series Complete
 
 	occurrences := rrule.Between(now, end, true)
 
+	if len(occurrences) == 0 {
+		return 0, fmt.Errorf("there are no occurrences between start (%s) and end (%s) date", now, end)
+	}
+
 	existingOccurrences, err := s.bookingRepo.GetExistingOccurrenceDates(ctx, series.Id, now, end)
 	if err != nil {
 		return 0, fmt.Errorf("could not get existing occurrence dates: %s", err.Error())

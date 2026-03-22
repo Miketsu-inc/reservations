@@ -132,14 +132,14 @@ type ServicesGroupedByCategory struct {
 }
 
 type MerchantPageService struct {
-	Id            int                       `json:"id"`
-	CategoryId    *int                      `json:"category_id"`
-	Name          string                    `json:"name"`
-	Description   *string                   `json:"description"`
-	TotalDuration int                       `json:"total_duration"`
-	Price         *currencyx.FormattedPrice `json:"price"`
-	PriceType     types.PriceType           `json:"price_type"`
-	Sequence      int                       `json:"sequence"`
+	Id            int              `json:"id"`
+	CategoryId    *int             `json:"category_id"`
+	Name          string           `json:"name"`
+	Description   *string          `json:"description"`
+	TotalDuration int              `json:"total_duration"`
+	Price         *currencyx.Price `json:"price"`
+	PriceType     types.PriceType  `json:"price_type"`
+	Sequence      int              `json:"sequence"`
 }
 
 type MerchantPageServicesGroupedByCategory struct {
@@ -184,23 +184,23 @@ type ServiceInfoForProducts struct {
 }
 
 type PublicServiceDetails struct {
-	Id                int                       `json:"id"`
-	Name              string                    `json:"name"`
-	Description       *string                   `json:"description"`
-	TotalDuration     int                       `json:"total_duration"`
-	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType           `json:"price_type"`
-	FormattedLocation string                    `json:"formatted_location"`
-	GeoPoint          types.GeoPoint            `json:"geo_point"`
-	Phases            []PublicServicePhase      `json:"phases"`
+	Id                int                  `json:"id"`
+	Name              string               `json:"name"`
+	Description       *string              `json:"description"`
+	TotalDuration     int                  `json:"total_duration"`
+	Price             *currencyx.Price     `json:"price"`
+	PriceType         types.PriceType      `json:"price_type"`
+	FormattedLocation string               `json:"formatted_location"`
+	GeoPoint          types.GeoPoint       `json:"geo_point"`
+	Phases            []PublicServicePhase `json:"phases"`
 }
 
 type MinimalServiceInfo struct {
-	Name              string                    `json:"name"`
-	TotalDuration     int                       `json:"total_duration"`
-	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType           `json:"price_type"`
-	FormattedLocation string                    `json:"formatted_location"`
+	Name              string           `json:"name"`
+	TotalDuration     int              `json:"total_duration"`
+	Price             *currencyx.Price `json:"price"`
+	PriceType         types.PriceType  `json:"price_type"`
+	FormattedLocation string           `json:"formatted_location"`
 }
 
 type ServicesGroupedByCategoriesForCalendar struct {
@@ -210,14 +210,14 @@ type ServicesGroupedByCategoriesForCalendar struct {
 }
 
 type CalendarService struct {
-	Id              int                       `json:"id"`
-	Name            string                    `json:"name"`
-	Duration        int                       `json:"duration"`
-	Price           *currencyx.FormattedPrice `json:"price"`
-	PriceType       types.PriceType           `json:"price_type"`
-	Color           string                    `json:"color"`
-	BookingType     types.BookingType         `json:"booking_type"`
-	MaxParticipants int                       `json:"max_participants"`
+	Id              int               `json:"id"`
+	Name            string            `json:"name"`
+	Duration        int               `json:"duration"`
+	Price           *currencyx.Price  `json:"price"`
+	PriceType       types.PriceType   `json:"price_type"`
+	Color           string            `json:"color"`
+	BookingType     types.BookingType `json:"booking_type"`
+	MaxParticipants int               `json:"max_participants"`
 }
 
 type GroupServicePageData struct {

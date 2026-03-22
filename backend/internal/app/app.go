@@ -1,10 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api"
@@ -33,6 +35,7 @@ import (
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -42,7 +45,7 @@ type App struct {
 }
 
 func New(cfg *config.Config) *App {
-	dbConn := db.New()
+	dbConn := db.New(context.Background(), RegisterTypes)
 
 	blockedTimeRepo := repos.NewBlockedTimeRepository(dbConn)
 	bookingRepo := repos.NewBookingRepository(dbConn)
@@ -106,4 +109,18 @@ func (a *App) Start() error {
 
 func (a *App) Stop() {
 	a.dbConn.Close()
+}
+
+func RegisterTypes(ctx context.Context, conn *pgx.Conn) error {
+	types, err := conn.LoadTypes(ctx, []string{"price", "_price"})
+	if err != nil {
+		return err
+	}
+
+	conn.TypeMap().RegisterTypes(types)
+
+	conn.TypeMap().RegisterDefaultPgType(currencyx.Price{}, "price")
+	conn.TypeMap().RegisterDefaultPgType([]currencyx.Price{}, "_price")
+
+	return nil
 }

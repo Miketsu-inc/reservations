@@ -30,7 +30,7 @@ func mapToGetByCustomerResp(in domain.PublicBooking) getByCustomerResp {
 		ServiceName:       in.ServiceName,
 		CancelDeadline:    in.CancelDeadline,
 		FormattedLocation: in.FormattedLocation,
-		Price:             in.Price,
+		Price:             in.Price.ToFormatted(),
 		PriceType:         in.PriceType,
 		MerchantName:      in.MerchantName,
 		IsCancelled:       in.IsCancelled,
@@ -116,8 +116,8 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,
 			MaxParticipants: b.MaxParticipants,
-			Price:           b.Price,
-			Cost:            b.Cost,
+			Price:           b.Price.ToFormatted(),
+			Cost:            b.Cost.ToFormatted(),
 		}
 
 		participants := make([]bookingParticipantForCalendar, len(b.Participants))
