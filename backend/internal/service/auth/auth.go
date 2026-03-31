@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
@@ -198,7 +199,7 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 	language := lang.LangFromContext(ctx)
 	curr := currencyx.FindBest(language)
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.merchantRepo.WithTx(tx).NewMerchant(ctx, userID, domain.Merchant{
 			Id:               merchantID,
 			Name:             input.Name,

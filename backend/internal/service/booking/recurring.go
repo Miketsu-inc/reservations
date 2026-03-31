@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
-	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/teambition/rrule-go"
 )
 
@@ -84,7 +84,7 @@ func (s *Service) generateRecurringBookings(ctx context.Context, series Complete
 
 	var bookingIds []int
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bookingIds, err = s.bookingRepo.WithTx(tx).NewBookings(ctx, bookings)
 		if err != nil {
 			return err

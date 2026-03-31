@@ -9,13 +9,17 @@ import (
 
 	"github.com/bojanz/currency"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/riverqueue/river"
 	"github.com/teambition/rrule-go"
 )
 
@@ -26,13 +30,14 @@ type Service struct {
 	userRepo        domain.UserRepository
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
-	mailer          email.Service
+	mailer          *email.Service
+	enqueuer        queue.Enqueuer
 	txManager       db.TransactionManager
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
 	user domain.UserRepository, customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
-	mailer email.Service, txManager db.TransactionManager) *Service {
+	mailer *email.Service, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
@@ -41,61 +46,59 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
 		mailer:          mailer,
+		enqueuer:        enqueuer,
 		txManager:       txManager,
 	}
 }
 
-func (s *Service) newBooking(ctx context.Context, booking domain.Booking, details domain.BookingDetails, participants []domain.BookingParticipant,
+func (s *Service) SetEnqueuer(client queue.Enqueuer) {
+	s.enqueuer = client
+}
+
+func (s *Service) newBooking(ctx context.Context, tx db.DBTX, booking domain.Booking, details domain.BookingDetails, participants []domain.BookingParticipant,
 	servicePhases []domain.PublicServicePhase) (int, error) {
 	var bookingId int
 	var err error
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
-		bookingId, err = s.bookingRepo.WithTx(tx).NewBooking(ctx, booking)
-		if err != nil {
-			return err
+	bookingId, err = s.bookingRepo.WithTx(tx).NewBooking(ctx, booking)
+	if err != nil {
+		return 0, err
+	}
+
+	bookingPhases := make([]domain.BookingPhase, len(servicePhases))
+
+	bookingStart := booking.FromDate
+	for i, phase := range servicePhases {
+		phaseDuration := time.Duration(phase.Duration) * time.Minute
+		bookingEnd := bookingStart.Add(phaseDuration)
+
+		bookingPhases[i] = domain.BookingPhase{
+			BookingId:      bookingId,
+			ServicePhaseId: phase.Id,
+			FromDate:       bookingStart,
+			ToDate:         bookingEnd,
 		}
 
-		bookingPhases := make([]domain.BookingPhase, len(servicePhases))
+		bookingStart = bookingEnd
+	}
 
-		bookingStart := booking.FromDate
-		for i, phase := range servicePhases {
-			phaseDuration := time.Duration(phase.Duration) * time.Minute
-			bookingEnd := bookingStart.Add(phaseDuration)
+	details.BookingId = bookingId
 
-			bookingPhases[i] = domain.BookingPhase{
-				BookingId:      bookingId,
-				ServicePhaseId: phase.Id,
-				FromDate:       bookingStart,
-				ToDate:         bookingEnd,
-			}
+	for i := range participants {
+		participants[i].BookingId = bookingId
+	}
 
-			bookingStart = bookingEnd
-		}
+	err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
+	if err != nil {
+		return 0, err
+	}
 
-		details.BookingId = bookingId
+	err = s.bookingRepo.WithTx(tx).NewBookingDetails(ctx, details)
+	if err != nil {
+		return 0, err
+	}
 
-		for i := range participants {
-			participants[i].BookingId = bookingId
-		}
-
-		err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
-		if err != nil {
-			return err
-		}
-
-		err = s.bookingRepo.WithTx(tx).NewBookingDetails(ctx, details)
-		if err != nil {
-			return err
-		}
-
-		err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
+	err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
 	if err != nil {
 		return 0, err
 	}
@@ -134,11 +137,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
 	if err != nil {
 		return fmt.Errorf("error while getting booking settings for merchant %w", err)
-	}
-
-	bookedLocation, err := s.merchantRepo.GetLocation(ctx, input.LocationId, merchantId)
-	if err != nil {
-		return fmt.Errorf("error while searching location by this id: %w", err)
 	}
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
@@ -209,41 +207,43 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
 	}
 
-	// means customer is booking an appointment
-	if input.BookingId == nil {
-		booking := domain.Booking{
-			Status:      types.BookingStatusBooked,
-			BookingType: types.BookingTypeAppointment,
-			MerchantId:  merchantId,
-			ServiceId:   input.ServiceId,
-			LocationId:  input.LocationId,
-			FromDate:    timeStamp,
-			ToDate:      toDate,
-		}
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		// means customer is booking an appointment
+		if input.BookingId == nil {
+			booking := domain.Booking{
+				Status:      types.BookingStatusBooked,
+				BookingType: types.BookingTypeAppointment,
+				MerchantId:  merchantId,
+				ServiceId:   input.ServiceId,
+				LocationId:  input.LocationId,
+				FromDate:    timeStamp,
+				ToDate:      toDate,
+			}
 
-		bookingDetails := domain.BookingDetails{
-			PricePerPerson:      price,
-			CostPerPerson:       cost,
-			TotalPrice:          price,
-			TotalCost:           cost,
-			MinParticipants:     1,
-			MaxParticipants:     1,
-			CurrentParticipants: 1,
-		}
+			bookingDetails := domain.BookingDetails{
+				PricePerPerson:      price,
+				CostPerPerson:       cost,
+				TotalPrice:          price,
+				TotalCost:           cost,
+				MinParticipants:     1,
+				MaxParticipants:     1,
+				CurrentParticipants: 1,
+			}
 
-		participants := []domain.BookingParticipant{{
-			Status:       types.BookingStatusBooked,
-			CustomerId:   &customerId,
-			CustomerNote: &input.CustomerNote,
-		}}
+			participants := []domain.BookingParticipant{{
+				Status:       types.BookingStatusBooked,
+				CustomerId:   &customerId,
+				CustomerNote: &input.CustomerNote,
+			}}
 
-		bookingId, err = s.newBooking(ctx, booking, bookingDetails, participants, service.Phases)
-		if err != nil {
-			return fmt.Errorf("error creating new booking: %s", err.Error())
-		}
-	} else {
-		err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
-			totalPrice, totalCost, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, *input.BookingId)
+			bookingId, err = s.newBooking(ctx, tx, booking, bookingDetails, participants, service.Phases)
+			if err != nil {
+				return err
+			}
+		} else {
+			bookingId = *input.BookingId
+
+			totalPrice, totalCost, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, bookingId)
 			if err != nil {
 				return err
 			}
@@ -258,14 +258,14 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				return err
 			}
 
-			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, *input.BookingId, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, bookingId, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
 			if err != nil {
 				return err
 			}
 
 			participants := []domain.BookingParticipant{{
 				Status:       types.BookingStatusBooked,
-				BookingId:    *input.BookingId,
+				BookingId:    bookingId,
 				CustomerId:   &customerId,
 				CustomerNote: &input.CustomerNote,
 			}}
@@ -274,54 +274,36 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			if err != nil {
 				return err
 			}
+		}
 
-			return nil
+		lang := lang.LangFromContext(ctx)
+		_, err = s.enqueuer.Insert(ctx, args.BookingConfirmationEmail{
+			Language:   lang,
+			BookingId:  bookingId,
+			CustomerId: customerId,
+		}, nil)
+		if err != nil {
+			return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
+		}
+
+		reminderDate := timeStamp.Add(-24 * time.Hour)
+
+		_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+			Language:         lang,
+			BookingId:        bookingId,
+			CustomerId:       customerId,
+			ExpectedFromDate: timeStamp,
+		}, &river.InsertOpts{
+			ScheduledAt: reminderDate,
 		})
 		if err != nil {
-			return fmt.Errorf("error adding new participant to booking: %s", err.Error())
+			return fmt.Errorf("could not schedule booking reminder email job: %w", err)
 		}
-	}
 
-	userInfo, err := s.userRepo.GetUser(ctx, userId)
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("could not get email for the user: %w", err)
-	}
-
-	toDateMerchantTz := toDate.In(merchantTz)
-	fromDateMerchantTz := timeStamp.In(merchantTz)
-
-	emailData := email.BookingConfirmationData{
-		Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-		Date:        fromDateMerchantTz.Format("Monday, January 2"),
-		Location:    bookedLocation.FormattedLocation,
-		ServiceName: service.Name,
-		TimeZone:    merchantTz.String(),
-		ModifyLink:  "http://reservations.local:3000/m/" + input.MerchantName + "/cancel/" + strconv.Itoa(bookingId),
-	}
-
-	lang := lang.LangFromContext(ctx)
-
-	err = s.mailer.BookingConfirmation(ctx, lang, userInfo.Email, emailData)
-	if err != nil {
-		return fmt.Errorf("could not send confirmation email for the booking: %w", err)
-	}
-
-	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-	if hoursUntilBooking >= 24 {
-
-		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-		email_id, err := s.mailer.BookingReminder(ctx, lang, userInfo.Email, emailData, reminderDate)
-		if err != nil {
-			return fmt.Errorf("could not schedule reminder email: %w", err)
-		}
-
-		if email_id != "" { //check because return "" when email sending is off
-			err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, email_id, customerId)
-			if err != nil {
-				return fmt.Errorf("failed to update email ID: %w", err)
-			}
-		}
+		return fmt.Errorf("error creating new booking by customer: %s", err.Error())
 	}
 
 	return nil
@@ -349,8 +331,8 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 		return fmt.Errorf("error while getting customer id: %s", err.Error())
 	}
 
-	//TODO: write seperate query for getting only fromDate and cancel deadline
-	emailData, err := s.bookingRepo.GetBookingDataForEmail(ctx, bookingId)
+	// TODO: write seperate query for getting only fromDate and cancel deadline
+	emailData, err := s.bookingRepo.GetBookingForEmail(ctx, bookingId, customerId)
 	if err != nil {
 		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
 	}
@@ -361,9 +343,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 		return fmt.Errorf("it's too late to cancel this appointments")
 	}
 
-	var emailId *uuid.UUID
-
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bookingDetails, err := s.bookingRepo.WithTx(tx).GetBookingDetails(ctx, bookingId)
 		if err != nil {
 			return err
@@ -371,7 +351,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 
 		var bookingType types.BookingType
 
-		emailId, bookingType, err = s.bookingRepo.WithTx(tx).CancelBookingByCustomer(ctx, bookingId, customerId)
+		bookingType, err = s.bookingRepo.WithTx(tx).CancelBookingByCustomer(ctx, bookingId, customerId)
 		if err != nil {
 			return fmt.Errorf("error while cancelling the booking by user: %s", err.Error())
 		}
@@ -407,14 +387,6 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 	})
 	if err != nil {
 		return err
-	}
-
-	// Email id can be null in case there was no email scheduled (like booked less then 24 hour before the start)
-	if emailId != nil {
-		err = s.mailer.Cancel(emailId.String())
-		if err != nil {
-			return fmt.Errorf("error while cancelling the scheduled email for the booking: %s", err.Error())
-		}
 	}
 
 	return nil
@@ -521,8 +493,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	fromDate := timeStamp.Truncate(time.Second)
 	toDate := timeStamp.Add(duration)
 
-	var participantIds []*uuid.UUID
-	var emailsToSend []*uuid.UUID
+	var participantIds []uuid.UUID
+	var emailsToSend []uuid.UUID
 	isWalkIn := false
 
 	//maybe check if the customers without an id have first and last name
@@ -531,19 +503,17 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	} else {
 		for _, customer := range input.Customers {
 			if customer.CustomerId != nil {
-				participantIds = append(participantIds, customer.CustomerId)
-				emailsToSend = append(emailsToSend, customer.CustomerId)
+				participantIds = append(participantIds, *customer.CustomerId)
+				emailsToSend = append(emailsToSend, *customer.CustomerId)
 			} else {
 				if customer.FirstName != nil && customer.LastName != nil {
-					newId, err := uuid.NewV7()
+					newCustomerId, err := uuid.NewV7()
 					if err != nil {
 						return fmt.Errorf("unexpected error during creating customer id: %s", err.Error())
 					}
 
-					customerId := &newId
-
 					if err := s.customerRepo.NewCustomer(ctx, employee.MerchantId, domain.Customer{
-						Id:          *customerId,
+						Id:          newCustomerId,
 						FirstName:   customer.FirstName,
 						LastName:    customer.LastName,
 						Email:       customer.Email,
@@ -553,9 +523,11 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 					}); err != nil {
 						return fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error())
 					}
-					participantIds = append(participantIds, customerId)
+
+					participantIds = append(participantIds, newCustomerId)
+
 					if customer.Email != nil {
-						emailsToSend = append(emailsToSend, customerId)
+						emailsToSend = append(emailsToSend, newCustomerId)
 					}
 				}
 			}
@@ -582,65 +554,65 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 	var bookingId int
 
-	if input.IsRecurring && input.Rrule != nil {
-		var freq rrule.Frequency
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		if input.IsRecurring && input.Rrule != nil {
+			var freq rrule.Frequency
 
-		switch strings.ToUpper(input.Rrule.Frequency) {
-		case "DAILY":
-			freq = rrule.DAILY
-		case "WEEKLY":
-			freq = rrule.WEEKLY
-		case "MONTHLY":
-			freq = rrule.MONTHLY
-		default:
-			return fmt.Errorf("recurring rule frequency is invalid")
-		}
-
-		untilTimeStamp, err := time.Parse(time.RFC3339, input.Rrule.Until)
-		if err != nil {
-			return fmt.Errorf("until timestamp could not be converted to time: %s", err.Error())
-		}
-
-		var weekdays []rrule.Weekday
-
-		for _, wkd := range input.Rrule.Weekdays {
-			switch strings.ToUpper(wkd) {
-			case rrule.MO.String():
-				weekdays = append(weekdays, rrule.MO)
-			case rrule.TU.String():
-				weekdays = append(weekdays, rrule.TU)
-			case rrule.WE.String():
-				weekdays = append(weekdays, rrule.WE)
-			case rrule.TH.String():
-				weekdays = append(weekdays, rrule.TH)
-			case rrule.FR.String():
-				weekdays = append(weekdays, rrule.FR)
-			case rrule.SA.String():
-				weekdays = append(weekdays, rrule.SA)
-			case rrule.SU.String():
-				weekdays = append(weekdays, rrule.SU)
+			switch strings.ToUpper(input.Rrule.Frequency) {
+			case "DAILY":
+				freq = rrule.DAILY
+			case "WEEKLY":
+				freq = rrule.WEEKLY
+			case "MONTHLY":
+				freq = rrule.MONTHLY
 			default:
-				return fmt.Errorf("incorrect weekday")
+				return fmt.Errorf("recurring rule frequency is invalid")
 			}
-		}
 
-		rrule, err := rrule.NewRRule(rrule.ROption{
-			Freq:      freq,
-			Dtstart:   fromDate,
-			Interval:  input.Rrule.Interval,
-			Byweekday: weekdays,
-			Until:     untilTimeStamp,
-		})
-		if err != nil {
-			return fmt.Errorf("error while creating rrule: %s", err.Error())
-		}
+			untilTimeStamp, err := time.Parse(time.RFC3339, input.Rrule.Until)
+			if err != nil {
+				return fmt.Errorf("until timestamp could not be converted to time: %s", err.Error())
+			}
 
-		// recurring bookings have to be stored in local time and converted to UTC during generation
-		fromDate = timeStamp.In(merchantTz)
+			var weekdays []rrule.Weekday
 
-		var series CompleteBookingSeries
+			for _, wkd := range input.Rrule.Weekdays {
+				switch strings.ToUpper(wkd) {
+				case rrule.MO.String():
+					weekdays = append(weekdays, rrule.MO)
+				case rrule.TU.String():
+					weekdays = append(weekdays, rrule.TU)
+				case rrule.WE.String():
+					weekdays = append(weekdays, rrule.WE)
+				case rrule.TH.String():
+					weekdays = append(weekdays, rrule.TH)
+				case rrule.FR.String():
+					weekdays = append(weekdays, rrule.FR)
+				case rrule.SA.String():
+					weekdays = append(weekdays, rrule.SA)
+				case rrule.SU.String():
+					weekdays = append(weekdays, rrule.SU)
+				default:
+					return fmt.Errorf("incorrect weekday")
+				}
+			}
 
-		err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+			rrule, err := rrule.NewRRule(rrule.ROption{
+				Freq:      freq,
+				Dtstart:   fromDate,
+				Interval:  input.Rrule.Interval,
+				Byweekday: weekdays,
+				Until:     untilTimeStamp,
+			})
+			if err != nil {
+				return fmt.Errorf("error while creating rrule: %s", err.Error())
+			}
+
+			// recurring bookings have to be stored in local time and converted to UTC during generation
+			fromDate = timeStamp.In(merchantTz)
+
+			var series CompleteBookingSeries
+
 			series.BookingSeries, err = s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
 				BookingType: service.BookingType,
 				MerchantId:  employee.MerchantId,
@@ -675,7 +647,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			for i, id := range participantIds {
 				seriesParticipants[i] = domain.BookingSeriesParticipant{
 					BookingSeriesId: series.Id,
-					CustomerId:      id,
+					CustomerId:      &id,
 					IsActive:        true,
 				}
 			}
@@ -685,107 +657,83 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("error while creating new booking series: %s", err.Error())
-		}
-
-		bookingId, err = s.generateRecurringBookings(ctx, series, service.Phases)
-		if err != nil {
-			return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
-		}
-	} else {
-		booking := domain.Booking{
-			Status:      types.BookingStatusBooked,
-			BookingType: service.BookingType,
-			MerchantId:  employee.MerchantId,
-			EmployeeId:  &employee.Id,
-			ServiceId:   service.Id,
-			LocationId:  bookedLocation.Id,
-			FromDate:    fromDate,
-			ToDate:      toDate,
-		}
-
-		bookingDetails := domain.BookingDetails{
-			BookingId:           bookingId,
-			PricePerPerson:      price,
-			CostPerPerson:       cost,
-			TotalPrice:          currencyx.Price{Amount: totalPrice},
-			TotalCost:           currencyx.Price{Amount: totalCost},
-			MerchantNote:        input.MerchantNote,
-			MinParticipants:     service.MinParticipants,
-			MaxParticipants:     service.MaxParticipants,
-			CurrentParticipants: participantCount,
-		}
-
-		participants := make([]domain.BookingParticipant, len(participantIds))
-		for i, custId := range participantIds {
-			participants[i] = domain.BookingParticipant{
-				Status:       types.BookingStatusBooked,
-				BookingId:    bookingId,
-				CustomerId:   custId,
-				CustomerNote: nil,
-			}
-		}
-
-		bookingId, err = s.newBooking(ctx, booking, bookingDetails, participants, service.Phases)
-		if err != nil {
-			return fmt.Errorf("error during new booking creation: %s", err.Error())
-		}
-	}
-
-	if !isWalkIn {
-		urlName, err := s.merchantRepo.GetMerchantUrlName(ctx, employee.MerchantId)
-		if err != nil {
-			return fmt.Errorf("error while getting merchant's url name: %s", err.Error())
-		}
-
-		toDateMerchantTz := toDate.In(merchantTz)
-		fromDateMerchantTz := timeStamp.In(merchantTz)
-
-		emailData := email.BookingConfirmationData{
-			Time:        fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04"),
-			Date:        fromDateMerchantTz.Format("Monday, January 2"),
-			Location:    bookedLocation.FormattedLocation,
-			ServiceName: service.Name,
-			TimeZone:    merchantTz.String(),
-			ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", urlName, bookingId),
-		}
-
-		lang := lang.LangFromContext(ctx)
-		hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-		for _, customerId := range emailsToSend {
-			customerEmail, err := s.customerRepo.GetCustomerEmailById(ctx, employee.MerchantId, *customerId)
+			bookingId, err = s.generateRecurringBookings(ctx, series, service.Phases)
 			if err != nil {
-				return fmt.Errorf("error while getting customer's email: %s", err.Error())
+				return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
+			}
+		} else {
+			booking := domain.Booking{
+				Status:      types.BookingStatusBooked,
+				BookingType: service.BookingType,
+				MerchantId:  employee.MerchantId,
+				EmployeeId:  &employee.Id,
+				ServiceId:   service.Id,
+				LocationId:  bookedLocation.Id,
+				FromDate:    fromDate,
+				ToDate:      toDate,
 			}
 
-			if customerEmail != nil {
+			bookingDetails := domain.BookingDetails{
+				BookingId:           bookingId,
+				PricePerPerson:      price,
+				CostPerPerson:       cost,
+				TotalPrice:          currencyx.Price{Amount: totalPrice},
+				TotalCost:           currencyx.Price{Amount: totalCost},
+				MerchantNote:        input.MerchantNote,
+				MinParticipants:     service.MinParticipants,
+				MaxParticipants:     service.MaxParticipants,
+				CurrentParticipants: participantCount,
+			}
 
-				err = s.mailer.BookingConfirmation(ctx, lang, *customerEmail, emailData)
+			participants := make([]domain.BookingParticipant, len(participantIds))
+			for i, id := range participantIds {
+				participants[i] = domain.BookingParticipant{
+					Status:       types.BookingStatusBooked,
+					BookingId:    bookingId,
+					CustomerId:   &id,
+					CustomerNote: nil,
+				}
+			}
+
+			bookingId, err = s.newBooking(ctx, tx, booking, bookingDetails, participants, service.Phases)
+			if err != nil {
+				return fmt.Errorf("error during new booking creation: %s", err.Error())
+			}
+		}
+
+		if !isWalkIn {
+			lang := lang.LangFromContext(ctx)
+
+			for _, customerId := range emailsToSend {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingConfirmationEmail{
+					Language:   lang,
+					BookingId:  bookingId,
+					CustomerId: customerId,
+				}, nil)
 				if err != nil {
-					return fmt.Errorf("could not send confirmation email for the booking: %s", err.Error())
+					return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
 				}
 
-				if hoursUntilBooking >= 24 {
+				reminderDate := timeStamp.Add(-24 * time.Hour)
 
-					reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-					email_id, err := s.mailer.BookingReminder(ctx, lang, *customerEmail, emailData, reminderDate)
-					if err != nil {
-						return fmt.Errorf("could not schedule reminder email: %s", err.Error())
-					}
-
-					if email_id != "" { //check because return "" when email sending is off
-						err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, email_id, *customerId)
-						if err != nil {
-							return fmt.Errorf("failed to update email ID: %s", err.Error())
-						}
-					}
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+					Language:         lang,
+					BookingId:        bookingId,
+					CustomerId:       customerId,
+					ExpectedFromDate: timeStamp,
+				}, &river.InsertOpts{
+					ScheduledAt: reminderDate,
+				})
+				if err != nil {
+					return fmt.Errorf("could not schedule booking reminder email job: %w", err)
 				}
 			}
 		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error while creating new booking: %s", err.Error())
 	}
 
 	return nil
@@ -805,13 +753,18 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
 	// old service, participants, time and date
-	oldBookingData, err := s.bookingRepo.GetBookingDataForEmail(ctx, bookingId)
+	oldBooking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
 		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
 	}
 
-	if oldBookingData.BookingStatus == types.BookingStatusCompleted {
+	if oldBooking.Status == types.BookingStatusCompleted {
 		return fmt.Errorf("you cannot update completed bookings")
+	}
+
+	oldService, err := s.catalogRepo.GetServiceWithPhases(ctx, oldBooking.ServiceId, employee.MerchantId)
+	if err != nil {
+		return fmt.Errorf("error searching for old service: %s", err.Error())
 	}
 
 	newService, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, employee.MerchantId)
@@ -833,24 +786,26 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	fromDate := timeStamp.UTC().Truncate(time.Second)
-	duration := time.Duration(newService.TotalDuration) * time.Minute
-	toDate := fromDate.Add(duration)
-	fromDateOffset := fromDate.Sub(oldBookingData.FromDate)
+	fromDateOffset := fromDate.Sub(oldBooking.FromDate)
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error getting merchant timezone: %s", err.Error())
 	}
 
-	var finalParticipantIds []uuid.UUID
-	var newlyAddedCustomerIds []uuid.UUID
+	participantIdsMap := make(map[uuid.UUID]struct{})
+	var newCustomerIds []uuid.UUID
+
 	isWalkIn := len(input.Customers) == 0
 
 	if !isWalkIn {
 		for _, customer := range input.Customers {
+
 			if customer.CustomerId != nil {
-				finalParticipantIds = append(finalParticipantIds, *customer.CustomerId)
+				participantIdsMap[*customer.CustomerId] = struct{}{}
+
 			} else if customer.FirstName != nil && customer.LastName != nil {
+
 				newId, err := uuid.NewV7()
 				if err != nil {
 					return fmt.Errorf("error generating customer id: %s", err.Error())
@@ -865,47 +820,45 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}); err != nil {
 					return fmt.Errorf("error inserting new customer: %s", err.Error())
 				}
-				finalParticipantIds = append(finalParticipantIds, newId)
-				newlyAddedCustomerIds = append(newlyAddedCustomerIds, newId)
+
+				participantIdsMap[newId] = struct{}{}
+				newCustomerIds = append(newCustomerIds, newId)
 			}
 		}
 	}
 
-	existingParticipantsMap := make(map[uuid.UUID]domain.ParticipantEmailData)
-	for _, p := range oldBookingData.Participants {
-		existingParticipantsMap[p.CustomerId] = p
+	oldParticipants, err := s.bookingRepo.GetBookingParticipants(ctx, bookingId)
+	if err != nil {
+		return fmt.Errorf("error getting booking participants: %w", err)
 	}
 
-	finalParticipantsMap := make(map[uuid.UUID]bool)
-	for _, id := range finalParticipantIds {
-		finalParticipantsMap[id] = true
+	existingParticipantsMap := make(map[uuid.UUID]struct{})
+	for _, p := range oldParticipants {
+		// customerId is nil in case of walk-in where email cannot be sent
+		if p.CustomerId != nil {
+			existingParticipantsMap[*p.CustomerId] = struct{}{}
+		}
+	}
+
+	var participantsToInsert []uuid.UUID
+	var participantsToDelete []uuid.UUID
+	var participantsToKeep []uuid.UUID
+
+	for id := range participantIdsMap {
 		if _, exists := existingParticipantsMap[id]; !exists {
-
-			alreadyAdded := false
-			for _, newId := range newlyAddedCustomerIds {
-				if newId == id {
-					alreadyAdded = true
-					break
-				}
-			}
-			if !alreadyAdded {
-				newlyAddedCustomerIds = append(newlyAddedCustomerIds, id)
-			}
+			participantsToInsert = append(participantsToInsert, id)
 		}
 	}
 
-	var participantIdsToDelete []uuid.UUID
-	var retainedParticipants []domain.ParticipantEmailData
-
-	for id, p := range existingParticipantsMap {
-		if !finalParticipantsMap[id] {
-			participantIdsToDelete = append(participantIdsToDelete, id)
+	for id := range existingParticipantsMap {
+		if _, exists := participantIdsMap[id]; !exists {
+			participantsToDelete = append(participantsToDelete, id)
 		} else {
-			retainedParticipants = append(retainedParticipants, p)
+			participantsToKeep = append(participantsToKeep, id)
 		}
 	}
 
-	participantCount := len(finalParticipantIds)
+	participantCount := len(participantIdsMap)
 	// walk ins do not get a booking participant row but 1 person still attending the booking
 	if isWalkIn {
 		participantCount = 1
@@ -913,6 +866,8 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 	countStr := strconv.Itoa(participantCount)
 
+	// TODO: this panics if price or cost is nil. We should fix this
+	//       by not allowing to insert nil prices into services
 	totalPrice, err := newService.Price.Mul(countStr)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total price: %s", err.Error())
@@ -923,7 +878,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return fmt.Errorf("failed to calculate total cost: %s", err.Error())
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = s.bookingRepo.WithTx(tx).UpdateBookingCore(ctx, employee.MerchantId, bookingId, newService.Id, fromDateOffset, newService.BookingType, input.BookingStatus)
 		if err != nil {
 			return fmt.Errorf("failed to update booking core: %s", err.Error())
@@ -944,7 +899,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			return fmt.Errorf("failed to update booking details: %s", err.Error())
 		}
 
-		if newService.Id != oldBookingData.ServiceId {
+		if newService.Id != oldBooking.ServiceId {
 			err := s.bookingRepo.WithTx(tx).DeleteBookingPhases(ctx, bookingId)
 			if err != nil {
 				return fmt.Errorf("failed to delete booking phases: %s", err.Error())
@@ -977,9 +932,9 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		if len(participantIdsToDelete) > 0 {
+		if len(participantsToDelete) > 0 {
 
-			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipants(ctx, bookingId, participantIdsToDelete)
+			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipants(ctx, bookingId, participantsToDelete)
 			if err != nil {
 				return fmt.Errorf("failed to remove participants: %s", err.Error())
 			}
@@ -988,17 +943,90 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 		if newService.BookingType == types.BookingTypeAppointment {
 			if !isWalkIn {
-				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, finalParticipantIds, input.BookingStatus)
+				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, participantsToInsert, input.BookingStatus)
 				if err != nil {
 					return err
 				}
 			}
 		} else {
 			// for goup booking status mangement is individual
-			if len(newlyAddedCustomerIds) > 0 {
-				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, newlyAddedCustomerIds, types.BookingStatusBooked)
+			if len(participantsToInsert) > 0 {
+				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, bookingId, participantsToInsert, types.BookingStatusBooked)
 				if err != nil {
 					return fmt.Errorf("failed to add participants: %s", err.Error())
+				}
+			}
+		}
+
+		fromDateMerchantTz := fromDate.In(merchantTz)
+		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
+
+		lang := lang.LangFromContext(ctx)
+
+		for _, id := range participantsToDelete {
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
+				Language:           lang,
+				BookingId:          bookingId,
+				CustomerId:         id,
+				CancellationReason: "",
+			}, nil)
+			if err != nil {
+				return fmt.Errorf("could not schedule booking cancellation email job: %w", err)
+			}
+		}
+
+		for _, id := range newCustomerIds {
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingConfirmationEmail{
+				Language:   lang,
+				BookingId:  bookingId,
+				CustomerId: id,
+			}, nil)
+			if err != nil {
+				return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
+			}
+
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+				Language:         lang,
+				BookingId:        bookingId,
+				CustomerId:       id,
+				ExpectedFromDate: timeStamp,
+			}, &river.InsertOpts{
+				ScheduledAt: reminderDate,
+			})
+			if err != nil {
+				return fmt.Errorf("could not schedule booking reminder email job: %w", err)
+			}
+		}
+
+		for _, id := range participantsToKeep {
+			if fromDateOffset != 0 || newService.Id != oldBooking.ServiceId {
+
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{
+					Language:       lang,
+					BookingId:      bookingId,
+					CustomerId:     id,
+					OldServiceName: oldService.Name,
+					OldFromDate:    oldBooking.FromDate,
+					OldToDate:      oldBooking.ToDate,
+				}, nil)
+				if err != nil {
+					return fmt.Errorf("could not schedule booking modification email job: %w", err)
+				}
+
+			}
+
+			if fromDateOffset != 0 {
+				// TODO: expand on conditions for sending new reminder
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+					Language:         lang,
+					BookingId:        bookingId,
+					CustomerId:       id,
+					ExpectedFromDate: timeStamp,
+				}, &river.InsertOpts{
+					ScheduledAt: reminderDate,
+				})
+				if err != nil {
+					return fmt.Errorf("could not schedule booking reminder email job: %w", err)
 				}
 			}
 		}
@@ -1007,132 +1035,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	})
 	if err != nil {
 		return err
-	}
-
-	toDateMerchantTz := toDate.In(merchantTz)
-	fromDateMerchantTz := fromDate.In(merchantTz)
-	oldToDateMerchantTz := oldBookingData.ToDate.In(merchantTz)
-	oldFromDateMerchantTz := oldBookingData.FromDate.In(merchantTz)
-
-	oldFormattedDate := oldBookingData.FromDate.Format("Monday, January 2")
-	oldFormattedTime := oldFromDateMerchantTz.Format("15:04") + " - " + oldToDateMerchantTz.Format("15:04")
-	formattedTime := fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04")
-	formattedDate := fromDate.Format("Monday, January 2")
-
-	modifyLink := fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", oldBookingData.MerchantName, bookingId)
-	lang := lang.LangFromContext(ctx)
-
-	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-	confirmData := email.BookingConfirmationData{
-		Time:        formattedTime,
-		Date:        formattedDate,
-		Location:    oldBookingData.FormattedLocation,
-		ServiceName: newService.Name,
-		TimeZone:    merchantTz.String(),
-		ModifyLink:  modifyLink,
-	}
-
-	for _, id := range participantIdsToDelete {
-		p := existingParticipantsMap[id]
-
-		if p.EmailId != uuid.Nil {
-			err := s.mailer.Cancel(p.EmailId.String())
-			if err != nil {
-				return err
-			}
-		}
-
-		// email is nil if it's a walk-in or if a customer doesnt have an email
-		if p.Email != nil {
-			err := s.mailer.BookingCancellation(ctx, lang, *p.Email, email.BookingCancellationData{
-				Time:           formattedTime,
-				Date:           formattedDate,
-				Location:       oldBookingData.FormattedLocation,
-				ServiceName:    oldBookingData.ServiceName, //since he wont be at the booking for the new
-				TimeZone:       merchantTz.String(),
-				Reason:         "",
-				NewBookingLink: "http://reservations.local:3000/m/" + oldBookingData.MerchantName,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, id := range newlyAddedCustomerIds {
-		customerEmail, err := s.customerRepo.GetCustomerEmailById(ctx, employee.MerchantId, id)
-		if err != nil {
-			return fmt.Errorf("error while getting customer's email: %s", err.Error())
-		}
-
-		if customerEmail != nil {
-			err = s.mailer.BookingConfirmation(ctx, lang, *customerEmail, confirmData)
-			if err != nil {
-				return fmt.Errorf("could not send confirmation email for the booking: %s", err.Error())
-			}
-
-			if hoursUntilBooking >= 24 {
-
-				reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-				email_id, err := s.mailer.BookingReminder(ctx, lang, *customerEmail, confirmData, reminderDate)
-				if err != nil {
-					return fmt.Errorf("could not schedule reminder email: %s", err.Error())
-				}
-
-				if email_id != "" { //check because return "" when email sending is off
-					err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, email_id, id)
-					if err != nil {
-						return fmt.Errorf("failed to update email ID: %s", err.Error())
-					}
-				}
-			}
-		}
-	}
-
-	if fromDateOffset != 0 || newService.Id != oldBookingData.ServiceId {
-		for _, p := range retainedParticipants {
-			if p.Email != nil {
-				err := s.mailer.BookingModification(ctx, lang, *p.Email, email.BookingModificationData{
-					Time:        formattedTime,
-					Date:        formattedDate,
-					Location:    oldBookingData.FormattedLocation,
-					ServiceName: oldBookingData.ServiceName,
-					TimeZone:    merchantTz.String(),
-					ModifyLink:  modifyLink,
-					OldTime:     oldFormattedTime,
-					OldDate:     oldFormattedDate,
-				})
-				if err != nil {
-					return err
-				}
-			}
-
-			if p.EmailId != uuid.Nil {
-				// Always cancel the old email — content might be outdated
-				err := s.mailer.Cancel(p.EmailId.String())
-				if err != nil {
-					return fmt.Errorf("could not cancel old reminder email: %s", err.Error())
-				}
-			}
-
-			// Only schedule new one if new time is valid
-			if hoursUntilBooking >= 24 {
-				reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
-
-				new_email_id, err := s.mailer.BookingReminder(ctx, lang, *p.Email, confirmData, reminderDate)
-				if err != nil {
-					return fmt.Errorf("could not schedule reminder email: %s", err.Error())
-				}
-
-				if new_email_id != "" { //check because return "" when email sending is off
-					err = s.bookingRepo.UpdateEmailIdForBooking(ctx, bookingId, new_email_id, p.CustomerId)
-					if err != nil {
-						return fmt.Errorf("failed to update email ID: %s", err.Error())
-					}
-				}
-			}
-		}
 	}
 
 	return nil
@@ -1146,27 +1048,21 @@ type CancelByMerchantInput struct {
 func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input CancelByMerchantInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
+	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
-		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+		return err
 	}
 
-	emailData, err := s.bookingRepo.GetBookingDataForEmail(ctx, bookingId)
-	if err != nil {
-		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
-	}
-
-	if emailData.FromDate.Before(time.Now().UTC()) {
+	if booking.FromDate.Before(time.Now().UTC()) {
 		return fmt.Errorf("you cannot cancel past bookings")
 	}
 
-	toDateMerchantTz := emailData.ToDate.In(merchantTz)
-	fromDateMerchantTz := emailData.FromDate.In(merchantTz)
-	formattedTime := fromDateMerchantTz.Format("15:04") + " - " + toDateMerchantTz.Format("15:04")
-	formattedDate := fromDateMerchantTz.Format("Monday, January 2")
-	newBookingLink := "http://reservations.local:3000/m/" + emailData.MerchantName
+	bookingParticipants, err := s.bookingRepo.GetBookingParticipants(ctx, bookingId)
+	if err != nil {
+		return err
+	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = s.bookingRepo.WithTx(tx).CancelBookingByMerchant(ctx, employee.MerchantId, bookingId, input.CancellationReason)
 		if err != nil {
 			return err
@@ -1177,38 +1073,27 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 			return err
 		}
 
+		lang := lang.LangFromContext(ctx)
+
+		for _, participant := range bookingParticipants {
+			// if not walk-in
+			if participant.CustomerId != nil {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
+					Language:           lang,
+					BookingId:          bookingId,
+					CancellationReason: input.CancellationReason,
+					CustomerId:         *participant.CustomerId,
+				}, nil)
+				if err != nil {
+					return fmt.Errorf("could not schedule booking cancellation email job: %w", err)
+				}
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("error while cancelling booking by merchant: %s", err.Error())
-	}
-
-	for _, participant := range emailData.Participants {
-
-		// email is nil if it's a walk-in
-		if participant.Email != nil {
-			lang := lang.LangFromContext(ctx)
-
-			err = s.mailer.BookingCancellation(ctx, lang, *participant.Email, email.BookingCancellationData{
-				Time:           formattedTime,
-				Date:           formattedDate,
-				Location:       emailData.FormattedLocation,
-				ServiceName:    emailData.ServiceName,
-				TimeZone:       merchantTz.String(),
-				Reason:         input.CancellationReason,
-				NewBookingLink: newBookingLink,
-			})
-			if err != nil {
-				return fmt.Errorf("error while sending cancellation email: %s", err.Error())
-			}
-
-			if participant.EmailId != uuid.Nil {
-				err = s.mailer.Cancel(participant.EmailId.String())
-				if err != nil {
-					return fmt.Errorf("error while cancelling the scheduled email for the booking: %s", err.Error())
-				}
-			}
-		}
 	}
 
 	return nil

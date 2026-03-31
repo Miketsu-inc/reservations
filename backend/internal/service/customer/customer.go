@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -96,7 +97,7 @@ func (s *Service) Update(ctx context.Context, customerId uuid.UUID, input Update
 func (s *Service) Delete(ctx context.Context, customerId uuid.UUID) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.bookingRepo.DeleteAppointmentsByCustomer(ctx, customerId, employee.MerchantId)
 		if err != nil {
 			return err

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
-	"time"
 
 	"html/template"
 
@@ -26,7 +25,7 @@ type Service struct {
 	enabled   bool
 }
 
-func NewService(apiKey string, enableEmails bool) Service {
+func NewService(apiKey string, enableEmails bool) *Service {
 	templateFS, localesFs := emails.TemplateFS()
 
 	bundle := i18n.NewBundle(language.English)
@@ -63,7 +62,7 @@ func NewService(apiKey string, enableEmails bool) Service {
 	})
 	assert.Nil(err, fmt.Sprintf("Error walking through templates: %v", err))
 
-	return Service{
+	return &Service{
 		templates: templates,
 		bundle:    bundle,
 		client:    resend.NewClient(apiKey),
@@ -116,57 +115,6 @@ func (s *Service) send(ctx context.Context, to string, body string, subjectText 
 	}
 
 	_, err := s.client.Emails.SendWithContext(ctx, params)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) schedule(ctx context.Context, to string, body string, subjectText string, date string) (string, error) {
-	if !s.enabled {
-		return "", nil
-	}
-
-	params := &resend.SendEmailRequest{
-		From:        "Acme <onboarding@resend.dev>",
-		To:          []string{"delivered@resend.dev"},
-		Html:        body,
-		Subject:     subjectText,
-		ScheduledAt: date,
-	}
-
-	res, err := s.client.Emails.SendWithContext(ctx, params)
-	if err != nil {
-		return "", err
-	}
-
-	return res.Id, nil
-}
-
-func (s *Service) Cancel(emailId string) error {
-	if !s.enabled {
-		return nil
-	}
-
-	_, err := s.client.Emails.Cancel(emailId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Service) ReSchedule(emailId string, newDate string) error {
-	if !s.enabled {
-		return nil
-	}
-
-	updateParams := &resend.UpdateEmailRequest{
-		Id:          emailId,
-		ScheduledAt: newDate,
-	}
-
-	_, err := s.client.Emails.Update(updateParams)
 	if err != nil {
 		return err
 	}
@@ -228,17 +176,17 @@ func (s *Service) BookingConfirmation(ctx context.Context, lang language.Tag, to
 	return nil
 }
 
-func (s *Service) BookingReminder(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData, date time.Time) (string, error) {
+func (s *Service) BookingReminder(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData) error {
 	templateName := "BookingReminder"
 	subject := s.getSubject(templateName, lang)
 	body := s.executeTemplate(templateName, lang, data)
 
-	email_id, err := s.schedule(ctx, to, body, subject, date.Format(time.RFC3339))
+	err := s.send(ctx, to, body, subject)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return email_id, nil
+	return nil
 }
 
 type BookingCancellationData struct {

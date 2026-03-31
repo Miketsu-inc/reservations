@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -105,7 +106,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		}
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:              0,
 			MerchantId:      employee.MerchantId,
@@ -209,7 +210,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		durationSum += phase.Duration
 	}
 
-	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		existingPhases, err := s.catalogRepo.WithTx(tx).GetServicePhases(ctx, serviceId)
 		if err != nil {
 			return err
@@ -335,7 +336,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 func (s *Service) Delete(ctx context.Context, serviceId int) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.catalogRepo.WithTx(tx).DeleteService(ctx, employee.MerchantId, serviceId)
 		if err != nil {
 			return err
@@ -390,7 +391,7 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 		})
 	}
 
-	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		connProducts, err := s.catalogRepo.WithTx(tx).GetServiceProducts(ctx, serviceId)
 		if err != nil {
 			return err
@@ -554,7 +555,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		minParticipants = *input.MinParticipants
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:              0,
 			MerchantId:      employee.MerchantId,
@@ -631,7 +632,7 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 		minParticipants = *input.MinParticipants
 	}
 
-	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.catalogRepo.WithTx(tx).UpdateServicePhaseDuration(ctx, serviceId, input.Duration)
 		if err != nil {
 			return err

@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -445,24 +444,23 @@ func (r *bookingRepository) CancelBookingByMerchant(ctx context.Context, merchan
 	return nil
 }
 
-func (r *bookingRepository) CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (*uuid.UUID, types.BookingType, error) {
+func (r *bookingRepository) CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (types.BookingType, error) {
 	query := `
 	update "BookingParticipant" bp
 	set cancelled_on = $1, status = 'cancelled'
 	from "Booking" b
 	where bp.customer_id = $2 and bp.booking_id = $1 and b.id = $1 and bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date > $3
-	returning bp.email_id, b.booking_type
+	returning b.booking_type
 	`
 
-	var emailId *uuid.UUID
 	var bookingType types.BookingType
 
-	err := r.db.QueryRow(ctx, query, bookingId, customerId, time.Now().UTC()).Scan(&emailId, &bookingType)
+	err := r.db.QueryRow(ctx, query, bookingId, customerId, time.Now().UTC()).Scan(&bookingType)
 	if err != nil {
-		return nil, types.BookingType{}, err
+		return types.BookingType{}, err
 	}
 
-	return emailId, bookingType, nil
+	return bookingType, nil
 }
 
 func (r *bookingRepository) DeleteAppointmentsByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
@@ -493,6 +491,21 @@ func (r *bookingRepository) DeleteParticipantByCustomer(ctx context.Context, cus
 	}
 
 	return nil
+}
+
+func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (domain.Booking, error) {
+	query := `
+	select * from "Booking"
+	where id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, bookingId)
+	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Booking])
+	if err != nil {
+		return domain.Booking{}, err
+	}
+
+	return booking, nil
 }
 
 func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int) (domain.PublicBooking, error) {
@@ -633,48 +646,28 @@ func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, b
 	return bookingData, nil
 }
 
-func (r *bookingRepository) GetBookingDataForEmail(ctx context.Context, bookingId int) (domain.BookingEmailData, error) {
+func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (domain.BookingForEmail, error) {
 	query := `
-	select b.status, b.from_date, b.to_date, s.name as service_name, s.id as service_id, m.name as merchant_name, coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location,
-	coalesce(
-		jsonb_agg(
-			jsonb_build_object(
-				'customer_id', c.id,
-				'email', coalesce(u.email, c.email),
-				'email_id', bp.email_id
-			)
-		) filter (where bp.id is not null),
-		'[]'::jsonb
-	) as participants
-	from "Booking" b
+	select b.id, b.status, b.from_date, b.to_date, s.name as service_name, s.id as service_id, m.name as merchant_name, m.url_name as merchant_url, m.timezone,
+		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location, c.id as customer_id, coalesce(u.email, c.email) as customer_email,
+		bp.status as participant_status
+	from "BookingParticipant" bp
+	join "Booking" b on b.id = bp.booking_id and b.id = $1
 	join "Service" s on s.id = b.service_id
-	left join "BookingParticipant" bp on bp.booking_id = b.id
-	left join "Customer" c on c.id = bp.customer_id
-	left join "User" u on u.id = c.user_id
 	join "Merchant" m on m.id = b.merchant_id
 	join "Location" l on l.id = b.location_id
-	where b.id = $1
-	group by b.id, s.id, m.id, l.id`
+	left join "Customer" c on c.id = bp.customer_id
+	left join "User" u on u.id = c.user_id
+	where bp.customer_id = $2
+	`
 
-	var data domain.BookingEmailData
-	var participantJson []byte
-
-	err := r.db.QueryRow(ctx, query, bookingId).Scan(&data.BookingStatus, &data.FromDate, &data.ToDate, &data.ServiceName, &data.ServiceId,
-		&data.MerchantName, &data.CancelDeadline, &data.FormattedLocation, &participantJson)
+	rows, _ := r.db.Query(ctx, query, bookingId, customerId)
+	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForEmail])
 	if err != nil {
-		return domain.BookingEmailData{}, err
+		return domain.BookingForEmail{}, err
 	}
 
-	if len(participantJson) > 0 {
-		err = json.Unmarshal(participantJson, &data.Participants)
-		if err != nil {
-			return domain.BookingEmailData{}, err
-		}
-	} else {
-		data.Participants = []domain.ParticipantEmailData{}
-	}
-
-	return data, nil
+	return booking, nil
 }
 
 func (r *bookingRepository) GetBookingDetails(ctx context.Context, bookingId int) (domain.BookingDetails, error) {
@@ -690,6 +683,22 @@ func (r *bookingRepository) GetBookingDetails(ctx context.Context, bookingId int
 	}
 
 	return bookingDetails, nil
+}
+
+func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingId int) ([]domain.BookingParticipant, error) {
+	query := `
+	select *
+	from "BookingParticipant"
+	where booking_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, bookingId)
+	participants, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingParticipant])
+	if err != nil {
+		return []domain.BookingParticipant{}, err
+	}
+
+	return participants, nil
 }
 
 func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]domain.BookingTime, error) {

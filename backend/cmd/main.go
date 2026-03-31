@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -22,9 +23,11 @@ func main() {
 	cfg := config.LoadEnvVars()
 	cfg.Validate()
 
-	application := app.New(cfg)
-	defer application.Stop()
+	ctx := context.Background()
 
-	err := application.Start()
+	application := app.New(ctx, cfg)
+	defer application.Stop(ctx)
+
+	err := application.Start(ctx)
 	assert.Nil(err, fmt.Sprintf("cannot start server: %s", err))
 }

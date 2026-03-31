@@ -38,17 +38,19 @@ type BookingRepository interface {
 	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 
 	CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error
-	CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (*uuid.UUID, types.BookingType, error)
+	CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (types.BookingType, error)
 	DeleteAppointmentsByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
+	GetBooking(ctx context.Context, bookingId int) (Booking, error)
 	GetPublicBooking(ctx context.Context, bookingId int) (PublicBooking, error)
 	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]BookingForCalendar, error)
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
-	GetBookingDataForEmail(ctx context.Context, bookingId int) (BookingEmailData, error)
+	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
 	GetBookingDetails(ctx context.Context, bookingId int) (BookingDetails, error)
+	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
 
 	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingTime, error)
 	GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationiId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
@@ -175,22 +177,21 @@ type BookingTime struct {
 	To_date   time.Time `db:"to_date"`
 }
 
-type BookingEmailData struct {
-	BookingStatus     types.BookingStatus    `json:"booking_status" db:"booking_status"`
-	FromDate          time.Time              `json:"from_date" db:"from_date"`
-	ToDate            time.Time              `json:"to_date" db:"to_date"`
-	ServiceName       string                 `json:"service_name" db:"service_name"`
-	ServiceId         int                    `json:"service_id" db:"service_id"`
-	FormattedLocation string                 `json:"formatted_location" db:"formatted_location"`
-	MerchantName      string                 `json:"merchant_name" db:"merchant_name"`
-	CancelDeadline    int                    `json:"cancel_deadline" db:"cancel_deadline"`
-	Participants      []ParticipantEmailData `json:"participants"`
-}
-
-type ParticipantEmailData struct {
-	CustomerId uuid.UUID `json:"customer_id" db:"customer_id"`
-	Email      *string   `json:"email" db:"email"`
-	EmailId    uuid.UUID `json:"email_id" db:"email_id"`
+type BookingForEmail struct {
+	Id                int                 `db:"id"`
+	Status            types.BookingStatus `db:"status"`
+	FromDate          time.Time           `db:"from_date"`
+	ToDate            time.Time           `db:"to_date"`
+	ServiceName       string              `db:"service_name"`
+	ServiceId         int                 `db:"service_id"`
+	MerchantName      string              `db:"merchant_name"`
+	MerchantUrl       string              `db:"merchant_url"`
+	Timezone          string              `db:"timezone"`
+	CancelDeadline    int                 `db:"cancel_deadline"`
+	FormattedLocation string              `db:"formatted_location"`
+	CustomerId        uuid.UUID           `db:"customer_id"`
+	CustomerEmail     *string             `db:"customer_email"`
+	ParticipantStatus types.BookingStatus `db:"participant_status"`
 }
 
 type BookingSeries struct {

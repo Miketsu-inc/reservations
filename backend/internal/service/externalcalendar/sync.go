@@ -12,7 +12,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
-	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/googleapi"
@@ -112,7 +111,7 @@ func parseEventDates(event *calendar.Event, calendarTz *time.Location) (time.Tim
 }
 
 func (s *Service) initialCalendarSyncToDB(ctx context.Context, blockedTimes []domain.BlockedTime, blockingIdxs []int, externalEvents []domain.ExternalCalendarEvent) error {
-	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		var btIds []int
 		var err error
 
@@ -245,7 +244,7 @@ func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, newBlockedTim
 	assert.True(len(blockingIdxs)+len(pendingBlockingLinks) == len(newBlockedTimes), "ExternalCalendarEvent and BlockedTime link mismatch!",
 		len(blockingIdxs), len(pendingBlockingLinks), len(newBlockedTimes))
 
-	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		var btIds []int
 		var err error
 
@@ -301,7 +300,7 @@ func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, newBlockedTim
 // Delete all external calendar related data (BlockedTime, ExternalCalendarEvent) and reset sync state
 // should be called for 410 GONE response before full initial sync
 func (s *Service) resetExternalCalendar(ctx context.Context, extCalendarId int) error {
-	return s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.blockedTimeRepo.WithTx(tx).DeleteExternalCalendarBlockedTimes(ctx, extCalendarId)
 		if err != nil {
 			return err

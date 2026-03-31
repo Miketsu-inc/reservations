@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -183,7 +184,7 @@ type UpdateSettingsInput struct {
 func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput) error {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
-	err := s.txManager.WithTransaction(ctx, func(tx db.DBTX) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.merchantRepo.WithTx(tx).UpdateMerchantFields(ctx, employee.MerchantId, domain.MerchantSettingFields{
 			Introduction:     input.Introduction,
 			Announcement:     input.Announcement,

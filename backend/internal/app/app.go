@@ -24,6 +24,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/team"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/workers"
 	repos "github.com/miketsu-inc/reservations/backend/internal/repository/db"
 	authSrv "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	blockedtimeSrv "github.com/miketsu-inc/reservations/backend/internal/service/blockedtime"
@@ -35,17 +36,21 @@ import (
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/riverqueue/river"
 )
 
 type App struct {
-	server *http.Server
-	dbConn *pgxpool.Pool
+	server     *http.Server
+	dbConn     *pgxpool.Pool
+	jobsClient *river.Client[pgx.Tx]
 }
 
-func New(cfg *config.Config) *App {
-	dbConn := db.New(context.Background(), RegisterTypes)
+func New(ctx context.Context, cfg *config.Config) *App {
+	dbConn := db.New(ctx, RegisterTypes)
 
 	blockedTimeRepo := repos.NewBlockedTimeRepository(dbConn)
 	bookingRepo := repos.NewBookingRepository(dbConn)
@@ -63,12 +68,22 @@ func New(cfg *config.Config) *App {
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo)
-	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, transactionManager)
+	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, transactionManager)
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	teamService := teamSrv.NewService(teamRepo)
+
+	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
+		EmailService:   emailService,
+		BookingService: bookingService,
+		BookingRepo:    bookingRepo,
+		TxManager:      transactionManager,
+	}, workers.RegisterWorkers)
+	assert.Nil(err, "Failed to create new river client")
+
+	bookingService.SetEnqueuer(enqueuer)
 
 	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
 
@@ -98,16 +113,23 @@ func New(cfg *config.Config) *App {
 	}
 
 	return &App{
-		server: srv,
-		dbConn: dbConn,
+		server:     srv,
+		dbConn:     dbConn,
+		jobsClient: enqueuer,
 	}
 }
 
-func (a *App) Start() error {
+func (a *App) Start(ctx context.Context) error {
+	err := a.jobsClient.Start(ctx)
+	if err != nil {
+		return err
+	}
+
 	return a.server.ListenAndServe()
 }
 
-func (a *App) Stop() {
+func (a *App) Stop(ctx context.Context) {
+	a.jobsClient.Stop(ctx)
 	a.dbConn.Close()
 }
 
