@@ -129,7 +129,7 @@ func (a *App) Start(ctx context.Context) error {
 }
 
 func (a *App) Stop(ctx context.Context) {
-	a.jobsClient.Stop(ctx)
+	_ = a.jobsClient.Stop(ctx)
 	a.dbConn.Close()
 }
 
