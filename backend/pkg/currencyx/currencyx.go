@@ -63,16 +63,17 @@ func FindBest(lang language.Tag) string {
 
 type Price struct {
 	currency.Amount
-	stratch *priceScratch
+	scanState *priceScanState
 }
 
 type FormattedPrice struct {
 	currency.Amount
 }
 
-type priceScratch struct {
-	number       pgtype.Numeric
-	currencyCode string
+// Used for assembling the currency (Price struct)
+type priceScanState struct {
+	numStr string
+	parent *Price
 }
 
 func (f FormattedPrice) MarshalJSON() ([]byte, error) {
@@ -98,6 +99,28 @@ func FormatPrice(price *Price) *FormattedPrice {
 	return &fp
 }
 
+// ScanText implements pgtype.TextScanner.
+// This is called automatically by pgx v5 when it finishes reading the char(3) field.
+func (s *priceScanState) ScanText(v pgtype.Text) error {
+	if !v.Valid || v.String == "" {
+		return fmt.Errorf("price: empty currency code")
+	}
+
+	if s.numStr == "" {
+		return fmt.Errorf("price: number scanned as empty")
+	}
+
+	a, err := currency.NewAmount(s.numStr, v.String)
+	if err != nil {
+		return fmt.Errorf("price: error constructing amount: %w", err)
+	}
+
+	// Update the parent Price struct and clear the state
+	s.parent.Amount = a
+	s.parent.scanState = nil
+	return nil
+}
+
 // IsNull implements pgtype.CompositeIndexGetter.
 // Price is a value type; use *Price for nullable columns.
 func (p Price) IsNull() bool {
@@ -108,11 +131,7 @@ func (p Price) IsNull() bool {
 func (p Price) Index(i int) any {
 	switch i {
 	case 0:
-		n := new(pgtype.Numeric)
-		if err := n.Scan(p.Number()); err != nil {
-			panic(fmt.Sprintf("price index: scanning numeric: %q: %v", p.Number(), err))
-		}
-		return n
+		return p.Number()
 	case 1:
 		return p.CurrencyCode()
 	default:
@@ -128,51 +147,18 @@ func (p *Price) ScanNull() error {
 
 // ScanIndex implements pgtype.CompositeIndexScanner.
 func (p *Price) ScanIndex(i int) any {
-	if p.stratch == nil {
-		p.stratch = new(priceScratch)
+	if p.scanState == nil {
+		p.scanState = &priceScanState{parent: p}
 	}
 
 	switch i {
 	case 0:
-		return &p.stratch.number
+		// Scan numeric directly into the state's string
+		return &p.scanState.numStr
 	case 1:
-		return &p.stratch.currencyCode
+		// Return the state itself as the TextScanner
+		return p.scanState
 	default:
 		panic(fmt.Sprintf("price scanIndex: unexpected index %d", i))
 	}
-}
-
-func (p *Price) Scan(src any) error {
-	if p.stratch == nil {
-		return fmt.Errorf("price: Scan called without prior ScanIndex (src: %T)", src)
-	}
-
-	s := p.stratch
-	p.stratch = nil
-
-	if !s.number.Valid {
-		return fmt.Errorf("price: number cannot be null")
-	}
-
-	if s.currencyCode == "" {
-		return fmt.Errorf("price: empty currency code")
-	}
-
-	v, err := s.number.Value()
-	if err != nil {
-		return fmt.Errorf("price: reading numeric value: %w", err)
-	}
-
-	numStr, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("price: unexpected numeric type: %T", v)
-	}
-
-	a, err := currency.NewAmount(numStr, s.currencyCode)
-	if err != nil {
-		return fmt.Errorf("price: error constructing amount (%q, %q): %w", numStr, s.currencyCode, err)
-	}
-
-	p.Amount = a
-	return nil
 }

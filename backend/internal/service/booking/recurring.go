@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/teambition/rrule-go"
 )
 
@@ -17,7 +17,7 @@ type CompleteBookingSeries struct {
 	Participants []domain.BookingSeriesParticipant
 }
 
-func (s *Service) generateRecurringBookings(ctx context.Context, series CompleteBookingSeries, serivePhases []domain.PublicServicePhase) (int, error) {
+func (s *Service) generateRecurringBookings(ctx context.Context, tx db.DBTX, series CompleteBookingSeries, serivePhases []domain.PublicServicePhase) (int, error) {
 	tz, err := time.LoadLocation(series.Timezone)
 	if err != nil {
 		return 0, fmt.Errorf("error parsing location from booking series: %s", err.Error())
@@ -84,72 +84,65 @@ func (s *Service) generateRecurringBookings(ctx context.Context, series Complete
 
 	var bookingIds []int
 
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bookingIds, err = s.bookingRepo.WithTx(tx).NewBookings(ctx, bookings)
-		if err != nil {
-			return err
+	bookingIds, err = s.bookingRepo.WithTx(tx).NewBookings(ctx, bookings)
+	if err != nil {
+		return 0, err
+	}
+
+	bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(serivePhases))
+	bookingDetails := make([]domain.BookingDetails, len(bookingIds))
+	participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(series.Participants))
+
+	for i, id := range bookingIds {
+		bookingStart := bookings[i].FromDate
+
+		for _, phase := range serivePhases {
+			phaseDuration := time.Duration(phase.Duration) * time.Minute
+			bookingEnd := bookingStart.Add(phaseDuration)
+
+			bookingPhases = append(bookingPhases, domain.BookingPhase{
+				BookingId:      id,
+				ServicePhaseId: phase.Id,
+				FromDate:       bookingStart,
+				ToDate:         bookingEnd,
+			})
+
+			bookingStart = bookingEnd
 		}
 
-		bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(serivePhases))
-		bookingDetails := make([]domain.BookingDetails, len(bookingIds))
-		participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(series.Participants))
-
-		for i, id := range bookingIds {
-			bookingStart := bookings[i].FromDate
-
-			for _, phase := range serivePhases {
-				phaseDuration := time.Duration(phase.Duration) * time.Minute
-				bookingEnd := bookingStart.Add(phaseDuration)
-
-				bookingPhases = append(bookingPhases, domain.BookingPhase{
-					BookingId:      id,
-					ServicePhaseId: phase.Id,
-					FromDate:       bookingStart,
-					ToDate:         bookingEnd,
-				})
-
-				bookingStart = bookingEnd
-			}
-
-			bookingDetails[i] = domain.BookingDetails{
-				BookingId:           id,
-				PricePerPerson:      series.Details.PricePerPerson,
-				CostPerPerson:       series.Details.CostPerPerson,
-				TotalPrice:          series.Details.TotalPrice,
-				TotalCost:           series.Details.TotalCost,
-				MerchantNote:        nil,
-				MinParticipants:     series.Details.MinParticipants,
-				MaxParticipants:     series.Details.MaxParticipants,
-				CurrentParticipants: series.Details.CurrentParticipants,
-			}
-
-			for _, p := range series.Participants {
-				participants = append(participants, domain.BookingParticipant{
-					Status:       types.BookingStatusBooked,
-					BookingId:    id,
-					CustomerId:   p.CustomerId,
-					CustomerNote: nil,
-				})
-			}
+		bookingDetails[i] = domain.BookingDetails{
+			BookingId:           id,
+			PricePerPerson:      series.Details.PricePerPerson,
+			CostPerPerson:       series.Details.CostPerPerson,
+			TotalPrice:          series.Details.TotalPrice,
+			TotalCost:           series.Details.TotalCost,
+			MerchantNote:        nil,
+			MinParticipants:     series.Details.MinParticipants,
+			MaxParticipants:     series.Details.MaxParticipants,
+			CurrentParticipants: series.Details.CurrentParticipants,
 		}
 
-		err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
-		if err != nil {
-			return err
+		for _, p := range series.Participants {
+			participants = append(participants, domain.BookingParticipant{
+				Status:       types.BookingStatusBooked,
+				BookingId:    id,
+				CustomerId:   p.CustomerId,
+				CustomerNote: nil,
+			})
 		}
+	}
 
-		err = s.bookingRepo.WithTx(tx).NewBookingDetailsBatch(ctx, bookingDetails)
-		if err != nil {
-			return err
-		}
+	err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
+	if err != nil {
+		return 0, err
+	}
 
-		err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
-		if err != nil {
-			return err
-		}
+	err = s.bookingRepo.WithTx(tx).NewBookingDetailsBatch(ctx, bookingDetails)
+	if err != nil {
+		return 0, err
+	}
 
-		return nil
-	})
+	err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
 	if err != nil {
 		return 0, err
 	}

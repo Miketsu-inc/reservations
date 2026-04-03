@@ -657,7 +657,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
-			bookingId, err = s.generateRecurringBookings(ctx, series, service.Phases)
+			bookingId, err = s.generateRecurringBookings(ctx, tx, series, service.Phases)
 			if err != nil {
 				return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
 			}
