@@ -43,6 +43,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
 
       onAdded();
       onClose();
+      setCategoryData({ name: "" });
     }
   }
 
