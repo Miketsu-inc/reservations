@@ -25,7 +25,6 @@ type BookingRepository interface {
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
 	UpdateBookingCore(ctx context.Context, merchantId uuid.UUID, bookingId int, serviceId int, offset time.Duration, bookingType types.BookingType, status types.BookingStatus) error
-	UpdateEmailIdForBooking(context.Context, int, string, uuid.UUID) error
 	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error
 	UpdateBookingDetails(ctx context.Context, merchantId uuid.UUID, details BookingDetails) error
 	UpdateBookingPhaseTime(ctx context.Context, bookingId int, offset time.Duration) error
@@ -110,7 +109,6 @@ type BookingParticipant struct {
 	CancelledOn        *time.Time
 	CancellationReason *string
 	TransferredTo      *uuid.UUID
-	EmailId            *uuid.UUID
 }
 
 type PublicBooking struct {

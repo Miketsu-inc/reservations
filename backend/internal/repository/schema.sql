@@ -226,7 +226,6 @@ create table if not exists "BookingParticipant" (
     cancelled_on             timestamptz,
     cancellation_reason      text,
     transferred_to           uuid,
-    email_id                 uuid,
 
     constraint unique_booking_participant unique (booking_id, customer_id)
 );

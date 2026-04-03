@@ -263,27 +263,6 @@ func (r *bookingRepository) UpdateBookingCore(ctx context.Context, merchantId uu
 	return nil
 }
 
-func (r *bookingRepository) UpdateEmailIdForBooking(ctx context.Context, bookingId int, emailId string, customerId uuid.UUID) error {
-	emailUUID, err := uuid.Parse(emailId)
-	if err != nil {
-		return err
-	}
-
-	query := `
-	update "BookingParticipant"
-	set email_id = $1
-	from "Booking" b
-	where booking_id = $2 and customer_id = $3
-	`
-
-	_, err = r.db.Exec(ctx, query, emailUUID, bookingId, customerId)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *bookingRepository) UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error {
 	query := `
 	update "BookingDetails" set total_price = $2, total_cost = $3
