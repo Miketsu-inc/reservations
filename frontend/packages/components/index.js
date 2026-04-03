@@ -7,6 +7,12 @@ export { default as CloseButton } from "./CloseButton.jsx";
 export { default as ComboBox } from "./ComboBox.jsx";
 export { default as DatePicker } from "./DatePicker.jsx";
 export { default as DeleteModal } from "./DeleteModal.jsx";
+export {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTrigger,
+} from "./Drawer.jsx";
 export { default as FloatingLabelInput } from "./FloatingLabelInput.jsx";
 export { default as Input } from "./Input.jsx";
 export { default as InputBase } from "./InputBase.jsx";
