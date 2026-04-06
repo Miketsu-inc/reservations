@@ -67,23 +67,27 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, transactionManager)
-	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo)
+	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, nil, transactionManager)
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
-	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, transactionManager)
+	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	teamService := teamSrv.NewService(teamRepo)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
-		EmailService:   emailService,
-		BookingService: bookingService,
-		BookingRepo:    bookingRepo,
-		TxManager:      transactionManager,
-	}, workers.RegisterWorkers)
+		BookingService:     bookingService,
+		EmailService:       emailService,
+		ExtCalendarService: externalCalendarService,
+		BookingRepo:        bookingRepo,
+		ExtCalendarRepo:    externalCalendarRepo,
+		TxManager:          transactionManager,
+	}, workers.RegisterWorkers, workers.GetPeriodicJobs())
 	assert.Nil(err, "Failed to create new river client")
 
 	bookingService.SetEnqueuer(enqueuer)
+	externalCalendarService.SetEnqueuer(enqueuer)
+	blockedTimeService.SetEnqueuer(enqueuer)
 
 	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
 

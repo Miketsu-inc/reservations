@@ -19,7 +19,7 @@ type Enqueuer interface {
 
 type RegisterWorkersFunc[T any] func(workers *river.Workers, deps T)
 
-func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc RegisterWorkersFunc[T]) (*river.Client[pgx.Tx], error) {
+func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc RegisterWorkersFunc[T], periodicJobs []*river.PeriodicJob) (*river.Client[pgx.Tx], error) {
 	riverWorkers := river.NewWorkers()
 
 	registerWorkersFunc(riverWorkers, deps)
@@ -29,6 +29,7 @@ func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc Register
 			river.QueueDefault: {MaxWorkers: 100},
 			"email":            {MaxWorkers: 100},
 		},
-		Workers: riverWorkers,
+		Workers:      riverWorkers,
+		PeriodicJobs: periodicJobs,
 	})
 }

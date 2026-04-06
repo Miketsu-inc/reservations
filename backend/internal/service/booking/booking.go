@@ -240,6 +240,14 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			if err != nil {
 				return err
 			}
+
+			// TODO: this is a no-op now as the customer cannot choose an employee
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBooking{
+				BookingId: bookingId,
+			}, nil)
+			if err != nil {
+				return err
+			}
 		} else {
 			bookingId = *input.BookingId
 
@@ -373,6 +381,13 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int, input Can
 
 		if bookingType == types.BookingTypeAppointment {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingStatus(ctx, merchantId, bookingId, types.BookingStatusCancelled)
+			if err != nil {
+				return err
+			}
+
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncDeleteBooking{
+				BookingId: bookingId,
+			}, nil)
 			if err != nil {
 				return err
 			}
@@ -699,6 +714,15 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			if err != nil {
 				return fmt.Errorf("error during new booking creation: %s", err.Error())
 			}
+
+			if booking.EmployeeId != nil {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBooking{
+					BookingId: bookingId,
+				}, nil)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
 		if !isWalkIn {
@@ -958,6 +982,18 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
+		if fromDateOffset != 0 {
+			// TODO: don't forget to change this when we will consider employee changes in this
+			if oldBooking.EmployeeId != nil {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBooking{
+					BookingId: bookingId,
+				}, nil)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		fromDateMerchantTz := fromDate.In(merchantTz)
 		reminderDate := fromDateMerchantTz.Add(-24 * time.Hour)
 
@@ -1087,6 +1123,15 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 				if err != nil {
 					return fmt.Errorf("could not schedule booking cancellation email job: %w", err)
 				}
+			}
+		}
+
+		if booking.EmployeeId != nil {
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncDeleteBooking{
+				BookingId: bookingId,
+			}, nil)
+			if err != nil {
+				return err
 			}
 		}
 

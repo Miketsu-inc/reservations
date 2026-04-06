@@ -10,8 +10,10 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
+	"github.com/miketsu-inc/reservations/backend/pkg/queue"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -24,20 +26,26 @@ type Service struct {
 	merchantRepo         domain.MerchantRepository
 	bookingRepo          domain.BookingRepository
 	teamRepo             domain.TeamRepository
+	enqueuer             queue.Enqueuer
 	txManager            db.TransactionManager
 }
 
 func NewService(externalCalendar domain.ExternalCalendarRepository, blockedTime domain.BlockedTimeRepository,
 	merchant domain.MerchantRepository, booking domain.BookingRepository, team domain.TeamRepository,
-	txManager db.TransactionManager) *Service {
+	enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		externalCalendarRepo: externalCalendar,
 		blockedTimeRepo:      blockedTime,
 		merchantRepo:         merchant,
 		bookingRepo:          booking,
 		teamRepo:             team,
+		enqueuer:             enqueuer,
 		txManager:            txManager,
 	}
+}
+
+func (s *Service) SetEnqueuer(client queue.Enqueuer) {
+	s.enqueuer = client
 }
 
 var googleCalendarConf = &oauth2.Config{
@@ -147,8 +155,9 @@ func (s *Service) GoogleCalendarWatch(ctx context.Context, channelId, resourceId
 		return
 	}
 
-	// TODO: call incremental sync as background job
-	err = s.incrementalCalendarSync(ctx, extCalendar)
+	_, err = s.enqueuer.Insert(ctx, args.IncrementalCalendarSync{
+		ExternalCalendarId: extCalendar.Id,
+	}, nil)
 	if err != nil {
 		return
 	}
