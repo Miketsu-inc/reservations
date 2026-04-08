@@ -74,7 +74,7 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
 
         <Button
           variant="primary"
-          onClick={onSave}
+          onClick={() => onSave(selected)}
           styles="py-1 px-4"
           buttonText="Save Changes"
         />

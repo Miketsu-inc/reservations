@@ -210,10 +210,10 @@ func (r *bookingRepository) NewBookingParticipants(ctx context.Context, bookingP
 	return nil
 }
 
-func (r *bookingRepository) DeleteBookingPhases(ctx context.Context, bookingId int) error {
-	query := `delete from "BookingPhase" where booking_id = $1`
+func (r *bookingRepository) DeleteBookingPhasesBatch(ctx context.Context, bookingIds []int) error {
+	query := `delete from "BookingPhase" where booking_id = any($1::int[])`
 
-	_, err := r.db.Exec(ctx, query, bookingId)
+	_, err := r.db.Exec(ctx, query, bookingIds)
 	if err != nil {
 		return err
 	}
@@ -221,11 +221,11 @@ func (r *bookingRepository) DeleteBookingPhases(ctx context.Context, bookingId i
 	return nil
 }
 
-func (r *bookingRepository) DeleteBookingParticipants(ctx context.Context, bookingId int, participantIds []uuid.UUID) error {
+func (r *bookingRepository) DeleteBookingParticipantsBatch(ctx context.Context, bookingIds []int, participantIds []uuid.UUID) error {
 	query := `delete from "BookingParticipant"
-	where booking_id = $1 and customer_id = any($2::uuid[])`
+	where booking_id = any($1::int[]) and customer_id = any($2::uuid[])`
 
-	_, err := r.db.Exec(ctx, query, bookingId, participantIds)
+	_, err := r.db.Exec(ctx, query, bookingIds, participantIds)
 	if err != nil {
 		return err
 	}
@@ -248,14 +248,19 @@ func (r *bookingRepository) UpdateBookingStatus(ctx context.Context, merchantId 
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingCore(ctx context.Context, merchantId uuid.UUID, bookingId int, serviceId int, offset time.Duration, bookingType types.BookingType, status types.BookingStatus) error {
+func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus) error {
 	query := `
-	update "Booking"
-	set from_date = from_date + $3, to_date = to_date + $3, service_id = $4, booking_type = $5, status = $6
-	where id = $1 and merchant_id = $2 and status not in ('cancelled', 'completed')
+	update "Booking" as b
+	set from_date = data.new_from_dates, 
+	    to_date = data.new_to_dates, 
+	    service_id = $2, 
+	    booking_type = $3, 
+	    status = $4
+	from (select unnest($1::int[]) as id, unnest($5::timestamptz[]) as new_from_dates, unnest($6::timestamptz[]) as new_to_dates) as data
+	where b.id = data.id and b.merchant_id = $7 and b.status not in ('cancelled', 'completed')
 	`
 
-	_, err := r.db.Exec(ctx, query, bookingId, merchantId, offset, serviceId, bookingType, status)
+	_, err := r.db.Exec(ctx, query, bookingIds, serviceId, bookingType, status, fromDates, toDates, merchantId)
 	if err != nil {
 		return err
 	}
@@ -277,14 +282,14 @@ func (r *bookingRepository) UpdateBookingTotalPrice(ctx context.Context, booking
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingDetails(ctx context.Context, merchantId uuid.UUID, details domain.BookingDetails) error {
+func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details domain.BookingDetails) error {
 	query := `
 	update "BookingDetails" bd
 	set price_per_person = $3, cost_per_person = $4, total_price = $5, total_cost = $6, merchant_note = $7, min_participants = $8, max_participants = $9, current_participants = $10
 	from "Booking" b
-	where b.id = $1 and b.id = bd.booking_id and b.merchant_id = $2 and b.status not in ('cancelled', 'completed')
+	where b.id = any($1::int[]) and b.id = bd.booking_id and b.merchant_id = $2 and b.status not in ('cancelled', 'completed')
 	`
-	_, err := r.db.Exec(ctx, query, details.BookingId, merchantId, details.PricePerPerson, details.CostPerPerson, details.TotalPrice,
+	_, err := r.db.Exec(ctx, query, bookingIds, merchantId, details.PricePerPerson, details.CostPerPerson, details.TotalPrice,
 		details.TotalCost, details.MerchantNote, details.MinParticipants, details.MaxParticipants, details.CurrentParticipants)
 	if err != nil {
 		return err
@@ -293,30 +298,29 @@ func (r *bookingRepository) UpdateBookingDetails(ctx context.Context, merchantId
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingPhaseTime(ctx context.Context, bookingId int, offset time.Duration) error {
-	query := `
-	update "BookingPhase"
-	set from_date = from_date + $2, to_date = to_date + $2
-	where booking_id = $1
-	`
-
-	_, err := r.db.Exec(ctx, query, bookingId, offset)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *bookingRepository) UpdateBookingParticipants(ctx context.Context, bookingId int, participantIds []uuid.UUID, status types.BookingStatus) error {
+func (r *bookingRepository) UpdateBookingParticipants(ctx context.Context, participants []domain.BookingParticipant) error {
 	query := `
 	insert into "BookingParticipant" (booking_id, customer_id, status)
-	select $1::int, unnest($2::uuid[]), $3::booking_status
+	select unnest($1::int[]), unnest($2::uuid[]), unnest($3::booking_status[])
 	on conflict (booking_id, customer_id)
 	do update
-	set status = $3, cancelled_on = NULL, cancellation_reason = NULL`
+	set status = excluded.status, cancelled_on = NULL, cancellation_reason = NULL`
 
-	_, err := r.db.Exec(ctx, query, bookingId, participantIds, status)
+	statuses := make([]string, len(participants))
+	bookingIds := make([]int, len(participants))
+	customerIds := make([]pgtype.UUID, len(participants))
+
+	for i, bp := range participants {
+		statuses[i] = bp.Status.String()
+		bookingIds[i] = bp.BookingId
+		if bp.CustomerId == nil {
+			customerIds[i] = pgtype.UUID{Valid: false}
+		} else {
+			customerIds[i] = pgtype.UUID{Bytes: *bp.CustomerId, Valid: true}
+		}
+	}
+
+	_, err := r.db.Exec(ctx, query, bookingIds, customerIds, statuses)
 	if err != nil {
 		return err
 	}
@@ -796,6 +800,85 @@ func (r *bookingRepository) NewBookingSeriesParticipants(ctx context.Context, bo
 	}
 
 	return bookingSeriesParticipants, nil
+}
+
+func (r *bookingRepository) UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error {
+	query := `update "BookingSeries" set service_id = $2, booking_type = $3, rrule = $4, dstart = $5
+	where id = $1`
+
+	_, err := r.db.Exec(ctx, query, seriesId, serviceId, bookingType, rrule, dstart)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details domain.BookingSeriesDetails) error {
+	query := `update "BookingSeriesDetails"
+	set price_per_person = $2, cost_per_person = $3, total_price = $4, total_cost = $5, min_participants = $6, max_participants = $7, current_participants = $8
+	where booking_series_id = $1`
+
+	_, err := r.db.Exec(ctx, query, seriesId, details.PricePerPerson, details.CostPerPerson, details.TotalPrice, details.TotalCost,
+		details.MinParticipants, details.MaxParticipants, details.CurrentParticipants)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error {
+	query := `delete from "BookingSeriesParticipant" 
+	where booking_series_id = $1 and customer_id = any($2::uuid[])`
+
+	_, err := r.db.Exec(ctx, query, seriesId, customerIds)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) GetFutureSeriesBookings(ctx context.Context, seriesId int, fromDate time.Time) ([]domain.Booking, error) {
+	query := `select * from "Booking"
+	where booking_series_id = $1 and from_date >= $2 and status not in ('cancelled')
+	order by from_date asc`
+
+	rows, _ := r.db.Query(ctx, query, seriesId, fromDate)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Booking])
+	if err != nil {
+		return nil, err
+	}
+
+	return bookings, nil
+}
+
+func (r *bookingRepository) GetBookingSeries(ctx context.Context, seriesId int) (domain.BookingSeries, error) {
+	query := `select * from "BookingSeries" where id = $1`
+
+	rows, _ := r.db.Query(ctx, query, seriesId)
+	bookingSeries, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingSeries])
+	if err != nil {
+		return domain.BookingSeries{}, err
+	}
+	return bookingSeries, nil
+}
+
+func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]domain.BookingSeriesParticipant, error) {
+	query := `
+	select *
+	from "BookingSeriesParticipant"
+	where booking_series_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, seriesId)
+	participants, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSeriesParticipant])
+	if err != nil {
+		return []domain.BookingSeriesParticipant{}, err
+	}
+
+	return participants, nil
 }
 
 func (r *bookingRepository) GetExistingOccurrenceDates(ctx context.Context, seriesId int, fromDate, toDate time.Time) ([]time.Time, error) {

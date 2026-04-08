@@ -20,15 +20,14 @@ type BookingRepository interface {
 	NewBookingDetailsBatch(ctx context.Context, bookingDetails []BookingDetails) error
 	NewBookingParticipants(ctx context.Context, bookingParticipants []BookingParticipant) error
 
-	DeleteBookingPhases(ctx context.Context, bookingId int) error
-	DeleteBookingParticipants(ctx context.Context, bookingId int, participantIds []uuid.UUID) error
+	DeleteBookingPhasesBatch(ctx context.Context, bookingIds []int) error
+	DeleteBookingParticipantsBatch(ctx context.Context, bookingIds []int, participantIds []uuid.UUID) error
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
-	UpdateBookingCore(ctx context.Context, merchantId uuid.UUID, bookingId int, serviceId int, offset time.Duration, bookingType types.BookingType, status types.BookingStatus) error
+	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus) error
 	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error
-	UpdateBookingDetails(ctx context.Context, merchantId uuid.UUID, details BookingDetails) error
-	UpdateBookingPhaseTime(ctx context.Context, bookingId int, offset time.Duration) error
-	UpdateBookingParticipants(ctx context.Context, bookingId int, participantIds []uuid.UUID, status types.BookingStatus) error
+	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details BookingDetails) error
+	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant) error
 	UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, status types.BookingStatus) error
 	IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, currencyx.Price, error)
 	DecrementParticipantCount(ctx context.Context, bookingId int) error
@@ -59,6 +58,14 @@ type BookingRepository interface {
 	NewBookingSeriesDetails(ctx context.Context, bookingSeriesDetails BookingSeriesDetails) (BookingSeriesDetails, error)
 	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
 
+	UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error
+	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingSeriesDetails) error
+
+	DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error
+
+	GetBookingSeries(ctx context.Context, seriesId int) (BookingSeries, error)
+	GetFutureSeriesBookings(ctx context.Context, seriesId int, fromDate time.Time) ([]Booking, error)
+	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 	GetExistingOccurrenceDates(ctx context.Context, seriesId int, startDate time.Time, endDate time.Time) ([]time.Time, error)
 }
 
