@@ -10,6 +10,8 @@ import {
 } from "@reservations/assets";
 import {
   Avatar,
+  Drawer,
+  DrawerContent,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -43,6 +45,7 @@ export default function ParticipantManager({
   maxParticipants,
   disabled,
   onStatusChange,
+  isWindowSmall,
 }) {
   const [nestedPageState, setNestedPageState] = useState({
     isOpen: false,
@@ -60,46 +63,72 @@ export default function ParticipantManager({
     setNestedPageState({ isOpen: true, active: "view" });
   };
 
+  const ActiveNestedContent = (
+    <>
+      {nestedPageState.active === "add" && (
+        <CustomerSelector
+          key={nestedPageState.isOpen}
+          onSave={(newParticipants) => {
+            onAdd(newParticipants);
+            setNestedPageState((prev) => ({ ...prev, isOpen: false }));
+          }}
+          customers={customers}
+          isGroupMode={true}
+          selected={participants}
+          styles="pt-0!"
+          isInDrawer={isWindowSmall}
+        />
+      )}
+      {nestedPageState.active === "view" && activeProfile && (
+        <CustomerProfile
+          customer={activeProfile}
+          disabled={disabled}
+          onRemove={() => {
+            onRemove(activeProfile);
+            setNestedPageState((prev) => ({ ...prev, isOpen: false }));
+          }}
+          styles="pt-0!"
+        />
+      )}
+    </>
+  );
+
   return (
     <div className="bg-layer_bg relative flex h-full w-full flex-col">
-      <NestedSidePanel
-        isOpen={nestedPageState.isOpen}
-        onBack={() =>
-          setNestedPageState((prev) => ({ ...prev, isOpen: false }))
-        }
-        styles="size-6"
+      {isWindowSmall ? (
+        <Drawer
+          open={nestedPageState.isOpen}
+          onOpenChange={(open) =>
+            setNestedPageState((prev) => ({ ...prev, isOpen: open }))
+          }
+          styles="p-0!"
+        >
+          <DrawerContent
+            styles="h-full"
+            popUpStyles={`${nestedPageState.active === "view" && activeProfile ? "" : "h-[calc(80vh+3rem)]! overflow-y-hidden!"}`}
+          >
+            {ActiveNestedContent}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <NestedSidePanel
+          isOpen={nestedPageState.isOpen}
+          onBack={() =>
+            setNestedPageState((prev) => ({ ...prev, isOpen: false }))
+          }
+          styles="size-6"
+        >
+          {ActiveNestedContent}
+        </NestedSidePanel>
+      )}
+      <div
+        className={`${isWindowSmall ? "px-5 pt-4" : "px-4 pt-14"} flex h-full
+          flex-col pb-4`}
       >
-        {nestedPageState.active === "add" && (
-          <CustomerSelector
-            key={nestedPageState.isOpen}
-            onSave={(newParticipants) => {
-              onAdd(newParticipants);
-              setNestedPageState((prev) => ({ ...prev, isOpen: false }));
-            }}
-            customers={customers}
-            isGroupMode={true}
-            selected={participants}
-            styles="pt-0!"
-          />
-        )}
-        {nestedPageState.active === "view" && activeProfile && (
-          <CustomerProfile
-            customer={activeProfile}
-            disabled={disabled}
-            onRemove={() => {
-              onRemove(activeProfile);
-              setNestedPageState((prev) => ({ ...prev, isOpen: false }));
-            }}
-            styles="pt-0!"
-          />
-        )}
-      </NestedSidePanel>
-
-      <div className="flex h-full flex-col pt-16 pb-4">
         <div
           className={`border-border_color flex flex-col ${
             disabled ? "gap-5" : "gap-8"
-          } border-b px-4 pb-4`}
+          } border-b pb-4`}
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-text_color text-xl font-semibold">
@@ -137,7 +166,7 @@ export default function ParticipantManager({
           )}
         </div>
 
-        <div className="no-scrollbar flex-1 overflow-y-auto px-4 pt-6">
+        <div className="no-scrollbar flex-1 overflow-y-auto pt-6">
           {participants.length === 0 ? (
             <div
               className="flex h-full flex-col items-center justify-start gap-4
@@ -306,7 +335,12 @@ function ParticipantItem({
               <PopoverClose asChild>
                 <button
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
-                  onClick={onView}
+                  onClick={(e) => {
+                    // let the Popover fully close before the drawer opens
+                    setTimeout(() => {
+                      onView();
+                    }, 50);
+                  }}
                 >
                   <PersonIcon styles="size-5 fill-text_color" />
                   <p>View Customer</p>

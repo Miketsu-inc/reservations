@@ -42,7 +42,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
           <div className="flex -space-x-6">
             {displayedParticipants.map((participant) => (
               <Avatar
-                key={participant.id}
+                key={participant.customer_id}
                 img={participant.avatar_url}
                 initials={participant.first_name[0] + participant.last_name[0]}
                 styles="size-12! rounded-full! border-2 border-layer_bg"

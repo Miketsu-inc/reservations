@@ -13,6 +13,7 @@ export default function CustomerSelector({
   isGroupMode = true,
   styles,
   selected = [],
+  isInDrawer = false,
 }) {
   const [searchText, setSearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState(selected);
@@ -43,8 +44,11 @@ export default function CustomerSelector({
   };
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className={`flex flex-col gap-5 px-4 pt-6 pb-2 ${styles}`}>
+    <div
+      className={`relative flex h-full flex-col ${isInDrawer ? "px-0" : "px-4"}
+        `}
+    >
+      <div className={`flex flex-col gap-5 pt-6 pb-2 ${styles}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-text_color text-xl font-semibold">
             {isGroupMode ? "Select clients" : "Select a client"}
@@ -59,7 +63,7 @@ export default function CustomerSelector({
         />
       </div>
 
-      <ul className="border-border_color flex flex-col gap-3 border-b px-3 pb-2">
+      <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
         <CustomerRow
           variant="action"
           label="Add new client"
@@ -77,8 +81,7 @@ export default function CustomerSelector({
       </ul>
 
       <div
-        className="min-h-0 flex-1 overflow-y-auto px-3 pt-4 pb-24
-          dark:scheme-dark"
+        className="min-h-0 flex-1 overflow-y-auto pt-4 pb-24 dark:scheme-dark"
       >
         <ul className="flex flex-col gap-3">
           {filteredCustomers?.map((customer) => {
@@ -103,7 +106,7 @@ export default function CustomerSelector({
       {isGroupMode && (
         <div
           className="bg-layer_bg border-border_color absolute right-0 bottom-0
-            left-0 border-t p-4"
+            left-0 border-t px-4 py-2"
         >
           <Button
             buttonText="Save"

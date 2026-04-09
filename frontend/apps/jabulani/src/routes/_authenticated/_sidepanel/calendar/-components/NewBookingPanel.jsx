@@ -66,7 +66,8 @@ export default function NewBookingPanel({
 
   const isMobilePanelActive =
     nestedPageState.active === "customer-selector" ||
-    nestedPageState.active === "customer-profile";
+    nestedPageState.active === "customer-profile" ||
+    nestedPageState.active === "participant-manager";
 
   const isNestedPanelOpen =
     nestedPageState.isOpen && (isWindowSmall || !isMobilePanelActive);
@@ -209,7 +210,7 @@ export default function NewBookingPanel({
               onAdd={handleSelectCustomers}
               onRemove={handleRemoveParticipant}
               maxParticipants={selectedService?.max_participants}
-              isWindowSmalll={isWindowSmall}
+              isWindowSmall={isWindowSmall}
             />
           ) : isCustomerSectionExpanded ? (
             <CustomerSelector
@@ -318,11 +319,21 @@ export default function NewBookingPanel({
                       selected={bookingData.customers}
                     />
                   )}
-                  ;
+
                   {nestedPageState.active === "customer-profile" && (
                     <CustomerProfile
                       customer={bookingData.customers[0]}
                       onRemove={handleRemoveCustomer}
+                    />
+                  )}
+                  {nestedPageState.active === "participant-manager" && (
+                    <ParticipantManager
+                      customers={customers}
+                      participants={bookingData.customers}
+                      onAdd={handleSelectCustomers}
+                      onRemove={handleRemoveParticipant}
+                      maxParticipants={selectedService?.max_participants}
+                      isWindowSmall={isWindowSmall}
                     />
                   )}
                 </>
@@ -370,7 +381,7 @@ export default function NewBookingPanel({
                           onClick={() =>
                             setNestedPageState({
                               isOpen: true,
-                              active: "customer-selector",
+                              active: "participant-manager",
                             })
                           }
                           maxParticipants={selectedService.max_participants}

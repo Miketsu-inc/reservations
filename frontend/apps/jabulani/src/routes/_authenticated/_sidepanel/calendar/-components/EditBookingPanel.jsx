@@ -69,6 +69,14 @@ export default function EditBookingPanel({
     active: "service-selector",
   });
 
+  const isMobilePanelActive =
+    nestedPageState.active === "customer-selector" ||
+    nestedPageState.active === "customer-profile" ||
+    nestedPageState.active === "participant-manager";
+
+  const isNestedPanelOpen =
+    nestedPageState.isOpen && (isWindowSmall || !isMobilePanelActive);
+
   const mappedParticipants =
     originalBookingData.extendedProps?.participants.map((participant) => {
       const customerData = customers.find(
@@ -86,7 +94,9 @@ export default function EditBookingPanel({
         customer_id: participant.customer_id,
         participant_id: participant.id,
         status: participant.status,
-        customer_note: participant.customer_note || "",
+        customer_note:
+          participant.customer_note ||
+          "this is a great booking and i cant wait to fet to do it tofetjer with you bevause your are one of  the best",
       };
     });
 
@@ -96,7 +106,7 @@ export default function EditBookingPanel({
     serviceId: originalBookingData.extendedProps.service_id,
     bookingStatus: originalBookingData.extendedProps.booking_status,
     participants: mappedParticipants,
-    merchantNote: originalBookingData.extendedProps.merchant_note,
+    merchantNote: originalBookingData.extendedProps.merchant_note || "",
   });
 
   const hasSelection = bookingData.participants.length > 0;
@@ -332,7 +342,7 @@ export default function EditBookingPanel({
       )}
       <div className={`${isWindowSmall ? "w-full" : "w-110"} relative`}>
         <NestedSidePanel
-          isOpen={nestedPageState.isOpen}
+          isOpen={isNestedPanelOpen}
           onBack={() =>
             setNestedPageState((prev) => ({ ...prev, isOpen: false }))
           }
@@ -375,6 +385,18 @@ export default function EditBookingPanel({
                   customer={bookingData.participants[0]}
                   onRemove={handleRemoveCustomer}
                   disabled={isPastBooking}
+                />
+              )}
+              {nestedPageState.active === "participant-manager" && (
+                <ParticipantManager
+                  customers={customers}
+                  participants={bookingData.participants}
+                  maxParticipants={selectedService.max_participants}
+                  isWindowSmall={isWindowSmall}
+                  disabled={isPastBooking}
+                  onAdd={handleSelectCustomers}
+                  onRemove={handleRemoveParticipant}
+                  onStatusChange={handleStatusChange}
                 />
               )}
             </>
@@ -434,7 +456,7 @@ export default function EditBookingPanel({
                       onClick={() =>
                         setNestedPageState({
                           isOpen: true,
-                          active: "customer-selector",
+                          active: "participant-manager",
                         })
                       }
                       maxParticipants={selectedService.max_participants}
