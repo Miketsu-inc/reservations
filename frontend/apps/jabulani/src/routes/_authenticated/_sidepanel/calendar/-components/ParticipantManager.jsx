@@ -335,7 +335,7 @@ function ParticipantItem({
               <PopoverClose asChild>
                 <button
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
-                  onClick={(e) => {
+                  onClick={() => {
                     // let the Popover fully close before the drawer opens
                     setTimeout(() => {
                       onView();
