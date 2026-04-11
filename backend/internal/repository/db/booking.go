@@ -897,7 +897,7 @@ func (r *bookingRepository) GetBookingSeries(ctx context.Context, seriesId int) 
 
 func (r *bookingRepository) GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error) {
 	query := `
-	select *
+	select id
 	from "BookingSeries"
 	where is_active = true and (generated_until < $1 or generated_until is null)
 	`
