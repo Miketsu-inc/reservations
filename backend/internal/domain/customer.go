@@ -12,7 +12,7 @@ type CustomerRepository interface {
 	WithTx(tx db.DBTX) CustomerRepository
 
 	NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
-	NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, error)
+	NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, bool, error)
 	UpdateCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
 	DeleteCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 

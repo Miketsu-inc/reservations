@@ -105,6 +105,7 @@ type MerchantSettingsInfo struct {
 	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
 	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
 	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
 	Timezone         string             `json:"timezone" db:"timezone"`
 	BusinessHours    map[int][]TimeSlot `json:"business_hours" db:"business_hours"`
 
@@ -117,21 +118,23 @@ type MerchantSettingsInfo struct {
 }
 
 type MerchantBookingSettings struct {
-	BookingWindowMin int `json:"booking_window_min" db:"booking_window_min"`
-	BookingWindowMax int `json:"booking_window_max" db:"booking_window_max"`
-	BufferTime       int `json:"buffer_time" db:"buffer_time"`
+	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
 }
 
 type MerchantSettingFields struct {
-	Introduction     string `json:"introduction"`
-	Announcement     string `json:"announcement"`
-	AboutUs          string `json:"about_us"`
-	ParkingInfo      string `json:"parking_info"`
-	PaymentInfo      string `json:"payment_info"`
-	CancelDeadline   int    `json:"cancel_deadline"`
-	BookingWindowMin int    `json:"booking_window_min"`
-	BookingWindowMax int    `json:"booking_window_max"`
-	BufferTime       int    `json:"buffer_time"`
+	Introduction     string             `json:"introduction"`
+	Announcement     string             `json:"announcement"`
+	AboutUs          string             `json:"about_us"`
+	ParkingInfo      string             `json:"parking_info"`
+	PaymentInfo      string             `json:"payment_info"`
+	CancelDeadline   int                `json:"cancel_deadline"`
+	BookingWindowMin int                `json:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `json:"approval_policy"`
 }
 
 // TODO: value is of numeric type so float might not be the best

@@ -81,11 +81,11 @@ func (r *merchantRepository) UpdateMerchantFields(ctx context.Context, merchantI
 	query := `
 	update "Merchant"
 	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5,
-	parking_info = $6, cancel_deadline = $7, booking_window_min = $8, booking_window_max = $9, buffer_time = $10
+	parking_info = $6, cancel_deadline = $7, booking_window_min = $8, booking_window_max = $9, buffer_time = $10, approval_policy = $11
 	where id = $1;`
 
 	_, err := r.db.Exec(ctx, query, merchantId, ms.Introduction, ms.Announcement, ms.AboutUs, ms.PaymentInfo, ms.ParkingInfo,
-		ms.CancelDeadline, ms.BookingWindowMin, ms.BookingWindowMax, ms.BufferTime)
+		ms.CancelDeadline, ms.BookingWindowMin, ms.BookingWindowMax, ms.BufferTime, ms.ApprovalPolicy)
 	if err != nil {
 		return err
 	}
@@ -232,14 +232,14 @@ func (r *merchantRepository) GetMerchantSettingsInfo(ctx context.Context, mercha
 
 	merchantQuery := `
 	select m.name, m.contact_email, m.introduction, m.announcement,
-		   m.about_us, m.parking_info, m.payment_info, m.cancel_deadline, m.booking_window_min, m.booking_window_max, m.buffer_time, m.timezone,
+		   m.about_us, m.parking_info, m.payment_info, m.cancel_deadline, m.booking_window_min, m.booking_window_max, m.buffer_time, m.approval_policy, m.timezone,
 	       l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location
 	from "Merchant" m inner join "Location" l on m.id = l.merchant_id
 	where m.id = $1;`
 
 	err := r.db.QueryRow(ctx, merchantQuery, merchantId).Scan(&msi.Name, &msi.ContactEmail, &msi.Introduction, &msi.Announcement,
-		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.Timezone,
-		&msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address, &msi.FormattedLocation)
+		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.ApprovalPolicy,
+		&msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address, &msi.FormattedLocation)
 	if err != nil {
 		return domain.MerchantSettingsInfo{}, err
 	}
@@ -258,13 +258,14 @@ func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.
 	query := `
 	select coalesce(s.buffer_time, m.buffer_time) as buffer_time,
 	       coalesce(s.booking_window_max, m.booking_window_max) as booking_window_max,
-		   coalesce(s.booking_window_min, m.booking_window_min) as booking_window_min
+		   coalesce(s.booking_window_min, m.booking_window_min) as booking_window_min,
+		   coalesce(s.approval_policy, m.approval_policy) as approval_policy
 	from "Merchant" m
 	join "Service" s on s.merchant_id = $1
 	where m.id = $1 and s.id = $2`
 
 	var mbs domain.MerchantBookingSettings
-	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin)
+	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin, &mbs.ApprovalPolicy)
 	if err != nil {
 		return domain.MerchantBookingSettings{}, err
 	}
@@ -421,16 +422,17 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
     on conflict (merchant_id, day_of_week, start_time, end_time) do nothing
 	`
 
-	days := make([]int, len(businessHours))
-	startTimes := make([]string, len(businessHours))
-	endTimes := make([]string, len(businessHours))
+	days := make([]int, 0)
+	startTimes := make([]string, 0)
+	endTimes := make([]string, 0)
 
+	// 2. Dynamically append valid items
 	for day, timeRanges := range businessHours {
-		for i, ts := range timeRanges {
+		for _, ts := range timeRanges { // Notice we don't use 'i' anymore!
 			if ts.StartTime != "" && ts.EndTime != "" {
-				days[i] = day
-				startTimes[i] = ts.StartTime
-				endTimes[i] = ts.EndTime
+				days = append(days, day)
+				startTimes = append(startTimes, ts.StartTime)
+				endTimes = append(endTimes, ts.EndTime)
 			}
 		}
 	}
@@ -452,16 +454,17 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
     )
 	`
 
-	days := make([]int, len(businessHours))
-	startTimes := make([]string, len(businessHours))
-	endTimes := make([]string, len(businessHours))
+	days := make([]int, 0)
+	startTimes := make([]string, 0)
+	endTimes := make([]string, 0)
 
+	// 2. Dynamically append valid items
 	for day, timeRanges := range businessHours {
-		for i, ts := range timeRanges {
+		for _, ts := range timeRanges { // Notice we don't use 'i' anymore!
 			if ts.StartTime != "" && ts.EndTime != "" {
-				days[i] = day
-				startTimes[i] = ts.StartTime
-				endTimes[i] = ts.EndTime
+				days = append(days, day)
+				startTimes = append(startTimes, ts.StartTime)
+				endTimes = append(endTimes, ts.EndTime)
 			}
 		}
 	}

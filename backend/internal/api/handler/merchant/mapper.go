@@ -24,6 +24,7 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 	for i, b := range in.UpcomingBookings {
 		upcomingBookings[i] = bookingDetailsResp{
 			ID:              b.ID,
+			Status:          b.Status,
 			FromDate:        b.FromDate,
 			ToDate:          b.ToDate,
 			CustomerNote:    b.CustomerNote,
@@ -44,6 +45,7 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 	for i, b := range in.LatestBookings {
 		latestBookings[i] = bookingDetailsResp{
 			ID:              b.ID,
+			Status:          b.Status,
 			FromDate:        b.FromDate,
 			ToDate:          b.ToDate,
 			CustomerNote:    b.CustomerNote,
@@ -135,6 +137,7 @@ func mapToGetSettingsResp(in domain.MerchantSettingsInfo) getSettingsResp {
 		BookingWindowMin:  in.BookingWindowMin,
 		BookingWindowMax:  in.BookingWindowMax,
 		BufferTime:        in.BufferTime,
+		ApprovalPolicy:    in.ApprovalPolicy,
 		Timezone:          in.Timezone,
 		BusinessHours:     businessHours,
 		LocationId:        in.LocationId,
@@ -172,6 +175,7 @@ func mapToUpdateSettingsInput(in updateSettingsReq) merchantServ.UpdateSettingsI
 		BookingWindowMin: in.BookingWindowMin,
 		BookingWindowMax: in.BookingWindowMax,
 		BufferTime:       in.BufferTime,
+		ApprovalPolicy:   in.ApprovalPolicy,
 		BusinessHours:    businessHours,
 	}
 }

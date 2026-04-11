@@ -62,6 +62,7 @@ type getDashboardResp struct {
 
 type bookingDetailsResp struct {
 	ID              int                      `json:"id"`
+	Status          types.BookingStatus      `json:"status"`
 	FromDate        time.Time                `json:"from_date"`
 	ToDate          time.Time                `json:"to_date"`
 	CustomerNote    *string                  `json:"customer_note"`
@@ -175,6 +176,7 @@ type getSettingsResp struct {
 	BookingWindowMin int                    `json:"booking_window_min"`
 	BookingWindowMax int                    `json:"booking_window_max"`
 	BufferTime       int                    `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
 	Timezone         string                 `json:"timezone"`
 	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
 
@@ -211,6 +213,7 @@ type updateSettingsReq struct {
 	BookingWindowMin int                    `json:"booking_window_min"`
 	BookingWindowMax int                    `json:"booking_window_max"`
 	BufferTime       int                    `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
 	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
 }
 

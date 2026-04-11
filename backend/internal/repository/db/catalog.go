@@ -28,17 +28,17 @@ func (r *catalogRepository) WithTx(tx db.DBTX) domain.CatalogRepository {
 func (r *catalogRepository) NewService(ctx context.Context, serv domain.Service) (int, error) {
 	query := `
 	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person, cost_per_person,
-		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time)
+		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, coalesce((
 		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1 and deleted_on is null
-		), 1), $12, $13, $14, $15, $16, $17)
+		), 1), $12, $13, $14, $15, $16, $17, $18)
 	returning id
 	`
 
 	var serviceId int
 	err := r.db.QueryRow(ctx, query, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
 		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceType, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
-		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime).Scan(&serviceId)
+		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime, serv.ApprovalPolicy).Scan(&serviceId)
 	if err != nil {
 		return 0, err
 	}
@@ -55,7 +55,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 	update "Service"
 	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8, cost_per_person = $9,
 		price_type = $10, is_active = $11, cancel_deadline = $12, booking_window_min = $13, booking_window_max = $14, buffer_time = $15,
-		min_participants = $16, max_participants = $17,
+		approval_policy = $16, min_participants = $17, max_participants = $18,
 		sequence = case
 			when old.category_id is distinct from $3 then (
 				coalesce((
@@ -72,7 +72,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 	var oldCategoryId *int
 	err := r.db.QueryRow(ctx, query, s.Id, s.MerchantId, s.CategoryId, s.Name, s.Description, s.Color, s.TotalDuration,
 		s.Price, s.Cost, s.PriceType, s.IsActive, s.CancelDeadline, s.BookingWindowMin, s.BookingWindowMax, s.BufferTime,
-		s.MinParticipants, s.MaxParticipants).Scan(&oldCategoryId)
+		s.ApprovalPolicy, s.MinParticipants, s.MaxParticipants).Scan(&oldCategoryId)
 	if err != nil {
 		return nil, err
 	}
@@ -526,7 +526,8 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 		 	'cancel_deadline', s.cancel_deadline,
          	'booking_window_min', s.booking_window_min,
          	'booking_window_max', s.booking_window_max,
-         	'buffer_time', s.buffer_time
+         	'buffer_time', s.buffer_time,
+			'approval_policy', s.approval_policy
 		) as settings,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
 		coalesce(products.products, '[]'::jsonb) as products
@@ -596,7 +597,8 @@ func (r *catalogRepository) GetGroupServicePageData(ctx context.Context, merchan
 		 	'cancel_deadline', s.cancel_deadline,
          	'booking_window_min', s.booking_window_min,
          	'booking_window_max', s.booking_window_max,
-         	'buffer_time', s.buffer_time
+         	'buffer_time', s.buffer_time,
+			'approval_policy', s.approval_policy
 		) as settings,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s

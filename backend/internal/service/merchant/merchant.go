@@ -178,6 +178,7 @@ type UpdateSettingsInput struct {
 	BookingWindowMin int
 	BookingWindowMax int
 	BufferTime       int
+	ApprovalPolicy   types.ApprovalType
 	BusinessHours    map[int][]domain.TimeSlot
 }
 
@@ -195,6 +196,7 @@ func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput)
 			BookingWindowMin: input.BookingWindowMin,
 			BookingWindowMax: input.BookingWindowMax,
 			BufferTime:       input.BufferTime,
+			ApprovalPolicy:   input.ApprovalPolicy,
 		})
 		if err != nil {
 			return err

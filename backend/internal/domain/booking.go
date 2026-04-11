@@ -134,19 +134,20 @@ type PublicBooking struct {
 }
 
 type PublicBookingDetails struct {
-	ID              int             `json:"id" db:"id"`
-	FromDate        time.Time       `json:"from_date" db:"from_date"`
-	ToDate          time.Time       `json:"to_date" db:"to_date"`
-	CustomerNote    *string         `json:"customer_note" db:"customer_note"`
-	MerchantNote    *string         `json:"merchant_note" db:"merchant_note"`
-	ServiceName     string          `json:"service_name" db:"service_name"`
-	ServiceColor    string          `json:"service_color" db:"service_color"`
-	ServiceDuration int             `json:"service_duration" db:"service_duration"`
-	Price           currencyx.Price `json:"price" db:"price"`
-	Cost            currencyx.Price `json:"cost" db:"cost"`
-	FirstName       *string         `json:"first_name" db:"first_name"`
-	LastName        *string         `json:"last_name" db:"last_name"`
-	PhoneNumber     *string         `json:"phone_number" db:"phone_number"`
+	ID              int                 `json:"id" db:"id"`
+	Status          types.BookingStatus `json:"status" db:"status"`
+	FromDate        time.Time           `json:"from_date" db:"from_date"`
+	ToDate          time.Time           `json:"to_date" db:"to_date"`
+	CustomerNote    *string             `json:"customer_note" db:"customer_note"`
+	MerchantNote    *string             `json:"merchant_note" db:"merchant_note"`
+	ServiceName     string              `json:"service_name" db:"service_name"`
+	ServiceColor    string              `json:"service_color" db:"service_color"`
+	ServiceDuration int                 `json:"service_duration" db:"service_duration"`
+	Price           currencyx.Price     `json:"price" db:"price"`
+	Cost            currencyx.Price     `json:"cost" db:"cost"`
+	FirstName       *string             `json:"first_name" db:"first_name"`
+	LastName        *string             `json:"last_name" db:"last_name"`
+	PhoneNumber     *string             `json:"phone_number" db:"phone_number"`
 }
 
 type BookingForCalendar struct {

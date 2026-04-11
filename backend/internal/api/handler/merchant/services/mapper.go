@@ -40,6 +40,7 @@ func mapToNewInput(in newReq) catalogServ.NewInput {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		Phases:       phases,
 		UsedProducts: connProducts,
@@ -75,6 +76,7 @@ func mapToUpdateInput(in updateReq) catalogServ.UpdateInput {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		Phases: phases,
 	}
@@ -122,6 +124,7 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		Phases:       phases,
 		UsedProducts: products,
@@ -258,6 +261,7 @@ func mapToNewGroupInput(in newGroupReq) catalogServ.NewGroupInput {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		UsedProducts: products,
 	}
@@ -282,6 +286,7 @@ func mapToUpdateGroupInput(in updateGroupReq) catalogServ.UpdateGroupInput {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 	}
 }
@@ -316,6 +321,7 @@ func mapToGetGroupResp(in domain.GroupServicePageData) getGroupResp {
 			BookingWindowMin: in.Settings.BookingWindowMin,
 			BookingWindowMax: in.Settings.BookingWindowMax,
 			BufferTime:       in.Settings.BufferTime,
+			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		Products: products,
 	}

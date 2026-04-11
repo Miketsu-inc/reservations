@@ -61,10 +61,11 @@ type newReq struct {
 }
 
 type serviceSettingsReq struct {
-	CancelDeadline   *int `json:"cancel_deadline"`
-	BookingWindowMin *int `json:"booking_window_min"`
-	BookingWindowMax *int `json:"booking_window_max"`
-	BufferTime       *int `json:"buffer_time"`
+	CancelDeadline   *int                `json:"cancel_deadline"`
+	BookingWindowMin *int                `json:"booking_window_min"`
+	BookingWindowMax *int                `json:"booking_window_max"`
+	BufferTime       *int                `json:"buffer_time"`
+	ApprovalPolicy   *types.ApprovalType `json:"approval_policy"`
 }
 
 type newPhaseReq struct {

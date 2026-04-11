@@ -45,6 +45,7 @@ type ServiceSettingsInput struct {
 	BookingWindowMin *int
 	BookingWindowMax *int
 	BufferTime       *int
+	ApprovalPolicy   *types.ApprovalType
 }
 
 type NewPhasesInput struct {
@@ -128,6 +129,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 				BookingWindowMin: input.Settings.BookingWindowMin,
 				BookingWindowMax: input.Settings.BookingWindowMax,
 				BufferTime:       input.Settings.BufferTime,
+				ApprovalPolicy:   input.Settings.ApprovalPolicy,
 			},
 		})
 		if err != nil {
@@ -305,6 +307,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 				BookingWindowMin: input.Settings.BookingWindowMin,
 				BookingWindowMax: input.Settings.BookingWindowMax,
 				BufferTime:       input.Settings.BufferTime,
+				ApprovalPolicy:   input.Settings.ApprovalPolicy,
 			},
 		})
 		if err != nil {
@@ -577,6 +580,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 				BookingWindowMin: input.Settings.BookingWindowMin,
 				BookingWindowMax: input.Settings.BookingWindowMax,
 				BufferTime:       input.Settings.BufferTime,
+				ApprovalPolicy:   input.Settings.ApprovalPolicy,
 			},
 		})
 		if err != nil {
@@ -657,6 +661,7 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 				BookingWindowMin: input.Settings.BookingWindowMin,
 				BookingWindowMax: input.Settings.BookingWindowMax,
 				BufferTime:       input.Settings.BufferTime,
+				ApprovalPolicy:   input.Settings.ApprovalPolicy,
 			},
 		})
 		if err != nil {

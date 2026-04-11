@@ -516,7 +516,7 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int)
 
 func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
@@ -543,7 +543,7 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 
 func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,

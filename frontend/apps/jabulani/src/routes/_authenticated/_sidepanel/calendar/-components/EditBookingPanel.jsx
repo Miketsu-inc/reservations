@@ -695,19 +695,19 @@ function BookingHeader({
                       </button>
                     </PopoverClose>
                   )}
-                {bookingData.bookingStatus !== "booked" && (
-                  <PopoverClose asChild>
-                    <button
-                      className="hover:bg-hvr_gray cursor-pointer gap-3"
-                      onClick={() =>
-                        updateBookingData({ bookingStatus: "booked" })
-                      }
-                    >
-                      <CalendarIcon styles="size-5 text-text_color" />
-                      Booked
-                    </button>
-                  </PopoverClose>
-                )}
+                {bookingData.bookingStatus !== "confirmed" &&
+                  !isPastBooking && (
+                    <PopoverClose asChild>
+                      <button
+                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        onClick={() =>
+                          updateBookingData({ bookingStatus: "confirmed" })
+                        }
+                      >
+                        Confirmed
+                      </button>
+                    </PopoverClose>
+                  )}
                 {!isPastBooking && (
                   <PopoverClose asChild>
                     <button className="hover:bg-hvr_gray">Reschedule</button>

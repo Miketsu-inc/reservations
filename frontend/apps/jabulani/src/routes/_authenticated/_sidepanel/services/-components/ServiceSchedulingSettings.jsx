@@ -21,6 +21,7 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
     if (showCustomSettings) {
       onUpdate({
         settings: {
+          ...settings,
           cancel_deadline: null,
           buffer_time: null,
           booking_window_max: null,

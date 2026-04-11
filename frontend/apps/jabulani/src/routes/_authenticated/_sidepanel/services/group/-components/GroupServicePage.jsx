@@ -16,6 +16,7 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import BookingApprovalSetting from "../../-components/BookingApprovalSetting";
 import ProductAdder from "../../-components/ProductAdder";
 import ServiceSchedulingSettings from "../../-components/ServiceSchedulingSettings";
 
@@ -52,6 +53,7 @@ export default function GroupServicePage({
         booking_window_min: service?.settings?.booking_window_min || null,
         booking_window_max: service?.settings?.booking_window_max || null,
         buffer_time: service?.settings?.buffer_time || null,
+        approval_policy: service?.settings?.approval_policy || null,
       },
       used_products: service?.used_products || [],
     }),
@@ -426,6 +428,10 @@ export default function GroupServicePage({
               }
             />
             <ServiceSchedulingSettings
+              onUpdate={updateServiceData}
+              settings={serviceData.settings}
+            />
+            <BookingApprovalSetting
               onUpdate={updateServiceData}
               settings={serviceData.settings}
             />

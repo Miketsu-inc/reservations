@@ -19,6 +19,7 @@ create type price_type as ENUM ('fixed', 'free', 'from');
 create type auth_provider_type as ENUM ('facebook', 'google');
 create type event_source as ENUM ('internal', 'google');
 create type event_internal_type as ENUM ('booking', 'blocked_time');
+create type approval_type as ENUM ('auto', 'manual', 'manual_for_new');
 
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
@@ -47,6 +48,7 @@ create table if not exists "Merchant" (
     booking_window_min       integer not null default 0,
     booking_window_max       integer not null default 5, --  in months
     buffer_time              integer not null default 0,
+    approval_policy          approval_type not null default 'auto',
     timezone                 text,
     currency_code            char(3)           not null,
     subscription_tier        subscription_tier not null
@@ -110,6 +112,7 @@ create table if not exists "Service" (
     booking_window_min       integer,
     booking_window_max       integer,
     buffer_time              integer,
+    approval_policy          approval_type,
     deleted_on               timestamptz
 );
 

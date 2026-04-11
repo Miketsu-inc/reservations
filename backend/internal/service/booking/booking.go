@@ -198,7 +198,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 	var bookingId int
 
 	// inserting new customer here to avoid a nested transaction
-	customerId, isBlacklisted, err := s.customerRepo.NewCustomerFromUser(ctx, customerId, merchantId, userId)
+	customerId, isBlacklisted, isNewCustomer, err := s.customerRepo.NewCustomerFromUser(ctx, customerId, merchantId, userId)
 	if err != nil {
 		return err
 	}
@@ -207,11 +207,28 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
 	}
 
+	var bookingStatus types.BookingStatus
+
+	switch bookingSettings.ApprovalPolicy {
+	case types.ApprovalTypeAuto:
+		bookingStatus = types.BookingStatusConfirmed
+	case types.ApprovalTypeManual:
+		bookingStatus = types.BookingStatusBooked
+	case types.ApprovalTypeManualForNew:
+		if isNewCustomer {
+			bookingStatus = types.BookingStatusBooked
+		} else {
+			bookingStatus = types.BookingStatusConfirmed
+		}
+	default:
+		return fmt.Errorf("invalid approval policy for merchant")
+	}
+
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		// means customer is booking an appointment
 		if input.BookingId == nil {
 			booking := domain.Booking{
-				Status:      types.BookingStatusBooked,
+				Status:      bookingStatus,
 				BookingType: types.BookingTypeAppointment,
 				MerchantId:  merchantId,
 				ServiceId:   input.ServiceId,
@@ -231,7 +248,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 			participants := []domain.BookingParticipant{{
-				Status:       types.BookingStatusBooked,
+				Status:       bookingStatus,
 				CustomerId:   &customerId,
 				CustomerNote: &input.CustomerNote,
 			}}
@@ -272,7 +289,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 			participants := []domain.BookingParticipant{{
-				Status:       types.BookingStatusBooked,
+				Status:       bookingStatus,
 				BookingId:    bookingId,
 				CustomerId:   &customerId,
 				CustomerNote: &input.CustomerNote,
@@ -284,28 +301,30 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 		}
 
-		lang := lang.LangFromContext(ctx)
-		_, err = s.enqueuer.Insert(ctx, args.BookingConfirmationEmail{
-			Language:   lang,
-			BookingId:  bookingId,
-			CustomerId: customerId,
-		}, nil)
-		if err != nil {
-			return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
-		}
+		if bookingStatus == types.BookingStatusConfirmed {
+			lang := lang.LangFromContext(ctx)
+			_, err = s.enqueuer.Insert(ctx, args.BookingConfirmationEmail{
+				Language:   lang,
+				BookingId:  bookingId,
+				CustomerId: customerId,
+			}, nil)
+			if err != nil {
+				return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
+			}
 
-		reminderDate := timeStamp.Add(-24 * time.Hour)
+			reminderDate := timeStamp.Add(-24 * time.Hour)
 
-		_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
-			Language:         lang,
-			BookingId:        bookingId,
-			CustomerId:       customerId,
-			ExpectedFromDate: timeStamp,
-		}, &river.InsertOpts{
-			ScheduledAt: reminderDate,
-		})
-		if err != nil {
-			return fmt.Errorf("could not schedule booking reminder email job: %w", err)
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+				Language:         lang,
+				BookingId:        bookingId,
+				CustomerId:       customerId,
+				ExpectedFromDate: timeStamp,
+			}, &river.InsertOpts{
+				ScheduledAt: reminderDate,
+			})
+			if err != nil {
+				return fmt.Errorf("could not schedule booking reminder email job: %w", err)
+			}
 		}
 
 		return nil
@@ -676,7 +695,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			}
 		} else {
 			booking := domain.Booking{
-				Status:      types.BookingStatusBooked,
+				Status:      types.BookingStatusConfirmed,
 				BookingType: service.BookingType,
 				MerchantId:  employee.MerchantId,
 				EmployeeId:  &employee.Id,
@@ -701,7 +720,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			participants := make([]domain.BookingParticipant, len(participantIds))
 			for i, id := range participantIds {
 				participants[i] = domain.BookingParticipant{
-					Status:       types.BookingStatusBooked,
+					Status:       types.BookingStatusConfirmed,
 					BookingId:    bookingId,
 					CustomerId:   &id,
 					CustomerNote: nil,
@@ -808,7 +827,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 	//for a recurring series the offset can differ for bookings if one of them was modified seperately earlier
 	fromDate := timeStamp.UTC().Truncate(time.Second)
-	localFromDateOffset := fromDate.Sub(oldBooking.FromDate)
+	fromDateOffset := fromDate.Sub(oldBooking.FromDate)
 
 	var seriesFromDateOffset time.Duration
 	if oldBooking.IsRecurring && oldBooking.SeriesOriginalDate != nil {
@@ -867,8 +886,28 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		}
 	}
 
+	var participantsToInsert []uuid.UUID
+	var participantsToDelete []uuid.UUID
+	var participantsToKeep []uuid.UUID
+
+	for id := range participantIdsMap {
+		if _, exists := existingParticipantsMap[id]; !exists {
+			participantsToInsert = append(participantsToInsert, id)
+		}
+	}
+
+	for id := range existingParticipantsMap {
+		if _, exists := participantIdsMap[id]; !exists {
+			participantsToDelete = append(participantsToDelete, id)
+		} else {
+			participantsToKeep = append(participantsToKeep, id)
+		}
+	}
+
 	var seriesParticipants []domain.BookingSeriesParticipant
 	exsistingSeriesParticipantsMap := make(map[uuid.UUID]struct{})
+	var seriesParticipantsToInsert []uuid.UUID
+	var seriesParticipantsToDelete []uuid.UUID
 
 	if input.UpdateAllFuture && oldBooking.IsRecurring {
 		seriesParticipants, err = s.bookingRepo.GetBookingSeriesParticipants(ctx, *oldBooking.BookingSeriesId)
@@ -880,31 +919,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				exsistingSeriesParticipantsMap[*sp.CustomerId] = struct{}{}
 			}
 		}
-	}
 
-	var localParticipantsToInsert []uuid.UUID
-	var localParticipantsToDelete []uuid.UUID
-	var localParticipantsToKeep []uuid.UUID
-
-	for id := range participantIdsMap {
-		if _, exists := existingParticipantsMap[id]; !exists {
-			localParticipantsToInsert = append(localParticipantsToInsert, id)
-		}
-	}
-
-	for id := range existingParticipantsMap {
-		if _, exists := participantIdsMap[id]; !exists {
-			localParticipantsToDelete = append(localParticipantsToDelete, id)
-		} else {
-			localParticipantsToKeep = append(localParticipantsToKeep, id)
-		}
-	}
-
-	var seriesParticipantsToInsert []uuid.UUID
-	var seriesParticipantsToDelete []uuid.UUID
-
-	if input.UpdateAllFuture && oldBooking.IsRecurring {
-		//only truly new if the person isnt in either of the participant maps
 		for id := range participantIdsMap {
 			_, inLocal := existingParticipantsMap[id]
 			_, inSeries := existingParticipantsMap[id]
@@ -912,7 +927,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				seriesParticipantsToInsert = append(seriesParticipantsToInsert, id)
 			}
 		}
-		//delete from the series only if the person is both in the maps but not in the incoming participants
+		// delete from the series only if the person is both in the maps but not in the incoming participants
 		for id := range existingParticipantsMap {
 			_, inIncoming := participantIdsMap[id]
 			_, inSeries := existingParticipantsMap[id]
@@ -931,7 +946,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	countStr := strconv.Itoa(participantCount)
 
 	// TODO: this panics if price or cost is nil. We should fix this
-	//by not allowing to insert nil prices into services
+	// by not allowing to insert nil prices into services
 	totalPrice, err := newService.Price.Mul(countStr)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total price: %s", err.Error())
@@ -942,7 +957,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return fmt.Errorf("failed to calculate total cost: %s", err.Error())
 	}
 
-	//since the participants can differ thus the total price and total cost will be different from the local booking as well
+	// since the participants can differ thus the total price and total cost will be different from the local booking as well
 	var seriesParticipantCount int
 	var seriesTotalPrice, seriesTotalCost currency.Amount
 
@@ -1043,14 +1058,14 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		var futureBookingIds []int
 		var newFromDates []time.Time
 		var newToDates []time.Time
-		//new phases to be batch inserted containing booking ids
+		// new phases to be batch inserted containing booking ids
 		var allNewPhases []domain.BookingPhase
-		//new participants to be batch inserted containing booking ids
+		// new participants to be batch inserted containing booking ids
 		var allNewParticipants []domain.BookingParticipant
 
 		status := input.BookingStatus
 		if newService.BookingType != types.BookingTypeAppointment {
-			status = types.BookingStatusBooked
+			status = types.BookingStatusConfirmed
 		}
 
 		for _, b := range bookingsToUpdate {
@@ -1064,7 +1079,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if input.UpdateAllFuture && b.IsRecurring {
 				newBookingStart = b.SeriesOriginalDate.Add(seriesFromDateOffset)
 			} else {
-				newBookingStart = b.FromDate.Add(localFromDateOffset)
+				newBookingStart = b.FromDate.Add(fromDateOffset)
 			}
 
 			duration := time.Duration(newService.TotalDuration) * time.Minute
@@ -1076,7 +1091,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if newService.Id != b.ServiceId || !newBookingStart.Equal(b.FromDate) {
 				bookingStart := newBookingStart
 
-				//if service didnt chnage new service is the old service
+				// if service didnt chnage new service is the old service
 				for _, phase := range newService.Phases {
 					phaseDuration := time.Duration(phase.Duration) * time.Minute
 					bookingEnd := bookingStart.Add(phaseDuration)
@@ -1092,10 +1107,10 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 
 			if b.Id == oldBooking.Id {
-				//if local booking then apply all local changes as before
+				// if local booking then apply all local changes as before
 
-				if len(localParticipantsToInsert) > 0 {
-					for _, pid := range localParticipantsToInsert {
+				if len(participantsToInsert) > 0 {
+					for _, pid := range participantsToInsert {
 						allNewParticipants = append(allNewParticipants, domain.BookingParticipant{
 							BookingId:  b.Id,
 							CustomerId: &pid,
@@ -1104,11 +1119,11 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					}
 				}
 
-				//since the query is an upsert for an appointment we want to have the kept participants so we can update the status
-				//for group booking the status management is seperate so we don't use these participant so the batch query will only insert the new ones
+				// since the query is an upsert for an appointment we want to have the kept participants so we can update the status
+				// for group booking the status management is seperate so we don't use these participant so the batch query will only insert the new ones
 				if newService.BookingType == types.BookingTypeAppointment {
-					if len(localParticipantsToKeep) > 0 {
-						for _, pid := range localParticipantsToKeep {
+					if len(participantsToKeep) > 0 {
+						for _, pid := range participantsToKeep {
 							allNewParticipants = append(allNewParticipants, domain.BookingParticipant{
 								BookingId:  b.Id,
 								CustomerId: &pid,
@@ -1118,7 +1133,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					}
 				}
 			} else {
-				//if future series booking then apply series changes only
+				// if future series booking then apply series changes only
 				for _, pid := range seriesParticipantsToInsert {
 					allNewParticipants = append(allNewParticipants, domain.BookingParticipant{
 						BookingId:  b.Id,
@@ -1176,15 +1191,15 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		//delete the local chnage
-		if len(localParticipantsToDelete) > 0 {
-			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, []int{oldBooking.Id}, localParticipantsToDelete)
+		// delete the local chnage
+		if len(participantsToDelete) > 0 {
+			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, []int{oldBooking.Id}, participantsToDelete)
 			if err != nil {
 				return fmt.Errorf("failed to remove participants: %s", err.Error())
 			}
 		}
 
-		//delete the series changes in the future
+		// delete the series changes in the future
 		if len(futureBookingIds) > 0 && len(seriesParticipantsToDelete) > 0 {
 			err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, futureBookingIds, seriesParticipantsToDelete)
 			if err != nil {
@@ -1192,7 +1207,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		//insert all the assigned participants to all the bookings
+		// insert all the assigned participants to all the bookings
 		if len(allNewParticipants) > 0 {
 			err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, allNewParticipants)
 			if err != nil {
@@ -1201,7 +1216,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		}
 
 		for _, booking := range bookingsToUpdate {
-			if localFromDateOffset != 0 || seriesFromDateOffset != 0 {
+			if fromDateOffset != 0 || seriesFromDateOffset != 0 {
 				// TODO: don't forget to change this when we will consider employee changes in this
 				if oldBooking.EmployeeId != nil {
 					_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBooking{
@@ -1219,7 +1234,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 		lang := lang.LangFromContext(ctx)
 		// implement the updating of the scheduled reminder emails for future recurring bookings
-		for _, id := range localParticipantsToDelete {
+		for _, id := range participantsToDelete {
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
 				Language:           lang,
 				BookingId:          bookingId,
@@ -1254,8 +1269,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		for _, id := range localParticipantsToKeep {
-			if localFromDateOffset != 0 || newService.Id != oldBooking.ServiceId {
+		statusChangedToConfirmed := newService.BookingType == types.BookingTypeAppointment &&
+			oldBooking.Status == types.BookingStatusBooked &&
+			input.BookingStatus == types.BookingStatusConfirmed
+
+		for _, id := range participantsToKeep {
+			if fromDateOffset != 0 || newService.Id != oldBooking.ServiceId {
 
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{
 					Language:       lang,
@@ -1271,7 +1290,18 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			}
 
-			if localFromDateOffset != 0 {
+			if statusChangedToConfirmed {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingConfirmationEmail{
+					Language:   lang,
+					BookingId:  bookingId,
+					CustomerId: id,
+				}, nil)
+				if err != nil {
+					return fmt.Errorf("could not schedule booking confirmation email job: %w", err)
+				}
+			}
+
+			if fromDateOffset != 0 || statusChangedToConfirmed {
 				// TODO: expand on conditions for sending new reminder
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
 					Language:         lang,

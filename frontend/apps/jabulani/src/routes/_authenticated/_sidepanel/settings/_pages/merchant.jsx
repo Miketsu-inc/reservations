@@ -6,7 +6,7 @@ import {
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import BusinessHours from "../-components/BusinessHours";
 import DangerZone from "../-components/DangerZone";
 import ImageUploader from "../-components/ImageUploader";
@@ -23,6 +23,24 @@ const daysOfWeek = {
   0: "Sunday",
 };
 
+const ApprovalOptions = [
+  {
+    value: "auto",
+    name: "Automatic",
+    desc: "All bookings confirmed instantly, no action needed.",
+  },
+  {
+    value: "manual",
+    name: "Manual",
+    desc: "Every request waits for your approval before confirming.",
+  },
+  {
+    value: "manual_for_new",
+    name: "Manual for new customers",
+    desc: "Returning customers auto-approved, new ones need review.",
+  },
+];
+
 async function fetchMerchantData() {
   const response = await fetch(`/api/v1/merchant/settings`, {
     method: "GET",
@@ -35,10 +53,6 @@ async function fetchMerchantData() {
   } else {
     return result.data;
   }
-}
-
-function hasChanges(changedData, originalData) {
-  return JSON.stringify(changedData) !== JSON.stringify(originalData);
 }
 
 function validateBusinessHours(hours) {
@@ -81,6 +95,7 @@ const defaultMerchantInfo = {
   booking_window_min: 0,
   booking_window_max: 5,
   buffer_time: 0,
+  approval_policy: "auto",
   business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
 };
 
@@ -117,15 +132,14 @@ function MerchantPage() {
         booking_window_min: loaderData.booking_window_min,
         booking_window_max: loaderData.booking_window_max,
         buffer_time: loaderData.buffer_time,
+        approval_policy: loaderData.approval_policy,
         business_hours: loaderData.business_hours,
       }
     : defaultMerchantInfo;
 
   const [merchantInfo, setMerchantInfo] = useState(initialMerchantInfo);
   const [originalData, setOriginalData] = useState(initialMerchantInfo);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const { showToast } = useToast();
 
   const { data: preferences } = useQuery(preferencesQueryOptions());
@@ -137,15 +151,9 @@ function MerchantPage() {
     }));
   }
 
-  useEffect(() => {
-    const validationError = validateBusinessHours(merchantInfo.business_hours);
-    setErrorMessage(validationError);
-  }, [merchantInfo.business_hours]);
-
-  // needed because inside the handleInputData it couldn't detect copy pasting
-  useEffect(() => {
-    setHasUnsavedChanges(hasChanges(merchantInfo, originalData));
-  }, [merchantInfo, originalData]);
+  const errorMessage = validateBusinessHours(merchantInfo.business_hours);
+  const hasUnsavedChanges =
+    JSON.stringify(merchantInfo) !== JSON.stringify(originalData);
 
   async function updateButtonHandler() {
     if (errorMessage || !hasUnsavedChanges) {
@@ -169,6 +177,7 @@ function MerchantPage() {
           booking_window_min: merchantInfo.booking_window_min,
           booking_window_max: merchantInfo.booking_window_max,
           buffer_time: merchantInfo.buffer_time,
+          approval_policy: merchantInfo.approval_policy,
           business_hours: merchantInfo.business_hours,
         }),
       });
@@ -279,6 +288,45 @@ function MerchantPage() {
           }}
           onChange={handleInputData}
         />
+        <div className="flex flex-col gap-4">
+          <span className="font-semibold">Booking Approval Policy</span>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {ApprovalOptions.map((opt) => {
+              const active = merchantInfo.approval_policy === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() =>
+                    handleInputData({
+                      name: "approval_policy",
+                      value: opt.value,
+                    })
+                  }
+                  className={`flex flex-col gap-1 rounded-md border p-4
+                  text-left transition-colors duration-150 ${
+                    active
+                      ? "border-primary bg-primary/5"
+                      : `bg-layer_bg border-gray-300 hover:border-gray-300
+                        hover:bg-gray-100 dark:border-gray-500
+                        dark:hover:border-gray-400 dark:hover:bg-gray-600/5`
+                  }`}
+                >
+                  <span className={"text-text_color text-sm font-medium"}>
+                    {opt.name}
+                  </span>
+                  <span
+                    className={
+                      "text-xs leading-relaxed text-gray-500 dark:text-gray-400"
+                    }
+                  >
+                    {opt.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div className="mt-10 flex flex-col gap-3">
           <span className="text-text_color/70 text-sm md:w-2/3">
             All of the fields on this page are optional and can be deleted at

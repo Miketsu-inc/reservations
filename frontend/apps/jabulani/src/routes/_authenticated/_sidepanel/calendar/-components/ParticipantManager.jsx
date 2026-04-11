@@ -4,6 +4,7 @@ import {
   CustomersIcon,
   PersonIcon,
   PlusIcon,
+  SunIcon,
   ThreeDotsIcon,
   TickIcon,
   TrashBinIcon,
@@ -34,6 +35,10 @@ const statusMap = {
   booked: {
     bgColor: "bg-gray-500",
     icon: <CalendarIcon styles="size-3.5 text-white" />,
+  },
+  confirmed: {
+    bgColor: "bg-accent",
+    icon: <SunIcon styles="size-3.5 text-white" />,
   },
 };
 
@@ -290,20 +295,20 @@ function ParticipantItem({
                       </button>
                     </PopoverClose>
                   )}
-                  {customer.status !== "booked" && (
+                  {customer.status !== "confirmed" && (
                     <PopoverClose asChild>
                       <button
                         className="hover:bg-hvr_gray cursor-pointer gap-3"
                         onClick={() =>
                           onStatusChange(
                             customer.participant_id,
-                            "booked",
+                            "confirmed",
                             customer.status
                           )
                         }
                       >
-                        <CalendarIcon styles="size-5 text-text_color" />
-                        Booked
+                        <SunIcon styles="size-5 text-text_color" />
+                        Confirmed
                       </button>
                     </PopoverClose>
                   )}

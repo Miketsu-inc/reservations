@@ -41,22 +41,23 @@ func (r *customerRepository) NewCustomer(ctx context.Context, merchantId uuid.UU
 	return nil
 }
 
-func (r *customerRepository) NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, error) {
+func (r *customerRepository) NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, bool, error) {
 	query := `
 	insert into "Customer" (id, merchant_id, user_id) values ($1, $2, $3)
 	on conflict (merchant_id, user_id) do update
 	set merchant_id = excluded.merchant_id
-	returning id, is_blacklisted`
+	returning id, is_blacklisted, (xmax = 0) as is_new`
 
 	var IsBlacklisted bool
 	var custId uuid.UUID
+	var isNew bool
 
-	err := r.db.QueryRow(ctx, query, customerId, merchantId, userId).Scan(&custId, &IsBlacklisted)
+	err := r.db.QueryRow(ctx, query, customerId, merchantId, userId).Scan(&custId, &IsBlacklisted, &isNew)
 	if err != nil {
-		return uuid.UUID{}, false, err
+		return uuid.UUID{}, false, false, err
 	}
 
-	return custId, IsBlacklisted, nil
+	return custId, IsBlacklisted, isNew, nil
 }
 
 // TODO: this logic shouldn't live here and some of it is probably unnecessary
