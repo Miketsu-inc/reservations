@@ -938,44 +938,70 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	participantCount := len(participantIdsMap)
+	seriesParticipantCount := len(existingParticipantsMap) + len(seriesParticipantsToInsert) - len(seriesParticipantsToDelete)
 	// walk ins do not get a booking participant row but 1 person still attending the booking
 	if isWalkIn {
 		participantCount = 1
+		seriesParticipantCount = 1
 	}
 
 	countStr := strconv.Itoa(participantCount)
+	seriesCountStr := strconv.Itoa(seriesParticipantCount)
 
-	// TODO: this panics if price or cost is nil. We should fix this
-	// by not allowing to insert nil prices into services
-	totalPrice, err := newService.Price.Mul(countStr)
-	if err != nil {
-		return fmt.Errorf("failed to calculate total price: %s", err.Error())
+	var totalPrice, totalCost, seriesTotalPrice, seriesTotalCost, pricePerPerson, costPerPerson currency.Amount
+	var zeroAmount currency.Amount
+	var curr string
+
+	if newService.Price == nil || newService.Cost == nil {
+		curr, err = s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+		if err != nil {
+			return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+		}
+
+		zeroAmount, err = currency.NewAmount("0", curr)
+		if err != nil {
+			return fmt.Errorf("error while creating new amount: %s", err.Error())
+		}
 	}
 
-	totalCost, err := newService.Cost.Mul(countStr)
-	if err != nil {
-		return fmt.Errorf("failed to calculate total cost: %s", err.Error())
+	if newService.Price != nil {
+		pricePerPerson = newService.Price.Amount
+
+		totalPrice, err = newService.Price.Mul(countStr)
+		if err != nil {
+			return fmt.Errorf("failed to calculate total price: %s", err.Error())
+		}
+
+		if input.UpdateAllFuture && oldBooking.IsRecurring {
+			seriesTotalPrice, err = newService.Price.Mul(seriesCountStr)
+			if err != nil {
+				return fmt.Errorf("failed to calculate series total price: %s", err.Error())
+			}
+		}
+	} else {
+		pricePerPerson = zeroAmount
+		totalPrice = zeroAmount
+		seriesTotalPrice = zeroAmount
 	}
 
-	// since the participants can differ thus the total price and total cost will be different from the local booking as well
-	var seriesParticipantCount int
-	var seriesTotalPrice, seriesTotalCost currency.Amount
+	if newService.Cost != nil {
+		costPerPerson = newService.Cost.Amount
 
-	if input.UpdateAllFuture && oldBooking.IsRecurring {
-		seriesParticipantCount = len(existingParticipantsMap) + len(seriesParticipantsToInsert) - len(seriesParticipantsToDelete)
-		if isWalkIn {
-			seriesParticipantCount = 1
+		totalCost, err = newService.Cost.Mul(countStr)
+		if err != nil {
+			return fmt.Errorf("failed to calculate total cost: %s", err.Error())
 		}
 
-		seriesCountStr := strconv.Itoa(seriesParticipantCount)
-		seriesTotalPrice, err = newService.Price.Mul(seriesCountStr)
-		if err != nil {
-			return fmt.Errorf("failed to calculate series total price: %s", err.Error())
+		if input.UpdateAllFuture && oldBooking.IsRecurring {
+			seriesTotalCost, err = newService.Cost.Mul(seriesCountStr)
+			if err != nil {
+				return fmt.Errorf("failed to calculate series total cost: %s", err.Error())
+			}
 		}
-		seriesTotalCost, err = newService.Cost.Mul(seriesCountStr)
-		if err != nil {
-			return fmt.Errorf("failed to calculate series total cost: %s", err.Error())
-		}
+	} else {
+		costPerPerson = zeroAmount
+		totalCost = zeroAmount
+		seriesTotalCost = zeroAmount
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -1019,8 +1045,8 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 
 			err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesDetails(ctx, *oldBooking.BookingSeriesId, domain.BookingSeriesDetails{
-				PricePerPerson:      *newService.Price,
-				CostPerPerson:       *newService.Cost,
+				PricePerPerson:      currencyx.Price{Amount: pricePerPerson},
+				CostPerPerson:       currencyx.Price{Amount: costPerPerson},
 				TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
 				TotalCost:           currencyx.Price{Amount: seriesTotalCost},
 				MinParticipants:     newService.MinParticipants,
@@ -1150,8 +1176,8 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		}
 
 		err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, employee.MerchantId, []int{oldBooking.Id}, domain.BookingDetails{
-			PricePerPerson:      *newService.Price,
-			CostPerPerson:       *newService.Cost,
+			PricePerPerson:      currencyx.Price{Amount: pricePerPerson},
+			CostPerPerson:       currencyx.Price{Amount: costPerPerson},
 			TotalPrice:          currencyx.Price{Amount: totalPrice},
 			TotalCost:           currencyx.Price{Amount: totalCost},
 			MerchantNote:        input.MerchantNote,
@@ -1165,8 +1191,8 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 		if len(futureBookingIds) > 0 {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, employee.MerchantId, futureBookingIds, domain.BookingDetails{
-				PricePerPerson:      *newService.Price,
-				CostPerPerson:       *newService.Cost,
+				PricePerPerson:      currencyx.Price{Amount: pricePerPerson},
+				CostPerPerson:       currencyx.Price{Amount: costPerPerson},
 				TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
 				TotalCost:           currencyx.Price{Amount: seriesTotalCost},
 				MerchantNote:        input.MerchantNote,
