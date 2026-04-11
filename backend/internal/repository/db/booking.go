@@ -251,10 +251,10 @@ func (r *bookingRepository) UpdateBookingStatus(ctx context.Context, merchantId 
 func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus) error {
 	query := `
 	update "Booking" as b
-	set from_date = data.new_from_dates, 
-	    to_date = data.new_to_dates, 
-	    service_id = $2, 
-	    booking_type = $3, 
+	set from_date = data.new_from_dates,
+	    to_date = data.new_to_dates,
+	    service_id = $2,
+	    booking_type = $3,
 	    status = $4
 	from (select unnest($1::int[]) as id, unnest($5::timestamptz[]) as new_from_dates, unnest($6::timestamptz[]) as new_to_dates) as data
 	where b.id = data.id and b.merchant_id = $7 and b.status not in ('cancelled', 'completed')
@@ -814,6 +814,36 @@ func (r *bookingRepository) UpdateBookingSeriesCore(ctx context.Context, seriesI
 	return nil
 }
 
+func (r *bookingRepository) UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error {
+	query := `
+	update "BookingSeries"
+	set generated_until = $2
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, seriesId, generatedUntil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) DeactivateBookingSeries(ctx context.Context, seriesId int) error {
+	query := `
+	update "BookingSeries"
+	set is_active = false
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, seriesId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details domain.BookingSeriesDetails) error {
 	query := `update "BookingSeriesDetails"
 	set price_per_person = $2, cost_per_person = $3, total_price = $4, total_cost = $5, min_participants = $6, max_participants = $7, current_participants = $8
@@ -829,7 +859,7 @@ func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seri
 }
 
 func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error {
-	query := `delete from "BookingSeriesParticipant" 
+	query := `delete from "BookingSeriesParticipant"
 	where booking_series_id = $1 and customer_id = any($2::uuid[])`
 
 	_, err := r.db.Exec(ctx, query, seriesId, customerIds)
@@ -865,6 +895,38 @@ func (r *bookingRepository) GetBookingSeries(ctx context.Context, seriesId int) 
 	return bookingSeries, nil
 }
 
+func (r *bookingRepository) GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error) {
+	query := `
+	select *
+	from "BookingSeries"
+	where is_active = true and (generated_until < $1 or generated_until is null)
+	`
+
+	rows, _ := r.db.Query(ctx, query, tresholdTime)
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[int])
+	if err != nil {
+		return []int{}, err
+	}
+
+	return ids, nil
+}
+
+func (r *bookingRepository) GetBookingSeriesDetails(ctx context.Context, seriesId int) (domain.BookingSeriesDetails, error) {
+	query := `
+	select *
+	from "BookingSeriesDetails"
+	where booking_series_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, seriesId)
+	seriesDetails, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingSeriesDetails])
+	if err != nil {
+		return domain.BookingSeriesDetails{}, err
+	}
+
+	return seriesDetails, nil
+}
+
 func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]domain.BookingSeriesParticipant, error) {
 	query := `
 	select *
@@ -879,20 +941,4 @@ func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, se
 	}
 
 	return participants, nil
-}
-
-func (r *bookingRepository) GetExistingOccurrenceDates(ctx context.Context, seriesId int, fromDate, toDate time.Time) ([]time.Time, error) {
-	query := `
-	select series_original_date
-	from "Booking"
-	where booking_series_id = $1 and series_original_date >= $2 and series_original_date <= $3
-	`
-
-	rows, _ := r.db.Query(ctx, query, seriesId, fromDate, toDate)
-	dates, err := pgx.CollectRows(rows, pgx.RowTo[time.Time])
-	if err != nil {
-		return []time.Time{}, nil
-	}
-
-	return dates, nil
 }

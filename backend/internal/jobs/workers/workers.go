@@ -18,6 +18,7 @@ type Deps struct {
 	EmailService       *email.Service
 	ExtCalendarService *externalcalendar.Service
 	BookingRepo        domain.BookingRepository
+	CatalogRepo        domain.CatalogRepository
 	ExtCalendarRepo    domain.ExternalCalendarRepository
 	TxManager          db.TransactionManager
 }
@@ -36,6 +37,9 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewSyncUpdateBlockedTime(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncDeleteBlockedTime(deps.ExtCalendarService))
 	river.AddWorker(workers, NewHandleChannelExpiration(deps.ExtCalendarService))
+
+	river.AddWorker(workers, NewRecurringBookingScheduler(deps.BookingRepo))
+	river.AddWorker(workers, NewBookingOccurrenceGenerator(deps.BookingService, deps.BookingRepo, deps.CatalogRepo, deps.TxManager))
 }
 
 func GetPeriodicJobs() []*river.PeriodicJob {
@@ -43,6 +47,11 @@ func GetPeriodicJobs() []*river.PeriodicJob {
 		river.NewPeriodicJob(schedule.NewDailyMidnight(time.UTC),
 			func() (river.JobArgs, *river.InsertOpts) {
 				return args.HandleChannelExpiration{}, nil
+			}, &river.PeriodicJobOpts{RunOnStart: true},
+		),
+		river.NewPeriodicJob(schedule.NewDailyMidnight(time.UTC),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return args.RecurringBookingScheduler{}, nil
 			}, &river.PeriodicJobOpts{RunOnStart: true},
 		),
 	}

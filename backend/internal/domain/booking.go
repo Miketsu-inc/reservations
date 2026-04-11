@@ -59,14 +59,17 @@ type BookingRepository interface {
 	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
 
 	UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error
+	UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error
+	DeactivateBookingSeries(ctx context.Context, seriesId int) error
 	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingSeriesDetails) error
 
 	DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error
 
 	GetBookingSeries(ctx context.Context, seriesId int) (BookingSeries, error)
+	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
+	GetBookingSeriesDetails(ctx context.Context, seriesId int) (BookingSeriesDetails, error)
 	GetFutureSeriesBookings(ctx context.Context, seriesId int, fromDate time.Time) ([]Booking, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
-	GetExistingOccurrenceDates(ctx context.Context, seriesId int, startDate time.Time, endDate time.Time) ([]time.Time, error)
 }
 
 type Booking struct {
@@ -200,16 +203,17 @@ type BookingForEmail struct {
 }
 
 type BookingSeries struct {
-	Id          int               `json:"id" db:"id"`
-	BookingType types.BookingType `json:"booking_type" db:"booking_type"`
-	MerchantId  uuid.UUID         `json:"merchant_id" db:"merchant_id"`
-	EmployeeId  int               `json:"employee_id" db:"employee_id"`
-	ServiceId   int               `json:"service_id" db:"service_id"`
-	LocationId  int               `json:"location_id" db:"location_id"`
-	Rrule       string            `json:"rrule" db:"rrule"`
-	Dstart      time.Time         `json:"dstart" db:"dstart"`
-	Timezone    string            `json:"timezone" db:"timezone"`
-	IsActive    bool              `json:"is_active" db:"is_active"`
+	Id             int               `json:"id" db:"id"`
+	BookingType    types.BookingType `json:"booking_type" db:"booking_type"`
+	MerchantId     uuid.UUID         `json:"merchant_id" db:"merchant_id"`
+	EmployeeId     int               `json:"employee_id" db:"employee_id"`
+	ServiceId      int               `json:"service_id" db:"service_id"`
+	LocationId     int               `json:"location_id" db:"location_id"`
+	Rrule          string            `json:"rrule" db:"rrule"`
+	Dstart         time.Time         `json:"dstart" db:"dstart"`
+	Timezone       string            `json:"timezone" db:"timezone"`
+	IsActive       bool              `json:"is_active" db:"is_active"`
+	GeneratedUntil *time.Time        `db:"generated_until"`
 }
 
 type BookingSeriesDetails struct {

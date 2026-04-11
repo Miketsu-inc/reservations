@@ -31,5 +31,7 @@ func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc Register
 		},
 		Workers:      riverWorkers,
 		PeriodicJobs: periodicJobs,
+		// TODO: Limited to 5 so in dev errored jobs do not pile up
+		MaxAttempts: 5,
 	})
 }

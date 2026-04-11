@@ -80,6 +80,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		EmailService:       emailService,
 		ExtCalendarService: externalCalendarService,
 		BookingRepo:        bookingRepo,
+		CatalogRepo:        catalogRepo,
 		ExtCalendarRepo:    externalCalendarRepo,
 		TxManager:          transactionManager,
 	}, workers.RegisterWorkers, workers.GetPeriodicJobs())

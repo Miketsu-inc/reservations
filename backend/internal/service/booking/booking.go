@@ -626,9 +626,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			// recurring bookings have to be stored in local time and converted to UTC during generation
 			fromDate = timeStamp.In(merchantTz)
 
-			var series CompleteBookingSeries
-
-			series.BookingSeries, err = s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
+			series, err := s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
 				BookingType: service.BookingType,
 				MerchantId:  employee.MerchantId,
 				EmployeeId:  employee.Id,
@@ -643,7 +641,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
-			series.Details, err = s.bookingRepo.WithTx(tx).NewBookingSeriesDetails(ctx, domain.BookingSeriesDetails{
+			seriesDetails, err := s.bookingRepo.WithTx(tx).NewBookingSeriesDetails(ctx, domain.BookingSeriesDetails{
 				BookingSeriesId:     series.Id,
 				PricePerPerson:      price,
 				CostPerPerson:       cost,
@@ -667,12 +665,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				}
 			}
 
-			series.Participants, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipants)
+			seriesParticipants, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipants)
 			if err != nil {
 				return err
 			}
 
-			bookingId, err = s.generateRecurringBookings(ctx, tx, series, service.Phases)
+			bookingId, err = s.GenerateRecurringBookings(ctx, tx, series, seriesDetails, seriesParticipants, service.Phases, time.Now().UTC())
 			if err != nil {
 				return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
 			}

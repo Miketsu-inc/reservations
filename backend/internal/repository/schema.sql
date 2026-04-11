@@ -152,7 +152,8 @@ create table if not exists "BookingSeries" (
     rrule                    text            not null,
     dstart                   timestamptz     not null,
     timezone                 text            not null,
-    is_active                boolean         not null default true
+    is_active                boolean         not null default true,
+    generated_until          timestamptz
 );
 
 create table if not exists "BookingSeriesDetails" (
