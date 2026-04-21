@@ -693,6 +693,24 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	return msi, nil
 }
 
+func (r *catalogRepository) GetServiceCancelDeadline(ctx context.Context, merchantId uuid.UUID, serviceId int) (int, error) {
+	query := `
+	select coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline
+	from "Service" s
+	join "Merchant" m on m.id = s.merchant_id
+	where m.id = $1 and s.id = $2
+	`
+
+	var cancelDeadline int
+
+	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&cancelDeadline)
+	if err != nil {
+		return 0, err
+	}
+
+	return cancelDeadline, nil
+}
+
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
 	query := `
 	insert into "ServicePhase" (service_id, name, sequence, duration, phase_type)

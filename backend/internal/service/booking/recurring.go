@@ -12,8 +12,8 @@ import (
 	"github.com/teambition/rrule-go"
 )
 
-func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, series domain.BookingSeries, seriesDetails domain.BookingSeriesDetails,
-	seriesParticipants []domain.BookingSeriesParticipant, serivePhases []domain.PublicServicePhase, generateFrom time.Time) (int, error) {
+func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant,
+	serivePhases []domain.PublicServicePhase, generateFrom time.Time) (int, error) {
 	tz, err := time.LoadLocation(series.Timezone)
 	if err != nil {
 		return 0, fmt.Errorf("error parsing location from booking series: %s", err.Error())
@@ -44,17 +44,25 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 		toDate := fromDate.Add(totalDuration)
 
 		bookings = append(bookings, domain.Booking{
-			Status:             types.BookingStatusConfirmed,
-			BookingType:        series.BookingType,
-			IsRecurring:        true,
-			MerchantId:         series.MerchantId,
-			EmployeeId:         &series.EmployeeId,
-			ServiceId:          series.ServiceId,
-			LocationId:         series.LocationId,
-			BookingSeriesId:    &series.Id,
-			SeriesOriginalDate: &fromDate,
-			FromDate:           fromDate,
-			ToDate:             toDate,
+			Status:              types.BookingStatusConfirmed,
+			BookingType:         series.BookingType,
+			IsRecurring:         true,
+			MerchantId:          series.MerchantId,
+			EmployeeId:          &series.EmployeeId,
+			ServiceId:           series.ServiceId,
+			LocationId:          series.LocationId,
+			BookingSeriesId:     &series.Id,
+			SeriesOriginalDate:  &fromDate,
+			FromDate:            fromDate,
+			ToDate:              toDate,
+			PricePerPerson:      series.PricePerPerson,
+			CostPerPerson:       series.CostPerPerson,
+			TotalPrice:          series.TotalPrice,
+			TotalCost:           series.TotalCost,
+			MerchantNote:        nil,
+			MinParticipants:     series.MinParticipants,
+			MaxParticipants:     series.MaxParticipants,
+			CurrentParticipants: series.CurrentParticipants,
 		})
 	}
 
@@ -64,7 +72,6 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 	}
 
 	bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(serivePhases))
-	bookingDetails := make([]domain.BookingDetails, len(bookingIds))
 	participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(seriesParticipants))
 
 	for i, id := range bookingIds {
@@ -84,18 +91,6 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 			bookingStart = bookingEnd
 		}
 
-		bookingDetails[i] = domain.BookingDetails{
-			BookingId:           id,
-			PricePerPerson:      seriesDetails.PricePerPerson,
-			CostPerPerson:       seriesDetails.CostPerPerson,
-			TotalPrice:          seriesDetails.TotalPrice,
-			TotalCost:           seriesDetails.TotalCost,
-			MerchantNote:        nil,
-			MinParticipants:     seriesDetails.MinParticipants,
-			MaxParticipants:     seriesDetails.MaxParticipants,
-			CurrentParticipants: seriesDetails.CurrentParticipants,
-		}
-
 		for _, p := range seriesParticipants {
 			participants = append(participants, domain.BookingParticipant{
 				Status:       types.BookingStatusBooked,
@@ -107,11 +102,6 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 	}
 
 	err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhases)
-	if err != nil {
-		return 0, err
-	}
-
-	err = s.bookingRepo.WithTx(tx).NewBookingDetailsBatch(ctx, bookingDetails)
 	if err != nil {
 		return 0, err
 	}

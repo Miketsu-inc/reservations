@@ -72,11 +72,6 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 		return err
 	}
 
-	seriesDetails, err := w.bookingRepo.GetBookingSeriesDetails(ctx, job.Args.BookingSeriesId)
-	if err != nil {
-		return err
-	}
-
 	seriesParticipants, err := w.bookingRepo.GetBookingSeriesParticipants(ctx, job.Args.BookingSeriesId)
 	if err != nil {
 		return err
@@ -97,7 +92,7 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 			generateFrom = time.Now().UTC()
 		}
 
-		_, err = w.bookingService.GenerateRecurringBookings(ctx, tx, series, seriesDetails, seriesParticipants, service.Phases, generateFrom)
+		_, err = w.bookingService.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service.Phases, generateFrom)
 		if err != nil {
 			return err
 		}

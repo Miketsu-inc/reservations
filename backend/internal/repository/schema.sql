@@ -156,12 +156,7 @@ create table if not exists "BookingSeries" (
     dstart                   timestamptz     not null,
     timezone                 text            not null,
     is_active                boolean         not null default true,
-    generated_until          timestamptz
-);
-
-create table if not exists "BookingSeriesDetails" (
-    ID                       serial          primary key unique not null,
-    booking_series_id        integer         references "BookingSeries" (ID) on delete cascade not null,
+    generated_until          timestamptz,
     price_per_person         price           not null,
     cost_per_person          price           not null,
     total_price              price           not null,
@@ -193,7 +188,17 @@ create table if not exists "Booking" (
     booking_series_id        integer         references "BookingSeries" (ID) on delete set null,
     series_original_date     timestamptz,
     from_date                timestamptz     not null,
-    to_date                  timestamptz     not null
+    to_date                  timestamptz     not null,
+    price_per_person         price           not null,
+    cost_per_person          price           not null,
+    total_price              price           not null,
+    total_cost               price           not null,
+    merchant_note            text,
+    min_participants         integer         not null,
+    max_participants         integer         not null,
+    current_participants     integer         not null,
+    cancelled_by_merchant_on timestamptz,
+    cancellation_reason      text
 );
 
 create table if not exists "BookingPhase" (
@@ -204,21 +209,6 @@ create table if not exists "BookingPhase" (
     to_date                  timestamptz      not null,
 
     constraint unique_booking_phase unique (booking_id, service_phase_id)
-);
-
-create table if not exists "BookingDetails" (
-    ID                       serial           primary key unique not null,
-    booking_id               integer          unique references "Booking" (ID) on delete cascade not null,
-    price_per_person         price            not null,
-    cost_per_person          price            not null,
-    total_price              price            not null,
-    total_cost               price            not null,
-    merchant_note            text,
-    min_participants         integer          not null,
-    max_participants         integer          not null,
-    current_participants     integer          not null,
-    cancelled_by_merchant_on timestamptz,
-    cancellation_reason      text
 );
 
 create table if not exists "BookingParticipant" (

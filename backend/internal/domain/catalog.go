@@ -32,6 +32,7 @@ type CatalogRepository interface {
 	GetGroupServicePageData(ctx context.Context, merchantId uuid.UUID, serviceId int) (GroupServicePageData, error)
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
+	GetServiceCancelDeadline(ctx context.Context, merchantId uuid.UUID, serviceId int) (int, error)
 
 	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
 	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error

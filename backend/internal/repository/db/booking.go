@@ -27,14 +27,17 @@ func (r *bookingRepository) WithTx(tx db.DBTX) domain.BookingRepository {
 
 func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booking) (int, error) {
 	query := `
-	insert into "Booking" (status, booking_type, merchant_id, service_id, location_id, from_date, to_date)
-	values ($1, $2, $3, $4, $5, $6, $7)
+	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date,
+		price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 	returning id
 	`
 
 	var bookingId int
 
-	err := r.db.QueryRow(ctx, query, booking.Status, booking.BookingType, booking.MerchantId, booking.ServiceId, booking.LocationId, booking.FromDate, booking.ToDate).Scan(&bookingId)
+	err := r.db.QueryRow(ctx, query, booking.Status, booking.BookingType, booking.IsRecurring, booking.MerchantId, booking.EmployeeId, booking.ServiceId, booking.LocationId,
+		booking.BookingSeriesId, booking.SeriesOriginalDate, booking.FromDate, booking.ToDate, booking.PricePerPerson, booking.CostPerPerson, booking.TotalPrice, booking.TotalCost,
+		booking.MerchantNote, booking.MinParticipants, booking.MaxParticipants, booking.CurrentParticipants).Scan(&bookingId)
 	if err != nil {
 		return 0, err
 	}
@@ -44,9 +47,11 @@ func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booki
 
 func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.Booking) ([]int, error) {
 	query := `
-	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date)
-	select unnest($1::booking_status[]), unnest($2::booking_type[]), unnest($3::boolean[]), unnest($4::uuid[]), unnest($5::int[]),
-		unnest($6::int[]), unnest($7::int[]), unnest($8::int[]), unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[])
+	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date,
+		price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
+	select unnest($1::booking_status[]), unnest($2::booking_type[]), unnest($3::boolean[]), unnest($4::uuid[]), unnest($5::int[]), unnest($6::int[]), unnest($7::int[]),
+		unnest($8::int[]), unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[]), unnest($12::price[]), unnest($13::price[]),
+		unnest($14::price[]), unnest($15::price[]), unnest($16::text[]), unnest($17::int[]), unnest($18::int[]), unnest($19::int[])
 	returning id
 	`
 
@@ -62,6 +67,14 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 	seriesIds := make([]pgtype.Int4, len(bookings))
 	fromDates := make([]time.Time, len(bookings))
 	toDates := make([]time.Time, len(bookings))
+	pricePerPersons := make([]currencyx.Price, len(bookings))
+	costPerPersons := make([]currencyx.Price, len(bookings))
+	totalPrices := make([]currencyx.Price, len(bookings))
+	totalCosts := make([]currencyx.Price, len(bookings))
+	merchantNotes := make([]pgtype.Text, len(bookings))
+	minParicipants := make([]int, len(bookings))
+	maxParicipants := make([]int, len(bookings))
+	currentParicipants := make([]int, len(bookings))
 
 	for i, b := range bookings {
 		statues[i] = b.Status.String()
@@ -82,6 +95,18 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 		}
 		fromDates[i] = b.FromDate
 		toDates[i] = b.ToDate
+		pricePerPersons[i] = b.PricePerPerson
+		costPerPersons[i] = b.CostPerPerson
+		totalPrices[i] = b.TotalPrice
+		totalCosts[i] = b.TotalCost
+		if b.MerchantNote == nil {
+			merchantNotes[i] = pgtype.Text{Valid: false}
+		} else {
+			merchantNotes[i] = pgtype.Text{String: *b.MerchantNote, Valid: true}
+		}
+		minParicipants[i] = b.MinParticipants
+		maxParicipants[i] = b.MaxParticipants
+		currentParicipants[i] = b.CurrentParticipants
 	}
 
 	rows, _ := r.db.Query(ctx, query, statues, types, isRecurrings, merchantIds, employeeIds, serviceIds, locationIds,
@@ -113,62 +138,6 @@ func (r *bookingRepository) NewBookingPhases(ctx context.Context, bookingPhases 
 	}
 
 	_, err := r.db.Exec(ctx, query, bookingIds, servicePhaseIds, fromDates, toDates)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *bookingRepository) NewBookingDetails(ctx context.Context, bookingDetails domain.BookingDetails) error {
-	query := `
-	insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`
-
-	_, err := r.db.Exec(ctx, query, bookingDetails.BookingId, bookingDetails.PricePerPerson, bookingDetails.CostPerPerson, bookingDetails.TotalPrice,
-		bookingDetails.TotalCost, bookingDetails.MerchantNote, bookingDetails.MinParticipants, bookingDetails.MaxParticipants, bookingDetails.CurrentParticipants)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *bookingRepository) NewBookingDetailsBatch(ctx context.Context, bookingDetails []domain.BookingDetails) error {
-	query := `
-	insert into "BookingDetails" (booking_id, price_per_person, cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants)
-	select unnest($1::int[]), unnest($2::price[]), unnest($3::price[]), unnest($4::price[]), unnest($5::price[]), unnest($6::text[]), unnest($7::int[]), unnest($8::int[]), unnest($9::int[])
-	`
-
-	bookingIds := make([]int, len(bookingDetails))
-	pricePerPersons := make([]currencyx.Price, len(bookingDetails))
-	costPerPersons := make([]currencyx.Price, len(bookingDetails))
-	totalPrices := make([]currencyx.Price, len(bookingDetails))
-	totalCosts := make([]currencyx.Price, len(bookingDetails))
-	merchantNotes := make([]pgtype.Text, len(bookingDetails))
-	minParicipants := make([]int, len(bookingDetails))
-	maxParicipants := make([]int, len(bookingDetails))
-	currentParicipants := make([]int, len(bookingDetails))
-
-	for i, bd := range bookingDetails {
-		bookingIds[i] = bd.BookingId
-		pricePerPersons[i] = bd.PricePerPerson
-		costPerPersons[i] = bd.CostPerPerson
-		totalPrices[i] = bd.TotalPrice
-		totalCosts[i] = bd.TotalCost
-		if bd.MerchantNote == nil {
-			merchantNotes[i] = pgtype.Text{Valid: false}
-		} else {
-			merchantNotes[i] = pgtype.Text{String: *bd.MerchantNote, Valid: true}
-		}
-		minParicipants[i] = bd.MinParticipants
-		maxParicipants[i] = bd.MaxParticipants
-		currentParicipants[i] = bd.CurrentParticipants
-	}
-
-	_, err := r.db.Exec(ctx, query, bookingIds, pricePerPersons, costPerPersons, totalPrices, totalCosts, merchantNotes, minParicipants,
-		maxParicipants, currentParicipants)
 	if err != nil {
 		return err
 	}
@@ -270,8 +239,9 @@ func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchant
 
 func (r *bookingRepository) UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error {
 	query := `
-	update "BookingDetails" set total_price = $2, total_cost = $3
-	where booking_id = $1
+	update "Booking"
+	set total_price = $2, total_cost = $3
+	where id = $1
 	`
 
 	_, err := r.db.Exec(ctx, query, bookingId, price, cost)
@@ -284,10 +254,9 @@ func (r *bookingRepository) UpdateBookingTotalPrice(ctx context.Context, booking
 
 func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details domain.BookingDetails) error {
 	query := `
-	update "BookingDetails" bd
+	update "Booking"
 	set price_per_person = $3, cost_per_person = $4, total_price = $5, total_cost = $6, merchant_note = $7, min_participants = $8, max_participants = $9, current_participants = $10
-	from "Booking" b
-	where b.id = any($1::int[]) and b.id = bd.booking_id and b.merchant_id = $2 and b.status not in ('cancelled', 'completed')
+	where id = any($1::int[]) and merchant_id = $2 and status not in ('cancelled', 'completed')
 	`
 	_, err := r.db.Exec(ctx, query, bookingIds, merchantId, details.PricePerPerson, details.CostPerPerson, details.TotalPrice,
 		details.TotalCost, details.MerchantNote, details.MinParticipants, details.MaxParticipants, details.CurrentParticipants)
@@ -342,11 +311,10 @@ func (r *bookingRepository) UpdateParticipantStatus(ctx context.Context, booking
 
 func (r *bookingRepository) IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, currencyx.Price, error) {
 	query := `
-	update "BookingDetails" bd
+	update "Booking"
 	set current_participants = current_participants + 1
-	from "Booking" b
-	where b.id = bd.booking_id and b.id = $1 and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
-	returning bd.total_price, bd.total_cost
+	where id = $1 and booking_type in ('event', 'class') and status not in ('cancelled', 'completed') and current_participants < max_participants
+	returning total_price, total_cost
 	`
 
 	var totalPrice, totalCost currencyx.Price
@@ -361,10 +329,9 @@ func (r *bookingRepository) IncrementParticipantCount(ctx context.Context, booki
 
 func (r *bookingRepository) DecrementParticipantCount(ctx context.Context, bookingId int) error {
 	query := `
-	update "BookingDetails" bd
+	update "Booking"
 	set current_participants = current_participants - 1
-	from "Booking" b
-	where b.id = bd.booking_id and b.id = $1 and b.status not in ('cancelled', 'completed') and b.from_date > $2
+	where id = $1 and status not in ('cancelled', 'completed') and from_date > $2
 	`
 
 	var bookingType types.BookingType
@@ -379,11 +346,10 @@ func (r *bookingRepository) DecrementParticipantCount(ctx context.Context, booki
 
 func (r *bookingRepository) DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
 	query := `
-	update "BookingDetails" bd
+	update "Booking" b
 	set current_participants = current_participants - 1
-	from "Booking" b
-	left join "BookingParticipant" bp on b.id = bp.booking_id and bp.customer_id = $1
-	where b.id = bd.booking_id and b.merchant_id = $2 and b.booking_type in ('event', 'class')
+	from "BookingParticipant" bp
+	where b.id = bp.booking_id and bp.customer_id = $1 and b.merchant_id = $2 and b.booking_type in ('event', 'class')
 	`
 
 	_, err := r.db.Exec(ctx, query, customerId, merchantId)
@@ -412,14 +378,13 @@ func (r *bookingRepository) TransferDummyBookings(ctx context.Context, merchantI
 }
 
 func (r *bookingRepository) CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error {
-	bookingDetailsQuery := `
-	update "BookingDetails" bd
+	query := `
+	update "Booking"
 	set cancelled_by_merchant_on = $1, cancellation_reason = $2
-	from "Booking" b
-	where b.id = $4 and b.id = bd.booking_id and b.merchant_id = $3 and b.status not in ('cancelled', 'completed') and b.from_date > $1
+	where id = $4 and merchant_id = $3 and status not in ('cancelled', 'completed') and from_date > $1
 	`
 
-	_, err := r.db.Exec(ctx, bookingDetailsQuery, time.Now().UTC(), cancellationReason, merchantId, bookingId)
+	_, err := r.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, bookingId)
 	if err != nil {
 		return err
 	}
@@ -493,11 +458,10 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 
 func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int) (domain.PublicBooking, error) {
 	query := `
-	select b.from_date, b.to_date, bd.price_per_person as price, m.name as merchant_name, s.name as service_name, m.cancel_deadline, s.price_type,
+	select b.from_date, b.to_date, b.price_per_person as price, m.name as merchant_name, s.name as service_name, m.cancel_deadline, s.price_type,
 		b.status = 'cancelled' as is_cancelled,
 		l.formatted_location
 	from "Booking" b
-	join "BookingDetails" bd on bd.booking_id = b.id
 	join "Service" s on s.id = b.service_id
 	join "Merchant" m on m.id = b.merchant_id
 	join "Location" l on l.id = b.location_id
@@ -516,14 +480,13 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int)
 
 func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, b.merchant_note, b.total_price as price, b.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "BookingDetails" bd on bd.booking_id = b.id
 	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
 	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
@@ -543,14 +506,13 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 
 func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, bd.merchant_note, bd.total_price as price, bd.total_cost as cost, s.name as service_name,
+	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, b.merchant_note, b.total_price as price, b.total_cost as cost, s.name as service_name,
 		s.color as service_color, s.total_duration as service_duration,
 		coalesce(c.first_name, u.first_name) as first_name,
 		coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.phone_number, u.phone_number) as phone_number
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "BookingDetails" bd on bd.booking_id = b.id
 	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
 	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
@@ -589,12 +551,11 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 		where bp.status not in ('cancelled')
 		group by bp.booking_id
 	)
-	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, bd.merchant_note, bd.total_price as price, bd.total_cost as cost,
-		s.id as service_id, s.name as service_name, s.color as service_color, bd.max_participants,
+	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.total_price as price, b.total_cost as cost,
+		s.id as service_id, s.name as service_name, s.color as service_color, b.max_participants,
 		coalesce(p.participants, '[]'::jsonb) as participants
 	from "Booking" b
 	join "Service" s on b.service_id = s.id
-	join "BookingDetails" bd on bd.booking_id = b.id
 	left join participants p on p.booking_id = b.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.to_date <= $3 AND b.status not in ('cancelled')
 	order by b.id
@@ -612,9 +573,8 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, bookingId int) (domain.BookingForExternalCalendar, error) {
 	query := `
 	select b.id, b.status, b.booking_type, b.employee_id, s.name as service_name, s.description as service_description, s.price_type,
-		l.formatted_location, b.from_date, b.to_date, bd.total_price, bd.total_cost, bd.merchant_note, bd.current_participants
+		l.formatted_location, b.from_date, b.to_date, b.total_price, b.total_cost, b.merchant_note, b.current_participants
 	from "Booking" b
-	join "BookingDetails" bd on b.id = bd.booking_id
 	join "Service" s on b.service_id = s.id
 	join "Location" l on b.location_id = l.id
 	where b.id = $1
@@ -651,21 +611,6 @@ func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId in
 	}
 
 	return booking, nil
-}
-
-func (r *bookingRepository) GetBookingDetails(ctx context.Context, bookingId int) (domain.BookingDetails, error) {
-	query := `
-	select * from "BookingDetails"
-	where booking_id = $1
-	`
-
-	rows, _ := r.db.Query(ctx, query, bookingId)
-	bookingDetails, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingDetails])
-	if err != nil {
-		return domain.BookingDetails{}, err
-	}
-
-	return bookingDetails, nil
 }
 
 func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingId int) ([]domain.BookingParticipant, error) {
@@ -724,9 +669,8 @@ func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merch
 func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]domain.BookingTime, error) {
 	query := `
 	select b.from_date, b.to_date from "Booking" b
-	join "BookingDetails" bd on bd.booking_id = b.id
 	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $4 and DATE(b.to_date) <= $5
-		and b.status not in ('cancelled', 'completed') and bd.current_participants < bd.max_participants
+		and b.status not in ('cancelled', 'completed') and b.current_participants < b.max_participants
 	order by b.from_date
 	`
 
@@ -741,35 +685,20 @@ func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Conte
 
 func (r *bookingRepository) NewBookingSeries(ctx context.Context, bs domain.BookingSeries) (domain.BookingSeries, error) {
 	query := `
-	insert into "BookingSeries" (booking_type, merchant_id, employee_id, service_id, location_id, rrule, dstart, timezone, is_active)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	insert into "BookingSeries" (booking_type, merchant_id, employee_id, service_id, location_id, rrule, dstart, timezone, is_active, generated_until,
+		price_per_person, cost_per_person, total_price, total_cost, min_participants, max_participants, current_participants)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	returning *
 	`
 
-	rows, _ := r.db.Query(ctx, query, bs.BookingType, bs.MerchantId, bs.EmployeeId, bs.ServiceId, bs.LocationId, bs.Rrule, bs.Dstart, bs.Timezone, true)
+	rows, _ := r.db.Query(ctx, query, bs.BookingType, bs.MerchantId, bs.EmployeeId, bs.ServiceId, bs.LocationId, bs.Rrule, bs.Dstart, bs.Timezone, true, bs.GeneratedUntil,
+		bs.PricePerPerson, bs.CostPerPerson, bs.TotalPrice, bs.TotalCost, bs.MinParticipants, bs.MaxParticipants, bs.CurrentParticipants)
 	bookingSeries, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.BookingSeries])
 	if err != nil {
 		return domain.BookingSeries{}, err
 	}
 
 	return bookingSeries, nil
-}
-
-func (r *bookingRepository) NewBookingSeriesDetails(ctx context.Context, bsd domain.BookingSeriesDetails) (domain.BookingSeriesDetails, error) {
-	query := `
-	insert into "BookingSeriesDetails" (booking_series_id, price_per_person, cost_per_person, total_price, total_cost, min_participants, max_participants, current_participants)
-	values ($1, $2, $3, $4, $5, $6, $7, $8)
-	returning *
-	`
-
-	rows, _ := r.db.Query(ctx, query, bsd.BookingSeriesId, bsd.PricePerPerson, bsd.CostPerPerson, bsd.TotalPrice, bsd.TotalCost,
-		bsd.MinParticipants, bsd.MaxParticipants, bsd.CurrentParticipants)
-	bookingSeriesDetails, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.BookingSeriesDetails])
-	if err != nil {
-		return domain.BookingSeriesDetails{}, err
-	}
-
-	return bookingSeriesDetails, nil
 }
 
 func (r *bookingRepository) NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []domain.BookingSeriesParticipant) ([]domain.BookingSeriesParticipant, error) {
@@ -844,10 +773,12 @@ func (r *bookingRepository) DeactivateBookingSeries(ctx context.Context, seriesI
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details domain.BookingSeriesDetails) error {
-	query := `update "BookingSeriesDetails"
+func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details domain.BookingDetails) error {
+	query := `
+	update "BookingSeries"
 	set price_per_person = $2, cost_per_person = $3, total_price = $4, total_cost = $5, min_participants = $6, max_participants = $7, current_participants = $8
-	where booking_series_id = $1`
+	where id = $1
+	`
 
 	_, err := r.db.Exec(ctx, query, seriesId, details.PricePerPerson, details.CostPerPerson, details.TotalPrice, details.TotalCost,
 		details.MinParticipants, details.MaxParticipants, details.CurrentParticipants)
@@ -885,7 +816,11 @@ func (r *bookingRepository) GetFutureSeriesBookings(ctx context.Context, seriesI
 }
 
 func (r *bookingRepository) GetBookingSeries(ctx context.Context, seriesId int) (domain.BookingSeries, error) {
-	query := `select * from "BookingSeries" where id = $1`
+	query := `
+	select *
+	from "BookingSeries"
+	where id = $1
+	`
 
 	rows, _ := r.db.Query(ctx, query, seriesId)
 	bookingSeries, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingSeries])
@@ -909,22 +844,6 @@ func (r *bookingRepository) GetActiveBookingSeriesIds(ctx context.Context, tresh
 	}
 
 	return ids, nil
-}
-
-func (r *bookingRepository) GetBookingSeriesDetails(ctx context.Context, seriesId int) (domain.BookingSeriesDetails, error) {
-	query := `
-	select *
-	from "BookingSeriesDetails"
-	where booking_series_id = $1
-	`
-
-	rows, _ := r.db.Query(ctx, query, seriesId)
-	seriesDetails, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingSeriesDetails])
-	if err != nil {
-		return domain.BookingSeriesDetails{}, err
-	}
-
-	return seriesDetails, nil
 }
 
 func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]domain.BookingSeriesParticipant, error) {

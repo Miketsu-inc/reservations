@@ -16,8 +16,6 @@ type BookingRepository interface {
 	NewBooking(ctx context.Context, booking Booking) (int, error)
 	NewBookings(ctx context.Context, bookings []Booking) ([]int, error)
 	NewBookingPhases(ctx context.Context, bookingPhases []BookingPhase) error
-	NewBookingDetails(ctx context.Context, bookingDetails BookingDetails) error
-	NewBookingDetailsBatch(ctx context.Context, bookingDetails []BookingDetails) error
 	NewBookingParticipants(ctx context.Context, bookingParticipants []BookingParticipant) error
 
 	DeleteBookingPhasesBatch(ctx context.Context, bookingIds []int) error
@@ -47,7 +45,6 @@ type BookingRepository interface {
 	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]BookingForCalendar, error)
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
 	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
-	GetBookingDetails(ctx context.Context, bookingId int) (BookingDetails, error)
 	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
 
 	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingTime, error)
@@ -55,36 +52,56 @@ type BookingRepository interface {
 	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
 
 	NewBookingSeries(ctx context.Context, bookingSeries BookingSeries) (BookingSeries, error)
-	NewBookingSeriesDetails(ctx context.Context, bookingSeriesDetails BookingSeriesDetails) (BookingSeriesDetails, error)
 	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
 
 	UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error
 	UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error
 	DeactivateBookingSeries(ctx context.Context, seriesId int) error
-	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingSeriesDetails) error
+	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingDetails) error
 
 	DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error
 
 	GetBookingSeries(ctx context.Context, seriesId int) (BookingSeries, error)
 	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
-	GetBookingSeriesDetails(ctx context.Context, seriesId int) (BookingSeriesDetails, error)
 	GetFutureSeriesBookings(ctx context.Context, seriesId int, fromDate time.Time) ([]Booking, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 }
 
 type Booking struct {
-	Id                 int
-	Status             types.BookingStatus
-	BookingType        types.BookingType
-	IsRecurring        bool
-	MerchantId         uuid.UUID
-	EmployeeId         *int
-	ServiceId          int
-	LocationId         int
-	BookingSeriesId    *int
-	SeriesOriginalDate *time.Time
-	FromDate           time.Time
-	ToDate             time.Time
+	Id                    int                 `db:"id"`
+	Status                types.BookingStatus `db:"status"`
+	BookingType           types.BookingType   `db:"booking_type"`
+	IsRecurring           bool                `db:"is_recurring"`
+	MerchantId            uuid.UUID           `db:"merchant_id"`
+	EmployeeId            *int                `db:"employee_id"`
+	ServiceId             int                 `db:"service_id"`
+	LocationId            int                 `db:"location_id"`
+	BookingSeriesId       *int                `db:"booking_series_id"`
+	SeriesOriginalDate    *time.Time          `db:"series_original_date"`
+	FromDate              time.Time           `db:"from_date"`
+	ToDate                time.Time           `db:"to_date"`
+	PricePerPerson        currencyx.Price     `db:"price_per_person"`
+	CostPerPerson         currencyx.Price     `db:"cost_per_person"`
+	TotalPrice            currencyx.Price     `db:"total_price"`
+	TotalCost             currencyx.Price     `db:"total_cost"`
+	MerchantNote          *string             `db:"merchant_note"`
+	MinParticipants       int                 `db:"min_participants"`
+	MaxParticipants       int                 `db:"max_participants"`
+	CurrentParticipants   int                 `db:"current_participants"`
+	CancelledByMerchantOn *time.Time          `db:"cancelled_by_merchant_on"`
+	CancellationReason    *string             `db:"cancellation_reason"`
+}
+
+// struct just for db inserts and updates
+type BookingDetails struct {
+	PricePerPerson      currencyx.Price
+	CostPerPerson       currencyx.Price
+	TotalPrice          currencyx.Price
+	TotalCost           currencyx.Price
+	MerchantNote        *string
+	MinParticipants     int
+	MaxParticipants     int
+	CurrentParticipants int
 }
 
 type BookingPhase struct {
@@ -93,21 +110,6 @@ type BookingPhase struct {
 	ServicePhaseId int
 	FromDate       time.Time
 	ToDate         time.Time
-}
-
-type BookingDetails struct {
-	Id                    int
-	BookingId             int
-	PricePerPerson        currencyx.Price
-	CostPerPerson         currencyx.Price
-	TotalPrice            currencyx.Price
-	TotalCost             currencyx.Price
-	MerchantNote          *string
-	MinParticipants       int
-	MaxParticipants       int
-	CurrentParticipants   int
-	CancelledByMerchantOn *time.Time
-	CancellationReason    *string
 }
 
 type BookingParticipant struct {
@@ -204,37 +206,32 @@ type BookingForEmail struct {
 }
 
 type BookingSeries struct {
-	Id             int               `json:"id" db:"id"`
-	BookingType    types.BookingType `json:"booking_type" db:"booking_type"`
-	MerchantId     uuid.UUID         `json:"merchant_id" db:"merchant_id"`
-	EmployeeId     int               `json:"employee_id" db:"employee_id"`
-	ServiceId      int               `json:"service_id" db:"service_id"`
-	LocationId     int               `json:"location_id" db:"location_id"`
-	Rrule          string            `json:"rrule" db:"rrule"`
-	Dstart         time.Time         `json:"dstart" db:"dstart"`
-	Timezone       string            `json:"timezone" db:"timezone"`
-	IsActive       bool              `json:"is_active" db:"is_active"`
-	GeneratedUntil *time.Time        `db:"generated_until"`
-}
-
-type BookingSeriesDetails struct {
-	Id                  int             `json:"id" db:"id"`
-	BookingSeriesId     int             `json:"booking_series_id" db:"booking_series_id"`
-	PricePerPerson      currencyx.Price `json:"price_per_person" db:"price_per_person"`
-	CostPerPerson       currencyx.Price `json:"cost_per_person" db:"cost_per_person"`
-	TotalPrice          currencyx.Price `json:"total_price" db:"total_price"`
-	TotalCost           currencyx.Price `json:"total_cost" db:"total_cost"`
-	MinParticipants     int             `json:"min_participants" db:"min_participants"`
-	MaxParticipants     int             `json:"max_participants" db:"max_participants"`
-	CurrentParticipants int             `json:"current_participants" db:"current_participants"`
+	Id                  int               `db:"id"`
+	BookingType         types.BookingType `db:"booking_type"`
+	MerchantId          uuid.UUID         `db:"merchant_id"`
+	EmployeeId          int               `db:"employee_id"`
+	ServiceId           int               `db:"service_id"`
+	LocationId          int               `db:"location_id"`
+	Rrule               string            `db:"rrule"`
+	Dstart              time.Time         `db:"dstart"`
+	Timezone            string            `db:"timezone"`
+	IsActive            bool              `db:"is_active"`
+	GeneratedUntil      *time.Time        `db:"generated_until"`
+	PricePerPerson      currencyx.Price   `db:"price_per_person"`
+	CostPerPerson       currencyx.Price   `db:"cost_per_person"`
+	TotalPrice          currencyx.Price   `db:"total_price"`
+	TotalCost           currencyx.Price   `db:"total_cost"`
+	MinParticipants     int               `db:"min_participants"`
+	MaxParticipants     int               `db:"max_participants"`
+	CurrentParticipants int               `db:"current_participants"`
 }
 
 type BookingSeriesParticipant struct {
-	Id              int        `json:"id" db:"id"`
-	BookingSeriesId int        `json:"booking_series_id" db:"booking_series_id"`
-	CustomerId      *uuid.UUID `json:"customer_id" db:"customer_id"`
-	IsActive        bool       `json:"is_active" db:"is_active"`
-	DroppedOutOn    *time.Time `json:"dropped_out_on" db:"dropped_out_on"`
+	Id              int        `db:"id"`
+	BookingSeriesId int        `db:"booking_series_id"`
+	CustomerId      *uuid.UUID `db:"customer_id"`
+	IsActive        bool       `db:"is_active"`
+	DroppedOutOn    *time.Time `db:"dropped_out_on"`
 }
 
 type BookingForExternalCalendar struct {

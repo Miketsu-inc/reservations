@@ -185,11 +185,10 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 				) order by b.from_date desc
 			) as bookings
 		from (
-			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id, b.location_id, b.service_id, bd.price_per_person, bp.status
+			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id, b.location_id, b.service_id, b.price_per_person, bp.status
 			from "Booking" b
-			join "BookingDetails" bd on bd.booking_id = b.id
 			left join "BookingParticipant" bp on bp.booking_id = b.id and (bp.customer_id = $2 or bp.transferred_to = $2)
-			where b.merchant_id = $1 and bd.cancelled_by_merchant_on is null
+			where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
 		) b
 		join "Service" s on s.id = b.service_id
 		join "Merchant" m on m.id = b.merchant_id

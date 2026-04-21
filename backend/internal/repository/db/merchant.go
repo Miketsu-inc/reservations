@@ -285,13 +285,12 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 	base AS (
 		SELECT
 			to_date,
-			(bd.total_price).number as price,
-			(bd.total_price).currency as currency,
+			(total_price).number as price,
+			(total_price).currency as currency,
 			EXTRACT(EPOCH FROM (to_date - from_date)) / 60 AS duration,
 			COALESCE(bp.cancelled_by_user, FALSE) as cancelled_by_user,
 			(b.status in ('cancelled')) as cancelled
 		FROM "Booking" b
-		join "BookingDetails" bd on bd.booking_id = b.id
 		left join participant bp on bp.booking_id = b.id
 		WHERE merchant_id = $1
 		order by b.id
@@ -396,9 +395,8 @@ func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uui
 		DATE(bookings.from_date) AS day,
 		COALESCE(SUM(bookings.price), 0) AS value
 	FROM (
-		select b.from_date, (bd.total_price).number as price
+		select b.from_date, (b.total_price).number as price
 		from "Booking" b
-		join "BookingDetails" bd on bd.booking_id = b.id
 		where b.merchant_id = $1 AND b.from_date >= $2 AND b.from_date < $3 and b.status not in ('cancelled')
 		order by b.id
 	) as bookings
