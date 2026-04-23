@@ -140,9 +140,9 @@ function SidePanelLayout() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto">
-      {isWindowSmall && (
-        <nav className="bg-layer_bg sticky top-0 z-20 w-full">
+    <div className="bg-layer_bg flex h-screen flex-col overflow-hidden">
+      {isWindowSmall ? (
+        <nav className="sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center justify-between px-4 py-2">
             <button
               aria-controls="sidepanel"
@@ -175,125 +175,48 @@ function SidePanelLayout() {
             </div>
           </div>
         </nav>
-      )}
-      {isOpen && isWindowSmall && (
-        <div
-          onClick={closeSidePanelHandler}
-          className={`fixed inset-0 z-20 bg-black transition-opacity
-          duration-1000 ease-in-out
-          ${isOpen ? "opacity-60" : "pointer-events-none opacity-0"}`}
-        ></div>
-      )}
-      <aside
-        id="sidepanel"
-        className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
-          ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"} fixed top-0 left-0
-          z-30 h-dvh overflow-hidden transition-all duration-300`}
-        aria-label="Sidepanel"
-      >
-        <div
-          className="bg-layer_bg border-border_color flex h-full flex-col
-            border-r px-3 py-4"
-        >
-          <div
-            className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"} flex
-              h-10 flex-row items-center gap-3 transition-normal duration-300
-              ease-in-out`}
-          >
-            <img
-              className="h-full rounded-lg object-cover"
-              src="https://dummyimage.com/160x40/d156c3/000000.jpg"
-            />
-          </div>
-          <ol className="flex flex-1 flex-col space-y-2 pt-8">
-            {navigation.map((item, index) => (
-              <li
-                className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}
-                key={index}
-              >
-                {withConditionalTooltip(
-                  !isWindowSmall && isCollapsed,
-                  item.label,
-                  <Link
-                    onClick={
-                      item?.onClick ? item.onClick : closeSidePanelHandler
-                    }
-                    to={item.href}
-                    activeProps={{
-                      className: "bg-primary/20 *:text-primary! *:duration-0",
-                    }}
-                    className="text-text_color hover:bg-primary/20 flex
-                      items-center rounded-lg p-2"
-                  >
-                    <span
-                      className="shrink-0 text-gray-500 transition duration-75
-                        dark:text-gray-400"
-                    >
-                      {item.icon}
-                    </span>
-                    {(!isCollapsed || isWindowSmall) && (
-                      <>
-                        <span
-                          className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
-                          ms-3 flex-1 whitespace-nowrap transition-opacity
-                          duration-300`}
-                        >
-                          {item.label}
-                        </span>
-                        {item.isPro && (
-                          <span
-                            className="ms-3 inline-flex items-center
-                              justify-center rounded-full bg-gray-300 px-2
-                              text-sm font-medium text-gray-800 dark:bg-gray-700
-                              dark:text-gray-300"
-                          >
-                            Pro
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </aside>
-      {!isWindowSmall && (
-        <div
-          className={`${isCollapsed ? "md:ml-16" : "md:ml-60"} bg-layer_bg
-          border-b-border_color border-b py-2 pl-4 transition-[margin]
-          duration-300`}
-        >
+      ) : (
+        <header className={"py-2 pl-4 transition-[margin] duration-300"}>
           <div className="mr-4 flex flex-row items-center justify-between">
-            <div
-              className="flex flex-row items-center gap-2 py-3 text-sm
-                text-gray-800 dark:text-gray-300"
-            >
-              <Tootlip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="cursor-pointer"
-                    onClick={() => {
-                      localStorage.setItem("sidepanel_collapsed", !isCollapsed);
-                      setIsCollapsed(!isCollapsed);
-                    }}
-                  >
-                    <SidePanelToggleIcon
-                      styles="size-4 stroke-gray-800 dark:stroke-gray-300
-                        hover:stroke-text_color"
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={6}>
-                  <p>Sidepanel toggle</p>
-                </TooltipContent>
-              </Tootlip>
-              {/* <div
-                className="mx-2 h-3 w-px border-none bg-gray-800
-                  dark:bg-gray-300"
-              ></div>
-              <Breadcrumbs /> */}
+            <div className="flex flex-row items-center gap-4">
+              <div
+                className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"}
+                  flex h-10 flex-row items-center gap-3 transition-normal
+                  duration-300 ease-in-out`}
+              >
+                <img
+                  className="h-full rounded-lg object-cover"
+                  src="https://dummyimage.com/160x40/d156c3/000000.jpg"
+                />
+              </div>
+              <div
+                className={`${isCollapsed ? "ml-0" : "ml-16"} flex flex-row
+                  items-center gap-2 py-3 text-sm text-gray-800
+                  transition-[margin] dark:text-gray-300`}
+              >
+                <Tootlip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="cursor-pointer"
+                      onClick={() => {
+                        localStorage.setItem(
+                          "sidepanel_collapsed",
+                          !isCollapsed
+                        );
+                        setIsCollapsed(!isCollapsed);
+                      }}
+                    >
+                      <SidePanelToggleIcon
+                        styles="size-4 stroke-gray-800 dark:stroke-gray-300
+                          hover:stroke-text_color"
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    <p>Sidepanel toggle</p>
+                  </TooltipContent>
+                </Tootlip>
+              </div>
             </div>
             <div className="flex flex-row gap-4">
               <a
@@ -322,14 +245,106 @@ function SidePanelLayout() {
               </button>
             </div>
           </div>
-        </div>
+        </header>
       )}
-      <div
-        className={`${!isWindowSmall && isCollapsed ? "md:ml-16" : "md:ml-60"}
-          flex min-h-screen flex-col transition-[margin] duration-300 md:px-4
-          md:pt-4`}
-      >
-        <Outlet />
+      <div className="flex flex-1 overflow-hidden">
+        {isOpen && isWindowSmall && (
+          <div
+            onClick={closeSidePanelHandler}
+            className={`fixed inset-0 z-20 bg-black transition-opacity
+            duration-1000 ease-in-out
+            ${isOpen ? "opacity-60" : "pointer-events-none opacity-0"}`}
+          ></div>
+        )}
+        <aside
+          id="sidepanel"
+          className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
+            ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"}
+            ${isWindowSmall && "top-0"} bg-layer_bg fixed left-0 z-30 h-dvh
+            overflow-hidden transition-[width,translate] duration-300`}
+          aria-label="Sidepanel"
+        >
+          {isWindowSmall && (
+            <div className="p-4">
+              <div
+                className={`${!isWindowSmall && isCollapsed ? "w-10" : "w-40"}
+                flex h-10 flex-row items-center gap-3 transition-normal
+                duration-300 ease-in-out`}
+              >
+                <img
+                  className="h-full rounded-lg object-cover"
+                  src="https://dummyimage.com/160x40/d156c3/000000.jpg"
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex h-full flex-col px-3 py-4">
+            <ol className="flex flex-1 flex-col space-y-2">
+              {navigation.map((item, index) => (
+                <li
+                  className={`${index === navigation.length - 1 ? "mt-auto" : ""}`}
+                  key={index}
+                >
+                  {withConditionalTooltip(
+                    !isWindowSmall && isCollapsed,
+                    item.label,
+                    <Link
+                      onClick={
+                        item?.onClick ? item.onClick : closeSidePanelHandler
+                      }
+                      to={item.href}
+                      activeProps={{
+                        className: "bg-primary/20 *:text-primary! *:duration-0",
+                      }}
+                      className="text-text_color hover:bg-primary/20 flex
+                        items-center rounded-lg p-2"
+                    >
+                      <span
+                        className="shrink-0 text-gray-500 transition duration-75
+                          dark:text-gray-400"
+                      >
+                        {item.icon}
+                      </span>
+                      {(!isCollapsed || isWindowSmall) && (
+                        <>
+                          <span
+                            className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
+                            ms-3 flex-1 whitespace-nowrap transition-opacity
+                            duration-300`}
+                          >
+                            {item.label}
+                          </span>
+                          {item.isPro && (
+                            <span
+                              className="ms-3 inline-flex items-center
+                                justify-center rounded-full bg-gray-300 px-2
+                                text-sm font-medium text-gray-800
+                                dark:bg-gray-700 dark:text-gray-300"
+                            >
+                              Pro
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </aside>
+        <div
+          className={`${!isWindowSmall && isCollapsed ? "md:ml-14" : "md:ml-60"}
+            flex min-h-0 flex-1 flex-col transition-[margin] duration-300
+            md:px-2 md:pt-2`}
+        >
+          <div
+            className={`${!isWindowSmall ? "md:px-4 md:pt-4" : ""} bg-bg_color
+              flex-1 overflow-y-auto rounded-t-xl`}
+          >
+            <Outlet />
+          </div>
+        </div>
       </div>
     </div>
   );

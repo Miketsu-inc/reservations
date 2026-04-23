@@ -39,7 +39,7 @@ function ProfilePage() {
     <div className="flex flex-col gap-6">
       <ServerError error={serverError} />
       <div className="flex flex-col">
-        <SectionHeader title="Change Password" styles="" />
+        <SectionHeader title="Change Password" />
       </div>
 
       <div className="flex flex-col gap-4">

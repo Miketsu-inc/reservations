@@ -204,7 +204,7 @@ function MerchantPage() {
   };
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex min-h-0 w-full flex-col gap-6">
       <div className="flex w-full flex-col gap-6">
         <SectionHeader title="General info" styles="" />
         <Textarea

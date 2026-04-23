@@ -259,7 +259,7 @@ export default function Calendar({ router, route, search }) {
           setRecurModalData({ handleSave: handleSave })
         }
       />
-      <div className="relative flex flex-col py-4 md:flex-row md:gap-2">
+      <div className="relative flex flex-col pb-4 md:flex-row md:gap-2">
         <div
           className="flex w-full flex-col justify-between md:flex-row
             md:items-center"

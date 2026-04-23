@@ -19,9 +19,11 @@ function CustomersLayout() {
   const pathName = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="flex flex-col justify-center gap-6 px-4 py-4 md:px-0">
+    <div
+      className="flex flex-col justify-center gap-6 px-4 py-2 md:px-0 md:py-0"
+    >
       <div className="flex w-full flex-col gap-4">
-        <h1 className="text-text_color text-2xl font-bold">Customers</h1>
+        <h1 className="text-text_color text-xl">Customers</h1>
         <div className="flex items-center justify-between">
           <nav
             className="dark:bg-layer_bg flex w-fit rounded-md bg-gray-200 p-1"

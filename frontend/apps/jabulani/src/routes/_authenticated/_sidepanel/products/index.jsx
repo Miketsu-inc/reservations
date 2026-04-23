@@ -147,7 +147,7 @@ function ProductsPage() {
         onClose={() => setShowProductModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="flex w-full flex-col gap-5 py-4">
+      <div className="flex w-full flex-col gap-5 pb-4">
         <p className="text-xl">Products</p>
         <ServerError error={serverError} />
         <div className="h-2/3 w-full">

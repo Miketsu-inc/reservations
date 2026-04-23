@@ -11,8 +11,8 @@ export const Route = createFileRoute(
 function RouteComponent() {
   return (
     <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0">
-      <p className="py-6 text-2xl">Integrations</p>
-      <p className="pb-6 text-xl">Calendar</p>
+      <p className="pb-6 text-xl">Integrations</p>
+      <p className="pb-6 text-lg">Calendar</p>
       <div className="flex flex-col gap-4">
         <Card styles="flex flex-row justify-between items-center gap-2">
           <div className="flex flex-col gap-2">

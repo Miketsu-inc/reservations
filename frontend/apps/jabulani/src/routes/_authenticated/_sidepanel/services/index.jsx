@@ -232,7 +232,7 @@ function ServicesPage() {
         onClose={() => setShowAddCategoryModal(false)}
         onAdded={invalidateServicesQuery}
       />
-      <div className="flex w-full flex-col gap-8 py-6">
+      <div className="flex w-full flex-col gap-8 pb-6">
         <p className="text-xl">Services</p>
         <ServerError error={serverError} />
         <div className="flex flex-row items-center justify-between">

@@ -82,7 +82,7 @@ function DashboardPage() {
 
   return (
     <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0 lg:h-[90svh]">
-      <div className="flex flex-row items-center justify-between py-3">
+      <div className="flex flex-row items-center justify-between pb-3">
         <p className="text-xl">Your dashboard</p>
         <Select
           styles="w-36!"
