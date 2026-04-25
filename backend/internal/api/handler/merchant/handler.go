@@ -280,7 +280,13 @@ func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.service.UpdatePreferences(r.Context(), mapToUpdatePreferencesInput(req))
+	updatePreferencesInput, err := mapToUpdatePreferencesInput(req)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = h.service.UpdatePreferences(r.Context(), updatePreferencesInput)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return

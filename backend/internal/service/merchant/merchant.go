@@ -248,9 +248,9 @@ type UpdatePreferencesInput struct {
 	TimeFormat         string
 	CalendarView       string
 	CalendarViewMobile string
-	StartHour          domain.TimeString
-	EndHour            domain.TimeString
-	TimeFrequency      domain.TimeString
+	StartHour          time.Time
+	EndHour            time.Time
+	TimeFrequency      time.Time
 }
 
 func (s *Service) UpdatePreferences(ctx context.Context, input UpdatePreferencesInput) error {

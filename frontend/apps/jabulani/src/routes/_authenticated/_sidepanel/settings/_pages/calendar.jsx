@@ -17,9 +17,9 @@ const calendarViewOptions = [
 ];
 
 const TimeFrequencyOptions = [
-  { value: "00:10:00", label: "10 minute" },
-  { value: "00:15:00", label: "15 minute" },
-  { value: "00:30:00", label: "30 minute" },
+  { value: "00:10", label: "10 minute" },
+  { value: "00:15", label: "15 minute" },
+  { value: "00:30", label: "30 minute" },
 ];
 
 function convertTimeToMinutes(time) {

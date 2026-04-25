@@ -2,8 +2,6 @@ package domain
 
 import (
 	"context"
-	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -190,47 +188,12 @@ type Location struct {
 	IsActive          bool           `json:"is_active"`
 }
 
-// TODO: surely this is not great
-type TimeString string
-
-func (ts TimeString) MarshalJSON() ([]byte, error) {
-	timeStr := string(ts)
-	if strings.Contains(timeStr, ".") {
-		if parsed, err := time.Parse("15:04:05.000000", timeStr); err == nil {
-			timeStr = parsed.Format("15:04:05")
-		}
-	}
-	return json.Marshal(timeStr)
-}
-
-func (ts *TimeString) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*ts = TimeString(s)
-
-	return nil
-}
-
-func (ts TimeString) String() string {
-	timeStr := string(ts)
-
-	if strings.Contains(timeStr, ".") {
-		if parsed, err := time.Parse("15:04:05.000000", timeStr); err == nil {
-			timeStr = parsed.Format("15:04:05")
-		}
-	}
-
-	return timeStr
-}
-
 type PreferenceData struct {
-	FirstDayOfWeek     string     `json:"first_day_of_week"`
-	TimeFormat         string     `json:"time_format"`
-	CalendarView       string     `json:"calendar_view"`
-	CalendarViewMobile string     `json:"calendar_view_mobile"`
-	StartHour          TimeString `json:"start_hour"`
-	EndHour            TimeString `json:"end_hour"`
-	TimeFrequency      TimeString `json:"time_frequency"`
+	FirstDayOfWeek     string    `json:"first_day_of_week"`
+	TimeFormat         string    `json:"time_format"`
+	CalendarView       string    `json:"calendar_view"`
+	CalendarViewMobile string    `json:"calendar_view_mobile"`
+	StartHour          time.Time `json:"start_hour"`
+	EndHour            time.Time `json:"end_hour"`
+	TimeFrequency      time.Time `json:"time_frequency"`
 }

@@ -1,6 +1,8 @@
 package merchant
 
 import (
+	"time"
+
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -199,22 +201,37 @@ func mapToGetPreferencesResp(in domain.PreferenceData) getPreferencesResp {
 		TimeFormat:         in.TimeFormat,
 		CalendarView:       in.CalendarView,
 		CalendarViewMobile: in.CalendarViewMobile,
-		StartHour:          in.StartHour.String(),
-		EndHour:            in.EndHour.String(),
-		TimeFrequency:      in.TimeFrequency.String(),
+		StartHour:          in.StartHour.Format("15:04"),
+		EndHour:            in.EndHour.Format("15:04"),
+		TimeFrequency:      in.TimeFrequency.Format("15:04"),
 	}
 }
 
-func mapToUpdatePreferencesInput(in updatePreferencesReq) merchantServ.UpdatePreferencesInput {
+func mapToUpdatePreferencesInput(in updatePreferencesReq) (merchantServ.UpdatePreferencesInput, error) {
+	startHour, err := time.Parse("15:04", in.StartHour)
+	if err != nil {
+		return merchantServ.UpdatePreferencesInput{}, err
+	}
+
+	endHour, err := time.Parse("15:04", in.EndHour)
+	if err != nil {
+		return merchantServ.UpdatePreferencesInput{}, err
+	}
+
+	timeFreq, err := time.Parse("15:04", in.TimeFrequency)
+	if err != nil {
+		return merchantServ.UpdatePreferencesInput{}, err
+	}
+
 	return merchantServ.UpdatePreferencesInput{
 		FirstDayOfWeek:     in.FirstDayOfWeek,
 		TimeFormat:         in.TimeFormat,
 		CalendarView:       in.CalendarView,
 		CalendarViewMobile: in.CalendarViewMobile,
-		StartHour:          domain.TimeString(in.StartHour),
-		EndHour:            domain.TimeString(in.EndHour),
-		TimeFrequency:      domain.TimeString(in.TimeFrequency),
-	}
+		StartHour:          startHour,
+		EndHour:            endHour,
+		TimeFrequency:      timeFreq,
+	}, nil
 }
 
 func mapToGetTeamMembersForCalendarResp(in []domain.EmployeeForCalendar) []getTeamMembersForCalendarResp {
