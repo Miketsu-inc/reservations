@@ -148,7 +148,7 @@ func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time,
 }
 
 func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingTime, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
-	startDate time.Time, endDate time.Time, businessHours map[int][]domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
+	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}
 

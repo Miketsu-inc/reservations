@@ -406,7 +406,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
-		businessHours := map[int][]domain.TimeSlot{
+		businessHours := domain.BusinessHours{
 			3: {
 				{StartTime: "09:00:00", EndTime: "11:00:00"},
 			},
@@ -444,7 +444,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		serviceDuration := 30
 		bookingWindowMin, bufferTime := 0, 0
 
-		businessHours := map[int][]domain.TimeSlot{
+		businessHours := domain.BusinessHours{
 			2: {}, // Tuesday (July 1, 2025)
 			3: { // Wednesday (July 2, 2025)
 				{StartTime: "09:00:00", EndTime: "11:00:00"},

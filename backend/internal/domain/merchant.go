@@ -34,12 +34,12 @@ type MerchantRepository interface {
 	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
 	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time) ([]RevenueStat, error)
 
-	NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]TimeSlot) error
-	DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]TimeSlot) error
-	GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int][]TimeSlot, error)
+	NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error
+	DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error
+	GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
 	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, day int) ([]TimeSlot, error)
 	// Get business hours for merchant including only the first start and last ending time
-	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int]TimeSlot, error)
+	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
 
 	NewLocation(ctx context.Context, location Location) error
 	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
@@ -69,6 +69,8 @@ type TimeSlot struct {
 	EndTime   string `json:"end_time" db:"end_time"`
 }
 
+type BusinessHours map[int][]TimeSlot
+
 type MerchantInfo struct {
 	Name         string `json:"merchant_name"`
 	UrlName      string `json:"url_name"`
@@ -90,7 +92,7 @@ type MerchantInfo struct {
 
 	Services []MerchantPageServicesGroupedByCategory `json:"services"`
 
-	BusinessHours map[int][]TimeSlot `json:"business_hours"`
+	BusinessHours BusinessHours `json:"business_hours"`
 }
 
 type MerchantSettingsInfo struct {
@@ -107,7 +109,7 @@ type MerchantSettingsInfo struct {
 	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
 	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
 	Timezone         string             `json:"timezone" db:"timezone"`
-	BusinessHours    map[int][]TimeSlot `json:"business_hours" db:"business_hours"`
+	BusinessHours    BusinessHours      `json:"business_hours" db:"business_hours"`
 
 	LocationId        int     `json:"location_id" db:"location_id"`
 	Country           *string `json:"country" db:"country"`

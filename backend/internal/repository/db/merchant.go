@@ -413,7 +413,7 @@ func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uui
 	return revenue, nil
 }
 
-func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]domain.TimeSlot) error {
+func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours domain.BusinessHours) error {
 	query := `
 	insert into "BusinessHours" (merchant_id, day_of_week, start_time, end_time)
     select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
@@ -443,7 +443,7 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
 	return nil
 }
 
-func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours map[int][]domain.TimeSlot) error {
+func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours domain.BusinessHours) error {
 	query := `
 	delete from "BusinessHours"
     where merchant_id = $1
@@ -475,7 +475,7 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
 	return nil
 }
 
-func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int][]domain.TimeSlot, error) {
+func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (domain.BusinessHours, error) {
 	query := `
 	select day_of_week, start_time, end_time from "BusinessHours"
 	where merchant_id = $1
@@ -484,7 +484,7 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
 
-	businessHours := make(map[int][]domain.TimeSlot)
+	businessHours := make(domain.BusinessHours)
 	for day := 0; day <= 6; day++ {
 		businessHours[day] = []domain.TimeSlot{}
 	}
@@ -500,7 +500,7 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 		return nil
 	})
 	if err != nil {
-		return map[int][]domain.TimeSlot{}, err
+		return domain.BusinessHours{}, err
 	}
 
 	return businessHours, nil
@@ -529,7 +529,7 @@ func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchan
 	return bHours, nil
 }
 
-func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (map[int]domain.TimeSlot, error) {
+func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (domain.BusinessHours, error) {
 	query := `
 	select day_of_week, min(start_time) as start_time,
 	max(end_time) as end_time from "BusinessHours"
@@ -542,15 +542,15 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 	var day int
 	var startTime, endTime string
 
-	result := make(map[int]domain.TimeSlot)
+	result := make(domain.BusinessHours)
 	_, err := pgx.ForEachRow(rows, []any{&day, &startTime, &endTime}, func() error {
 		startTime = strings.Split(startTime, ".")[0]
 		endTime = strings.Split(endTime, ".")[0]
 
-		result[day] = domain.TimeSlot{
+		result[day] = []domain.TimeSlot{{
 			StartTime: startTime,
 			EndTime:   endTime,
-		}
+		}}
 
 		return nil
 	})

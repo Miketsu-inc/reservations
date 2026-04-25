@@ -179,7 +179,7 @@ type UpdateSettingsInput struct {
 	BookingWindowMax int
 	BufferTime       int
 	ApprovalPolicy   types.ApprovalType
-	BusinessHours    map[int][]domain.TimeSlot
+	BusinessHours    domain.BusinessHours
 }
 
 func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput) error {
@@ -221,12 +221,12 @@ func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput)
 	return nil
 }
 
-func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (map[int]domain.TimeSlot, error) {
+func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.BusinessHours, error) {
 	employee := jwt.MustGetEmployeeFromContext(ctx)
 
 	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, employee.MerchantId)
 	if err != nil {
-		return map[int]domain.TimeSlot{}, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error())
+		return domain.BusinessHours{}, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error())
 	}
 
 	return businessHours, nil

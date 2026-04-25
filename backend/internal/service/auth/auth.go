@@ -232,7 +232,7 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 			return err
 		}
 
-		businessHours := map[int][]domain.TimeSlot{
+		businessHours := domain.BusinessHours{
 			0: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
 			1: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
 			2: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
