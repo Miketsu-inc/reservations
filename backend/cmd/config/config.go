@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sync"
 
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
