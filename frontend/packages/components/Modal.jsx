@@ -15,22 +15,23 @@ export default function Modal({
 
   useEffect(() => {
     if (isOpen) {
-      modalRef.current.focus();
+      const modal = modalRef.current;
+
+      modal.focus();
 
       if (!disableFocusTrap) {
         const focusOutHandler = (event) => {
-          if (!modalRef.current?.contains(event.relatedTarget))
-            modalRef.current?.focus();
+          if (!modal?.contains(event.relatedTarget)) modal?.focus();
         };
 
-        modalRef.current.addEventListener("focusout", focusOutHandler);
+        modal.addEventListener("focusout", focusOutHandler);
 
         return () => {
-          document.removeEventListener("focusout", focusOutHandler);
+          modal.removeEventListener("focusout", focusOutHandler);
         };
       }
     }
-  }, [disableFocusTrap, isOpen, onClose]);
+  }, [disableFocusTrap, isOpen]);
 
   return (
     <>

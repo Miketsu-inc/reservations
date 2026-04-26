@@ -150,7 +150,7 @@ export default function BlockedTypesModal({
                 <button
                   key={icon}
                   type="button"
-                  onClick={() => updateFormData({ icon })}
+                  onClick={() => updateFormData({ icon: icon })}
                   className={`size-13 rounded-md border-2 text-xl transition-all
                   ${
                     formData.icon === icon
