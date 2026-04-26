@@ -13,7 +13,7 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimes(reserved []domain.BookingTime, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, BufferTime int,
+func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, BufferTime int,
 	BookingWindowMin int, bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
 
 	year, month, day := bookingDay.Date()
@@ -38,14 +38,11 @@ func CalculateAvailableTimes(reserved []domain.BookingTime, blockedTimes []domai
 	stepSize := 15 * time.Minute
 
 	for _, slot := range businessHours {
-		startTime, _ := time.Parse("15:04:05", slot.StartTime)
-		endTime, _ := time.Parse("15:04:05", slot.EndTime)
-
 		// buisness hours are NOT an absolute point in time,
 		// their timezone should be in the same timzone as the merchant is in
 		// for golang before/after to work correctly
-		businessStart := time.Date(year, month, day, startTime.Hour(), startTime.Minute(), 0, 0, merchantTz)
-		businessEnd := time.Date(year, month, day, endTime.Hour(), endTime.Minute(), 0, 0, merchantTz)
+		businessStart := time.Date(year, month, day, slot.StartTime.Hour(), slot.StartTime.Minute(), 0, 0, merchantTz)
+		businessEnd := time.Date(year, month, day, slot.EndTime.Hour(), slot.EndTime.Minute(), 0, 0, merchantTz)
 
 		bookingStart := businessStart
 
@@ -83,8 +80,8 @@ func CalculateAvailableTimes(reserved []domain.BookingTime, blockedTimes []domai
 					}
 
 					for _, booking := range reserved {
-						reservedFromDate := booking.From_date.In(merchantTz).Add(-bufferDuration)
-						reservedToDate := booking.To_date.In(merchantTz).Add(bufferDuration)
+						reservedFromDate := booking.FromDate.In(merchantTz).Add(-bufferDuration)
+						reservedToDate := booking.ToDate.In(merchantTz).Add(bufferDuration)
 
 						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
 							bookingStart = bookingStart.Add(stepSize)
@@ -147,14 +144,14 @@ func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time,
 	return filtered
 }
 
-func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingTime, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
+func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
 	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}
 
-	reservationsByDate := make(map[string][]domain.BookingTime)
+	reservationsByDate := make(map[string][]domain.BookingSlot)
 	for _, booking := range reservedForPeriod {
-		date := booking.From_date.In(merchantTz).Format("2006-01-02")
+		date := booking.FromDate.In(merchantTz).Format("2006-01-02")
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 

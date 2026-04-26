@@ -63,8 +63,8 @@ type Merchant struct {
 }
 
 type TimeSlot struct {
-	StartTime string `json:"start_time" db:"start_time"`
-	EndTime   string `json:"end_time" db:"end_time"`
+	StartTime time.Time `db:"start_time"`
+	EndTime   time.Time `db:"end_time"`
 }
 
 type BusinessHours map[int][]TimeSlot

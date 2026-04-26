@@ -31,7 +31,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
         ...prevHours,
         [day]: prevHours?.[day]?.length
           ? []
-          : [{ start_time: "09:00:00", end_time: "17:00:00" }],
+          : [{ start_time: "09:00", end_time: "17:00" }],
       };
     });
   };
@@ -41,7 +41,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
       ...prevHours,
       [day]: [
         ...(prevHours?.[day] || []),
-        { start_time: "09:00:00", end_time: "17:00:00" },
+        { start_time: "09:00", end_time: "17:00" },
       ],
     }));
   }
@@ -115,7 +115,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                 <div key={timeSlotIndex} className="flex items-center gap-3">
                   <Select
                     options={timeOptions.filter(
-                      (option) => option.value !== "23:30:00"
+                      (option) => option.value !== "23:30"
                     )}
                     value={timeSlot.start_time}
                     onSelect={(option) =>

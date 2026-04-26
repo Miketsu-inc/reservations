@@ -629,7 +629,7 @@ func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingI
 	return participants, nil
 }
 
-func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]domain.BookingTime, error) {
+func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]domain.BookingSlot, error) {
 	query := `
     select bphase.from_date, bphase.to_date
 	from "BookingPhase" bphase
@@ -639,7 +639,7 @@ func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uu
     ORDER BY bphase.from_date`
 
 	rows, _ := r.db.Query(ctx, query, merchant_id, location_id, day)
-	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingTime])
+	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
 		return nil, err
 	}
@@ -647,7 +647,7 @@ func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uu
 	return reservedTimes, nil
 }
 
-func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationId int, startDate time.Time, endDate time.Time) ([]domain.BookingTime, error) {
+func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationId int, startDate time.Time, endDate time.Time) ([]domain.BookingSlot, error) {
 	query := `
 	select bphase.from_date, bphase.to_date
 	from "BookingPhase" bphase
@@ -658,7 +658,7 @@ func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merch
 	order by bphase.from_date`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, locationId, startDate, endDate)
-	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingTime])
+	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +666,7 @@ func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merch
 	return reservedTimes, nil
 }
 
-func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]domain.BookingTime, error) {
+func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]domain.BookingSlot, error) {
 	query := `
 	select b.from_date, b.to_date from "Booking" b
 	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $4 and DATE(b.to_date) <= $5
@@ -675,7 +675,7 @@ func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Conte
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, startTime, endTime)
-	availableBookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingTime])
+	availableBookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
 		return nil, err
 	}

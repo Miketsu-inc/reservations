@@ -111,7 +111,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 
 		bookingsByDate := make(map[string][]time.Time)
 		for _, b := range groupBookings {
-			fromDate := b.From_date.In(merchantTz)
+			fromDate := b.FromDate.In(merchantTz)
 			date := fromDate.Format("2006-01-02")
 
 			bookingsByDate[date] = append(bookingsByDate[date], fromDate)

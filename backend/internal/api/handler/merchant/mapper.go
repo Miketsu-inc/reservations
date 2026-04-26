@@ -119,8 +119,8 @@ func mapToGetSettingsResp(in domain.MerchantSettingsInfo) getSettingsResp {
 
 		for i, s := range slots {
 			timeSlots[i] = timeSlotResp{
-				StartTime: s.StartTime,
-				EndTime:   s.EndTime,
+				StartTime: s.StartTime.Format("15:04"),
+				EndTime:   s.EndTime.Format("15:04"),
 			}
 		}
 
@@ -151,16 +151,26 @@ func mapToGetSettingsResp(in domain.MerchantSettingsInfo) getSettingsResp {
 	}
 }
 
-func mapToUpdateSettingsInput(in updateSettingsReq) merchantServ.UpdateSettingsInput {
+func mapToUpdateSettingsInput(in updateSettingsReq) (merchantServ.UpdateSettingsInput, error) {
 	businessHours := make(domain.BusinessHours, len(in.BusinessHours))
 
 	for day, slots := range in.BusinessHours {
 		timeSlots := make([]domain.TimeSlot, len(slots))
 
 		for i, s := range slots {
+			startTime, err := time.Parse("15:04", s.StartTime)
+			if err != nil {
+				return merchantServ.UpdateSettingsInput{}, err
+			}
+
+			endTime, err := time.Parse("15:04", s.EndTime)
+			if err != nil {
+				return merchantServ.UpdateSettingsInput{}, err
+			}
+
 			timeSlots[i] = domain.TimeSlot{
-				StartTime: s.StartTime,
-				EndTime:   s.EndTime,
+				StartTime: startTime,
+				EndTime:   endTime,
 			}
 		}
 
@@ -179,7 +189,7 @@ func mapToUpdateSettingsInput(in updateSettingsReq) merchantServ.UpdateSettingsI
 		BufferTime:       in.BufferTime,
 		ApprovalPolicy:   in.ApprovalPolicy,
 		BusinessHours:    businessHours,
-	}
+	}, nil
 }
 
 func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSlotResp {
@@ -187,8 +197,8 @@ func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSl
 
 	for day, ts := range in {
 		businessHours[day] = timeSlotResp{
-			StartTime: ts[0].StartTime,
-			EndTime:   ts[0].EndTime,
+			StartTime: ts[0].StartTime.Format("15:04"),
+			EndTime:   ts[0].EndTime.Format("15:04"),
 		}
 	}
 

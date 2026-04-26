@@ -16,11 +16,16 @@ func ct(year int, month time.Month, day int, timeStr string, loc *time.Location)
 	return time.Date(year, month, day, t.Hour(), t.Minute(), 0, 0, loc)
 }
 
-func ctReserved(year int, month time.Month, day int, start, end string, loc *time.Location) domain.BookingTime {
-	return domain.BookingTime{
-		From_date: ct(year, month, day, start, loc).UTC(),
-		To_date:   ct(year, month, day, end, loc).UTC(),
+func ctReserved(year int, month time.Month, day int, start, end string, loc *time.Location) domain.BookingSlot {
+	return domain.BookingSlot{
+		FromDate: ct(year, month, day, start, loc).UTC(),
+		ToDate:   ct(year, month, day, end, loc).UTC(),
 	}
+}
+
+func ctBH(timeStr string) time.Time {
+	t, _ := time.Parse("15:04", timeStr)
+	return time.Date(0, time.January, 1, t.Hour(), t.Minute(), 0, 0, time.UTC)
 }
 
 func formatTimes(times []time.Time) []string {
@@ -39,7 +44,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	day := 1
 
 	t.Run("Business hours", func(t *testing.T) {
-		reserved := []domain.BookingTime{}
+		reserved := []domain.BookingSlot{}
 
 		servicePhases := []domain.PublicServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
@@ -50,8 +55,8 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(2025, time.July, 1, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:30:00", EndTime: "11:30:00"},
-			{StartTime: "13:00:00", EndTime: "16:15:00"},
+			{StartTime: ctBH("09:30"), EndTime: ctBH("11:30")},
+			{StartTime: ctBH("13:00"), EndTime: ctBH("16:15")},
 		}
 
 		expectedMorning := []string{"09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00"}
@@ -68,7 +73,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("One active phase", func(t *testing.T) {
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:00", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -83,7 +88,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(year, month, day, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "16:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
 		expectedMorning := []time.Time{
@@ -110,7 +115,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Mutliple phases with wait at the start", func(t *testing.T) {
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:15", "11:30", tz),
 			ctReserved(year, month, day, "13:00", "15:00", tz),
@@ -126,8 +131,8 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(year, month, day, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:30:00", EndTime: "11:30:00"},
-			{StartTime: "13:00:00", EndTime: "16:15:00"},
+			{StartTime: ctBH("09:30"), EndTime: ctBH("11:30")},
+			{StartTime: ctBH("13:00"), EndTime: ctBH("16:15")},
 		}
 
 		expectedMorning := []time.Time{
@@ -154,7 +159,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Mutliple phases with wait in the middle", func(t *testing.T) {
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:15", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -171,7 +176,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(year, month, day, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "16:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
 		expectedMorning := []time.Time{
@@ -195,7 +200,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Close current time", func(t *testing.T) {
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 			ctReserved(year, month, day, "11:00", "11:45", tz),
 			ctReserved(year, month, day, "13:00", "14:00", tz),
@@ -212,7 +217,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(year, month, day, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "16:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
 		expectedMorning := []time.Time{}
@@ -231,7 +236,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	})
 
 	t.Run("Buffer time between bookings", func(t *testing.T) {
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 		}
 
@@ -244,7 +249,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		bookingDay := ct(year, month, day, "00:00", tz)
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "12:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("12:00")},
 		}
 
 		// With buffer=15min, the blocked period is 09:45–10:45.
@@ -275,7 +280,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
-		reserved := []domain.BookingTime{}
+		reserved := []domain.BookingSlot{}
 
 		blocked := []domain.BlockedTimes{
 			{
@@ -290,7 +295,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "17:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")},
 		}
 
 		serviceDuration := 30
@@ -309,7 +314,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
-		reserved := []domain.BookingTime{}
+		reserved := []domain.BookingSlot{}
 
 		blocked := []domain.BlockedTimes{
 			{
@@ -324,7 +329,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "08:00:00", EndTime: "12:00:00"},
+			{StartTime: ctBH("08:00"), EndTime: ctBH("12:00")},
 		}
 
 		serviceDuration := 30
@@ -346,7 +351,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		bookingDay := ct(year, month, day, "00:00", tz)
 
-		reserved := []domain.BookingTime{}
+		reserved := []domain.BookingSlot{}
 
 		blocked := []domain.BlockedTimes{
 			{
@@ -363,7 +368,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 		}
 
 		businessHours := []domain.TimeSlot{
-			{StartTime: "09:00:00", EndTime: "12:00:00"},
+			{StartTime: ctBH("09:00"), EndTime: ctBH("12:00")},
 		}
 
 		serviceDuration := 75
@@ -400,7 +405,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 
 		blocked := []domain.BlockedTimes{}
 
-		reserved := []domain.BookingTime{}
+		reserved := []domain.BookingSlot{}
 
 		servicePhases := []domain.PublicServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
@@ -408,7 +413,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 
 		businessHours := domain.BusinessHours{
 			3: {
-				{StartTime: "09:00:00", EndTime: "11:00:00"},
+				{StartTime: ctBH("09:00"), EndTime: ctBH("11:00")},
 			},
 		}
 
@@ -434,7 +439,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		startDate := ct(2025, time.July, 1, "00:00", tz)
 		endDate := ct(2025, time.July, 3, "23:59", tz)
 
-		reserved := []domain.BookingTime{
+		reserved := []domain.BookingSlot{
 			ctReserved(2025, time.July, 2, "10:00", "10:30", tz),
 		}
 
@@ -447,10 +452,10 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		businessHours := domain.BusinessHours{
 			2: {}, // Tuesday (July 1, 2025)
 			3: { // Wednesday (July 2, 2025)
-				{StartTime: "09:00:00", EndTime: "11:00:00"},
+				{StartTime: ctBH("09:00"), EndTime: ctBH("11:00")},
 			},
 			4: { // Thursday (July 3, 2025)
-				{StartTime: "09:00:00", EndTime: "11:00:00"},
+				{StartTime: ctBH("09:00"), EndTime: ctBH("11:00")},
 			},
 		}
 

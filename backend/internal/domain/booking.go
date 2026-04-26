@@ -47,9 +47,9 @@ type BookingRepository interface {
 	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
 	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
 
-	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingTime, error)
-	GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationiId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
-	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingTime, error)
+	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingSlot, error)
+	GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationiId int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
+	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
 
 	NewBookingSeries(ctx context.Context, bookingSeries BookingSeries) (BookingSeries, error)
 	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
@@ -183,9 +183,9 @@ type CalendarEvents struct {
 	BlockedTimes []BlockedTimeEvent   `json:"blocked_times"`
 }
 
-type BookingTime struct {
-	From_date time.Time `db:"from_date"`
-	To_date   time.Time `db:"to_date"`
+type BookingSlot struct {
+	FromDate time.Time `db:"from_date"`
+	ToDate   time.Time `db:"to_date"`
 }
 
 type BookingForEmail struct {

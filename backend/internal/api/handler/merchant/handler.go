@@ -225,7 +225,13 @@ func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.service.UpdateSettings(r.Context(), mapToUpdateSettingsInput(req))
+	updateSettingsInput, err := mapToUpdateSettingsInput(req)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = h.service.UpdateSettings(r.Context(), updateSettingsInput)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return

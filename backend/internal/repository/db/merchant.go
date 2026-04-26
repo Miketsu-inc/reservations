@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/bojanz/currency"
@@ -421,13 +420,12 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
 	`
 
 	days := make([]int, 0)
-	startTimes := make([]string, 0)
-	endTimes := make([]string, 0)
+	startTimes := make([]time.Time, 0)
+	endTimes := make([]time.Time, 0)
 
-	// 2. Dynamically append valid items
 	for day, timeRanges := range businessHours {
-		for _, ts := range timeRanges { // Notice we don't use 'i' anymore!
-			if ts.StartTime != "" && ts.EndTime != "" {
+		for _, ts := range timeRanges {
+			if !ts.StartTime.IsZero() && !ts.EndTime.IsZero() {
 				days = append(days, day)
 				startTimes = append(startTimes, ts.StartTime)
 				endTimes = append(endTimes, ts.EndTime)
@@ -453,13 +451,12 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
 	`
 
 	days := make([]int, 0)
-	startTimes := make([]string, 0)
-	endTimes := make([]string, 0)
+	startTimes := make([]time.Time, 0)
+	endTimes := make([]time.Time, 0)
 
-	// 2. Dynamically append valid items
 	for day, timeRanges := range businessHours {
-		for _, ts := range timeRanges { // Notice we don't use 'i' anymore!
-			if ts.StartTime != "" && ts.EndTime != "" {
+		for _, ts := range timeRanges {
+			if !ts.StartTime.IsZero() && !ts.EndTime.IsZero() {
 				days = append(days, day)
 				startTimes = append(startTimes, ts.StartTime)
 				endTimes = append(endTimes, ts.EndTime)
@@ -482,20 +479,19 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 	order by day_of_week, start_time;
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId)
-
 	businessHours := make(domain.BusinessHours)
 	for day := 0; day <= 6; day++ {
 		businessHours[day] = []domain.TimeSlot{}
 	}
 
 	var dayOfWeek int
-	var ts domain.TimeSlot
-	_, err := pgx.ForEachRow(rows, []any{&dayOfWeek, &ts.StartTime, &ts.EndTime}, func() error {
-		ts.StartTime = strings.Split(ts.StartTime, ".")[0]
-		ts.EndTime = strings.Split(ts.EndTime, ".")[0]
-
-		businessHours[dayOfWeek] = append(businessHours[dayOfWeek], ts)
+	var start, end time.Time
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	_, err := pgx.ForEachRow(rows, []any{&dayOfWeek, &start, &end}, func() error {
+		businessHours[dayOfWeek] = append(businessHours[dayOfWeek], domain.TimeSlot{
+			StartTime: start,
+			EndTime:   end,
+		})
 
 		return nil
 	})
@@ -517,9 +513,6 @@ func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchan
 		var ts domain.TimeSlot
 		err := row.Scan(&ts.StartTime, &ts.EndTime)
 
-		ts.StartTime = strings.Split(ts.StartTime, ".")[0]
-		ts.EndTime = strings.Split(ts.EndTime, ".")[0]
-
 		return ts, err
 	})
 	if err != nil {
@@ -540,13 +533,10 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 	rows, _ := r.db.Query(ctx, query, merchantId)
 
 	var day int
-	var startTime, endTime string
+	var startTime, endTime time.Time
 
 	result := make(domain.BusinessHours)
 	_, err := pgx.ForEachRow(rows, []any{&day, &startTime, &endTime}, func() error {
-		startTime = strings.Split(startTime, ".")[0]
-		endTime = strings.Split(endTime, ".")[0]
-
 		result[day] = []domain.TimeSlot{{
 			StartTime: startTime,
 			EndTime:   endTime,

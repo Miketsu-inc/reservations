@@ -27,7 +27,7 @@ function findNextOpenDay(businessHours, startIndex) {
     if (nextDayHours !== "Closed") {
       return {
         day: nextDay,
-        time: nextDayHours.split("–")[0].trim(),
+        time: nextDayHours.split("-")[0].trim(),
       };
     }
   }
@@ -46,7 +46,7 @@ function calculateBusinessStatus(businessHours) {
   let closingSoon = false;
 
   if (todayHours !== "Closed") {
-    const [openStr, closeStr] = todayHours.split("–").map((s) => s.trim());
+    const [openStr, closeStr] = todayHours.split("-").map((s) => s.trim());
     closeTimeStr = closeStr;
 
     const openTime = parseTimeString(openStr);
@@ -92,7 +92,7 @@ export default function DropDownBusinessHours({ hoursData }) {
       const data = hoursData[index];
       if (data) {
         hours[day] =
-          `${data.start_time.slice(0, 5)} – ${data.end_time.slice(0, 5)}`;
+          `${data.start_time.slice(0, 5)} - ${data.end_time.slice(0, 5)}`;
       } else {
         hours[day] = "Closed";
       }
@@ -127,7 +127,7 @@ export default function DropDownBusinessHours({ hoursData }) {
                 >
                   Open
                 </span>
-                – {closingSoon ? "closes soon at" : "closes at"}
+                - {closingSoon ? "closes soon at" : "closes at"}
                 <span>{closeTimeStr}</span>
               </span>
             ) : (
@@ -135,7 +135,7 @@ export default function DropDownBusinessHours({ hoursData }) {
                 <span className="text-orange-700 dark:text-orange-500">
                   Closed
                 </span>
-                – opens{" "}
+                - opens{" "}
                 {nextOpenDay === "today"
                   ? `later today at ${nextOpenTime}`
                   : `on ${nextOpenDay} at ${nextOpenTime}`}
@@ -152,7 +152,7 @@ export default function DropDownBusinessHours({ hoursData }) {
           className={`transition-[max-height,opacity] duration-200 ease-in-out
             ${
               isDropDownOpen
-                ? "max-h-[1000px] opacity-100"
+                ? "max-h-250 opacity-100"
                 : "max-h-0 overflow-hidden opacity-0"
             }`}
         >

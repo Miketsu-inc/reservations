@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -172,6 +173,11 @@ type MerchantSignupInput struct {
 	Timezone     string
 }
 
+func ctBH(timeStr string) time.Time {
+	t, _ := time.Parse("15:04", timeStr)
+	return time.Date(0, time.January, 1, t.Hour(), t.Minute(), 0, 0, time.UTC)
+}
+
 // TODO: create new jwts here... just don't know what to put as location
 // I feel like most of this should be in merchant services
 func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput) error {
@@ -233,13 +239,13 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 		}
 
 		businessHours := domain.BusinessHours{
-			0: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			1: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			2: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			3: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			4: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			5: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
-			6: {{StartTime: "09:00:00", EndTime: "17:00:00"}},
+			0: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			1: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			2: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			3: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			4: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			5: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			6: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
 		}
 
 		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, merchantID, businessHours)

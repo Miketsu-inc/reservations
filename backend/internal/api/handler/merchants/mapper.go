@@ -40,8 +40,8 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 
 		for i, s := range slots {
 			timeSlots[i] = timeSlotResp{
-				StartTime: s.StartTime,
-				EndTime:   s.EndTime,
+				StartTime: s.StartTime.Format("15:04"),
+				EndTime:   s.EndTime.Format("15:04"),
 			}
 		}
 
