@@ -1,5 +1,6 @@
 import { GoogleIcon } from "@reservations/assets";
 import { Button, Card } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -9,6 +10,8 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+  const { merchantId } = useAuth();
+
   return (
     <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0">
       <p className="pb-6 text-xl">Integrations</p>
@@ -22,7 +25,9 @@ function RouteComponent() {
               and our system
             </p>
           </div>
-          <a href="http://app.reservations.local:3000/api/v1/merchant/integrations/google/calendar">
+          <a
+            href={`http://app.reservations.local:3000/api/v1/merchants/${merchantId}/integrations/google/calendar`}
+          >
             <Button styles="py-2 px-4" buttonText="Sync" onClick={() => {}}>
               <GoogleIcon styles="size-5 fill-text_color mr-3" />
             </Button>

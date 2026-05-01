@@ -1,4 +1,5 @@
 import { ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -12,10 +13,11 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   async function saveHandler(employee) {
     try {
-      const response = await fetch("/api/v1/merchant/team", {
+      const response = await fetch(`/api/v1/merchants/${merchantId}/team`, {
         method: "POST",
         headers: {
           Accept: "application/json",

@@ -1,10 +1,12 @@
 import { Button, Input, Modal } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
 
 export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
   const [categoryData, setCategoryData] = useState({ name: "" });
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   function updateCategoryData(data) {
     setCategoryData((prev) => ({ ...prev, ...data }));
@@ -17,16 +19,19 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
       return;
     }
 
-    const response = await fetch(`/api/v1/merchant/service-categories`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        name: categoryData.name,
-      }),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/service-categories`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name: categoryData.name,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const result = await response.json();

@@ -4,7 +4,7 @@ import path from "path";
 import { defineConfig } from "vite";
 
 /** @type {import('vite').UserConfig} */
-const createBaseConfig = ({ appRoot }) =>
+const createBaseConfig = (additionalConfig) =>
   defineConfig(({ mode }) => {
     return {
       envDir: path.resolve(__dirname, ".."),
@@ -23,7 +23,6 @@ const createBaseConfig = ({ appRoot }) =>
         //   },
         // }),
       ],
-      root: appRoot,
       esbuild:
         mode === "production"
           ? {
@@ -43,6 +42,7 @@ const createBaseConfig = ({ appRoot }) =>
               },
               allowedHosts: [".reservations.local"],
             },
+      ...additionalConfig,
       // Keeping for debug purposes
       // build: {
       //   rollupOptions: {

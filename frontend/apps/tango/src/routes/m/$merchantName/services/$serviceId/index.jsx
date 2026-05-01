@@ -1,7 +1,6 @@
 import { CalendarIcon, ClockIcon, MapPinIcon } from "@reservations/assets";
 import { Button, Card, Loading, ServerError } from "@reservations/components";
 import {
-  businessHoursQueryOptions,
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
@@ -19,7 +18,7 @@ import PhaseItem from "./-components/PhaseItem";
 
 async function fetchServiceDetails(merchantName, serviceId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}`,
     {
       method: "GET",
       headers: {
@@ -47,7 +46,7 @@ function publicServiceDetailsQueryOptions(merchantName, serviceId, locationId) {
 
 async function fetchNextAvailable(merchantName, serviceId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/next`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/next`,
     {
       method: "GET",
       headers: {
@@ -70,6 +69,33 @@ function nextAvailableQueryOptions(merchantName, serviceId, locationId) {
   return queryOptions({
     queryKey: ["next-available", merchantName, serviceId, locationId],
     queryFn: () => fetchNextAvailable(merchantName, serviceId, locationId),
+  });
+}
+
+async function fetchBusinessHours(merchantName, locationId) {
+  const response = await fetch(
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/business-hours/normalized`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "constent-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function businessHoursQueryOptions(merchantName, locationId) {
+  return queryOptions({
+    queryKey: ["public-normalized-business-hours", merchantName, locationId],
+    queryFn: () => fetchBusinessHours(merchantName, locationId),
   });
 }
 
@@ -112,7 +138,9 @@ function ServiceDetailsPage() {
   const isWindowSmall =
     windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
-  const businessHours = useSuspenseQuery(businessHoursQueryOptions());
+  const businessHours = useSuspenseQuery(
+    businessHoursQueryOptions(merchantName, locationId)
+  );
 
   const queryResults = useQueries({
     queries: [

@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   blockedTimeTypesQueryOptions,
   formatDuration,
@@ -30,8 +31,13 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/scheduling"
 )({
   component: BlockedTimesManager,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(blockedTimeTypesQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(blockedTimeTypesQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -40,6 +46,7 @@ export const Route = createFileRoute(
 
 function BlockedTimesManager() {
   const { queryClient } = Route.useRouteContext();
+  const { merchantId } = useAuth();
   const { showToast } = useToast();
   const windowSize = useWindowSize();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,15 +56,15 @@ function BlockedTimesManager() {
     isLoading,
     isError,
     error,
-  } = useQuery(blockedTimeTypesQueryOptions());
+  } = useQuery(blockedTimeTypesQueryOptions(merchantId));
 
   const hasData = blockedTypes && blockedTypes.length > 0;
 
   const invalidateBlokedTypesQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["blocked-time-types"],
+      queryKey: [merchantId, "blocked-time-types"],
     });
-  }, [queryClient]);
+  }, [merchantId, queryClient]);
 
   if (isLoading) {
     return <Loading />;
@@ -75,7 +82,7 @@ function BlockedTimesManager() {
   async function handleDelete(id) {
     try {
       const response = await fetch(
-        `/api/v1/merchant/blocked-time-types/${id}`,
+        `/api/v1/merchants/${merchantId}/blocked-time-types/${id}`,
         {
           method: "DELETE",
           headers: {

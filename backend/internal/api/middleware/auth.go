@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
 
 // Jwt authentication middleware. Uses refresh and access tokens
-func (m *Manager) Authentication(next http.Handler) http.Handler {
+func (m *Manager) JwtAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -63,12 +64,7 @@ func (m *Manager) Authentication(next http.Handler) http.Handler {
 				return
 			}
 
-			merchantId := getMerchantIdFromClaims(claims)
-			employeeId := getEmployeeIdFromClaims(claims)
-			locationId := getLocationIdFromClaims(claims)
-			role := getEmployeeRoleFromCalims(claims)
-
-			token, err := jwt.NewAccessToken(userID, merchantId, employeeId, locationId, role)
+			token, err := jwt.NewAccessToken(userID)
 			if err != nil {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not create new access jwt"))
 				return
@@ -83,23 +79,37 @@ func (m *Manager) Authentication(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = jwt.SetUsedIdInContext(ctx, userID)
+		ctx = jwt.SetUserIdInContext(ctx, userID)
 
-		if merchantID := getMerchantIdFromClaims(claims); merchantID != nil {
-			ctx = jwt.SetMerchantIdInContext(ctx, *merchantID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (m *Manager) EmployeeAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		merchantId, err := uuid.Parse(chi.URLParam(r, "merchantId"))
+		if err != nil {
+			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("invalid merchantId: %s", err.Error()))
+			return
 		}
 
-		if employeeID := getEmployeeIdFromClaims(claims); employeeID != nil {
-			ctx = jwt.SetEmployeeIdInContext(ctx, *employeeID)
+		userId := jwt.MustGetUserIDFromContext(r.Context())
+
+		authInfo, err := m.userRepo.GetEmployeeByUser(ctx, merchantId, userId)
+		if err != nil {
+			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("user is not a team member for this merchant"))
+			return
 		}
 
-		if locationID := getLocationIdFromClaims(claims); locationID != nil {
-			ctx = jwt.SetLocationIdInContext(ctx, *locationID)
-		}
+		ctx = actor.SetMerchantIdInContext(ctx, merchantId)
+		ctx = actor.SetLocationIdInContext(ctx, authInfo.LocationId)
+		ctx = actor.SetEmployeeIdInContext(ctx, authInfo.Id)
+		ctx = actor.SetEmployeeRoleInContext(ctx, authInfo.Role)
 
-		if employeeRole := getEmployeeRoleFromCalims(claims); employeeRole != nil {
-			ctx = jwt.SetEmployeeRoleInContext(ctx, *employeeRole)
-		}
+		actor, _ := actor.GetFromContext(ctx)
+		fmt.Println(actor)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -136,82 +146,6 @@ func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, error) {
 	}
 
 	return 0, nil
-}
-
-func getMerchantIdFromClaims(claims jwtlib.MapClaims) *uuid.UUID {
-	val, ok := claims["merchant_id"]
-	if !ok {
-		return nil
-	}
-
-	merchantIdStr, ok := val.(string)
-	if !ok {
-		return nil
-	}
-
-	merchantId, err := uuid.Parse(merchantIdStr)
-	if err != nil {
-		return nil
-	}
-
-	return &merchantId
-}
-
-func getEmployeeIdFromClaims(claims jwtlib.MapClaims) *int {
-	val, ok := claims["employee_id"]
-	if !ok {
-		return nil
-	}
-
-	switch id := val.(type) {
-	case float64:
-		employeeId := int(id)
-		return &employeeId
-	case json.Number:
-		num, _ := id.Float64()
-		employeeId := int(num)
-		return &employeeId
-	}
-
-	return nil
-}
-
-func getLocationIdFromClaims(claims jwtlib.MapClaims) *int {
-	val, ok := claims["location_id"]
-	if !ok {
-		return nil
-	}
-
-	switch id := val.(type) {
-	case float64:
-		locationId := int(id)
-		return &locationId
-	case json.Number:
-		num, _ := id.Float64()
-		locationId := int(num)
-		return &locationId
-	}
-
-	return nil
-}
-
-func getEmployeeRoleFromCalims(claims jwtlib.MapClaims) *types.EmployeeRole {
-	val, ok := claims["employee_role"]
-	if !ok {
-		return nil
-	}
-
-	roleStr, ok := val.(string)
-	if !ok {
-		return nil
-	}
-
-	role, err := types.NewEmployeeRole(roleStr)
-	if err != nil {
-		return nil
-	}
-
-	return &role
 }
 
 // parse and validate jwt, returning the claims if valid

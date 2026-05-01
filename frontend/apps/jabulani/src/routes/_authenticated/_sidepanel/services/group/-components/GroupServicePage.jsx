@@ -16,6 +16,7 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { useAuth } from "@reservations/jabulani/lib";
 import BookingApprovalSetting from "../../-components/BookingApprovalSetting";
 import ProductAdder from "../../-components/ProductAdder";
 import ServiceSchedulingSettings from "../../-components/ServiceSchedulingSettings";
@@ -65,6 +66,7 @@ export default function GroupServicePage({
   const [lastSavedData, setLastSavedData] = useState(originalData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   useEffect(() => {
     setServiceData(originalData);
@@ -87,13 +89,16 @@ export default function GroupServicePage({
   }
 
   async function deleteHandler() {
-    const response = await fetch(`/api/v1/merchant/services/${service.id}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/services/${service.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       invalidateLocalStorageAuth(response.status);

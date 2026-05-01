@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -11,12 +12,38 @@ import (
 
 type Service struct {
 	teamRepo domain.TeamRepository
+	userRepo domain.UserRepository
 }
 
-func NewService(team domain.TeamRepository) *Service {
+func NewService(team domain.TeamRepository, user domain.UserRepository) *Service {
 	return &Service{
 		teamRepo: team,
+		userRepo: user,
 	}
+}
+
+type MeResult struct {
+	User        domain.User
+	Memberships []domain.EmployeeAuthInfo
+}
+
+func (s *Service) Me(ctx context.Context) (MeResult, error) {
+	userId := jwt.MustGetUserIDFromContext(ctx)
+
+	user, err := s.userRepo.GetUser(ctx, userId)
+	if err != nil {
+		return MeResult{}, fmt.Errorf("error while retrieving user: %s", err.Error())
+	}
+
+	employeeInfo, err := s.userRepo.GetEmployeesByUser(ctx, userId)
+	if err != nil {
+		return MeResult{}, fmt.Errorf("error while getting employees for user: %s", err.Error())
+	}
+
+	return MeResult{
+		User:        user,
+		Memberships: employeeInfo,
+	}, nil
 }
 
 type NewMemberInput struct {
@@ -33,9 +60,9 @@ func (s *Service) NewMember(ctx context.Context, input NewMemberInput) error {
 		return fmt.Errorf("error there can only be 1 owner")
 	}
 
-	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.NewEmployee(ctx, employeeAuth.MerchantId, domain.PublicEmployee{
+	err := s.teamRepo.NewEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
 		LastName:    &input.LastName,
@@ -64,9 +91,9 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 		return fmt.Errorf("error there can only be 1 owner")
 	}
 
-	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.UpdateEmployee(ctx, employeeAuth.MerchantId, domain.PublicEmployee{
+	err := s.teamRepo.UpdateEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
 		Id:          memberId,
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
@@ -83,9 +110,9 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 }
 
 func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
-	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.DeleteEmployee(ctx, employeeAuth.MerchantId, memberId)
+	err := s.teamRepo.DeleteEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
 		return fmt.Errorf("error while deleting employee by id: %s", err.Error())
 	}
@@ -94,9 +121,9 @@ func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 }
 
 func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmployee, error) {
-	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	teamMember, err := s.teamRepo.GetEmployee(ctx, employeeAuth.MerchantId, memberId)
+	teamMember, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
 		return domain.PublicEmployee{}, fmt.Errorf("error while retrieving employee by id: %s", err.Error())
 	}
@@ -105,9 +132,9 @@ func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmp
 }
 
 func (s *Service) GetTeam(ctx context.Context) ([]domain.PublicEmployee, error) {
-	employeeAuth := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	teamMembers, err := s.teamRepo.GetEmployees(ctx, employeeAuth.MerchantId)
+	teamMembers, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
 		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
 	}

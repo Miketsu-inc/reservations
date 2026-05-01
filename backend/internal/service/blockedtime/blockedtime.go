@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -41,17 +41,17 @@ type NewInput struct {
 }
 
 func (s *Service) New(ctx context.Context, input NewInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	if !input.ToDate.After(input.FromDate) {
 		return fmt.Errorf("toDate must be after fromDate")
 	}
 
-	employeeIds := []int{employee.Id}
+	employeeIds := []int{actor.EmployeeId}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		ids, err := s.blockedTimeRepo.WithTx(tx).NewBlockedTime(ctx, employee.MerchantId, employeeIds, input.Name, input.FromDate, input.ToDate, input.AllDay, input.BlockedTypeId)
-		// err := s.blockedTimeRepo.WithTx(tx).NewBlockedTime(ctx, employee.MerchantId, input.EmployeeIds, input.Name, input.FromDate, input.ToDate, input.AllDay)
+		ids, err := s.blockedTimeRepo.WithTx(tx).NewBlockedTime(ctx, actor.MerchantId, employeeIds, input.Name, input.FromDate, input.ToDate, input.AllDay, input.BlockedTypeId)
+		// err := s.blockedTimeRepo.WithTx(tx).NewBlockedTime(ctx, actor.MerchantId, input.EmployeeIds, input.Name, input.FromDate, input.ToDate, input.AllDay)
 		if err != nil {
 			return fmt.Errorf("could not make new blocked time %s", err.Error())
 		}
@@ -84,7 +84,7 @@ func (s *Service) Update(ctx context.Context, blockedTimeId int, input UpdateInp
 		return fmt.Errorf("invalid blocked time id")
 	}
 
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	if !input.ToDate.After(input.FromDate) {
 		return fmt.Errorf("toDate must be after fromDate")
@@ -93,9 +93,9 @@ func (s *Service) Update(ctx context.Context, blockedTimeId int, input UpdateInp
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.blockedTimeRepo.WithTx(tx).UpdateBlockedTime(ctx, domain.BlockedTime{
 			Id:         blockedTimeId,
-			MerchantId: employee.MerchantId,
+			MerchantId: actor.MerchantId,
 			// EmployeeId: input.EmployeeId,
-			EmployeeId:    employee.Id,
+			EmployeeId:    actor.EmployeeId,
 			BlockedTypeId: input.BlockedTypeId,
 			Name:          input.Name,
 			FromDate:      input.FromDate,
@@ -124,11 +124,11 @@ func (s *Service) Update(ctx context.Context, blockedTimeId int, input UpdateInp
 
 // func (s *Service) Delete(ctx context.Context, blockedTimeId int, input DeleteInput) error {
 func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.blockedTimeRepo.WithTx(tx).DeleteBlockedTime(ctx, blockedTimeId, employee.MerchantId, employee.Id)
-		// err := s.blockedTimeRepo.WithTx(tx).DeleteBlockedTime(ctx, blockedTimeId, employee.MerchantId, input.EmployeeId)
+		err := s.blockedTimeRepo.WithTx(tx).DeleteBlockedTime(ctx, blockedTimeId, actor.MerchantId, actor.EmployeeId)
+		// err := s.blockedTimeRepo.WithTx(tx).DeleteBlockedTime(ctx, blockedTimeId, actor.MerchantId, input.EmployeeId)
 		if err != nil {
 			return fmt.Errorf("error while deleting blocked time for merchant: %s", err.Error())
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 )
 
@@ -13,9 +13,9 @@ type NewCategoryInput struct {
 }
 
 func (s *Service) NewCategory(ctx context.Context, req NewCategoryInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.NewServiceCategory(ctx, employee.MerchantId, domain.ServiceCategory{
+	err := s.catalogRepo.NewServiceCategory(ctx, actor.MerchantId, domain.ServiceCategory{
 		Name:     req.Name,
 		Sequence: 0,
 	})
@@ -31,9 +31,9 @@ type UpdateCategoryInput struct {
 }
 
 func (s *Service) UpdateCategory(ctx context.Context, categoryId int, req UpdateCategoryInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.UpdateServiceCategory(ctx, employee.MerchantId, domain.ServiceCategory{
+	err := s.catalogRepo.UpdateServiceCategory(ctx, actor.MerchantId, domain.ServiceCategory{
 		Id:   categoryId,
 		Name: req.Name,
 	})
@@ -45,9 +45,9 @@ func (s *Service) UpdateCategory(ctx context.Context, categoryId int, req Update
 }
 
 func (s *Service) DeleteCategory(ctx context.Context, categoryId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.DeleteServiceCategory(ctx, employee.MerchantId, categoryId)
+	err := s.catalogRepo.DeleteServiceCategory(ctx, actor.MerchantId, categoryId)
 	if err != nil {
 		return fmt.Errorf("error while deleting service category: %s", err.Error())
 	}
@@ -60,9 +60,9 @@ type ReorderCategoriesInput struct {
 }
 
 func (s *Service) ReorderCategories(ctx context.Context, req ReorderCategoriesInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.ReorderServiceCategories(ctx, employee.MerchantId, req.Categories)
+	err := s.catalogRepo.ReorderServiceCategories(ctx, actor.MerchantId, req.Categories)
 	if err != nil {
 		return fmt.Errorf("error while ordering service categories: %s", err.Error())
 	}

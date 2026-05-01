@@ -9,6 +9,7 @@ import {
   SearchInput,
   ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   useToast,
@@ -21,8 +22,8 @@ import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
 import ServiceCard from "./-components/ServiceCard";
 import ServiceCategoryCard from "./-components/ServiceCategoryCard";
 
-async function fetchServices() {
-  const response = await fetch(`/api/v1/merchant/services`, {
+async function fetchServices(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/services`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -39,10 +40,10 @@ async function fetchServices() {
   }
 }
 
-function servicesQueryOptions() {
+function servicesQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["services"],
-    queryFn: fetchServices,
+    queryKey: [merchantId, "services"],
+    queryFn: () => fetchServices(merchantId),
   });
 }
 
@@ -71,8 +72,13 @@ function reorderArray(items, itemId, direction) {
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
   component: ServicesPage,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(servicesQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(servicesQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -83,6 +89,7 @@ function ServicesPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const windowSize = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
@@ -99,7 +106,7 @@ function ServicesPage() {
     isLoading,
     isError,
     error,
-  } = useQuery(servicesQueryOptions());
+  } = useQuery(servicesQueryOptions(merchantId));
 
   if (isLoading) {
     return <Loading />;
@@ -111,7 +118,7 @@ function ServicesPage() {
 
   async function invalidateServicesQuery() {
     await queryClient.invalidateQueries({
-      queryKey: ["services"],
+      queryKey: [merchantId, "services"],
     });
   }
 
@@ -124,13 +131,16 @@ function ServicesPage() {
 
   async function deleteHandler(selected) {
     try {
-      const response = await fetch(`/api/v1/merchant/services/${selected.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/services/${selected.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -157,7 +167,7 @@ function ServicesPage() {
     if (!categoryIds) return;
 
     const response = await fetch(
-      `/api/v1/merchant/service-categories/reorder`,
+      `/api/v1/merchants/${merchantId}/service-categories/reorder`,
       {
         method: "PUT",
         headers: {
@@ -193,17 +203,20 @@ function ServicesPage() {
     const serviceIds = reorderArray(servicesInCategory, id, direction);
     if (!serviceIds) return;
 
-    const response = await fetch(`/api/v1/merchant/services/reorder`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        category_id: categoryId,
-        services: serviceIds,
-      }),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/services/reorder`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          category_id: categoryId,
+          services: serviceIds,
+        }),
+      }
+    );
 
     if (!response.ok) {
       invalidateLocalStorageAuth(response.status);

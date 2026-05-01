@@ -10,6 +10,7 @@ import (
 	"github.com/bojanz/currency"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
@@ -449,9 +450,9 @@ type RecurringRuleInput struct {
 }
 
 func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, employee.MerchantId)
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching service by this id: %s", err.Error())
 	}
@@ -464,12 +465,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
 
-	bookedLocation, err := s.merchantRepo.GetLocation(ctx, employee.LocationId, employee.MerchantId)
+	bookedLocation, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching location by this id: %s", err.Error())
 	}
@@ -479,7 +480,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	var price currencyx.Price
 	var cost currencyx.Price
 	if service.Price == nil || service.Cost == nil {
-		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 		if err != nil {
 			return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 		}
@@ -535,7 +536,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 						return fmt.Errorf("unexpected error during creating customer id: %s", err.Error())
 					}
 
-					if err := s.customerRepo.NewCustomer(ctx, employee.MerchantId, domain.Customer{
+					if err := s.customerRepo.NewCustomer(ctx, actor.MerchantId, domain.Customer{
 						Id:          newCustomerId,
 						FirstName:   customer.FirstName,
 						LastName:    customer.LastName,
@@ -636,8 +637,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 			series, err := s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
 				BookingType:         service.BookingType,
-				MerchantId:          employee.MerchantId,
-				EmployeeId:          employee.Id,
+				MerchantId:          actor.MerchantId,
+				EmployeeId:          actor.EmployeeId,
 				ServiceId:           service.Id,
 				LocationId:          bookedLocation.Id,
 				Rrule:               rrule.String(),
@@ -679,8 +680,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			booking := domain.Booking{
 				Status:              types.BookingStatusConfirmed,
 				BookingType:         service.BookingType,
-				MerchantId:          employee.MerchantId,
-				EmployeeId:          &employee.Id,
+				MerchantId:          actor.MerchantId,
+				EmployeeId:          &actor.EmployeeId,
 				ServiceId:           service.Id,
 				LocationId:          bookedLocation.Id,
 				FromDate:            fromDate,
@@ -768,7 +769,7 @@ type UpdateByMerchantInput struct {
 }
 
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	// old service, participants, time and date
 	oldBooking, err := s.bookingRepo.GetBooking(ctx, bookingId)
@@ -780,12 +781,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return fmt.Errorf("you cannot update completed bookings")
 	}
 
-	oldService, err := s.catalogRepo.GetServiceWithPhases(ctx, oldBooking.ServiceId, employee.MerchantId)
+	oldService, err := s.catalogRepo.GetServiceWithPhases(ctx, oldBooking.ServiceId, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error searching for old service: %s", err.Error())
 	}
 
-	newService, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, employee.MerchantId)
+	newService, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error searching for new service: %s", err.Error())
 	}
@@ -812,7 +813,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		seriesFromDateOffset = fromDate.Sub(*oldBooking.SeriesOriginalDate)
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, employee.MerchantId)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error getting merchant timezone: %s", err.Error())
 	}
@@ -835,7 +836,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					return fmt.Errorf("error generating customer id: %s", err.Error())
 				}
 
-				if err := s.customerRepo.NewCustomer(ctx, employee.MerchantId, domain.Customer{
+				if err := s.customerRepo.NewCustomer(ctx, actor.MerchantId, domain.Customer{
 					Id:          newId,
 					FirstName:   customer.FirstName,
 					LastName:    customer.LastName,
@@ -931,7 +932,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	var curr string
 
 	if newService.Price == nil || newService.Cost == nil {
-		curr, err = s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+		curr, err = s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 		if err != nil {
 			return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 		}
@@ -1148,12 +1149,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, employee.MerchantId, bookingIds, newService.Id, newFromDates, newToDates, newService.BookingType, input.BookingStatus)
+		err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, bookingIds, newService.Id, newFromDates, newToDates, newService.BookingType, input.BookingStatus)
 		if err != nil {
 			return fmt.Errorf("failed to batch update booking core: %s", err.Error())
 		}
 
-		err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, employee.MerchantId, []int{oldBooking.Id}, domain.BookingDetails{
+		err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, []int{oldBooking.Id}, domain.BookingDetails{
 			PricePerPerson:      currencyx.Price{Amount: pricePerPerson},
 			CostPerPerson:       currencyx.Price{Amount: costPerPerson},
 			TotalPrice:          currencyx.Price{Amount: totalPrice},
@@ -1168,7 +1169,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		}
 
 		if len(futureBookingIds) > 0 {
-			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, employee.MerchantId, futureBookingIds, domain.BookingDetails{
+			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, futureBookingIds, domain.BookingDetails{
 				PricePerPerson:      currencyx.Price{Amount: pricePerPerson},
 				CostPerPerson:       currencyx.Price{Amount: costPerPerson},
 				TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
@@ -1336,7 +1337,7 @@ type CancelByMerchantInput struct {
 
 // TODO: what should the booking participant statuses be here?
 func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input CancelByMerchantInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
@@ -1353,12 +1354,12 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err = s.bookingRepo.WithTx(tx).CancelBookingByMerchant(ctx, employee.MerchantId, bookingId, input.CancellationReason)
+		err = s.bookingRepo.WithTx(tx).CancelBookingByMerchant(ctx, actor.MerchantId, bookingId, input.CancellationReason)
 		if err != nil {
 			return err
 		}
 
-		err = s.bookingRepo.WithTx(tx).UpdateBookingStatus(ctx, employee.MerchantId, bookingId, types.BookingStatusCancelled)
+		err = s.bookingRepo.WithTx(tx).UpdateBookingStatus(ctx, actor.MerchantId, bookingId, types.BookingStatusCancelled)
 		if err != nil {
 			return err
 		}
@@ -1409,23 +1410,4 @@ func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, pa
 	}
 
 	return nil
-}
-
-func (s *Service) GetCalendarEvents(ctx context.Context, start string, end string) (domain.CalendarEvents, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
-
-	var events domain.CalendarEvents
-	var err error
-
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, employee.MerchantId, start, end)
-	if err != nil {
-		return domain.CalendarEvents{}, err
-	}
-
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, employee.MerchantId, start, end)
-	if err != nil {
-		return domain.CalendarEvents{}, err
-	}
-
-	return events, nil
 }

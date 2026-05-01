@@ -20,6 +20,7 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   customersQueryOptions,
   invalidateLocalStorageAuth,
@@ -36,9 +37,9 @@ import CustomerStats from "./-components/CustomerStats";
 import ExpandableNote from "./-components/ExpandableNote";
 import PaginatedList from "./-components/PaginatedList";
 
-async function fetchCustomerInfo(customerId) {
+async function fetchCustomerInfo(merchantId, customerId) {
   const response = await fetch(
-    `/api/v1/merchant/customers/${customerId}/stats`,
+    `/api/v1/merchants/${merchantId}/customers/${customerId}/stats`,
     {
       method: "GET",
       headers: {
@@ -57,10 +58,10 @@ async function fetchCustomerInfo(customerId) {
   }
 }
 
-function customerInfoQueryOptions(id) {
+function customerInfoQueryOptions(merchantId, id) {
   return queryOptions({
-    queryKey: ["customer-info", id],
-    queryFn: () => fetchCustomerInfo(id),
+    queryKey: [merchantId, "customer-info", id],
+    queryFn: () => fetchCustomerInfo(merchantId, id),
   });
 }
 
@@ -84,11 +85,17 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/$customerId/"
 )({
   component: CustomerDetailsPage,
-  loader: async ({ params, context: { queryClient } }) => {
+  loader: async ({
+    params,
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
     await queryClient.ensureQueryData(
-      customerInfoQueryOptions(params.customerId)
+      customerInfoQueryOptions(merchantId, params.customerId)
     );
-    await queryClient.ensureQueryData(customersQueryOptions());
+    await queryClient.ensureQueryData(customersQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.mesage} />;
@@ -103,13 +110,17 @@ function CustomerDetailsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
   const now = new Date();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { customerId } = Route.useParams();
 
   const queryResults = useQueries({
-    queries: [customerInfoQueryOptions(customerId), customersQueryOptions()],
+    queries: [
+      customerInfoQueryOptions(merchantId, customerId),
+      customersQueryOptions(merchantId),
+    ],
   });
 
   if (queryResults.some((r) => r.isLoading)) {
@@ -134,13 +145,16 @@ function CustomerDetailsPage() {
 
   async function deleteHandler(id) {
     try {
-      const response = await fetch(`/api/v1/merchant/customers/${id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/customers/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -180,7 +194,7 @@ function CustomerDetailsPage() {
 
     try {
       const response = await fetch(
-        `/api/v1/merchant/customers/${data.id}/blacklist`,
+        `/api/v1/merchants/${merchantId}/customers/${data.id}/blacklist`,
         options
       );
 
@@ -212,17 +226,20 @@ function CustomerDetailsPage() {
 
   async function transferHandler(data) {
     try {
-      const response = await fetch(`/api/v1/merchant/customers/transfer`, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          from_customer_id: data.from,
-          to_customer_id: data.to,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/customers/transfer`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            from_customer_id: data.from,
+            to_customer_id: data.to,
+          }),
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

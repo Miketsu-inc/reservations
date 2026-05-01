@@ -27,7 +27,7 @@ async function fetchHours(merchantName, locationId, serviceId, start, end) {
   end = new Date(end).toJSON();
 
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability?start=${start}&end=${end}`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability?start=${start}&end=${end}`,
     {
       method: "GET",
       headers: {
@@ -68,7 +68,7 @@ function availableTimesQueryOptions(
 
 async function fetchDisabledDays(merchantName, locationId, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/disabled-days`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/disabled-days`,
     {
       method: "GET",
       headers: {
@@ -96,7 +96,7 @@ function disabledDaysQueryOptions(merchantName, locationId, serviceId) {
 
 async function fetchSummaryInfo(merchantName, locationId, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/summary`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/summary`,
     {
       method: "GET",
       headers: {
@@ -133,9 +133,6 @@ export const Route = createFileRoute("/m/$merchantName/booking/")({
     context: { queryClient },
     deps: { serviceId, locationId },
   }) => {
-    console.log(merchantName);
-    console.log(locationId);
-    console.log(serviceId);
     await queryClient.ensureQueryData(
       summaryInfoQueryOptions(merchantName, locationId, serviceId)
     );
@@ -249,7 +246,7 @@ function SelectDateTime() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/v1/bookings/customer", {
+      const response = await fetch("/api/v1/public/bookings", {
         method: "POST",
         headers: {
           "Content-type": "application/json; charset=UTF-8",

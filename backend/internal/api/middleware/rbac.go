@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
@@ -16,13 +16,13 @@ func (m *Manager) RoleBasedAccessControl(roles ...types.EmployeeRole) func(next 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			employee, ok := jwt.GetEmployeeFromContext(r.Context())
+			actor, ok := actor.GetFromContext(r.Context())
 			if !ok {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("you need an employee account to access this"))
 				return
 			}
 
-			if !slices.Contains(roles, employee.Role) {
+			if !slices.Contains(roles, actor.Role) {
 				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("this resource can only be accessed with %s roles", roles))
 				return
 			}

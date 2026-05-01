@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   useToast,
@@ -28,8 +29,16 @@ import { employeeQueryOptions } from "./edit.$id";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/team/$id")({
   component: RouteComponent,
-  loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(employeeQueryOptions(params.id));
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+    params,
+  }) => {
+    await queryClient.ensureQueryData(
+      employeeQueryOptions(merchantId, params.id)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -43,13 +52,14 @@ function RouteComponent() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const {
     data: employee,
     isLoading,
     isError,
     error,
-  } = useQuery(employeeQueryOptions(id));
+  } = useQuery(employeeQueryOptions(merchantId, id));
 
   if (isLoading) {
     return <Loading />;
@@ -61,13 +71,16 @@ function RouteComponent() {
 
   async function deleteHandler() {
     try {
-      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/team/${employee.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

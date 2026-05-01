@@ -76,35 +76,17 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (jwt.TokenPair, e
 		return jwt.TokenPair{}, err
 	}
 
-	employeeAuthInfo, err := s.userRepo.GetEmployeesByUser(ctx, userID)
-	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("unexpected error when reading employees associated with user: %s", err.Error())
-	}
-
-	var merchantId *uuid.UUID
-	var employeeId *int
-	var locationId *int
-	var role *types.EmployeeRole
-
-	// TODO: later user should be able to select which merchant to log into
-	if len(employeeAuthInfo) >= 1 {
-		merchantId = &employeeAuthInfo[0].MerchantId
-		employeeId = &employeeAuthInfo[0].Id
-		locationId = &employeeAuthInfo[0].LocationId
-		role = &employeeAuthInfo[0].Role
-	}
-
 	refreshVersion, err := s.userRepo.GetUserJwtRefreshVersion(ctx, userID)
 	if err != nil {
 		return jwt.TokenPair{}, fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
 	}
 
-	accessToken, err := jwt.NewAccessToken(userID, merchantId, employeeId, locationId, role)
+	accessToken, err := jwt.NewAccessToken(userID)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userID, merchantId, employeeId, locationId, role, refreshVersion)
+	refreshToken, err := jwt.NewRefreshToken(userID, refreshVersion)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
@@ -154,12 +136,12 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		return jwt.TokenPair{}, fmt.Errorf("unexpected error when creating user: %s", err.Error())
 	}
 
-	accessToken, err := jwt.NewAccessToken(userID, nil, nil, nil, nil)
+	accessToken, err := jwt.NewAccessToken(userID)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userID, nil, nil, nil, nil, 0)
+	refreshToken, err := jwt.NewRefreshToken(userID, 0)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}

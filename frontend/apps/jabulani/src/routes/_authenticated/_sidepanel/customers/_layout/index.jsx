@@ -1,4 +1,5 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   customersQueryOptions,
   invalidateLocalStorageAuth,
@@ -15,8 +16,13 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout/"
 )({
   component: CustomersPage,
-  loader: ({ context: { queryClient } }) => {
-    return queryClient.ensureQueryData(customersQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(customersQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -31,9 +37,12 @@ function CustomersPage() {
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
-  const { data, isLoading, isError, error } = useQuery(customersQueryOptions());
+  const { data, isLoading, isError, error } = useQuery(
+    customersQueryOptions(merchantId)
+  );
 
   if (isLoading) {
     return <Loading />;
@@ -61,7 +70,7 @@ function CustomersPage() {
   async function deleteHandler(selected) {
     try {
       const response = await fetch(
-        `/api/v1/merchant/customers/${selected.id}`,
+        `/api/v1/merchants/${merchantId}/customers/${selected.id}`,
         {
           method: "DELETE",
           headers: {
@@ -81,7 +90,7 @@ function CustomersPage() {
           variant: "success",
         });
         await queryClient.invalidateQueries({
-          queryKey: ["customers"],
+          queryKey: [merchantId, "customers"],
         });
         setServerError();
       }
@@ -92,17 +101,20 @@ function CustomersPage() {
 
   async function transferHandler(data) {
     try {
-      const response = await fetch(`/api/v1/merchant/customers/transfer`, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          from_customer_id: data.from,
-          to_customer_id: data.to,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/customers/transfer`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            from_customer_id: data.from,
+            to_customer_id: data.to,
+          }),
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -114,7 +126,7 @@ function CustomersPage() {
           variant: "success",
         });
         await queryClient.invalidateQueries({
-          queryKey: ["customers"],
+          queryKey: [merchantId, "customers"],
         });
         setServerError();
         setTransferModalData();
@@ -127,7 +139,7 @@ function CustomersPage() {
   async function blacklistHandler(data) {
     try {
       const response = await fetch(
-        `/api/v1/merchant/customers/${data.id}/blacklist`,
+        `/api/v1/merchants/${merchantId}/customers/${data.id}/blacklist`,
         {
           method: "PUT",
           headers: {
@@ -151,7 +163,7 @@ function CustomersPage() {
           variant: "success",
         });
         await queryClient.invalidateQueries({
-          queryKey: ["customers"],
+          queryKey: [merchantId, "customers"],
         });
         setServerError();
       }

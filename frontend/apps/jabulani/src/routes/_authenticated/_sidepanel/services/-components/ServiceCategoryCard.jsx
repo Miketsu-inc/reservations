@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { useToast } from "@reservations/lib";
 import { useState } from "react";
 import EditServiceCategoryModal from "./EditServiceCategoryModal";
@@ -30,10 +31,11 @@ export default function ServiceCategoryCard({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   async function deleteHandler() {
     const response = await fetch(
-      `/api/v1/merchant/service-categories/${category.id}`,
+      `/api/v1/merchants/${merchantId}/service-categories/${category.id}`,
       {
         method: "DELETE",
         headers: {

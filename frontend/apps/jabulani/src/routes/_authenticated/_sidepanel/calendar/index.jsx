@@ -36,12 +36,12 @@ function normalizeDateString(dateStr) {
   }
 }
 
-async function fetchBookings(start, end) {
+async function fetchBookings(merchantId, start, end) {
   start = new Date(start).toJSON();
   end = new Date(end).toJSON();
 
   const response = await fetch(
-    `/api/v1/bookings/calendar/events?start=${start}&end=${end}`,
+    `/api/v1/merchants/${merchantId}/calendar/events?start=${start}&end=${end}`,
     {
       method: "GET",
     }
@@ -59,10 +59,10 @@ async function fetchBookings(start, end) {
   }
 }
 
-export function bookingsQueryOptions(start, end) {
+export function bookingsQueryOptions(merchantId, start, end) {
   return queryOptions({
-    queryKey: ["events", start, end],
-    queryFn: () => fetchBookings(start, end),
+    queryKey: [merchantId, "events", start, end],
+    queryFn: () => fetchBookings(merchantId, start, end),
   });
 }
 
@@ -85,6 +85,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   validateSearch: (search) => {
     let defaultView = "timeGridWeek";
 
+    // TODO: rewrite needed, we can't fetch the preferences here no more
     const preferences = globalQueryClient.getQueryData(["preferences"]);
     if (preferences?.calendar_view) {
       defaultView = mapCalendarView(
@@ -125,9 +126,17 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
     start,
     end,
   }),
-  loader: async ({ deps: { start, end }, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(bookingsQueryOptions(start, end));
-    await queryClient.ensureQueryData(businessHoursQueryOptions());
+  loader: async ({
+    deps: { start, end },
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(
+      bookingsQueryOptions(merchantId, start, end)
+    );
+    await queryClient.ensureQueryData(businessHoursQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;

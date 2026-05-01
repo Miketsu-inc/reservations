@@ -1,4 +1,5 @@
 import { CalendarIcon, ClockIcon } from "@reservations/assets";
+import { useAuth } from "@reservations/jabulani/lib";
 import { preferencesQueryOptions, timeStringFromDate } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 
@@ -13,7 +14,8 @@ function monthDateFormat(date) {
 export default function BookingItem({ booking, customerName }) {
   const now = new Date();
   const toDate = new Date(booking.to_date);
-  const { data: preferences } = useQuery(preferencesQueryOptions());
+  const { merchantId } = useAuth();
+  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
   let statusLabel = "Completed";
   let statusStyle = "bg-green-600/20 text-green-600";

@@ -1,18 +1,22 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import CustomerPage from "./-components/CustomerPage";
 
-async function fetchCustomerData(id) {
-  const response = await fetch(`/api/v1/merchant/customers/${id}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchCustomerData(merchantId, id) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/customers/${id}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -23,10 +27,10 @@ async function fetchCustomerData(id) {
   }
 }
 
-function customerQueryOptions(id) {
+function customerQueryOptions(merchantId, id) {
   return queryOptions({
-    queryKey: ["customer", id],
-    queryFn: () => fetchCustomerData(id),
+    queryKey: [merchantId, "customer", id],
+    queryFn: () => fetchCustomerData(merchantId, id),
   });
 }
 
@@ -34,8 +38,16 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/edit/$id"
 )({
   component: RouteComponent,
-  loader: ({ context: { queryClient }, params }) => {
-    return queryClient.ensureQueryData(customerQueryOptions(params.id));
+  loader: ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+    params,
+  }) => {
+    return queryClient.ensureQueryData(
+      customerQueryOptions(merchantId, params.id)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -47,14 +59,15 @@ function RouteComponent() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { id } = Route.useParams();
+  const { merchantId } = useAuth();
   const { data, isLoading, isError, error } = useQuery(
-    customerQueryOptions(id)
+    customerQueryOptions(merchantId, id)
   );
 
   async function saveCustomerHandler(customer) {
     try {
       const response = await fetch(
-        `/api/v1/merchant/customers/${customer.id}`,
+        `/api/v1/merchants/${merchantId}/customers/${customer.id}`,
         {
           method: "PUT",
           headers: {

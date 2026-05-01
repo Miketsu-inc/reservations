@@ -112,6 +112,23 @@ func (r *userRepository) GetUserPreferredLanguage(ctx context.Context, userId uu
 	return &tag, nil
 }
 
+func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeAuthInfo, error) {
+	query := `
+	select e.id, l.id as location_id, e.merchant_id, e.role
+	from "Employee" e
+	join "Location" l on l.merchant_id = e.merchant_id
+	where e.merchant_id = $1 and user_id = $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId, userId)
+	employeeAuthInfo, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
+	if err != nil {
+		return domain.EmployeeAuthInfo{}, err
+	}
+
+	return employeeAuthInfo, nil
+}
+
 func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {
 	query := `
 	select e.id, l.id as location_id, e.merchant_id, e.role

@@ -1,4 +1,5 @@
 import { Button, Loading, Select, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
@@ -27,8 +28,8 @@ function convertTimeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
-async function updatePreferences(preferences) {
-  const response = await fetch("/api/v1/merchant/preferences", {
+async function updatePreferences(merchantId, preferences) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/preferences`, {
     method: "PATCH",
     headers: {
       Accept: "application/json",
@@ -67,8 +68,13 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/calendar"
 )({
   component: CalendarPage,
-  loader: ({ context: { queryClient } }) => {
-    return queryClient.ensureQueryData(preferencesQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(preferencesQueryOptions(merchantId));
   },
 });
 
@@ -77,17 +83,18 @@ function CalendarPage() {
   const [serverError, setServerError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const { merchantId } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
-    preferencesQueryOptions()
+    preferencesQueryOptions(merchantId)
   );
 
   const preferences = { ...(data || defaultPreferences), ...unsavedChanges };
 
   const updateMutation = useMutation({
-    mutationFn: updatePreferences,
+    mutationFn: (preferences) => updatePreferences(merchantId, preferences),
     onSuccess: () => {
-      queryClient.setQueryData(["preferences"], preferences);
+      queryClient.setQueryData([merchantId, "preferences"], preferences);
       setUnsavedChanges({});
       setServerError("");
     },

@@ -7,18 +7,19 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/auth"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/bookings"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/blockedtimes"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/blockedtimetypes"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/customers"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/integrations"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/locations"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/products"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/servicecategories"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/services"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/team"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/bookings"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/customers"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/locations"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/products"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/servicecategories"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/services"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
+	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
+	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
@@ -28,8 +29,9 @@ import (
 type Handlers struct {
 	Auth              *auth.Handler
 	Bookings          *bookings.Handler
+	PublicMerchants   *publicMerchants.Handler
+	PublicBookings    *publicBookings.Handler
 	Merchants         *merchants.Handler
-	Merchant          *merchant.Handler
 	BlockedTimes      *blockedtimes.Handler
 	BlockedTimeTypes  *blockedtimetypes.Handler
 	Customers         *customers.Handler
@@ -51,43 +53,53 @@ func NewRouter(h *Handlers) *chi.Mux {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Mount("/auth", h.Auth.Routes())
-		r.Mount("/bookings", h.Bookings.Routes())
-		r.Mount("/merchants/{merchantName}", h.Merchants.Routes())
-
-		r.Route("/merchant", func(r chi.Router) {
-			r.Use(h.Middleware.Authentication)
+		r.Mount("/integrations", h.Integrations.Routes())
+		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
+		r.Mount("/public/bookings", h.PublicBookings.Routes())
+		r.Route("/merchants", func(r chi.Router) {
+			r.Use(h.Middleware.JwtAuthentication)
 			r.Use(h.Middleware.Language)
+
+			r.Post("/check-url", h.Merchants.CheckUrl)
+		})
+		r.Route("/merchants/{merchantId}", func(r chi.Router) {
+			r.Use(h.Middleware.JwtAuthentication)
+			r.Use(h.Middleware.EmployeeAuthentication)
+			r.Use(h.Middleware.Language)
+
+			r.Get("/me", h.Merchants.Me)
 
 			r.Group(func(r chi.Router) {
 				r.Use(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner))
 
-				r.Delete("/", h.Merchant.Delete)
-				r.Patch("/name", h.Merchant.UpdateName)
+				r.Delete("/", h.Merchants.Delete)
+				r.Patch("/name", h.Merchants.UpdateName)
 			})
 
 			r.Group(func(r chi.Router) {
 				r.Use(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
 
-				r.Get("/dashboard", h.Merchant.GetDashboard)
+				r.Get("/dashboard", h.Merchants.GetDashboard)
 
-				r.Post("/check-url", h.Merchant.CheckUrl)
+				r.Get("/settings", h.Merchants.GetSettings)
+				r.Patch("/settings", h.Merchants.UpdateSettings)
+				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
 
-				r.Get("/settings", h.Merchant.GetSettings)
-				r.Patch("/settings", h.Merchant.UpdateSettings)
-				r.Get("/settings/business-hours/normalized", h.Merchant.GetNormalizedBusinessHours)
+				r.Get("/preferences", h.Merchants.GetPreferences)
+				r.Patch("/preferences", h.Merchants.UpdatePreferences)
 
-				r.Get("/preferences", h.Merchant.GetPreferences)
-				r.Patch("/preferences", h.Merchant.UpdatePreferences)
+				r.Get("/calendar/team", h.Merchants.GetTeamMembersForCalendar)
+				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
+				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
+				r.Get("/calendar/events", h.Merchants.GetCalendarEvents)
 
-				r.Get("/calendar/team", h.Merchant.GetTeamMembersForCalendar)
-				r.Get("/calendar/services", h.Merchant.GetServicesForCalendar)
-				r.Get("/calendar/customers", h.Merchant.GetCustomersForCalendar)
+				r.Get("/integrations/google/calendar", h.Merchants.GoogleCalendar)
 			})
 
+			r.Mount("/bookings", h.Bookings.Routes())
 			r.Mount("/blocked-times", h.BlockedTimes.Routes())
 			r.Mount("/blocked-time-types", h.BlockedTimeTypes.Routes())
 			r.Mount("/customers", h.Customers.Routes())
-			r.Mount("/integrations", h.Integrations.Routes())
 			r.Mount("/locations", h.Locations.Routes())
 			r.Mount("/products", h.Products.Routes())
 			r.Mount("/services", h.Services.Routes())

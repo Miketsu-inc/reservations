@@ -13,6 +13,7 @@ import {
   PopoverTrigger,
   Switch,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   formatDuration,
   invalidateLocalStorageAuth,
@@ -30,10 +31,11 @@ export default function ServiceCard({
   onMoveForth,
 }) {
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   async function serviceStatusHandler(isActive) {
     const response = await fetch(
-      `/api/v1/merchant/services/${service.id}/${isActive ? "activate" : "deactivate"}`,
+      `/api/v1/merchants/${merchantId}/services/${service.id}/${isActive ? "activate" : "deactivate"}`,
       {
         method: "PATCH",
         headers: {

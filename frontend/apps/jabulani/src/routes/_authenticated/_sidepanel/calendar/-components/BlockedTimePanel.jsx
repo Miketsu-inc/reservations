@@ -7,6 +7,7 @@ import {
   Select,
   Switch,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   blockedTimeTypesQueryOptions,
   combineDateTimeLocal,
@@ -98,6 +99,8 @@ export default function BlockedTimePanel({
   });
 
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
+
   const [formData, setFormData] = useState({
     id: blockedTime?.extendedProps?.id || null,
     blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
@@ -111,7 +114,9 @@ export default function BlockedTimePanel({
 
   const [activeType, setActiveType] = useState(formData.blocked_type_id);
 
-  const { data: blockedTypes = [] } = useQuery(blockedTimeTypesQueryOptions());
+  const { data: blockedTypes = [] } = useQuery(
+    blockedTimeTypesQueryOptions(merchantId)
+  );
 
   // const employeeOptions = employees?.map((employee) => ({
   //   value: employee.id,
@@ -167,13 +172,13 @@ export default function BlockedTimePanel({
     // means that the blocek time was already added and now should be modified
     if (formData.id != null) {
       // body.employee_id = blockedTime?.extendedProps?.employee_id;
-      url = `/api/v1/merchant/blocked-times/${formData.id}`;
+      url = `/api/v1/merchants/${merchantId}/blocked-times/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
       // body.employee_ids = [formData.employee_id];
-      url = "/api/v1/merchant/blocked-times";
+      url = `/api/v1/merchants/${merchantId}/blocked-times`;
       method = "POST";
     }
 
@@ -211,16 +216,19 @@ export default function BlockedTimePanel({
 
   async function handleDelete(bt) {
     try {
-      const response = await fetch(`/api/v1/merchant/blocked-times/${bt.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        // body: JSON.stringify({
-        //   employee_id: bt.employee_id,
-        // }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/blocked-times/${bt.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          // body: JSON.stringify({
+          //   employee_id: bt.employee_id,
+          // }),
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();

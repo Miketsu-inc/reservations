@@ -1,4 +1,5 @@
 import { DeleteModal } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -11,9 +12,10 @@ export default function DangerZone() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMerchantNameModalOpen, setisMerchantNameModalOpen] = useState(false);
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   async function deletehandler() {
-    const response = await fetch("/api/v1/merchant", {
+    const response = await fetch(`/api/v1/merchants/${merchantId}`, {
       method: "DELETE",
     });
     if (!response.ok) {
@@ -33,7 +35,7 @@ export default function DangerZone() {
   }
 
   async function handleNameChange(newName) {
-    const response = await fetch("/api/v1/merchant/name", {
+    const response = await fetch(`/api/v1/merchants/${merchantId}/name`, {
       method: "PATCH",
       headers: {
         Accept: "application/json",

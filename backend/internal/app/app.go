@@ -11,18 +11,19 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/auth"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/bookings"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/blockedtimes"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/blockedtimetypes"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/customers"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/integrations"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/locations"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/products"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/servicecategories"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/services"
-	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchant/team"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/bookings"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/customers"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/locations"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/products"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/servicecategories"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/services"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
+	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
+	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/workers"
 	repos "github.com/miketsu-inc/reservations/backend/internal/repository/db"
@@ -73,7 +74,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
-	teamService := teamSrv.NewService(teamRepo)
+	teamService := teamSrv.NewService(teamRepo, userRepo)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,
@@ -93,10 +94,11 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
 
 	router := api.NewRouter(&api.Handlers{
-		Auth:              auth.NewHandler(authService, middlewareManager),
+		Auth:              auth.NewHandler(authService, teamService, middlewareManager),
 		Bookings:          bookings.NewHandler(bookingService, middlewareManager),
-		Merchants:         merchants.NewHandler(merchantService, middlewareManager),
-		Merchant:          merchant.NewHandler(merchantService),
+		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
+		PublicMerchants:   publicMerchants.NewHandler(merchantService, middlewareManager),
+		Merchants:         merchants.NewHandler(merchantService, externalCalendarService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),
 		Customers:         customers.NewHandler(customerService),

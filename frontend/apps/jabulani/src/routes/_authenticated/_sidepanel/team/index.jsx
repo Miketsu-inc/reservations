@@ -1,12 +1,13 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import EmployeeTable from "./-components/EmployeeTable";
 
-async function fetchEmployees() {
-  const response = await fetch("/api/v1/merchant/team", {
+async function fetchEmployees(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/team`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -23,17 +24,22 @@ async function fetchEmployees() {
   }
 }
 
-function employeesQueryOptions() {
+function employeesQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["employees"],
-    queryFn: fetchEmployees,
+    queryKey: [merchantId, "employees"],
+    queryFn: () => fetchEmployees(merchantId),
   });
 }
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/team/")({
   component: RouteComponent,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(employeesQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(employeesQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -46,13 +52,14 @@ function RouteComponent() {
   const { showToast } = useToast();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { merchantId } = useAuth();
 
   const {
     data: employees,
     isLoading,
     isError,
     error,
-  } = useQuery(employeesQueryOptions());
+  } = useQuery(employeesQueryOptions(merchantId));
 
   if (isLoading) {
     return <Loading />;
@@ -79,13 +86,16 @@ function RouteComponent() {
 
   async function deleteHandler(employee) {
     try {
-      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/team/${employee.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

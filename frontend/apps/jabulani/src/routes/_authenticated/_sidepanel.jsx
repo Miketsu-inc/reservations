@@ -30,8 +30,13 @@ import { useCallback, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel")({
   component: SidePanelLayout,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(preferencesQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(preferencesQueryOptions(merchantId));
   },
   pendingComponent: Loading,
   errorComponent: ({ error }) => {

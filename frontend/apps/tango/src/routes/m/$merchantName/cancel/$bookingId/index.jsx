@@ -1,16 +1,12 @@
 import { ClockIcon, MapPinIcon, WarningIcon } from "@reservations/assets";
 import { Button, Loading, ServerError } from "@reservations/components";
-import {
-  getDisplayPrice,
-  preferencesQueryOptions,
-  timeStringFromDate,
-} from "@reservations/lib";
+import { getDisplayPrice, timeStringFromDate } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
 async function fetchBookingInfo(bookingId) {
-  const response = await fetch(`/api/v1/bookings/customer/${bookingId}`, {
+  const response = await fetch(`/api/v1/public/bookings/${bookingId}`, {
     method: "GET",
   });
 
@@ -77,8 +73,6 @@ function CancelPage() {
     error,
   } = useQuery(publicBookingInfoQueryOptions(bookingId));
 
-  const { data: preferences } = useQuery(preferencesQueryOptions());
-
   if (isLoading) {
     return <Loading />;
   }
@@ -111,7 +105,7 @@ function CancelPage() {
   async function handleCancel() {
     setCancelling(true);
     try {
-      const response = await fetch(`/api/v1/bookings/customer/${bookingId}`, {
+      const response = await fetch(`/api/v1/public/bookings/${bookingId}`, {
         method: "DELETE",
         headers: {
           "Content-type": "application/json; charset=UTF-8",
@@ -182,12 +176,8 @@ function CancelPage() {
               <ClockIcon styles="w-4 h-4 dark:fill-gray-400 fill-gray-500" />
               <span className="font-medium text-gray-500 dark:text-gray-400">
                 {`${timeStringFromDate(
-                  new Date(bookingData.from_date),
-                  preferences?.time_format
-                )} - ${timeStringFromDate(
-                  new Date(bookingData.to_date),
-                  preferences?.time_format
-                )}`}
+                  new Date(bookingData.from_date)
+                )} - ${timeStringFromDate(new Date(bookingData.to_date))}`}
               </span>
             </div>
           </div>

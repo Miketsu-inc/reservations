@@ -1,4 +1,5 @@
 import { Card, Loading, Select, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   fillStatisticsWithDate,
   invalidateLocalStorageAuth,
@@ -16,11 +17,11 @@ import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import RevenueChart from "./-components/RevenueChart";
 import StatisticsCard from "./-components/StatisticsCard";
 
-async function fetchDashboardData(period) {
+async function fetchDashboardData(merchantId, period) {
   const date = new Date().toJSON();
 
   const response = await fetch(
-    `/api/v1/merchant/dashboard?date=${date}&period=${period}`,
+    `/api/v1/merchants/${merchantId}/dashboard?date=${date}&period=${period}`,
     {
       method: "GET",
       headers: {
@@ -42,10 +43,10 @@ async function fetchDashboardData(period) {
   }
 }
 
-function dashboardQueryOptions(period) {
+function dashboardQueryOptions(merchantId, period) {
   return queryOptions({
-    queryKey: ["dashboard", period],
-    queryFn: () => fetchDashboardData(period),
+    queryKey: [merchantId, "dashboard", period],
+    queryFn: () => fetchDashboardData(merchantId, period),
   });
 }
 
@@ -60,11 +61,12 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
 function DashboardPage() {
   const windowSize = useWindowSize();
   const [period, setPeriod] = useState(7);
+  const { queryClient } = useRouteContext({ from: Route.id });
+  const { merchantId } = useAuth();
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    ...dashboardQueryOptions(period),
+    ...dashboardQueryOptions(merchantId, period),
     placeholderData: keepPreviousData,
   });
-  const { queryClient } = useRouteContext({ from: Route.id });
 
   async function invalidateDashBoardData() {
     await queryClient.invalidateQueries({

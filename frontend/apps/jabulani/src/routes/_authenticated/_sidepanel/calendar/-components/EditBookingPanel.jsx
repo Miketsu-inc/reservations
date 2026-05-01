@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
   Textarea,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   combineDateTimeLocal,
   timeStringFromDate,
@@ -57,6 +58,7 @@ export default function EditBookingPanel({
   preferences,
 }) {
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
   const isPastBooking = new Date(originalBookingData.end) <= new Date();
   const isBookingCompleted =
     originalBookingData.extendedProps.booking_status === "completed";
@@ -182,7 +184,7 @@ export default function EditBookingPanel({
 
     try {
       const response = await fetch(
-        `/api/v1/bookings/merchant/${originalBookingData.extendedProps.id}`,
+        `/api/v1/merchants/${merchantId}/bookings/${originalBookingData.extendedProps.id}`,
         {
           method: "PATCH",
           headers: {
@@ -225,7 +227,7 @@ export default function EditBookingPanel({
 
     try {
       const response = await fetch(
-        `/api/v1/bookings/merchant/${originalBookingData.extendedProps.id}/participant/${participantId}`,
+        `/api/v1/merchants/${merchantId}/bookings/${originalBookingData.extendedProps.id}/participant/${participantId}`,
         {
           method: "PATCH",
           headers: {

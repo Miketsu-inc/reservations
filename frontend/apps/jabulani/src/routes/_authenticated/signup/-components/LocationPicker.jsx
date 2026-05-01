@@ -1,6 +1,7 @@
 import { SearchBox } from "@mapbox/search-js-react";
 import { MapPinIcon } from "@reservations/assets";
 import { Button, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -16,6 +17,7 @@ export default function LocationPicker({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState();
+  const { merchantId } = useAuth();
 
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showMap, setShowMap] = useState(false);
@@ -275,24 +277,27 @@ export default function LocationPicker({
   async function submitHandler() {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/v1/merchant/locations", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          country: selectedLocation.country,
-          city: selectedLocation.city,
-          postal_code: selectedLocation.postal_code,
-          address: selectedLocation.address,
-          geo_point: selectedLocation.geo_point,
-          place_id: selectedLocation.place_id,
-          formatted_location: selectedLocation.formatted_location,
-          is_primary: true,
-          is_active: true,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/locations`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            country: selectedLocation.country,
+            city: selectedLocation.city,
+            postal_code: selectedLocation.postal_code,
+            address: selectedLocation.address,
+            geo_point: selectedLocation.geo_point,
+            place_id: selectedLocation.place_id,
+            formatted_location: selectedLocation.formatted_location,
+            is_primary: true,
+            is_active: true,
+          }),
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

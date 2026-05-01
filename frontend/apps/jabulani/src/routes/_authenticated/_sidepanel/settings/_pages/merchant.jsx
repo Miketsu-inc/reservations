@@ -1,12 +1,18 @@
-import { Button, ServerError, Textarea } from "@reservations/components";
+import {
+  Button,
+  Loading,
+  ServerError,
+  Textarea,
+} from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
   useToast,
 } from "@reservations/lib";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BusinessHours from "../-components/BusinessHours";
 import DangerZone from "../-components/DangerZone";
 import ImageUploader from "../-components/ImageUploader";
@@ -41,9 +47,13 @@ const ApprovalOptions = [
   },
 ];
 
-async function fetchMerchantData() {
-  const response = await fetch(`/api/v1/merchant/settings`, {
+async function fetchMerchantData(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/settings`, {
     method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
   });
 
   const result = await response.json();
@@ -53,6 +63,13 @@ async function fetchMerchantData() {
   } else {
     return result.data;
   }
+}
+
+function merchantDataQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "merchant-data"],
+    queryFn: () => fetchMerchantData(merchantId),
+  });
 }
 
 function validateBusinessHours(hours) {
@@ -103,12 +120,13 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_pages/merchant"
 )({
   component: MerchantPage,
-  loader: async () => {
-    const merchantData = await fetchMerchantData();
-
-    return {
-      ...merchantData,
-    };
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(merchantDataQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -116,33 +134,31 @@ export const Route = createFileRoute(
 });
 
 function MerchantPage() {
-  const loaderData = Route.useLoaderData();
-  const initialMerchantInfo = loaderData
-    ? {
-        merchant_name: loaderData.merchant_name,
-        location_id: loaderData.location_id,
-        contact_email: loaderData.contact_email,
-        formatted_location: `${loaderData.address}, ${loaderData.city} ${loaderData.postal_code}`,
-        introduction: loaderData.introduction,
-        announcement: loaderData.announcement,
-        about_us: loaderData.about_us,
-        parking_info: loaderData.parking_info,
-        payment_info: loaderData.payment_info,
-        cancel_deadline: loaderData.cancel_deadline,
-        booking_window_min: loaderData.booking_window_min,
-        booking_window_max: loaderData.booking_window_max,
-        buffer_time: loaderData.buffer_time,
-        approval_policy: loaderData.approval_policy,
-        business_hours: loaderData.business_hours,
-      }
-    : defaultMerchantInfo;
+  const { merchantId } = useAuth();
 
-  const [merchantInfo, setMerchantInfo] = useState(initialMerchantInfo);
-  const [originalData, setOriginalData] = useState(initialMerchantInfo);
+  const {
+    data: merchantData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(merchantDataQueryOptions(merchantId));
+
+  const [merchantInfo, setMerchantInfo] = useState(
+    merchantData || defaultMerchantInfo
+  );
+
+  // only using this because this will be rewritten anyway
+  useEffect(() => {
+    if (merchantData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMerchantInfo(merchantData);
+    }
+  }, [merchantData]);
+
   const [serverError, setServerError] = useState("");
   const { showToast } = useToast();
 
-  const { data: preferences } = useQuery(preferencesQueryOptions());
+  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
   function handleInputData(data) {
     setMerchantInfo((prevFormData) => ({
@@ -153,7 +169,7 @@ function MerchantPage() {
 
   const errorMessage = validateBusinessHours(merchantInfo.business_hours);
   const hasUnsavedChanges =
-    JSON.stringify(merchantInfo) !== JSON.stringify(originalData);
+    JSON.stringify(merchantInfo) !== JSON.stringify(merchantData);
 
   async function updateButtonHandler() {
     if (errorMessage || !hasUnsavedChanges) {
@@ -161,7 +177,7 @@ function MerchantPage() {
     }
 
     try {
-      const response = await fetch("/api/v1/merchant/settings", {
+      const response = await fetch(`/api/v1/merchants/${merchantId}/settings`, {
         method: "PATCH",
         headers: {
           Accept: "application/json",
@@ -186,7 +202,6 @@ function MerchantPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        setOriginalData(merchantInfo);
         setServerError("");
         showToast({
           message: "Merchant updated successfully!",
@@ -202,6 +217,14 @@ function MerchantPage() {
     // Process the uploaded file
     console.log(file);
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
 
   return (
     <div className="flex min-h-0 w-full flex-col gap-6">

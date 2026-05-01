@@ -1,4 +1,5 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
@@ -6,8 +7,8 @@ import { useState } from "react";
 import ProductModal from "./-components/ProductModal";
 import ProductsTable from "./-components/ProductsTable";
 
-async function fetchProducts() {
-  const response = await fetch(`/api/v1/merchant/products`, {
+async function fetchProducts(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/products`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -24,17 +25,22 @@ async function fetchProducts() {
   }
 }
 
-function productsQueryOptions() {
+function productsQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["products"],
-    queryFn: fetchProducts,
+    queryKey: [merchantId, "products"],
+    queryFn: () => fetchProducts(merchantId),
   });
 }
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/products/")({
   component: ProductsPage,
-  loader: ({ context: { queryClient } }) => {
-    return queryClient.ensureQueryData(productsQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(productsQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -47,18 +53,24 @@ function ProductsPage() {
   const [serverError, setServerError] = useState();
   const { queryClient } = useRouteContext({ from: Route.id });
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
-  const { data, isLoading, isError, error } = useQuery(productsQueryOptions());
+  const { data, isLoading, isError, error } = useQuery(
+    productsQueryOptions(merchantId)
+  );
 
   async function deleteHandler(product) {
     try {
-      const response = await fetch(`/api/v1/merchant/products/${product.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/products/${product.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
@@ -86,12 +98,12 @@ function ProductsPage() {
 
     // means that the product was already added and now should be modified
     if (product.id != null) {
-      url = `/api/v1/merchant/products/${product.id}`;
+      url = `/api/v1/merchants/${merchantId}/products/${product.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete product.id;
-      url = "/api/v1/merchant/products";
+      url = `/api/v1/merchants/${merchantId}/products`;
       method = "POST";
     }
 
@@ -120,7 +132,7 @@ function ProductsPage() {
         setServerError();
 
         await queryClient.invalidateQueries({
-          queryKey: ["products"],
+          queryKey: [merchantId, "products"],
         });
       }
     } catch (err) {

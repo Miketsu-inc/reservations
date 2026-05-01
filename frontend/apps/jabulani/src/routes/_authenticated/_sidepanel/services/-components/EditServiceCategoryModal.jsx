@@ -1,4 +1,5 @@
 import { Button, Input, Modal } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
 
@@ -10,6 +11,7 @@ export default function EditServiceCategoryModal({
 }) {
   const [categoryData, setCategoryData] = useState({ name: category.name });
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   function updateCategoryData(data) {
     setCategoryData((prev) => ({ ...prev, ...data }));
@@ -23,7 +25,7 @@ export default function EditServiceCategoryModal({
     }
 
     const response = await fetch(
-      `/api/v1/merchant/service-categories/${category.id}`,
+      `/api/v1/merchants/${merchantId}/service-categories/${category.id}`,
       {
         method: "PUT",
         headers: {

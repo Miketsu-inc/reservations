@@ -1,4 +1,5 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   serviceFormOptionsQueryOptions,
@@ -9,14 +10,17 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import GroupServicePage from "./-components/GroupServicePage";
 
-async function fetchGroupServiceData(id) {
-  const response = await fetch(`/api/v1/merchant/services/group/${id}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchGroupServiceData(merchantId, id) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/services/group/${id}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -27,10 +31,10 @@ async function fetchGroupServiceData(id) {
   }
 }
 
-function groupServiceQueryOptions(id) {
+function groupServiceQueryOptions(merchantId, id) {
   return queryOptions({
-    queryKey: ["group-service", id],
-    queryFn: () => fetchGroupServiceData(id),
+    queryKey: [merchantId, "group-service", id],
+    queryFn: () => fetchGroupServiceData(merchantId, id),
   });
 }
 
@@ -38,9 +42,19 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/services/group/edit/$id"
 )({
   component: RouteComponent,
-  loader: async ({ params, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(groupServiceQueryOptions(params.id));
-    await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
+  loader: async ({
+    params,
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(
+      groupServiceQueryOptions(merchantId, params.id)
+    );
+    await queryClient.ensureQueryData(
+      serviceFormOptionsQueryOptions(merchantId)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -51,11 +65,15 @@ function RouteComponent() {
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const { id } = Route.useParams({ from: Route.id });
 
   const queryResults = useQueries({
-    queries: [groupServiceQueryOptions(id), serviceFormOptionsQueryOptions()],
+    queries: [
+      groupServiceQueryOptions(merchantId, id),
+      serviceFormOptionsQueryOptions(merchantId),
+    ],
   });
 
   if (queryResults.some((r) => r.isLoading)) {
@@ -90,7 +108,7 @@ function RouteComponent() {
 
   async function updateServiceData(serviceId, serviceData) {
     const response = await fetch(
-      `/api/v1/merchant/services/group/${serviceId}`,
+      `/api/v1/merchants/${merchantId}/services/group/${serviceId}`,
       {
         method: "PUT",
         headers: {
@@ -110,7 +128,7 @@ function RouteComponent() {
 
   async function updateUsedProducts(serviceId, usedProducts) {
     const response = await fetch(
-      `/api/v1/merchant/services/${serviceId}/products`,
+      `/api/v1/merchants/${merchantId}/services/${serviceId}/products`,
       {
         method: "PUT",
         headers: {

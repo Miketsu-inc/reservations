@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
@@ -31,9 +31,9 @@ type NewInput struct {
 }
 
 func (s *Service) New(ctx context.Context, input NewInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 	}
@@ -46,7 +46,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	if err := s.productRepo.NewProduct(ctx, domain.Product{
 		Id:            0,
-		MerchantId:    employee.MerchantId,
+		MerchantId:    actor.MerchantId,
 		Name:          input.Name,
 		Description:   input.Description,
 		Price:         input.Price,
@@ -75,11 +75,11 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 		return fmt.Errorf("invalid product id")
 	}
 
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	err := s.productRepo.UpdateProduct(ctx, domain.Product{
 		Id:            input.Id,
-		MerchantId:    employee.MerchantId,
+		MerchantId:    actor.MerchantId,
 		Name:          input.Name,
 		Description:   input.Description,
 		Price:         input.Price,
@@ -95,9 +95,9 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 }
 
 func (s *Service) Delete(ctx context.Context, productId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.productRepo.DeleteProduct(ctx, employee.MerchantId, productId)
+	err := s.productRepo.DeleteProduct(ctx, actor.MerchantId, productId)
 	if err != nil {
 		return fmt.Errorf("error while deleting product for merchant: %s", err.Error())
 	}
@@ -106,9 +106,9 @@ func (s *Service) Delete(ctx context.Context, productId int) error {
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]domain.ProductInfo, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	products, err := s.productRepo.GetProducts(ctx, employee.MerchantId)
+	products, err := s.productRepo.GetProducts(ctx, actor.MerchantId)
 	if err != nil {
 		return []domain.ProductInfo{}, fmt.Errorf("error while retrieving products for merchant: %s", err.Error())
 	}

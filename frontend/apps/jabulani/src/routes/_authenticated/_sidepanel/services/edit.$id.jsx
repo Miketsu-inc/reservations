@@ -1,4 +1,5 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   serviceFormOptionsQueryOptions,
@@ -9,14 +10,17 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
-async function fetchServiceData(id) {
-  const response = await fetch(`/api/v1/merchant/services/${id}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchServiceData(merchantId, id) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/services/${id}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -27,10 +31,10 @@ async function fetchServiceData(id) {
   }
 }
 
-function serviceQueryOptions(id) {
+function serviceQueryOptions(merchantId, id) {
   return queryOptions({
-    queryKey: ["service", id],
-    queryFn: () => fetchServiceData(id),
+    queryKey: [merchantId, "service", id],
+    queryFn: () => fetchServiceData(merchantId, id),
   });
 }
 
@@ -38,9 +42,19 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/services/edit/$id"
 )({
   component: RouteComponent,
-  loader: async ({ params, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(serviceQueryOptions(params.id));
-    await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
+  loader: async ({
+    params,
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(
+      serviceQueryOptions(merchantId, params.id)
+    );
+    await queryClient.ensureQueryData(
+      serviceFormOptionsQueryOptions(merchantId)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -51,11 +65,15 @@ function RouteComponent() {
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const { id } = Route.useParams({ from: Route.id });
 
   const queryResults = useQueries({
-    queries: [serviceQueryOptions(id), serviceFormOptionsQueryOptions()],
+    queries: [
+      serviceQueryOptions(merchantId, id),
+      serviceFormOptionsQueryOptions(merchantId),
+    ],
   });
 
   if (queryResults.some((r) => r.isLoading)) {
@@ -89,14 +107,17 @@ function RouteComponent() {
   }
 
   async function updateServiceData(serviceId, serviceData) {
-    const response = await fetch(`/api/v1/merchant/services/${serviceId}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(serviceData),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/services/${serviceId}`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(serviceData),
+      }
+    );
 
     if (!response.ok) {
       invalidateLocalStorageAuth(response.status);
@@ -107,7 +128,7 @@ function RouteComponent() {
 
   async function updateUsedProducts(serviceId, usedProducts) {
     const response = await fetch(
-      `/api/v1/merchant/services/${serviceId}/products`,
+      `/api/v1/merchants/${merchantId}/services/${serviceId}/products`,
       {
         method: "PUT",
         headers: {

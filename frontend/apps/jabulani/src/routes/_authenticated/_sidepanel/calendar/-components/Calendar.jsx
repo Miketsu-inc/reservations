@@ -10,6 +10,7 @@ import {
   Select,
   ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
   formatToDateString,
@@ -133,17 +134,21 @@ export default function Calendar({ router, route, search }) {
   const [cancelBookingModalData, setCancelBookingModalData] = useState(null);
   const [recurModalData, setRecurModalData] = useState(null);
 
+  const { merchantId } = useAuth();
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },
     isError,
     error,
   } = useQuery({
-    ...bookingsQueryOptions(search.start, search.end),
+    ...bookingsQueryOptions(merchantId, search.start, search.end),
     placeholderData: keepPreviousData,
   });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
-    queries: [preferencesQueryOptions(), businessHoursQueryOptions()],
+    queries: [
+      preferencesQueryOptions(merchantId),
+      businessHoursQueryOptions(merchantId),
+    ],
   });
   const [calendarView, setCalendarView] = useState(search.view);
 

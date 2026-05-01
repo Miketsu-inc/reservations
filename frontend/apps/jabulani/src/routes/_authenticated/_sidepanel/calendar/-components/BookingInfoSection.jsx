@@ -5,6 +5,7 @@ import {
   PhoneIcon,
   ServicesIcon,
 } from "@reservations/assets";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   formatToDateString,
   preferencesQueryOptions,
@@ -13,7 +14,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 
 export default function BookingInfoSection({ booking }) {
-  const { data: preferences } = useQuery(preferencesQueryOptions());
+  const { merchantId } = useAuth();
+  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
   return (
     <div

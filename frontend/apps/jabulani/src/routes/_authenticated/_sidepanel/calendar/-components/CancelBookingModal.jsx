@@ -1,4 +1,5 @@
 import { Button, CloseButton, Modal, Textarea } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 
 export default function CancelBookingModal({
@@ -8,6 +9,7 @@ export default function CancelBookingModal({
   onClose,
 }) {
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   async function deleteBookingHandler(e) {
     e.preventDefault();
@@ -15,16 +17,19 @@ export default function CancelBookingModal({
     const deletion_reason = e.target.elements.deletion_reason.value;
 
     try {
-      const response = await fetch(`/api/v1/bookings/merchant/${booking.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          cancellation_reason: deletion_reason,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/bookings/${booking.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            cancellation_reason: deletion_reason,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();

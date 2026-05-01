@@ -1,4 +1,5 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   serviceFormOptionsQueryOptions,
@@ -13,8 +14,15 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/services/group/new"
 )({
   component: RouteComponent,
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(serviceFormOptionsQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(
+      serviceFormOptionsQueryOptions(merchantId)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -25,13 +33,14 @@ function RouteComponent() {
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const {
     data: formOptions,
     isLoading,
     isError,
     error,
-  } = useQuery(serviceFormOptionsQueryOptions());
+  } = useQuery(serviceFormOptionsQueryOptions(merchantId));
 
   if (isLoading) {
     return <Loading />;
@@ -43,14 +52,17 @@ function RouteComponent() {
 
   async function saveHandler(service) {
     try {
-      const response = await fetch("/api/v1/merchant/services/group", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(service),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/services/group`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(service),
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

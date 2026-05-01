@@ -1,17 +1,79 @@
 import { Loading, ServerError } from "@reservations/components";
-import { isAuthenticated } from "@reservations/lib";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { AuthProvider } from "@reservations/jabulani/lib";
+import { queryOptions } from "@tanstack/react-query";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+
+async function fetchMe() {
+  const response = await fetch("/api/v1/auth/me", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw { status: response.status, message: result.error };
+  } else {
+    return result.data;
+  }
+}
+
+function meQueryOptions() {
+  return queryOptions({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+  });
+}
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async () => {
-    if (!(await isAuthenticated("/api/v1/auth/me"))) {
-      throw redirect({
-        to: "/login",
-      });
+  beforeLoad: async ({ context: { queryClient } }) => {
+    try {
+      const me = await queryClient.ensureQueryData(meQueryOptions());
+
+      const stored = localStorage.getItem("activeMerchantId");
+      const membership =
+        me.memberships.find((e) => e.merchant_id === stored) ??
+        me.memberships[0];
+
+      let authContext = null;
+
+      if (membership) {
+        authContext = {
+          merchantId: membership?.merchant_id,
+          locationId: membership?.location_id,
+          employeeId: membership?.employee_id,
+          role: membership?.role,
+        };
+      }
+
+      return {
+        authContext: authContext,
+      };
+    } catch (error) {
+      if (error.status === 401) {
+        throw redirect({
+          to: "/login",
+          search: { redirect: location.href },
+        });
+      }
     }
   },
   pendingComponent: Loading,
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
+  component: AuthOutlet,
 });
+
+function AuthOutlet() {
+  const { authContext } = Route.useRouteContext();
+
+  return (
+    <AuthProvider authContext={authContext}>
+      <Outlet />
+    </AuthProvider>
+  );
+}

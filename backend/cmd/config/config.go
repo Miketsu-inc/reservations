@@ -28,6 +28,7 @@ type Config struct {
 	RESEND_API_TEST string
 	ENABLE_EMAILS   bool
 
+	OAUTH_STATE_SECRET           string
 	GOOGLE_OAUTH_CLIENT_ID       string
 	GOOGLE_OAUTH_CLIENT_SECRET   string
 	FACEBOOK_OAUTH_CLIENT_ID     string
@@ -53,6 +54,7 @@ func LoadEnvVars() *Config {
 		jwt_refresh_exp_min, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_EXP_MIN"))
 		resend_api_test := os.Getenv("RESEND_API_TEST")
 		enable_emails, _ := strconv.ParseBool(os.Getenv("ENABLE_EMAILS"))
+		oauth_state_secret := os.Getenv("OAUTH_STATE_SECRET")
 		google_oauth_client_id := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
 		google_oauth_client_secret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 		facebook_oauth_client_id := os.Getenv("FACEBOOK_OAUTH_CLIENT_ID")
@@ -73,6 +75,7 @@ func LoadEnvVars() *Config {
 			JWT_REFRESH_EXP_MIN:          jwt_refresh_exp_min,
 			RESEND_API_TEST:              resend_api_test,
 			ENABLE_EMAILS:                enable_emails,
+			OAUTH_STATE_SECRET:           oauth_state_secret,
 			GOOGLE_OAUTH_CLIENT_ID:       google_oauth_client_id,
 			GOOGLE_OAUTH_CLIENT_SECRET:   google_oauth_client_secret,
 			FACEBOOK_OAUTH_CLIENT_ID:     facebook_oauth_client_id,
@@ -97,6 +100,7 @@ func (c *Config) Validate() {
 	assert.True(c.JWT_REFRESH_EXP_MIN != 0, "JWT_REFRESH_EXP_MIN environment variable could not be found")
 	assert.True(c.RESEND_API_TEST != "", "RESEND_API_TEST environment variable could not be found")
 	assert.NotNil(c.ENABLE_EMAILS, "ENABLE_EMAILS environment variable could not be found")
+	assert.True(c.OAUTH_STATE_SECRET != "", "OAUTH_STATE_SECRET environment variable could not be found")
 	assert.True(c.GOOGLE_OAUTH_CLIENT_ID != "", "GOOGLE_OAUTH_CLIENT_ID environment variable could not be found")
 	assert.True(c.GOOGLE_OAUTH_CLIENT_SECRET != "", "GOOGLE_OAUTH_CLIENT_SECRET environment variable could not be found")
 	assert.True(c.FACEBOOK_OAUTH_CLIENT_ID != "", "FACEBOOK_OAUTH_CLIENT_ID environment variable could not be found")

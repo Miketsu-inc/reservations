@@ -6,82 +6,203 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
+	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
+// merchant routes are in router.go due to them being at the
+// same level as the other authenticated merchant routes
+// but not being grouped under a subroute
 type Handler struct {
-	service    *merchantServ.Service
-	middleware *middleware.Manager
+	service         *merchantServ.Service
+	extcalendarServ *externalcalendarServ.Service
 }
 
-func NewHandler(s *merchantServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, middleware: m}
+func NewHandler(s *merchantServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	return &Handler{service: s, extcalendarServ: extcalendarServ}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
-
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.Language)
-
-		r.Get("/", h.GetInfo)
-
-		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
-		r.Get("/locations/{locationId}/services/{serviceId}/summary", h.GetSummary)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability", h.GetAvailability)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/next", h.GetNextAvailability)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/disabled-days", h.GetDisabledDays)
-	})
-
-	return r
+type meResp struct {
+	UserId     uuid.UUID          `json:"user_id"`
+	MerchantId uuid.UUID          `json:"merchant_id"`
+	LocationId int                `json:"location_id"`
+	EmployeeId int                `json:"employee_id"`
+	Role       types.EmployeeRole `json:"role"`
 }
 
-type getInfoResp struct {
-	Name         string `json:"merchant_name"`
-	UrlName      string `json:"url_name"`
-	ContactEmail string `json:"contact_email"`
-	Introduction string `json:"introduction"`
-	Announcement string `json:"announcement"`
-	AboutUs      string `json:"about_us"`
-	ParkingInfo  string `json:"parking_info"`
-	PaymentInfo  string `json:"payment_info"`
-	Timezone     string `json:"timezone"`
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	actor := actor.MustGetFromContext(r.Context())
 
-	LocationId        int            `json:"location_id"`
-	Country           *string        `json:"country"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	FormattedLocation string         `json:"formatted_location"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-
-	// TODO: this should be probably called categories
-	Services []servicesGroupedByCategoryResp `json:"services"`
-
-	BusinessHours map[int][]timeSlotResp `json:"business_hours"`
+	httputil.Success(w, http.StatusOK, mapToMeResp(actor))
 }
 
-type servicesGroupedByCategoryResp struct {
-	Id       *int          `json:"id"`
-	Name     *string       `json:"name"`
-	Sequence *int          `json:"sequence"`
-	Services []serviceResp `json:"services"`
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	err := h.service.Delete(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusBadGateway, err)
+		return
+	}
 }
 
-type serviceResp struct {
-	Id            int                       `json:"id"`
-	CategoryId    *int                      `json:"category_id"`
-	Name          string                    `json:"name"`
-	Description   *string                   `json:"description"`
-	TotalDuration int                       `json:"total_duration"`
-	Price         *currencyx.FormattedPrice `json:"price"`
-	PriceType     types.PriceType           `json:"price_type"`
-	Sequence      int                       `json:"sequence"`
+type updateNameReq struct {
+	Name string `json:"name" validate:"required"`
+}
+
+func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) {
+	var req updateNameReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+	}
+
+	err := h.service.UpdateName(r.Context(), mapToUpdateNameInput(req))
+	if err != nil {
+		httputil.Error(w, http.StatusBadGateway, err)
+		return
+	}
+}
+
+type getDashboardResp struct {
+	PeriodStart      time.Time               `json:"period_start"`
+	PeriodEnd        time.Time               `json:"period_end"`
+	UpcomingBookings []bookingDetailsResp    `json:"upcoming_bookings"`
+	LatestBookings   []bookingDetailsResp    `json:"latest_bookings"`
+	LowStockProducts []lowStockProductResp   `json:"low_stock_products"`
+	Statistics       dashboardStatisticsResp `json:"statistics"`
+}
+
+type bookingDetailsResp struct {
+	ID              int                      `json:"id"`
+	Status          types.BookingStatus      `json:"status"`
+	FromDate        time.Time                `json:"from_date"`
+	ToDate          time.Time                `json:"to_date"`
+	CustomerNote    *string                  `json:"customer_note"`
+	MerchantNote    *string                  `json:"merchant_note"`
+	ServiceName     string                   `json:"service_name"`
+	ServiceColor    string                   `json:"service_color"`
+	ServiceDuration int                      `json:"service_duration"`
+	Price           currencyx.FormattedPrice `json:"price"`
+	Cost            currencyx.FormattedPrice `json:"cost"`
+	FirstName       *string                  `json:"first_name"`
+	LastName        *string                  `json:"last_name"`
+	PhoneNumber     *string                  `json:"phone_number"`
+}
+
+type lowStockProductResp struct {
+	Id            int     `json:"id"`
+	Name          string  `json:"name"`
+	MaxAmount     int     `json:"max_amount"`
+	CurrentAmount int     `json:"current_amount"`
+	Unit          string  `json:"unit"`
+	FillRatio     float64 `json:"fill_ratio"`
+}
+
+type dashboardStatisticsResp struct {
+	Revenue               []revenueStatResp `json:"revenue"`
+	RevenueSum            string            `json:"revenue_sum"`
+	RevenueChange         int               `json:"revenue_change"`
+	Bookings              int               `json:"bookings"`
+	BookingsChange        int               `json:"bookings_change"`
+	Cancellations         int               `json:"cancellations"`
+	CancellationsChange   int               `json:"cancellations_change"`
+	AverageDuration       int               `json:"average_duration"`
+	AverageDurationChange int               `json:"average_duration_change"`
+}
+
+// TODO: value is of numeric type so float might not be the best
+// type to return here
+type revenueStatResp struct {
+	Value float64   `json:"value"`
+	Day   time.Time `json:"day"`
+}
+
+func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
+	urlDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("date"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date: %s", err.Error()))
+		return
+	}
+
+	urlPeriod, err := strconv.Atoi(r.URL.Query().Get("period"))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid period: %s", err.Error()))
+		return
+	}
+
+	dashboard, err := h.service.GetDashboard(r.Context(), urlDate, urlPeriod)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetDashboardResp(dashboard))
+}
+
+type checkUrlReq struct {
+	Name string `json:"merchant_name"`
+}
+
+type checkUrlResp struct {
+	Name string `json:"merchant_name"`
+}
+
+func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) {
+	var req checkUrlReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	merchantUrl, err := h.service.CheckUrl(r.Context(), mapToCheckUrlInput(req))
+	if err != nil {
+		switch e := err.(type) {
+		case merchantServ.ErrMerchantUrlNotUnique:
+			httputil.WriteJSON(w, http.StatusConflict, map[string]map[string]string{
+				"error": {
+					"message":      err.Error(),
+					"merchant_url": e.URL},
+			})
+			return
+
+		default:
+			httputil.Error(w, http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	httputil.Success(w, http.StatusOK, mapToCheckUrlResp(merchantUrl))
+
+}
+
+type getSettingsResp struct {
+	Name             string                 `json:"merchant_name"`
+	ContactEmail     string                 `json:"contact_email"`
+	Introduction     string                 `json:"introduction"`
+	Announcement     string                 `json:"announcement"`
+	AboutUs          string                 `json:"about_us"`
+	ParkingInfo      string                 `json:"parking_info"`
+	PaymentInfo      string                 `json:"payment_info"`
+	CancelDeadline   int                    `json:"cancel_deadline"`
+	BookingWindowMin int                    `json:"booking_window_min"`
+	BookingWindowMax int                    `json:"booking_window_max"`
+	BufferTime       int                    `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
+	Timezone         string                 `json:"timezone"`
+	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
+
+	LocationId        int     `json:"location_id"`
+	Country           *string `json:"country"`
+	City              *string `json:"city"`
+	PostalCode        *string `json:"postal_code"`
+	Address           *string `json:"address"`
+	FormattedLocation string  `json:"formatted_location"`
 }
 
 type timeSlotResp struct {
@@ -89,223 +210,237 @@ type timeSlotResp struct {
 	EndTime   string `json:"end_time"`
 }
 
-func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
-
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
-	}
-
-	info, err := h.service.GetInfo(r.Context(), urlName)
+func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	settings, err := h.service.GetSettings(r.Context())
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetInfo(info))
+	httputil.Success(w, http.StatusOK, mapToGetSettingsResp(settings))
 }
 
-type getServiceDetailsResp struct {
-	Id                int                       `json:"id"`
-	Name              string                    `json:"name"`
-	Description       *string                   `json:"description"`
-	TotalDuration     int                       `json:"total_duration"`
-	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType           `json:"price_type"`
-	FormattedLocation string                    `json:"formatted_location"`
-	GeoPoint          types.GeoPoint            `json:"geo_point"`
-	Phases            []phaseResp               `json:"phases"`
+type updateSettingsReq struct {
+	Introduction     string                 `json:"introduction"`
+	Announcement     string                 `json:"announcement"`
+	AboutUs          string                 `json:"about_us"`
+	ParkingInfo      string                 `json:"parking_info"`
+	PaymentInfo      string                 `json:"payment_info"`
+	CancelDeadline   int                    `json:"cancel_deadline"`
+	BookingWindowMin int                    `json:"booking_window_min"`
+	BookingWindowMax int                    `json:"booking_window_max"`
+	BufferTime       int                    `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
+	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
 }
 
-type phaseResp struct {
-	Id        int                    `json:"id"`
-	ServiceId int                    `json:"service_id"`
-	Name      string                 `json:"name"`
-	Sequence  int                    `json:"sequence"`
-	Duration  int                    `json:"duration"`
-	PhaseType types.ServicePhaseType `json:"phase_type"`
-}
+func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	var req updateSettingsReq
 
-func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
-
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
-	}
-
-	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
-	}
-
-	serviceDetails, err := h.service.GetServiceDetails(r.Context(), urlName, urlServiceId, urlLocationId)
+	updateSettingsInput, err := mapToUpdateSettingsInput(req)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetServiceDetailsResp(serviceDetails))
+	err = h.service.UpdateSettings(r.Context(), updateSettingsInput)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
 }
 
-type getSummaryResp struct {
-	Name              string                    `json:"name"`
-	TotalDuration     int                       `json:"total_duration"`
-	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType           `json:"price_type"`
-	FormattedLocation string                    `json:"formatted_location"`
-}
-
-func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
-
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
-	}
-
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
-	}
-
-	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
-	}
-
-	summaryInfo, err := h.service.GetSummary(r.Context(), urlName, urlServiceId, urlLocationId)
+func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) {
+	businessHours, err := h.service.GetNormalizedBusinessHours(r.Context())
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetSummaryResp(summaryInfo))
+	httputil.Success(w, http.StatusOK, mapToGetNormalizedBusinessHoursResp(businessHours))
 }
 
-type getAvailabilityResp struct {
-	Date        string   `json:"date"`
-	IsAvailable bool     `json:"is_available"`
-	Morning     []string `json:"morning"`
-	Afternoon   []string `json:"afternoon"`
+type getPreferencesResp struct {
+	FirstDayOfWeek     string `json:"first_day_of_week"`
+	TimeFormat         string `json:"time_format"`
+	CalendarView       string `json:"calendar_view"`
+	CalendarViewMobile string `json:"calendar_view_mobile"`
+	StartHour          string `json:"start_hour"`
+	EndHour            string `json:"end_hour"`
+	TimeFrequency      string `json:"time_frequency"`
 }
 
-func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
-
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
-	}
-
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
-	}
-
-	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
-	}
-
-	urlStartDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
-		return
-	}
-
-	urlEndDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
-		return
-	}
-
-	availability, err := h.service.GetAvailability(r.Context(), urlName, urlServiceId, urlLocationId, urlStartDate, urlEndDate)
+func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
+	preferences, err := h.service.GetPreferences(r.Context())
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetAvailabilityResp(availability))
+	httputil.Success(w, http.StatusOK, mapToGetPreferencesResp(preferences))
 }
 
-type getNextAvailabilityResp struct {
-	Date string `json:"date"`
-	Time string `json:"time"`
+type updatePreferencesReq struct {
+	FirstDayOfWeek     string `json:"first_day_of_week"`
+	TimeFormat         string `json:"time_format"`
+	CalendarView       string `json:"calendar_view"`
+	CalendarViewMobile string `json:"calendar_view_mobile"`
+	StartHour          string `json:"start_hour"`
+	EndHour            string `json:"end_hour"`
+	TimeFrequency      string `json:"time_frequency"`
 }
 
-func (h *Handler) GetNextAvailability(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
+func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
+	var req updatePreferencesReq
 
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
-	}
-
-	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
-	}
-
-	nextAvailability, err := h.service.GetNextAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
+	updatePreferencesInput, err := mapToUpdatePreferencesInput(req)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetNextAvailabilityResp(nextAvailability))
+	err = h.service.UpdatePreferences(r.Context(), updatePreferencesInput)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
 }
 
-type getDisabledDaysResp struct {
-	ClosedDays []int     `json:"closed_days"`
-	MinDate    time.Time `json:"min_date"`
-	MaxDate    time.Time `json:"max_date"`
+type getTeamMembersForCalendarResp struct {
+	Id        int    `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
-func (h *Handler) GetDisabledDays(w http.ResponseWriter, r *http.Request) {
-	urlName := chi.URLParam(r, "merchantName")
-
-	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
-	}
-
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
-	}
-
-	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
-	}
-
-	disabledDays, err := h.service.GetDisabledDays(r.Context(), urlName, urlServiceId, urlLocationId)
+func (h *Handler) GetTeamMembersForCalendar(w http.ResponseWriter, r *http.Request) {
+	teamMembers, err := h.service.GetTeamMembersForCalendar(r.Context())
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetDisabledDaysResp(disabledDays))
+	httputil.Success(w, http.StatusOK, mapToGetTeamMembersForCalendarResp(teamMembers))
+}
+
+type getServicesForCalendarResp struct {
+	Id       *int                  `json:"id"`
+	Name     *string               `json:"name"`
+	Services []calendarServiceResp `json:"services"`
+}
+
+type calendarServiceResp struct {
+	Id              int                       `json:"id"`
+	Name            string                    `json:"name"`
+	Duration        int                       `json:"duration"`
+	Price           *currencyx.FormattedPrice `json:"price"`
+	PriceType       types.PriceType           `json:"price_type"`
+	Color           string                    `json:"color"`
+	BookingType     types.BookingType         `json:"booking_type"`
+	MaxParticipants int                       `json:"max_participants"`
+}
+
+func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) {
+	services, err := h.service.GetServicesForCalendar(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetServicesForCalendarResp(services))
+}
+
+type getCustomersForCalendarResp struct {
+	CustomerId  uuid.UUID  `json:"customer_id"`
+	FirstName   string     `json:"first_name"`
+	LastName    string     `json:"last_name"`
+	Email       *string    `json:"email"`
+	PhoneNumber *string    `json:"phone_number"`
+	BirthDay    *time.Time `json:"birthday"`
+	IsDummy     bool       `json:"is_dummy"`
+	LastVisited *time.Time `json:"last_visited"`
+}
+
+func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) {
+	customers, err := h.service.GetCustomersForCalendar(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetCustomersForCalendarResp(customers))
+}
+
+type getCalendarEventsResp struct {
+	Bookings     []bookingForCalendar `json:"bookings"`
+	BlockedTimes []blockedTime        `json:"blocked_times"`
+}
+
+type bookingForCalendar struct {
+	ID              int                             `json:"id"`
+	BookingType     types.BookingType               `json:"booking_type"`
+	BookingStatus   types.BookingStatus             `json:"booking_status"`
+	FromDate        time.Time                       `json:"from_date"`
+	ToDate          time.Time                       `json:"to_date"`
+	IsRecurring     bool                            `json:"is_recurring"`
+	MerchantNote    *string                         `json:"merchant_note"`
+	ServiceId       int                             `json:"service_id"`
+	ServiceName     string                          `json:"service_name"`
+	ServiceColor    string                          `json:"service_color" `
+	MaxParticipants int                             `json:"max_participants"`
+	Price           currencyx.FormattedPrice        `json:"price"`
+	Cost            currencyx.FormattedPrice        `json:"cost"`
+	Participants    []bookingParticipantForCalendar `json:"participants"`
+}
+
+type bookingParticipantForCalendar struct {
+	Id           int                 `json:"id"`
+	CustomerId   uuid.UUID           `json:"customer_id"`
+	FirstName    *string             `json:"first_name"`
+	LastName     *string             `json:"last_name"`
+	CustomerNote *string             `json:"customer_note"`
+	Status       types.BookingStatus `json:"status"`
+}
+
+type blockedTime struct {
+	ID            int       `json:"id"`
+	EmployeeId    int       `json:"employee_id"`
+	Name          string    `json:"name"`
+	FromDate      time.Time `json:"from_date"`
+	ToDate        time.Time `json:"to_date"`
+	AllDay        bool      `json:"all_day"`
+	Icon          *string   `json:"icon"`
+	BlockedTypeId *int      `json:"blocked_type_id"`
+}
+
+func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) {
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
+
+	bookings, err := h.service.GetCalendarEvents(r.Context(), start, end)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetCalendarEventsResp(bookings))
+}
+
+func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) {
+	url, err := h.extcalendarServ.GoogleCalendar(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }

@@ -27,7 +27,7 @@ var googleConf = &oauth2.Config{
 }
 
 func (s *Service) GoogleLogin(ctx context.Context) (string, string, error) {
-	state, err := oauthutil.GenerateSate()
+	state, err := oauthutil.RandomString(32)
 	if err != nil {
 		return "", "", err
 	}
@@ -99,12 +99,12 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 		}
 	}
 
-	accessToken, err := jwt.NewAccessToken(userId, nil, nil, nil, nil)
+	accessToken, err := jwt.NewAccessToken(userId)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userId, nil, nil, nil, nil, 0)
+	refreshToken, err := jwt.NewRefreshToken(userId, 0)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
@@ -121,7 +121,7 @@ var facebookConf = &oauth2.Config{
 }
 
 func (s *Service) FacebookLogin(ctx context.Context) (string, string, error) {
-	state, err := oauthutil.GenerateSate()
+	state, err := oauthutil.RandomString(32)
 	if err != nil {
 		return "", "", err
 	}
@@ -196,12 +196,12 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 		}
 	}
 
-	accessToken, err := jwt.NewAccessToken(userId, nil, nil, nil, nil)
+	accessToken, err := jwt.NewAccessToken(userId)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userId, nil, nil, nil, nil, 0)
+	refreshToken, err := jwt.NewRefreshToken(userId, 0)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}

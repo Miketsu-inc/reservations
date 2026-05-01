@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { invalidateLocalStorageAuth } from "./lib";
 
-async function fetchPreferences() {
-  const response = await fetch(`/api/v1/merchant/preferences`, {
+async function fetchPreferences(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/preferences`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -19,16 +19,16 @@ async function fetchPreferences() {
   }
 }
 
-export function preferencesQueryOptions() {
+export function preferencesQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["preferences"],
-    queryFn: fetchPreferences,
+    queryKey: [merchantId, "preferences"],
+    queryFn: () => fetchPreferences(merchantId),
   });
 }
 
-async function fetchBusinessHours() {
+async function fetchBusinessHours(merchantId) {
   const response = await fetch(
-    `/api/v1/merchant/settings/business-hours/normalized`,
+    `/api/v1/merchants/${merchantId}/settings/business-hours/normalized`,
     {
       method: "GET",
       headers: {
@@ -46,15 +46,15 @@ async function fetchBusinessHours() {
   }
 }
 
-export function businessHoursQueryOptions() {
+export function businessHoursQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["normalized-business-hours"],
-    queryFn: fetchBusinessHours,
+    queryKey: [merchantId, "normalized-business-hours"],
+    queryFn: () => fetchBusinessHours(merchantId),
   });
 }
 
-async function fetchCustomers() {
-  const response = await fetch(`/api/v1/merchant/customers`, {
+async function fetchCustomers(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/customers`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -71,21 +71,24 @@ async function fetchCustomers() {
   }
 }
 
-export function customersQueryOptions() {
+export function customersQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["customers"],
-    queryFn: fetchCustomers,
+    queryKey: [merchantId, "customers"],
+    queryFn: () => fetchCustomers(merchantId),
   });
 }
 
-async function fetchBlockedTimeTypes() {
-  const response = await fetch(`/api/v1/merchant/blocked-time-types`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchBlockedTimeTypes(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/blocked-time-types`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -96,21 +99,24 @@ async function fetchBlockedTimeTypes() {
   }
 }
 
-export function blockedTimeTypesQueryOptions() {
+export function blockedTimeTypesQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["blocked-time-types"],
-    queryFn: fetchBlockedTimeTypes,
+    queryKey: [merchantId, "blocked-time-types"],
+    queryFn: () => fetchBlockedTimeTypes(merchantId),
   });
 }
 
-async function fetchServiceFormOptions() {
-  const response = await fetch("/api/v1/merchant/services/form-options", {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchServiceFormOptions(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/services/form-options`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -121,9 +127,9 @@ async function fetchServiceFormOptions() {
   }
 }
 
-export function serviceFormOptionsQueryOptions() {
+export function serviceFormOptionsQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["service-from-options"],
-    queryFn: fetchServiceFormOptions,
+    queryKey: [merchantId, "service-from-options"],
+    queryFn: () => fetchServiceFormOptions(merchantId),
   });
 }

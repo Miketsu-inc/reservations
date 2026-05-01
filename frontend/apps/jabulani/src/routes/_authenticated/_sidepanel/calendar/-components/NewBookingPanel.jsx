@@ -5,6 +5,7 @@ import {
   DatePicker,
   Textarea,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
   combineDateTimeLocal,
@@ -40,6 +41,7 @@ export default function NewBookingPanel({
     active: "service-selector",
   });
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
   const currentDate = new Date();
   const [recurData, setRecurData] = useState({
     isRecurring: false,
@@ -148,7 +150,7 @@ export default function NewBookingPanel({
     }));
 
     try {
-      const response = await fetch(`/api/v1/bookings/merchant`, {
+      const response = await fetch(`/api/v1/merchants/${merchantId}/bookings`, {
         method: "POST",
         headers: {
           Accept: "application/json",

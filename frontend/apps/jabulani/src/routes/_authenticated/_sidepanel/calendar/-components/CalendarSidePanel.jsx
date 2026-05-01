@@ -1,13 +1,14 @@
 import { XIcon } from "@reservations/assets";
 import { ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import BlockedTimePanel from "./BlockedTimePanel";
 import EditBookingPanel from "./EditBookingPanel";
 import NewBookingPanel from "./NewBookingPanel";
 
-// async function fetchEmployees() {
-//   const response = await fetch(`/api/v1/merchant/calendar/employees`, {
+// async function fetchEmployees(merchantId) {
+//   const response = await fetch(`/api/v1/merchants/${merchantId}/calendar/employees`, {
 //     method: "GET",
 //     headers: {
 //       Accept: "application/json",
@@ -23,21 +24,24 @@ import NewBookingPanel from "./NewBookingPanel";
 //   }
 // }
 
-// function employeeQueryOptions() {
+// function employeeQueryOptions(merchantId) {
 //   return queryOptions({
-//     queryKey: ["calendar-employees"],
-//     queryFn: fetchEmployees,
+//     queryKey: [merchantId, "calendar-employees"],
+//     queryFn: () => fetchEmployees(merchantId),
 //   });
 // }
 
-async function fetchCustomersForCalendar() {
-  const response = await fetch("/api/v1/merchant/calendar/customers", {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchCustomersForCalendar(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/calendar/customers`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -48,21 +52,24 @@ async function fetchCustomersForCalendar() {
   }
 }
 
-function customersForCalendarQueryOptions() {
+function customersForCalendarQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["customers-calendar"],
-    queryFn: fetchCustomersForCalendar,
+    queryKey: [merchantId, "customers-calendar"],
+    queryFn: () => fetchCustomersForCalendar(merchantId),
   });
 }
 
-async function fetchServicesForCalendar() {
-  const response = await fetch("/api/v1/merchant/calendar/services", {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchServicesForCalendar(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/calendar/services`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -73,10 +80,10 @@ async function fetchServicesForCalendar() {
   }
 }
 
-function servicesForCalendarQueryOptions() {
+function servicesForCalendarQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["services-calendar"],
-    queryFn: fetchServicesForCalendar,
+    queryKey: [merchantId, "services-calendar"],
+    queryFn: () => fetchServicesForCalendar(merchantId),
   });
 }
 
@@ -93,19 +100,20 @@ export default function CalendarSidePanel({
 }) {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
-  // const { data: employees = [] } = useQuery(employeeQueryOptions());
+  const { merchantId } = useAuth();
+  // const { data: employees = [] } = useQuery(employeeQueryOptions(merchantId));
 
   const {
     data: customers = [],
     isError: customersIsError,
     error: customersError,
-  } = useQuery(customersForCalendarQueryOptions());
+  } = useQuery(customersForCalendarQueryOptions(merchantId));
 
   const {
     data: services = [],
     isError: servicesIsError,
     error: servicesError,
-  } = useQuery(servicesForCalendarQueryOptions());
+  } = useQuery(servicesForCalendarQueryOptions(merchantId));
 
   if (customersIsError || servicesIsError) {
     return (

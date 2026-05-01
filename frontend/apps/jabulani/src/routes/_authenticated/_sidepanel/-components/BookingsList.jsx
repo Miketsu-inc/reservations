@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   formatToDateString,
   preferencesQueryOptions,
@@ -72,7 +73,8 @@ function monthDateFormat(date) {
 
 function BookingCard({ booking, route, onCancel, onAccept }) {
   const [showNote, setShowNote] = useState(false);
-  const { data: preferences } = useQuery(preferencesQueryOptions());
+  const { merchantId } = useAuth();
+  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
   return (
     <Card styles="py-2">

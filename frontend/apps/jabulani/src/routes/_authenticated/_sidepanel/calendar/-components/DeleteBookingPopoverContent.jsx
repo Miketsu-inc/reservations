@@ -1,9 +1,11 @@
 import { Button, PopoverClose, Textarea } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useRef } from "react";
 
 export default function DeleteBookingPopoverContent({ booking, onDeleted }) {
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
   const closeButtonRef = useRef(null);
 
   async function deleteBookingHandler(e) {
@@ -12,16 +14,19 @@ export default function DeleteBookingPopoverContent({ booking, onDeleted }) {
     const deletion_reason = e.target.elements.deletion_reason.value;
 
     try {
-      const response = await fetch(`/api/v1/bookings/merchant/${booking.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          cancellation_reason: deletion_reason,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/bookings/${booking.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            cancellation_reason: deletion_reason,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();

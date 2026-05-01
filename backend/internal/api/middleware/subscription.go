@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
@@ -16,9 +16,9 @@ func (m *Manager) Subscription(tiers ...types.SubTier) func(next http.Handler) h
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			employee := jwt.MustGetEmployeeFromContext(r.Context())
+			actor := actor.MustGetFromContext(r.Context())
 
-			tier, err := m.merchantRepo.GetMerchantSubscriptionTier(r.Context(), employee.MerchantId)
+			tier, err := m.merchantRepo.GetMerchantSubscriptionTier(r.Context(), actor.MerchantId)
 			if err != nil {
 				httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during getting merchant's subscription tier: %s", err.Error()))
 				return

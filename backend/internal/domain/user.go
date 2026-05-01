@@ -18,6 +18,7 @@ type UserRepository interface {
 	GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, *string, error)
 	GetUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
 	GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error)
+	GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeAuthInfo, error)
 	GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error)
 
 	IsEmailUnique(ctx context.Context, email string) error

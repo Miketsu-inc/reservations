@@ -1,5 +1,6 @@
 import { PersonIcon } from "@reservations/assets";
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -7,14 +8,17 @@ import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import CustomersTable from "../-components/CustomersTable";
 
-async function fetchCustomers() {
-  const response = await fetch(`/api/v1/merchant/customers/blacklist`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchCustomers(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/customers/blacklist`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -25,10 +29,10 @@ async function fetchCustomers() {
   }
 }
 
-function blacklistQueryOptions() {
+function blacklistQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["blacklisted-customers"],
-    queryFn: fetchCustomers,
+    queryKey: [merchantId, "blacklisted-customers"],
+    queryFn: () => fetchCustomers(merchantId),
   });
 }
 
@@ -36,8 +40,13 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_layout/blacklist"
 )({
   component: BlacklistPage,
-  loader: ({ context: { queryClient } }) => {
-    return queryClient.ensureQueryData(blacklistQueryOptions());
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    await queryClient.ensureQueryData(blacklistQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -50,9 +59,12 @@ function BlacklistPage() {
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
-  const { data, isLoading, isError, error } = useQuery(blacklistQueryOptions());
+  const { data, isLoading, isError, error } = useQuery(
+    blacklistQueryOptions(merchantId)
+  );
 
   if (isLoading) {
     return <Loading />;
@@ -80,7 +92,7 @@ function BlacklistPage() {
   async function blacklistHandler(id) {
     try {
       const response = await fetch(
-        `/api/v1/merchant/customers/${id}/blacklist`,
+        `/api/v1/merchants/${merchantId}/customers/${id}/blacklist`,
         {
           method: "DELETE",
           headers: {

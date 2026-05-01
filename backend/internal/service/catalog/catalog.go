@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -61,7 +61,7 @@ type ConnectedProductsInput struct {
 }
 
 func (s *Service) New(ctx context.Context, input NewInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	if len(input.Phases) == 0 {
 		return fmt.Errorf("service phases can not be empty")
@@ -90,7 +90,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		})
 	}
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 	}
@@ -110,7 +110,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:              0,
-			MerchantId:      employee.MerchantId,
+			MerchantId:      actor.MerchantId,
 			CategoryId:      input.CategoryId,
 			BookingType:     types.BookingTypeAppointment,
 			Name:            input.Name,
@@ -142,7 +142,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		}
 
 		if len(connectedProducts) != 0 {
-			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, connectedProducts)
+			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, actor.MerchantId, connectedProducts)
 			if err != nil {
 				return err
 			}
@@ -196,7 +196,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		return fmt.Errorf("service phases can not be empty")
 	}
 
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	var phases []domain.PublicServicePhase
 	durationSum := 0
@@ -290,7 +290,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
 			Id:              serviceId,
-			MerchantId:      employee.MerchantId,
+			MerchantId:      actor.MerchantId,
 			CategoryId:      input.CategoryId,
 			Name:            input.Name,
 			Description:     input.Description,
@@ -316,12 +316,12 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 
 		// the categoryId has changed, reordering services is needed
 		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, employee.MerchantId, &serviceId)
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, actor.MerchantId, &serviceId)
 			if err != nil {
 				return err
 			}
 
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, employee.MerchantId, nil)
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, actor.MerchantId, nil)
 			if err != nil {
 				return err
 			}
@@ -337,10 +337,10 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 }
 
 func (s *Service) Delete(ctx context.Context, serviceId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.catalogRepo.WithTx(tx).DeleteService(ctx, employee.MerchantId, serviceId)
+		err := s.catalogRepo.WithTx(tx).DeleteService(ctx, actor.MerchantId, serviceId)
 		if err != nil {
 			return err
 		}
@@ -360,9 +360,9 @@ func (s *Service) Delete(ctx context.Context, serviceId int) error {
 }
 
 func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageData, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	service, err := s.catalogRepo.GetAllServicePageData(ctx, serviceId, employee.MerchantId)
+	service, err := s.catalogRepo.GetAllServicePageData(ctx, serviceId, actor.MerchantId)
 	if err != nil {
 		return domain.ServicePageData{}, fmt.Errorf("error while retrieving service for merchant: %s", err.Error())
 	}
@@ -440,9 +440,9 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 
 // TODO: one query instead of separate activate and deactivate queries
 func (s *Service) Activate(ctx context.Context, serviceId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.DeactivateService(ctx, employee.MerchantId, serviceId)
+	err := s.catalogRepo.DeactivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return fmt.Errorf("error while activating service: %s", err.Error())
 	}
@@ -451,9 +451,9 @@ func (s *Service) Activate(ctx context.Context, serviceId int) error {
 }
 
 func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.ActivateService(ctx, employee.MerchantId, serviceId)
+	err := s.catalogRepo.ActivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return fmt.Errorf("error while deactivating service: %s", err.Error())
 	}
@@ -462,9 +462,9 @@ func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]domain.ServicesGroupedByCategory, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServices(ctx, employee.MerchantId)
+	services, err := s.catalogRepo.GetServices(ctx, actor.MerchantId)
 	if err != nil {
 		return []domain.ServicesGroupedByCategory{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
 	}
@@ -478,9 +478,9 @@ type ReorderInput struct {
 }
 
 func (s *Service) Reorder(ctx context.Context, input ReorderInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.ReorderServices(ctx, employee.MerchantId, input.CategoryId, input.Services)
+	err := s.catalogRepo.ReorderServices(ctx, actor.MerchantId, input.CategoryId, input.Services)
 	if err != nil {
 		return fmt.Errorf("error while ordering services: %s", err.Error())
 	}
@@ -489,9 +489,9 @@ func (s *Service) Reorder(ctx context.Context, input ReorderInput) error {
 }
 
 func (s *Service) GetFormOptions(ctx context.Context) (domain.ServicePageFormOptions, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	formOptions, err := s.catalogRepo.GetServicePageFormOptions(ctx, employee.MerchantId)
+	formOptions, err := s.catalogRepo.GetServicePageFormOptions(ctx, actor.MerchantId)
 	if err != nil {
 		return domain.ServicePageFormOptions{}, fmt.Errorf("error while retrieving service form options for merchant: %s", err.Error())
 	}
@@ -516,7 +516,7 @@ type NewGroupInput struct {
 }
 
 func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	var products []domain.ConnectedProducts
 	for _, p := range input.UsedProducts {
@@ -536,7 +536,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		PhaseType: types.ServicePhaseTypeActive,
 	}}
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, employee.MerchantId)
+	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 	}
@@ -561,7 +561,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:              0,
-			MerchantId:      employee.MerchantId,
+			MerchantId:      actor.MerchantId,
 			CategoryId:      input.CategoryId,
 			BookingType:     types.BookingTypeClass,
 			Name:            input.Name,
@@ -593,7 +593,7 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		}
 
 		if len(products) != 0 {
-			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, employee.MerchantId, products)
+			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, actor.MerchantId, products)
 			if err != nil {
 				return err
 			}
@@ -629,7 +629,7 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 		return fmt.Errorf("invalid service id")
 	}
 
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
 	minParticipants := 1
 	if input.MinParticipants != nil {
@@ -644,7 +644,7 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
 			Id:              serviceId,
-			MerchantId:      employee.MerchantId,
+			MerchantId:      actor.MerchantId,
 			CategoryId:      input.CategoryId,
 			Name:            input.Name,
 			Description:     input.Description,
@@ -670,12 +670,12 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 
 		// the categoryId has changed, reordering services is needed
 		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, employee.MerchantId, &serviceId)
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, actor.MerchantId, &serviceId)
 			if err != nil {
 				return err
 			}
 
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, employee.MerchantId, nil)
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, actor.MerchantId, nil)
 			if err != nil {
 				return err
 			}
@@ -686,9 +686,9 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 }
 
 func (s *Service) GetGroup(ctx context.Context, serviceId int) (domain.GroupServicePageData, error) {
-	employee := jwt.MustGetEmployeeFromContext(ctx)
+	actor := actor.MustGetFromContext(ctx)
 
-	service, err := s.catalogRepo.GetGroupServicePageData(ctx, employee.MerchantId, serviceId)
+	service, err := s.catalogRepo.GetGroupServicePageData(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return domain.GroupServicePageData{}, fmt.Errorf("error while retrieving service for merchant: %s", err.Error())
 	}

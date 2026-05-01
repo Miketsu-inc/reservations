@@ -1,13 +1,11 @@
 package integrations
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
-	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 )
 
 type Handler struct {
@@ -21,34 +19,17 @@ func NewHandler(s *externalcalendarServ.Service) *Handler {
 func (h *Handler) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Post("/google/calendar", h.GoogleCalendar)
 	r.Put("/google/calendar/callback", h.GoogleCalendarCallback)
 	r.Post("/google/calendar/watch", h.GoogleCalendarWatch)
 
 	return r
 }
 
-func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) {
-	url, state, err := h.service.GoogleCalendar(r.Context())
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	oauthutil.SetOauthStateCookie(w, state)
-
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
 func (h *Handler) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
+	stateStr := r.URL.Query().Get("state")
 
-	if err := oauthutil.ValidateOauthState(r); err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during oauth state validation: %s", err.Error()))
-		return
-	}
-
-	err := h.service.GoogleCalendarCallback(r.Context(), code)
+	err := h.service.GoogleCalendarCallback(r.Context(), code, stateStr)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return

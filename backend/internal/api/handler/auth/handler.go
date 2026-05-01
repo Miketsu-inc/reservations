@@ -5,21 +5,25 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
+	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Handler struct {
-	service    *authServ.Service
-	middleware *middleware.Manager
+	service     *authServ.Service
+	teamService *teamServ.Service
+	middleware  *middleware.Manager
 }
 
-func NewHandler(s *authServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, middleware: m}
+func NewHandler(s *authServ.Service, ts *teamServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, teamService: ts, middleware: m}
 }
 
 func (h *Handler) Routes() chi.Router {
@@ -39,11 +43,9 @@ func (h *Handler) Routes() chi.Router {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.Authentication)
+		r.Use(h.middleware.JwtAuthentication)
 		r.Use(h.middleware.Language)
 
-		// TODO: instead of just checking if authenticated it should
-		// return some basic info my user
 		r.Get("/me", h.Me)
 
 		r.Post("/logout", h.Logout)
@@ -129,8 +131,30 @@ func (h *Handler) MerchantSignup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+type meResp struct {
+	UserId      uuid.UUID         `json:"user_id"`
+	FirstName   string            `json:"first_name"`
+	LastName    string            `json:"last_name"`
+	Email       string            `json:"email"`
+	PhoneNumber *string           `json:"phone_number"`
+	Memberships []membershipsResp `json:"memberships"`
+}
+
+type membershipsResp struct {
+	MerchantId uuid.UUID          `json:"merchant_id"`
+	LocationId int                `json:"location_id"`
+	EmployeeId int                `json:"employee_id"`
+	Role       types.EmployeeRole `json:"role"`
+}
+
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+	result, err := h.teamService.Me(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusBadGateway, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToMeResp(result))
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {

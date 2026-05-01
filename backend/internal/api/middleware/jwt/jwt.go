@@ -9,7 +9,6 @@ import (
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
@@ -33,10 +32,6 @@ type contextKey struct {
 }
 
 var userIDCtxKey = &contextKey{"UserID"}
-var merchantIDCtxKey = &contextKey{"MerchantID"}
-var employeeIDCtxKey = &contextKey{"EmployeeID"}
-var locationIDCtxKey = &contextKey{"LocationID"}
-var employeeRoleCtxKey = &contextKey{"EmployeeRole"}
 
 // Returns UserID from the request's context. Panics if not present!
 func MustGetUserIDFromContext(ctx context.Context) uuid.UUID {
@@ -56,92 +51,8 @@ func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	return userID, true
 }
 
-type EmployeeContext struct {
-	Id         int
-	Role       types.EmployeeRole
-	LocationId int
-	UserId     uuid.UUID
-	MerchantId uuid.UUID
-}
-
-// Get employee details from the request's context. Panics if not present!
-func MustGetEmployeeFromContext(ctx context.Context) EmployeeContext {
-	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
-	locationId, hasLocId := ctx.Value(locationIDCtxKey).(int)
-	role, hasRole := ctx.Value(employeeRoleCtxKey).(types.EmployeeRole)
-	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
-	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
-
-	assert.True(hasEmpId, "employee id not in context", ctx.Value(employeeIDCtxKey), employeeId, hasEmpId)
-	assert.True(hasLocId, "location id not in context", ctx.Value(locationIDCtxKey), locationId, hasLocId)
-	assert.True(hasRole, "employee role not in context", ctx.Value(employeeRoleCtxKey), role, hasRole)
-	assert.True(hasUsrId, "user id not in context", ctx.Value(userIDCtxKey), userId, hasUsrId)
-	assert.True(hasMerchId, "merchant id not in context", ctx.Value(merchantIDCtxKey), merchantId, hasMerchId)
-
-	return EmployeeContext{
-		Id:         employeeId,
-		Role:       role,
-		LocationId: locationId,
-		UserId:     userId,
-		MerchantId: merchantId,
-	}
-}
-
-// Returns employee details from the request's context
-func GetEmployeeFromContext(ctx context.Context) (EmployeeContext, bool) {
-	employeeId, hasEmpId := ctx.Value(employeeIDCtxKey).(int)
-	locationId, hasLocId := ctx.Value(locationIDCtxKey).(int)
-	role, hasRole := ctx.Value(employeeRoleCtxKey).(types.EmployeeRole)
-	userId, hasUsrId := ctx.Value(userIDCtxKey).(uuid.UUID)
-	merchantId, hasMerchId := ctx.Value(merchantIDCtxKey).(uuid.UUID)
-
-	if !hasEmpId || !hasLocId || !hasRole || !hasUsrId || !hasMerchId {
-		return EmployeeContext{}, false
-	}
-
-	return EmployeeContext{
-		Id:         employeeId,
-		Role:       role,
-		LocationId: locationId,
-		UserId:     userId,
-		MerchantId: merchantId,
-	}, true
-}
-
-// Adds the employee relevant fields to the claim if they are not nil
-func addEmployeeClaims(claims jwtlib.MapClaims, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole) {
-	if merchantId == nil {
-		return
-	}
-
-	assert.NotNil(employeeId, "jwt: employeeId can't be nil if merchantId is not nil", employeeId, merchantId)
-	assert.NotNil(locationId, "jwt: locationId can't be nil if merchantId is not nil", locationId, merchantId)
-	assert.NotNil(role, "jwt: role can't be nil if merchantId is not nil", role, merchantId)
-
-	claims["merchant_id"] = merchantId.String()
-	claims["employee_id"] = *employeeId
-	claims["location_id"] = *locationId
-	claims["employee_role"] = role.String()
-}
-
-func SetMerchantIdInContext(ctx context.Context, merchantId uuid.UUID) context.Context {
-	return context.WithValue(ctx, merchantIDCtxKey, merchantId)
-}
-
-func SetUsedIdInContext(ctx context.Context, userId uuid.UUID) context.Context {
+func SetUserIdInContext(ctx context.Context, userId uuid.UUID) context.Context {
 	return context.WithValue(ctx, userIDCtxKey, userId)
-}
-
-func SetEmployeeIdInContext(ctx context.Context, employeeId int) context.Context {
-	return context.WithValue(ctx, employeeIDCtxKey, employeeId)
-}
-
-func SetLocationIdInContext(ctx context.Context, locationId int) context.Context {
-	return context.WithValue(ctx, locationIDCtxKey, locationId)
-}
-
-func SetEmployeeRoleInContext(ctx context.Context, employeeRole types.EmployeeRole) context.Context {
-	return context.WithValue(ctx, employeeRoleCtxKey, employeeRole)
 }
 
 // Create a new jwt, with HS256 signing method
@@ -158,7 +69,7 @@ func new(secret []byte, claims jwtlib.MapClaims) (string, error) {
 }
 
 // Create a new access token
-func NewAccessToken(userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole) (string, error) {
+func NewAccessToken(userID uuid.UUID) (string, error) {
 	expMin := config.LoadEnvVars().JWT_ACCESS_EXP_MIN
 	expMinDuration := time.Minute * time.Duration(expMin)
 
@@ -166,8 +77,6 @@ func NewAccessToken(userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, lo
 		"sub": userID,
 		"exp": time.Now().Add(expMinDuration).Unix(),
 	}
-
-	addEmployeeClaims(claims, merchantId, employeeId, locationId, role)
 
 	token, err := new([]byte(config.LoadEnvVars().JWT_ACCESS_SECRET), claims)
 	if err != nil {
@@ -178,7 +87,7 @@ func NewAccessToken(userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, lo
 }
 
 // Create a new refresh token
-func NewRefreshToken(userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, locationId *int, role *types.EmployeeRole, refreshVersion int) (string, error) {
+func NewRefreshToken(userID uuid.UUID, refreshVersion int) (string, error) {
 	expMin := config.LoadEnvVars().JWT_REFRESH_EXP_MIN
 	expMinDuration := time.Minute * time.Duration(expMin)
 
@@ -187,8 +96,6 @@ func NewRefreshToken(userID uuid.UUID, merchantId *uuid.UUID, employeeId *int, l
 		"exp":             time.Now().Add(expMinDuration).Unix(),
 		"refresh_version": refreshVersion,
 	}
-
-	addEmployeeClaims(claims, merchantId, employeeId, locationId, role)
 
 	token, err := new([]byte(config.LoadEnvVars().JWT_REFRESH_SECRET), claims)
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func GenerateSate() (string, error) {
-	b := make([]byte, 32)
+func RandomString(n int) (string, error) {
+	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}

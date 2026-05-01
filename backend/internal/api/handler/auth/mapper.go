@@ -1,6 +1,9 @@
 package auth
 
-import authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
+import (
+	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
+	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
+)
 
 func mapToLoginInput(in loginReq) authServ.LoginInput {
 	return authServ.LoginInput{
@@ -24,5 +27,27 @@ func mapToMerchantSignupInput(in merchantSignupReq) authServ.MerchantSignupInput
 		Name:         in.Name,
 		ContactEmail: in.ContactEmail,
 		Timezone:     in.Timezone,
+	}
+}
+
+func mapToMeResp(in teamServ.MeResult) meResp {
+	memberships := make([]membershipsResp, len(in.Memberships))
+
+	for i, e := range in.Memberships {
+		memberships[i] = membershipsResp{
+			MerchantId: e.MerchantId,
+			LocationId: e.LocationId,
+			EmployeeId: e.Id,
+			Role:       e.Role,
+		}
+	}
+
+	return meResp{
+		UserId:      in.User.Id,
+		FirstName:   in.User.FirstName,
+		LastName:    in.User.LastName,
+		Email:       in.User.Email,
+		PhoneNumber: in.User.PhoneNumber,
+		Memberships: memberships,
 	}
 }

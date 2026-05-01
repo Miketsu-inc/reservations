@@ -5,6 +5,7 @@ import {
   Modal,
   Select,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
 
@@ -38,6 +39,7 @@ export default function BlockedTypesModal({
   editData,
 }) {
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [formData, setFormData] = useState({
     id: editData?.id || null,
@@ -74,12 +76,12 @@ export default function BlockedTypesModal({
     let method = "";
 
     if (formData.id != null) {
-      url = `/api/v1/merchant/blocked-time-types/${formData.id}`;
+      url = `/api/v1/merchants/${merchantId}/blocked-time-types/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
-      url = "/api/v1/merchant/blocked-time-types";
+      url = `/api/v1/merchants/${merchantId}/blocked-time-types`;
       method = "POST";
     }
 

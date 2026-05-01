@@ -1,12 +1,13 @@
 import { Loading, ServerError } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import EmployeePage from "./-components/EmployeePage";
 
-async function fetchEmployee(id) {
-  const response = await fetch(`/api/v1/merchant/team/${id}`, {
+async function fetchEmployee(merchantId, id) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/team/${id}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -23,10 +24,10 @@ async function fetchEmployee(id) {
   }
 }
 
-export function employeeQueryOptions(id) {
+export function employeeQueryOptions(merchantId, id) {
   return queryOptions({
-    queryKey: ["employee", id],
-    queryFn: () => fetchEmployee(id),
+    queryKey: [merchantId, "employee", id],
+    queryFn: () => fetchEmployee(merchantId, id),
   });
 }
 
@@ -34,8 +35,16 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/team/edit/$id"
 )({
   component: RouteComponent,
-  loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(employeeQueryOptions(params.id));
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+    params,
+  }) => {
+    await queryClient.ensureQueryData(
+      employeeQueryOptions(merchantId, params.id)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -47,24 +56,28 @@ function RouteComponent() {
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
   const {
     data: employee,
     isLoading,
     isError,
     error,
-  } = useQuery(employeeQueryOptions(id));
+  } = useQuery(employeeQueryOptions(merchantId, id));
 
   async function saveEmployee(employee) {
     try {
-      const response = await fetch(`/api/v1/merchant/team/${employee.id}`, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(employee),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/team/${employee.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(employee),
+        }
+      );
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);
