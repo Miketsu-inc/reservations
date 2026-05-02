@@ -1,32 +1,7 @@
 import { Loading, ServerError } from "@reservations/components";
 import { AuthProvider } from "@reservations/jabulani/lib";
-import { queryOptions } from "@tanstack/react-query";
+import { meQueryOptions } from "@reservations/lib";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-
-async function fetchMe() {
-  const response = await fetch("/api/v1/auth/me", {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw { status: response.status, message: result.error };
-  } else {
-    return result.data;
-  }
-}
-
-function meQueryOptions() {
-  return queryOptions({
-    queryKey: ["me"],
-    queryFn: fetchMe,
-  });
-}
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context: { queryClient } }) => {

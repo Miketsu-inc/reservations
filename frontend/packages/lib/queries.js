@@ -133,3 +133,28 @@ export function serviceFormOptionsQueryOptions(merchantId) {
     queryFn: () => fetchServiceFormOptions(merchantId),
   });
 }
+
+async function fetchMe() {
+  const response = await fetch("/api/v1/auth/me", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw { status: response.status, message: result.error };
+  } else {
+    return result.data;
+  }
+}
+
+export function meQueryOptions() {
+  return queryOptions({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+  });
+}
