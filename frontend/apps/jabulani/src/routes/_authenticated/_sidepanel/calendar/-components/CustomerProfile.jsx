@@ -76,7 +76,7 @@ export default function CustomerProfile({
                 border-gray-300 bg-transparent px-2 py-1.5 text-center
                 shadow-none hover:bg-gray-300 dark:border-gray-800
                 dark:hover:bg-gray-800"
-              to={`/customers/${customer?.id}`}
+              to={`/customers/${customer?.customer_id}`}
               from=""
             >
               View Profile
