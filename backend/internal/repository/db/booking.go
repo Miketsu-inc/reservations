@@ -592,7 +592,7 @@ func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, b
 func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (domain.BookingForEmail, error) {
 	query := `
 	select b.id, b.status, b.from_date, b.to_date, s.name as service_name, s.id as service_id, m.name as merchant_name, m.url_name as merchant_url, m.timezone,
-		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location, c.id as customer_id, coalesce(u.email, c.email) as customer_email,
+		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location, c.id as customer_id, coalesce(c.email, u.email) as customer_email,
 		bp.status as participant_status
 	from "BookingParticipant" bp
 	join "Booking" b on b.id = bp.booking_id and b.id = $1

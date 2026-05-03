@@ -108,9 +108,6 @@ func (m *Manager) EmployeeAuthentication(next http.Handler) http.Handler {
 		ctx = actor.SetEmployeeIdInContext(ctx, authInfo.Id)
 		ctx = actor.SetEmployeeRoleInContext(ctx, authInfo.Role)
 
-		actor, _ := actor.GetFromContext(ctx)
-		fmt.Println(actor)
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
