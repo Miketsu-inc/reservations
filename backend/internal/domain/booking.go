@@ -124,15 +124,15 @@ type BookingParticipant struct {
 }
 
 type PublicBooking struct {
-	FromDate          time.Time       `json:"from_date" db:"from_date"`
-	ToDate            time.Time       `json:"to_date" db:"to_date"`
-	ServiceName       string          `json:"service_name" db:"service_name"`
-	CancelDeadline    int             `json:"cancel_deadline" db:"cancel_deadline"`
-	FormattedLocation string          `json:"formatted_location" db:"formatted_location"`
-	Price             currencyx.Price `json:"price" db:"price"`
-	PriceType         types.PriceType `json:"price_type"`
-	MerchantName      string          `json:"merchant_name" db:"merchant_name"`
-	IsCancelled       bool            `json:"is_cancelled" db:"is_cancelled"`
+	FromDate          time.Time           `json:"from_date" db:"from_date"`
+	ToDate            time.Time           `json:"to_date" db:"to_date"`
+	ServiceName       string              `json:"service_name" db:"service_name"`
+	CancelDeadline    int                 `json:"cancel_deadline" db:"cancel_deadline"`
+	FormattedLocation string              `json:"formatted_location" db:"formatted_location"`
+	Price             currencyx.Price     `json:"price" db:"price"`
+	PriceType         types.PriceType     `json:"price_type"`
+	MerchantName      string              `json:"merchant_name" db:"merchant_name"`
+	Status            types.BookingStatus `json:"status" db:"status"`
 }
 
 type PublicBookingDetails struct {

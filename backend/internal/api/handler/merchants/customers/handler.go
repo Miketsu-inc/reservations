@@ -153,6 +153,7 @@ type getStatsResp struct {
 	TimesBooked          int                    `json:"times_booked"`
 	TimesCancelledByUser int                    `json:"times_cancelled_by_user"`
 	TimesUpcoming        int                    `json:"times_upcoming"`
+	TimesCompleted       int                    `json:"times_completed"`
 	Bookings             []customerBookingsResp `json:"bookings"`
 }
 
@@ -165,7 +166,7 @@ type customerBookingsResp struct {
 	Price             currencyx.FormattedPrice `json:"price"`
 	PriceType         types.PriceType          `json:"price_type"`
 	MerchantName      string                   `json:"merchant_name"`
-	IsCancelled       bool                     `json:"is_cancelled"`
+	Status            types.BookingStatus      `json:"status"`
 }
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {

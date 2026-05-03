@@ -101,7 +101,7 @@ type getByCustomerResp struct {
 	Price             currencyx.FormattedPrice `json:"price"`
 	PriceType         types.PriceType          `json:"price_type"`
 	MerchantName      string                   `json:"merchant_name"`
-	IsCancelled       bool                     `json:"is_cancelled"`
+	Status            types.BookingStatus      `json:"status"`
 }
 
 func (h *Handler) GetByCustomer(w http.ResponseWriter, r *http.Request) {

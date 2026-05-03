@@ -111,7 +111,6 @@ function CustomerDetailsPage() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
-  const now = new Date();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { customerId } = Route.useParams();
@@ -132,12 +131,9 @@ function CustomerDetailsPage() {
     return <ServerError error={error} />;
   }
 
-  const completedBookings = queryResults[0].data.bookings
-    .filter((booking) => {
-      const toDate = new Date(booking.to_date);
-      return toDate < now && !booking.is_cancelled;
-    })
-    .sort((a, b) => new Date(b.to_date) - new Date(a.to_date));
+  const completedBookings = queryResults[0].data.bookings.filter(
+    (booking) => booking.status === "completed"
+  );
 
   const lastVisited = completedBookings[0]
     ? monthDateFormat(new Date(completedBookings[0].to_date))

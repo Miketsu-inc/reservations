@@ -181,7 +181,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 					'price_type', s.price_type,
 					'merchant_name', m.name,
 					'formatted_location', l.formatted_location,
-					'is_cancelled', b.status in ('cancelled')
+					'status', b.status
 				) order by b.from_date desc
 			) as bookings
 		from (
@@ -197,8 +197,8 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(b.id) as times_booked, count(distinct case when bp.status in ('cancelled') then b.id end) as times_cancelled_by_user,
-		count(distinct case when bp.status not in ('cancelled', 'completed') and b.status not in ('cancelled', 'completed') and b.from_date >= now() then b.id end) as times_upcoming,
+		count(b.id) as times_booked, count(distinct case when bp.status in ('cancelled', 'no-show') then b.id end) as times_cancelled_by_user,
+		count(distinct case when bp.status in ('booked', 'confirmed') then b.id end) as times_upcoming, count(distinct case when bp.status in ('completed') then b.id end) as times_completed, 
 		coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
@@ -213,7 +213,8 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	var bookingsJSON []byte
 
 	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.Birthday,
-		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesUpcoming, &bookingsJSON)
+		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesUpcoming,
+		&customer.TimesCompleted, &bookingsJSON)
 	if err != nil {
 		return domain.CustomerStatistics{}, err
 	}

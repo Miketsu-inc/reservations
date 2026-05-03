@@ -54,7 +54,7 @@ func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 			Price:             b.Price.ToFormatted(),
 			PriceType:         b.PriceType,
 			MerchantName:      b.MerchantName,
-			IsCancelled:       b.IsCancelled,
+			Status:            b.Status,
 		}
 	}
 
@@ -72,6 +72,7 @@ func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 		TimesBooked:          in.TimesBooked,
 		TimesCancelledByUser: in.TimesCancelledByUser,
 		TimesUpcoming:        in.TimesUpcoming,
+		TimesCompleted:       in.TimesCompleted,
 		Bookings:             bookings,
 	}
 }

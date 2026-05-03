@@ -33,6 +33,6 @@ func mapToGetByCustomerResp(in domain.PublicBooking) getByCustomerResp {
 		Price:             in.Price.ToFormatted(),
 		PriceType:         in.PriceType,
 		MerchantName:      in.MerchantName,
-		IsCancelled:       in.IsCancelled,
+		Status:            in.Status,
 	}
 }

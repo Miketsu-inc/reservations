@@ -88,7 +88,7 @@ function CancelPage() {
   ); // getTime returns in milisecond
 
   const now = new Date();
-  const alreadyCancelled = bookingData.is_cancelled;
+  const alreadyCancelled = bookingData.status === "cancelled";
   const canBeCancelled = !alreadyCancelled && now < cancelDeadline;
 
   let cancelMessage = "";

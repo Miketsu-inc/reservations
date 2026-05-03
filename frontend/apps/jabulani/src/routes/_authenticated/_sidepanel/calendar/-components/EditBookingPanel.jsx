@@ -96,9 +96,7 @@ export default function EditBookingPanel({
         customer_id: participant.customer_id,
         participant_id: participant.id,
         status: participant.status,
-        customer_note:
-          participant.customer_note ||
-          "this is a great booking and i cant wait to fet to do it tofetjer with you bevause your are one of  the best",
+        customer_note: participant.customer_note || "",
       };
     });
 

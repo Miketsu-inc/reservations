@@ -2,10 +2,6 @@ import { ApproveIcon, CalendarIcon, XIcon } from "@reservations/assets";
 import BookingDonutChart from "./BookingDonutChart";
 
 export default function CustomerStats({ customer }) {
-  const completed =
-    customer.times_booked -
-    (customer.times_upcoming + customer.times_cancelled_by_user);
-
   return (
     <div
       className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start
@@ -16,7 +12,7 @@ export default function CustomerStats({ customer }) {
           <BookingDonutChart
             cancelled={customer.times_cancelled_by_user}
             upcoming={customer.times_upcoming}
-            completed={completed}
+            completed={customer.times_completed}
           />
         </div>
       )}
@@ -29,13 +25,17 @@ export default function CustomerStats({ customer }) {
           <span className="text-xl font-bold">{customer.times_booked}</span>
         </div>
         <div className="grid w-full grid-cols-3 gap-4 rounded-lg p-4">
-          <StatElement value={completed} color="green-600" label="Completed">
+          <StatElement
+            value={customer.times_completed}
+            color="green-600"
+            label="Completed"
+          >
             <ApproveIcon styles="size-7 stroke-green-600" />
           </StatElement>
           <StatElement
             value={customer.times_cancelled_by_user}
             color="red-600"
-            label="Cancelled"
+            label="Cancelled/No-show"
           >
             <div className="w-min rounded-full border-2 border-red-600">
               <XIcon styles="size-5 fill-red-600" />

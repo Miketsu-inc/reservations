@@ -459,7 +459,7 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int) (domain.PublicBooking, error) {
 	query := `
 	select b.from_date, b.to_date, b.price_per_person as price, m.name as merchant_name, s.name as service_name, m.cancel_deadline, s.price_type,
-		b.status = 'cancelled' as is_cancelled,
+		b.status,
 		l.formatted_location
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
@@ -470,7 +470,7 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int)
 
 	var data domain.PublicBooking
 	err := r.db.QueryRow(ctx, query, bookingId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
-		&data.ServiceName, &data.CancelDeadline, &data.PriceType, &data.IsCancelled, &data.FormattedLocation)
+		&data.ServiceName, &data.CancelDeadline, &data.PriceType, &data.Status, &data.FormattedLocation)
 	if err != nil {
 		return domain.PublicBooking{}, err
 	}

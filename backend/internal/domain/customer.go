@@ -59,6 +59,7 @@ type CustomerStatistics struct {
 	TimesBooked          int             `json:"times_booked"`
 	TimesCancelledByUser int             `json:"times_cancelled_by_user"`
 	TimesUpcoming        int             `json:"times_upcoming"`
+	TimesCompleted       int             `json:"times_completed"`
 	Bookings             []PublicBooking `json:"bookings"`
 }
 

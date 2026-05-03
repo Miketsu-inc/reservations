@@ -11,22 +11,36 @@ function monthDateFormat(date) {
   });
 }
 
+const statusMap = {
+  completed: {
+    getLabel: () => "Completed",
+    style: "bg-green-600/20 text-green-700 dark:text-green-500",
+  },
+  booked: {
+    getLabel: () => "Booked",
+    style: "bg-primary/10 text-primary",
+  },
+  confirmed: {
+    getLabel: () => "Confirmed",
+    style: "bg-primary/25 text-primary font-bold",
+  },
+  cancelled: {
+    getLabel: (name) => `Cancelled by ${name || "User"}`,
+    style: "bg-red-600/10 text-red-600",
+  },
+  "no-show": {
+    getLabel: () => "No-show",
+    style: "bg-red-600/15 text-red-500",
+  },
+};
+
 export default function BookingItem({ booking, customerName }) {
-  const now = new Date();
-  const toDate = new Date(booking.to_date);
   const { merchantId } = useAuth();
   const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
-  let statusLabel = "Completed";
-  let statusStyle = "bg-green-600/20 text-green-600";
-
-  if (booking.is_cancelled) {
-    statusLabel = `Cancelled by ${customerName}`;
-    statusStyle = "bg-red-600/20 text-red-600";
-  } else if (toDate > now) {
-    statusLabel = "Upcoming";
-    statusStyle = "bg-primary/20 text-primary";
-  }
+  const currentStatus = statusMap[booking.status];
+  const statusLabel = currentStatus.getLabel(customerName);
+  const statusStyle = currentStatus.style;
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -35,7 +49,7 @@ export default function BookingItem({ booking, customerName }) {
           {booking.service_name}
         </h4>
         <span
-          className={`rounded-full px-2 py-1 text-xs font-medium ${statusStyle}`}
+          className={`rounded-xl px-3 py-1.5 text-xs font-medium ${statusStyle}`}
         >
           {statusLabel}
         </span>
