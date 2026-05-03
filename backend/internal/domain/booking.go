@@ -189,20 +189,20 @@ type BookingSlot struct {
 }
 
 type BookingForEmail struct {
-	Id                int                 `db:"id"`
-	Status            types.BookingStatus `db:"status"`
-	FromDate          time.Time           `db:"from_date"`
-	ToDate            time.Time           `db:"to_date"`
-	ServiceName       string              `db:"service_name"`
-	ServiceId         int                 `db:"service_id"`
-	MerchantName      string              `db:"merchant_name"`
-	MerchantUrl       string              `db:"merchant_url"`
-	Timezone          string              `db:"timezone"`
-	CancelDeadline    int                 `db:"cancel_deadline"`
-	FormattedLocation string              `db:"formatted_location"`
-	CustomerId        uuid.UUID           `db:"customer_id"`
-	CustomerEmail     *string             `db:"customer_email"`
-	ParticipantStatus types.BookingStatus `db:"participant_status"`
+	Id                int                  `db:"id"`
+	Status            types.BookingStatus  `db:"status"`
+	FromDate          time.Time            `db:"from_date"`
+	ToDate            time.Time            `db:"to_date"`
+	ServiceName       string               `db:"service_name"`
+	ServiceId         int                  `db:"service_id"`
+	MerchantName      string               `db:"merchant_name"`
+	MerchantUrl       string               `db:"merchant_url"`
+	Timezone          string               `db:"timezone"`
+	CancelDeadline    int                  `db:"cancel_deadline"`
+	FormattedLocation string               `db:"formatted_location"`
+	CustomerId        *uuid.UUID           `db:"customer_id"`
+	CustomerEmail     *string              `db:"customer_email"`
+	ParticipantStatus *types.BookingStatus `db:"participant_status"`
 }
 
 type BookingSeries struct {

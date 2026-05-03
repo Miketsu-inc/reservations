@@ -34,11 +34,16 @@ func (w *BookingConfirmationEmail) Work(ctx context.Context, job *river.Job[args
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCancelled || booking.ParticipantStatus == types.BookingStatusCancelled {
+	// participant was deleted before job could run
+	if booking.ParticipantStatus == nil {
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCompleted || booking.ParticipantStatus == types.BookingStatusCompleted {
+	if booking.Status == types.BookingStatusCancelled || *booking.ParticipantStatus == types.BookingStatusCancelled {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCompleted || *booking.ParticipantStatus == types.BookingStatusCompleted {
 		return nil
 	}
 
@@ -85,11 +90,15 @@ func (w *BookingReminderEmail) Work(ctx context.Context, job *river.Job[args.Boo
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCancelled || booking.ParticipantStatus == types.BookingStatusCancelled {
+	if booking.ParticipantStatus == nil {
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCompleted || booking.ParticipantStatus == types.BookingStatusCompleted {
+	if booking.Status == types.BookingStatusCancelled || *booking.ParticipantStatus == types.BookingStatusCancelled {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCompleted || *booking.ParticipantStatus == types.BookingStatusCompleted {
 		return nil
 	}
 
@@ -151,7 +160,11 @@ func (w *BookingCancellationEmail) Work(ctx context.Context, job *river.Job[args
 	// 	return nil
 	// }
 
-	if booking.Status == types.BookingStatusCompleted || booking.ParticipantStatus == types.BookingStatusCompleted {
+	if booking.ParticipantStatus == nil {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCompleted || *booking.ParticipantStatus == types.BookingStatusCompleted {
 		return nil
 	}
 
@@ -199,11 +212,15 @@ func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCancelled || booking.ParticipantStatus == types.BookingStatusCancelled {
+	if booking.ParticipantStatus == nil {
 		return nil
 	}
 
-	if booking.Status == types.BookingStatusCompleted || booking.ParticipantStatus == types.BookingStatusCompleted {
+	if booking.Status == types.BookingStatusCancelled || *booking.ParticipantStatus == types.BookingStatusCancelled {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCompleted || *booking.ParticipantStatus == types.BookingStatusCompleted {
 		return nil
 	}
 
