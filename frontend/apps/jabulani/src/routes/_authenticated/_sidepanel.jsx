@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
   Tootlip,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { meQueryOptions, useTheme, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
@@ -51,6 +52,7 @@ function SidePanelLayout() {
   );
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
+  const { role } = useAuth();
 
   const isOpen = isWindowSmall ? isOpenend : true;
 
@@ -329,7 +331,7 @@ function SidePanelLayout() {
                       whitespace-nowrap`}
                   >
                     <span className="text-sm">{`${user?.first_name} ${user?.last_name}`}</span>
-                    <span className="text-xs">{user?.memberships[0].role}</span>
+                    <span className="text-xs">{role}</span>
                   </div>
                 </div>
               </PopoverTrigger>
