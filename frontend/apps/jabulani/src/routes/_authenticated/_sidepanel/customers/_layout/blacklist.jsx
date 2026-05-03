@@ -112,7 +112,7 @@ function BlacklistPage() {
           variant: "success",
         });
         await queryClient.invalidateQueries({
-          queryKey: ["blacklisted-customers"],
+          queryKey: [merchantId, "blacklisted-customers"],
         });
 
         setServerError();

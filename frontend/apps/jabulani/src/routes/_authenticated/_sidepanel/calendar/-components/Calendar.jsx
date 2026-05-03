@@ -160,9 +160,9 @@ export default function Calendar({ router, route, search }) {
 
   const invalidateBookingsQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
-      queryKey: ["events", search.start, search.end],
+      queryKey: [merchantId, "events", search.start, search.end],
     });
-  }, [queryClient, search]);
+  }, [merchantId, queryClient, search]);
 
   const datesChanged = useCallback(
     (api) => {

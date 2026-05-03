@@ -70,7 +70,7 @@ function DashboardPage() {
 
   async function invalidateDashBoardData() {
     await queryClient.invalidateQueries({
-      queryKey: ["dashboard"],
+      queryKey: [merchantId, "dashboard"],
     });
   }
 

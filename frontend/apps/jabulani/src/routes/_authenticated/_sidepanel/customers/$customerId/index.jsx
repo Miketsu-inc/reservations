@@ -211,7 +211,7 @@ function CustomerDetailsPage() {
           });
         }
         await queryClient.invalidateQueries({
-          queryKey: ["customer-info", customerId],
+          queryKey: [merchantId, "customer-info", customerId],
         });
         setServerError();
       }
@@ -247,7 +247,7 @@ function CustomerDetailsPage() {
           variant: "success",
         });
         await queryClient.invalidateQueries({
-          queryKey: ["customer-info", customerId],
+          queryKey: [merchantId, "customer-info", customerId],
         });
         setServerError();
       }

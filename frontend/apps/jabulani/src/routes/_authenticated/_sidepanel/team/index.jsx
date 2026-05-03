@@ -106,7 +106,9 @@ function RouteComponent() {
           message: "Employee deleted successfully",
           variant: "success",
         });
-        await queryClient.invalidateQueries(employeesQueryOptions());
+        await queryClient.invalidateQueries({
+          queryKey: [merchantId, "employees"],
+        });
       }
     } catch (err) {
       setServerError(err.message);

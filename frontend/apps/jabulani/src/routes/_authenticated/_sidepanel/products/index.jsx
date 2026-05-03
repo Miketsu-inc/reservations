@@ -78,7 +78,7 @@ function ProductsPage() {
         setServerError(result.error.message);
       } else {
         await queryClient.invalidateQueries({
-          queryKey: ["products"],
+          queryKey: [merchantId, "products"],
         });
 
         setServerError();
