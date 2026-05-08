@@ -109,8 +109,8 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 		currentParicipants[i] = b.CurrentParticipants
 	}
 
-	rows, _ := r.db.Query(ctx, query, statues, types, isRecurrings, merchantIds, employeeIds, serviceIds, locationIds,
-		seriesIds, fromDates, fromDates, toDates)
+	rows, _ := r.db.Query(ctx, query, statues, types, isRecurrings, merchantIds, employeeIds, serviceIds, locationIds, seriesIds, fromDates,
+		fromDates, toDates, pricePerPersons, costPerPersons, totalPrices, totalCosts, merchantNotes, minParicipants, maxParicipants, currentParicipants)
 	bookingIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
 		return []int{}, err
