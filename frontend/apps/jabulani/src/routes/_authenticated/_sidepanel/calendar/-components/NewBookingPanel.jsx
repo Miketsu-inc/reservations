@@ -141,13 +141,20 @@ export default function NewBookingPanel({
       days = [];
     }
 
-    const customerInput = bookingData.customers.map((p) => ({
-      id: p?.customer_id || null,
-      first_name: p.first_name,
-      last_name: p.last_name,
-      email: p?.email || "",
-      phone_number: p?.phone_number || "",
-    }));
+    const customerInput = bookingData.customers.map((c) => {
+      const payload = {
+        first_name: c.first_name,
+        last_name: c.last_name,
+        email: c.email,
+        phone_number: c.phone_number,
+      };
+
+      if (!c.isNewCustomer) {
+        payload.id = c.customer_id;
+      }
+
+      return payload;
+    });
 
     try {
       const response = await fetch(`/api/v1/merchants/${merchantId}/bookings`, {
@@ -221,6 +228,7 @@ export default function NewBookingPanel({
               isGroupMode={false}
               walkIn={() => setIsCustomerSectionExpanded(false)}
               selected={bookingData.customers}
+              isWindowSmall={isWindowSmall}
             />
           ) : hasSelection ? (
             <CustomerProfile
@@ -319,6 +327,7 @@ export default function NewBookingPanel({
                         });
                       }}
                       selected={bookingData.customers}
+                      isWindowSmall={isWindowSmall}
                     />
                   )}
 

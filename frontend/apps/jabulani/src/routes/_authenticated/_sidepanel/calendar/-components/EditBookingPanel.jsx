@@ -174,13 +174,20 @@ export default function EditBookingPanel({
       bookingData.time
     ).toISOString();
 
-    const customerInput = bookingData.participants.map((p) => ({
-      id: p.customer_id,
-      first_name: p.first_name,
-      last_name: p.last_name,
-      email: p.email,
-      phone_number: p.phone_number,
-    }));
+    const customerInput = bookingData.participants.map((p) => {
+      const payload = {
+        first_name: p.first_name,
+        last_name: p.last_name,
+        email: p.email,
+        phone_number: p.phone_number,
+      };
+
+      if (!p.isNewCustomer) {
+        payload.id = p.customer_id;
+      }
+
+      return payload;
+    });
 
     try {
       const response = await fetch(
@@ -329,6 +336,7 @@ export default function EditBookingPanel({
               isGroupMode={false}
               walkIn={() => setIsCustomerSectionExpanded(false)}
               selected={bookingData.participants}
+              isWindowSmall={isWindowSmall}
             />
           ) : (
             <button
@@ -394,6 +402,7 @@ export default function EditBookingPanel({
                     });
                   }}
                   selected={bookingData.participants}
+                  isWindowSmall={isWindowSmall}
                 />
               )}
               {nestedPageState.active === "customer-profile" && (

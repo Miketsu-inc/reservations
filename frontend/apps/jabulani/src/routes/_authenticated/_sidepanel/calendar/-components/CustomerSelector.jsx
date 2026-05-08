@@ -6,6 +6,7 @@ import {
   SearchInput,
 } from "@reservations/components";
 import { useState } from "react";
+import NewCustomerOverlay from "./NewCutomerForm";
 
 export default function CustomerSelector({
   customers,
@@ -14,9 +15,11 @@ export default function CustomerSelector({
   styles,
   selected = [],
   isInDrawer = false,
+  isWindowSmall,
 }) {
   const [searchText, setSearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState(selected);
+  const [isAddNewOpen, setIsAddNewOpen] = useState(false);
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -43,6 +46,11 @@ export default function CustomerSelector({
     }
   };
 
+  function handleNewCustomer(customer) {
+    onSave([customer]);
+    setIsAddNewOpen(false);
+  }
+
   return (
     <div
       className={`relative flex h-full flex-col ${isInDrawer ? "px-0" : "px-4"}
@@ -63,22 +71,29 @@ export default function CustomerSelector({
         />
       </div>
 
-      <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
-        <CustomerRow
-          variant="action"
-          label="Add new client"
-          icon={<PlusIcon styles="size-6" />}
-          onClick={() => console.log("Create new client")}
-        />
-        {!isGroupMode && (
+      {!isGroupMode && (
+        <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
+          <CustomerRow
+            variant="action"
+            label="Add new client"
+            icon={<PlusIcon styles="size-6" />}
+            onClick={() => setIsAddNewOpen(true)}
+          />
+          <NewCustomerOverlay
+            onClose={() => setIsAddNewOpen(false)}
+            onSave={handleNewCustomer}
+            isWindowSmall={isWindowSmall}
+            isOpen={isAddNewOpen}
+          />
+
           <CustomerRow
             variant="action"
             label="Walk-In"
             icon={<WalkingIcon styles="size-6" />}
             onClick={() => onSave([])}
           />
-        )}
-      </ul>
+        </ul>
+      )}
 
       <div
         className="min-h-0 flex-1 overflow-y-auto pt-4 pb-24 dark:scheme-dark"
@@ -133,8 +148,9 @@ function CustomerRow({
   return (
     <button
       onClick={() => onClick(customer)}
-      className="flex w-full items-center gap-4 rounded-xl px-3 py-2 text-left
-        transition-all hover:bg-gray-200/40 dark:hover:bg-gray-700/10"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3
+        py-2 text-left transition-all hover:bg-gray-200/40
+        dark:hover:bg-gray-700/10"
     >
       {isAction ? (
         <div

@@ -22,6 +22,7 @@ import { useState } from "react";
 import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
 import NestedSidePanel from "./NestedSidePanel";
+import NewCustomerOverlay from "./NewCutomerForm";
 
 const statusMap = {
   completed: {
@@ -58,6 +59,7 @@ export default function ParticipantManager({
   });
 
   const [activeProfile, setActiveProfile] = useState(null);
+  const [isAddNewOpen, setIsAddNewOpen] = useState(false);
 
   const handleOpenAdd = () => {
     setNestedPageState({ isOpen: true, active: "add" });
@@ -66,6 +68,11 @@ export default function ParticipantManager({
   const handleViewProfile = (customer) => {
     setActiveProfile(customer);
     setNestedPageState({ isOpen: true, active: "view" });
+  };
+
+  const handleSaveNewCustomer = (newCustomer) => {
+    onAdd([...participants, newCustomer]);
+    setIsAddNewOpen(false);
   };
 
   const ActiveNestedContent = (
@@ -82,6 +89,7 @@ export default function ParticipantManager({
           selected={participants}
           styles="pt-0!"
           isInDrawer={isWindowSmall}
+          isWindowSmall={isWindowSmall}
         />
       )}
       {nestedPageState.active === "view" && activeProfile && (
@@ -100,6 +108,12 @@ export default function ParticipantManager({
 
   return (
     <div className="bg-layer_bg relative flex h-full w-full flex-col">
+      <NewCustomerOverlay
+        onSave={handleSaveNewCustomer}
+        onClose={() => setIsAddNewOpen(false)}
+        isOpen={isAddNewOpen}
+        isWindowSmall={isWindowSmall}
+      />
       {isWindowSmall ? (
         <Drawer
           open={nestedPageState.isOpen}
@@ -127,14 +141,10 @@ export default function ParticipantManager({
         </NestedSidePanel>
       )}
       <div
-        className={`${isWindowSmall ? "px-5 pt-4" : "px-4 pt-14"} flex h-full
+        className={`${isWindowSmall ? "px-5 pt-0" : "px-4 pt-8"} flex h-full
           flex-col pb-4`}
       >
-        <div
-          className={`border-border_color flex flex-col ${
-            disabled ? "gap-5" : "gap-8"
-          } border-b pb-4`}
-        >
+        <div className="border-border_color flex flex-col gap-5 border-b pb-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-text_color text-xl font-semibold">
               Participants
@@ -147,23 +157,44 @@ export default function ParticipantManager({
             </span>
           </div>
           {!disabled ? (
-            <button
-              className="flex w-full items-center gap-4 rounded-lg px-3 py-2
-                hover:bg-gray-200/40 dark:hover:bg-gray-700/20"
-              onClick={handleOpenAdd}
-            >
-              <div
-                className="bg-primary/20 text-primary flex size-14 shrink-0
-                  items-center justify-center rounded-full"
+            <div className="flex flex-col gap-2">
+              <button
+                className="flex w-full cursor-pointer items-center gap-4
+                  rounded-lg px-3 py-2 hover:bg-gray-200/40
+                  dark:hover:bg-gray-700/20"
+                onClick={() => setIsAddNewOpen(true)}
               >
-                <PlusIcon styles="size-7" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-text_color font-medium">
-                  Add Participants
-                </span>
-              </div>
-            </button>
+                <div
+                  className="bg-primary/20 text-primary flex size-14 shrink-0
+                    items-center justify-center rounded-full"
+                >
+                  <PlusIcon styles="size-6" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-text_color font-medium">
+                    Add New Customer
+                  </span>
+                </div>
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center gap-4
+                  rounded-lg px-3 py-2 hover:bg-gray-200/40
+                  dark:hover:bg-gray-700/20"
+                onClick={handleOpenAdd}
+              >
+                <div
+                  className="bg-primary/20 text-primary flex size-14 shrink-0
+                    items-center justify-center rounded-full"
+                >
+                  <PersonIcon styles="size-7 fill-primary" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-text_color font-medium">
+                    Select Customers
+                  </span>
+                </div>
+              </button>
+            </div>
           ) : (
             <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">
               View all the participants for this booking
@@ -251,7 +282,7 @@ function ParticipantItem({
           className={`ring-layer_bg absolute top-12 left-13 inline-flex size-5
           items-center justify-center gap-2 rounded-full text-xs ring-2
           ${status.bgColor}`}
-          title={customer.status}
+          title={customer.status} // couldnt do with tooltip
         >
           {status.icon}
         </div>
