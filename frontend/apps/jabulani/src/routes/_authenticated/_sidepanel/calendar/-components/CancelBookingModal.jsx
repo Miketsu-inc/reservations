@@ -3,7 +3,7 @@ import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 
 export default function CancelBookingModal({
-  booking,
+  bookingId,
   onDeleted,
   isOpen,
   onClose,
@@ -18,7 +18,7 @@ export default function CancelBookingModal({
 
     try {
       const response = await fetch(
-        `/api/v1/merchants/${merchantId}/bookings/${booking.id}`,
+        `/api/v1/merchants/${merchantId}/bookings/${bookingId}`,
         {
           method: "DELETE",
           headers: {

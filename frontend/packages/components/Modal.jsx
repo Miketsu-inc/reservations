@@ -1,5 +1,6 @@
 import { useClickOutside } from "@reservations/lib";
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export default function Modal({
   styles,
@@ -35,39 +36,41 @@ export default function Modal({
 
   return (
     <>
-      {isOpen && (
-        <>
-          <div
-            aria-hidden="true"
-            className={"fixed inset-0 bg-black/45"}
-            style={{ zIndex: zindex }}
-          ></div>
-          <div
-            className="fixed inset-0 flex w-full items-center justify-center
-              p-4"
-            style={{ zIndex: zindex }}
-          >
+      {isOpen &&
+        createPortal(
+          <>
             <div
-              role="dialog"
-              aria-modal="true"
-              tabIndex={-1}
-              className={`${styles} bg-layer_bg text-text_color
-              dark:border-border_color w-full rounded-lg shadow-lg
-              shadow-gray-500 transition-all focus:outline-none sm:w-fit
-              dark:border dark:shadow-md dark:shadow-gray-950`}
-              ref={modalRef}
+              aria-hidden="true"
+              className={"fixed inset-0 bg-black/45"}
+              style={{ zIndex: zindex }}
+            ></div>
+            <div
+              className="fixed inset-0 flex w-full items-center justify-center
+                p-4"
+              style={{ zIndex: zindex }}
             >
-              {children}
+              <div
+                role="dialog"
+                aria-modal="true"
+                tabIndex={-1}
+                className={`${styles} bg-layer_bg text-text_color
+                dark:border-border_color w-full rounded-lg shadow-lg
+                shadow-gray-500 transition-all focus:outline-none sm:w-fit
+                dark:border dark:shadow-md dark:shadow-gray-950`}
+                ref={modalRef}
+              >
+                {children}
+              </div>
             </div>
-          </div>
-          {/* This is needed to trap focus and make tabbing loop */}
-          <span
-            aria-hidden="true"
-            tabIndex={0}
-            className="pointer-events-none fixed opacity-0 outline-none"
-          ></span>
-        </>
-      )}
+            {/* This is needed to trap focus and make tabbing loop */}
+            <span
+              aria-hidden="true"
+              tabIndex={0}
+              className="pointer-events-none fixed opacity-0 outline-none"
+            ></span>
+          </>,
+          document.body
+        )}
     </>
   );
 }

@@ -26,9 +26,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
 import CalendarSidePanel from "./CalendarSidePanel";
-import CancelBookingModal from "./CancelBookingModal";
 import CreateMenu from "./CreateMenu";
-import UpdateRecurringModal from "./UpdateRecurringModal";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -131,8 +129,6 @@ export default function Calendar({ router, route, search }) {
     revert: null,
   });
   const [calendarTitle, setCalendarTitle] = useState("");
-  const [cancelBookingModalData, setCancelBookingModalData] = useState(null);
-  const [recurModalData, setRecurModalData] = useState(null);
 
   const { merchantId } = useAuth();
   const { queryClient } = route.useRouteContext({ from: route.id });
@@ -259,10 +255,6 @@ export default function Calendar({ router, route, search }) {
         }}
         onSoftUpdate={() => invalidateBookingsQuery()}
         preferences={preferences}
-        onOpenCancelModal={(booking) => setCancelBookingModalData(booking)}
-        onOpenRecurModal={(handleSave) =>
-          setRecurModalData({ handleSave: handleSave })
-        }
       />
       <div className="relative flex flex-col pb-4 md:flex-row md:gap-2">
         <div
@@ -457,25 +449,6 @@ export default function Calendar({ router, route, search }) {
           businessHours={transformBusinessHours(businessHours)}
         />
       </div>
-      <CancelBookingModal
-        booking={cancelBookingModalData}
-        isOpen={cancelBookingModalData !== null}
-        onClose={() => setCancelBookingModalData(null)}
-        onDeleted={() => {
-          invalidateBookingsQuery();
-          setCancelBookingModalData(null);
-          setSidePanelState((prev) => ({ ...prev, isOpen: false }));
-        }}
-      />
-      <UpdateRecurringModal
-        isOpen={recurModalData !== null}
-        onClose={() => setRecurModalData(null)}
-        onSave={(option) => {
-          // save function passed up from EditBookingPanel
-          recurModalData.handleSave(option);
-          setRecurModalData(null);
-        }}
-      />
     </div>
   );
 }

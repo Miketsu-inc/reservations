@@ -95,8 +95,6 @@ export default function CalendarSidePanel({
   onSave,
   onSoftUpdate,
   preferences,
-  onOpenCancelModal,
-  onOpenRecurModal,
 }) {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
@@ -179,8 +177,6 @@ export default function CalendarSidePanel({
               customers={customers}
               categories={services}
               isWindowSmall={isWindowSmall}
-              onOpenCancelModal={onOpenCancelModal}
-              onOpenRecurModal={onOpenRecurModal}
               preferences={preferences}
             />
           )}

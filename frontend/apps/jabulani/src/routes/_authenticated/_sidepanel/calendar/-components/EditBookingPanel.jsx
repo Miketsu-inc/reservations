@@ -31,11 +31,13 @@ import {
   SelectedCustomerCard,
   ServiceCard,
 } from "./BookingCards";
+import CancelBookingModal from "./CancelBookingModal";
 import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
 import NestedSidePanel from "./NestedSidePanel";
 import ParticipantManager from "./ParticipantManager";
 import ServiceSelector from "./ServiceSelector";
+import UpdateRecurringModal from "./UpdateRecurringModal";
 
 function monthDateFormat(date) {
   return date.toLocaleDateString([], {
@@ -53,8 +55,6 @@ export default function EditBookingPanel({
   onClose,
   onSave,
   onSoftUpdate,
-  onOpenCancelModal,
-  onOpenRecurModal,
   preferences,
 }) {
   const { showToast } = useToast();
@@ -70,6 +70,8 @@ export default function EditBookingPanel({
     isOpen: false,
     active: "service-selector",
   });
+  const [isRecurModalOpen, setIsRecurModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const isMobilePanelActive =
     nestedPageState.active === "customer-selector" ||
@@ -262,6 +264,20 @@ export default function EditBookingPanel({
 
   return (
     <div className="flex h-full transition-all duration-300 ease-in-out">
+      <UpdateRecurringModal
+        isOpen={isRecurModalOpen}
+        onClose={() => setIsRecurModalOpen(false)}
+        onSave={(option) => handleSave(option)}
+      />
+      <CancelBookingModal
+        bookingId={originalBookingData.extendedProps.id}
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onDeleted={() => {
+          setIsCancelModalOpen(false);
+          onSave();
+        }}
+      />
       {!isWindowSmall && (
         <div
           className={`border-border_color overflow-hidden border-r
@@ -415,7 +431,7 @@ export default function EditBookingPanel({
             isWindowSmall={isWindowSmall}
             selectedService={selectedService}
             updateBookingData={updateBookingData}
-            onCancel={onOpenCancelModal}
+            onCancel={() => setIsCancelModalOpen(true)}
             onClose={onClose}
           />
           <div className="flex w-full flex-col gap-8 px-6 pt-9 pb-28">
@@ -589,13 +605,7 @@ export default function EditBookingPanel({
               variant="primary"
               name="saveButton"
               buttonText="Save"
-              onClick={() => {
-                if (isRecurring) {
-                  onOpenRecurModal(handleSave);
-                } else {
-                  handleSave();
-                }
-              }}
+              onClick={() => setIsRecurModalOpen(true)}
             />
           </div>
         )}
