@@ -150,7 +150,10 @@ func jabulaniRouter() chi.Router {
 		"/integrations",
 		"/products",
 		"/dashboard",
-		"/signup",
+		"/team",
+		"/team/new",
+		"/team/{id}",
+		"/team/edit/{id}",
 	}
 
 	dist, assets := jabulani.StaticFilesPath()

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
     loader: async ({
       context: {
         queryClient,
-        useContext: { merchantId },
+        authContext: { merchantId },
       },
     }) => {
       await queryClient.ensureQueryData(
