@@ -614,7 +614,13 @@ export default function EditBookingPanel({
               variant="primary"
               name="saveButton"
               buttonText="Save"
-              onClick={() => setIsRecurModalOpen(true)}
+              onClick={() => {
+                if (isRecurring) {
+                  setIsRecurModalOpen(true);
+                } else {
+                  handleSave();
+                }
+              }}
             />
           </div>
         )}
