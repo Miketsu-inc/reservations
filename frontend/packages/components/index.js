@@ -35,4 +35,5 @@ export { default as Switch } from "./Switch.jsx";
 export { default as Table } from "./Table.jsx";
 export { default as Textarea } from "./Textarea.jsx";
 export { ToastContext, default as ToastProvider } from "./ToastProvider.jsx";
+export { Toggle, ToggleGroup } from "./Toggle.jsx";
 export { TooltipContent, TooltipTrigger, Tootlip } from "./Tooltip.jsx";

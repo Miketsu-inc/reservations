@@ -1,7 +1,7 @@
 export default function SearchIcon({ styles }) {
   return (
     <svg
-      className={`${styles} fill-transparent text-text_color`}
+      className={`${styles} text-text_color fill-transparent`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"

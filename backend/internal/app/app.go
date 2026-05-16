@@ -24,6 +24,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
 	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
 	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/workers"
 	repos "github.com/miketsu-inc/reservations/backend/internal/repository/db"
@@ -37,6 +38,7 @@ import (
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	userSrv "github.com/miketsu-inc/reservations/backend/internal/service/user"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -75,6 +77,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	teamService := teamSrv.NewService(teamRepo, userRepo)
+	userService := userSrv.NewService(userRepo)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,
@@ -103,6 +106,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),
 		Customers:         customers.NewHandler(customerService),
 		Integrations:      integrations.NewHandler(externalCalendarService),
+		Users:             users.NewHandler(userService, bookingService, authService, middlewareManager),
 		Locations:         locations.NewHandler(merchantService),
 		Products:          products.NewHandler(productService),
 		Services:          services.NewHandler(catalogService),

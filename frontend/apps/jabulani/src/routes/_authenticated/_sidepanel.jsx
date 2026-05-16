@@ -60,7 +60,7 @@ function SidePanelLayout() {
 
   const handleLogout = useCallback(async () => {
     try {
-      await fetch("api/v1/auth/logout", {
+      await fetch("/api/v1/auth/logout", {
         method: "POST",
         headers: {
           Accept: "application/json",

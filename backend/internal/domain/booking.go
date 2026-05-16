@@ -46,6 +46,9 @@ type BookingRepository interface {
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
 	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
 	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
+	GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
+	GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
+	GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 
 	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, day time.Time) ([]BookingSlot, error)
 	GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationiId int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
@@ -249,4 +252,20 @@ type BookingForExternalCalendar struct {
 	TotalCost           currencyx.Price     `json:"total_cost" db:"total_cost"`
 	MerchantNote        *string             `json:"merchant_note" db:"merchant_note"`
 	CurrentParticipants int                 `json:"current_participants" db:"current_participants"`
+}
+
+type BookingForUser struct {
+	Id                int                 `db:"id"`
+	Status            types.BookingStatus `db:"status"`
+	BookingType       types.BookingType   `db:"booking_type"`
+	IsRecurring       bool                `db:"is_recurring"`
+	FromDate          time.Time           `db:"from_date"`
+	ToDate            time.Time           `db:"to_date"`
+	PricePerPerson    currencyx.Price     `db:"price_per_person"`
+	MerchantName      string              `db:"merchant_name"`
+	MerchantUrl       string              `db:"merchant_url"`
+	FormattedLocation string              `db:"formatted_location"`
+	ServiceName       string              `db:"service_name"`
+	EmployeeFirstName *string             `db:"employee_first_name"`
+	EmployeeLastName  *string             `db:"employee_last_name"`
 }

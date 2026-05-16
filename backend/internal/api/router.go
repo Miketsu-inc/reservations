@@ -20,6 +20,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
 	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
 	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
@@ -36,6 +37,7 @@ type Handlers struct {
 	BlockedTimeTypes  *blockedtimetypes.Handler
 	Customers         *customers.Handler
 	Integrations      *integrations.Handler
+	Users             *users.Handler
 	Locations         *locations.Handler
 	Products          *products.Handler
 	Services          *services.Handler
@@ -54,6 +56,7 @@ func NewRouter(h *Handlers) *chi.Mux {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Mount("/auth", h.Auth.Routes())
 		r.Mount("/integrations", h.Integrations.Routes())
+		r.Mount("/users", h.Users.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
 		r.Route("/merchants", func(r chi.Router) {
@@ -182,6 +185,12 @@ func tangoRouter() chi.Router {
 		"/",
 		"/login",
 		"/signup",
+		"/home",
+		"/bookings",
+		"/settings",
+		"/favorites",
+		"/profile",
+		"/profile/edit",
 		"/m/{merchant_url}",
 		"/m/{merchant_url}/booking",
 		"/m/{merchant_url}/booking/completed",

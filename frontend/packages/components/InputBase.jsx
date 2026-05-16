@@ -20,43 +20,45 @@ export default function InputBase({
 
   useAutofill(inputRef, onBlur);
 
+  const input = (
+    <input
+      className={`${styles} ${isTypePassword ? "pr-12" : ""} autofill w-full
+        appearance-none rounded-lg ps-3 pe-3 outline-hidden dark:scheme-dark`}
+      id={id}
+      type={isTypePassword ? (visible ? "text" : type) : type}
+      value={value}
+      name={name}
+      onChange={onChange}
+      onBlur={onBlur}
+      onFocus={onFocus}
+      ref={inputRef}
+      autoFocus={autoFocus}
+      {...props}
+    />
+  );
+
+  if (!isTypePassword) return input;
+
   return (
-    <>
-      <input
-        className={`${styles} ${isTypePassword ? "w-5/6" : "w-full"} autofill
-          appearance-none rounded-lg ps-3 pe-3 outline-hidden dark:scheme-dark`}
-        id={id}
-        type={isTypePassword ? (visible ? "text" : type) : type}
-        value={value}
-        name={name}
-        onChange={onChange}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        ref={inputRef}
-        autoFocus={autoFocus}
-        {...props}
-      />
+    <div className="relative w-full">
+      {input}
       {isTypePassword ? (
-        <div>
-          {visible ? (
-            <EyeSlashIcon
-              onClick={() => {
-                setVisible(!visible);
-              }}
-              styles="absolute -translate-y-1/2 right-4"
-            />
-          ) : (
-            <EyeIcon
-              onClick={() => {
-                setVisible(!visible);
-              }}
-              styles="absolute -translate-y-1/2 right-4"
-            />
-          )}
-        </div>
+        <button
+          type="button"
+          className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer"
+          onClick={() => setVisible(!visible)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setVisible(!visible);
+            }
+          }}
+        >
+          {visible ? <EyeSlashIcon /> : <EyeIcon />}
+        </button>
       ) : (
         <></>
       )}
-    </>
+    </div>
   );
 }

@@ -21,6 +21,10 @@ type UserRepository interface {
 	GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeAuthInfo, error)
 	GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error)
 
+	UpdateUser(ctx context.Context, user UserCore) error
+	UpdatePassword(ctx context.Context, userId uuid.UUID, passwordHash string) error
+	DeleteUser(ctx context.Context, userId uuid.UUID) error
+
 	IsEmailUnique(ctx context.Context, email string) error
 	IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error
 
@@ -41,6 +45,18 @@ type User struct {
 	PreferredLang     *string                 `json:"preferred_lang" db:"preferred_lang"`
 	AuthProvider      *types.AuthProviderType `json:"auth_provider" db:"auth_provider"`
 	ProviderId        *string                 `json:"provider_id" db:"provider_id"`
+}
+
+func (u User) IsOauthUser() bool {
+	return u.AuthProvider != nil || u.ProviderId != nil
+}
+
+type UserCore struct {
+	Id          uuid.UUID `db:"id"`
+	FirstName   string    `db:"first_name"`
+	LastName    string    `db:"last_name"`
+	Email       string    `db:"email"`
+	PhoneNumber *string   `db:"phone_number"`
 }
 
 type EmployeeAuthInfo struct {

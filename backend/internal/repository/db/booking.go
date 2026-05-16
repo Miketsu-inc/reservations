@@ -629,6 +629,85 @@ func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingI
 	return participants, nil
 }
 
+func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
+	query := `
+	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
+		m.url_name as merchant_url, l.formatted_location, s.name as service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id
+	join "Customer" c on bp.customer_id = c.id
+	join "User" u on c.user_id = u.id
+	join "Merchant" m on b.merchant_id = m.id
+	join "Location" l on b.location_id = l.id
+	join "Service" s on b.service_id = s.id
+	left join "Employee" e on b.employee_id = e.id
+	where u.id = $1 and b.from_date > now() and b.status in ('booked', 'confirmed') and (b.from_date, b.id) > ($3, $4)
+	order by b.from_date asc, b.id asc
+	limit $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
+	if err != nil {
+		return []domain.BookingForUser{}, err
+	}
+
+	return bookings, nil
+}
+
+func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
+	query := `
+	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
+		m.url_name as merchant_url, l.formatted_location, s.name as service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id
+	join "Customer" c on bp.customer_id = c.id
+	join "User" u on c.user_id = u.id
+	join "Merchant" m on b.merchant_id = m.id
+	join "Location" l on b.location_id = l.id
+	join "Service" s on b.service_id = s.id
+	left join "Employee" e on b.employee_id = e.id
+	where u.id = $1 and b.to_date < now() and b.status not in ('cancelled', 'no-show') and (b.from_date, b.id) > ($3, $4)
+	order by b.from_date desc, b.id desc
+	limit $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
+	if err != nil {
+		return []domain.BookingForUser{}, err
+	}
+
+	return bookings, nil
+}
+
+// TODO: order by updated_at desc
+func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
+	query := `
+	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
+		m.url_name as merchant_url, l.formatted_location, s.name as service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id
+	join "Customer" c on bp.customer_id = c.id
+	join "User" u on c.user_id = u.id
+	join "Merchant" m on b.merchant_id = m.id
+	join "Location" l on b.location_id = l.id
+	join "Service" s on b.service_id = s.id
+	left join "Employee" e on b.employee_id = e.id
+	where u.id = $1 and b.status in ('cancelled') and b.cancelled_by_merchant_on is not null and (b.from_date, b.id) > ($3, $4)
+	order by b.id asc
+	limit $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
+	if err != nil {
+		return []domain.BookingForUser{}, err
+	}
+
+	return bookings, nil
+}
+
 func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]domain.BookingSlot, error) {
 	query := `
     select bphase.from_date, bphase.to_date

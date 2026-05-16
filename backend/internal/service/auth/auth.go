@@ -254,3 +254,43 @@ func (s *Service) LogoutAllDevices(ctx context.Context) error {
 
 	return nil
 }
+
+type UpdatePasswordInput struct {
+	OldPassword        string
+	NewPassword        string
+	ConfirmNewPassword string
+}
+
+func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) error {
+	userId := jwt.MustGetUserIDFromContext(ctx)
+
+	user, err := s.userRepo.GetUser(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	if user.IsOauthUser() {
+		return fmt.Errorf("oauth users can't update password")
+	}
+
+	err = hashCompare(in.OldPassword, *user.PasswordHash)
+	if err != nil {
+		return err
+	}
+
+	if in.NewPassword != in.ConfirmNewPassword {
+		return fmt.Errorf("new passwords do not match")
+	}
+
+	newPasswordHash, err := hashPassword(in.NewPassword)
+	if err != nil {
+		return fmt.Errorf("error during password hashing: %s", err.Error())
+	}
+
+	err = s.userRepo.UpdatePassword(ctx, userId, newPasswordHash)
+	if err != nil {
+		return fmt.Errorf("error updating password: %s", err.Error())
+	}
+
+	return nil
+}

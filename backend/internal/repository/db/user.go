@@ -146,6 +146,50 @@ func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUI
 	return employeeAuthInfo, nil
 }
 
+func (r *userRepository) UpdateUser(ctx context.Context, user domain.UserCore) error {
+	query := `
+	update "User"
+	set first_name = $2, last_name = $3, phone_number = $4, email = $5
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.PhoneNumber, user.Email)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, userId uuid.UUID, passwordHash string) error {
+	query := `
+	update "User"
+	set password_hash = $2
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, userId, passwordHash)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *userRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+	query := `
+	delete from "User"
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *userRepository) IsEmailUnique(ctx context.Context, email string) error {
 	query := `
 	select 1 from "User"

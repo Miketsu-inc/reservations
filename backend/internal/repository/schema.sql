@@ -132,7 +132,7 @@ create table if not exists "ServicePhase" (
 create table if not exists "Customer" (
     ID                      uuid            primary key unique not null,
     merchant_id             uuid            references "Merchant" (ID) on delete cascade not null,
-    user_id                 uuid            references "User" (ID),
+    user_id                 uuid            references "User" (ID) on delete set null,
     first_name              varchar(30),
     last_name               varchar(30),
     email                   varchar(320),
