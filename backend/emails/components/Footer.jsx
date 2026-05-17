@@ -1,5 +1,5 @@
-import { Link, Section, Text } from "@react-email/components";
 import React from "react";
+import { Link, Section, Text } from "react-email";
 
 void React;
 

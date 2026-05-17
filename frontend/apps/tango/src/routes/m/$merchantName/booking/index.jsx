@@ -178,6 +178,8 @@ function SelectDateTime() {
     placeholderData: keepPreviousData,
   });
 
+  // TODO: solve this
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!availableTimesWindow || skipCount > 3 || isInitialSkipDone) return;
 
@@ -195,6 +197,7 @@ function SelectDateTime() {
       setIsInitialSkipDone(true);
     }
   }, [availableTimesWindow, currentMonth, isInitialSkipDone, skipCount]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const {
     data: summaryInfo,

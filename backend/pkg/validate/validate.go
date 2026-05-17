@@ -73,7 +73,7 @@ func getJsonTagForField(s any, fieldName string) (string, bool) {
 	t := reflect.TypeOf(s)
 
 	// Dereference the pointer
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 

@@ -153,6 +153,7 @@ function RouteComponent() {
     <>
       <ServerError error={serverError} />
       <ServicePage
+        key={queryResults[0].data.id}
         service={queryResults[0].data}
         categories={queryResults[1].data.categories}
         products={queryResults[1].data.products}

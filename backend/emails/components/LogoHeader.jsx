@@ -1,5 +1,5 @@
-import { Column, Img, Row, Section, Text } from "@react-email/components";
 import React from "react";
+import { Column, Img, Row, Section, Text } from "react-email";
 
 void React;
 

@@ -9,7 +9,7 @@ func StructToMap(data any) map[string]any {
 	result := make(map[string]any)
 
 	val := reflect.ValueOf(data)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 	typ := val.Type()

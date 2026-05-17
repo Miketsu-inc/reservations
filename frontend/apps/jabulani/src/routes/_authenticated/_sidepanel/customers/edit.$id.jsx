@@ -108,7 +108,11 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <CustomerPage customer={data} onSave={saveCustomerHandler} />
+      <CustomerPage
+        key={data.id}
+        customer={data}
+        onSave={saveCustomerHandler}
+      />
     </>
   );
 }

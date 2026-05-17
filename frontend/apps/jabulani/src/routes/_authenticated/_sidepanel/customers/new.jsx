@@ -53,7 +53,7 @@ function RouteComponent() {
   return (
     <>
       <ServerError error={serverError} />
-      <CustomerPage onSave={saveCustomerHandler} />
+      <CustomerPage key="new" onSave={saveCustomerHandler} />
     </>
   );
 }

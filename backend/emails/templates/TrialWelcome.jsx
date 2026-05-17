@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Body,
   Button,
@@ -11,8 +12,7 @@ import {
   Section,
   Tailwind,
   Text,
-} from "@react-email/components";
-import React from "react";
+} from "react-email";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
 

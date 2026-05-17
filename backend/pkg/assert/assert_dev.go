@@ -38,7 +38,7 @@ func Nil(item any, msg string, data ...any) {
 }
 
 func NotNil(item any, msg string, data ...any) {
-	if item == nil || reflect.ValueOf(item).Kind() == reflect.Ptr && reflect.ValueOf(item).IsNil() {
+	if item == nil || reflect.ValueOf(item).Kind() == reflect.Pointer && reflect.ValueOf(item).IsNil() {
 		execAssert(msg, data...)
 	}
 }

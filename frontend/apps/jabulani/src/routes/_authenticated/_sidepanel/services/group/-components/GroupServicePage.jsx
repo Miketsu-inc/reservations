@@ -11,12 +11,10 @@ import {
   TooltipTrigger,
   Tootlip,
 } from "@reservations/components";
-
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-
-import { useAuth } from "@reservations/jabulani/lib";
+import { useMemo, useState } from "react";
 import BookingApprovalSetting from "../../-components/BookingApprovalSetting";
 import ProductAdder from "../../-components/ProductAdder";
 import ServiceSchedulingSettings from "../../-components/ServiceSchedulingSettings";
@@ -67,11 +65,6 @@ export default function GroupServicePage({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
   const { merchantId } = useAuth();
-
-  useEffect(() => {
-    setServiceData(originalData);
-    setLastSavedData(originalData);
-  }, [originalData]);
 
   const categoryOptions = useMemo(
     () => [

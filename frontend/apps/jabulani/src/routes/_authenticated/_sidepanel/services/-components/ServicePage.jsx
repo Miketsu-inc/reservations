@@ -13,7 +13,7 @@ import {
 } from "@reservations/components";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import BookingApprovalSetting from "./BookingApprovalSetting";
 import ProductAdder from "./ProductAdder";
 import { useServicePhases } from "./servicehooks";
@@ -61,11 +61,6 @@ export default function ServicePage({
   const [lastSavedData, setLastSavedData] = useState(originalData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
-
-  useEffect(() => {
-    setServiceData(originalData);
-    setLastSavedData(originalData);
-  }, [originalData]);
 
   const phaseHandlers = useServicePhases(setServiceData);
 

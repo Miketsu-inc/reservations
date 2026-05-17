@@ -6,7 +6,7 @@ import {
   Textarea,
 } from "@reservations/components";
 import { Block, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const Customerfields = [
   "first_name",
@@ -35,12 +35,7 @@ export default function CustomerPage({ customer, onSave }) {
   }, [customer]);
   const router = useRouter();
   const [customerData, setCustomerData] = useState(originalData);
-  const [lastSavedData, setLastSavedData] = useState();
-
-  useEffect(() => {
-    setCustomerData(originalData);
-    setLastSavedData(originalData);
-  }, [originalData]);
+  const [lastSavedData, setLastSavedData] = useState(originalData);
 
   function updateCustomerData(data) {
     setCustomerData((prev) => ({ ...prev, ...data }));

@@ -85,6 +85,7 @@ function RouteComponent() {
     <>
       <ServerError error={serverError} />
       <ServicePage
+        key="new"
         categories={formOptions.categories}
         products={formOptions.products}
         onSave={saveServiceHandler}
