@@ -1,4 +1,9 @@
-import { ApproveIcon, CalendarIcon, XIcon } from "@reservations/assets";
+import {
+  Calendar02Icon,
+  Cancel01Icon,
+  CheckmarkCircle02Icon,
+} from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import BookingDonutChart from "./BookingDonutChart";
 
 export default function CustomerStats({ customer }) {
@@ -30,7 +35,7 @@ export default function CustomerStats({ customer }) {
             color="green-600"
             label="Completed"
           >
-            <ApproveIcon styles="size-7 stroke-green-600" />
+            <Icon icon={CheckmarkCircle02Icon} styles="size-7 text-green-600" />
           </StatElement>
           <StatElement
             value={customer.times_cancelled_by_user}
@@ -38,7 +43,7 @@ export default function CustomerStats({ customer }) {
             label="Cancelled/No-show"
           >
             <div className="w-min rounded-full border-2 border-red-600">
-              <XIcon styles="size-5 fill-red-600" />
+              <Icon icon={Cancel01Icon} styles="size-5 text-red-600" />
             </div>
           </StatElement>
           <StatElement
@@ -46,7 +51,7 @@ export default function CustomerStats({ customer }) {
             color="primary"
             label="Upcoming"
           >
-            <CalendarIcon styles="size-6 mb-0.5 stroke-primary" />
+            <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-primary" />
           </StatElement>
         </div>
       </div>

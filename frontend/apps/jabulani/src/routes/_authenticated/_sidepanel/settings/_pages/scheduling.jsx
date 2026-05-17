@@ -1,12 +1,13 @@
 import {
-  EditIcon,
-  PlusIcon,
-  ThreeDotsIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  Delete02Icon,
+  Edit03Icon,
+  MoreVerticalIcon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
+  Icon,
   Loading,
   Popover,
   PopoverClose,
@@ -127,7 +128,10 @@ function BlockedTimesManager() {
             buttonText={windowSize !== "sm" ? "Add" : ""}
             onClick={() => handleOpenModal()}
           >
-            <PlusIcon styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white" />
+            <Icon
+              icon={PlusSignIcon}
+              styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white"
+            />
           </Button>
         )}
       </div>
@@ -152,9 +156,9 @@ function BlockedTimesManager() {
                     className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
                       cursor-pointer rounded-lg p-1"
                   >
-                    <ThreeDotsIcon
-                      styles="size-6 stroke-4 stroke-gray-400
-                        dark:stroke-gray-500"
+                    <Icon
+                      icon={MoreVerticalIcon}
+                      styles="size-6 text-gray-400 dark:text-gray-500 rotate-90"
                     />
                   </button>
                 </PopoverTrigger>
@@ -168,7 +172,7 @@ function BlockedTimesManager() {
                         className="hover:bg-hvr_gray cursor-pointer gap-3"
                         onClick={() => handleOpenModal(type)}
                       >
-                        <EditIcon styles="size-4 ml-1" />
+                        <Icon icon={Edit03Icon} styles="size-5" />
                         <p>Edit </p>
                       </button>
                     </PopoverClose>
@@ -178,7 +182,10 @@ function BlockedTimesManager() {
                         onClick={() => handleDelete(type.id)}
                         className="hover:bg-hvr_gray cursor-pointer gap-3"
                       >
-                        <TrashBinIcon styles="size-5 mb-0.5" />
+                        <Icon
+                          icon={Delete02Icon}
+                          styles="size-5 mb-0.5 text-red-600 dark:text-red-500"
+                        />
                         <p className="text-red-600 dark:text-red-500">Delete</p>
                       </button>
                     </PopoverClose>
@@ -205,7 +212,10 @@ function BlockedTimesManager() {
               buttonText="Create your first type"
               onClick={() => handleOpenModal()}
             >
-              <PlusIcon styles="size-5 mr-2 mb-0.5 text-white" />
+              <Icon
+                icon={PlusSignIcon}
+                styles="size-5 mr-2 mb-0.5 text-white"
+              />
             </Button>
           </div>
         )}

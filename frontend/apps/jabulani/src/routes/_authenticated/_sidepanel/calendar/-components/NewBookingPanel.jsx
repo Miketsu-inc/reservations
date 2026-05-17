@@ -1,8 +1,9 @@
-import { PlusIcon } from "@reservations/assets";
+import { PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
   CloseButton,
   DatePicker,
+  Icon,
   Textarea,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -248,7 +249,7 @@ export default function NewBookingPanel({
                   className="bg-primary/20 text-primary flex size-14
                     items-center justify-center rounded-full"
                 >
-                  <PlusIcon styles="size-6" />
+                  <Icon icon={PlusSignIcon} styles="size-6" />
                 </div>
                 <div>
                   <p className="font-semibold">Add customer</p>

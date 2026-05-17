@@ -1,6 +1,6 @@
+import { Location01Icon } from "@hugeicons/core-free-icons";
 import { SearchBox } from "@mapbox/search-js-react";
-import { MapPinIcon } from "@reservations/assets";
-import { Button, ServerError } from "@reservations/components";
+import { Button, Icon, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import mapboxgl from "mapbox-gl";
@@ -346,7 +346,10 @@ export default function LocationPicker({
               p-4"
           >
             <div className="flex items-start">
-              <MapPinIcon styles="mt-0.5 mr-3 size-5 shrink-0 text-primary" />
+              <Icon
+                icon={Location01Icon}
+                styles="mt-0.5 mr-3 size-5 shrink-0 text-primary"
+              />
               <div className="flex-1">
                 <p className="mb-1 font-medium text-gray-900 dark:text-gray-200">
                   Selected Location
@@ -381,7 +384,8 @@ export default function LocationPicker({
                 bg-gray-200 p-4 dark:bg-gray-700"
             >
               <div className="text-center">
-                <MapPinIcon
+                <Icon
+                  icon={Location01Icon}
                   styles="mx-auto mb-4 size-16 text-gray-400 dark:text-gray-300"
                 />
                 <p className="font-medium text-gray-600 dark:text-gray-300">

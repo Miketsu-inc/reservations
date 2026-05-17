@@ -1,5 +1,15 @@
-import { BackArrowIcon, EditIcon, SettingsIcon } from "@reservations/assets";
-import { Avatar, Card, Loading, ServerError } from "@reservations/components";
+import {
+  ArrowLeft01Icon,
+  Edit03Icon,
+  Settings02Icon,
+} from "@hugeicons/core-free-icons";
+import {
+  Avatar,
+  Card,
+  Icon,
+  Loading,
+  ServerError,
+} from "@reservations/components";
 import { meQueryOptions, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -31,7 +41,7 @@ function RouteComponent() {
           <div className="text-primary mb-12 flex justify-end">
             <Link from={Route.fullPath} to="edit">
               <span className="flex flex-row items-center gap-2">
-                <EditIcon styles="size-4" />
+                <Icon icon={Edit03Icon} styles="size-5" />
                 <p>Edit</p>
               </span>
             </Link>
@@ -72,10 +82,13 @@ function RouteComponent() {
                 to="/settings"
               >
                 <span className="flex flex-row items-center gap-4">
-                  <SettingsIcon styles="size-6!" />
+                  <Icon icon={Settings02Icon} styles="size-6" />
                   <p>Settings</p>
                 </span>
-                <BackArrowIcon styles="size-6 stroke-text_color rotate-180" />
+                <Icon
+                  icon={ArrowLeft01Icon}
+                  styles="size-6 text-text_color rotate-180"
+                />
               </Link>
             </Card>
             <Card>
@@ -84,7 +97,10 @@ function RouteComponent() {
                 href="http://app.reservations.local:3000"
               >
                 <p className="font-bold">For businesses</p>
-                <BackArrowIcon styles="size-6 stroke-text_color rotate-180" />
+                <Icon
+                  icon={ArrowLeft01Icon}
+                  styles="size-6 text-text_color rotate-180"
+                />
               </a>
             </Card>
           </>

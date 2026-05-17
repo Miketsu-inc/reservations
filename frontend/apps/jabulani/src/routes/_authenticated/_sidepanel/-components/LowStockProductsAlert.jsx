@@ -1,10 +1,10 @@
 import {
-  BackArrowIcon,
-  ProductIcon,
-  TickIcon,
-  WarningIcon,
-} from "@reservations/assets";
-import { Card } from "@reservations/components";
+  Alert02Icon,
+  ArrowLeft01Icon,
+  ShoppingBag02Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
+import { Card, Icon } from "@reservations/components";
 import { getDisplayUnit } from "@reservations/lib";
 import { Link } from "@tanstack/react-router";
 
@@ -58,11 +58,15 @@ export default function LowStockProductsAlert({ products, route }) {
                 }`}
             >
               {hasLowStock ? (
-                <WarningIcon
+                <Icon
+                  icon={Alert02Icon}
                   styles="size-6 shrink-0 text-amber-600 dark:text-amber-400"
                 />
               ) : (
-                <ProductIcon styles="size-6 shrink-0 text-green-600" />
+                <Icon
+                  icon={ShoppingBag02Icon}
+                  styles="size-6 shrink-0 text-green-600"
+                />
               )}
             </div>
             <div>
@@ -84,8 +88,9 @@ export default function LowStockProductsAlert({ products, route }) {
               justify-end gap-1 rounded-lg p-0 text-sm sm:p-2"
           >
             <span className="hidden text-right sm:block">Manage Products</span>
-            <BackArrowIcon
-              styles="stroke-text_color/70 h-5 w-5 shrink-0 rotate-180"
+            <Icon
+              icon={ArrowLeft01Icon}
+              styles="stroke-text_color/70 size-5 shrink-0 rotate-180"
             />
           </Link>
         </div>
@@ -167,7 +172,7 @@ export default function LowStockProductsAlert({ products, route }) {
               className="mb-4 flex w-min items-center justify-center
                 rounded-full bg-green-100 p-2 dark:bg-green-500/20"
             >
-              <TickIcon styles="size-12 text-green-600" />
+              <Icon icon={Tick02Icon} styles="size-12 text-green-600" />
             </div>
 
             <p className="text-sm text-gray-600 dark:text-gray-400">

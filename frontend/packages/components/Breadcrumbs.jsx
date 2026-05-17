@@ -1,5 +1,6 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { isMatch, Link, useMatches } from "@tanstack/react-router";
+import { Icon } from ".";
 
 export default function Breadcrumbs() {
   const matches = useMatches();
@@ -29,7 +30,7 @@ export default function Breadcrumbs() {
               <Link to={item.href}>{item.label}</Link>
             )}
             {index < items.length - 1 && (
-              <BackArrowIcon styles="rotate-180 w-4 h-4 stroke-current" />
+              <Icon icon={ArrowLeft01Icon} styles="rotate-180 size-4" />
             )}
           </li>
         ))}

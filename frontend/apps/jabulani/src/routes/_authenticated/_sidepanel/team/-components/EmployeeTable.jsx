@@ -1,5 +1,5 @@
-import { EditIcon, TrashBinIcon } from "@reservations/assets";
-import { DeleteModal, Loading } from "@reservations/components";
+import { Delete02Icon, Edit03Icon } from "@hugeicons/core-free-icons";
+import { DeleteModal, Icon, Loading } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 
@@ -65,7 +65,7 @@ export default function EmployeeTable({
               className="cursor-pointer"
               onClick={() => onEdit(data[params.node.sourceRowIndex])}
             >
-              <EditIcon styles="size-4 mx-1" />
+              <Icon icon={Edit03Icon} styles="size-5 mx-1" />
             </button>
             {params.data.role !== "owner" && (
               <button
@@ -79,7 +79,10 @@ export default function EmployeeTable({
                   setShowDeleteModal(true);
                 }}
               >
-                <TrashBinIcon styles="size-5 mx-1" />
+                <Icon
+                  icon={Delete02Icon}
+                  styles="text-red-600 dark:text-red-500 size-5 mx-1"
+                />
               </button>
             )}
           </div>

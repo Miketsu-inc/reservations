@@ -3,10 +3,11 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   DatePicker,
+  Icon,
   Select,
   ServerError,
 } from "@reservations/components";
@@ -295,7 +296,7 @@ export default function Calendar({ router, route, search }) {
                 type="button"
                 onClick={() => navButtonHandler("prev")}
               >
-                <BackArrowIcon styles="size-8 stroke-current" />
+                <Icon icon={ArrowLeft01Icon} styles="size-8" />
               </button>
               <Button
                 variant="primary"
@@ -308,7 +309,7 @@ export default function Calendar({ router, route, search }) {
                 type="button"
                 onClick={() => navButtonHandler("next")}
               >
-                <BackArrowIcon styles="size-8 stroke-current rotate-180" />
+                <Icon icon={ArrowLeft01Icon} styles="size-8 rotate-180" />
               </button>
             </div>
             <Select

@@ -1,5 +1,15 @@
-import { ClockIcon, CustomersIcon, RefreshIcon } from "@reservations/assets";
-import { Avatar, Button, Loading, ServerError } from "@reservations/components";
+import {
+  ArrowReloadHorizontalIcon,
+  Clock01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
+import {
+  Avatar,
+  Button,
+  Icon,
+  Loading,
+  ServerError,
+} from "@reservations/components";
 import { timeStringFromDate } from "@reservations/lib";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
@@ -123,7 +133,7 @@ function BookingCard({ booking }) {
           <div className="flex flex-col items-start justify-center">
             <p className="text-lg">{booking.service_name}</p>
             <div className="flex flex-row items-center gap-2">
-              <ClockIcon styles="size-3 stroke-text_color/60" />
+              <Icon icon={Clock01Icon} styles="size-3 text-text_color/60" />
               <p className="text-text_color/60 text-sm">
                 {timeStringFromDate(fromDate)} - {timeStringFromDate(toDate)}
               </p>
@@ -153,13 +163,13 @@ function BookingCard({ booking }) {
         <div className="flex flex-row items-center gap-2">
           {isGroupBooking && (
             <Pill>
-              <CustomersIcon styles="size-4" />
+              <Icon icon={UserGroupIcon} styles="size-4" />
               <p>Group</p>
             </Pill>
           )}
           {isRecurring && (
             <Pill>
-              <RefreshIcon styles="size-4" />
+              <Icon icon={ArrowReloadHorizontalIcon} styles="size-4" />
               <p>Repeating</p>
             </Pill>
           )}

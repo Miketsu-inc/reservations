@@ -1,14 +1,15 @@
 import {
-  EditIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  ThreeDotsIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  Call02Icon,
+  Delete02Icon,
+  Edit03Icon,
+  Mail01Icon,
+  MoreVerticalIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Card,
   DeleteModal,
+  Icon,
   Loading,
   Popover,
   PopoverClose,
@@ -160,9 +161,9 @@ function RouteComponent() {
                     className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
                       cursor-pointer rounded-lg p-1"
                   >
-                    <ThreeDotsIcon
-                      styles="size-6 stroke-4 stroke-gray-400
-                        dark:stroke-gray-500"
+                    <Icon
+                      icon={MoreVerticalIcon}
+                      styles="size-6 rotate-90 text-gray-400 dark:text-gray-500"
                     />
                   </button>
                 </PopoverTrigger>
@@ -181,7 +182,7 @@ function RouteComponent() {
                           });
                         }}
                       >
-                        <EditIcon styles="size-4 ml-1" />
+                        <Icon icon={Edit03Icon} styles="size-5" />
                         <p>Edit team member</p>
                       </button>
                     </PopoverClose>
@@ -191,7 +192,11 @@ function RouteComponent() {
                           onClick={() => setShowDeleteModal(true)}
                           className="hover:bg-hvr_gray cursor-pointer gap-3"
                         >
-                          <TrashBinIcon styles="size-5 mb-0.5" />
+                          <Icon
+                            icon={Delete02Icon}
+                            styles="text-red-600 dark:text-red-500 size-5
+                              mb-0.5"
+                          />
                           <p className="text-red-600 dark:text-red-500">
                             Delete team member
                           </p>
@@ -210,16 +215,16 @@ function RouteComponent() {
           >
             {employee.email && (
               <div className="flex items-center gap-2">
-                <EnvelopeIcon styles="size-5 text-text_color/70" />
+                <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
                 {employee.email}
               </div>
             )}
             <div className="flex items-center gap-6 sm:justify-start">
               {employee.phone_number && (
                 <div className="flex items-center gap-2">
-                  <PhoneIcon
-                    styles="size-4 mb-0.5 fill-text_color/70
-                      stroke-text_color/10"
+                  <Icon
+                    icon={Call02Icon}
+                    styles="size-4 mb-0.5 text-text_color/70"
                   />
                   {employee.phone_number}
                 </div>

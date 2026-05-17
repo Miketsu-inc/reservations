@@ -1,12 +1,13 @@
 import {
-  ArrowIcon,
-  ClockIcon,
-  EditIcon,
-  ThreeDotsIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  ArrowLeft02Icon,
+  Clock01Icon,
+  Delete02Icon,
+  Edit03Icon,
+  MoreVerticalIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
+  Icon,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -99,7 +100,7 @@ export default function ServiceCard({
                     fill: service.is_active ? service.color : undefined,
                   }}
                 >
-                  <ClockIcon styles="size-4" />
+                  <Icon icon={Clock01Icon} styles="size-4" />
                 </span>
                 <p className="text-sm">
                   {formatDuration(service.total_duration)}
@@ -113,8 +114,9 @@ export default function ServiceCard({
                 className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
                   cursor-pointer rounded-lg p-1"
               >
-                <ThreeDotsIcon
-                  styles="size-6 stroke-4 stroke-gray-400 dark:stroke-gray-500"
+                <Icon
+                  icon={MoreVerticalIcon}
+                  styles="size-6 text-gray-400 dark:text-gray-500 rotate-90"
                 />
               </button>
             </PopoverTrigger>
@@ -140,7 +142,7 @@ export default function ServiceCard({
                         : "hover:bg-hvr_gray cursor-pointer"
                       } gap-5`}
                   >
-                    <ArrowIcon styles="size-6 ml-2 -rotate-90 stroke-current" />
+                    <Icon icon={ArrowLeft02Icon} styles="size-6 ml-2" />
                     <p>Move back</p>
                   </button>
                 </PopoverClose>
@@ -151,7 +153,10 @@ export default function ServiceCard({
                     className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
                       gap-5`}
                   >
-                    <ArrowIcon styles="size-6 rotate-90 stroke-current ml-2" />
+                    <Icon
+                      icon={ArrowLeft02Icon}
+                      styles="size-6 rotate-180 ml-2"
+                    />
                     <p>Move forth</p>
                   </button>
                 </PopoverClose>
@@ -170,7 +175,7 @@ export default function ServiceCard({
             buttonText={`${!isWindowSmall ? "Delete" : ""}`}
             onClick={onDelete}
           >
-            <TrashBinIcon styles="size-5 stroke-white! mr-1 mb-0.5" />
+            <Icon icon={Delete02Icon} styles="size-5 text-white! mr-1 mb-0.5" />
           </Button>
           <Button
             type="button"
@@ -179,7 +184,7 @@ export default function ServiceCard({
             buttonText="Edit"
             onClick={onEdit}
           >
-            <EditIcon styles="size-4 mr-2" />
+            <Icon icon={Edit03Icon} styles="size-5 mr-2" />
           </Button>
         </div>
       </div>

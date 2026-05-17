@@ -1,5 +1,5 @@
-import { ProductIcon } from "@reservations/assets";
-import { DeleteModal, Loading } from "@reservations/components";
+import { ShoppingBag02Icon } from "@hugeicons/core-free-icons";
+import { DeleteModal, Icon, Loading } from "@reservations/components";
 import { getDisplayUnit, useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 import TableActions from "../../-components/TableActions";
@@ -150,7 +150,7 @@ function DefaultNoRowsOverlay() {
       className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
         dark:text-gray-300"
     >
-      <ProductIcon styles="size-16" />
+      <Icon icon={ShoppingBag02Icon} styles="size-16" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-text_color text-base font-medium">
           No products added

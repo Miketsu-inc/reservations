@@ -1,4 +1,5 @@
-import { BackArrowIcon, ClockIcon } from "@reservations/assets";
+import { ArrowLeft01Icon, Clock01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useMemo, useState } from "react";
 
 const daysOfWeek = [
@@ -119,7 +120,7 @@ export default function DropDownBusinessHours({ hoursData }) {
           className="flex w-full items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <ClockIcon styles="fill-text_color size-5" />
+            <Icon icon={Clock01Icon} styles="text-text_color size-5" />
             {isBusinessOpen ? (
               <span className="flex gap-1 text-base font-medium">
                 <span
@@ -142,8 +143,9 @@ export default function DropDownBusinessHours({ hoursData }) {
               </span>
             )}
           </div>
-          <BackArrowIcon
-            styles={`size-6 stroke-gray-600 transition-transform duration-200
+          <Icon
+            icon={ArrowLeft01Icon}
+            styles={`size-6 text-gray-600 transition-transform duration-200
               dark:text-gray-400 ${isDropDownOpen ? "rotate-90" : "-rotate-90"}`}
           />
         </button>

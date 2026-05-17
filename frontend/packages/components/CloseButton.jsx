@@ -1,4 +1,5 @@
-import { XIcon } from "@reservations/assets";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from ".";
 
 export default function CloseButton({ styles, onClick }) {
   return (
@@ -8,7 +9,10 @@ export default function CloseButton({ styles, onClick }) {
       type="button"
       onClick={onClick}
     >
-      <XIcon styles={`${styles} size-8 fill-gray-700 dark:fill-gray-200`} />
+      <Icon
+        icon={Cancel01Icon}
+        styles={`${styles} size-8 text-gray-700 dark:text-gray-200`}
+      />
     </button>
   );
 }

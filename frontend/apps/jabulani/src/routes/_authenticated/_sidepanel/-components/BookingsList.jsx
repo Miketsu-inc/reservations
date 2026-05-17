@@ -1,12 +1,13 @@
 import {
-  BackArrowIcon,
-  CalendarIcon,
-  ClockIcon,
-  TickIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  ArrowLeft01Icon,
+  Calendar02Icon,
+  Clock01Icon,
+  Delete02Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import {
   Card,
+  Icon,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -51,7 +52,10 @@ export default function BookingsList({
             rounded-lg p-4 text-center shadow-sm"
         >
           <div className="mb-3 rounded-full bg-gray-300 p-3 dark:bg-gray-700">
-            <CalendarIcon styles="size-8 stroke-gray-500 dark:stroke-gray-400" />
+            <Icon
+              icon={Calendar02Icon}
+              styles="size-8 text-gray-500 dark:text-gray-400"
+            />
           </div>
           <p className="mb-1">No bookings yet</p>
           <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
@@ -92,7 +96,10 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
             <div className="flex flex-row items-center gap-3">
               <span className="text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
               <div className="flex flex-row items-center gap-2">
-                <ClockIcon styles="size-3 fill-gray-500 dark:fill-gray-400" />
+                <Icon
+                  icon={Clock01Icon}
+                  styles="size-3 text-gray-500 dark:text-gray-400"
+                />
                 <span className="text-sm">{`${timeStringFromDate(new Date(booking.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(booking.to_date), preferences?.time_format)}`}</span>
               </div>
             </div>
@@ -115,12 +122,15 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
               start: formatToDateString(new Date(booking.from_date)),
             }}
           >
-            <CalendarIcon styles="size-5 stroke-text_color" />
+            <Icon icon={Calendar02Icon} styles="size-5 text-text_color" />
           </Link>
           <Popover>
             <PopoverTrigger asChild>
               <button className="cursor-pointer ps-1">
-                <TrashBinIcon styles="size-5" />
+                <Icon
+                  icon={Delete02Icon}
+                  styles="text-red-600 dark:text-red-500 size-5"
+                />
               </button>
             </PopoverTrigger>
             <PopoverContent side="bottom" align="end" styles="w-fit">
@@ -131,7 +141,7 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
             </PopoverContent>
           </Popover>
           <button className="cursor-pointer" onClick={() => onAccept(booking)}>
-            <TickIcon styles="size-6 stroke-text_color" />
+            <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
           </button>
         </div>
       </div>
@@ -142,10 +152,11 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
               text-gray-500 dark:text-gray-400"
             onClick={() => setShowNote(!showNote)}
           >
-            <BackArrowIcon
+            <Icon
+              icon={ArrowLeft01Icon}
               styles={`${showNote ? "rotate-90" : "-rotate-90"}
-              transition-transform duration-300 size-3 stroke-gray-500
-              dark:stroke-gray-400`}
+              transition-transform duration-300 size-3 text-gray-500
+              dark:text-gray-400`}
             />
             <span className="text-xs">{showNote ? "Hide" : "View"} note</span>
           </button>

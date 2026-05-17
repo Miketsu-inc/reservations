@@ -1,5 +1,9 @@
-import { BanIcon, PersonIcon, PlusIcon } from "@reservations/assets";
-import { Button } from "@reservations/components";
+import {
+  PlusSignIcon,
+  UnavailableIcon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
+import { Button, Icon } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import {
   createFileRoute,
@@ -38,7 +42,7 @@ function CustomersLayout() {
                 font-medium"
             >
               <div className="flex items-center gap-2">
-                <PersonIcon styles="size-4 fill-current" />
+                <Icon icon={User03Icon} styles="size-4" />
                 <span className="font-semibold">Customers</span>
               </div>
             </Link>
@@ -51,7 +55,7 @@ function CustomersLayout() {
                 font-medium"
             >
               <div className="flex items-center gap-2">
-                <BanIcon styles="size-4" />
+                <Icon icon={UnavailableIcon} styles="size-4" />
                 <span className="font-semibold">Blacklisted</span>
               </div>
             </Link>
@@ -63,7 +67,10 @@ function CustomersLayout() {
                 styles="sm:py-2 sm:px-4 w-fit p-2"
                 buttonText={windowSize !== "sm" ? "New Customer" : ""}
               >
-                <PlusIcon styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white" />
+                <Icon
+                  icon={PlusSignIcon}
+                  styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white"
+                />
               </Button>
             </Link>
           )}

@@ -1,5 +1,5 @@
-import { PersonIcon } from "@reservations/assets";
-import { Loading, ServerError } from "@reservations/components";
+import { User03Icon } from "@hugeicons/core-free-icons";
+import { Icon, Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
@@ -163,7 +163,7 @@ function NoRowsComponent() {
       className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
         dark:text-gray-300"
     >
-      <PersonIcon styles="fill-current size-16" />
+      <Icon icon={User03Icon} styles="size-16" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-text_color text-base font-medium">
           No blacklisted customers

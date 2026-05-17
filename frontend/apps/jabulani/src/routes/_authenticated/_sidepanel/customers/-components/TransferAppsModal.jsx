@@ -1,5 +1,5 @@
-import { TransferIcon } from "@reservations/assets";
-import { Button, ComboBox, Modal } from "@reservations/components";
+import { UserSwitchIcon } from "@hugeicons/core-free-icons";
+import { Button, ComboBox, Icon, Modal } from "@reservations/components";
 import { useState } from "react";
 
 export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
@@ -50,7 +50,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
           <p className="w-fit text-lg font-semibold sm:text-nowrap">
             {fromCustomer?.first_name + " " + fromCustomer?.last_name}
           </p>
-          <TransferIcon styles="w-7 h-7" />
+          <Icon icon={UserSwitchIcon} styles="size-7" />
           <ComboBox
             options={options}
             value={toCustomer}

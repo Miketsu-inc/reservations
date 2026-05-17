@@ -1,17 +1,18 @@
 import {
-  BackArrowIcon,
-  BanIcon,
-  CalendarIcon,
-  ClockIcon,
-  PlusIcon,
-  RefreshIcon,
-  TickIcon,
+  ArrowLeft01Icon,
+  ArrowReloadHorizontalIcon,
+  Calendar02Icon,
+  Clock01Icon,
+  PlusSignIcon,
+  Tick02Icon,
+  UnavailableIcon,
   WalkingIcon,
-} from "@reservations/assets";
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   CloseButton,
   DatePicker,
+  Icon,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -317,7 +318,7 @@ export default function EditBookingPanel({
                 className="flex size-16 items-center justify-center rounded-full
                   bg-gray-200 dark:bg-gray-400/20"
               >
-                <WalkingIcon styles="fill-gray-300 size-6" />
+                <Icon icon={WalkingIcon} styles="fill-gray-300 size-6" />
               </div>
               <div className="text-center">
                 <p className="font-semibold">Walk-in Customer</p>
@@ -351,7 +352,7 @@ export default function EditBookingPanel({
                   className="bg-primary/20 text-primary flex size-14
                     items-center justify-center rounded-full"
                 >
-                  <PlusIcon styles="size-6" />
+                  <Icon icon={PlusSignIcon} styles="size-6" />
                 </div>
                 <div>
                   <p className="font-semibold">Add customer</p>
@@ -511,7 +512,10 @@ export default function EditBookingPanel({
                           className="flex size-12 items-center justify-center
                             rounded-full bg-gray-200 dark:bg-gray-400/20"
                         >
-                          <WalkingIcon styles="fill-gray-300 size-6" />
+                          <Icon
+                            icon={WalkingIcon}
+                            styles="fill-gray-300 size-6"
+                          />
                         </div>
                         <span className="text-gray-800 dark:text-gray-300">
                           Walk-in Customer
@@ -537,11 +541,11 @@ export default function EditBookingPanel({
                   justify-between rounded-lg border px-4 py-3"
               >
                 <div className="flex items-center gap-2">
-                  <CalendarIcon styles="size-5" />
+                  <Icon icon={Calendar02Icon} styles="size-5" />
                   <span>{monthDateFormat(originalBookingData.start)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ClockIcon styles="size-4 fill-text_color" />
+                  <Icon icon={Clock01Icon} styles="size-4 fill-text_color" />
                   <span>{`${timeStringFromDate(originalBookingData.start, preferences?.time_format)} - ${timeStringFromDate(originalBookingData.end, preferences?.time_format)}`}</span>{" "}
                 </div>
               </div>
@@ -576,7 +580,7 @@ export default function EditBookingPanel({
                 className="border-input_border_color flex items-center gap-2
                   rounded-lg border p-3"
               >
-                <RefreshIcon styles="size-5" />
+                <Icon icon={ArrowReloadHorizontalIcon} styles="size-5" />
                 <span>Part of repeating series</span>
               </div>
             )}
@@ -666,7 +670,7 @@ function BookingHeader({
               px-3 py-2 text-sm font-medium text-white shadow-lg"
           >
             <div className="rounded-full border-white">
-              <TickIcon styles="size-5" />
+              <Icon icon={Tick02Icon} styles="size-5" />
             </div>
             <span>Completed</span>
           </div>
@@ -679,8 +683,9 @@ function BookingHeader({
                   shadow-lg"
               >
                 <span>{bookingData.bookingStatus}</span>
-                <BackArrowIcon
-                  styles="-rotate-90 size-4 mt-0.5 stroke-white shadow-lg
+                <Icon
+                  icon={ArrowLeft01Icon}
+                  styles="-rotate-90 size-4 mt-0.5 text-white shadow-lg
                     transition-all duration-200"
                 />
               </button>
@@ -698,7 +703,7 @@ function BookingHeader({
                         updateBookingData({ bookingStatus: "completed" })
                       }
                     >
-                      <TickIcon styles="size-6 fill-text_color" />
+                      <Icon icon={Tick02Icon} styles="size-6 fill-text_color" />
                       Completed
                     </button>
                   </PopoverClose>
@@ -715,7 +720,7 @@ function BookingHeader({
                           updateBookingData({ bookingStatus: "no-show" })
                         }
                       >
-                        <BanIcon styles="size-5" />
+                        <Icon icon={UnavailableIcon} styles="size-5" />
                         No-show
                       </button>
                     </PopoverClose>

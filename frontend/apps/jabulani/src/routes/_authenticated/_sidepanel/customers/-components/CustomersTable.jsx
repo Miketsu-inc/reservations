@@ -1,12 +1,12 @@
 import {
-  ApproveIcon,
-  BanIcon,
-  EditIcon,
-  PersonIcon,
-  TransferIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
-import { DeleteModal, Loading } from "@reservations/components";
+  CheckmarkCircle02Icon,
+  Delete02Icon,
+  Edit03Icon,
+  UnavailableIcon,
+  User03Icon,
+  UserSwitchIcon,
+} from "@hugeicons/core-free-icons";
+import { DeleteModal, Icon, Loading } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 import BookingRing from "./BookingRing";
@@ -102,7 +102,7 @@ export default function CustomersTable({
               className="cursor-pointer"
               onClick={() => onEdit(customersData[params.node.sourceRowIndex])}
             >
-              <EditIcon styles="size-4 mx-1" />
+              <Icon icon={Edit03Icon} styles="size-5 mx-1" />
             </button>
             {params.data.is_dummy ? (
               <>
@@ -111,7 +111,7 @@ export default function CustomersTable({
                     className="cursor-pointer"
                     onClick={() => onTransfer(params.data.id)}
                   >
-                    <TransferIcon styles="size-5 mx-1" />
+                    <Icon icon={UserSwitchIcon} styles="size-5 mx-1" />
                   </button>
                 ) : (
                   <></>
@@ -127,7 +127,10 @@ export default function CustomersTable({
                     setShowDeleteModal(true);
                   }}
                 >
-                  <TrashBinIcon styles="size-5 mx-1" />
+                  <Icon
+                    icon={Delete02Icon}
+                    styles="size-5 mx-1 text-red-600 dark:text-red-500"
+                  />
                 </button>
               </>
             ) : (
@@ -138,14 +141,14 @@ export default function CustomersTable({
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <ApproveIcon styles="size-5 mx-1" />
+                    <Icon icon={CheckmarkCircle02Icon} styles="size-5 mx-1" />
                   </button>
                 ) : (
                   <button
                     className="cursor-pointer"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <BanIcon styles="size-5 mx-1" />
+                    <Icon icon={UnavailableIcon} styles="size-5 mx-1" />
                   </button>
                 )}
               </>
@@ -199,7 +202,7 @@ function DefaultNoRowsOverlay() {
       className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
         dark:text-gray-300"
     >
-      <PersonIcon styles="stroke-gray-200 size-16" />
+      <Icon icon={User03Icon} styles="text-gray-200 size-16" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-text_color text-base font-medium">
           No customers found

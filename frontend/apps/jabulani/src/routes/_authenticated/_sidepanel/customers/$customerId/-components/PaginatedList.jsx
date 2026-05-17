@@ -1,5 +1,5 @@
-import { BackArrowIcon } from "@reservations/assets";
-import { Button, Card } from "@reservations/components";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Button, Card, Icon } from "@reservations/components";
 import { useState } from "react";
 
 export default function PaginatedList({
@@ -69,7 +69,7 @@ export default function PaginatedList({
               variant="tertiary"
               styles="p-2 w-fit rounded-sm"
             >
-              <BackArrowIcon styles="size-5 stroke-text_color" />
+              <Icon icon={ArrowLeft01Icon} styles="size-5 text-text_color" />
             </Button>
 
             <div className="flex gap-1">
@@ -89,7 +89,10 @@ export default function PaginatedList({
               styles="p-2 w-fit rounded-sm"
             >
               <span className="flex items-center justify-center gap-1">
-                <BackArrowIcon styles="size-5 stroke-text_color rotate-180" />
+                <Icon
+                  icon={ArrowLeft01Icon}
+                  styles="size-5 text-text_color rotate-180"
+                />
               </span>
             </Button>
           </div>

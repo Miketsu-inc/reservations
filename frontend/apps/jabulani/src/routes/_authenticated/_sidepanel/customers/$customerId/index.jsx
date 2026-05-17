@@ -1,18 +1,19 @@
 import {
-  ApproveIcon,
-  BanIcon,
-  CakeIcon,
-  EditIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  ThreeDotsIcon,
-  TransferIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  BirthdayCakeIcon,
+  Call02Icon,
+  CheckmarkCircle02Icon,
+  Delete02Icon,
+  Edit03Icon,
+  Mail01Icon,
+  MoreVerticalIcon,
+  UnavailableIcon,
+  UserSwitchIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Card,
   DeleteModal,
+  Icon,
   Loading,
   Popover,
   PopoverClose,
@@ -314,7 +315,7 @@ function CustomerDetailsPage() {
                         rounded-full bg-red-700/20 px-2 py-0.5 text-xs
                         font-medium text-red-800 dark:text-red-500"
                     >
-                      <BanIcon styles="size-4" />
+                      <Icon icon={UnavailableIcon} styles="size-4" />
                       Blacklisted
                     </span>
                   )}
@@ -346,9 +347,9 @@ function CustomerDetailsPage() {
                     className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
                       cursor-pointer rounded-lg p-1"
                   >
-                    <ThreeDotsIcon
-                      styles="size-6 stroke-4 stroke-gray-400
-                        dark:stroke-gray-500"
+                    <Icon
+                      icon={MoreVerticalIcon}
+                      styles="size-6 text-gray-400 dark:text-gray-500 rotate-90"
                     />
                   </button>
                 </PopoverTrigger>
@@ -365,9 +366,15 @@ function CustomerDetailsPage() {
                             cursor-pointer gap-3"
                         >
                           {!queryResults[0].data.is_blacklisted ? (
-                            <BanIcon styles="size-6 ml-0.5 shrink-0" />
+                            <Icon
+                              icon={UnavailableIcon}
+                              styles="size-6 shrink-0"
+                            />
                           ) : (
-                            <ApproveIcon styles="size-6" />
+                            <Icon
+                              icon={CheckmarkCircle02Icon}
+                              styles="size-6"
+                            />
                           )}
                           <p className="text-nowrap">
                             {!queryResults[0].data.is_blacklisted
@@ -387,7 +394,7 @@ function CustomerDetailsPage() {
                           });
                         }}
                       >
-                        <EditIcon styles="size-4 ml-1" />
+                        <Icon icon={Edit03Icon} styles="size-5" />
                         <p>Edit customer</p>
                       </button>
                     </PopoverClose>
@@ -399,7 +406,7 @@ function CustomerDetailsPage() {
                               className="hover:bg-hvr_gray cursor-pointer gap-3"
                               onClick={() => setShowTransferModal(true)}
                             >
-                              <TransferIcon styles="size-5" />
+                              <Icon icon={UserSwitchIcon} styles="size-5" />
                               <p>Transfer customer</p>
                             </button>
                           </PopoverClose>
@@ -411,7 +418,11 @@ function CustomerDetailsPage() {
                             onClick={() => setShowDeleteModal(true)}
                             className="hover:bg-hvr_gray cursor-pointer gap-3"
                           >
-                            <TrashBinIcon styles="size-5 mb-0.5" />
+                            <Icon
+                              icon={Delete02Icon}
+                              styles="size-5 mb-0.5 text-red-600
+                                dark:text-red-500"
+                            />
                             <p className="text-red-600 dark:text-red-500">
                               Delete Customer
                             </p>
@@ -431,23 +442,26 @@ function CustomerDetailsPage() {
           >
             {queryResults[0].data.email && (
               <div className="flex items-center gap-2">
-                <EnvelopeIcon styles="size-5 text-text_color/70" />
+                <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
                 {queryResults[0].data.email}
               </div>
             )}
             <div className="flex items-center gap-6 sm:justify-start">
               {queryResults[0].data.phone_number && (
                 <div className="flex items-center gap-2">
-                  <PhoneIcon
-                    styles="size-4 mb-0.5 fill-text_color/70
-                      stroke-text_color/10"
+                  <Icon
+                    icon={Call02Icon}
+                    styles="size-4 mb-0.5 text-text_color/70"
                   />
                   {queryResults[0].data.phone_number}
                 </div>
               )}
               {queryResults[0].data.birthday && (
                 <div className="flex items-center gap-2">
-                  <CakeIcon styles="size-5 mb-0.5 text-text_color/70" />
+                  <Icon
+                    icon={BirthdayCakeIcon}
+                    styles="size-5 mb-0.5 text-text_color/70"
+                  />
                   {formatBirthday(queryResults[0].data.birthday)}
                 </div>
               )}

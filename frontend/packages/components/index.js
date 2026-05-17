@@ -14,6 +14,7 @@ export {
   DrawerTrigger,
 } from "./Drawer.jsx";
 export { default as FloatingLabelInput } from "./FloatingLabelInput.jsx";
+export { default as Icon } from "./Icon.jsx";
 export { default as Input } from "./Input.jsx";
 export { default as InputBase } from "./InputBase.jsx";
 export { default as Loading } from "./Loading.jsx";

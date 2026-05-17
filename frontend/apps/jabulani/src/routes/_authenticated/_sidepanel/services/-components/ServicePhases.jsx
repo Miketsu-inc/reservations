@@ -1,15 +1,16 @@
 import {
-  ClockIcon,
-  EditIcon,
-  HourGlassIcon,
-  InfoIcon,
-  PlusIcon,
-  ServicesIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  Clock01Icon,
+  Delete02Icon,
+  Edit03Icon,
+  HourglassIcon,
+  InformationCircleIcon,
+  Note01Icon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
+  Icon,
   Input,
   Select,
   Switch,
@@ -50,7 +51,10 @@ export default function ServicePhases({
         <span className="hidden md:flex">
           <Tootlip>
             <TooltipTrigger>
-              <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+              <Icon
+                icon={InformationCircleIcon}
+                styles="size-4 text-gray-500 dark:text-gray-400"
+              />
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>
@@ -86,7 +90,7 @@ export default function ServicePhases({
           >
             <div className="flex flex-row items-center gap-3">
               <div className="bg-primary/20 rounded-lg p-2">
-                <ClockIcon styles="size-5 fill-primary" />
+                <Icon icon={Clock01Icon} styles="size-5 text-primary" />
               </div>
               <div>
                 <p className="font-semibold">Total duration</p>
@@ -102,7 +106,7 @@ export default function ServicePhases({
                 buttonText={!isWindowSmall ? "Add phase" : ""}
                 onClick={() => setShowAddForm(true)}
               >
-                <PlusIcon styles="size-5 sm:mr-1" />
+                <Icon icon={PlusSignIcon} styles="size-5 sm:mr-1" />
               </Button>
             )}
           </div>
@@ -145,9 +149,15 @@ export default function ServicePhases({
                           rounded-lg p-2`}
                       >
                         {phase.phase_type === "wait" ? (
-                          <HourGlassIcon styles="size-5 stroke-accent" />
+                          <Icon
+                            icon={HourglassIcon}
+                            styles="size-5 text-accent"
+                          />
                         ) : (
-                          <ServicesIcon styles="size-5 text-secondary" />
+                          <Icon
+                            icon={Note01Icon}
+                            styles="size-5 text-secondary"
+                          />
                         )}
                       </div>
                       <div>
@@ -158,13 +168,16 @@ export default function ServicePhases({
                       </div>
                     </div>
                     <div className="flex flex-row items-center gap-4">
-                      <EditIcon
+                      <Icon
+                        icon={Edit03Icon}
                         onClick={() => setEditPhase(phase.sequence)}
                         styles="size-4 cursor-pointer"
                       />
-                      <TrashBinIcon
+                      <Icon
+                        icon={Delete02Icon}
                         onClick={() => onRemovePhase(phase.sequence)}
-                        styles="size-5 cursor-pointer"
+                        styles="size-5 cursor-pointer text-red-600
+                          dark:text-red-500"
                       />
                     </div>
                   </div>
@@ -280,7 +293,10 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
         <span className="hidden md:flex">
           <Tootlip>
             <TooltipTrigger>
-              <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+              <Icon
+                icon={InformationCircleIcon}
+                styles="size-4 text-gray-500 dark:text-gray-400"
+              />
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>Customers can make bookings during this phase</p>
@@ -303,7 +319,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
             buttonText="Add phase"
             type="submit"
           >
-            <PlusIcon styles="size-5 mr-1" />
+            <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
           </Button>
         )}
         {showCancel && (

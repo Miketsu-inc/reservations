@@ -1,4 +1,5 @@
-import { SearchIcon } from "@reservations/assets";
+import { Search01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from ".";
 import Input from "./Input";
 
 export default function SearchInput({
@@ -13,7 +14,7 @@ export default function SearchInput({
         className="pointer-events-none absolute inset-y-0 start-0 flex
           items-center ps-3"
       >
-        <SearchIcon styles="h-4 w-4" />
+        <Icon icon={Search01Icon} styles="size-4" />
       </div>
       <Input
         styles={`p-2 ps-9 w-44 md:w-full text-sm ${styles}`}

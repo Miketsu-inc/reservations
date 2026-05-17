@@ -1,10 +1,11 @@
 import {
-  CalendarIcon,
-  ClockIcon,
-  PersonIcon,
-  PhoneIcon,
-  ServicesIcon,
-} from "@reservations/assets";
+  Calendar02Icon,
+  Call02Icon,
+  Clock01Icon,
+  Note01Icon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   formatToDateString,
@@ -24,30 +25,30 @@ export default function BookingInfoSection({ booking }) {
     >
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
-          <PersonIcon styles="fill-white size-4" />
+          <Icon icon={User03Icon} styles="size-4" />
           <p>{booking.title}</p>
         </div>
         {booking.extendedProps.phone_number && (
           <div className="flex items-center gap-2">
-            <PhoneIcon styles="fill-white size-4" />
+            <Icon icon={Call02Icon} styles="size-4" />
             <p>{booking.extendedProps.phone_number}</p>
           </div>
         )}
       </div>
       <div className="flex justify-between">
         <div className="flex items-center gap-3">
-          <ServicesIcon styles="size-4" />
+          <Icon icon={Note01Icon} styles="size-4" />
           <p className="text-center">{booking.extendedProps.service_name}</p>
         </div>
         {booking.extendedProps.price && <p>{booking.extendedProps.price}</p>}
       </div>
       <div className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-3">
-          <CalendarIcon styles="size-4" />
+          <Icon icon={Calendar02Icon} styles="size-4" />
           <p>{formatToDateString(booking.start)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <ClockIcon styles="fill-white size-4" />
+          <Icon icon={Clock01Icon} styles="text-white size-4" />
           <p className="text-center">
             {`${timeStringFromDate(booking.start, preferences?.time_format)} - ${timeStringFromDate(booking.end, preferences?.time_format)}`}
           </p>

@@ -1,4 +1,5 @@
-import { WarningIcon } from "@reservations/assets";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
+import { Icon } from ".";
 import Button from "./Button";
 import Modal from "./Modal";
 
@@ -8,7 +9,8 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
       <div className="m-2 md:m-4">
         <div className="flex justify-center py-2">
           <div className="flex rounded-full bg-red-200 p-3 dark:bg-red-600">
-            <WarningIcon
+            <Icon
+              icon={Alert02Icon}
               styles="size-8 text-red-600 dark:text-red-200
                 -translate-y-[0.15rem]"
             />

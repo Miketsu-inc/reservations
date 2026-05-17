@@ -1,5 +1,5 @@
-import { SignOutIcon } from "@reservations/assets";
-import { Button, Card, DeleteModal } from "@reservations/components";
+import { Logout05Icon } from "@hugeicons/core-free-icons";
+import { Button, Card, DeleteModal, Icon } from "@reservations/components";
 import { useToast, useWindowSize } from "@reservations/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -85,7 +85,7 @@ function RouteComponent() {
                 className="flex w-full flex-row items-center gap-4 p-2"
                 onClick={logoutHandler}
               >
-                <SignOutIcon styles="size-6" />
+                <Icon icon={Logout05Icon} styles="size-6" />
                 <p>Sign out</p>
               </button>
             </Card>

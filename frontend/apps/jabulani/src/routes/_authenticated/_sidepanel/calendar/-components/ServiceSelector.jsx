@@ -1,5 +1,5 @@
-import { SearchIcon } from "@reservations/assets";
-import { CloseButton, SearchInput } from "@reservations/components";
+import { Search01Icon } from "@hugeicons/core-free-icons";
+import { CloseButton, Icon, SearchInput } from "@reservations/components";
 import { useMemo, useState } from "react";
 import { ServiceCard } from "./BookingCards";
 
@@ -131,7 +131,7 @@ export default function ServiceSelector({
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center justify-start gap-4">
-            <SearchIcon styles="size-15 text-gray-500!" />
+            <Icon icon={Search01Icon} styles="size-15 text-gray-500!" />
             <p className="text-gray-40 dark:text-gray-500">No services found</p>
           </div>
         )}

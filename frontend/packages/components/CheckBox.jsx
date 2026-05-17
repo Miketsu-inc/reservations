@@ -1,4 +1,5 @@
-import { TickIcon } from "@reservations/assets";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { Icon } from ".";
 
 export default function CheckBox({ checked, styles, onChange, ...props }) {
   return (
@@ -12,7 +13,9 @@ export default function CheckBox({ checked, styles, onChange, ...props }) {
           transition-colors dark:border-gray-500`}
         {...props}
       />
-      {checked && <TickIcon styles="absolute size-5 text-white" />}
+      {checked && (
+        <Icon icon={Tick02Icon} styles="absolute size-5 text-white" />
+      )}
     </div>
   );
 }

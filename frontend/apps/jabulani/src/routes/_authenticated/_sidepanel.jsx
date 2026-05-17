@@ -1,20 +1,23 @@
 import {
-  CalendarIcon,
-  ChartIcon,
-  CustomersIcon,
-  DashboardIcon,
-  HamburgerMenuIcon,
-  LinkIcon,
-  MoonIcon,
-  ProductIcon,
-  ServicesIcon,
-  SettingsIcon,
-  SidePanelToggleIcon,
-  SignOutIcon,
-  SunIcon,
-} from "@reservations/assets";
+  Calendar02Icon,
+  Chart03Icon,
+  CorporateIcon,
+  DashboardSquare01Icon,
+  LayoutLeftIcon,
+  Link01Icon,
+  LinkSquare02Icon,
+  Logout05Icon,
+  Menu01Icon,
+  Moon02Icon,
+  Note01Icon,
+  Settings02Icon,
+  ShoppingBag02Icon,
+  Sun03Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
+  Icon,
   Loading,
   Popover,
   PopoverClose,
@@ -87,48 +90,48 @@ function SidePanelLayout() {
     {
       href: "/dashboard",
       label: "Dashboard",
-      icon: <DashboardIcon styles="size-5" />,
+      icon: <Icon icon={DashboardSquare01Icon} styles="size-5" />,
     },
     {
       href: "/calendar",
       label: "Calendar",
-      icon: <CalendarIcon styles="size-5" />,
+      icon: <Icon icon={Calendar02Icon} styles="size-5" />,
     },
     {
       href: "/services",
       label: "Services",
-      icon: <ServicesIcon styles="size-5" />,
+      icon: <Icon icon={Note01Icon} styles="size-5" />,
     },
     {
       href: "/customers",
       label: "Customers",
-      icon: <CustomersIcon styles="size-5" />,
+      icon: <Icon icon={UserGroupIcon} styles="size-5" />,
     },
     {
       href: "/team",
       label: "Team",
-      icon: <CustomersIcon styles="size-5" />,
+      icon: <Icon icon={CorporateIcon} styles="size-5" />,
     },
     {
       href: "/products",
       label: "Products",
-      icon: <ProductIcon styles="size-5" />,
+      icon: <Icon icon={ShoppingBag02Icon} styles="size-5" />,
     },
     {
       href: "/integrations",
       label: "Integrations",
-      icon: <CalendarIcon styles="size-5" />,
+      icon: <Icon icon={Link01Icon} styles="size-5" />,
     },
     {
       href: "#",
       label: "Statistics",
-      icon: <ChartIcon styles="size-5" />,
+      icon: <Icon icon={Chart03Icon} styles="size-5" />,
       isPro: true,
     },
     {
       href: "/settings/profile",
       label: "Settings",
-      icon: <SettingsIcon styles="size-5" />,
+      icon: <Icon icon={Settings02Icon} styles="size-5" />,
     },
   ];
 
@@ -161,7 +164,7 @@ function SidePanelLayout() {
               onClick={() => setIsOpened(true)}
             >
               <span className="sr-only">Open sidepanel</span>
-              <HamburgerMenuIcon styles="size-6" />
+              <Icon icon={Menu01Icon} styles="size-6" />
             </button>
             <div className="flex flex-row gap-4">
               <a
@@ -169,18 +172,20 @@ function SidePanelLayout() {
                   rounded-lg p-2"
                 href="http://reservations.local:3000/m/bwnet"
               >
-                <LinkIcon styles="size-5" />
+                <Icon icon={LinkSquare02Icon} styles="size-5" />
                 <span>Live booking page</span>
               </a>
               <button
                 className="cursor-pointer transition-transform duration-300"
                 onClick={switchTheme}
               >
-                {isDarkTheme ? (
-                  <SunIcon styles="size-5" />
-                ) : (
-                  <MoonIcon styles="size-5" />
-                )}
+                <Icon
+                  icon={Moon02Icon}
+                  altIcon={Sun03Icon}
+                  showAlt={isDarkTheme}
+                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
+                    hover:stroke-text_color"
+                />
               </button>
             </div>
           </div>
@@ -206,24 +211,20 @@ function SidePanelLayout() {
                   rounded-lg p-2"
                 href="http://reservations.local:3000/m/bwnet"
               >
-                <LinkIcon styles="size-5" />
+                <Icon icon={LinkSquare02Icon} styles="size-5" />
                 <span>Live booking page</span>
               </a>
               <button
                 className="cursor-pointer transition-transform duration-300"
                 onClick={switchTheme}
               >
-                {isDarkTheme ? (
-                  <SunIcon
-                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                      hover:stroke-text_color"
-                  />
-                ) : (
-                  <MoonIcon
-                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                      hover:stroke-text_color"
-                  />
-                )}
+                <Icon
+                  icon={Moon02Icon}
+                  altIcon={Sun03Icon}
+                  showAlt={isDarkTheme}
+                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
+                    hover:stroke-text_color"
+                />
               </button>
             </div>
           </div>
@@ -353,7 +354,7 @@ function SidePanelLayout() {
                           setIsCollapsed(!isCollapsed);
                         }}
                       >
-                        <SidePanelToggleIcon styles="size-4 stroke-text_color" />
+                        <Icon icon={LayoutLeftIcon} styles="size-5" />
                         {isCollapsed
                           ? "Expand sidepanel"
                           : "Collapse sidepanel"}
@@ -366,7 +367,7 @@ function SidePanelLayout() {
                         gap-2"
                       onClick={handleLogout}
                     >
-                      <SignOutIcon styles="size-5" />
+                      <Icon icon={Logout05Icon} styles="size-5" />
                       Sign out
                     </button>
                   </div>

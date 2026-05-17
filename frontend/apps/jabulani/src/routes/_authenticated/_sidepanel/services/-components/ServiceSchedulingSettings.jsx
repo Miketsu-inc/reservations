@@ -1,5 +1,5 @@
-import { BackArrowIcon, CalendarIcon } from "@reservations/assets";
-import { Card, Select, Switch } from "@reservations/components";
+import { ArrowLeft01Icon, Calendar02Icon } from "@hugeicons/core-free-icons";
+import { Card, Icon, Select, Switch } from "@reservations/components";
 import {
   BOOKING_WINDOW_MAX_OPTIONS,
   BOOKING_WINDOW_MIN_OPTIONS,
@@ -41,7 +41,7 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           cursor-pointer items-center justify-between p-4`}
       >
         <div className="flex items-center justify-center gap-2">
-          <CalendarIcon styles="size-6 mb-0.5 text-text_color" />
+          <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-text_color" />
           <p className="text-lg">Scheduling</p>
         </div>
         <button
@@ -49,8 +49,9 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           onClick={() => setIsOpen(!isOpen)}
           className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
         >
-          <BackArrowIcon
-            styles={`size-6 stroke-text_color transition-transform
+          <Icon
+            icon={ArrowLeft01Icon}
+            styles={`size-6 text-text_color transition-transform
               ${isOpen ? "rotate-90" : "-rotate-90"}`}
           />
         </button>

@@ -1,4 +1,5 @@
-import { MessageIcon } from "@reservations/assets";
+import { Message01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useEffect, useRef, useState } from "react";
 
 export default function ExpandableNote({ text }) {
@@ -29,9 +30,9 @@ export default function ExpandableNote({ text }) {
           className="text-text_color/70 flex w-full items-start justify-start
             gap-3 pr-2 sm:pr-4"
         >
-          <MessageIcon
-            styles="size-4 shrink-0 mt-1 stroke-text_color/50
-              fill-text_color/50"
+          <Icon
+            icon={Message01Icon}
+            styles="size-4 shrink-0 mt-1 text-text_color/50"
           />
 
           {showFullNote ? (

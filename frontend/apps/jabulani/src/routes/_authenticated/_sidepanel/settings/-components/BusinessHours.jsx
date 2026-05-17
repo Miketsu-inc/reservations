@@ -1,5 +1,5 @@
-import { PlusIcon, TrashBinIcon } from "@reservations/assets";
-import { Select, Switch } from "@reservations/components";
+import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import { Icon, Select, Switch } from "@reservations/components";
 import { GenerateTimeOptions } from "@reservations/lib";
 
 const days = {
@@ -157,7 +157,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                         transition-colors`}
                       disabled={day.timeSlots.length >= 2}
                     >
-                      <PlusIcon styles="size-4" />
+                      <Icon icon={PlusSignIcon} styles="size-4" />
                     </button>
                   ) : (
                     <button
@@ -165,7 +165,10 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                       className="border-text_color cursor-pointer rounded-full
                         border p-1"
                     >
-                      <TrashBinIcon styles="size-4" />
+                      <Icon
+                        icon={Delete02Icon}
+                        styles="size-4 text-red-600 dark:text-red-500"
+                      />
                     </button>
                   )}
                 </div>

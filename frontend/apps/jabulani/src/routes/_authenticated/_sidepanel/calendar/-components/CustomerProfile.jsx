@@ -1,11 +1,11 @@
 import {
-  CakeIcon,
-  EnvelopeIcon,
-  MessageIcon,
-  PersonIcon,
-  PhoneIcon,
-} from "@reservations/assets";
-import { Avatar, Button } from "@reservations/components";
+  BirthdayCakeIcon,
+  Call02Icon,
+  Mail01Icon,
+  Message01Icon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
+import { Avatar, Button, Icon } from "@reservations/components";
 import { Link } from "@tanstack/react-router";
 
 function formatBirthday(datestr) {
@@ -46,16 +46,13 @@ export default function CustomerProfile({
           <div className="flex w-full flex-col items-center gap-2">
             {customer.email && (
               <div className="flex items-center gap-3 text-sm">
-                <EnvelopeIcon styles="size-5 text-text_color/70" />
-
+                <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
                 <span className="truncate">{customer.email}</span>
               </div>
             )}
             {customer.phone_number && (
               <div className="flex items-center gap-3 text-sm">
-                <PhoneIcon
-                  styles="size-4 fill-text_color/70 stroke-text_color/10"
-                />
+                <Icon icon={Call02Icon} styles="size-4 text-text_color/70" />
 
                 <span>{customer.phone_number}</span>
               </div>
@@ -87,13 +84,13 @@ export default function CustomerProfile({
       <div className="flex w-full flex-col justify-start gap-3 px-8">
         {customer.birthday && (
           <div className="flex items-center gap-3 text-sm">
-            <CakeIcon styles="size-5 text-text_color/70" />
+            <Icon icon={BirthdayCakeIcon} styles="size-5 text-text_color/70" />
             <span>{formatBirthday(customer.birthday)}</span>
           </div>
         )}
         {customer.last_visited && (
           <div className="flex items-center gap-3 text-sm">
-            <PersonIcon styles="size-5 fill-text_color/70" />
+            <Icon icon={User03Icon} styles="size-5 text-text_color/70" />
 
             <span className="">
               Last visited: {formatBirthday(customer.last_visited)}
@@ -107,7 +104,7 @@ export default function CustomerProfile({
             className="rounded-md bg-gray-200/30 px-4 py-4 dark:bg-gray-500/5"
           >
             <div className="mb-2 flex items-center gap-3">
-              <MessageIcon styles="size-4 mt-1 fill-text_color" />
+              <Icon icon={Message01Icon} styles="size-4 mt-1 fill-text_color" />
               <span className="text-sm font-medium">
                 Note from {customer.first_name}
               </span>

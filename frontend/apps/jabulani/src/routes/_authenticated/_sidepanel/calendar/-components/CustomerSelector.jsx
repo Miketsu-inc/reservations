@@ -1,8 +1,9 @@
-import { PlusIcon, WalkingIcon } from "@reservations/assets"; // Make sure you have a CheckIcon
+import { PlusSignIcon, WalkingIcon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Button,
   CheckBox,
+  Icon,
   SearchInput,
 } from "@reservations/components";
 import { useState } from "react";
@@ -76,7 +77,7 @@ export default function CustomerSelector({
           <CustomerRow
             variant="action"
             label="Add new client"
-            icon={<PlusIcon styles="size-6" />}
+            icon={<Icon icon={PlusSignIcon} styles="size-6" />}
             onClick={() => setIsAddNewOpen(true)}
           />
           <NewCustomerOverlay
@@ -85,11 +86,10 @@ export default function CustomerSelector({
             isWindowSmall={isWindowSmall}
             isOpen={isAddNewOpen}
           />
-
           <CustomerRow
             variant="action"
             label="Walk-In"
-            icon={<WalkingIcon styles="size-6" />}
+            icon={<Icon icon={WalkingIcon} styles="size-6" />}
             onClick={() => onSave([])}
           />
         </ul>

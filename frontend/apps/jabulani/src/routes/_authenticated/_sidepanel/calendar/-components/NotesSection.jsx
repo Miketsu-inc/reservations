@@ -1,4 +1,5 @@
-import { BackArrowIcon, MessageIcon } from "@reservations/assets";
+import { ArrowLeft01Icon, Message01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useState } from "react";
 
 export default function NotesSection({
@@ -14,7 +15,7 @@ export default function NotesSection({
       <div className="bg-secondary rounded-lg border border-gray-400 px-3 py-2">
         <div className="flex w-full flex-row items-center">
           <div className="text-text_color flex items-center gap-2 text-sm">
-            <MessageIcon styles="fill-text_color size-4" />
+            <Icon icon={Message01Icon} styles="fill-text_color size-4" />
             <span>Notes</span>
           </div>
           <button
@@ -22,9 +23,10 @@ export default function NotesSection({
             className="flex grow cursor-pointer justify-end"
             onClick={() => setAreNotesHidden(!areNotesHidden)}
           >
-            <BackArrowIcon
+            <Icon
+              icon={ArrowLeft01Icon}
               styles={`${areNotesHidden ? "-rotate-90" : "rotate-90"} size-5
-                stroke-text_color transition-transform duration-200`}
+                text-text_color transition-transform duration-200`}
             />
           </button>
         </div>

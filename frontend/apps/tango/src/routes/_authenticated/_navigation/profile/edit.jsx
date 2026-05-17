@@ -1,7 +1,8 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
+  Icon,
   Input,
   Loading,
   ServerError,
@@ -77,7 +78,7 @@ function RouteComponent() {
         <div className="flex flex-row items-center gap-4 pt-4 pb-8">
           {!isWindowSmall && (
             <Link from={Route.fullPath} to="..">
-              <BackArrowIcon styles="size-7 stroke-text_color" />
+              <Icon icon={ArrowLeft01Icon} styles="size-7 text-text_color" />
             </Link>
           )}
           <p className="text-2xl">Edit profile</p>

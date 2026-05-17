@@ -1,8 +1,9 @@
-import { InfoIcon } from "@reservations/assets";
+import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
   DeleteModal,
+  Icon,
   Input,
   Select,
   Switch,
@@ -226,9 +227,10 @@ export default function GroupServicePage({
                           <span className="hidden items-center md:flex">
                             <Tootlip>
                               <TooltipTrigger type="button">
-                                <InfoIcon
-                                  styles="size-4 stroke-gray-500
-                                    dark:stroke-gray-400"
+                                <Icon
+                                  icon={InformationCircleIcon}
+                                  styles="size-4 text-gray-500
+                                    dark:text-gray-400"
                                 />
                               </TooltipTrigger>
                               <TooltipContent side="right">
@@ -309,8 +311,10 @@ export default function GroupServicePage({
                       <label className="flex w-auto flex-col">
                         <div className="flex items-center gap-2 pb-1">
                           <span className="text-sm">Price Note</span>
-                          <InfoIcon styles="size-4 stroke-gray-500
-                            dark:stroke-gray-400" />
+                          <Icon
+                            icon={InformationCircleIcon}
+                            styles="size-4 text-gray-500 dark:text-gray-400"
+                          />
                         </div>
                         <Select
                           value={serviceData.price_type}

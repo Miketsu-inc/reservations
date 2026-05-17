@@ -1,4 +1,5 @@
-import { CalendarIcon, ClockIcon } from "@reservations/assets";
+import { Calendar02Icon, Clock01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { preferencesQueryOptions, timeStringFromDate } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
@@ -59,11 +60,17 @@ export default function BookingItem({ booking, customerName }) {
           dark:text-gray-400"
       >
         <span className="flex items-center gap-2">
-          <CalendarIcon styles="size-4 text-gray-500 dark:text-gray-400" />
+          <Icon
+            icon={Calendar02Icon}
+            styles="size-4 text-gray-500 dark:text-gray-400"
+          />
           <span className="mt-0.5 text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
         </span>
         <span className="flex items-center gap-2">
-          <ClockIcon styles="size-4 fill-gray-500 dark:fill-gray-400" />
+          <Icon
+            icon={Clock01Icon}
+            styles="size-4 text-gray-500 dark:text-gray-400"
+          />
           <span className="mt-0.5 text-sm">{`${timeStringFromDate(new Date(booking.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(booking.to_date), preferences?.time_format)}`}</span>
         </span>
       </div>

@@ -1,5 +1,9 @@
-import { ClockIcon, MapPinIcon, WarningIcon } from "@reservations/assets";
-import { Button, Loading, ServerError } from "@reservations/components";
+import {
+  Alert02Icon,
+  Clock01Icon,
+  Location01Icon,
+} from "@hugeicons/core-free-icons";
+import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import { getDisplayPrice, timeStringFromDate } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -150,7 +154,7 @@ function CancelPage() {
             sm:mt-0 sm:mb-2 dark:border-yellow-800 dark:bg-yellow-700/15
             dark:text-yellow-500"
         >
-          <WarningIcon styles="h-5 w-5 shrink-0" />
+          <Icon icon={Alert02Icon} styles="size-5 shrink-0" />
 
           <span className="text-sm">{cancelMessage}</span>
         </div>
@@ -173,7 +177,10 @@ function CancelPage() {
               {bookingData.merchant_name}
             </p>
             <div className="flex items-center gap-2">
-              <ClockIcon styles="w-4 h-4 dark:fill-gray-400 fill-gray-500" />
+              <Icon
+                icon={Clock01Icon}
+                styles="size-4 dark:text-gray-400 text-gray-500"
+              />
               <span className="font-medium text-gray-500 dark:text-gray-400">
                 {`${timeStringFromDate(
                   new Date(bookingData.from_date)
@@ -197,7 +204,10 @@ function CancelPage() {
             sm:p-4 sm:shadow-sm"
         >
           <div className="mb-1 flex items-center gap-2">
-            <MapPinIcon styles="w-4 h-4 dark:text-blue-400 text-blue-600" />
+            <Icon
+              icon={Location01Icon}
+              styles="size-4 dark:text-blue-400 text-blue-600"
+            />
             <span className="text-text_color text-xs font-semibold">
               LOCATION
             </span>

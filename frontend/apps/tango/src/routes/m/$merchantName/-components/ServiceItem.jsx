@@ -1,4 +1,5 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { formatDuration, getDisplayPrice } from "@reservations/lib";
 import { Link } from "@tanstack/react-router";
 
@@ -35,8 +36,9 @@ export default function ServiceItem({ children, service, router, locationId }) {
                 dark:text-gray-300"
             >
               See service details
-              <BackArrowIcon
-                styles="size-4 rotate-180 stroke-gray-700 dark:stroke-gray-300"
+              <Icon
+                icon={ArrowLeft01Icon}
+                styles="size-4 rotate-180 text-gray-700 dark:text-gray-300"
               />
             </Link>
           </div>

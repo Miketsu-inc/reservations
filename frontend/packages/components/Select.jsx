@@ -1,5 +1,6 @@
-import { BackArrowIcon, TickIcon } from "@reservations/assets";
+import { ArrowLeft01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
+import { Icon } from ".";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 34;
@@ -141,10 +142,10 @@ export default function Select({
                   selectedOption.label
                 )}
               </span>
-              <BackArrowIcon
-                styles={`stroke-gray-700 dark:stroke-gray-300
-                  transition-transform -rotate-90 shrink-0
-                  ${isOpen ? "rotate-90" : ""} size-5`}
+              <Icon
+                icon={ArrowLeft01Icon}
+                styles={`text-gray-700 dark:text-gray-300 transition-transform
+                  -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} size-6`}
               />
             </div>
           </button>
@@ -210,7 +211,10 @@ export default function Select({
                       <span className="truncate">{option.label}</span>
                     </div>
                     {isSelected && (
-                      <TickIcon styles="h-6 w-6 fill-text_color shrink-0" />
+                      <Icon
+                        icon={Tick02Icon}
+                        styles="size-6 text-text_color shrink-0"
+                      />
                     )}
                   </div>
                 </li>

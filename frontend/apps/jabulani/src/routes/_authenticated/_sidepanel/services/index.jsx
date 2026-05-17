@@ -1,7 +1,8 @@
-import { PlusIcon } from "@reservations/assets";
+import { PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
   DeleteModal,
+  Icon,
   Loading,
   Popover,
   PopoverContent,
@@ -257,7 +258,7 @@ function ServicesPage() {
             <Popover>
               <PopoverTrigger asChild>
                 <Button styles="p-2" variant="primary">
-                  <PlusIcon styles="size-6" />
+                  <Icon icon={PlusSignIcon} styles="size-6" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end">
@@ -288,7 +289,7 @@ function ServicesPage() {
                 buttonText="New category"
                 onClick={() => setShowAddCategoryModal(true)}
               >
-                <PlusIcon styles="size-5 mr-1" />
+                <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
               </Button>
               <Popover>
                 <PopoverTrigger asChild>
@@ -297,7 +298,7 @@ function ServicesPage() {
                     variant="primary"
                     buttonText="New service"
                   >
-                    <PlusIcon styles="size-5 mr-1" />
+                    <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent>

@@ -1,4 +1,5 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 
 export default function NestedSidePanel({ onBack, isOpen, children, styles }) {
   return (
@@ -13,7 +14,7 @@ export default function NestedSidePanel({ onBack, isOpen, children, styles }) {
         type="button"
         onClick={onBack}
       >
-        <BackArrowIcon styles={`${styles} stroke-text_color`} />
+        <Icon icon={ArrowLeft01Icon} styles={`${styles} text-text_color`} />
       </button>
       <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
     </div>

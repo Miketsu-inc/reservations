@@ -1,6 +1,7 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
+  Icon,
   Loading,
   ServerError,
   SmallCalendar,
@@ -311,7 +312,7 @@ function SelectDateTime() {
       <div className="py-5">
         <Link from={Route.fullPath} to="..">
           <button className="inline-flex cursor-pointer gap-1 hover:underline">
-            <BackArrowIcon styles="size-6 stroke-gray-500" />
+            <Icon icon={ArrowLeft01Icon} styles="size-6 text-gray-500" />
             Back
           </button>
         </Link>

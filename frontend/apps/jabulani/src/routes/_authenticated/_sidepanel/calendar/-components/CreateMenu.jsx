@@ -1,6 +1,7 @@
-import { CalendarPlusIcon, PlusIcon } from "@reservations/assets";
+import { CalendarAdd01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
+  Icon,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -30,7 +31,8 @@ export default function CreateMenu({
             } `}
           buttonText={isFloating ? "" : "Create"}
         >
-          <PlusIcon
+          <Icon
+            icon={PlusSignIcon}
             styles={isFloating ? "size-7 text-white" : "size-4 mr-2 text-white"}
           />
         </Button>
@@ -48,7 +50,7 @@ export default function CreateMenu({
             }}
             className="flex cursor-pointer items-center gap-2 text-left"
           >
-            <CalendarPlusIcon styles="size-6" /> Booking
+            <Icon icon={CalendarAdd01Icon} styles="size-6" /> Booking
           </button>
           <button
             onClick={() => {

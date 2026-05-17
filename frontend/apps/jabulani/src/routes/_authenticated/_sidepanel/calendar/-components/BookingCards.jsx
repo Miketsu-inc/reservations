@@ -1,19 +1,20 @@
 import {
-  BackArrowIcon,
-  ClockIcon,
-  CustomersIcon,
-  EnvelopeIcon,
-  MessageIcon,
-  PersonIcon,
-  PhoneIcon,
-  PlusIcon,
-  RefreshIcon,
-  ThreeDotsIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  ArrowLeft01Icon,
+  ArrowReloadHorizontalIcon,
+  Call02Icon,
+  Clock01Icon,
+  Delete02Icon,
+  Mail01Icon,
+  Message01Icon,
+  MoreVerticalIcon,
+  PlusSignIcon,
+  User03Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Card,
+  Icon,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -72,7 +73,8 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
       )}
 
       {hasParticipants ? (
-        <BackArrowIcon
+        <Icon
+          icon={ArrowLeft01Icon}
           styles="size-6 rotate-180 stroke-current text-gray-500
             dark:text-gray-400"
         />
@@ -81,7 +83,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
           className="bg-primary/20 flex size-12 shrink-0 items-center
             justify-center rounded-full"
         >
-          <PlusIcon styles="size-6 text-primary" />
+          <Icon icon={PlusSignIcon} styles="size-6 text-primary" />
         </div>
       )}
     </button>
@@ -113,7 +115,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
               <div
                 className="text-text_color/70 flex items-center gap-2 text-sm"
               >
-                <EnvelopeIcon styles="size-4 text-text_color/70" />
+                <Icon icon={Mail01Icon} styles="size-4 text-text_color/70" />
 
                 <span className="truncate">{customer.email}</span>
               </div>
@@ -122,9 +124,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
               <div
                 className="text-text_color/70 flex items-center gap-2 text-sm"
               >
-                <PhoneIcon
-                  styles="size-3.5 fill-text_color/70 stroke-text_color/10"
-                />
+                <Icon icon={Call02Icon} styles="size-3.5 text-text_color/70" />
 
                 <span>{customer.phone_number}</span>
               </div>
@@ -138,7 +138,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
             items-center gap-2 rounded-full bg-yellow-300 p-1 text-xs ring-2
             dark:bg-yellow-700"
         >
-          <MessageIcon styles="size-3 fill-yellow-700 dark:fill-yellow-300" />
+          <Icon
+            icon={Message01Icon}
+            styles="size-3 fill-yellow-700 dark:fill-yellow-300"
+          />
         </button>
       )}
       <Popover>
@@ -147,9 +150,9 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
             className="hover:bg-hvr_gray hover:*:stroke-text_color absolute
               top-4 right-3 h-fit cursor-pointer rounded-lg p-1"
           >
-            <ThreeDotsIcon
-              styles="size-6 stroke-4 stroke-gray-600 dark:stroke-gray-500
-                rotate-90"
+            <Icon
+              icon={MoreVerticalIcon}
+              styles="size-6 text-gray-600 dark:text-gray-500"
             />
           </button>
         </PopoverTrigger>
@@ -163,7 +166,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
                 className="hover:bg-hvr_gray cursor-pointer gap-3"
                 onClick={onView}
               >
-                <PersonIcon styles="size-5 ml-1 fill-text_color" />
+                <Icon icon={User03Icon} styles="size-5 ml-1 text-text_color" />
                 View Customer
               </button>
             </PopoverClose>
@@ -174,7 +177,8 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
                     text-yellow-600 dark:text-yellow-500"
                   onClick={onView}
                 >
-                  <MessageIcon
+                  <Icon
+                    icon={Message01Icon}
                     styles="size-4 ml-1 mt-0.5 fill-yellow-600
                       dark:fill-yellow-500"
                   />
@@ -188,7 +192,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
                   href={`tel:${customer.phone_number}`}
                 >
-                  <PhoneIcon styles="size-4 ml-1 fill-text_color" />
+                  <Icon
+                    icon={Call02Icon}
+                    styles="size-4 ml-1 text-text_color"
+                  />
                   Call customer
                 </a>
               </PopoverClose>
@@ -199,7 +206,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
                   href={`mailto:${customer.email}`}
                 >
-                  <EnvelopeIcon styles="size-4 ml-1 text-text_color" />
+                  <Icon
+                    icon={Mail01Icon}
+                    styles="size-4 ml-1 text-text_color"
+                  />
                   Email customer
                 </a>
               </PopoverClose>
@@ -210,7 +220,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
                   onClick={onRemove}
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
                 >
-                  <TrashBinIcon styles="size-5 mb-0.5" />
+                  <Icon
+                    icon={Delete02Icon}
+                    styles="size-5 mb-0.5 text-red-600 dark:text-red-500"
+                  />
                   <p className="text-red-600 dark:text-red-500">
                     Remove customer
                   </p>
@@ -251,7 +264,10 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
             dark:text-gray-400"
         >
           <div className="flex items-center gap-1.5 font-medium">
-            <ClockIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+            <Icon
+              icon={Clock01Icon}
+              styles="size-4 text-gray-500 dark:text-gray-400"
+            />
             <span>{formatDuration(service.duration)}</span>
           </div>
 
@@ -260,7 +276,7 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
               className="flex items-center gap-1.5 font-medium text-gray-500
                 dark:text-gray-400"
             >
-              <CustomersIcon styles="size-5" />
+              <Icon icon={UserGroupIcon} styles="size-5" />
               <span>Max {service.max_participants}</span>
             </div>
           )}
@@ -296,7 +312,7 @@ export function AddCustomerCard({ onClick }) {
           className="bg-primary/20 text-primary flex size-12 items-center
             justify-center rounded-full"
         >
-          <PlusIcon styles="size-6" />
+          <Icon icon={PlusSignIcon} styles="size-6" />
         </div>
       </button>
     </Card>
@@ -329,7 +345,10 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
     >
       <div className="flex flex-col items-start gap-1">
         <div className="flex items-center gap-2">
-          <RefreshIcon styles="size-5 text-text_color/80 mt-0.5" />
+          <Icon
+            icon={ArrowReloadHorizontalIcon}
+            styles="size-5 text-text_color/80 mt-0.5"
+          />
           <span className="text-text_color">
             {recurData.isRecurring
               ? `Repeats ${getFrequencyText()}`
@@ -367,7 +386,8 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
         )}
       </div>
 
-      <BackArrowIcon
+      <Icon
+        icon={ArrowLeft01Icon}
         styles="size-6 rotate-180 stroke-current text-gray-500
           dark:text-gray-400"
       />

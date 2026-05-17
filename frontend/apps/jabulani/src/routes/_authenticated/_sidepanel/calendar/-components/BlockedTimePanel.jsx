@@ -1,8 +1,13 @@
-import { EditIcon, PlusIcon, TrashBinIcon } from "@reservations/assets";
+import {
+  Delete02Icon,
+  Edit03Icon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   CloseButton,
   DatePicker,
+  Icon,
   Input,
   Select,
   Switch,
@@ -410,7 +415,10 @@ export default function BlockedTimePanel({
             type="button"
             onClick={() => handleDelete(formData)}
           >
-            <TrashBinIcon styles="size-6" />
+            <Icon
+              icon={Delete02Icon}
+              styles="size-6 text-red-600 dark:text-red-500"
+            />
           </Button>
         )}
         <div className="flex flex-1 justify-end gap-3">
@@ -475,7 +483,7 @@ function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
                 : "border-border_color hover:border-gray-400"
             } `}
         >
-          <EditIcon styles="size-7 mt-3" />
+          <Icon icon={Edit03Icon} styles="size-7 mt-3" />
 
           <div className="text-center">
             <div className="text-sm font-medium">Custom</div>
@@ -495,7 +503,7 @@ function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
               className="bg-primary/20 text-primary flex size-12 items-center
                 justify-center rounded-full"
             >
-              <PlusIcon styles="size-6" />
+              <Icon icon={PlusSignIcon} styles="size-6" />
             </div>
             <div
               className="text-sm font-medium text-gray-500 dark:text-gray-400"

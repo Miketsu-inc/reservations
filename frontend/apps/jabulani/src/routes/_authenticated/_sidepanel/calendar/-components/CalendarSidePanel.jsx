@@ -1,5 +1,5 @@
-import { XIcon } from "@reservations/assets";
-import { ServerError } from "@reservations/components";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Icon, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
@@ -142,7 +142,7 @@ export default function CalendarSidePanel({
               hover:scale-110"
             aria-label="Close panel"
           >
-            <XIcon styles="size-7 fill-text_color" />
+            <Icon icon={Cancel01Icon} styles="size-7 fill-text_color" />
           </button>
         )}
         <div

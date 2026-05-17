@@ -1,5 +1,15 @@
-import { CalendarIcon, ClockIcon, MapPinIcon } from "@reservations/assets";
-import { Button, Card, Loading, ServerError } from "@reservations/components";
+import {
+  Calendar02Icon,
+  Clock01Icon,
+  Location01Icon,
+} from "@hugeicons/core-free-icons";
+import {
+  Button,
+  Card,
+  Icon,
+  Loading,
+  ServerError,
+} from "@reservations/components";
 import {
   formatDuration,
   getDisplayPrice,
@@ -192,7 +202,7 @@ function ServiceDetailsPage() {
                     ${windowSize === "sm" ? "flex-col gap-3" : "gap-2"}`}
                 >
                   <div className="flex items-center justify-start gap-2">
-                    <ClockIcon styles="size-4 fill-text_color" />
+                    <Icon icon={Clock01Icon} styles="size-4 text-text_color" />
                     {formatDuration(serviceDetails.total_duration)}
                   </div>
                   {windowSize === "sm" ? "" : "•"}
@@ -240,7 +250,7 @@ function ServiceDetailsPage() {
             )}
             <div className="flex flex-col gap-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
-                <MapPinIcon styles="size-5" />
+                <Icon icon={Location01Icon} styles="size-5" />
                 Location
               </h2>
               <div className="flex flex-col gap-2">
@@ -288,7 +298,7 @@ function NextAvailable({
         items-center gap-5 rounded-xl md:shadow-sm lg:gap-6 lg:border lg:p-6"
     >
       <div className="flex w-full items-center gap-2">
-        <CalendarIcon styles="size-6 mb-0.5 text-text_color" />
+        <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-text_color" />
         <h2 className="text-text_color text-lg font-semibold">
           Next Available
         </h2>

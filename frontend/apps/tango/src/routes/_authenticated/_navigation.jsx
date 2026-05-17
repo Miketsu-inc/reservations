@@ -1,16 +1,18 @@
 import {
-  BackArrowIcon,
-  CalendarIcon,
-  CustomersIcon,
-  DashboardIcon,
-  MoonIcon,
-  SearchIcon,
-  SettingsIcon,
-  SignOutIcon,
-  SunIcon,
-} from "@reservations/assets";
+  ArrowLeft02Icon,
+  Calendar02Icon,
+  FavouriteIcon,
+  Home07Icon,
+  Logout05Icon,
+  Moon02Icon,
+  Search01Icon,
+  Settings02Icon,
+  Sun03Icon,
+  UserCircleIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
+  Icon,
   Loading,
   Popover,
   PopoverContent,
@@ -63,27 +65,27 @@ function NavLayout() {
     {
       href: "/home",
       label: "Home",
-      icon: <DashboardIcon styles="size-5" />,
+      icon: <Icon icon={Home07Icon} styles="size-5" />,
     },
     {
       href: "/profile",
       label: "Profile",
-      icon: <CalendarIcon styles="size-5" />,
+      icon: <Icon icon={UserCircleIcon} styles="size-5" />,
     },
     {
       href: "/bookings",
       label: "Bookings",
-      icon: <CalendarIcon styles="size-5" />,
+      icon: <Icon icon={Calendar02Icon} styles="size-5" />,
     },
     {
       href: "/favorites",
       label: "Favorites",
-      icon: <CustomersIcon styles="size-5" />,
+      icon: <Icon icon={FavouriteIcon} styles="size-5" />,
     },
     {
       href: "/settings",
       label: "Settings",
-      icon: <SettingsIcon styles="size-5" />,
+      icon: <Icon icon={Settings02Icon} styles="size-5" />,
     },
   ];
 
@@ -97,7 +99,7 @@ function NavLayout() {
         <div className="sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center px-4 py-4">
             <Link to=".." className="cursor-pointer">
-              <BackArrowIcon styles="size-6 stroke-text_color" />
+              <Icon icon={ArrowLeft02Icon} styles="size-6" />
             </Link>
           </div>
         </div>
@@ -120,17 +122,13 @@ function NavLayout() {
                 className="cursor-pointer transition-transform duration-300"
                 onClick={switchTheme}
               >
-                {isDarkTheme ? (
-                  <SunIcon
-                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                      hover:stroke-text_color"
-                  />
-                ) : (
-                  <MoonIcon
-                    styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                      hover:stroke-text_color"
-                  />
-                )}
+                <Icon
+                  icon={Moon02Icon}
+                  altIcon={Sun03Icon}
+                  showAlt={isDarkTheme}
+                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
+                    hover:stroke-text_color"
+                />
               </button>
             </div>
           </div>
@@ -222,7 +220,7 @@ function NavLayout() {
                           gap-2"
                         onClick={handleLogout}
                       >
-                        <SignOutIcon styles="size-5" />
+                        <Icon icon={Logout05Icon} styles="size-5" />
                         Sign out
                       </button>
                     </div>
@@ -258,11 +256,11 @@ function NavLayout() {
               grid-cols-[1fr_1fr_auto_1fr_1fr] items-center p-2"
           >
             <MobileNavLink from={Route.fullPath} to="/home">
-              <DashboardIcon styles="size-8" />
+              <Icon icon={Home07Icon} styles="size-8" />
               <p className="text-sm">Home</p>
             </MobileNavLink>
             <MobileNavLink from={Route.fullPath} to="/bookings">
-              <CalendarIcon styles="size-8" />
+              <Icon icon={Calendar02Icon} styles="size-8" />
               <p className="text-sm">Bookings</p>
             </MobileNavLink>
             <div className="relative flex w-9 justify-center">
@@ -270,11 +268,11 @@ function NavLayout() {
                 className="bg-primary border-bg_color absolute -top-16 flex
                   size-18 items-center justify-center rounded-full border-4"
               >
-                <SearchIcon styles="size-8 text-white" />
+                <Icon icon={Search01Icon} styles="size-8" />
               </button>
             </div>
             <MobileNavLink from={Route.fullPath} to="/favorites">
-              <DashboardIcon styles="size-8" />
+              <Icon icon={FavouriteIcon} styles="size-8" />
               <p className="text-sm">Favorites</p>
             </MobileNavLink>
             <MobileNavLink from={Route.fullPath} to="/profile">

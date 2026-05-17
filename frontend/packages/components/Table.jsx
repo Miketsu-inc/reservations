@@ -1,4 +1,4 @@
-import { ExportIcon, PlusIcon } from "@reservations/assets";
+import { Download01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { useWindowSize } from "@reservations/lib";
 import {
   CellStyleModule,
@@ -11,6 +11,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useRef, useState } from "react";
+import { Icon } from ".";
 import Button from "./Button";
 import SearchInput from "./SearchInput";
 
@@ -68,7 +69,10 @@ export default function Table({
             buttonText={windowSize != "sm" ? "Export" : ""}
             onClick={onBtnExport}
           >
-            <ExportIcon styles="text-text_color md:mr-2 md:mb-0.5 size-5" />
+            <Icon
+              icon={Download01Icon}
+              styles="text-text_color md:mr-2 md:mb-0.5 size-5"
+            />
           </Button>
         </div>
         {showControls && (
@@ -85,7 +89,10 @@ export default function Table({
               styles="p-2 text-sm w-fit"
               buttonText={`New ${itemName}`}
             >
-              <PlusIcon styles="size-4 md:size-5 mr-1 text-white" />
+              <Icon
+                icon={PlusSignIcon}
+                styles="size-4 md:size-5 mr-1 text-white"
+              />
             </Button>
           </div>
         )}

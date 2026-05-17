@@ -1,4 +1,5 @@
-import { HourGlassIcon, ServicesIcon } from "@reservations/assets";
+import { HourglassIcon, Note01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { formatDuration } from "@reservations/lib";
 
 export default function PhaseItem({ phase, isLast }) {
@@ -14,9 +15,9 @@ export default function PhaseItem({ phase, isLast }) {
             }`}
         >
           {phase.phase_type === "wait" ? (
-            <HourGlassIcon styles="size-5 stroke-yellow-500" />
+            <Icon icon={HourglassIcon} styles="size-5 text-yellow-500" />
           ) : (
-            <ServicesIcon styles="size-5 text-secondary" />
+            <Icon icon={Note01Icon} styles="size-5 text-secondary" />
           )}
         </div>
 
@@ -43,7 +44,7 @@ export default function PhaseItem({ phase, isLast }) {
 
       {!isLast && (
         <div
-          className="absolute -bottom-[29px] left-[19px] h-5 w-[2px] bg-gray-400
+          className="absolute -bottom-7.25 left-4.25 h-5 w-0.5 bg-gray-400
             dark:bg-gray-300"
         />
       )}

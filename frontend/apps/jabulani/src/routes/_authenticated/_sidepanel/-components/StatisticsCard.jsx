@@ -1,6 +1,7 @@
-import { InfoIcon } from "@reservations/assets";
+import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import {
   Card,
+  Icon,
   TooltipContent,
   TooltipTrigger,
   Tootlip,
@@ -22,7 +23,10 @@ export default function StatisticsCard({
           {tooltip && (
             <Tootlip>
               <TooltipTrigger>
-                <InfoIcon styles="size-4 stroke-gray-500 dark:stroke-gray-400" />
+                <Icon
+                  icon={InformationCircleIcon}
+                  styles="size-4 text-gray-500 dark:text-gray-400"
+                />
               </TooltipTrigger>
               <TooltipContent>
                 <p>{tooltipText}</p>

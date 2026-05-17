@@ -1,5 +1,5 @@
-import { BackArrowIcon } from "@reservations/assets";
-import { Card, Switch } from "@reservations/components";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Card, Icon, Switch } from "@reservations/components";
 import { useState } from "react";
 
 const approvalOptions = [
@@ -53,8 +53,9 @@ export default function BookingApprovalSetting({ onUpdate, settings }) {
           onClick={() => setIsOpen(!isOpen)}
           className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
         >
-          <BackArrowIcon
-            styles={`size-6 stroke-text_color transition-transform
+          <Icon
+            icon={ArrowLeft01Icon}
+            styles={`size-6 text-text_color transition-transform
               ${isOpen ? "rotate-90" : "-rotate-90"}`}
           />
         </button>

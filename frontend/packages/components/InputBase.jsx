@@ -1,6 +1,7 @@
-import { EyeIcon, EyeSlashIcon } from "@reservations/assets";
+import { ViewIcon, ViewOffSlashIcon } from "@hugeicons/core-free-icons";
 import { useAutofill } from "@reservations/lib";
 import { useRef, useState } from "react";
+import { Icon } from ".";
 
 export default function InputBase({
   id,
@@ -54,7 +55,7 @@ export default function InputBase({
             }
           }}
         >
-          {visible ? <EyeSlashIcon /> : <EyeIcon />}
+          <Icon icon={ViewIcon} altIcon={ViewOffSlashIcon} showAlt={visible} />
         </button>
       ) : (
         <></>

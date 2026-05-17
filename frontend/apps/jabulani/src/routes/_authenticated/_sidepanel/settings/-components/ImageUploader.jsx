@@ -1,4 +1,5 @@
-import { TrashBinIcon, UploadIcon } from "@reservations/assets";
+import { Delete02Icon, FileImageIcon } from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import { useRef, useState } from "react";
 
 export default function ImageUploader({
@@ -84,12 +85,18 @@ export default function ImageUploader({
               text-white transition-colors sm:hidden sm:group-hover:block
               dark:bg-gray-600"
           >
-            <TrashBinIcon styles="size-6" />
+            <Icon
+              icon={Delete02Icon}
+              styles="size-6 text-red-600 dark:text-red-500"
+            />
           </button>
         </>
       ) : (
         <div className="flex flex-col items-center justify-center text-center">
-          <UploadIcon styles="text-gray-500 dark:text-gray-400" />
+          <Icon
+            icon={FileImageIcon}
+            styles="text-gray-500 dark:text-gray-400"
+          />
           <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
             <span className="font-semibold">Click to upload</span> or drag and
             drop

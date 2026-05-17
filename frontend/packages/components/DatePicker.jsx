@@ -1,5 +1,6 @@
-import { DatePickerIcon } from "@reservations/assets";
+import { Calendar04Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
+import { Icon } from ".";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import SmallCalendar from "./SmallCalendar";
 
@@ -69,8 +70,9 @@ export default function DatePicker({
                       : palaceHolderText || "Pick a date"}
                   </span>
                 )}
-                <DatePickerIcon
-                  styles="stroke-gray-700 dark:stroke-gray-300 shrink-0 h-4 w-4"
+                <Icon
+                  icon={Calendar04Icon}
+                  styles="text-gray-700 dark:text-gray-300 shrink-0 size-4"
                 />
               </div>
             </button>

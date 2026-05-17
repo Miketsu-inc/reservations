@@ -1,5 +1,11 @@
-import { InfoIcon, TickIcon, WarningIcon, XIcon } from "@reservations/assets";
+import {
+  Alert02Icon,
+  Cancel01Icon,
+  InformationCircleIcon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import { createContext, useCallback, useEffect, useState } from "react";
+import { Icon } from ".";
 
 export const ToastContext = createContext();
 
@@ -44,22 +50,28 @@ const icons = {
       className="w-min rounded-full border border-green-700
         dark:border-green-600"
     >
-      <TickIcon styles="size-6 dark:fill-green-600 fill-green-700" />
+      <Icon
+        icon={Tick02Icon}
+        styles="size-6 dark:text-green-600 text-green-700"
+      />
     </div>
   ),
   error: (
     <div
       className="w-min rounded-full border border-red-700 dark:border-red-600"
     >
-      <XIcon styles="size-6 dark:fill-red-600 fill-red-700" />
+      <Icon
+        icon={Cancel01Icon}
+        styles="size-6 dark:text-red-600 text-red-700"
+      />
     </div>
   ),
   warning: (
     <div className="w-min rounded-full">
-      <WarningIcon styles="size-6 fill-yellow-600" />
+      <Icon icon={Alert02Icon} styles="size-6 text-yellow-600" />
     </div>
   ),
-  info: <InfoIcon styles="size-7 text-blue-600 stroke-blue-600" />,
+  info: <Icon icon={InformationCircleIcon} styles="size-7 text-blue-600" />,
 };
 
 const typeStyles = {
@@ -98,10 +110,11 @@ function ToastElement({ variant, message, onClose, duration = 5000 }) {
       <div
         className="group dark:hover:bg-hvr_gray rounded-lg hover:bg-gray-200/25"
       >
-        <XIcon
+        <Icon
+          icon={Cancel01Icon}
           onClick={onClose}
-          styles="size-6 dark:fill-gray-400 m-1 fill-gray-500
-            group-hover:fill-current cursor-pointer"
+          styles="size-6 dark:text-gray-400 m-1 text-gray-500
+            group-hover:text-current cursor-pointer"
         />
       </div>
     </div>

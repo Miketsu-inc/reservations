@@ -1,18 +1,19 @@
 import {
-  BanIcon,
-  CalendarIcon,
-  CustomersIcon,
-  PersonIcon,
-  PlusIcon,
-  SunIcon,
-  ThreeDotsIcon,
-  TickIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  Calendar02Icon,
+  CheckmarkCircle02Icon,
+  Delete02Icon,
+  MoreVerticalIcon,
+  PlusSignIcon,
+  Tick02Icon,
+  UnavailableIcon,
+  User03Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Drawer,
   DrawerContent,
+  Icon,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -27,19 +28,19 @@ import NewCustomerOverlay from "./NewCutomerForm";
 const statusMap = {
   completed: {
     bgColor: "bg-green-600",
-    icon: <TickIcon styles="size-4 text-white" />,
+    icon: <Icon icon={Tick02Icon} styles="size-4 text-white" />,
   },
   "no-show": {
     bgColor: "bg-red-500",
-    icon: <BanIcon styles="size-3.5 text-white" />,
+    icon: <Icon icon={UnavailableIcon} styles="size-3.5 text-white" />,
   },
   booked: {
     bgColor: "bg-gray-500",
-    icon: <CalendarIcon styles="size-3.5 text-white" />,
+    icon: <Icon icon={Calendar02Icon} styles="size-3.5 text-white" />,
   },
   confirmed: {
     bgColor: "bg-accent",
-    icon: <SunIcon styles="size-3.5 text-white" />,
+    icon: <Icon icon={CheckmarkCircle02Icon} styles="size-3.5 text-white" />,
   },
 };
 
@@ -168,7 +169,7 @@ export default function ParticipantManager({
                   className="bg-primary/20 text-primary flex size-14 shrink-0
                     items-center justify-center rounded-full"
                 >
-                  <PlusIcon styles="size-6" />
+                  <Icon icon={PlusSignIcon} styles="size-6" />
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="text-text_color font-medium">
@@ -186,7 +187,7 @@ export default function ParticipantManager({
                   className="bg-primary/20 text-primary flex size-14 shrink-0
                     items-center justify-center rounded-full"
                 >
-                  <PersonIcon styles="size-7 fill-primary" />
+                  <Icon icon={User03Icon} styles="size-7 text-primary" />
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="text-text_color font-medium">
@@ -212,7 +213,10 @@ export default function ParticipantManager({
                 className="flex size-18 items-center justify-center rounded-full
                   bg-gray-400/20"
               >
-                <CustomersIcon styles="size-12 text-gray-500 dark:text-gray-400" />
+                <Icon
+                  icon={UserGroupIcon}
+                  styles="size-12 text-gray-500 dark:text-gray-400"
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-lg font-medium">No participants yet</p>
@@ -291,7 +295,7 @@ function ParticipantItem({
       <Popover>
         <PopoverTrigger asChild>
           <button className="cursor-pointer rounded-lg p-0.5">
-            <ThreeDotsIcon styles="size-6 stroke-4 stroke-gray-500 rotate-90" />
+            <Icon icon={MoreVerticalIcon} styles="size-6 text-gray-500" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left" styles="w-auto">
@@ -321,7 +325,10 @@ function ParticipantItem({
                           )
                         }
                       >
-                        <TickIcon styles="size-6 fill-text_color" />
+                        <Icon
+                          icon={Tick02Icon}
+                          styles="size-6 fill-text_color"
+                        />
                         Completed
                       </button>
                     </PopoverClose>
@@ -338,7 +345,10 @@ function ParticipantItem({
                           )
                         }
                       >
-                        <SunIcon styles="size-5 text-text_color" />
+                        <Icon
+                          icon={CheckmarkCircle02Icon}
+                          styles="size-5 text-text_color"
+                        />
                         Confirmed
                       </button>
                     </PopoverClose>
@@ -355,7 +365,7 @@ function ParticipantItem({
                           )
                         }
                       >
-                        <BanIcon styles="size-5" />
+                        <Icon icon={UnavailableIcon} styles="size-5" />
                         No Show
                       </button>
                     </PopoverClose>
@@ -378,7 +388,7 @@ function ParticipantItem({
                     }, 50);
                   }}
                 >
-                  <PersonIcon styles="size-5 fill-text_color" />
+                  <Icon icon={User03Icon} styles="size-5 text-text_color" />
                   <p>View Customer</p>
                 </button>
               </PopoverClose>
@@ -388,7 +398,10 @@ function ParticipantItem({
                     onClick={onRemove}
                     className="hover:bg-hvr_gray cursor-pointer gap-3"
                   >
-                    <TrashBinIcon styles="size-5 mb-0.5" />
+                    <Icon
+                      icon={Delete02Icon}
+                      styles="size-5 mb-0.5 text-red-600 dark:text-red-500"
+                    />
                     <p className="text-red-600 dark:text-red-500">
                       Remove customer
                     </p>

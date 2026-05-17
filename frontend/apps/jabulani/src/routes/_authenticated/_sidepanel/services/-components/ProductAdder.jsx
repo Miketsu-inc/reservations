@@ -1,11 +1,11 @@
 import {
-  BackArrowIcon,
-  EditIcon,
-  PlusIcon,
-  ProductIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
-import { Button, Card, ComboBox, Input } from "@reservations/components";
+  ArrowLeft01Icon,
+  Delete02Icon,
+  Edit03Icon,
+  PlusSignIcon,
+  ShoppingBag02Icon,
+} from "@hugeicons/core-free-icons";
+import { Button, Card, ComboBox, Icon, Input } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { useMemo, useState } from "react";
 
@@ -59,7 +59,10 @@ export default function ProductAdder({
           cursor-pointer items-center justify-between p-4`}
       >
         <div className="flex items-center justify-center gap-2">
-          <ProductIcon styles="size-6 mb-0.5 text-text_color" />
+          <Icon
+            icon={ShoppingBag02Icon}
+            styles="size-6 mb-0.5 text-text_color"
+          />
           <p className="text-lg">Products</p>
         </div>
         <button
@@ -67,8 +70,9 @@ export default function ProductAdder({
           onClick={() => setIsOpen(!isOpen)}
           className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
         >
-          <BackArrowIcon
-            styles={`size-6 stroke-text_color transition-transform duration-200
+          <Icon
+            icon={ArrowLeft01Icon}
+            styles={`size-6 text-text_color transition-transform duration-200
               ${isOpen ? "rotate-90" : "-rotate-90"}`}
           />
         </button>
@@ -118,7 +122,8 @@ export default function ProductAdder({
                         <span>{product.amount_used}</span>
                         <span>{product?.unit}</span>
                       </div>
-                      <EditIcon
+                      <Icon
+                        icon={Edit03Icon}
                         onClick={() => {
                           setEditProduct({
                             id: product.id,
@@ -128,7 +133,8 @@ export default function ProductAdder({
                         }}
                         styles="size-4 cursor-pointer"
                       />
-                      <TrashBinIcon
+                      <Icon
+                        icon={Delete02Icon}
                         onClick={() => handleRemove(product.id)}
                         styles="size-5 cursor-pointer"
                       />
@@ -146,7 +152,10 @@ export default function ProductAdder({
                 className="mb-4 flex w-min items-center justify-center
                   rounded-full"
               >
-                <ProductIcon styles="size-12 dark:text-gray-500 text-gray-400" />
+                <Icon
+                  icon={ShoppingBag02Icon}
+                  styles="size-12 dark:text-gray-500 text-gray-400"
+                />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 No products added yet
@@ -277,7 +286,7 @@ function ProductForm({
                 buttonText="Add Product"
                 type="submit"
               >
-                <PlusIcon styles="size-5 sm:mr-1" />
+                <Icon icon={PlusSignIcon} styles="size-5 sm:mr-1" />
               </Button>
             )}
             {isWindowSmall && (

@@ -1,9 +1,11 @@
 import {
-  BriefcaseIcon,
-  CalendarIcon,
+  Briefcase04Icon,
+  Calendar02Icon,
   CreditCardIcon,
-  PersonIcon,
-} from "@reservations/assets";
+  TimeScheduleIcon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
+import { Icon } from "@reservations/components";
 import NavigationItem from "./NavigationItem";
 
 export default function SettingsNavigation() {
@@ -11,19 +13,19 @@ export default function SettingsNavigation() {
     <nav className="">
       <ul className="flex flex-col items-start justify-center">
         <NavigationItem label="Profile" path="/settings/profile">
-          <PersonIcon styles="h-6 w-6 fill-current" />
+          <Icon icon={User03Icon} styles="size-6" />
         </NavigationItem>
         <NavigationItem label="Merchant" path="/settings/merchant">
-          <BriefcaseIcon styles="h-6 w-6" />
+          <Icon icon={Briefcase04Icon} styles="size-6" />
         </NavigationItem>
         <NavigationItem label="Calendar" path="/settings/calendar">
-          <CalendarIcon styles="h-6 w-6" />
+          <Icon icon={Calendar02Icon} styles="size-6" />
         </NavigationItem>
         <NavigationItem label="Billing" path="/settings/billing">
-          <CreditCardIcon styles="h-6 w-6" />
+          <Icon icon={CreditCardIcon} styles="size-6" />
         </NavigationItem>
         <NavigationItem label="Scheduling" path="/settings/scheduling">
-          <CreditCardIcon styles="h-6 w-6" />
+          <Icon icon={TimeScheduleIcon} styles="size-6" />
         </NavigationItem>
       </ul>
     </nav>

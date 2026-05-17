@@ -1,6 +1,6 @@
-import { BackArrowIcon } from "@reservations/assets";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
-import { Avatar, CheckBox } from ".";
+import { Avatar, CheckBox, Icon } from ".";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 36;
@@ -149,10 +149,10 @@ export default function MultiSelect({
                   {getDisplayText()}
                 </span>
               </div>
-              <BackArrowIcon
-                styles={`stroke-gray-700 dark:stroke-gray-300
-                  transition-transform -rotate-90 shrink-0
-                  ${isOpen ? "rotate-90" : ""} size-5`}
+              <Icon
+                icon={ArrowLeft01Icon}
+                styles={`text-gray-700 dark:text-gray-300 transition-transform
+                  -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} size-5`}
               />
             </div>
           </button>

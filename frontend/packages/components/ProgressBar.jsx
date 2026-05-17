@@ -1,5 +1,6 @@
-import { TickIcon } from "@reservations/assets";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { Fragment } from "react";
+import { Icon } from ".";
 
 export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
   return (
@@ -47,7 +48,7 @@ function ProgressBarStep({ step, isActive, isCompleted }) {
     >
       {isCompleted ? (
         <div>
-          <TickIcon styles="fill-white h-5 w-5" />
+          <Icon icon={Tick02Icon} styles="text-white size-5" />
         </div>
       ) : (
         `${step}`

@@ -1,12 +1,13 @@
 import {
-  ArrowIcon,
-  BackArrowIcon,
-  EditIcon,
-  ThreeDotsIcon,
-  TrashBinIcon,
-} from "@reservations/assets";
+  ArrowLeft01Icon,
+  ArrowLeft02Icon,
+  Delete02Icon,
+  Edit03Icon,
+  MoreVerticalIcon,
+} from "@hugeicons/core-free-icons";
 import {
   DeleteModal,
+  Icon,
   Popover,
   PopoverClose,
   PopoverContent,
@@ -97,9 +98,9 @@ export default function ServiceCategoryCard({
                   className="hover:bg-hvr_gray hover:*:stroke-text_color
                     cursor-pointer rounded-lg p-1"
                 >
-                  <ThreeDotsIcon
-                    styles="size-6 stroke-4 stroke-gray-400
-                      dark:stroke-gray-500"
+                  <Icon
+                    icon={MoreVerticalIcon}
+                    styles="size-6 rotate-90 text-gray-400 dark:text-gray-500"
                   />
                 </button>
               </PopoverTrigger>
@@ -113,7 +114,7 @@ export default function ServiceCategoryCard({
                       onClick={() => setIsEditModalOpen(true)}
                       className="hover:bg-hvr_gray cursor-pointer gap-5"
                     >
-                      <EditIcon styles="size-4 ml-1" />
+                      <Icon icon={Edit03Icon} styles="size-5" />
                       <p>Edit category</p>
                     </button>
                   </PopoverClose>
@@ -127,7 +128,10 @@ export default function ServiceCategoryCard({
                           : "hover:bg-hvr_gray cursor-pointer"
                       } gap-4`}
                     >
-                      <ArrowIcon styles="size-6 stroke-current" />
+                      <Icon
+                        icon={ArrowLeft02Icon}
+                        styles="size-6 -rotate-90 stroke-current"
+                      />
                       <p>Move down</p>
                     </button>
                   </PopoverClose>
@@ -138,7 +142,10 @@ export default function ServiceCategoryCard({
                       className={`${category.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
                       gap-4`}
                     >
-                      <ArrowIcon styles="size-6 rotate-180 stroke-current" />
+                      <Icon
+                        icon={ArrowLeft02Icon}
+                        styles="size-6 rotate-90 stroke-current"
+                      />
                       <p>Move up</p>
                     </button>
                   </PopoverClose>
@@ -147,7 +154,11 @@ export default function ServiceCategoryCard({
                       onClick={() => setIsDeleteModalOpen(true)}
                       className="hover:bg-hvr_gray cursor-pointer gap-4"
                     >
-                      <TrashBinIcon styles="size-5 ml-0.5 mb-0.5" />
+                      <Icon
+                        icon={Delete02Icon}
+                        styles="size-5 ml-0.5 mb-0.5 text-red-600
+                          dark:text-red-500"
+                      />
                       <p className="text-red-600 dark:text-red-500">
                         Delete category
                       </p>
@@ -168,10 +179,11 @@ export default function ServiceCategoryCard({
               setIsCollapsed(!isCollapsed);
             }}
           >
-            <BackArrowIcon
+            <Icon
+              icon={ArrowLeft01Icon}
               styles={`${isCollapsed ? "-rotate-90" : "rotate-90"}
-                transition-transform duration-200 size-6 stroke-4
-                stroke-gray-400 dark:stroke-gray-500`}
+                transition-transform duration-200 size-6 text-gray-400
+                dark:text-gray-500`}
             />
           </button>
         </div>
