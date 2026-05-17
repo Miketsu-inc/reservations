@@ -1,5 +1,4 @@
-// TODO: replace import with new package
-import { DayPicker } from "react-day-picker";
+import { DayPicker } from "@daypicker/react";
 
 export default function SmallCalendar({
   value,
