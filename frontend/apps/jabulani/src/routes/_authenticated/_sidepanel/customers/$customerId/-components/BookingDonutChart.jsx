@@ -20,7 +20,11 @@ export default function BookingDonutChart({ upcoming, cancelled, completed }) {
   const fallbackData = [{ name: "Empty", value: 1 }];
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer
+      initialDimension={{ width: 100, height: 100 }} // silence warning
+      width="100%"
+      height="100%"
+    >
       <PieChart>
         <Pie
           data={total > 0 ? chartData : fallbackData}

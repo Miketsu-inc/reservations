@@ -34,7 +34,7 @@ function CustomersLayout() {
           >
             <Link
               activeProps={{
-                className: " bg-bg_color text-primary! shadow-sm",
+                className: "bg-bg_color text-primary! shadow-sm",
               }}
               activeOptions={{ exact: true }}
               to="/customers/"
@@ -48,9 +48,9 @@ function CustomersLayout() {
             </Link>
             <Link
               activeProps={{
-                className: " bg-bg_color text-red-600! shadow-sm",
+                className: "bg-bg_color text-red-600! shadow-sm",
               }}
-              to="blacklist"
+              to="/customers/blacklist"
               className="text-text_color/70 rounded-md px-4 py-2 text-sm
                 font-medium"
             >

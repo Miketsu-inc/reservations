@@ -12,7 +12,11 @@ export default function RevenueChart({ data }) {
     <div className="flex h-full w-full flex-col gap-8">
       <p>Revenue</p>
       <div className="flex-1">
-        <ResponsiveContainer height="100%" width="100%">
+        <ResponsiveContainer
+          initialDimension={{ width: 100, height: 100 }} // silence warning
+          height="100%"
+          width="100%"
+        >
           <AreaChart
             accessibilityLayer
             data={data}
