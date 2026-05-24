@@ -73,7 +73,13 @@ func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.service.CreateByMerchant(r.Context(), mapToCreateByMerchantInput(req))
+	input, err := mapToCreateByMerchantInput(req)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = h.service.CreateByMerchant(r.Context(), input)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
@@ -107,7 +113,13 @@ func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.UpdateByMerchant(r.Context(), urlId, mapToUpdateByMerchantInput(req))
+	input, err := mapToUpdateByMerchantInput(req)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = h.service.UpdateByMerchant(r.Context(), urlId, input)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return

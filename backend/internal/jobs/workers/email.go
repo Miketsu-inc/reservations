@@ -69,6 +69,67 @@ func (w *BookingConfirmationEmail) Work(ctx context.Context, job *river.Job[args
 	})
 }
 
+type BookingStatusConfirmedEmail struct {
+	river.WorkerDefaults[args.BookingStatusConfirmedEmail]
+
+	emailService *email.Service
+	bookingRepo  domain.BookingRepository
+}
+
+func NewBookingStatusConfirmedEmailWorker(emailService *email.Service, bookingRepo domain.BookingRepository) *BookingStatusConfirmedEmail {
+	return &BookingStatusConfirmedEmail{emailService: emailService, bookingRepo: bookingRepo}
+}
+
+func (w *BookingStatusConfirmedEmail) Work(ctx context.Context, job *river.Job[args.BookingStatusConfirmedEmail]) error {
+	booking, err := w.bookingRepo.GetBookingForEmail(ctx, job.Args.BookingId, job.Args.CustomerId)
+	if err != nil {
+		return err
+	}
+
+	// added customer without email
+	if booking.CustomerEmail == nil {
+		return nil
+	}
+
+	// participant was deleted before job could run
+	if booking.ParticipantStatus == nil {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCancelled || *booking.ParticipantStatus == types.BookingStatusCancelled {
+		return nil
+	}
+
+	if booking.Status == types.BookingStatusCompleted || *booking.ParticipantStatus == types.BookingStatusCompleted {
+		return nil
+	}
+
+	if time.Now().UTC().After(booking.FromDate) {
+		return nil
+	}
+
+	if booking.Status != types.BookingStatusConfirmed {
+		return nil
+	}
+
+	merchantTz, err := time.LoadLocation(booking.Timezone)
+	if err != nil {
+		return err
+	}
+
+	fromDateMerchantTz := booking.FromDate.In(merchantTz)
+	toDateMerchantTz := booking.ToDate.In(merchantTz)
+
+	return w.emailService.BookingStatusConfirmed(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingConfirmationData{
+		Time:        fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
+		Date:        fromDateMerchantTz.Format("Monday, January 2"),
+		Location:    booking.FormattedLocation,
+		ServiceName: booking.ServiceName,
+		TimeZone:    merchantTz.String(),
+		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
+	})
+}
+
 type BookingReminderEmail struct {
 	river.WorkerDefaults[args.BookingReminderEmail]
 
@@ -202,6 +263,8 @@ func NewBookingModificationEmail(emailService *email.Service, bookingRepo domain
 	return &BookingModificationEmail{emailService: emailService, bookingRepo: bookingRepo}
 }
 
+// TODO: the email should probably contain both the old and new service names
+// also we should probably have either different email templates or some kind of checking for what's changed
 func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args.BookingModificationEmail]) error {
 	booking, err := w.bookingRepo.GetBookingForEmail(ctx, job.Args.BookingId, job.Args.CustomerId)
 	if err != nil {

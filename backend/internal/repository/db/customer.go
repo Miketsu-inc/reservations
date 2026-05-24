@@ -198,7 +198,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
 		count(b.id) as times_booked, count(distinct case when bp.status in ('cancelled', 'no-show') then b.id end) as times_cancelled_by_user,
-		count(distinct case when bp.status in ('booked', 'confirmed') then b.id end) as times_upcoming, count(distinct case when bp.status in ('completed') then b.id end) as times_completed, 
+		count(distinct case when bp.status in ('booked', 'confirmed') then b.id end) as times_upcoming, count(distinct case when bp.status in ('completed') then b.id end) as times_completed,
 		coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
@@ -264,19 +264,6 @@ func (r *customerRepository) SetBlacklistStatusForCustomer(ctx context.Context, 
 
 	return nil
 
-}
-
-func (r *customerRepository) GetCustomerIdByUserIdAndMerchantId(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (uuid.UUID, error) {
-	query := `
-	select id from "Customer" where user_id = $1 and merchant_id = $2`
-
-	var customerId uuid.UUID
-	err := r.db.QueryRow(ctx, query, userId, merchantId).Scan(&customerId)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return customerId, nil
 }
 
 func (r *customerRepository) GetCustomerEmailById(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (*string, error) {

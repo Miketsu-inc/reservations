@@ -25,6 +25,7 @@ type Deps struct {
 
 func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewBookingConfirmationEmailWorker(deps.EmailService, deps.BookingRepo))
+	river.AddWorker(workers, NewBookingStatusConfirmedEmailWorker(deps.EmailService, deps.BookingRepo))
 	river.AddWorker(workers, NewBookingReminderEmailWorker(deps.EmailService, deps.BookingRepo))
 	river.AddWorker(workers, NewBookingCancellationEmail(deps.EmailService, deps.BookingRepo))
 	river.AddWorker(workers, NewBookingModificationEmail(deps.EmailService, deps.BookingRepo))

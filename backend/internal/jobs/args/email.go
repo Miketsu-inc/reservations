@@ -22,6 +22,20 @@ func (BookingConfirmationEmail) InsertOpts() river.InsertOpts {
 	}
 }
 
+type BookingStatusConfirmedEmail struct {
+	Language   language.Tag `json:"language"`
+	BookingId  int          `json:"booking_id"`
+	CustomerId uuid.UUID    `json:"customer_id"`
+}
+
+func (BookingStatusConfirmedEmail) Kind() string { return "booking_status_confirmed_email" }
+
+func (BookingStatusConfirmedEmail) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue: "email",
+	}
+}
+
 type BookingReminderEmail struct {
 	Language         language.Tag `json:"language"`
 	BookingId        int          `json:"booking_id"`

@@ -176,6 +176,11 @@ func (s *Service) BookingConfirmation(ctx context.Context, lang language.Tag, to
 	return nil
 }
 
+// TODO: missing email
+func (s *Service) BookingStatusConfirmed(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData) error {
+	return nil
+}
+
 func (s *Service) BookingReminder(ctx context.Context, lang language.Tag, to string, data BookingConfirmationData) error {
 	templateName := "BookingReminder"
 	subject := s.getSubject(templateName, lang)

@@ -1,10 +1,18 @@
 package bookings
 
 import (
+	"fmt"
+	"time"
+
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 )
 
-func mapToCreateByMerchantInput(in createByMerchantReq) bookingServ.CreateByMerchantInput {
+func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMerchantInput, error) {
+	timeStamp, err := time.Parse(time.RFC3339, in.TimeStamp)
+	if err != nil {
+		return bookingServ.CreateByMerchantInput{}, fmt.Errorf("timestamp could not be converted to time: %s", err.Error())
+	}
+
 	customers := make([]bookingServ.CustomerInput, len(in.Customers))
 
 	for i, c := range in.Customers {
@@ -20,7 +28,7 @@ func mapToCreateByMerchantInput(in createByMerchantReq) bookingServ.CreateByMerc
 	return bookingServ.CreateByMerchantInput{
 		Customers:    customers,
 		ServiceId:    in.ServiceId,
-		TimeStamp:    in.TimeStamp,
+		TimeStamp:    timeStamp,
 		MerchantNote: in.MerchantNote,
 		IsRecurring:  in.IsRecurring,
 		Rrule: &bookingServ.RecurringRuleInput{
@@ -29,10 +37,15 @@ func mapToCreateByMerchantInput(in createByMerchantReq) bookingServ.CreateByMerc
 			Weekdays:  in.Rrule.Weekdays,
 			Until:     in.Rrule.Until,
 		},
-	}
+	}, nil
 }
 
-func mapToUpdateByMerchantInput(in updateByMerchantReq) bookingServ.UpdateByMerchantInput {
+func mapToUpdateByMerchantInput(in updateByMerchantReq) (bookingServ.UpdateByMerchantInput, error) {
+	timeStamp, err := time.Parse(time.RFC3339, in.TimeStamp)
+	if err != nil {
+		return bookingServ.UpdateByMerchantInput{}, fmt.Errorf("timestamp could not be converted to time: %s", err.Error())
+	}
+
 	customers := make([]bookingServ.CustomerInput, len(in.Customers))
 
 	for i, c := range in.Customers {
@@ -48,11 +61,11 @@ func mapToUpdateByMerchantInput(in updateByMerchantReq) bookingServ.UpdateByMerc
 	return bookingServ.UpdateByMerchantInput{
 		Customers:       customers,
 		ServiceId:       in.ServiceId,
-		TimeStamp:       in.TimeStamp,
+		TimeStamp:       timeStamp,
 		MerchantNote:    in.MerchantNote,
 		BookingStatus:   in.BookingStatus,
 		UpdateAllFuture: in.UpdateAllFuture,
-	}
+	}, nil
 }
 
 func mapToCancelByMerchantInput(in cancelByMerchantReq) bookingServ.CancelByMerchantInput {

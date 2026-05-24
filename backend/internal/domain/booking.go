@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +23,7 @@ type BookingRepository interface {
 	DeleteBookingParticipantsBatch(ctx context.Context, bookingIds []int, participantIds []uuid.UUID) error
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
-	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus) error
+	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, seriesOriginalDate *time.Time) error
 	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error
 	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details BookingDetails) error
 	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant) error
@@ -34,17 +35,18 @@ type BookingRepository interface {
 	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 
 	CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error
-	CancelBookingByCustomer(ctx context.Context, bookingId int, customerId uuid.UUID) (types.BookingType, error)
 	DeleteAppointmentsByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
 	GetBooking(ctx context.Context, bookingId int) (Booking, error)
-	GetPublicBooking(ctx context.Context, bookingId int) (PublicBooking, error)
+	GetPublicBooking(ctx context.Context, bookingId int, userId uuid.UUID) (PublicBooking, error)
 	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]BookingForCalendar, error)
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
 	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
+	GetBookingParticipantByUser(ctx context.Context, bookingId int, userId uuid.UUID) (BookingParticipant, error)
+	GetBookingParticipant(ctx context.Context, participantId int) (BookingParticipant, error)
 	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
 	GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
@@ -95,6 +97,74 @@ type Booking struct {
 	CancellationReason    *string             `db:"cancellation_reason"`
 }
 
+func (b Booking) IsCancelled() bool {
+	return b.Status == types.BookingStatusCancelled
+}
+
+func (b Booking) IsCompleted() bool {
+	return b.Status == types.BookingStatusCompleted
+}
+
+func (b Booking) IsNoShow() bool {
+	return b.Status == types.BookingStatusNoShow
+}
+
+func (b Booking) IsPast() bool {
+	return time.Now().UTC().After(b.FromDate)
+}
+
+func (b Booking) IsModifiable() bool {
+	return b.CanModify() == nil
+}
+
+func (b Booking) IsGroupBooking() bool {
+	return b.BookingType == types.BookingTypeClass || b.BookingType == types.BookingTypeEvent
+}
+
+func (b Booking) IsOwnedByMerchant(id uuid.UUID) bool {
+	return b.MerchantId == id
+}
+
+func (b Booking) CanModify() error {
+	if b.IsCancelled() {
+		return fmt.Errorf("booking has already been cancelled")
+	}
+
+	if b.IsCompleted() {
+		return fmt.Errorf("you cannot cancel completed bookings")
+	}
+
+	if b.IsNoShow() {
+		return fmt.Errorf("you cannot cancel no-show bookings")
+	}
+
+	return nil
+}
+
+func (b Booking) CanCancel() error {
+	if b.IsPast() {
+		return fmt.Errorf("you cannot cancel past bookings")
+	}
+
+	return b.CanModify()
+}
+
+func (b Booking) CanCancelWithDeadline(deadline time.Time) error {
+	if time.Now().UTC().After(deadline) {
+		return fmt.Errorf("it's too late to cancel this booking")
+	}
+
+	return b.CanModify()
+}
+
+func (b Booking) CanTransition(status types.BookingStatus) error {
+	if b.Status != types.BookingStatusBooked && status == types.BookingStatusBooked {
+		return fmt.Errorf("booking status cannot transition from %s to %s", b.Status, status)
+	}
+
+	return b.CanModify()
+}
+
 // struct just for db inserts and updates
 type BookingDetails struct {
 	PricePerPerson      currencyx.Price
@@ -124,6 +194,42 @@ type BookingParticipant struct {
 	CancelledOn        *time.Time
 	CancellationReason *string
 	TransferredTo      *uuid.UUID
+}
+
+func (bp BookingParticipant) IsCancelled() bool {
+	return bp.Status == types.BookingStatusCancelled
+}
+
+func (bp BookingParticipant) IsCompleted() bool {
+	return bp.Status == types.BookingStatusCompleted
+}
+
+func (bp BookingParticipant) IsNoShow() bool {
+	return bp.Status == types.BookingStatusNoShow
+}
+
+func (bp BookingParticipant) IsModifiable() bool {
+	return bp.CanModify() == nil
+}
+
+func (bp BookingParticipant) CanModify() error {
+	if bp.IsCancelled() {
+		return fmt.Errorf("booking has already been cancelled")
+	}
+
+	return nil
+}
+
+func (bp BookingParticipant) CanTransition(status types.BookingStatus) error {
+	if bp.IsCancelled() {
+		return fmt.Errorf("you cannot modify cancelled participant status")
+	}
+
+	if bp.Status != types.BookingStatusBooked && status == types.BookingStatusBooked {
+		return fmt.Errorf("participant status cannot transition from %s to %s", bp.Status, status)
+	}
+
+	return nil
 }
 
 type PublicBooking struct {

@@ -57,7 +57,13 @@ func (h *Handler) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.service.CreateByCustomer(r.Context(), mapToCreateByCustomerInput(req))
+	input, err := mapToCreateByCustomerInput(req)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = h.service.CreateByCustomer(r.Context(), input)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
@@ -66,6 +72,7 @@ func (h *Handler) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// TODO: why do we need these? a bookingId in the url should be fine as of now
 type cancelByCustomerReq struct {
 	BookingId    int    `json:"booking_id" validate:"required"`
 	MerchantName string `json:"merchant_name" validate:"required"`
@@ -85,7 +92,12 @@ func (h *Handler) CancelByCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.CancelByCustomer(r.Context(), urlId, mapToCancelByCustomerInput(req))
+	if urlId != req.BookingId {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id"))
+		return
+	}
+
+	err = h.service.CancelByCustomer(r.Context(), mapToCancelByCustomerInput(req))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
