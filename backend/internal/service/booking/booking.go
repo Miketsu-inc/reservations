@@ -185,7 +185,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("unexpected error during creating customer id: %w", err)
 	}
 
-	price, cost, err := s.preventNilBookingPrice(ctx, merchantId, service.Price, service.Cost)
+	price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		if isGroupBooking {
 			bookingId = *input.BookingId
 
-			totalPrice, totalCost, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, bookingId)
+			totalPrice, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, bookingId)
 			if err != nil {
 				return err
 			}
@@ -223,12 +223,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				return err
 			}
 
-			newTotalCost, err := totalCost.Add(cost.Amount)
-			if err != nil {
-				return err
-			}
-
-			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, bookingId, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, bookingId, currencyx.Price{Amount: newTotalPrice})
 			if err != nil {
 				return err
 			}
@@ -255,9 +250,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				FromDate:            fromDate,
 				ToDate:              toDate,
 				PricePerPerson:      price,
-				CostPerPerson:       cost,
 				TotalPrice:          price,
-				TotalCost:           cost,
 				MinParticipants:     1,
 				MaxParticipants:     1,
 				CurrentParticipants: 1,
@@ -344,12 +337,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 				return fmt.Errorf("failed to calculate total price: %w", err)
 			}
 
-			newTotalCost, err := booking.TotalCost.Sub(booking.CostPerPerson.Amount)
-			if err != nil {
-				return fmt.Errorf("failed to calculate total cost: %w", err)
-			}
-
-			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, booking.Id, currencyx.Price{Amount: newTotalPrice}, currencyx.Price{Amount: newTotalCost})
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, booking.Id, currencyx.Price{Amount: newTotalPrice})
 			if err != nil {
 				return err
 			}
@@ -388,39 +376,27 @@ func (s *Service) GetByCustomer(ctx context.Context, bookingId int) (domain.Publ
 	return publicBooking, nil
 }
 
-// prevent null booking price and cost to avoid a lot of headaches
-func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UUID, price, cost *currencyx.Price) (currencyx.Price, currencyx.Price, error) {
+// prevent null booking price to avoid a lot of headaches
+func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UUID, price *currencyx.Price) (currencyx.Price, error) {
 	var outPrice currencyx.Price
-	var outCost currencyx.Price
 
-	if price == nil || cost == nil {
+	if price == nil {
 		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, merchantId)
 		if err != nil {
-			return currencyx.Price{}, currencyx.Price{}, fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+			return currencyx.Price{}, fmt.Errorf("error while getting merchant's currency: %s", err.Error())
 		}
 
 		zeroAmount, err := currency.NewAmount("0", curr)
 		if err != nil {
-			return currencyx.Price{}, currencyx.Price{}, fmt.Errorf("error while creating new amount: %s", err.Error())
+			return currencyx.Price{}, fmt.Errorf("error while creating new amount: %s", err.Error())
 		}
 
-		if price != nil {
-			outPrice = *price
-		} else {
-			outPrice = currencyx.Price{Amount: zeroAmount}
-		}
-
-		if cost != nil {
-			outCost = *cost
-		} else {
-			outCost = currencyx.Price{Amount: zeroAmount}
-		}
+		outPrice = currencyx.Price{Amount: zeroAmount}
 	} else {
 		outPrice = *price
-		outCost = *cost
 	}
 
-	return outPrice, outCost, nil
+	return outPrice, nil
 }
 
 func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, error) {
@@ -595,7 +571,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("error while searching location by this id: %s", err.Error())
 	}
 
-	price, cost, err := s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price, service.Cost)
+	price, err := s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
 	if err != nil {
 		return err
 	}
@@ -629,11 +605,6 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("failed to calculate total price: %w", err)
 	}
 
-	totalCost, err := cost.Mul(countStr)
-	if err != nil {
-		return fmt.Errorf("failed to calculate total cost: %w", err)
-	}
-
 	fromDate := input.TimeStamp.UTC()
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
@@ -663,9 +634,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				Timezone:            merchantTz.String(),
 				IsActive:            true,
 				PricePerPerson:      price,
-				CostPerPerson:       cost,
 				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				TotalCost:           currencyx.Price{Amount: totalCost},
 				MinParticipants:     service.MinParticipants,
 				MaxParticipants:     service.MaxParticipants,
 				CurrentParticipants: participantCount,
@@ -703,9 +672,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				FromDate:            fromDate,
 				ToDate:              toDate,
 				PricePerPerson:      price,
-				CostPerPerson:       cost,
 				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				TotalCost:           currencyx.Price{Amount: totalCost},
 				MerchantNote:        input.MerchantNote,
 				MinParticipants:     service.MinParticipants,
 				MaxParticipants:     service.MaxParticipants,
@@ -1023,14 +990,13 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		participantBookingStatus = types.BookingStatusConfirmed
 	}
 
-	var pricePerPerson, costPerPerson currencyx.Price
-	var totalPrice, totalCost currency.Amount
-	var seriesTotalPrice, seriesTotalCost currency.Amount
+	var pricePerPerson currencyx.Price
+	var totalPrice, seriesTotalPrice currency.Amount
 
 	if priceChanged {
 		countStr := strconv.Itoa(participantCount)
 
-		pricePerPerson, costPerPerson, err = s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price, service.Cost)
+		pricePerPerson, err = s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
 		if err != nil {
 			return err
 		}
@@ -1040,11 +1006,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			return fmt.Errorf("failed to calculate total price: %s", err.Error())
 		}
 
-		totalCost, err = costPerPerson.Mul(countStr)
-		if err != nil {
-			return fmt.Errorf("failed to calculate total cost: %s", err.Error())
-		}
-
 		if input.UpdateAllFuture && booking.IsRecurring {
 			seriesCountStr := strconv.Itoa(seriesParticipantCount)
 
@@ -1052,17 +1013,10 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if err != nil {
 				return fmt.Errorf("failed to calculate series total price: %s", err.Error())
 			}
-
-			seriesTotalCost, err = costPerPerson.Mul(seriesCountStr)
-			if err != nil {
-				return fmt.Errorf("failed to calculate series total cost: %s", err.Error())
-			}
 		}
 	} else {
 		pricePerPerson = booking.PricePerPerson
-		costPerPerson = booking.CostPerPerson
 		totalPrice = booking.TotalPrice.Amount
-		totalCost = booking.TotalCost.Amount
 	}
 
 	var bookingsToUpdate []domain.Booking
@@ -1105,15 +1059,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			if !priceChanged {
 				seriesTotalPrice = bookingSeries.TotalPrice.Amount
-				seriesTotalCost = bookingSeries.TotalCost.Amount
 			}
 
 			if seriesParticipantsChanged || serviceChanged || priceChanged {
 				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesDetails(ctx, *booking.BookingSeriesId, domain.BookingDetails{
 					PricePerPerson:      pricePerPerson,
-					CostPerPerson:       costPerPerson,
 					TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
-					TotalCost:           currencyx.Price{Amount: seriesTotalCost},
 					MinParticipants:     service.MinParticipants,
 					MaxParticipants:     service.MaxParticipants,
 					CurrentParticipants: participantCount,
@@ -1167,6 +1118,11 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		for _, b := range bookingsToUpdate {
 			bookingIds = append(bookingIds, b.Id)
 
+			// TODO: I don't think we want to insert from and to dates in the merchantTz... It should be UTC like
+			// in the GenerateRecurringBookings function. But then won't DST fuck us over if we overwrite too far?
+			//
+			// maybe instead of updating it here just delete every future occurrence and generate new ones...?
+			// won't that mess up other updates tho? or already booked participants?
 			if b.IsRecurring {
 				newFromDates = append(newFromDates, seriesFromDate)
 				newToDates = append(newToDates, seriesToDate)
@@ -1235,9 +1191,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		if serviceChanged || priceChanged || merchantNoteChanged || participantsChanged {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, []int{booking.Id}, domain.BookingDetails{
 				PricePerPerson:      pricePerPerson,
-				CostPerPerson:       costPerPerson,
 				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				TotalCost:           currencyx.Price{Amount: totalCost},
 				MerchantNote:        merchantNote,
 				MinParticipants:     service.MinParticipants,
 				MaxParticipants:     service.MaxParticipants,
@@ -1251,9 +1205,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		if serviceChanged || priceChanged || merchantNoteChanged || seriesParticipantsChanged {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, futureBookingIds, domain.BookingDetails{
 				PricePerPerson: pricePerPerson,
-				CostPerPerson:  costPerPerson,
 				TotalPrice:     currencyx.Price{Amount: seriesTotalPrice},
-				TotalCost:      currencyx.Price{Amount: seriesTotalCost},
 				// TODO: the merchant note shouldn't really be updated on future bookings
 				MerchantNote:        input.MerchantNote,
 				MinParticipants:     service.MinParticipants,

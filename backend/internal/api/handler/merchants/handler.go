@@ -88,7 +88,6 @@ type bookingDetailsResp struct {
 	ServiceColor    string                   `json:"service_color"`
 	ServiceDuration int                      `json:"service_duration"`
 	Price           currencyx.FormattedPrice `json:"price"`
-	Cost            currencyx.FormattedPrice `json:"cost"`
 	FirstName       *string                  `json:"first_name"`
 	LastName        *string                  `json:"last_name"`
 	PhoneNumber     *string                  `json:"phone_number"`
@@ -398,7 +397,6 @@ type bookingForCalendar struct {
 	ServiceColor    string                          `json:"service_color" `
 	MaxParticipants int                             `json:"max_participants"`
 	Price           currencyx.FormattedPrice        `json:"price"`
-	Cost            currencyx.FormattedPrice        `json:"cost"`
 	Participants    []bookingParticipantForCalendar `json:"participants"`
 }
 

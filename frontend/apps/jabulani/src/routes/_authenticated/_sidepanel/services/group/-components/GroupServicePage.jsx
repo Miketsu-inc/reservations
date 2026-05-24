@@ -41,7 +41,6 @@ export default function GroupServicePage({
       color: service?.color || "#2334b8",
       price: service?.price ?? null,
       price_type: service?.price_type || "fixed",
-      cost: service?.cost ?? null,
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
       duration: service?.duration || "",
@@ -332,33 +331,6 @@ export default function GroupServicePage({
                         />
                       </label>
                     </div>
-
-                    <Input
-                      styles="p-2 peer"
-                      id="cost"
-                      name="cost"
-                      type="number"
-                      min={0}
-                      required={false}
-                      labelText="Cost (Per Person)"
-                      placeholder="0"
-                      value={serviceData.cost?.number || ""}
-                      inputData={(data) =>
-                        updateServiceData({
-                          cost: {
-                            number: data.value,
-                            currency: serviceData.cost?.currency || "HUF",
-                          },
-                        })
-                      }
-                    >
-                      <p
-                        className="border-input_border_color rounded-r-lg border
-                          px-4 py-2"
-                      >
-                        {serviceData.cost?.currency || "HUF"}
-                      </p>
-                    </Input>
                   </div>
                 </div>
 
@@ -408,7 +380,7 @@ export default function GroupServicePage({
                   </div>
 
                   <Textarea
-                    styles="p-2 h-full min-h-35"
+                    styles="p-2 h-full md:min-h-0 min-h-35"
                     id="description"
                     name="description"
                     labelText="Description"

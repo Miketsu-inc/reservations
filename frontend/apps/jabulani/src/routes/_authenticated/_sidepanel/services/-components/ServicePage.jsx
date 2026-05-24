@@ -42,7 +42,6 @@ export default function ServicePage({
       color: service?.color || "#2334b8",
       price: service?.price ?? null,
       price_type: service?.price_type || "fixed",
-      cost: service?.cost ?? null,
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
       settings: {
@@ -250,33 +249,6 @@ export default function ServicePage({
                       />
                     </label>
                   </div>
-                  <Input
-                    styles="p-2"
-                    id="cost"
-                    name="cost"
-                    type="number"
-                    min={0}
-                    max={1000000}
-                    labelText="Cost"
-                    placeholder="500"
-                    required={false}
-                    value={serviceData.cost?.number || ""}
-                    inputData={(data) =>
-                      updateServiceData({
-                        cost: {
-                          number: data.value,
-                          currency: serviceData.cost?.currency || "HUF",
-                        },
-                      })
-                    }
-                  >
-                    <p
-                      className="border-input_border_color rounded-r-lg border
-                        px-4 py-2"
-                    >
-                      {serviceData.cost?.currency || "HUF"}
-                    </p>
-                  </Input>
                   <Select
                     value={serviceData.category_id}
                     labelText="Service Category"

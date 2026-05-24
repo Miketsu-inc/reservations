@@ -51,7 +51,6 @@ type newReq struct {
 	Description  *string                `json:"description"`
 	Color        string                 `json:"color" validate:"required,hexcolor"`
 	Price        *currencyx.Price       `json:"price"`
-	Cost         *currencyx.Price       `json:"cost"`
 	PriceType    types.PriceType        `json:"price_type"`
 	CategoryId   *int                   `json:"category_id"`
 	IsActive     bool                   `json:"is_active"`
@@ -103,7 +102,6 @@ type updateReq struct {
 	Description *string            `json:"description"`
 	Color       string             `json:"color" validate:"required,hexcolor"`
 	Price       *currencyx.Price   `json:"price"`
-	Cost        *currencyx.Price   `json:"cost"`
 	PriceType   types.PriceType    `json:"price_type"`
 	CategoryId  *int               `json:"category_id"`
 	IsActive    bool               `json:"is_active"`
@@ -163,7 +161,6 @@ type getResp struct {
 	Color         string             `json:"color"`
 	TotalDuration int                `json:"total_duration"`
 	Price         *currencyx.Price   `json:"price"`
-	Cost          *currencyx.Price   `json:"cost"`
 	PriceType     types.PriceType    `json:"price_type"`
 	IsActive      bool               `json:"is_active"`
 	Sequence      int                `json:"sequence"`
@@ -266,7 +263,6 @@ type serviceResp struct {
 	Color           string            `json:"color"`
 	TotalDuration   int               `json:"total_duration"`
 	Price           *currencyx.Price  `json:"price"`
-	Cost            *currencyx.Price  `json:"cost"`
 	PriceType       types.PriceType   `json:"price_type"`
 	IsActive        bool              `json:"is_active"`
 	MinParticipants int               `json:"min_participants"`
@@ -340,7 +336,6 @@ type newGroupReq struct {
 	Description     *string                `json:"description"`
 	Color           string                 `json:"color" validate:"required,hexcolor"`
 	Price           *currencyx.Price       `json:"price"`
-	Cost            *currencyx.Price       `json:"cost"`
 	PriceType       types.PriceType        `json:"price_type"`
 	Duration        int                    `json:"duration" validate:"required"`
 	CategoryId      *int                   `json:"category_id"`
@@ -374,7 +369,6 @@ type updateGroupReq struct {
 	Description     *string            `json:"description"`
 	Color           string             `json:"color" validate:"required,hexcolor"`
 	Price           *currencyx.Price   `json:"price"`
-	Cost            *currencyx.Price   `json:"cost"`
 	PriceType       types.PriceType    `json:"price_type"`
 	Duration        int                `json:"duration" validate:"required"`
 	CategoryId      *int               `json:"category_id"`
@@ -413,7 +407,6 @@ type getGroupResp struct {
 	Color           string               `json:"color"`
 	Duration        int                  `json:"duration"`
 	Price           *currencyx.Price     `json:"price"`
-	Cost            *currencyx.Price     `json:"cost"`
 	PriceType       types.PriceType      `json:"price_type"`
 	IsActive        bool                 `json:"is_active"`
 	Sequence        int                  `json:"sequence"`

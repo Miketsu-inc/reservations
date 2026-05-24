@@ -62,7 +62,6 @@ type Service struct {
 	Color           string            `json:"color"`
 	TotalDuration   int               `json:"total_duration"`
 	Price           *currencyx.Price  `json:"price"`
-	Cost            *currencyx.Price  `json:"cost"`
 	PriceType       types.PriceType   `json:"price_type"`
 	IsActive        bool              `json:"is_active"`
 	Sequence        int               `json:"sequence"`
@@ -117,7 +116,6 @@ type PublicServiceWithPhases struct {
 	Color           string               `json:"color"`
 	TotalDuration   int                  `json:"total_duration"`
 	Price           *currencyx.Price     `json:"price"`
-	Cost            *currencyx.Price     `json:"cost"`
 	PriceType       types.PriceType      `json:"price_type"`
 	IsActive        bool                 `json:"is_active"`
 	MinParticipants int                  `json:"min_participants"`
@@ -159,7 +157,6 @@ type ServicePageData struct {
 	Color         string                        `json:"color"`
 	TotalDuration int                           `json:"total_duration"`
 	Price         *currencyx.Price              `json:"price"`
-	Cost          *currencyx.Price              `json:"cost"`
 	PriceType     types.PriceType               `json:"price_type"`
 	IsActive      bool                          `json:"is_active"`
 	Sequence      int                           `json:"sequence"`
@@ -230,7 +227,6 @@ type GroupServicePageData struct {
 	Color           string                        `json:"color"`
 	Duration        int                           `json:"duration"`
 	Price           *currencyx.Price              `json:"price"`
-	Cost            *currencyx.Price              `json:"cost"`
 	PriceType       types.PriceType               `json:"price_type"`
 	IsActive        bool                          `json:"is_active"`
 	Sequence        int                           `json:"sequence"`

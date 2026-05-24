@@ -31,7 +31,6 @@ type NewInput struct {
 	Description  *string
 	Color        string
 	Price        *currencyx.Price
-	Cost         *currencyx.Price
 	PriceType    types.PriceType
 	CategoryId   *int
 	IsActive     bool
@@ -101,12 +100,6 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		}
 	}
 
-	if input.Cost != nil {
-		if input.Cost.CurrencyCode() != curr {
-			return fmt.Errorf("new service cost's currency does not match merchant's currency")
-		}
-	}
-
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:              0,
@@ -118,7 +111,6 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			Color:           input.Color,
 			TotalDuration:   durationSum,
 			Price:           input.Price,
-			Cost:            input.Cost,
 			PriceType:       input.PriceType,
 			IsActive:        input.IsActive,
 			Sequence:        0,
@@ -170,7 +162,6 @@ type UpdateInput struct {
 	Description *string
 	Color       string
 	Price       *currencyx.Price
-	Cost        *currencyx.Price
 	PriceType   types.PriceType
 	CategoryId  *int
 	IsActive    bool
@@ -297,7 +288,6 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 			Color:           input.Color,
 			TotalDuration:   durationSum,
 			Price:           input.Price,
-			Cost:            input.Cost,
 			PriceType:       input.PriceType,
 			IsActive:        input.IsActive,
 			MinParticipants: 1,
@@ -504,7 +494,6 @@ type NewGroupInput struct {
 	Description     *string
 	Color           string
 	Price           *currencyx.Price
-	Cost            *currencyx.Price
 	PriceType       types.PriceType
 	Duration        int
 	CategoryId      *int
@@ -547,12 +536,6 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 		}
 	}
 
-	if input.Cost != nil {
-		if input.Cost.CurrencyCode() != curr {
-			return fmt.Errorf("new service cost's currency does not match merchant's currency")
-		}
-	}
-
 	minParticipants := 1
 	if input.MinParticipants != nil {
 		minParticipants = *input.MinParticipants
@@ -569,7 +552,6 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 			Color:           input.Color,
 			TotalDuration:   input.Duration,
 			Price:           input.Price,
-			Cost:            input.Cost,
 			PriceType:       input.PriceType,
 			IsActive:        input.IsActive,
 			Sequence:        0,
@@ -614,7 +596,6 @@ type UpdateGroupInput struct {
 	Description     *string
 	Color           string
 	Price           *currencyx.Price
-	Cost            *currencyx.Price
 	PriceType       types.PriceType
 	Duration        int
 	CategoryId      *int
@@ -651,7 +632,6 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 			Color:           input.Color,
 			TotalDuration:   input.Duration,
 			Price:           input.Price,
-			Cost:            input.Cost,
 			PriceType:       input.PriceType,
 			IsActive:        input.IsActive,
 			MinParticipants: minParticipants,

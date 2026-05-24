@@ -46,7 +46,6 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 			ServiceColor:    b.ServiceColor,
 			ServiceDuration: b.ServiceDuration,
 			Price:           b.Price.ToFormatted(),
-			Cost:            b.Cost.ToFormatted(),
 			FirstName:       b.FirstName,
 			LastName:        b.LastName,
 			PhoneNumber:     b.PhoneNumber,
@@ -67,7 +66,6 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 			ServiceColor:    b.ServiceColor,
 			ServiceDuration: b.ServiceDuration,
 			Price:           b.Price.ToFormatted(),
-			Cost:            b.Cost.ToFormatted(),
 			FirstName:       b.FirstName,
 			LastName:        b.LastName,
 			PhoneNumber:     b.PhoneNumber,
@@ -334,7 +332,6 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 			ServiceColor:    b.ServiceColor,
 			MaxParticipants: b.MaxParticipants,
 			Price:           b.Price.ToFormatted(),
-			Cost:            b.Cost.ToFormatted(),
 		}
 
 		participants := make([]bookingParticipantForCalendar, len(b.Participants))

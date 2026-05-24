@@ -27,17 +27,17 @@ func (r *catalogRepository) WithTx(tx db.DBTX) domain.CatalogRepository {
 
 func (r *catalogRepository) NewService(ctx context.Context, serv domain.Service) (int, error) {
 	query := `
-	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person, cost_per_person,
+	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person,
 		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, coalesce((
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((
 		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1 and deleted_on is null
-		), 1), $12, $13, $14, $15, $16, $17, $18)
+		), 1), $11, $12, $13, $14, $15, $16, $17)
 	returning id
 	`
 
 	var serviceId int
 	err := r.db.QueryRow(ctx, query, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
-		serv.TotalDuration, serv.Price, serv.Cost, serv.PriceType, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
+		serv.TotalDuration, serv.Price, serv.PriceType, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
 		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime, serv.ApprovalPolicy).Scan(&serviceId)
 	if err != nil {
 		return 0, err
@@ -53,9 +53,9 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 		where id = $1 and merchant_id = $2 and deleted_on is null
 	)
 	update "Service"
-	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8, cost_per_person = $9,
-		price_type = $10, is_active = $11, cancel_deadline = $12, booking_window_min = $13, booking_window_max = $14, buffer_time = $15,
-		approval_policy = $16, min_participants = $17, max_participants = $18,
+	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8,
+		price_type = $9, is_active = $10, cancel_deadline = $11, booking_window_min = $12, booking_window_max = $13, buffer_time = $14,
+		approval_policy = $15, min_participants = $16, max_participants = $17,
 		sequence = case
 			when old.category_id is distinct from $3 then (
 				coalesce((
@@ -71,7 +71,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 
 	var oldCategoryId *int
 	err := r.db.QueryRow(ctx, query, s.Id, s.MerchantId, s.CategoryId, s.Name, s.Description, s.Color, s.TotalDuration,
-		s.Price, s.Cost, s.PriceType, s.IsActive, s.CancelDeadline, s.BookingWindowMin, s.BookingWindowMax, s.BufferTime,
+		s.Price, s.PriceType, s.IsActive, s.CancelDeadline, s.BookingWindowMin, s.BookingWindowMax, s.BufferTime,
 		s.ApprovalPolicy, s.MinParticipants, s.MaxParticipants).Scan(&oldCategoryId)
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (r *catalogRepository) ReorderServicesAfterUpdate(ctx context.Context, cate
 func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUID) ([]domain.ServicesGroupedByCategory, error) {
 	query := `
 	with services as (
-		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.cost_per_person,
+		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person,
 			s.price_type, s.is_active, s.sequence,
 		coalesce (
 			jsonb_agg(
@@ -222,7 +222,6 @@ func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUI
 				'color', s.color,
 				'total_duration', s.total_duration,
 				'price', s.price_per_person,
-				'cost', s.cost_per_person,
 				'price_type', s.price_type,
 				'is_active', s.is_active,
 				'sequence', s.sequence,
@@ -331,7 +330,7 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 
 func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID int, merchantId uuid.UUID) (domain.PublicServiceWithPhases, error) {
 	query := `
-	select s.id, s.merchant_id, s.booking_type, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost,
+	select s.id, s.merchant_id, s.booking_type, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price,
 		s.price_type, s.min_participants, s.max_participants, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
 	from "Service" s
 	left join "ServicePhase" sp on s.id = sp.service_id
@@ -354,7 +353,7 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 		var spId *int
 
 		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.BookingType, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
-			&ts.Price, &ts.Cost, &ts.PriceType, &ts.MinParticipants, &ts.MaxParticipants, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
+			&ts.Price, &ts.PriceType, &ts.MinParticipants, &ts.MaxParticipants, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
 		if err != nil {
 			return domain.PublicServiceWithPhases{}, err
 		}
@@ -370,7 +369,6 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 				Color:           ts.Color,
 				TotalDuration:   ts.TotalDuration,
 				Price:           ts.Price,
-				Cost:            ts.Cost,
 				PriceType:       ts.PriceType,
 				IsActive:        ts.IsActive,
 				MinParticipants: ts.MinParticipants,
@@ -521,7 +519,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 		where p.deleted_on is null
 		group by sprod.service_id
 	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person as price, s.cost_per_person as cost, s.price_type, s.is_active, s.sequence,
+	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person as price, s.price_type, s.is_active, s.sequence,
 		jsonb_build_object(
 		 	'cancel_deadline', s.cancel_deadline,
          	'booking_window_min', s.booking_window_min,
@@ -543,7 +541,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 	var productJson []byte
 
 	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
-		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.Cost, &spd.PriceType, &spd.IsActive, &spd.Sequence, &settingsJson, &phaseJson, &productJson)
+		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceType, &spd.IsActive, &spd.Sequence, &settingsJson, &phaseJson, &productJson)
 	if err != nil {
 		return domain.ServicePageData{}, err
 	}
@@ -592,7 +590,7 @@ func (r *catalogRepository) GetGroupServicePageData(ctx context.Context, merchan
 		where p.deleted_on is null
 		group by sprod.service_id
 	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration as duration, s.price_per_person as price, s.cost_per_person as cost, s.price_type, s.is_active, s.sequence, s.min_participants, s.max_participants,
+	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration as duration, s.price_per_person as price, s.price_type, s.is_active, s.sequence, s.min_participants, s.max_participants,
 		jsonb_build_object(
 		 	'cancel_deadline', s.cancel_deadline,
          	'booking_window_min', s.booking_window_min,
@@ -610,7 +608,7 @@ func (r *catalogRepository) GetGroupServicePageData(ctx context.Context, merchan
 	var productJson []byte
 
 	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&gspd.Id, &gspd.Name, &gspd.CategoryId, &gspd.Description,
-		&gspd.Color, &gspd.Duration, &gspd.Price, &gspd.Cost, &gspd.PriceType, &gspd.IsActive, &gspd.Sequence,
+		&gspd.Color, &gspd.Duration, &gspd.Price, &gspd.PriceType, &gspd.IsActive, &gspd.Sequence,
 		&gspd.MinParicipants, &gspd.MaxParticipants, &settingsJson, &productJson)
 	if err != nil {
 		return domain.GroupServicePageData{}, err

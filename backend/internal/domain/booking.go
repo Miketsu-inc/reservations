@@ -24,11 +24,11 @@ type BookingRepository interface {
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
 	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, seriesOriginalDate *time.Time) error
-	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price, cost currencyx.Price) error
+	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price currencyx.Price) error
 	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details BookingDetails) error
 	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant) error
 	UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, status types.BookingStatus) error
-	IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, currencyx.Price, error)
+	IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, error)
 	DecrementParticipantCount(ctx context.Context, bookingId int) error
 	// decrements the participant count on every booking related to the customer
 	DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
@@ -86,9 +86,7 @@ type Booking struct {
 	FromDate              time.Time           `db:"from_date"`
 	ToDate                time.Time           `db:"to_date"`
 	PricePerPerson        currencyx.Price     `db:"price_per_person"`
-	CostPerPerson         currencyx.Price     `db:"cost_per_person"`
 	TotalPrice            currencyx.Price     `db:"total_price"`
-	TotalCost             currencyx.Price     `db:"total_cost"`
 	MerchantNote          *string             `db:"merchant_note"`
 	MinParticipants       int                 `db:"min_participants"`
 	MaxParticipants       int                 `db:"max_participants"`
@@ -255,7 +253,6 @@ type PublicBookingDetails struct {
 	ServiceColor    string              `json:"service_color" db:"service_color"`
 	ServiceDuration int                 `json:"service_duration" db:"service_duration"`
 	Price           currencyx.Price     `json:"price" db:"price"`
-	Cost            currencyx.Price     `json:"cost" db:"cost"`
 	FirstName       *string             `json:"first_name" db:"first_name"`
 	LastName        *string             `json:"last_name" db:"last_name"`
 	PhoneNumber     *string             `json:"phone_number" db:"phone_number"`
@@ -274,7 +271,6 @@ type BookingForCalendar struct {
 	ServiceColor    string                          `json:"service_color" db:"service_color"`
 	MaxParticipants int                             `json:"max_participants" db:"max_participants"`
 	Price           currencyx.Price                 `json:"price" db:"price"`
-	Cost            currencyx.Price                 `json:"cost" db:"cost"`
 	Participants    []BookingParticipantForCalendar `json:"participants" db:"participants"`
 }
 
@@ -327,9 +323,7 @@ type BookingSeries struct {
 	IsActive            bool              `db:"is_active"`
 	GeneratedUntil      *time.Time        `db:"generated_until"`
 	PricePerPerson      currencyx.Price   `db:"price_per_person"`
-	CostPerPerson       currencyx.Price   `db:"cost_per_person"`
 	TotalPrice          currencyx.Price   `db:"total_price"`
-	TotalCost           currencyx.Price   `db:"total_cost"`
 	MinParticipants     int               `db:"min_participants"`
 	MaxParticipants     int               `db:"max_participants"`
 	CurrentParticipants int               `db:"current_participants"`
@@ -355,7 +349,6 @@ type BookingForExternalCalendar struct {
 	FromDate            time.Time           `json:"from_date" db:"from_date"`
 	ToDate              time.Time           `json:"to_date" db:"to_date"`
 	TotalPrice          currencyx.Price     `json:"total_price" db:"total_price"`
-	TotalCost           currencyx.Price     `json:"total_cost" db:"total_cost"`
 	MerchantNote        *string             `json:"merchant_note" db:"merchant_note"`
 	CurrentParticipants int                 `json:"current_participants" db:"current_participants"`
 }
