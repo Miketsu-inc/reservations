@@ -1,6 +1,16 @@
-import { Logout05Icon } from "@hugeicons/core-free-icons";
-import { Button, Card, DeleteModal, Icon } from "@reservations/components";
-import { useToast, useWindowSize } from "@reservations/lib";
+import {
+  Logout05Icon,
+  Moon02Icon,
+  Sun03Icon,
+} from "@hugeicons/core-free-icons";
+import {
+  Button,
+  Card,
+  DeleteModal,
+  Icon,
+  Switch,
+} from "@reservations/components";
+import { useTheme, useToast, useWindowSize } from "@reservations/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import ChangePasswordModal from "./-components/ChangePasswordModal";
@@ -15,6 +25,8 @@ function RouteComponent() {
   const { showToast } = useToast();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState();
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState();
+
+  const { isDarkTheme, switchTheme } = useTheme();
 
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
@@ -79,16 +91,39 @@ function RouteComponent() {
             />
           </Card>
           {isWindowSmall && (
-            <Card>
-              <button
-                type="button"
-                className="flex w-full flex-row items-center gap-4 p-2"
-                onClick={logoutHandler}
-              >
-                <Icon icon={Logout05Icon} styles="size-6" />
-                <p>Sign out</p>
-              </button>
-            </Card>
+            <>
+              <Card>
+                <div
+                  className="flex w-full flex-row items-center justify-between
+                    p-2"
+                >
+                  <div className="flex flex-row items-center gap-4">
+                    <Icon
+                      icon={Moon02Icon}
+                      altIcon={Sun03Icon}
+                      showAlt={isDarkTheme}
+                      styles="size-6"
+                    />
+                    <p>Use dark theme</p>
+                  </div>
+                  <Switch
+                    size="large"
+                    defaultValue={isDarkTheme}
+                    onSwitch={switchTheme}
+                  />
+                </div>
+              </Card>
+              <Card>
+                <button
+                  type="button"
+                  className="flex w-full flex-row items-center gap-4 p-2"
+                  onClick={logoutHandler}
+                >
+                  <Icon icon={Logout05Icon} styles="size-6" />
+                  <p>Sign out</p>
+                </button>
+              </Card>
+            </>
           )}
         </div>
         <DeleteModal
