@@ -247,7 +247,7 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 func (s *Service) LogoutAllDevices(ctx context.Context) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
-	err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
+	_, err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -261,36 +261,51 @@ type UpdatePasswordInput struct {
 	ConfirmNewPassword string
 }
 
-func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) error {
+func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) (jwt.TokenPair, error) {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	user, err := s.userRepo.GetUser(ctx, userId)
 	if err != nil {
-		return err
+		return jwt.TokenPair{}, err
 	}
 
 	if user.IsOauthUser() {
-		return fmt.Errorf("oauth users can't update password")
+		return jwt.TokenPair{}, fmt.Errorf("oauth users can't update password")
 	}
 
 	err = hashCompare(in.OldPassword, *user.PasswordHash)
 	if err != nil {
-		return err
+		return jwt.TokenPair{}, err
 	}
 
 	if in.NewPassword != in.ConfirmNewPassword {
-		return fmt.Errorf("new passwords do not match")
+		return jwt.TokenPair{}, fmt.Errorf("new passwords do not match")
 	}
 
 	newPasswordHash, err := hashPassword(in.NewPassword)
 	if err != nil {
-		return fmt.Errorf("error during password hashing: %s", err.Error())
+		return jwt.TokenPair{}, fmt.Errorf("error during password hashing: %s", err.Error())
 	}
 
 	err = s.userRepo.UpdatePassword(ctx, userId, newPasswordHash)
 	if err != nil {
-		return fmt.Errorf("error updating password: %s", err.Error())
+		return jwt.TokenPair{}, fmt.Errorf("error updating password: %s", err.Error())
 	}
 
-	return nil
+	refreshVersion, err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error incrementing jwt refresh version: %s", err.Error())
+	}
+
+	accessToken, err := jwt.NewAccessToken(userId)
+	if err != nil {
+		return jwt.TokenPair{}, err
+	}
+
+	refreshToken, err := jwt.NewRefreshToken(userId, refreshVersion)
+	if err != nil {
+		return jwt.TokenPair{}, err
+	}
+
+	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }

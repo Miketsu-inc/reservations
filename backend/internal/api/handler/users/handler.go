@@ -142,9 +142,12 @@ func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.authServ.UpdatePassword(r.Context(), mapToUpdatePasswordInput(req))
+	tokens, err := h.authServ.UpdatePassword(r.Context(), mapToUpdatePasswordInput(req))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
+
+	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
+	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 }

@@ -29,7 +29,7 @@ type UserRepository interface {
 	IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error
 
 	// Increment User's refresh version, logging out the User.
-	IncrementUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) error
+	IncrementUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
 
 	FindOauthUser(ctx context.Context, authProviderType types.AuthProviderType, providerId string) (uuid.UUID, error)
 }

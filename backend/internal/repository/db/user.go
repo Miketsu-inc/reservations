@@ -228,19 +228,22 @@ func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber st
 	return nil
 }
 
-func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) error {
+func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {
 	query := `
 	update "User"
 	set jwt_refresh_version = jwt_refresh_version + 1
 	where id = $1
+	returning jwt_refresh_version
 	`
 
-	_, err := r.db.Exec(ctx, query, userID)
+	var refreshVersion int
+
+	err := r.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return refreshVersion, nil
 }
 
 func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthProviderType, provider_id string) (uuid.UUID, error) {
