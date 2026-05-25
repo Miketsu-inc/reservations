@@ -156,11 +156,23 @@ func (b Booking) CanCancelWithDeadline(deadline time.Time) error {
 }
 
 func (b Booking) CanTransition(status types.BookingStatus) error {
+	if !b.IsPast() && status == types.BookingStatusCompleted {
+		return fmt.Errorf("future bookings cannot be completed")
+	}
+
+	if !b.IsPast() && status == types.BookingStatusNoShow {
+		return fmt.Errorf("future bookings cannot be no-show")
+	}
+
 	if b.Status != types.BookingStatusBooked && status == types.BookingStatusBooked {
 		return fmt.Errorf("booking status cannot transition from %s to %s", b.Status, status)
 	}
 
-	return b.CanModify()
+	if status == types.BookingStatusCancelled {
+		return b.CanCancel()
+	}
+
+	return nil
 }
 
 // struct just for db inserts and updates

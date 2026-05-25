@@ -562,6 +562,9 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	}
 
 	var incomingCustomerIds []uuid.UUID
+	var participantCount int
+
+	var totalPrice currency.Amount
 
 	isWalkIn := len(input.Customers) == 0
 
@@ -571,23 +574,29 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			return err
 		}
 
-		incomingCustomerIds = make([]uuid.UUID, len(customerIdMap))
 		for id := range customerIdMap {
 			incomingCustomerIds = append(incomingCustomerIds, id)
 		}
-	}
 
-	participantCount := len(incomingCustomerIds)
-	// walk ins do not get a booking participant row but 1 person still attending the booking
-	if isWalkIn {
-		participantCount = 1
-	}
+		participantCount = len(incomingCustomerIds)
 
-	countStr := strconv.Itoa(participantCount)
+		totalPrice, err = price.Mul(strconv.Itoa(participantCount))
+		if err != nil {
+			return fmt.Errorf("failed to calculate total price: %w", err)
+		}
+	} else {
+		// walk-ins do not get a booking participant row but 1 person still attending the booking
+		// group bookings can't have walk-ins
+		if service.IsGroupService() {
+			participantCount = 0
+		} else {
+			participantCount = 1
+		}
 
-	totalPrice, err := price.Mul(countStr)
-	if err != nil {
-		return fmt.Errorf("failed to calculate total price: %w", err)
+		totalPrice, err = currency.NewAmount("0", price.CurrencyCode())
+		if err != nil {
+			return fmt.Errorf("failed to calculate total price: %w", err)
+		}
 	}
 
 	fromDate := input.TimeStamp.UTC()
@@ -846,6 +855,25 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return fmt.Errorf("error getting merchant timezone: %s", err.Error())
 	}
 
+	isGroupBooking := booking.IsGroupBooking()
+	serviceChanged := booking.ServiceId != input.ServiceId
+
+	var service domain.Service
+
+	if serviceChanged {
+		service, err = s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
+		if err != nil {
+			return fmt.Errorf("error retrieving service: %s", err.Error())
+		}
+
+		isGroupBooking = service.IsGroupService()
+	} else {
+		service, err = s.catalogRepo.GetServiceWithPhases(ctx, booking.ServiceId, actor.MerchantId)
+		if err != nil {
+			return fmt.Errorf("error retrieving service: %s", err.Error())
+		}
+	}
+
 	var participantCount int
 	var seriesParticipantCount int
 	var participantChanges participantChanges
@@ -879,41 +907,79 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			seriesParticipantCount = len(seriesParticipantChanges.ToInsert) + len(seriesParticipantChanges.ToKeep)
 		}
-		// walk ins do not get a booking participant row but 1 person still attending the booking
-	} else {
-		participantCount = 1
-		seriesParticipantCount = 1
+	}
+
+	if isWalkIn {
+		if isGroupBooking {
+			participantCount = 0
+			seriesParticipantCount = 0
+		} else {
+			participantCount = 1
+			seriesParticipantCount = 1
+		}
 	}
 
 	participantsChanged := len(participantChanges.ToInsert) != 0 || len(participantChanges.ToDelete) != 0
 	seriesParticipantsChanged := len(seriesParticipantChanges.ToInsert) != 0 || len(seriesParticipantChanges.ToDelete) != 0
-	serviceChanged := booking.ServiceId != input.ServiceId
-	priceChanged := serviceChanged || participantsChanged
-	timeStampChanged := !booking.FromDate.Equal(input.TimeStamp.UTC())
-	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
-	statusChanged := booking.Status != input.BookingStatus
-
-	var service domain.PublicServiceWithPhases
 
 	if serviceChanged {
-		service, err = s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
-		if err != nil {
-			return fmt.Errorf("error retrieving service: %s", err.Error())
-		}
-
-		if service.BookingType == types.BookingTypeAppointment && participantCount > 1 {
+		if !isGroupBooking && participantCount > 1 {
 			return fmt.Errorf("appointments cannot have more than 1 customer")
 		}
 
-		if service.BookingType != types.BookingTypeAppointment && participantCount > service.MaxParticipants {
+		if isGroupBooking && participantCount > service.MaxParticipants {
 			return fmt.Errorf("customer count (%d) exceeds class limit of %d", participantCount, service.MaxParticipants)
 		}
-	} else {
-		service, err = s.catalogRepo.GetServiceWithPhases(ctx, booking.ServiceId, actor.MerchantId)
-		if err != nil {
-			return fmt.Errorf("error retrieving service: %s", err.Error())
-		}
 	}
+
+	priceChanged := serviceChanged || participantsChanged
+
+	var pricePerPerson currencyx.Price
+	var totalPrice, seriesTotalPrice currency.Amount
+
+	if priceChanged {
+		pricePerPerson, err = s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
+		if err != nil {
+			return err
+		}
+
+		if isWalkIn && isGroupBooking {
+			totalPrice, err = currency.NewAmount("0", pricePerPerson.CurrencyCode())
+			if err != nil {
+				return fmt.Errorf("failed to calculate total price: %s", err.Error())
+			}
+		} else {
+			countStr := strconv.Itoa(participantCount)
+
+			totalPrice, err = pricePerPerson.Mul(countStr)
+			if err != nil {
+				return fmt.Errorf("failed to calculate total price: %s", err.Error())
+			}
+		}
+
+		if input.UpdateAllFuture && booking.IsRecurring {
+			if isWalkIn && isGroupBooking {
+				seriesTotalPrice, err = currency.NewAmount("0", pricePerPerson.CurrencyCode())
+				if err != nil {
+					return fmt.Errorf("failed to calculate series total price: %s", err.Error())
+				}
+			} else {
+				seriesCountStr := strconv.Itoa(seriesParticipantCount)
+
+				seriesTotalPrice, err = pricePerPerson.Mul(seriesCountStr)
+				if err != nil {
+					return fmt.Errorf("failed to calculate series total price: %s", err.Error())
+				}
+			}
+		}
+	} else {
+		pricePerPerson = booking.PricePerPerson
+		totalPrice = booking.TotalPrice.Amount
+	}
+
+	timeStampChanged := !booking.FromDate.Equal(input.TimeStamp.UTC())
+	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
+	statusChanged := booking.Status != input.BookingStatus
 
 	duration := time.Duration(service.TotalDuration) * time.Minute
 
@@ -952,11 +1018,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		merchantNote = input.MerchantNote
 	}
 
-	isGroupBooking := booking.IsGroupBooking()
-	if serviceChanged {
-		isGroupBooking = service.BookingType != types.BookingTypeAppointment
-	}
-
 	bookingStatus := booking.Status
 
 	if statusChanged {
@@ -973,35 +1034,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	// we deault to confirmed as the merchant is adding them to the booking
 	if isGroupBooking {
 		participantBookingStatus = types.BookingStatusConfirmed
-	}
-
-	var pricePerPerson currencyx.Price
-	var totalPrice, seriesTotalPrice currency.Amount
-
-	if priceChanged {
-		countStr := strconv.Itoa(participantCount)
-
-		pricePerPerson, err = s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
-		if err != nil {
-			return err
-		}
-
-		totalPrice, err = pricePerPerson.Mul(countStr)
-		if err != nil {
-			return fmt.Errorf("failed to calculate total price: %s", err.Error())
-		}
-
-		if input.UpdateAllFuture && booking.IsRecurring {
-			seriesCountStr := strconv.Itoa(seriesParticipantCount)
-
-			seriesTotalPrice, err = pricePerPerson.Mul(seriesCountStr)
-			if err != nil {
-				return fmt.Errorf("failed to calculate series total price: %s", err.Error())
-			}
-		}
-	} else {
-		pricePerPerson = booking.PricePerPerson
-		totalPrice = booking.TotalPrice.Amount
 	}
 
 	var bookingsToUpdate []domain.Booking
@@ -1052,7 +1084,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
 					MinParticipants:     service.MinParticipants,
 					MaxParticipants:     service.MaxParticipants,
-					CurrentParticipants: participantCount,
+					CurrentParticipants: seriesParticipantCount,
 				})
 				if err != nil {
 					return fmt.Errorf("failed to update booking series details: %w", err)
