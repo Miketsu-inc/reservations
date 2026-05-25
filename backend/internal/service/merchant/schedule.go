@@ -13,7 +13,7 @@ type FormattedAvailableTimes struct {
 	Afternoon []string `json:"afternoon"`
 }
 
-func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, BufferTime int,
+func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, BufferTime int,
 	BookingWindowMin int, bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) FormattedAvailableTimes {
 
 	year, month, day := bookingDay.Date()
@@ -56,8 +56,7 @@ func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domai
 
 			phaseStart := bookingStart
 			for _, phase := range servicePhases {
-				phaseDuration := time.Duration(phase.Duration) * time.Minute
-				phaseEnd := phaseStart.Add(phaseDuration)
+				phaseEnd := phaseStart.Add(phase.GetDuration())
 
 				if phase.PhaseType == types.ServicePhaseTypeActive {
 
@@ -144,7 +143,7 @@ func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time,
 	return filtered
 }
 
-func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.PublicServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
+func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
 	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
 
 	results := []MultiDayAvailableTimes{}

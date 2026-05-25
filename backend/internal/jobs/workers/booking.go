@@ -92,7 +92,7 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 			generateFrom = time.Now().UTC()
 		}
 
-		_, err = w.bookingService.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service.Phases, generateFrom)
+		_, err = w.bookingService.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service, generateFrom)
 		if err != nil {
 			return err
 		}

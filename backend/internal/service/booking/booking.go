@@ -59,7 +59,7 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 }
 
 func (s *Service) newBooking(ctx context.Context, tx db.DBTX, booking domain.Booking, participants []domain.BookingParticipant,
-	servicePhases []domain.PublicServicePhase) (int, error) {
+	service domain.Service) (int, error) {
 	var bookingId int
 	var err error
 
@@ -68,22 +68,7 @@ func (s *Service) newBooking(ctx context.Context, tx db.DBTX, booking domain.Boo
 		return 0, err
 	}
 
-	bookingPhases := make([]domain.BookingPhase, len(servicePhases))
-
-	bookingStart := booking.FromDate
-	for i, phase := range servicePhases {
-		phaseDuration := time.Duration(phase.Duration) * time.Minute
-		bookingEnd := bookingStart.Add(phaseDuration)
-
-		bookingPhases[i] = domain.BookingPhase{
-			BookingId:      bookingId,
-			ServicePhaseId: phase.Id,
-			FromDate:       bookingStart,
-			ToDate:         bookingEnd,
-		}
-
-		bookingStart = bookingEnd
-	}
+	bookingPhases := service.CalculateNewBookingPhases(bookingId, booking.FromDate)
 
 	for i := range participants {
 		participants[i].BookingId = bookingId
@@ -262,7 +247,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				CustomerNote: &input.CustomerNote,
 			}}
 
-			bookingId, err = s.newBooking(ctx, tx, booking, participants, service.Phases)
+			bookingId, err = s.newBooking(ctx, tx, booking, participants, service)
 			if err != nil {
 				return err
 			}
@@ -553,11 +538,11 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("error while searching service by this id: %s", err.Error())
 	}
 
-	if service.BookingType == types.BookingTypeAppointment && len(input.Customers) > 1 {
+	if !service.IsGroupService() && len(input.Customers) > 1 {
 		return fmt.Errorf("appointments cannot have more than 1 customer")
 	}
 
-	if service.BookingType != types.BookingTypeAppointment && len(input.Customers) > service.MaxParticipants {
+	if service.IsGroupService() && len(input.Customers) > service.MaxParticipants {
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
@@ -657,7 +642,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
-			bookingId, err = s.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service.Phases, time.Now().UTC())
+			bookingId, err = s.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service, time.Now().UTC())
 			if err != nil {
 				return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
 			}
@@ -689,7 +674,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				}
 			}
 
-			bookingId, err = s.newBooking(ctx, tx, booking, participants, service.Phases)
+			bookingId, err = s.newBooking(ctx, tx, booking, participants, service)
 			if err != nil {
 				return fmt.Errorf("error during new booking creation: %s", err.Error())
 			}
@@ -1132,21 +1117,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 
 			if serviceChanged || timeStampChanged {
-				bookingPhaseStart := fromDate
-
-				for _, phase := range service.Phases {
-					phaseDuration := time.Duration(phase.Duration) * time.Minute
-					bookingPhaseEnd := bookingPhaseStart.Add(phaseDuration)
-
-					bookingPhasesToInsert = append(bookingPhasesToInsert, domain.BookingPhase{
-						BookingId:      b.Id,
-						ServicePhaseId: phase.Id,
-						FromDate:       bookingPhaseStart,
-						ToDate:         bookingPhaseEnd,
-					})
-
-					bookingPhaseStart = bookingPhaseEnd
-				}
+				bookingPhasesToInsert = service.CalculateNewBookingPhases(b.Id, fromDate)
 			}
 
 			for _, cid := range participantChanges.ToInsert {

@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant,
-	serivePhases []domain.PublicServicePhase, generateFrom time.Time) (int, error) {
+	service domain.Service, generateFrom time.Time) (int, error) {
 	tz, err := time.LoadLocation(series.Timezone)
 	if err != nil {
 		return 0, fmt.Errorf("error parsing location from booking series: %s", err.Error())
@@ -33,10 +33,7 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 		return 0, nil
 	}
 
-	var totalDuration time.Duration
-	for _, phase := range serivePhases {
-		totalDuration += time.Duration(phase.Duration) * time.Minute
-	}
+	totalDuration := time.Duration(service.TotalDuration) * time.Minute
 
 	bookings := make([]domain.Booking, 0, len(occurrences))
 	for _, date := range occurrences {
@@ -69,25 +66,12 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, tx db.DBTX, ser
 		return 0, err
 	}
 
-	bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(serivePhases))
+	bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(service.Phases))
 	participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(seriesParticipants))
 
 	for i, id := range bookingIds {
-		bookingStart := bookings[i].FromDate
-
-		for _, phase := range serivePhases {
-			phaseDuration := time.Duration(phase.Duration) * time.Minute
-			bookingEnd := bookingStart.Add(phaseDuration)
-
-			bookingPhases = append(bookingPhases, domain.BookingPhase{
-				BookingId:      id,
-				ServicePhaseId: phase.Id,
-				FromDate:       bookingStart,
-				ToDate:         bookingEnd,
-			})
-
-			bookingStart = bookingEnd
-		}
+		phases := service.CalculateNewBookingPhases(id, bookings[i].FromDate)
+		bookingPhases = append(bookingPhases, phases...)
 
 		for _, p := range seriesParticipants {
 			participants = append(participants, domain.BookingParticipant{

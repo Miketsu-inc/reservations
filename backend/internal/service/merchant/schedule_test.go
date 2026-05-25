@@ -46,7 +46,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 	t.Run("Business hours", func(t *testing.T) {
 		reserved := []domain.BookingSlot{}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30
@@ -79,7 +79,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ctReserved(year, month, day, "13:00", "14:00", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 60},
 		}
 		serviceDuration := 60
@@ -121,7 +121,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ctReserved(year, month, day, "13:00", "15:00", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
 		}
@@ -165,7 +165,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ctReserved(year, month, day, "13:00", "14:00", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
 			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
@@ -206,7 +206,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ctReserved(year, month, day, "13:00", "14:00", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
 			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
@@ -240,7 +240,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			ctReserved(year, month, day, "10:00", "10:30", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30
@@ -290,7 +290,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			},
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
@@ -324,7 +324,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			},
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
@@ -361,7 +361,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			},
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30}, // 1st active
 			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},   // wait
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 15}, // 2nd active
@@ -407,7 +407,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 
 		reserved := []domain.BookingSlot{}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 
@@ -443,7 +443,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			ctReserved(2025, time.July, 2, "10:00", "10:30", tz),
 		}
 
-		servicePhases := []domain.PublicServicePhase{
+		servicePhases := []domain.ServicePhase{
 			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
 		}
 		serviceDuration := 30

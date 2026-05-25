@@ -67,16 +67,17 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	}
 
 	var phases []domain.ServicePhase
+
 	durationSum := 0
 	for _, phase := range input.Phases {
 		phases = append(phases, domain.ServicePhase{
-			Id:        0,
 			ServiceId: 0,
 			Name:      phase.Name,
 			Sequence:  phase.Sequence,
 			Duration:  phase.Duration,
 			PhaseType: phase.PhaseType,
 		})
+
 		durationSum += phase.Duration
 	}
 
@@ -102,27 +103,26 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
-			Id:              0,
-			MerchantId:      actor.MerchantId,
-			CategoryId:      input.CategoryId,
-			BookingType:     types.BookingTypeAppointment,
-			Name:            input.Name,
-			Description:     input.Description,
-			Color:           input.Color,
-			TotalDuration:   durationSum,
-			Price:           input.Price,
-			PriceType:       input.PriceType,
-			IsActive:        input.IsActive,
-			Sequence:        0,
-			MinParticipants: 1,
-			MaxParticipants: 1,
-			ServiceSettings: domain.ServiceSettings{
-				CancelDeadline:   input.Settings.CancelDeadline,
-				BookingWindowMin: input.Settings.BookingWindowMin,
-				BookingWindowMax: input.Settings.BookingWindowMax,
-				BufferTime:       input.Settings.BufferTime,
-				ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			},
+			Id:            0,
+			MerchantId:    actor.MerchantId,
+			CategoryId:    input.CategoryId,
+			BookingType:   types.BookingTypeAppointment,
+			Name:          input.Name,
+			Description:   input.Description,
+			Color:         input.Color,
+			TotalDuration: durationSum,
+			Price:         input.Price,
+			PriceType:     input.PriceType,
+			IsActive:      input.IsActive,
+			// sequence get's calculated in the query
+			Sequence:         0,
+			MinParticipants:  1,
+			MaxParticipants:  1,
+			CancelDeadline:   input.Settings.CancelDeadline,
+			BookingWindowMin: input.Settings.BookingWindowMin,
+			BookingWindowMax: input.Settings.BookingWindowMax,
+			BufferTime:       input.Settings.BufferTime,
+			ApprovalPolicy:   input.Settings.ApprovalPolicy,
 		})
 		if err != nil {
 			return err
@@ -147,13 +147,6 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	}
 
 	return nil
-}
-
-func servicePhasesEqual(a, b domain.PublicServicePhase) bool {
-	return a.Name == b.Name &&
-		a.Sequence == b.Sequence &&
-		a.Duration == b.Duration &&
-		a.PhaseType == b.PhaseType
 }
 
 type UpdateInput struct {
@@ -189,10 +182,11 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 
 	actor := actor.MustGetFromContext(ctx)
 
-	var phases []domain.PublicServicePhase
+	var phases []domain.ServicePhase
+
 	durationSum := 0
 	for _, phase := range input.Phases {
-		phases = append(phases, domain.PublicServicePhase{
+		phases = append(phases, domain.ServicePhase{
 			Id:        phase.Id,
 			ServiceId: phase.ServiceId,
 			Name:      phase.Name,
@@ -200,6 +194,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 			Duration:  phase.Duration,
 			PhaseType: phase.PhaseType,
 		})
+
 		durationSum += phase.Duration
 	}
 
@@ -209,9 +204,9 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 			return err
 		}
 
-		existingPhasesMap := map[int]domain.PublicServicePhase{}
+		existingPhasesMap := map[int]domain.ServicePhase{}
 		for _, p := range existingPhases {
-			existingPhasesMap[p.Id] = domain.PublicServicePhase{
+			existingPhasesMap[p.Id] = domain.ServicePhase{
 				Id:        p.Id,
 				ServiceId: p.ServiceId,
 				Name:      p.Name,
@@ -221,8 +216,8 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 			}
 		}
 
-		updatedPhasesMap := map[int]domain.PublicServicePhase{}
-		newPhases := []domain.PublicServicePhase{}
+		updatedPhasesMap := map[int]domain.ServicePhase{}
+		newPhases := []domain.ServicePhase{}
 		for _, p := range phases {
 			if p.Id == 0 {
 				newPhases = append(newPhases, p)
@@ -246,7 +241,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		var phasesToUpdate []domain.ServicePhase
 		for id, phase := range updatedPhasesMap {
 			existingPhase := existingPhasesMap[id]
-			if !servicePhasesEqual(existingPhase, phase) {
+			if !existingPhase.IsEqual(phase) {
 				phasesToUpdate = append(phasesToUpdate, domain.ServicePhase{
 					Id:        id,
 					ServiceId: serviceId,
@@ -280,25 +275,23 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		}
 
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
-			Id:              serviceId,
-			MerchantId:      actor.MerchantId,
-			CategoryId:      input.CategoryId,
-			Name:            input.Name,
-			Description:     input.Description,
-			Color:           input.Color,
-			TotalDuration:   durationSum,
-			Price:           input.Price,
-			PriceType:       input.PriceType,
-			IsActive:        input.IsActive,
-			MinParticipants: 1,
-			MaxParticipants: 1,
-			ServiceSettings: domain.ServiceSettings{
-				CancelDeadline:   input.Settings.CancelDeadline,
-				BookingWindowMin: input.Settings.BookingWindowMin,
-				BookingWindowMax: input.Settings.BookingWindowMax,
-				BufferTime:       input.Settings.BufferTime,
-				ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			},
+			Id:               serviceId,
+			MerchantId:       actor.MerchantId,
+			CategoryId:       input.CategoryId,
+			Name:             input.Name,
+			Description:      input.Description,
+			Color:            input.Color,
+			TotalDuration:    durationSum,
+			Price:            input.Price,
+			PriceType:        input.PriceType,
+			IsActive:         input.IsActive,
+			MinParticipants:  1,
+			MaxParticipants:  1,
+			CancelDeadline:   input.Settings.CancelDeadline,
+			BookingWindowMin: input.Settings.BookingWindowMin,
+			BookingWindowMax: input.Settings.BookingWindowMax,
+			BufferTime:       input.Settings.BufferTime,
+			ApprovalPolicy:   input.Settings.ApprovalPolicy,
 		})
 		if err != nil {
 			return err
@@ -454,7 +447,7 @@ func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 func (s *Service) GetAll(ctx context.Context) ([]domain.ServicesGroupedByCategory, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServices(ctx, actor.MerchantId)
+	services, err := s.catalogRepo.GetServicesGroupedByCategory(ctx, actor.MerchantId)
 	if err != nil {
 		return []domain.ServicesGroupedByCategory{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
 	}
@@ -543,27 +536,25 @@ func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
-			Id:              0,
-			MerchantId:      actor.MerchantId,
-			CategoryId:      input.CategoryId,
-			BookingType:     types.BookingTypeClass,
-			Name:            input.Name,
-			Description:     input.Description,
-			Color:           input.Color,
-			TotalDuration:   input.Duration,
-			Price:           input.Price,
-			PriceType:       input.PriceType,
-			IsActive:        input.IsActive,
-			Sequence:        0,
-			MinParticipants: minParticipants,
-			MaxParticipants: input.MaxParticipants,
-			ServiceSettings: domain.ServiceSettings{
-				CancelDeadline:   input.Settings.CancelDeadline,
-				BookingWindowMin: input.Settings.BookingWindowMin,
-				BookingWindowMax: input.Settings.BookingWindowMax,
-				BufferTime:       input.Settings.BufferTime,
-				ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			},
+			Id:               0,
+			MerchantId:       actor.MerchantId,
+			CategoryId:       input.CategoryId,
+			BookingType:      types.BookingTypeClass,
+			Name:             input.Name,
+			Description:      input.Description,
+			Color:            input.Color,
+			TotalDuration:    input.Duration,
+			Price:            input.Price,
+			PriceType:        input.PriceType,
+			IsActive:         input.IsActive,
+			Sequence:         0,
+			MinParticipants:  minParticipants,
+			MaxParticipants:  input.MaxParticipants,
+			CancelDeadline:   input.Settings.CancelDeadline,
+			BookingWindowMin: input.Settings.BookingWindowMin,
+			BookingWindowMax: input.Settings.BookingWindowMax,
+			BufferTime:       input.Settings.BufferTime,
+			ApprovalPolicy:   input.Settings.ApprovalPolicy,
 		})
 		if err != nil {
 			return err
@@ -624,25 +615,23 @@ func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGr
 		}
 
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
-			Id:              serviceId,
-			MerchantId:      actor.MerchantId,
-			CategoryId:      input.CategoryId,
-			Name:            input.Name,
-			Description:     input.Description,
-			Color:           input.Color,
-			TotalDuration:   input.Duration,
-			Price:           input.Price,
-			PriceType:       input.PriceType,
-			IsActive:        input.IsActive,
-			MinParticipants: minParticipants,
-			MaxParticipants: input.MaxParticipants,
-			ServiceSettings: domain.ServiceSettings{
-				CancelDeadline:   input.Settings.CancelDeadline,
-				BookingWindowMin: input.Settings.BookingWindowMin,
-				BookingWindowMax: input.Settings.BookingWindowMax,
-				BufferTime:       input.Settings.BufferTime,
-				ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			},
+			Id:               serviceId,
+			MerchantId:       actor.MerchantId,
+			CategoryId:       input.CategoryId,
+			Name:             input.Name,
+			Description:      input.Description,
+			Color:            input.Color,
+			TotalDuration:    input.Duration,
+			Price:            input.Price,
+			PriceType:        input.PriceType,
+			IsActive:         input.IsActive,
+			MinParticipants:  minParticipants,
+			MaxParticipants:  input.MaxParticipants,
+			CancelDeadline:   input.Settings.CancelDeadline,
+			BookingWindowMin: input.Settings.BookingWindowMin,
+			BookingWindowMax: input.Settings.BookingWindowMax,
+			BufferTime:       input.Settings.BufferTime,
+			ApprovalPolicy:   input.Settings.ApprovalPolicy,
 		})
 		if err != nil {
 			return err

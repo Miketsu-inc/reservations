@@ -23,9 +23,9 @@ type CatalogRepository interface {
 	ReorderServices(ctx context.Context, merchantId uuid.UUID, categoryId *int, serviceIds []int) error
 	ReorderServicesAfterUpdate(ctx context.Context, categoryId *int, merchantId uuid.UUID, exludeServiceId *int) error
 
-	GetServices(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error)
+	GetServicesGroupedByCategory(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error)
 	GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
-	GetServiceWithPhases(ctx context.Context, serviceId int, merchantId uuid.UUID) (PublicServiceWithPhases, error)
+	GetServiceWithPhases(ctx context.Context, serviceId int, merchantId uuid.UUID) (Service, error)
 	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
 	GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error)
 	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
@@ -53,40 +53,85 @@ type CatalogRepository interface {
 }
 
 type Service struct {
-	Id              int               `json:"ID"`
-	MerchantId      uuid.UUID         `json:"merchant_id"`
-	CategoryId      *int              `json:"category_id"`
-	BookingType     types.BookingType `json:"booking_type"`
-	Name            string            `json:"name"`
-	Description     *string           `json:"description"`
-	Color           string            `json:"color"`
-	TotalDuration   int               `json:"total_duration"`
-	Price           *currencyx.Price  `json:"price"`
-	PriceType       types.PriceType   `json:"price_type"`
-	IsActive        bool              `json:"is_active"`
-	Sequence        int               `json:"sequence"`
-	MinParticipants int               `json:"min_participants"`
-	MaxParticipants int               `json:"max_participants"`
-	ServiceSettings
-	DeletedOn *time.Time `json:"deleted_on"`
+	Id               int                 `db:"id" json:"id"`
+	MerchantId       uuid.UUID           `db:"merchant_id" json:"merchant_id"`
+	CategoryId       *int                `db:"category_id" json:"category_id"`
+	BookingType      types.BookingType   `db:"booking_type" json:"booking_type"`
+	Name             string              `db:"name" json:"name"`
+	Description      *string             `db:"description" json:"description"`
+	Color            string              `db:"color" json:"color"`
+	TotalDuration    int                 `db:"total_duration" json:"total_duration"`
+	Price            *currencyx.Price    `db:"price_per_person" json:"price_per_person"`
+	PriceType        types.PriceType     `db:"price_type" json:"price_type"`
+	IsActive         bool                `db:"is_active" json:"is_active"`
+	Sequence         int                 `db:"sequence" json:"sequence"`
+	MinParticipants  int                 `db:"min_participants" json:"min_participants"`
+	MaxParticipants  int                 `db:"max_participants" json:"max_participants"`
+	CancelDeadline   *int                `db:"cancel_deadline" json:"cancel_deadline"`
+	BookingWindowMin *int                `db:"booking_window_min" json:"booking_window_min"`
+	BookingWindowMax *int                `db:"booking_window_max" json:"booking_window_max"`
+	BufferTime       *int                `db:"buffer_time" json:"buffer_time"`
+	ApprovalPolicy   *types.ApprovalType `db:"approval_policy" json:"approval_policy"`
+	DeletedOn        *time.Time          `db:"deleted_on" json:"deleted_on"`
+	// for convenience we do not really query the service without the phases anyway
+	Phases []ServicePhase
+}
+
+func (s *Service) IsGroupService() bool {
+	return s.BookingType == types.BookingTypeClass || s.BookingType == types.BookingTypeEvent
+}
+
+func (s *Service) CalculateNewBookingPhases(bookingId int, startTime time.Time) []BookingPhase {
+	if len(s.Phases) == 0 {
+		return []BookingPhase{}
+	}
+
+	bookingPhases := make([]BookingPhase, len(s.Phases))
+	bookingStart := startTime
+
+	for i, phase := range s.Phases {
+		bookingEnd := bookingStart.Add(phase.GetDuration())
+
+		bookingPhases[i] = BookingPhase{
+			BookingId:      bookingId,
+			ServicePhaseId: phase.Id,
+			FromDate:       bookingStart,
+			ToDate:         bookingEnd,
+		}
+
+		bookingStart = bookingEnd
+	}
+
+	return bookingPhases
 }
 
 type ServicePhase struct {
-	Id        int                    `json:"ID"`
-	ServiceId int                    `json:"service_id"`
-	Name      string                 `json:"name"`
-	Sequence  int                    `json:"sequence"`
-	Duration  int                    `json:"duration"`
-	PhaseType types.ServicePhaseType `json:"phase_type"`
-	DeletedOn *time.Time             `json:"deleted_on"`
+	Id        int                    `db:"id" json:"id"`
+	ServiceId int                    `db:"service_id" json:"service_id"`
+	Name      string                 `db:"name" json:"name"`
+	Sequence  int                    `db:"sequence" json:"sequence"`
+	Duration  int                    `db:"duration" json:"duration"`
+	PhaseType types.ServicePhaseType `db:"phase_type" json:"phase_type"`
+	DeletedOn *time.Time             `db:"deleted_on" json:"deleted_on"`
+}
+
+func (sp *ServicePhase) IsEqual(phase ServicePhase) bool {
+	return sp.Name == phase.Name &&
+		sp.Sequence == phase.Sequence &&
+		sp.Duration == phase.Duration &&
+		sp.PhaseType == phase.PhaseType
+}
+
+func (sp *ServicePhase) GetDuration() time.Duration {
+	return time.Duration(sp.Duration) * time.Minute
 }
 
 type ServiceCategory struct {
-	Id         int       `json:"id" db:"id"`
-	MerchantId uuid.UUID `json:"merchant_id"`
-	LocationId int       `json:"location_id"`
-	Name       string    `json:"name" db:"name"`
-	Sequence   int       `json:"sequence"`
+	Id         int       `db:"id"`
+	MerchantId uuid.UUID `db:"merchant_id"`
+	LocationId int       `db:"location_id"`
+	Name       string    `db:"name"`
+	Sequence   int       `db:"sequence"`
 }
 
 type ServiceSettings struct {
@@ -97,38 +142,11 @@ type ServiceSettings struct {
 	ApprovalPolicy   *types.ApprovalType `json:"approval_policy"`
 }
 
-type PublicServicePhase struct {
-	Id        int                    `json:"id" db:"id"`
-	ServiceId int                    `json:"service_id" db:"service_id"`
-	Name      string                 `json:"name" db:"name"`
-	Sequence  int                    `json:"sequence" db:"sequence"`
-	Duration  int                    `json:"duration" db:"duration"`
-	PhaseType types.ServicePhaseType `json:"phase_type" db:"phase_type"`
-}
-
-type PublicServiceWithPhases struct {
-	Id              int                  `json:"id"`
-	MerchantId      uuid.UUID            `json:"merchant_id"`
-	BookingType     types.BookingType    `json:"booking_type"`
-	CategoryId      *int                 `json:"category_id"`
-	Name            string               `json:"name"`
-	Description     *string              `json:"description"`
-	Color           string               `json:"color"`
-	TotalDuration   int                  `json:"total_duration"`
-	Price           *currencyx.Price     `json:"price"`
-	PriceType       types.PriceType      `json:"price_type"`
-	IsActive        bool                 `json:"is_active"`
-	MinParticipants int                  `json:"min_participants"`
-	MaxParticipants int                  `json:"max_participants"`
-	Sequence        int                  `json:"sequence"`
-	Phases          []PublicServicePhase `json:"phases"`
-}
-
 type ServicesGroupedByCategory struct {
-	Id       *int                      `json:"id"`
-	Name     *string                   `json:"name"`
-	Sequence *int                      `json:"sequence"`
-	Services []PublicServiceWithPhases `json:"services"`
+	Id       *int      `json:"id"`
+	Name     *string   `json:"name"`
+	Sequence *int      `json:"sequence"`
+	Services []Service `json:"services"`
 }
 
 type MerchantPageService struct {
@@ -161,7 +179,7 @@ type ServicePageData struct {
 	IsActive      bool                          `json:"is_active"`
 	Sequence      int                           `json:"sequence"`
 	Settings      ServiceSettings               `json:"settings"`
-	Phases        []PublicServicePhase          `json:"phases"`
+	Phases        []ServicePhase                `json:"phases"`
 	Products      []MinimalProductInfoWithUsage `json:"used_products"`
 }
 
@@ -183,15 +201,15 @@ type ServiceInfoForProducts struct {
 }
 
 type PublicServiceDetails struct {
-	Id                int                  `json:"id"`
-	Name              string               `json:"name"`
-	Description       *string              `json:"description"`
-	TotalDuration     int                  `json:"total_duration"`
-	Price             *currencyx.Price     `json:"price"`
-	PriceType         types.PriceType      `json:"price_type"`
-	FormattedLocation string               `json:"formatted_location"`
-	GeoPoint          types.GeoPoint       `json:"geo_point"`
-	Phases            []PublicServicePhase `json:"phases"`
+	Id                int              `json:"id"`
+	Name              string           `json:"name"`
+	Description       *string          `json:"description"`
+	TotalDuration     int              `json:"total_duration"`
+	Price             *currencyx.Price `json:"price"`
+	PriceType         types.PriceType  `json:"price_type"`
+	FormattedLocation string           `json:"formatted_location"`
+	GeoPoint          types.GeoPoint   `json:"geo_point"`
+	Phases            []ServicePhase   `json:"phases"`
 }
 
 type MinimalServiceInfo struct {

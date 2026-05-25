@@ -166,9 +166,7 @@ func (b Booking) CanTransition(status types.BookingStatus) error {
 // struct just for db inserts and updates
 type BookingDetails struct {
 	PricePerPerson      currencyx.Price
-	CostPerPerson       currencyx.Price
 	TotalPrice          currencyx.Price
-	TotalCost           currencyx.Price
 	MerchantNote        *string
 	MinParticipants     int
 	MaxParticipants     int

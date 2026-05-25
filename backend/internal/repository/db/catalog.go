@@ -188,11 +188,12 @@ func (r *catalogRepository) ReorderServicesAfterUpdate(ctx context.Context, cate
 }
 
 // TODO: full outer joins can be expensive, this should be reevaluated later for performance
-func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUID) ([]domain.ServicesGroupedByCategory, error) {
+func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, merchantId uuid.UUID) ([]domain.ServicesGroupedByCategory, error) {
 	query := `
 	with services as (
-		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person,
-			s.price_type, s.is_active, s.sequence,
+		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.price_type,
+			s.is_active, s.sequence, s.min_participants, s.max_participants, s.cancel_deadline, s.booking_window_min, s.booking_window_max,
+			s.buffer_time, s.approval_policy, s.deleted_on,
 		coalesce (
 			jsonb_agg(
 				jsonb_build_object(
@@ -201,7 +202,8 @@ func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUI
 					'name', sp.name,
 					'sequence', sp.sequence,
 					'duration', sp.duration,
-					'phase_type', sp.phase_type
+					'phase_type', sp.phase_type,
+					'deleted_on', sp.deleted_on
 				) order by sp.sequence
 			) filter (where sp.id is not null),
 		'[]'::jsonb) as phases
@@ -225,6 +227,14 @@ func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUI
 				'price_type', s.price_type,
 				'is_active', s.is_active,
 				'sequence', s.sequence,
+				'min_participants', s.min_participants,
+				'max_participants', s.max_participants,
+				'cancel_deadline', s.cancel_deadline,
+				'booking_window_min', s.booking_window_min,
+				'booking_window_max', s.booking_window_max,
+				'buffer_time', s.buffer_time,
+				'approval_policy', s.approval_policy,
+				'deleted_on', s.deleted_on,
 				'phases', s.phases
 			) order by s.sequence
 		) filter (where s.id is not null),
@@ -252,7 +262,7 @@ func (r *catalogRepository) GetServices(ctx context.Context, merchantId uuid.UUI
 				return domain.ServicesGroupedByCategory{}, err
 			}
 		} else {
-			sgby.Services = []domain.PublicServiceWithPhases{}
+			sgby.Services = []domain.Service{}
 		}
 
 		return sgby, nil
@@ -328,62 +338,50 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 	return servicesGroupByCategory, nil
 }
 
-func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID int, merchantId uuid.UUID) (domain.PublicServiceWithPhases, error) {
+func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID int, merchantId uuid.UUID) (domain.Service, error) {
 	query := `
-	select s.id, s.merchant_id, s.booking_type, s.category_id, s.name, s.description, s.color, s.total_duration, s.price_per_person as price,
-		s.price_type, s.min_participants, s.max_participants, s.is_active, sp.id, sp.service_id, sp.name, sp.sequence, sp.duration, sp.phase_type
+	select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.price_type,
+		s.is_active, s.sequence, s.min_participants, s.max_participants, s.cancel_deadline, s.booking_window_min, s.booking_window_max,
+		s.buffer_time, s.approval_policy, s.deleted_on,
+	coalesce (
+		jsonb_agg(
+			jsonb_build_object(
+				'id', sp.id,
+				'service_id', sp.service_id,
+				'name', sp.name,
+				'sequence', sp.sequence,
+				'duration', sp.duration,
+				'phase_type', sp.phase_type,
+				'deleted_on', sp.deleted_on
+			) order by sp.sequence
+		) filter (where sp.id is not null),
+	'[]'::jsonb) as phases
 	from "Service" s
-	left join "ServicePhase" sp on s.id = sp.service_id
-	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null and sp.deleted_on is null
-	order by sp.sequence asc
+	left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
+	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
+	group by s.id
 	`
 
-	rows, err := r.db.Query(ctx, query, serviceID, merchantId)
+	var s domain.Service
+	var phasesJson []byte
+
+	err := r.db.QueryRow(ctx, query, serviceID, merchantId).Scan(&s.Id, &s.MerchantId, &s.CategoryId, &s.BookingType, &s.Name, &s.Description, &s.Color, &s.TotalDuration,
+		&s.Price, &s.PriceType, &s.IsActive, &s.Sequence, &s.MinParticipants, &s.MaxParticipants, &s.CancelDeadline, &s.BookingWindowMin,
+		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &s.DeletedOn, &phasesJson)
 	if err != nil {
-		return domain.PublicServiceWithPhases{}, err
+		return domain.Service{}, err
 	}
-	defer rows.Close()
 
-	var pswp domain.PublicServiceWithPhases
-
-	firstRow := true
-	for rows.Next() {
-		var ts domain.Service
-		var p domain.PublicServicePhase
-		var spId *int
-
-		err := rows.Scan(&ts.Id, &ts.MerchantId, &ts.BookingType, &ts.CategoryId, &ts.Name, &ts.Description, &ts.Color, &ts.TotalDuration,
-			&ts.Price, &ts.PriceType, &ts.MinParticipants, &ts.MaxParticipants, &ts.IsActive, &spId, &p.ServiceId, &p.Name, &p.Sequence, &p.Duration, &p.PhaseType)
+	if len(phasesJson) > 0 {
+		err = json.Unmarshal(phasesJson, &s.Phases)
 		if err != nil {
-			return domain.PublicServiceWithPhases{}, err
+			return domain.Service{}, err
 		}
-
-		if firstRow {
-			pswp = domain.PublicServiceWithPhases{
-				Id:              ts.Id,
-				MerchantId:      ts.MerchantId,
-				BookingType:     ts.BookingType,
-				CategoryId:      ts.CategoryId,
-				Name:            ts.Name,
-				Description:     ts.Description,
-				Color:           ts.Color,
-				TotalDuration:   ts.TotalDuration,
-				Price:           ts.Price,
-				PriceType:       ts.PriceType,
-				IsActive:        ts.IsActive,
-				MinParticipants: ts.MinParticipants,
-				MaxParticipants: ts.MaxParticipants,
-			}
-			firstRow = false
-		}
-
-		if spId != nil {
-			p.Id = *spId
-			pswp.Phases = append(pswp.Phases, p)
-		}
+	} else {
+		s.Phases = []domain.ServicePhase{}
 	}
 
-	return pswp, nil
+	return s, nil
 }
 
 func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]domain.MerchantPageServicesGroupedByCategory, error) {
@@ -480,7 +478,7 @@ func (r *catalogRepository) GetServiceDetailsForMerchantPage(ctx context.Context
 			return domain.PublicServiceDetails{}, err
 		}
 	} else {
-		data.Phases = []domain.PublicServicePhase{}
+		data.Phases = []domain.ServicePhase{}
 	}
 
 	return data, nil
@@ -558,7 +556,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 			return domain.ServicePageData{}, err
 		}
 	} else {
-		spd.Phases = []domain.PublicServicePhase{}
+		spd.Phases = []domain.ServicePhase{}
 	}
 
 	if len(productJson) > 0 {
