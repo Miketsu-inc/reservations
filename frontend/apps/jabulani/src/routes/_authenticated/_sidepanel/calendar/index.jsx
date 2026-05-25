@@ -4,12 +4,12 @@ import {
   calculateStartEndTime,
   invalidateLocalStorageAuth,
   isDurationValid,
+  preferencesQueryOptions,
   SCREEN_SM,
 } from "@reservations/lib";
 import { queryOptions } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { globalQueryClient } from "../../../../main";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
@@ -82,17 +82,24 @@ function mapCalendarView(view, mobile_view) {
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
   component: CalendarPage,
-  validateSearch: (search) => {
-    let defaultView = "timeGridWeek";
+  loaderDeps: ({ search }) => search,
+  loader: async ({
+    deps: search,
+    context: {
+      queryClient,
+      authContext: { merchantId },
+    },
+  }) => {
+    const preferences = await queryClient.ensureQueryData(
+      preferencesQueryOptions(merchantId)
+    );
 
-    // TODO: rewrite needed, we can't fetch the preferences here no more
-    const preferences = globalQueryClient.getQueryData(["preferences"]);
-    if (preferences?.calendar_view) {
-      defaultView = mapCalendarView(
-        preferences.calendar_view,
-        preferences.calendar_view_mobile
-      );
-    }
+    let defaultView = preferences?.calendar_view
+      ? mapCalendarView(
+          preferences.calendar_view,
+          preferences.calendar_view_mobile
+        )
+      : "timeGridWeek";
 
     const view = [
       "dayGridMonth",
@@ -111,28 +118,24 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
         view,
         preferences?.first_day_of_week
       );
+
       start = calculated.start;
       end = calculated.end;
     }
 
-    return {
-      view,
-      start,
-      end,
-    };
-  },
-  loaderDeps: ({ search: { view, start, end } }) => ({
-    view,
-    start,
-    end,
-  }),
-  loader: async ({
-    deps: { start, end },
-    context: {
-      queryClient,
-      authContext: { merchantId },
-    },
-  }) => {
+    if (view !== search.view || start !== search.start || end !== search.end) {
+      throw redirect({
+        from: Route.fullPath,
+        to: "/calendar",
+        replace: true,
+        search: {
+          view: view,
+          start: start,
+          end: end,
+        },
+      });
+    }
+
     await queryClient.ensureQueryData(
       bookingsQueryOptions(merchantId, start, end)
     );
