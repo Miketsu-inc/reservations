@@ -142,7 +142,10 @@ export default function ServiceCard({
                         : "hover:bg-hvr_gray cursor-pointer"
                       } gap-5`}
                   >
-                    <Icon icon={ArrowLeft02Icon} styles="size-6 ml-2" />
+                    <Icon
+                      icon={ArrowLeft02Icon}
+                      styles="size-6 rotate-180 ml-2"
+                    />
                     <p>Move back</p>
                   </button>
                 </PopoverClose>
@@ -153,10 +156,7 @@ export default function ServiceCard({
                     className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
                       gap-5`}
                   >
-                    <Icon
-                      icon={ArrowLeft02Icon}
-                      styles="size-6 rotate-180 ml-2"
-                    />
+                    <Icon icon={ArrowLeft02Icon} styles="size-6 ml-2" />
                     <p>Move forth</p>
                   </button>
                 </PopoverClose>

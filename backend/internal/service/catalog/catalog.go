@@ -463,6 +463,15 @@ type ReorderInput struct {
 func (s *Service) Reorder(ctx context.Context, input ReorderInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
+	idSet := make(map[int]struct{}, len(input.Services))
+	for _, id := range input.Services {
+		if _, ok := idSet[id]; ok {
+			return fmt.Errorf("duplicate service id: %d", id)
+		}
+
+		idSet[id] = struct{}{}
+	}
+
 	err := s.catalogRepo.ReorderServices(ctx, actor.MerchantId, input.CategoryId, input.Services)
 	if err != nil {
 		return fmt.Errorf("error while ordering services: %s", err.Error())

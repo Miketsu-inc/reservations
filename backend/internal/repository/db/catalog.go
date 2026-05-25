@@ -3,8 +3,6 @@ package db
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,40 +123,17 @@ func (r *catalogRepository) ActivateService(ctx context.Context, merchantId uuid
 	return nil
 }
 
-// TODO: this implementation looks crazy
 func (r *catalogRepository) ReorderServices(ctx context.Context, merchantId uuid.UUID, categoryId *int, serviceIds []int) error {
-	var cases []string
-	var inParams []string
-	params := make([]any, len(serviceIds))
+	query := `
+	update "Service" s
+	set sequence = x.seq
+	from unnest($1::int[]) with ordinality as x(id, seq)
+	where s.id = x.id and s.merchant_id = $2 and (
+		($3::int is null and s.category_id is null) or s.category_id = $3
+	)
+	`
 
-	for i, id := range serviceIds {
-		params[i] = id
-		paramIndex := i + 1
-		cases = append(cases, fmt.Sprintf("when $%d then %d", paramIndex, i+1))
-		inParams = append(inParams, fmt.Sprintf("$%d", paramIndex))
-	}
-
-	categoryIdParamIndex := len(serviceIds) + 1
-	categoryCondition := ""
-	if categoryId == nil {
-		categoryCondition = "category_id is null"
-	} else {
-		categoryCondition = fmt.Sprintf("category_id = $%d", categoryIdParamIndex)
-		params = append(params, *categoryId)
-	}
-
-	merchantIdParamIndex := len(params) + 1
-	params = append(params, merchantId)
-
-	query := fmt.Sprintf(`
-	update "Service"
-	set sequence = case id
-	%s
-	end
-	where id in (%s) and %s and merchant_id = $%d`,
-		strings.Join(cases, "\n"), strings.Join(inParams, ", "), categoryCondition, merchantIdParamIndex)
-
-	_, err := r.db.Exec(ctx, query, params...)
+	_, err := r.db.Exec(ctx, query, serviceIds, merchantId, categoryId)
 	if err != nil {
 		return err
 	}
@@ -869,30 +844,15 @@ func (r *catalogRepository) DeleteServiceCategory(ctx context.Context, merchantI
 	return nil
 }
 
-// TODO: this implementation looks crazy
 func (r *catalogRepository) ReorderServiceCategories(ctx context.Context, merchantId uuid.UUID, categoryIds []int) error {
-	var cases []string
-	var inParams []string
-	params := make([]any, len(categoryIds))
+	query := `
+	update "ServiceCategory" sc
+	set sequence = x.seq
+	from unnest($1::int[]) with ordinality as x(id, seq)
+	where sc.id = x.id and sc.merchant_id = $2
+	`
 
-	for i, id := range categoryIds {
-		params[i] = id
-		paramIndex := i + 1
-		cases = append(cases, fmt.Sprintf("when $%d then %d", paramIndex, i+1))
-		inParams = append(inParams, fmt.Sprintf("$%d", paramIndex))
-	}
-
-	merchantIdParamIndex := len(categoryIds) + 1
-	params = append(params, merchantId)
-
-	query := fmt.Sprintf(`
-	update "ServiceCategory"
-	set sequence = case id
-	%s
-	end
-	where id in (%s) and merchant_id = $%d`, strings.Join(cases, "\n"), strings.Join(inParams, ", "), merchantIdParamIndex)
-
-	_, err := r.db.Exec(ctx, query, params...)
+	_, err := r.db.Exec(ctx, query, categoryIds, merchantId)
 	if err != nil {
 		return err
 	}

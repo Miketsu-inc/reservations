@@ -12,11 +12,11 @@ type NewCategoryInput struct {
 	Name string
 }
 
-func (s *Service) NewCategory(ctx context.Context, req NewCategoryInput) error {
+func (s *Service) NewCategory(ctx context.Context, input NewCategoryInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	err := s.catalogRepo.NewServiceCategory(ctx, actor.MerchantId, domain.ServiceCategory{
-		Name:     req.Name,
+		Name:     input.Name,
 		Sequence: 0,
 	})
 	if err != nil {
@@ -30,12 +30,12 @@ type UpdateCategoryInput struct {
 	Name string
 }
 
-func (s *Service) UpdateCategory(ctx context.Context, categoryId int, req UpdateCategoryInput) error {
+func (s *Service) UpdateCategory(ctx context.Context, categoryId int, input UpdateCategoryInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	err := s.catalogRepo.UpdateServiceCategory(ctx, actor.MerchantId, domain.ServiceCategory{
 		Id:   categoryId,
-		Name: req.Name,
+		Name: input.Name,
 	})
 	if err != nil {
 		return fmt.Errorf("error while updating service category: %s", err.Error())
@@ -59,10 +59,19 @@ type ReorderCategoriesInput struct {
 	Categories []int
 }
 
-func (s *Service) ReorderCategories(ctx context.Context, req ReorderCategoriesInput) error {
+func (s *Service) ReorderCategories(ctx context.Context, input ReorderCategoriesInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.ReorderServiceCategories(ctx, actor.MerchantId, req.Categories)
+	idSet := make(map[int]struct{}, len(input.Categories))
+	for _, id := range input.Categories {
+		if _, ok := idSet[id]; ok {
+			return fmt.Errorf("duplicate category id: %d", id)
+		}
+
+		idSet[id] = struct{}{}
+	}
+
+	err := s.catalogRepo.ReorderServiceCategories(ctx, actor.MerchantId, input.Categories)
 	if err != nil {
 		return fmt.Errorf("error while ordering service categories: %s", err.Error())
 	}
