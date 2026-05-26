@@ -685,7 +685,7 @@ func (r *catalogRepository) GetServiceCancelDeadline(ctx context.Context, mercha
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
 	query := `
 	insert into "ServicePhase" (service_id, name, sequence, duration, phase_type)
-	select $1, unnest($2::text[]), unnest($3::int[]), unnest($4::int[]), unnest($5::service_phase_type[])
+	select $1, unnest($2::text[]), unnest($3::int[]), unnest($4::int[]), unnest($5::text[])
 	`
 
 	names := make([]string, len(phases))
@@ -712,7 +712,7 @@ func (r *catalogRepository) UpdateServicePhases(ctx context.Context, phases []do
 	query := `
 	update "ServicePhase" sp
 	set name = u.name, sequence = u.sequence, duration = u.duration, phase_type = u.phase_type
-	from unnest($1::int[], $2::text[], $3::int[], $4::int[], $5::service_phase_type[]) as u(id, name, sequence, duration, phase_type)
+	from unnest($1::int[], $2::text[], $3::int[], $4::int[], $5::text[]) as u(id, name, sequence, duration, phase_type)
 	where sp.id = u.id
 	`
 

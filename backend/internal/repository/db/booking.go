@@ -49,7 +49,7 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 	query := `
 	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date,
 		price_per_person, total_price, merchant_note, min_participants, max_participants, current_participants)
-	select unnest($1::booking_status[]), unnest($2::booking_type[]), unnest($3::boolean[]), unnest($4::uuid[]), unnest($5::int[]), unnest($6::int[]), unnest($7::int[]),
+	select unnest($1::text[]), unnest($2::text[]), unnest($3::boolean[]), unnest($4::uuid[]), unnest($5::int[]), unnest($6::int[]), unnest($7::int[]),
 		unnest($8::int[]), unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[]), unnest($12::price[]), unnest($13::price[]),
 		unnest($14::text[]), unnest($15::int[]), unnest($16::int[]), unnest($17::int[])
 	returning id
@@ -144,7 +144,7 @@ func (r *bookingRepository) NewBookingPhases(ctx context.Context, bookingPhases 
 func (r *bookingRepository) NewBookingParticipants(ctx context.Context, bookingParticipants []domain.BookingParticipant) error {
 	query := `
 	insert into "BookingParticipant" (status, booking_id, customer_id, customer_note)
-	select unnest($1::booking_status[]), unnest($2::int[]), unnest($3::uuid[]), unnest($4::text[])
+	select unnest($1::text[]), unnest($2::int[]), unnest($3::uuid[]), unnest($4::text[])
 	`
 
 	statuses := make([]string, len(bookingParticipants))
@@ -267,7 +267,7 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 func (r *bookingRepository) UpdateBookingParticipants(ctx context.Context, participants []domain.BookingParticipant) error {
 	query := `
 	insert into "BookingParticipant" (booking_id, customer_id, status)
-	select unnest($1::int[]), unnest($2::uuid[]), unnest($3::booking_status[])
+	select unnest($1::int[]), unnest($2::uuid[]), unnest($3::text[])
 	on conflict (booking_id, customer_id)
 	do update
 	set status = excluded.status, cancelled_on = NULL, cancellation_reason = NULL`

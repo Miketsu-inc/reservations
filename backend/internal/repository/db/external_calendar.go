@@ -167,7 +167,7 @@ func (r *externalCalendarRepository) BulkInsertExternalCalendarEvent(ctx context
 	insert into "ExternalCalendarEvent" (external_calendar_id, external_event_id, etag, status, title, description, from_date, to_date, is_all_day,
 		internal_id, internal_type, is_blocking, source, last_synced_at)
 	select $1, unnest($2::text[]), unnest($3::text[]), unnest($4::text[]), unnest($5::text[]), unnest($6::text[]), unnest($7::timestamptz[]),
-		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::event_internal_type[]), unnest($12::boolean[]), $13, $14
+		unnest($8::timestamptz[]), unnest($9::boolean[]), unnest($10::int[]), unnest($11::text[]), unnest($12::boolean[]), $13, $14
 	`
 
 	extEventIds := make([]string, len(externalEvents))
@@ -232,7 +232,7 @@ func (r *externalCalendarRepository) BulkUpdateExternalCalendarEvent(ctx context
 	update "ExternalCalendarEvent" e
 	set etag = u.etag, status = u.status, title = u.title, description = u.description, from_date = u.from_date, to_date = u.to_date,
 		is_all_day = u.is_all_day, internal_id = u.internal_id, internal_type = u.internal_type, is_blocking = u.is_blocking, last_synced_at = $13
-	from unnest($2::int[], $3::text[], $4::text[], $5::text[], $6::text[], $7::timestamptz[], $8::timestamptz[], $9::boolean[], $10::int[], $11::event_internal_type[], $12::boolean[])
+	from unnest($2::int[], $3::text[], $4::text[], $5::text[], $6::text[], $7::timestamptz[], $8::timestamptz[], $9::boolean[], $10::int[], $11::text[], $12::boolean[])
 	as u(id, etag, status, title, description, from_date, to_date, is_all_day, internal_id, internal_type, is_blocking)
 	where external_calendar_id = $1 and e.id = u.id
 	`

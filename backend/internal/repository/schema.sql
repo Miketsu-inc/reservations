@@ -10,17 +10,6 @@ create type price as (
     currency                 char(3)
 );
 
-create type service_phase_type as ENUM ('active', 'wait');
-create type subscription_tier as ENUM ('free', 'pro', 'enterprise');
-create type booking_type as ENUM ('appointment', 'event', 'class');
-create type booking_status as ENUM ('booked', 'confirmed', 'completed', 'cancelled', 'no-show');
-create type employee_role as ENUM ('owner', 'admin', 'staff');
-create type price_type as ENUM ('fixed', 'free', 'from');
-create type auth_provider_type as ENUM ('facebook', 'google');
-create type event_source as ENUM ('internal', 'google');
-create type event_internal_type as ENUM ('booking', 'blocked_time');
-create type approval_type as ENUM ('auto', 'manual', 'manual_for_new');
-
 create table if not exists "User" (
     ID                       uuid            primary key unique not null,
     first_name               varchar(30)     not null,
@@ -30,7 +19,7 @@ create table if not exists "User" (
     password_hash            varchar(72),
     jwt_refresh_version      integer,
     preferred_lang           varchar(10),
-    auth_provider            auth_provider_type,
+    auth_provider            text            check (auth_provider in ('facebook', 'google')),
     provider_id              text
 );
 
@@ -44,14 +33,14 @@ create table if not exists "Merchant" (
     about_us                 text,
     parking_info             text,
     payment_info             text,
-    cancel_deadline          integer not null default 0,
-    booking_window_min       integer not null default 0,
-    booking_window_max       integer not null default 5, --  in months
-    buffer_time              integer not null default 0,
-    approval_policy          approval_type not null default 'auto',
+    cancel_deadline          integer         not null default 0,
+    booking_window_min       integer         not null default 0,
+    booking_window_max       integer         not null default 5, --  in months
+    buffer_time              integer         not null default 0,
+    approval_policy          text            default 'auto' check (approval_policy in ('auto', 'manual', 'manual_for_new')) not null,
     timezone                 text,
-    currency_code            char(3)           not null,
-    subscription_tier        subscription_tier not null
+    currency_code            char(3)         not null,
+    subscription_tier        text            check (subscription_tier in ('free', 'pro', 'enterprise')) not null
 );
 
 create table if not exists "Location" (
@@ -72,7 +61,7 @@ create table if not exists "Employee" (
     ID                       serial          primary key unique not null,
     user_id                  uuid            references "User" (ID) on delete set null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    role                     employee_role   not null default 'staff',
+    role                     text            default 'staff' check (role in ('owner', 'admin', 'staff')) not null,
     first_name               varchar(30),
     last_name                varchar(30),
     email                    varchar(320),
@@ -96,13 +85,13 @@ create table if not exists "Service" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     category_id              integer         references "ServiceCategory" (ID) on delete set null,
-    booking_type             booking_type    not null,
+    booking_type             text            check (booking_type in ('appointment', 'event', 'class')) not null,
     name                     varchar(30)     not null,
     description              varchar(200),
     color                    char(7)         not null,
     total_duration           integer         not null,
     price_per_person         price,
-    price_type               price_type      not null default 'fixed',
+    price_type               text            default 'fixed' check (price_type in ('fixed', 'free', 'from')) not null,
     is_active                boolean         not null,
     sequence                 integer         not null default 0,
     min_participants         integer         not null,
@@ -111,7 +100,7 @@ create table if not exists "Service" (
     booking_window_min       integer,
     booking_window_max       integer,
     buffer_time              integer,
-    approval_policy          approval_type,
+    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new')),
     deleted_on               timestamptz
 );
 
@@ -121,7 +110,7 @@ create table if not exists "ServicePhase" (
     name                     varchar(30)            not null,
     sequence                 integer                not null,
     duration                 integer                not null,
-    phase_type               service_phase_type     not null,
+    phase_type               text                   check (phase_type in ('active', 'wait')) not null,
     deleted_on               timestamptz,
 
     constraint unique_service_phase_sequence unique (service_id, sequence)
@@ -146,7 +135,7 @@ create table if not exists "Customer" (
 
 create table if not exists "BookingSeries" (
     ID                       serial          primary key unique not null,
-    booking_type             booking_type    not null,
+    booking_type             text            check (booking_type in ('appointment', 'event', 'class')) not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              integer         references "Employee" (ID) on delete set null,
     service_id               integer         references "Service" (ID) not null,
@@ -175,8 +164,8 @@ create table if not exists "BookingSeriesParticipant" (
 
 create table if not exists "Booking" (
     ID                       serial          primary key unique not null,
-    status                   booking_status  not null default 'booked',
-    booking_type             booking_type    not null,
+    status                   text            default 'booked' check (booking_status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
+    booking_type             text            check (booking_type in ('appointment', 'event', 'class')) not null,
     is_recurring             boolean         not null default false,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              integer         references "Employee" (ID) on delete set null,
@@ -208,7 +197,7 @@ create table if not exists "BookingPhase" (
 
 create table if not exists "BookingParticipant" (
     ID                       serial           primary key unique not null,
-    status                   booking_status   not null default 'booked',
+    status                   text             default 'booked' check (booking_status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
     booking_id               integer          references "Booking" (ID) on delete cascade not null,
     customer_id              uuid             references "Customer" (ID) on delete cascade,
     customer_note            text,
@@ -269,7 +258,7 @@ create table if not exists "BlockedTime" (
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,
     all_day                  boolean         not null,
-    source                   event_source
+    source                   text            check (source in ('internal', 'google'))
 );
 
 create table if not exists "BlockedTimeType" (
@@ -306,9 +295,9 @@ create table if not exists "ExternalCalendarEvent" (
     to_date                  timestamptz         not null,
     is_all_day               boolean             not null,
     internal_id              integer,
-    internal_type            event_internal_type,
+    internal_type            text                check (internal_type in ('booking', 'blocked_time')),
     is_blocking              boolean             not null,
-    source                   event_source        not null,
+    source                   text                check (source in ('internal', 'google')) not null,
     last_synced_at           timestamptz         not null default now(),
 
     unique (external_calendar_id, external_event_id)
