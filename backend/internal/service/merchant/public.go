@@ -302,34 +302,31 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 				na.FromDate = &parsedTime
 			}
 		}
-
 		return na, nil
 
 	} else {
 
-	}
+		searchStart := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
+		searchEnd := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
 
-	searchStart := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
-	searchEnd := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
-
-	booking, err := s.bookingRepo.GetClosestAvailableGroupBooking(ctx, merchantId, serviceId, locationId, searchStart, searchEnd)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return NextAvailable{}, nil
+		booking, err := s.bookingRepo.GetClosestAvailableGroupBooking(ctx, merchantId, serviceId, locationId, searchStart, searchEnd)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return NextAvailable{}, nil
+			}
+			return NextAvailable{}, fmt.Errorf("error finding group booking: %w", err)
 		}
-		return NextAvailable{}, fmt.Errorf("error finding group booking: %w", err)
+
+		fromDateMechantTz := booking.FromDate.In(merchantTz)
+		toDateMerchantTz := booking.ToDate.In(merchantTz)
+
+		return NextAvailable{
+			FromDate:            &fromDateMechantTz,
+			ToDate:              &toDateMerchantTz,
+			CurrentParticipants: &booking.CurrentParticipants,
+			Employee:            booking.EmployeeId,
+		}, nil
 	}
-
-	fromDateMechantTz := booking.FromDate.In(merchantTz)
-	toDateMerchantTz := booking.ToDate.In(merchantTz)
-
-	return NextAvailable{
-		FromDate:            &fromDateMechantTz,
-		ToDate:              &toDateMerchantTz,
-		CurrentParticipants: &booking.CurrentParticipants,
-		Employee:            booking.EmployeeId,
-	}, nil
-
 }
 
 type DisabledDays struct {
