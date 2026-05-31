@@ -69,6 +69,12 @@ type TimeSlot struct {
 
 type BusinessHours map[int][]TimeSlot
 
+type BusinessHoursStatus struct {
+	IsOpen      bool
+	CloseTime   *string
+	NextOpenDay *int
+}
+
 type MerchantInfo struct {
 	Name         string `json:"merchant_name"`
 	UrlName      string `json:"url_name"`
@@ -88,9 +94,8 @@ type MerchantInfo struct {
 	FormattedLocation string         `json:"formatted_location"`
 	GeoPoint          types.GeoPoint `json:"geo_point"`
 
-	Services []MerchantPageServicesGroupedByCategory `json:"services"`
-
-	BusinessHours BusinessHours `json:"business_hours"`
+	BusinessHours       BusinessHours       `json:"business_hours"`
+	BusinessHoursStatus BusinessHoursStatus `json:"business_hours_status"`
 }
 
 type MerchantSettingsInfo struct {

@@ -150,14 +150,16 @@ type ServicesGroupedByCategory struct {
 }
 
 type MerchantPageService struct {
-	Id            int              `json:"id"`
-	CategoryId    *int             `json:"category_id"`
-	Name          string           `json:"name"`
-	Description   *string          `json:"description"`
-	TotalDuration int              `json:"total_duration"`
-	Price         *currencyx.Price `json:"price"`
-	PriceType     types.PriceType  `json:"price_type"`
-	Sequence      int              `json:"sequence"`
+	Id              int               `json:"id"`
+	CategoryId      *int              `json:"category_id"`
+	Name            string            `json:"name"`
+	Description     *string           `json:"description"`
+	TotalDuration   int               `json:"total_duration"`
+	Price           *currencyx.Price  `json:"price"`
+	PriceType       types.PriceType   `json:"price_type"`
+	MaxParticipants int               `json:"max_participants"`
+	BookingType     types.BookingType `json:"booking_type"`
+	Sequence        int               `json:"sequence"`
 }
 
 type MerchantPageServicesGroupedByCategory struct {

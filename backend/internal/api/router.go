@@ -194,7 +194,6 @@ func tangoRouter() chi.Router {
 		"/m/{merchant_url}",
 		"/m/{merchant_url}/booking",
 		"/m/{merchant_url}/booking/completed",
-		"/m/{merchant_url}/services/{serviceId}",
 		"/m/{merchant_url}/cancel/{bookingId}",
 		"/m/{merchant_url}/cancel/{bookingId}/completed",
 	}

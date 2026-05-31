@@ -44,7 +44,7 @@ export function Toggle({
         isPressed
           ? "text-white [transition-delay:150ms] dark:text-black"
           : "text-text_color [transition-delay:0ms]"
-        } cursor-pointer rounded-3xl px-4 py-2 font-semibold`}
+        } cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -59,6 +59,8 @@ export function Toggle({
     </button>
   );
 }
+
+//autoscroll when a toggle is clicked
 
 export function ToggleGroup({
   styles,

@@ -19,6 +19,8 @@ type TeamRepository interface {
 	GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
 	GetEmployeesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]EmployeeForCalendar, error)
 
+	GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
+
 	GetMerchantIdByEmployee(ctx context.Context, employeeId int) (uuid.UUID, error)
 }
 

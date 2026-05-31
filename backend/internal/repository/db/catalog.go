@@ -371,13 +371,15 @@ func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merc
 				'total_duration', s.total_duration,
 				'price', s.price_per_person,
 				'price_type', s.price_type,
+				'max_participants', s.max_participants,
+				'booking_type', s.booking_type,
 				'sequence', s.sequence
 			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
-	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null and  s.booking_type = 'appointment'
+	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`

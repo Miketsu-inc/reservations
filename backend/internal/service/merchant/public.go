@@ -2,10 +2,12 @@ package merchant
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 )
@@ -21,7 +23,84 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		return domain.MerchantInfo{}, fmt.Errorf("error while accessing merchant info: %s", err.Error())
 	}
 
+	now := time.Now().In(time.UTC)
+	year, month, day := now.Date()
+	today := int(now.Weekday())
+	shiftsToday := merchantInfo.BusinessHours[today]
+
+	status := domain.BusinessHoursStatus{
+		IsOpen: false,
+	}
+
+	for _, shift := range shiftsToday {
+		businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, time.UTC)
+		businessEnd := time.Date(year, month, day, shift.EndTime.Hour(), shift.EndTime.Minute(), 0, 0, time.UTC)
+
+		if (now.Equal(businessStart) || now.After(businessStart)) && now.Before(businessEnd) {
+			status.IsOpen = true
+			formattedCloseTime := shift.EndTime.Format("15:04")
+			status.CloseTime = &formattedCloseTime
+			break
+		}
+	}
+
+	if !status.IsOpen {
+		foundNextOpen := false
+
+		for _, shift := range shiftsToday {
+			businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, time.UTC)
+			if now.Before(businessStart) {
+				val := today
+				status.NextOpenDay = &val
+				foundNextOpen = true
+				break
+			}
+		}
+
+		if !foundNextOpen {
+			for i := 0; i <= 6; i++ {
+				nextDay := (today + i) % 7
+				if len(merchantInfo.BusinessHours[nextDay]) > 0 {
+					val := nextDay
+					status.NextOpenDay = &val
+					break
+				}
+			}
+		}
+	}
+
+	merchantInfo.BusinessHoursStatus = status
+
 	return merchantInfo, nil
+}
+
+func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+	}
+
+	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting service for the merchant: %s", err.Error())
+	}
+
+	return services, nil
+
+}
+
+func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.PublicEmployee, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+	}
+
+	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+	if err != nil {
+		return []domain.PublicEmployee{}, fmt.Errorf("error while getting employees for merchant: %s", err.Error())
+	}
+
+	return employees, nil
 }
 
 func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, serviceId, locationId int) (domain.PublicServiceDetails, error) {
@@ -151,8 +230,10 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 }
 
 type NextAvailable struct {
-	Date string
-	Time string
+	FromDate            *time.Time
+	ToDate              *time.Time
+	CurrentParticipants *int
+	Employee            *int
 }
 
 func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, serviceId, locationId int) (NextAvailable, error) {
@@ -171,48 +252,84 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		return NextAvailable{}, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error())
 	}
 
-	startDate := time.Now().In(time.UTC)
-	endDate := startDate.AddDate(0, 3, 0)
-
-	reservedTimes, err := s.bookingRepo.GetReservedTimesForPeriod(ctx, merchantId, locationId, startDate, endDate)
-	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while calculating available time slots: %s", err.Error())
-	}
-
-	blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
-	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error())
-	}
-
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
 		return NextAvailable{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
 	}
 
-	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	now := time.Now().In(time.UTC)
+
+	if service.BookingType == types.BookingTypeAppointment {
+
+		startDate := now
+		endDate := startDate.AddDate(0, 3, 0)
+
+		reservedTimes, err := s.bookingRepo.GetReservedTimesForPeriod(ctx, merchantId, locationId, startDate, endDate)
+		if err != nil {
+			return NextAvailable{}, fmt.Errorf("error while calculating available time slots: %s", err.Error())
+		}
+
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
+		if err != nil {
+			return NextAvailable{}, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error())
+		}
+
+		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+		if err != nil {
+			return NextAvailable{}, fmt.Errorf("error while getting business hours: %s", err.Error())
+		}
+
+		availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+
+		var na NextAvailable
+		var dateStr, timeStr string
+
+		for _, day := range availableSlots {
+			if len(day.Morning) > 0 {
+				dateStr, timeStr = day.Date, day.Morning[0]
+				break
+			}
+			if len(day.Afternoon) > 0 {
+				dateStr, timeStr = day.Date, day.Afternoon[0]
+				break
+			}
+		}
+
+		if dateStr != "" && timeStr != "" {
+			timeString := fmt.Sprintf("%s %s", dateStr, timeStr)
+			parsedTime, err := time.ParseInLocation("2006-01-02 15:04", timeString, merchantTz)
+			if err == nil {
+				na.FromDate = &parsedTime
+			}
+		}
+
+		return na, nil
+
+	} else {
+
+	}
+
+	searchStart := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
+	searchEnd := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+
+	booking, err := s.bookingRepo.GetClosestAvailableGroupBooking(ctx, merchantId, serviceId, locationId, searchStart, searchEnd)
 	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while getting business hours: %s", err.Error())
+		if errors.Is(err, pgx.ErrNoRows) {
+			return NextAvailable{}, nil
+		}
+		return NextAvailable{}, fmt.Errorf("error finding group booking: %w", err)
 	}
 
-	now := time.Now()
-	availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+	fromDateMechantTz := booking.FromDate.In(merchantTz)
+	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	var na NextAvailable
+	return NextAvailable{
+		FromDate:            &fromDateMechantTz,
+		ToDate:              &toDateMerchantTz,
+		CurrentParticipants: &booking.CurrentParticipants,
+		Employee:            booking.EmployeeId,
+	}, nil
 
-	for _, day := range availableSlots {
-		if len(day.Morning) > 0 {
-			na.Time = day.Morning[0]
-			na.Date = day.Date
-			break
-		}
-		if len(day.Afternoon) > 0 {
-			na.Time = day.Afternoon[0]
-			na.Date = day.Date
-			break
-		}
-	}
-
-	return na, nil
 }
 
 type DisabledDays struct {

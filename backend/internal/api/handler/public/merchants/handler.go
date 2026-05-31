@@ -30,6 +30,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Use(h.middleware.Language)
 
 		r.Get("/", h.GetInfo)
+		r.Get("/services", h.GetServices)
+		r.Get("/team", h.GetTeam)
 
 		r.Get("/locations/{locationId}/business-hours/normalized", h.GetNormalizedBusinessHours)
 
@@ -62,33 +64,19 @@ type getInfoResp struct {
 	FormattedLocation string         `json:"formatted_location"`
 	GeoPoint          types.GeoPoint `json:"geo_point"`
 
-	// TODO: this should be probably called categories
-	Services []servicesGroupedByCategoryResp `json:"services"`
-
-	BusinessHours map[int][]timeSlotResp `json:"business_hours"`
-}
-
-type servicesGroupedByCategoryResp struct {
-	Id       *int          `json:"id"`
-	Name     *string       `json:"name"`
-	Sequence *int          `json:"sequence"`
-	Services []serviceResp `json:"services"`
-}
-
-type serviceResp struct {
-	Id            int                       `json:"id"`
-	CategoryId    *int                      `json:"category_id"`
-	Name          string                    `json:"name"`
-	Description   *string                   `json:"description"`
-	TotalDuration int                       `json:"total_duration"`
-	Price         *currencyx.FormattedPrice `json:"price"`
-	PriceType     types.PriceType           `json:"price_type"`
-	Sequence      int                       `json:"sequence"`
+	BusinessHours           map[int][]timeSlotResp  `json:"business_hours"`
+	BusinessHoursStatusResp businessHoursStatusResp `json:"business_hours_status"`
 }
 
 type timeSlotResp struct {
 	StartTime string `json:"start_time"`
 	EndTime   string `json:"end_time"`
+}
+
+type businessHoursStatusResp struct {
+	IsOpen      bool    `json:"is_business_open"`
+	CloseTime   *string `json:"close_time"`
+	NextOpenDay *int    `json:"next_open_day"`
 }
 
 func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +94,65 @@ func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetInfo(info))
+}
+
+type servicesGroupedByCategoryResp struct {
+	Id       *int          `json:"id"`
+	Name     *string       `json:"name"`
+	Sequence *int          `json:"sequence"`
+	Services []serviceResp `json:"services"`
+}
+
+type serviceResp struct {
+	Id              int                       `json:"id"`
+	CategoryId      *int                      `json:"category_id"`
+	Name            string                    `json:"name"`
+	Description     *string                   `json:"description"`
+	TotalDuration   int                       `json:"total_duration"`
+	Price           *currencyx.FormattedPrice `json:"price"`
+	PriceType       types.PriceType           `json:"price_type"`
+	MaxParticipants int                       `json:"max_participants"`
+	BookingType     types.BookingType         `json:"booking_type"`
+	Sequence        int                       `json:"sequence"`
+}
+
+func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) {
+	urlName := chi.URLParam(r, "merchantName")
+	if urlName == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+	}
+
+	services, err := h.service.GetServicesGroupedByCategories(r.Context(), urlName)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetServicesGroupedByCategories(services))
+}
+
+type teamResponse struct {
+	Id          int                `json:"id"`
+	Role        types.EmployeeRole `json:"role"`
+	FirstName   string             `json:"first_name"`
+	LastName    string             `json:"last_name"`
+	Email       *string            `json:"email" `
+	PhoneNumber *string            `json:"phone_number"`
+}
+
+func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
+	urlName := chi.URLParam(r, "merchantName")
+	if urlName == "" {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+	}
+
+	team, err := h.service.GetTeam(r.Context(), urlName)
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetTeam(team))
 }
 
 func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) {
@@ -270,8 +317,10 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) {
 }
 
 type getNextAvailabilityResp struct {
-	Date string `json:"date"`
-	Time string `json:"time"`
+	FromDate            *time.Time `json:"from_date"`
+	ToDate              *time.Time `json:"to_date"`
+	CurrentParticipants *int       `json:"current_participants"`
+	Employee            *int       `json:"employee"`
 }
 
 func (h *Handler) GetNextAvailability(w http.ResponseWriter, r *http.Request) {

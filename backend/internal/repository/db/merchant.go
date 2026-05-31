@@ -208,13 +208,6 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 		return domain.MerchantInfo{}, err
 	}
 
-	// this is fine until refactored into one query
-	catalogRepo := catalogRepository{db: r.db}
-	mi.Services, err = catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
-	if err != nil {
-		return domain.MerchantInfo{}, err
-	}
-
 	businnessHours, err := r.GetBusinessHours(ctx, merchantId)
 	if err != nil {
 		return domain.MerchantInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)

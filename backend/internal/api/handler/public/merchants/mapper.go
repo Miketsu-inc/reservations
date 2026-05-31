@@ -7,32 +7,6 @@ import (
 )
 
 func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
-	servicesGroupedByCategory := make([]servicesGroupedByCategoryResp, len(in.Services))
-
-	for i, serv := range in.Services {
-		services := make([]serviceResp, len(serv.Services))
-
-		for j, s := range serv.Services {
-			services[j] = serviceResp{
-				Id:            s.Id,
-				CategoryId:    s.CategoryId,
-				Name:          s.Name,
-				Description:   s.Description,
-				TotalDuration: s.TotalDuration,
-				Price:         currencyx.FormatPrice(s.Price),
-				PriceType:     s.PriceType,
-				Sequence:      s.Sequence,
-			}
-		}
-
-		servicesGroupedByCategory[i] = servicesGroupedByCategoryResp{
-			Id:       serv.Id,
-			Name:     serv.Name,
-			Sequence: serv.Sequence,
-			Services: services,
-		}
-	}
-
 	businessHours := make(map[int][]timeSlotResp, len(in.BusinessHours))
 
 	for day, slots := range in.BusinessHours {
@@ -48,26 +22,81 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		businessHours[day] = timeSlots
 	}
 
-	return getInfoResp{
-		Name:              in.Name,
-		UrlName:           in.UrlName,
-		ContactEmail:      in.ContactEmail,
-		Introduction:      in.Introduction,
-		Announcement:      in.Announcement,
-		AboutUs:           in.AboutUs,
-		ParkingInfo:       in.ParkingInfo,
-		PaymentInfo:       in.PaymentInfo,
-		Timezone:          in.Timezone,
-		LocationId:        in.LocationId,
-		Country:           in.Country,
-		City:              in.City,
-		PostalCode:        in.PostalCode,
-		Address:           in.Address,
-		FormattedLocation: in.FormattedLocation,
-		GeoPoint:          in.GeoPoint,
-		Services:          servicesGroupedByCategory,
-		BusinessHours:     businessHours,
+	businessStatus := businessHoursStatusResp{
+		IsOpen:      in.BusinessHoursStatus.IsOpen,
+		CloseTime:   in.BusinessHoursStatus.CloseTime,
+		NextOpenDay: in.BusinessHoursStatus.NextOpenDay,
 	}
+
+	return getInfoResp{
+		Name:                    in.Name,
+		UrlName:                 in.UrlName,
+		ContactEmail:            in.ContactEmail,
+		Introduction:            in.Introduction,
+		Announcement:            in.Announcement,
+		AboutUs:                 in.AboutUs,
+		ParkingInfo:             in.ParkingInfo,
+		PaymentInfo:             in.PaymentInfo,
+		Timezone:                in.Timezone,
+		LocationId:              in.LocationId,
+		Country:                 in.Country,
+		City:                    in.City,
+		PostalCode:              in.PostalCode,
+		Address:                 in.Address,
+		FormattedLocation:       in.FormattedLocation,
+		GeoPoint:                in.GeoPoint,
+		BusinessHours:           businessHours,
+		BusinessHoursStatusResp: businessStatus,
+	}
+}
+
+func mapToGetServicesGroupedByCategories(in []domain.MerchantPageServicesGroupedByCategory) []servicesGroupedByCategoryResp {
+	servicesGroupedByCategory := make([]servicesGroupedByCategoryResp, len(in))
+
+	for i, serv := range in {
+		services := make([]serviceResp, len(serv.Services))
+
+		for j, s := range serv.Services {
+			services[j] = serviceResp{
+				Id:              s.Id,
+				CategoryId:      s.CategoryId,
+				Name:            s.Name,
+				Description:     s.Description,
+				TotalDuration:   s.TotalDuration,
+				Price:           currencyx.FormatPrice(s.Price),
+				PriceType:       s.PriceType,
+				MaxParticipants: s.MaxParticipants,
+				BookingType:     s.BookingType,
+				Sequence:        s.Sequence,
+			}
+		}
+
+		servicesGroupedByCategory[i] = servicesGroupedByCategoryResp{
+			Id:       serv.Id,
+			Name:     serv.Name,
+			Sequence: serv.Sequence,
+			Services: services,
+		}
+	}
+
+	return servicesGroupedByCategory
+}
+
+func mapToGetTeam(in []domain.PublicEmployee) []teamResponse {
+	employees := make([]teamResponse, len(in))
+
+	for i, emp := range in {
+		employees[i] = teamResponse{
+			Id:          emp.Id,
+			Role:        emp.Role,
+			FirstName:   *emp.FirstName,
+			LastName:    *emp.LastName,
+			Email:       emp.Email,
+			PhoneNumber: emp.PhoneNumber,
+		}
+	}
+
+	return employees
 }
 
 func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSlotResp {
@@ -136,8 +165,10 @@ func mapToGetAvailabilityResp(in []merchantServ.MultiDayAvailableTimes) []getAva
 
 func mapToGetNextAvailabilityResp(in merchantServ.NextAvailable) getNextAvailabilityResp {
 	return getNextAvailabilityResp{
-		Date: in.Date,
-		Time: in.Time,
+		FromDate:            in.FromDate,
+		ToDate:              in.ToDate,
+		CurrentParticipants: in.CurrentParticipants,
+		Employee:            in.Employee,
 	}
 }
 
