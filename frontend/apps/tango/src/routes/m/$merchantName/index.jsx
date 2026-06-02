@@ -13,7 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import BusinessHoursSection from "./-components/BusinessHoursSection";
@@ -35,30 +35,6 @@ async function fetchMerchantInfo(name) {
   }
 }
 
-async function fetchMerchantServices(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/services`, {
-    method: "GET",
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-async function fetchMerchantTeam(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/team`, {
-    method: "GET",
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
 function merchantInfoQueryOptions(name) {
   return queryOptions({
     queryKey: ["merchant-info", name],
@@ -66,30 +42,12 @@ function merchantInfoQueryOptions(name) {
   });
 }
 
-function merchantServicesQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-services", name],
-    queryFn: () => fetchMerchantServices(name),
-  });
-}
-
-function merchantTeamQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-team", name],
-    queryFn: () => fetchMerchantTeam(name),
-  });
-}
-
 export const Route = createFileRoute("/m/$merchantName/")({
   component: MerchantPage,
   loader: async ({ params, context: { queryClient } }) => {
-    const { merchantName } = params;
-
-    await Promise.all([
-      queryClient.ensureQueryData(merchantInfoQueryOptions(merchantName)),
-      queryClient.ensureQueryData(merchantServicesQueryOptions(merchantName)),
-      queryClient.ensureQueryData(merchantTeamQueryOptions(merchantName)),
-    ]);
+    await queryClient.ensureQueryData(
+      merchantInfoQueryOptions(params.merchantName)
+    );
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -112,26 +70,21 @@ function MerchantPage() {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
-  const [infoQuery, servicesQuery, teamQuery] = useQueries({
-    queries: [
-      merchantInfoQueryOptions(merchantName),
-      merchantServicesQueryOptions(merchantName),
-      merchantTeamQueryOptions(merchantName),
-    ],
-  });
+  const {
+    data: merchantInfo,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(merchantInfoQueryOptions(merchantName));
 
-  if (infoQuery.isLoading || servicesQuery.isLoading || teamQuery.isLoading) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  if (infoQuery.isError || servicesQuery.isError || teamQuery.isError) {
-    const error = infoQuery.error || servicesQuery.error || teamQuery.error;
+  if (isError) {
     return <ServerError error={error} />;
   }
 
-  const merchantInfo = infoQuery.data;
-  const services = servicesQuery.data;
-  const team = teamQuery.data;
   const businessHoursStatus = merchantInfo.business_hours_status;
 
   let nextOpenStr = "";
@@ -367,11 +320,11 @@ function MerchantPage() {
             </div>
             <ReservationSection name="Select a Service" show={true}>
               <ServiceSection
-                categories={services}
                 onSelect={() => {}}
                 router={Route}
                 merchantInfo={merchantInfo}
                 isWindowSmall={isWindowSmall}
+                merchantName={merchantName}
               />
             </ReservationSection>
             <ReservationSection name="About us" show={merchantInfo.about_us}>
@@ -379,7 +332,10 @@ function MerchantPage() {
             </ReservationSection>
 
             <ReservationSection name="Team" show={true}>
-              <TeamSection employees={team} isWindowSmall={isWindowSmall} />
+              <TeamSection
+                isWindowSmall={isWindowSmall}
+                merchantName={merchantName}
+              />
             </ReservationSection>
 
             <ReservationSection
@@ -387,7 +343,7 @@ function MerchantPage() {
               show={merchantInfo.formatted_location}
             >
               <div className="flex flex-col gap-4 lg:gap-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="flex flex-wrap items-start gap-1">
                   <p className="lg:text-lg">
                     {merchantInfo.formatted_location}
                   </p>
@@ -427,7 +383,7 @@ function MerchantPage() {
                 className="border-border_color bg-layer_bg sticky bottom-0 z-10
                   flex w-full items-center justify-between border-y py-4"
               >
-                <span>{services.length} available service</span>
+                <span>{merchantName}</span>
                 <Button buttonText="Reserve" styles="px-4 py-2" />
               </div>
             )}

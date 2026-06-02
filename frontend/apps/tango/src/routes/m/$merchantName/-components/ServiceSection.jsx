@@ -2,39 +2,67 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   Icon,
+  Loading,
   SearchInput,
+  ServerError,
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
 import { formatDuration, getDisplayPrice } from "@reservations/lib";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import ServiceDetails from "./ServiceDetails";
 
+async function fetchMerchantServices(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}/services`, {
+    method: "GET",
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+function merchantServicesQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-services", name],
+    queryFn: () => fetchMerchantServices(name),
+  });
+}
+
 export default function ServiceSection({
-  categories,
   isWindowSmall,
   router,
   merchantInfo,
+  merchantName,
 }) {
-  const [activeCategoryId, setActiveCategoryId] = useState(
-    categories.length > 0 ? (categories[0].id ?? "uncategorized") : ""
-  );
+  const {
+    data: categories,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({ ...merchantServicesQueryOptions(merchantName) });
+
+  const [activeCategoryId, setActiveCategoryId] = useState("");
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const shouldShowToggles = categories.length > 1;
-
-  const isOnlyUncategorized =
-    categories.length === 1 && categories[0].id == null;
+  const showToggles = categories?.length > 1;
+  const currentCategoryId =
+    activeCategoryId || (categories?.[0]?.id ?? "uncategorized");
 
   const displayCategories = useMemo(() => {
-    let active = categories.filter(
-      (category) => (category.id ?? "uncategorized") === activeCategoryId
+    if (!categories) return [];
+
+    let active = categories?.filter(
+      (category) => (category?.id ?? "uncategorized") === currentCategoryId
     );
 
-    if (isOnlyUncategorized && searchText.trim().length > 0) {
+    if (!showToggles && searchText.trim().length > 0) {
       const searchTextLow = searchText.toLowerCase();
       active = active.map((category) => ({
         ...category,
@@ -45,7 +73,15 @@ export default function ServiceSection({
     }
 
     return active;
-  }, [categories, activeCategoryId, isOnlyUncategorized, searchText]);
+  }, [categories, currentCategoryId, showToggles, searchText]);
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -62,7 +98,7 @@ export default function ServiceSection({
         category={categories[0].name}
       />
       <div className="flex flex-col gap-5 pb-5">
-        {isOnlyUncategorized && (
+        {!showToggles && (
           <SearchInput
             searchText={searchText}
             onChange={(text) => setSearchText(text)}
@@ -71,11 +107,11 @@ export default function ServiceSection({
           />
         )}
 
-        {shouldShowToggles && (
+        {showToggles && (
           <div className="hide-scrollbar flex w-full overflow-x-auto pb-1">
             <ToggleGroup
               multiple={false}
-              value={activeCategoryId}
+              value={currentCategoryId}
               onValueChange={(val) => {
                 setActiveCategoryId(val);
               }}
@@ -122,7 +158,7 @@ export default function ServiceSection({
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center justify-start gap-4">
-            {isOnlyUncategorized && searchText.trim().length > 0 ? (
+            {!showToggles && searchText.trim().length > 0 ? (
               <>
                 <Icon icon={Search01Icon} styles="size-15 text-gray-500!" />
                 <p className="text-gray-400 dark:text-gray-500">

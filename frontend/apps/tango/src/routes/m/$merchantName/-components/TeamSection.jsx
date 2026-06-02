@@ -1,7 +1,42 @@
 import { StarIcon } from "@hugeicons/core-free-icons";
-import { Avatar, Icon } from "@reservations/components";
+import { Avatar, Icon, Loading, ServerError } from "@reservations/components";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 
-export default function TeamSection({ employees, isWindowSmall }) {
+async function fetchMerchantTeam(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}/team`, {
+    method: "GET",
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+function merchantTeamQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-team", name],
+    queryFn: () => fetchMerchantTeam(name),
+  });
+}
+
+export default function TeamSection({ isWindowSmall, merchantName }) {
+  const {
+    data: employees,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({ ...merchantTeamQueryOptions(merchantName) });
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="flex flex-col">
       <div

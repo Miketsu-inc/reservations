@@ -23,10 +23,16 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		return domain.MerchantInfo{}, fmt.Errorf("error while accessing merchant info: %s", err.Error())
 	}
 
+	merchantInfo.BusinessHoursStatus = CalculateBusinessStatus(merchantInfo.BusinessHours)
+
+	return merchantInfo, nil
+}
+
+func CalculateBusinessStatus(businessHours domain.BusinessHours) domain.BusinessHoursStatus {
 	now := time.Now().In(time.UTC)
 	year, month, day := now.Date()
 	today := int(now.Weekday())
-	shiftsToday := merchantInfo.BusinessHours[today]
+	shiftsToday := businessHours[today]
 
 	status := domain.BusinessHoursStatus{
 		IsOpen: false,
@@ -60,7 +66,7 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		if !foundNextOpen {
 			for i := 0; i <= 6; i++ {
 				nextDay := (today + i) % 7
-				if len(merchantInfo.BusinessHours[nextDay]) > 0 {
+				if len(businessHours[nextDay]) > 0 {
 					val := nextDay
 					status.NextOpenDay = &val
 					break
@@ -69,9 +75,7 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		}
 	}
 
-	merchantInfo.BusinessHoursStatus = status
-
-	return merchantInfo, nil
+	return status
 }
 
 func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
