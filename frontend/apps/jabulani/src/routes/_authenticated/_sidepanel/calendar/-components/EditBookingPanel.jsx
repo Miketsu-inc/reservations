@@ -37,7 +37,6 @@ import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
 import NestedSidePanel from "./NestedSidePanel";
 import ParticipantManager from "./ParticipantManager";
-import ServiceSelector from "./ServiceSelector";
 import UpdateRecurringModal from "./UpdateRecurringModal";
 
 function monthDateFormat(date) {
@@ -69,18 +68,12 @@ export default function EditBookingPanel({
     useState(false);
   const [nestedPageState, setNestedPageState] = useState({
     isOpen: false,
-    active: "service-selector",
+    active: "customer-selector",
   });
   const [isRecurModalOpen, setIsRecurModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const isMobilePanelActive =
-    nestedPageState.active === "customer-selector" ||
-    nestedPageState.active === "customer-profile" ||
-    nestedPageState.active === "participant-manager";
-
-  const isNestedPanelOpen =
-    nestedPageState.isOpen && (isWindowSmall || !isMobilePanelActive);
+  const isNestedPanelOpen = nestedPageState.isOpen && isWindowSmall;
 
   const mappedParticipants =
     originalBookingData.extendedProps?.participants.map((participant) => {
@@ -144,21 +137,6 @@ export default function EditBookingPanel({
       (c) => c.customer_id !== customerToRemove.customer_id
     );
     updateBookingData({ participants: newCustomers });
-  }
-
-  function handleServiceChange(newService) {
-    const isNewServiceGroup = newService?.booking_type === "class";
-    let updatedCustomers = bookingData.participants;
-
-    if (!isNewServiceGroup && bookingData.participants.length > 1) {
-      updatedCustomers = [];
-    }
-
-    updateBookingData({
-      serviceId: newService.id,
-      participants: updatedCustomers,
-    });
-    setNestedPageState((prev) => ({ ...prev, isOpen: false }));
   }
 
   async function handleSave(option = "this") {
@@ -373,15 +351,6 @@ export default function EditBookingPanel({
           }
           styles="size-8"
         >
-          {nestedPageState.active === "service-selector" && (
-            <ServiceSelector
-              categories={categories}
-              onClose={onClose}
-              isWindowSmall={isWindowSmall}
-              isNested={true}
-              onSelect={handleServiceChange}
-            />
-          )}
           {isWindowSmall && (
             <>
               {nestedPageState.active === "customer-selector" && (
@@ -448,17 +417,9 @@ export default function EditBookingPanel({
             <label className="flex flex-col gap-1">
               <span className="">Service</span>
               <ServiceCard
-                onClick={() => {
-                  if (!isPastBooking) {
-                    setNestedPageState({
-                      isOpen: true,
-                      active: "service-selector",
-                    });
-                  }
-                }}
                 service={selectedService}
                 isGroup={isGroupBooking}
-                disabled={isPastBooking}
+                disabled={true}
               />
             </label>
             {isWindowSmall && (
