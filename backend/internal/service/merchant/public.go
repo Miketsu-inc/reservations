@@ -84,19 +84,7 @@ func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantNa
 		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
 	}
 
-	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchant(ctx, merchantId)
-	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error())
-	}
-
-	now := time.Now().In(time.UTC)
-	searchStart := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
-	searchEnd := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
-
-	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId, searchStart, searchEnd)
-	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting service for the merchant: %s", err.Error())
-	}
+	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
 
 	return services, nil
 
