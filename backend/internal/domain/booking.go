@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -126,6 +127,10 @@ func (b Booking) IsOwnedByMerchant(id uuid.UUID) bool {
 	return b.MerchantId == id
 }
 
+func (b Booking) IsFull() bool {
+	return b.CurrentParticipants >= b.MaxParticipants
+}
+
 func (b Booking) GetDuration() time.Duration {
 	return b.ToDate.Sub(b.FromDate)
 }
@@ -136,11 +141,11 @@ func (b Booking) CanModify() error {
 	}
 
 	if b.IsCompleted() {
-		return fmt.Errorf("you cannot cancel completed bookings")
+		return fmt.Errorf("you cannot modify completed bookings")
 	}
 
 	if b.IsNoShow() {
-		return fmt.Errorf("you cannot cancel no-show bookings")
+		return fmt.Errorf("you cannot modify no-show bookings")
 	}
 
 	return nil
@@ -177,6 +182,35 @@ func (b Booking) CanTransition(status types.BookingStatus) error {
 
 	if status == types.BookingStatusCancelled {
 		return b.CanCancel()
+	}
+
+	return nil
+}
+
+func (b Booking) CanBookGroup(windowMin, windowMax int) error {
+	assert.True(b.IsGroupBooking(), "this function should only be called on group bookings", b)
+
+	if b.IsPast() {
+		return fmt.Errorf("you cannot book past bookings")
+	}
+
+	err := b.CanModify()
+	if err != nil {
+		return err
+	}
+
+	if b.IsFull() {
+		return fmt.Errorf("this booking is already full")
+	}
+
+	now := time.Now()
+
+	if b.FromDate.Before(now.Add(time.Duration(windowMin) * time.Minute)) {
+		return fmt.Errorf("must be booked at least %d minutes in advance", windowMin)
+	}
+
+	if b.FromDate.After(now.AddDate(0, windowMax, 0)) {
+		return fmt.Errorf("cannot be booked more than %d months in advance", windowMax)
 	}
 
 	return nil

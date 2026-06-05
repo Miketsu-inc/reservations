@@ -2,14 +2,12 @@ package workers
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
-	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/riverqueue/river"
 )
 
@@ -58,18 +56,20 @@ type BookingOccurrenceGenerator struct {
 	bookingService *bookingServ.Service
 	bookingRepo    domain.BookingRepository
 	catalogRepo    domain.CatalogRepository
-	txManager      db.TransactionManager
 }
 
-func NewBookingOccurrenceGenerator(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository,
-	txManager db.TransactionManager) *BookingOccurrenceGenerator {
-	return &BookingOccurrenceGenerator{bookingService: bookingService, bookingRepo: bookingRepo, catalogRepo: catalogRepo, txManager: txManager}
+func NewBookingOccurrenceGenerator(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository) *BookingOccurrenceGenerator {
+	return &BookingOccurrenceGenerator{bookingService: bookingService, bookingRepo: bookingRepo, catalogRepo: catalogRepo}
 }
 
 func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[args.BookingOccurrenceGenerator]) error {
 	series, err := w.bookingRepo.GetBookingSeries(ctx, job.Args.BookingSeriesId)
 	if err != nil {
 		return err
+	}
+
+	if !series.IsActive {
+		return nil
 	}
 
 	seriesParticipants, err := w.bookingRepo.GetBookingSeriesParticipants(ctx, job.Args.BookingSeriesId)
@@ -82,23 +82,16 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 		return err
 	}
 
-	return w.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		var generateFrom time.Time
+	var generateFrom time.Time
 
-		if series.GeneratedUntil != nil {
-			generateFrom = *series.GeneratedUntil
-		} else {
-			slog.DebugContext(ctx, "BookingSeries's generated_until should not be nil here!")
-			generateFrom = time.Now().UTC()
-		}
+	// only nil on the first generation, which is triggered 'manually'
+	if series.GeneratedUntil != nil {
+		generateFrom = *series.GeneratedUntil
+	} else {
+		generateFrom = job.Args.GenerateFrom
+	}
 
-		_, err = w.bookingService.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service, generateFrom)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
+	return w.bookingService.GenerateRecurringBookings(ctx, series, seriesParticipants, service, generateFrom)
 }
 
 type UpdateFutureBookingOccurrences struct {

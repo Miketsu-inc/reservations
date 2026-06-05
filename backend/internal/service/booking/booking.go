@@ -58,12 +58,9 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 	s.enqueuer = client
 }
 
-func (s *Service) newBooking(ctx context.Context, tx db.DBTX, booking domain.Booking, participants []domain.BookingParticipant,
+func (s *Service) newBooking(ctx context.Context, tx pgx.Tx, booking domain.Booking, participants []domain.BookingParticipant,
 	service domain.Service) (int, error) {
-	var bookingId int
-	var err error
-
-	bookingId, err = s.bookingRepo.WithTx(tx).NewBooking(ctx, booking)
+	bookingId, err := s.bookingRepo.WithTx(tx).NewBooking(ctx, booking)
 	if err != nil {
 		return 0, err
 	}
@@ -82,6 +79,15 @@ func (s *Service) newBooking(ctx context.Context, tx db.DBTX, booking domain.Boo
 	err = s.bookingRepo.WithTx(tx).NewBookingParticipants(ctx, participants)
 	if err != nil {
 		return 0, err
+	}
+
+	if booking.EmployeeId != nil {
+		_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBooking{
+			BookingId: bookingId,
+		}, nil)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	return bookingId, nil
@@ -143,21 +149,12 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("error while getting merchant's timezone: %w", err)
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
-	if err != nil {
-		return fmt.Errorf("error while searching service by this id: %w", err)
-	}
-
-	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, input.ServiceId)
 	if err != nil {
 		return fmt.Errorf("error while getting booking settings for merchant %w", err)
 	}
 
 	fromDate := input.TimeStamp.UTC()
-
-	duration := time.Duration(service.TotalDuration) * time.Minute
-
-	toDate := fromDate.Add(duration)
 
 	err = enforceBookingWindow(fromDate, time.Now().In(merchantTz), bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax)
 	if err != nil {
@@ -171,7 +168,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 	}
 
 	isGroupBooking := input.BookingId != nil
-	var bookingId int
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		customerId, isBlacklisted, isNewCustomer, err := s.customerRepo.WithTx(tx).NewCustomerFromUser(ctx, customerId, merchantId, userId)
@@ -188,10 +184,17 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			return err
 		}
 
-		// TODO: if it's a group booking we should probably query for the booking
-		// to see if the actions can be performed
+		var bookingId int
+
 		if isGroupBooking {
-			booking, err := s.bookingRepo.WithTx(tx).GetBooking(ctx, *input.BookingId)
+			bookingId = *input.BookingId
+
+			booking, err := s.bookingRepo.WithTx(tx).GetBooking(ctx, bookingId)
+			if err != nil {
+				return err
+			}
+
+			err = booking.CanBookGroup(bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax)
 			if err != nil {
 				return err
 			}
@@ -224,6 +227,14 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 		} else {
+			service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
+			if err != nil {
+				return fmt.Errorf("error while searching service by this id: %w", err)
+			}
+
+			duration := time.Duration(service.TotalDuration) * time.Minute
+			toDate := fromDate.Add(duration)
+
 			price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
 			if err != nil {
 				return err
@@ -251,14 +262,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}}
 
 			bookingId, err = s.newBooking(ctx, tx, booking, participants, service)
-			if err != nil {
-				return err
-			}
-
-			// TODO: this is a no-op now as the customer cannot choose an employee
-			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBooking{
-				BookingId: bookingId,
-			}, nil)
 			if err != nil {
 				return err
 			}
@@ -291,11 +294,6 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 		return fmt.Errorf("error while retrieving booking: %s", err.Error())
 	}
 
-	bookingParticipant, err := s.bookingRepo.GetBookingParticipantByUser(ctx, booking.Id, userId)
-	if err != nil {
-		return fmt.Errorf("error while retrieving booking participant: %s", err.Error())
-	}
-
 	cancelDeadline, err := s.catalogRepo.GetServiceCancelDeadline(ctx, booking.MerchantId, booking.ServiceId)
 	if err != nil {
 		return fmt.Errorf("error while retrieving cancel deadline: %s", err.Error())
@@ -306,6 +304,11 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 	err = booking.CanCancelWithDeadline(latestCancelTime)
 	if err != nil {
 		return err
+	}
+
+	bookingParticipant, err := s.bookingRepo.GetBookingParticipantByUser(ctx, booking.Id, userId)
+	if err != nil {
+		return fmt.Errorf("error while retrieving booking participant: %s", err.Error())
 	}
 
 	err = bookingParticipant.CanModify()
@@ -549,11 +552,6 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
-	if err != nil {
-		return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
-	}
-
 	bookedLocation, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
 	if err != nil {
 		return fmt.Errorf("error while searching location by this id: %s", err.Error())
@@ -604,14 +602,48 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 	fromDate := input.TimeStamp.UTC()
 
-	duration := time.Duration(service.TotalDuration) * time.Minute
+	duration := service.GetTotalDuration()
 
 	toDate := fromDate.Add(duration)
 
-	var bookingId int
-
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		booking := domain.Booking{
+			Status:              types.BookingStatusConfirmed,
+			BookingType:         service.BookingType,
+			MerchantId:          actor.MerchantId,
+			EmployeeId:          &actor.EmployeeId,
+			ServiceId:           service.Id,
+			LocationId:          bookedLocation.Id,
+			FromDate:            fromDate,
+			ToDate:              toDate,
+			PricePerPerson:      price,
+			TotalPrice:          currencyx.Price{Amount: totalPrice},
+			MerchantNote:        input.MerchantNote,
+			MinParticipants:     service.MinParticipants,
+			MaxParticipants:     service.MaxParticipants,
+			CurrentParticipants: participantCount,
+		}
+
+		participants := make([]domain.BookingParticipant, len(incomingCustomerIds))
+		for i, id := range incomingCustomerIds {
+			participants[i] = domain.BookingParticipant{
+				Status:       types.BookingStatusConfirmed,
+				CustomerId:   &id,
+				CustomerNote: nil,
+			}
+		}
+
+		bookingId, err := s.newBooking(ctx, tx, booking, participants, service)
+		if err != nil {
+			return fmt.Errorf("error during new booking creation: %s", err.Error())
+		}
+
 		if input.IsRecurring && input.Rrule != nil {
+			merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
+			if err != nil {
+				return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+			}
+
 			// recurring bookings have to be stored in local time and converted to UTC during generation
 			fromDateMerchantTz := fromDate.In(merchantTz)
 
@@ -654,50 +686,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
-			bookingId, err = s.GenerateRecurringBookings(ctx, tx, series, seriesParticipants, service, time.Now().UTC())
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingOccurrenceGenerator{
+				BookingSeriesId: series.Id,
+				GenerateFrom:    time.Now().UTC(),
+			}, &river.InsertOpts{})
 			if err != nil {
-				return fmt.Errorf("error while generating recurring bookings: %s", err.Error())
-			}
-		} else {
-			booking := domain.Booking{
-				Status:              types.BookingStatusConfirmed,
-				BookingType:         service.BookingType,
-				MerchantId:          actor.MerchantId,
-				EmployeeId:          &actor.EmployeeId,
-				ServiceId:           service.Id,
-				LocationId:          bookedLocation.Id,
-				FromDate:            fromDate,
-				ToDate:              toDate,
-				PricePerPerson:      price,
-				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				MerchantNote:        input.MerchantNote,
-				MinParticipants:     service.MinParticipants,
-				MaxParticipants:     service.MaxParticipants,
-				CurrentParticipants: participantCount,
-			}
-
-			participants := make([]domain.BookingParticipant, len(incomingCustomerIds))
-			for i, id := range incomingCustomerIds {
-				participants[i] = domain.BookingParticipant{
-					Status:       types.BookingStatusConfirmed,
-					BookingId:    bookingId,
-					CustomerId:   &id,
-					CustomerNote: nil,
-				}
-			}
-
-			bookingId, err = s.newBooking(ctx, tx, booking, participants, service)
-			if err != nil {
-				return fmt.Errorf("error during new booking creation: %s", err.Error())
-			}
-
-			if booking.EmployeeId != nil {
-				_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBooking{
-					BookingId: bookingId,
-				}, nil)
-				if err != nil {
-					return err
-				}
+				return fmt.Errorf("error scheduling recurring booking generation: %w", err)
 			}
 		}
 
@@ -715,6 +709,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 }
 
 // TODO: rename to something more expressive
+// also I do not like that there is uuid generation and db insert in the middle of this
+// also this should be in a transaction
 func (s *Service) getParticipants(ctx context.Context, merchantId uuid.UUID, customers []CustomerInput) (map[uuid.UUID]struct{}, error) {
 	customerIds := make(map[uuid.UUID]struct{})
 
@@ -934,6 +930,18 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	participantsChanged := len(participantChanges.ToInsert) != 0 || len(participantChanges.ToDelete) != 0
 	seriesParticipantsChanged := len(seriesParticipantChanges.ToInsert) != 0 || len(seriesParticipantChanges.ToDelete) != 0
 
+	if participantsChanged {
+		if participantCount > service.MaxParticipants {
+			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", participantCount, service.MaxParticipants)
+		}
+	}
+
+	if seriesParticipantsChanged {
+		if seriesParticipantCount > service.MaxParticipants {
+			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", seriesParticipantCount, service.MaxParticipants)
+		}
+	}
+
 	if serviceChanged {
 		if !isGroupBooking && participantCount > 1 {
 			return fmt.Errorf("appointments cannot have more than 1 customer")
@@ -1094,7 +1102,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					}
 				}
 
-				// TODO: do we check somewhere if inserting the new particiapnts will go above the service limit?
 				if len(seriesParticipantChanges.ToInsert) > 0 {
 					var seriesParticipantsInsert []domain.BookingSeriesParticipant
 

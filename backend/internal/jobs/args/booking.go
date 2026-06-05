@@ -20,7 +20,8 @@ func (RecurringBookingScheduler) InsertOpts() river.InsertOpts {
 }
 
 type BookingOccurrenceGenerator struct {
-	BookingSeriesId int `json:"booking_series_id"`
+	BookingSeriesId int       `json:"booking_series_id"`
+	GenerateFrom    time.Time `json:"generate_from"`
 }
 
 func (BookingOccurrenceGenerator) Kind() string { return "booking_occurrence_generator" }
