@@ -253,8 +253,10 @@ func (r *bookingRepository) UpdateBookingPricePerPersonBatch(ctx context.Context
 func (r *bookingRepository) UpdateBookingTotalPriceBatch(ctx context.Context, bookingIds []int, prices []currencyx.Price) error {
 	query := `
 	update "Booking" b
-	set total_price = b.total_price
-	from unnest($1::int[], $2::price[]) as u(id, total_price)
+	set total_price = u.total_price
+	from (
+		select unnest($1::int[]) as id, unnest($2::price[]) as total_price
+		) as u
 	where b.id = u.id and b.status not in ('cancelled', 'completed', 'no-show')
 	`
 
@@ -271,9 +273,11 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 	update "Booking" b
 	set price_per_person = u.price_per_person, total_price = u.total_price, min_participants = u.min_participants,
 		max_participants = u.max_participants, current_participants = u.current_participants
-	from unnest($2::int[], $3::price[], $4::price[], $5::int[], $6::int[], $7::int[])
-		as u(id, price_per_person, total_price, min_participants, max_participants, current_participants)
-	where b.id = any(u.id) and b.merchant_id = $2 and b.status not in ('cancelled', 'completed', 'no-show')
+	from (
+		select unnest($2::int[]) as id, unnest($3::price[]) as price_per_person, unnest($4::price[]) as total_price,
+			unnest($5::int[]) as min_participants, unnest($6::int[]) as max_participants, unnest($7::int[]) as current_participants
+		) as u
+	where b.id = u.id and b.merchant_id = $1 and b.status not in ('cancelled', 'completed', 'no-show')
 	`
 
 	pricePerPersons := make([]currencyx.Price, len(details))
@@ -318,14 +322,14 @@ func (r *bookingRepository) UpdateBookingOccurrencesBatch(ctx context.Context, b
 
 func (r *bookingRepository) UpdateBookingParticipants(ctx context.Context, participants []domain.BookingParticipant, updateStatusOnConflict bool) error {
 	query := `
-	insert into "BookingParticipant" bp (booking_id, customer_id, status)
+	insert into "BookingParticipant" (booking_id, customer_id, status)
 	select unnest($1::int[]), unnest($2::uuid[]), unnest($3::text[])
-	on conflict (bp.booking_id, bp.customer_id)
+	on conflict (booking_id, customer_id)
 	do update
 	set cancelled_on = NULL, cancellation_reason = NULL,
 		status = case
 			when $4 then excluded.status
-			else bp.status
+			else "BookingParticipant".status
 		end
 	`
 
@@ -875,7 +879,7 @@ func (r *bookingRepository) NewBookingSeries(ctx context.Context, bs domain.Book
 	query := `
 	insert into "BookingSeries" (booking_type, merchant_id, employee_id, service_id, location_id, rrule, dstart, timezone, is_active, generated_until,
 		price_per_person, total_price, min_participants, max_participants, current_participants)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	returning *
 	`
 

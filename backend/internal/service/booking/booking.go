@@ -681,14 +681,14 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				}
 			}
 
-			seriesParticipants, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipants)
+			_, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipants)
 			if err != nil {
 				return err
 			}
 
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingOccurrenceGenerator{
 				BookingSeriesId: series.Id,
-				GenerateFrom:    time.Now().UTC(),
+				GenerateFrom:    toDate,
 			}, &river.InsertOpts{})
 			if err != nil {
 				return fmt.Errorf("error scheduling recurring booking generation: %w", err)
@@ -1055,10 +1055,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			bookingSeries, err := s.bookingRepo.WithTx(tx).GetBookingSeries(ctx, *booking.BookingSeriesId)
 			if err != nil {
 				return fmt.Errorf("failed to fetch booking series: %w", err)
-			}
-
-			if !bookingSeries.IsActive {
-				return fmt.Errorf("cannot update an inactive booking series")
 			}
 
 			if !priceChanged {

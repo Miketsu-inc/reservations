@@ -112,10 +112,6 @@ func (w *UpdateFutureBookingOccurrences) Work(ctx context.Context, job *river.Jo
 		return err
 	}
 
-	if !series.IsActive {
-		return nil
-	}
-
 	service, err := w.catalogRepo.GetServiceWithPhases(ctx, series.ServiceId, series.MerchantId)
 	if err != nil {
 		return err
