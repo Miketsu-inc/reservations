@@ -3,6 +3,7 @@ package args
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/riverqueue/river"
 )
 
@@ -31,3 +32,14 @@ func (BookingOccurrenceGenerator) InsertOpts() river.InsertOpts {
 		},
 	}
 }
+
+type UpdateFutureBookingOccurrences struct {
+	BookingSeriesId      int           `json:"booking_series_id"`
+	OriginalFromDate     time.Time     `json:"original_from_date"`
+	FromDateOffset       time.Duration `json:"from_date_offset"`
+	PriceChanged         bool          `json:"price_changed"`
+	ParticipantsToInsert []uuid.UUID   `json:"particiapnts_to_insert"`
+	ParticipantsToDelete []uuid.UUID   `json:"particiapnts_to_delete"`
+}
+
+func (UpdateFutureBookingOccurrences) Kind() string { return "update_booking_occurrences" }

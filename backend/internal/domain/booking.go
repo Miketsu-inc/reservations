@@ -23,13 +23,14 @@ type BookingRepository interface {
 	DeleteBookingParticipantsBatch(ctx context.Context, bookingIds []int, participantIds []uuid.UUID) error
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
-	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, seriesOriginalDate *time.Time) error
-	UpdateBookingTotalPrice(ctx context.Context, bookingId int, price currencyx.Price) error
-	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details BookingDetails) error
-	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant) error
+	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error
+	UpdateBookingPricePerPersonBatch(ctx context.Context, bookingIds []int, price currencyx.Price) error
+	UpdateBookingTotalPriceBatch(ctx context.Context, bookingIds []int, prices []currencyx.Price) error
+	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details []BookingDetails) error
+	UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int) error
+	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant, updateStatusOnConflict bool) error
 	UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, status types.BookingStatus) error
-	IncrementParticipantCount(ctx context.Context, bookingId int) (currencyx.Price, error)
-	DecrementParticipantCount(ctx context.Context, bookingId int) error
+	UpdateParticipantCountBatch(ctx context.Context, bookingIds []int, participantDelta []int) ([]int, error)
 	// decrements the participant count on every booking related to the customer
 	DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
@@ -48,6 +49,7 @@ type BookingRepository interface {
 	GetBookingParticipantByUser(ctx context.Context, bookingId int, userId uuid.UUID) (BookingParticipant, error)
 	GetBookingParticipant(ctx context.Context, participantId int) (BookingParticipant, error)
 	GetBookingParticipants(ctx context.Context, bookingId int) ([]BookingParticipant, error)
+	GetParticipantCustomerIdsForBookings(ctx context.Context, bookingIds []int) (map[int][]uuid.UUID, error)
 	GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
@@ -69,7 +71,7 @@ type BookingRepository interface {
 
 	GetBookingSeries(ctx context.Context, seriesId int) (BookingSeries, error)
 	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
-	GetFutureSeriesBookings(ctx context.Context, seriesId int, fromDate time.Time) ([]Booking, error)
+	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId int, fromDate time.Time, limit int) ([]Booking, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 }
 
@@ -122,6 +124,10 @@ func (b Booking) IsGroupBooking() bool {
 
 func (b Booking) IsOwnedByMerchant(id uuid.UUID) bool {
 	return b.MerchantId == id
+}
+
+func (b Booking) GetDuration() time.Duration {
+	return b.ToDate.Sub(b.FromDate)
 }
 
 func (b Booking) CanModify() error {
@@ -325,7 +331,7 @@ type BookingSeries struct {
 	Id                  int               `db:"id"`
 	BookingType         types.BookingType `db:"booking_type"`
 	MerchantId          uuid.UUID         `db:"merchant_id"`
-	EmployeeId          int               `db:"employee_id"`
+	EmployeeId          *int              `db:"employee_id"`
 	ServiceId           int               `db:"service_id"`
 	LocationId          int               `db:"location_id"`
 	Rrule               string            `db:"rrule"`

@@ -81,6 +81,10 @@ func (s *Service) IsGroupService() bool {
 	return s.BookingType == types.BookingTypeClass || s.BookingType == types.BookingTypeEvent
 }
 
+func (s *Service) GetTotalDuration() time.Duration {
+	return time.Duration(s.TotalDuration) * time.Minute
+}
+
 func (s *Service) CalculateNewBookingPhases(bookingId int, startTime time.Time) []BookingPhase {
 	if len(s.Phases) == 0 {
 		return []BookingPhase{}

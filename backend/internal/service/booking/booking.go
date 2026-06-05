@@ -170,11 +170,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return fmt.Errorf("unexpected error during creating customer id: %w", err)
 	}
 
-	price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
-	if err != nil {
-		return err
-	}
-
 	isGroupBooking := input.BookingId != nil
 	var bookingId int
 
@@ -196,19 +191,22 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		// TODO: if it's a group booking we should probably query for the booking
 		// to see if the actions can be performed
 		if isGroupBooking {
-			bookingId = *input.BookingId
-
-			totalPrice, err := s.bookingRepo.WithTx(tx).IncrementParticipantCount(ctx, bookingId)
+			booking, err := s.bookingRepo.WithTx(tx).GetBooking(ctx, *input.BookingId)
 			if err != nil {
 				return err
 			}
 
-			newTotalPrice, err := totalPrice.Add(price.Amount)
+			_, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{1})
 			if err != nil {
 				return err
 			}
 
-			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, bookingId, currencyx.Price{Amount: newTotalPrice})
+			newTotalPrice, err := booking.TotalPrice.Add(booking.PricePerPerson.Amount)
+			if err != nil {
+				return err
+			}
+
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, []int{bookingId}, []currencyx.Price{{Amount: newTotalPrice}})
 			if err != nil {
 				return err
 			}
@@ -226,6 +224,11 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 		} else {
+			price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
+			if err != nil {
+				return err
+			}
+
 			booking := domain.Booking{
 				Status:              bookingStatus,
 				BookingType:         types.BookingTypeAppointment,
@@ -322,12 +325,12 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 				return fmt.Errorf("failed to calculate total price: %w", err)
 			}
 
-			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPrice(ctx, booking.Id, currencyx.Price{Amount: newTotalPrice})
+			err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, []int{booking.Id}, []currencyx.Price{{Amount: newTotalPrice}})
 			if err != nil {
 				return err
 			}
 
-			err = s.bookingRepo.WithTx(tx).DecrementParticipantCount(ctx, booking.Id)
+			_, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{-1})
 			if err != nil {
 				return err
 			}
@@ -620,7 +623,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			series, err := s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
 				BookingType:         service.BookingType,
 				MerchantId:          actor.MerchantId,
-				EmployeeId:          actor.EmployeeId,
+				EmployeeId:          &actor.EmployeeId,
 				ServiceId:           service.Id,
 				LocationId:          bookedLocation.Id,
 				Rrule:               rrule.String(),
@@ -832,12 +835,21 @@ type UpdateByMerchantInput struct {
 	UpdateAllFuture bool
 }
 
+// TODO: Service updates are not applied on 'updateAllFuture' as we plan to remove service updates entirely
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
 		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
+	}
+
+	if !booking.IsOwnedByMerchant(actor.MerchantId) {
+		return fmt.Errorf("booking not found for this merchant")
+	}
+
+	if input.UpdateAllFuture && !booking.IsRecurring {
+		return fmt.Errorf("cannot update future occurences of non-recurring booking")
 	}
 
 	err = booking.CanModify()
@@ -981,14 +993,13 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
 	statusChanged := booking.Status != input.BookingStatus
 
-	duration := time.Duration(service.TotalDuration) * time.Minute
+	duration := service.GetTotalDuration()
 
 	fromDate := booking.FromDate
 	toDate := booking.ToDate
 	fromDateOffset := time.Duration(0)
 
 	seriesFromDate := booking.FromDate.In(merchantTz)
-	seriesToDate := booking.ToDate.In(merchantTz)
 
 	if timeStampChanged {
 		fromDateOffset = input.TimeStamp.UTC().Sub(booking.FromDate)
@@ -1000,15 +1011,10 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			// For a recurring bookings we cannot use an offset as individual bookings which are part of the series
 			// could have been modified. Also it has to be in the merchant's timezone to avoid DST problems
 			seriesFromDate = input.TimeStamp.In(merchantTz)
-			seriesToDate = seriesFromDate.Add(duration)
 		}
 	} else {
 		if serviceChanged {
 			toDate = fromDate.Add(duration)
-
-			if input.UpdateAllFuture && booking.IsRecurring {
-				seriesToDate = seriesFromDate.Add(duration)
-			}
 		}
 	}
 
@@ -1036,13 +1042,8 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		participantBookingStatus = types.BookingStatusConfirmed
 	}
 
-	var bookingsToUpdate []domain.Booking
-
-	bookingsToUpdate = append(bookingsToUpdate, booking)
-
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		if input.UpdateAllFuture && booking.IsRecurring {
-			// TODO: this should probably be queried higher to avoid unnecessary actions
 			bookingSeries, err := s.bookingRepo.WithTx(tx).GetBookingSeries(ctx, *booking.BookingSeriesId)
 			if err != nil {
 				return fmt.Errorf("failed to fetch booking series: %w", err)
@@ -1052,34 +1053,28 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				return fmt.Errorf("cannot update an inactive booking series")
 			}
 
-			rruleStr := bookingSeries.Rrule
-			dStart := bookingSeries.Dstart
+			if !priceChanged {
+				seriesTotalPrice = bookingSeries.TotalPrice.Amount
+			}
 
-			if timeStampChanged {
-				parsedRule, err := rrule.StrToRRule(bookingSeries.Rrule)
+			// service changed does not necessarily mean that we should recalculate the occurrences, but it's highly likely
+			// that the duration changed and the booking phases would have to be recalculated anyway
+			if serviceChanged || timeStampChanged {
+				rrule, err := rrule.StrToRRule(bookingSeries.Rrule)
 				if err != nil {
 					return fmt.Errorf("failed to parse existing rrule: %w", err)
 				}
 
-				dStart = seriesFromDate
+				rrule.DTStart(seriesFromDate)
 
-				parsedRule.DTStart(dStart)
-				rruleStr = parsedRule.String()
-			}
-
-			if serviceChanged || timeStampChanged {
-				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesCore(ctx, *booking.BookingSeriesId, service.Id, service.BookingType, rruleStr, dStart)
+				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesCore(ctx, bookingSeries.Id, service.Id, service.BookingType, rrule.String(), seriesFromDate)
 				if err != nil {
 					return fmt.Errorf("failed to update booking series core: %w", err)
 				}
 			}
 
-			if !priceChanged {
-				seriesTotalPrice = bookingSeries.TotalPrice.Amount
-			}
-
 			if seriesParticipantsChanged || serviceChanged || priceChanged {
-				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesDetails(ctx, *booking.BookingSeriesId, domain.BookingDetails{
+				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesDetails(ctx, bookingSeries.Id, domain.BookingDetails{
 					PricePerPerson:      pricePerPerson,
 					TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
 					MinParticipants:     service.MinParticipants,
@@ -1093,18 +1088,19 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			if seriesParticipantsChanged {
 				if len(seriesParticipantChanges.ToDelete) > 0 {
-					err = s.bookingRepo.WithTx(tx).DeleteBookingSeriesParticipants(ctx, *booking.BookingSeriesId, seriesParticipantChanges.ToDelete)
+					err = s.bookingRepo.WithTx(tx).DeleteBookingSeriesParticipants(ctx, bookingSeries.Id, seriesParticipantChanges.ToDelete)
 					if err != nil {
 						return fmt.Errorf("failed to delete series participants: %w", err)
 					}
 				}
 
+				// TODO: do we check somewhere if inserting the new particiapnts will go above the service limit?
 				if len(seriesParticipantChanges.ToInsert) > 0 {
 					var seriesParticipantsInsert []domain.BookingSeriesParticipant
 
 					for _, cid := range seriesParticipantChanges.ToInsert {
 						seriesParticipantsInsert = append(seriesParticipantsInsert, domain.BookingSeriesParticipant{
-							BookingSeriesId: *booking.BookingSeriesId,
+							BookingSeriesId: bookingSeries.Id,
 							CustomerId:      &cid,
 							IsActive:        true,
 						})
@@ -1117,122 +1113,55 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}
 			}
 
-			// get all future series occurrences excluding the current booking
-			bookingsToUpdate, err = s.bookingRepo.WithTx(tx).GetFutureSeriesBookings(ctx, *booking.BookingSeriesId, booking.FromDate)
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.UpdateFutureBookingOccurrences{
+				BookingSeriesId:      bookingSeries.Id,
+				OriginalFromDate:     booking.FromDate,
+				FromDateOffset:       fromDateOffset,
+				PriceChanged:         priceChanged,
+				ParticipantsToInsert: seriesParticipantChanges.ToInsert,
+				ParticipantsToDelete: seriesParticipantChanges.ToDelete,
+			}, &river.InsertOpts{})
 			if err != nil {
-				return fmt.Errorf("failed to fetch future series bookings: %w", err)
-			}
-
-		}
-
-		var bookingIds []int
-		var futureBookingIds []int
-		var newFromDates []time.Time
-		var newToDates []time.Time
-		var bookingPhasesToInsert []domain.BookingPhase
-		var participantsToUpsert []domain.BookingParticipant
-
-		for _, b := range bookingsToUpdate {
-			bookingIds = append(bookingIds, b.Id)
-
-			// TODO: I don't think we want to insert from and to dates in the merchantTz... It should be UTC like
-			// in the GenerateRecurringBookings function. But then won't DST fuck us over if we overwrite too far?
-			//
-			// maybe instead of updating it here just delete every future occurrence and generate new ones...?
-			// won't that mess up other updates tho? or already booked participants?
-			if b.IsRecurring {
-				newFromDates = append(newFromDates, seriesFromDate)
-				newToDates = append(newToDates, seriesToDate)
-			} else {
-				newFromDates = append(newFromDates, fromDate)
-				newToDates = append(newToDates, toDate)
-			}
-
-			if serviceChanged || timeStampChanged {
-				bookingPhasesToInsert = service.CalculateNewBookingPhases(b.Id, fromDate)
-			}
-
-			for _, cid := range participantChanges.ToInsert {
-				participantsToUpsert = append(participantsToUpsert, domain.BookingParticipant{
-					BookingId:  b.Id,
-					CustomerId: &cid,
-					Status:     participantBookingStatus,
-				})
-			}
-
-			// TODO: do we want to overwrite all bookings statuses in a series?
-			// overwrite the participant status to match the new booking status
-			if booking.Id == b.Id {
-				if !isGroupBooking && statusChanged {
-					for _, cid := range participantChanges.ToKeep {
-						participantsToUpsert = append(participantsToUpsert, domain.BookingParticipant{
-							BookingId:  b.Id,
-							CustomerId: &cid,
-							Status:     participantBookingStatus,
-						})
-					}
-				}
+				return fmt.Errorf("failed to insert update future occurences job: %w", err)
 			}
 		}
 
-		if input.UpdateAllFuture && booking.IsRecurring && len(bookingIds) > 1 {
-			futureBookingIds = bookingIds[1:]
-		}
-
-		seriesOriginalDate := booking.SeriesOriginalDate
-		if input.UpdateAllFuture && booking.IsRecurring && timeStampChanged {
-			seriesOriginalDate = &seriesFromDate
-		}
-
-		if timeStampChanged || serviceChanged || statusChanged {
-			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, bookingIds, service.Id, newFromDates, newToDates, service.BookingType, input.BookingStatus, seriesOriginalDate)
+		if timeStampChanged || serviceChanged || statusChanged || merchantNoteChanged {
+			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, []int{booking.Id}, service.Id,
+				[]time.Time{fromDate}, []time.Time{toDate}, service.BookingType, bookingStatus, merchantNote)
 			if err != nil {
 				return fmt.Errorf("failed to batch update booking core: %s", err.Error())
 			}
 		}
 
-		if serviceChanged || priceChanged || merchantNoteChanged || participantsChanged {
-			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, []int{booking.Id}, domain.BookingDetails{
+		if serviceChanged || priceChanged || participantsChanged {
+			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, []int{booking.Id}, []domain.BookingDetails{{
 				PricePerPerson:      pricePerPerson,
 				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				MerchantNote:        merchantNote,
 				MinParticipants:     service.MinParticipants,
 				MaxParticipants:     service.MaxParticipants,
 				CurrentParticipants: participantCount,
-			})
+			}})
 			if err != nil {
 				return fmt.Errorf("failed to batch update booking details: %s", err.Error())
 			}
 		}
 
-		if serviceChanged || priceChanged || merchantNoteChanged || seriesParticipantsChanged {
-			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, futureBookingIds, domain.BookingDetails{
-				PricePerPerson: pricePerPerson,
-				TotalPrice:     currencyx.Price{Amount: seriesTotalPrice},
-				// TODO: the merchant note shouldn't really be updated on future bookings
-				MerchantNote:        input.MerchantNote,
-				MinParticipants:     service.MinParticipants,
-				MaxParticipants:     service.MaxParticipants,
-				CurrentParticipants: seriesParticipantCount,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to batch update future booking details: %s", err.Error())
-			}
-		}
-
 		if serviceChanged || timeStampChanged {
-			if len(bookingPhasesToInsert) > 0 {
-				err := s.bookingRepo.WithTx(tx).DeleteBookingPhasesBatch(ctx, bookingIds)
-				if err != nil {
-					return fmt.Errorf("failed to delete booking phases: %s", err.Error())
-				}
+			err := s.bookingRepo.WithTx(tx).DeleteBookingPhasesBatch(ctx, []int{booking.Id})
+			if err != nil {
+				return fmt.Errorf("failed to delete booking phases: %s", err.Error())
+			}
 
-				err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhasesToInsert)
-				if err != nil {
-					return fmt.Errorf("failed to insert booking phases: %s", err.Error())
-				}
+			bookingPhasesToInsert := service.CalculateNewBookingPhases(booking.Id, fromDate)
+
+			err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, bookingPhasesToInsert)
+			if err != nil {
+				return fmt.Errorf("failed to insert booking phases: %s", err.Error())
 			}
 		}
+
+		var participantsToUpsert []domain.BookingParticipant
 
 		if participantsChanged {
 			if len(participantChanges.ToDelete) > 0 {
@@ -1241,36 +1170,45 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					return fmt.Errorf("failed to remove participants: %s", err.Error())
 				}
 			}
-		}
 
-		if seriesParticipantsChanged {
-			if len(futureBookingIds) > 0 && len(seriesParticipantChanges.ToDelete) > 0 {
-				err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, futureBookingIds, seriesParticipantChanges.ToDelete)
-				if err != nil {
-					return fmt.Errorf("failed to remove participants for future bookings: %s", err.Error())
-				}
+			for _, cid := range participantChanges.ToInsert {
+				participantsToUpsert = append(participantsToUpsert, domain.BookingParticipant{
+					BookingId:  booking.Id,
+					CustomerId: &cid,
+					Status:     participantBookingStatus,
+				})
 			}
 		}
 
-		if participantsChanged || seriesParticipantsChanged || statusChanged {
+		// overwrite the participant status to match the new booking status in case of appointments
+		// where the statuses match eachother
+		if !isGroupBooking && statusChanged {
+			for _, cid := range participantChanges.ToKeep {
+				participantsToUpsert = append(participantsToUpsert, domain.BookingParticipant{
+					BookingId:  booking.Id,
+					CustomerId: &cid,
+					Status:     participantBookingStatus,
+				})
+			}
+		}
+
+		if participantsChanged || (!isGroupBooking && statusChanged) {
 			if len(participantsToUpsert) > 0 {
-				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToUpsert)
+				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToUpsert, true)
 				if err != nil {
-					return fmt.Errorf("failed to add participants: %s", err.Error())
+					return fmt.Errorf("failed to update participants: %s", err.Error())
 				}
 			}
 		}
 
 		if timeStampChanged {
-			for _, b := range bookingsToUpdate {
-				// TODO: don't forget to change this when we will consider employee changes in this
-				if b.EmployeeId != nil {
-					_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBooking{
-						BookingId: b.Id,
-					}, nil)
-					if err != nil {
-						return err
-					}
+			// TODO: don't forget to change this when we will consider employee changes in this
+			if booking.EmployeeId != nil {
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBooking{
+					BookingId: booking.Id,
+				}, nil)
+				if err != nil {
+					return err
 				}
 			}
 		}

@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
-	"github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/riverqueue/river"
 )
@@ -55,13 +55,13 @@ func (w *RecurringBookingScheduler) Work(ctx context.Context, job *river.Job[arg
 type BookingOccurrenceGenerator struct {
 	river.WorkerDefaults[args.BookingOccurrenceGenerator]
 
-	bookingService *booking.Service
+	bookingService *bookingServ.Service
 	bookingRepo    domain.BookingRepository
 	catalogRepo    domain.CatalogRepository
 	txManager      db.TransactionManager
 }
 
-func NewBookingOccurrenceGenerator(bookingService *booking.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository,
+func NewBookingOccurrenceGenerator(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository,
 	txManager db.TransactionManager) *BookingOccurrenceGenerator {
 	return &BookingOccurrenceGenerator{bookingService: bookingService, bookingRepo: bookingRepo, catalogRepo: catalogRepo, txManager: txManager}
 }
@@ -99,4 +99,35 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 
 		return nil
 	})
+}
+
+type UpdateFutureBookingOccurrences struct {
+	river.WorkerDefaults[args.UpdateFutureBookingOccurrences]
+
+	bookingService *bookingServ.Service
+	bookingRepo    domain.BookingRepository
+	catalogRepo    domain.CatalogRepository
+}
+
+func NewUpdateFutureBookingOccurrences(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository) *UpdateFutureBookingOccurrences {
+	return &UpdateFutureBookingOccurrences{bookingService: bookingService, bookingRepo: bookingRepo, catalogRepo: catalogRepo}
+}
+
+func (w *UpdateFutureBookingOccurrences) Work(ctx context.Context, job *river.Job[args.UpdateFutureBookingOccurrences]) error {
+	series, err := w.bookingRepo.GetBookingSeries(ctx, job.Args.BookingSeriesId)
+	if err != nil {
+		return err
+	}
+
+	if !series.IsActive {
+		return nil
+	}
+
+	service, err := w.catalogRepo.GetServiceWithPhases(ctx, series.ServiceId, series.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, service, job.Args.OriginalFromDate, job.Args.FromDateOffset, job.Args.PriceChanged,
+		job.Args.ParticipantsToInsert, job.Args.ParticipantsToDelete)
 }

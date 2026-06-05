@@ -60,11 +60,11 @@ func (r *customerRepository) NewCustomerFromUser(ctx context.Context, customerId
 	return custId, IsBlacklisted, isNew, nil
 }
 
-// TODO: this logic shouldn't live here and some of it is probably unnecessary
+// TODO: do we want patch or put here?
 func (r *customerRepository) UpdateCustomer(ctx context.Context, merchantId uuid.UUID, customer domain.Customer) error {
 	type field struct {
 		name  string
-		value interface{}
+		value any
 	}
 
 	fields := []field{
@@ -77,7 +77,7 @@ func (r *customerRepository) UpdateCustomer(ctx context.Context, merchantId uuid
 	}
 
 	setClauses := []string{}
-	args := []interface{}{merchantId, customer.Id}
+	args := []any{merchantId, customer.Id}
 	argPos := 3
 
 	for _, f := range fields {

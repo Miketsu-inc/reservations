@@ -41,6 +41,7 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 
 	river.AddWorker(workers, NewRecurringBookingScheduler(deps.BookingRepo))
 	river.AddWorker(workers, NewBookingOccurrenceGenerator(deps.BookingService, deps.BookingRepo, deps.CatalogRepo, deps.TxManager))
+	river.AddWorker(workers, NewUpdateFutureBookingOccurrences(deps.BookingService, deps.BookingRepo, deps.CatalogRepo))
 }
 
 func GetPeriodicJobs() []*river.PeriodicJob {
