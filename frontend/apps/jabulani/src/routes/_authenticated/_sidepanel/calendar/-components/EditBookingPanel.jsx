@@ -77,9 +77,8 @@ export default function EditBookingPanel({
 
   const mappedParticipants =
     originalBookingData.extendedProps?.participants.map((participant) => {
-      const customerData = customers.find(
-        (c) => c.customer_id === participant.customer_id
-      );
+      const customerData =
+        customers.find((c) => c.customer_id === participant.customer_id) || {};
 
       return {
         first_name: customerData.first_name || participant.first_name,

@@ -23,13 +23,13 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		return domain.MerchantInfo{}, fmt.Errorf("error while accessing merchant info: %s", err.Error())
 	}
 
-	merchantInfo.BusinessHoursStatus = CalculateBusinessStatus(merchantInfo.BusinessHours)
+	now := time.Now().In(time.UTC)
+	merchantInfo.BusinessHoursStatus = CalculateBusinessStatus(merchantInfo.BusinessHours, now)
 
 	return merchantInfo, nil
 }
 
-func CalculateBusinessStatus(businessHours domain.BusinessHours) domain.BusinessHoursStatus {
-	now := time.Now().In(time.UTC)
+func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) domain.BusinessHoursStatus {
 	year, month, day := now.Date()
 	today := int(now.Weekday())
 	shiftsToday := businessHours[today]
@@ -84,7 +84,16 @@ func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantNa
 		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
 	}
 
-	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchant(ctx, merchantId)
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error())
+	}
+
+	now := time.Now().In(time.UTC)
+	searchStart := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
+	searchEnd := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+
+	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId, searchStart, searchEnd)
 	if err != nil {
 		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting service for the merchant: %s", err.Error())
 	}
