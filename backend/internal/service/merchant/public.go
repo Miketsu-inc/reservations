@@ -85,6 +85,9 @@ func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantNa
 	}
 
 	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting service for the merchant: %s", err.Error())
+	}
 
 	return services, nil
 
