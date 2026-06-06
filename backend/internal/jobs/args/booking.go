@@ -35,12 +35,12 @@ func (BookingOccurrenceGenerator) InsertOpts() river.InsertOpts {
 }
 
 type UpdateFutureBookingOccurrences struct {
-	BookingSeriesId      int           `json:"booking_series_id"`
-	OriginalFromDate     time.Time     `json:"original_from_date"`
-	FromDateOffset       time.Duration `json:"from_date_offset"`
-	PriceChanged         bool          `json:"price_changed"`
-	ParticipantsToInsert []uuid.UUID   `json:"particiapnts_to_insert"`
-	ParticipantsToDelete []uuid.UUID   `json:"particiapnts_to_delete"`
+	BookingSeriesId          int           `json:"booking_series_id"`
+	SeriesOriginalDateOffset time.Duration `json:"series_original_date_offset"`
+	StatusChangedToCancelled bool          `json:"status_changed_to_cancelled"`
+	PriceChanged             bool          `json:"price_changed"`
+	ParticipantsToInsert     []uuid.UUID   `json:"particiapnts_to_insert"`
+	ParticipantsToDelete     []uuid.UUID   `json:"particiapnts_to_delete"`
 }
 
 func (UpdateFutureBookingOccurrences) Kind() string { return "update_booking_occurrences" }

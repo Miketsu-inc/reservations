@@ -607,36 +607,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	toDate := fromDate.Add(duration)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		booking := domain.Booking{
-			Status:              types.BookingStatusConfirmed,
-			BookingType:         service.BookingType,
-			MerchantId:          actor.MerchantId,
-			EmployeeId:          &actor.EmployeeId,
-			ServiceId:           service.Id,
-			LocationId:          bookedLocation.Id,
-			FromDate:            fromDate,
-			ToDate:              toDate,
-			PricePerPerson:      price,
-			TotalPrice:          currencyx.Price{Amount: totalPrice},
-			MerchantNote:        input.MerchantNote,
-			MinParticipants:     service.MinParticipants,
-			MaxParticipants:     service.MaxParticipants,
-			CurrentParticipants: participantCount,
-		}
-
-		participants := make([]domain.BookingParticipant, len(incomingCustomerIds))
-		for i, id := range incomingCustomerIds {
-			participants[i] = domain.BookingParticipant{
-				Status:       types.BookingStatusConfirmed,
-				CustomerId:   &id,
-				CustomerNote: nil,
-			}
-		}
-
-		bookingId, err := s.newBooking(ctx, tx, booking, participants, service)
-		if err != nil {
-			return fmt.Errorf("error during new booking creation: %s", err.Error())
-		}
+		var bookingSeriesId *int
+		var seriesOriginalDate *time.Time
 
 		if input.IsRecurring && input.Rrule != nil {
 			merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
@@ -693,6 +665,43 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			if err != nil {
 				return fmt.Errorf("error scheduling recurring booking generation: %w", err)
 			}
+
+			bookingSeriesId = &series.Id
+			seriesOriginalDate = &fromDate
+		}
+
+		booking := domain.Booking{
+			Status:              types.BookingStatusConfirmed,
+			BookingType:         service.BookingType,
+			IsRecurring:         input.IsRecurring,
+			MerchantId:          actor.MerchantId,
+			EmployeeId:          &actor.EmployeeId,
+			ServiceId:           service.Id,
+			LocationId:          bookedLocation.Id,
+			BookingSeriesId:     bookingSeriesId,
+			SeriesOriginalDate:  seriesOriginalDate,
+			FromDate:            fromDate,
+			ToDate:              toDate,
+			PricePerPerson:      price,
+			TotalPrice:          currencyx.Price{Amount: totalPrice},
+			MerchantNote:        input.MerchantNote,
+			MinParticipants:     service.MinParticipants,
+			MaxParticipants:     service.MaxParticipants,
+			CurrentParticipants: participantCount,
+		}
+
+		participants := make([]domain.BookingParticipant, len(incomingCustomerIds))
+		for i, id := range incomingCustomerIds {
+			participants[i] = domain.BookingParticipant{
+				Status:       types.BookingStatusConfirmed,
+				CustomerId:   &id,
+				CustomerNote: nil,
+			}
+		}
+
+		bookingId, err := s.newBooking(ctx, tx, booking, participants, service)
+		if err != nil {
+			return fmt.Errorf("error during new booking creation: %s", err.Error())
 		}
 
 		if !isWalkIn {
@@ -1006,6 +1015,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	fromDate := booking.FromDate
 	toDate := booking.ToDate
 	fromDateOffset := time.Duration(0)
+	seriesOriginalDateOffset := time.Duration(0)
 
 	seriesFromDate := booking.FromDate.In(merchantTz)
 
@@ -1019,6 +1029,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			// For a recurring bookings we cannot use an offset as individual bookings which are part of the series
 			// could have been modified. Also it has to be in the merchant's timezone to avoid DST problems
 			seriesFromDate = input.TimeStamp.In(merchantTz)
+			seriesOriginalDateOffset = input.TimeStamp.UTC().Sub(*booking.SeriesOriginalDate)
 		}
 	} else {
 		if serviceChanged {
@@ -1075,6 +1086,13 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				if err != nil {
 					return fmt.Errorf("failed to update booking series core: %w", err)
 				}
+
+				if timeStampChanged {
+					err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDate(ctx, booking.Id, fromDate)
+					if err != nil {
+						return err
+					}
+				}
 			}
 
 			if seriesParticipantsChanged || serviceChanged || priceChanged {
@@ -1116,13 +1134,15 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}
 			}
 
+			statusChangedToCancelled := statusChanged && bookingStatus == types.BookingStatusCancelled
+
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.UpdateFutureBookingOccurrences{
-				BookingSeriesId:      bookingSeries.Id,
-				OriginalFromDate:     booking.FromDate,
-				FromDateOffset:       fromDateOffset,
-				PriceChanged:         priceChanged,
-				ParticipantsToInsert: seriesParticipantChanges.ToInsert,
-				ParticipantsToDelete: seriesParticipantChanges.ToDelete,
+				BookingSeriesId:          bookingSeries.Id,
+				SeriesOriginalDateOffset: seriesOriginalDateOffset,
+				PriceChanged:             priceChanged,
+				StatusChangedToCancelled: statusChangedToCancelled,
+				ParticipantsToInsert:     seriesParticipantChanges.ToInsert,
+				ParticipantsToDelete:     seriesParticipantChanges.ToDelete,
 			}, &river.InsertOpts{})
 			if err != nil {
 				return fmt.Errorf("failed to insert update future occurences job: %w", err)

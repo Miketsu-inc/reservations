@@ -309,7 +309,7 @@ func (r *externalCalendarRepository) GetExternalCalendarEvents(ctx context.Conte
 	query := `
 	select *
 	from "ExternalCalendarEvent"
-	where external_calendar_id = $1 and external_event_id = any($2)
+	where external_calendar_id = $1 and external_event_id = any($2::text[])
 	`
 
 	rows, _ := r.db.Query(ctx, query, extCalendarId, eventIds)

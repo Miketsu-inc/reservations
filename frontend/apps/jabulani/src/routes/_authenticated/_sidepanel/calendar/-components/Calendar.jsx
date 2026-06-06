@@ -228,7 +228,7 @@ export default function Calendar({ router, route, search }) {
   }, []);
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   return (

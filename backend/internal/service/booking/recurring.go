@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 
@@ -115,11 +117,11 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 }
 
 type occurrenceTimestampUpdateContext struct {
-	rrule             *rrule.RRule
-	merchantTz        *time.Location
-	duration          time.Duration
-	servicePhaseCount int
-	fromDateOffset    time.Duration
+	rrule                    *rrule.RRule
+	merchantTz               *time.Location
+	duration                 time.Duration
+	servicePhaseCount        int
+	seriesOriginalDateOffset time.Duration
 }
 
 type occurrenceTimestampUpdate struct {
@@ -134,33 +136,35 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 
 	// fromDateOffset is necessary here to get the correct amount of occurrences
 	// because the rrule should have already changed with the offset
-	occurrencesStart := futureBookings[0].FromDate.In(context.merchantTz).Add(context.fromDateOffset)
-	occurrencesEnd := futureBookings[futureBookingsCount-1].FromDate.In(context.merchantTz).Add(context.fromDateOffset)
+	occurrencesStart := futureBookings[0].SeriesOriginalDate.In(context.merchantTz).Add(context.seriesOriginalDateOffset)
+	occurrencesEnd := futureBookings[futureBookingsCount-1].SeriesOriginalDate.In(context.merchantTz).Add(context.seriesOriginalDateOffset)
 
 	occurrences := context.rrule.Between(occurrencesStart, occurrencesEnd, true)
 
-	if len(occurrences) != context.servicePhaseCount {
-		return occurrenceTimestampUpdate{}, fmt.Errorf("number of generated occurrences and future bookings should match")
+	if len(occurrences) != futureBookingsCount {
+		return occurrenceTimestampUpdate{}, fmt.Errorf("number of generated occurrences (%d) and future bookings (%d) should match", len(occurrences), futureBookingsCount)
 	}
 
-	if occurrences[0].UTC().Sub(futureBookings[0].FromDate) != context.fromDateOffset {
-		return occurrenceTimestampUpdate{}, fmt.Errorf("from date offset should match")
+	if occurrences[0].UTC().Sub(*futureBookings[0].SeriesOriginalDate) != context.seriesOriginalDateOffset {
+		return occurrenceTimestampUpdate{}, fmt.Errorf("from date offset should match (%s) != (%s)", occurrences[0].UTC().Sub(*futureBookings[0].SeriesOriginalDate), context.seriesOriginalDateOffset)
 	}
 
-	bookingIds := make([]int, futureBookingsCount)
-	fromDates := make([]time.Time, futureBookingsCount)
-	toDates := make([]time.Time, futureBookingsCount)
-	bookingPhases := make([]domain.BookingPhase, 0, futureBookingsCount*context.servicePhaseCount)
+	var bookingIds []int
+	var fromDates []time.Time
+	var toDates []time.Time
+	var bookingPhases []domain.BookingPhase
 
 	for i, b := range futureBookings {
-		bookingStart := occurrences[i].UTC()
+		if b.IsModifiable() {
+			bookingStart := occurrences[i].UTC()
 
-		bookingIds[i] = b.Id
-		fromDates[i] = bookingStart
-		toDates[i] = bookingStart.Add(context.duration)
+			bookingIds = append(bookingIds, b.Id)
+			fromDates = append(fromDates, bookingStart)
+			toDates = append(toDates, bookingStart.Add(context.duration))
 
-		phases := service.CalculateNewBookingPhases(b.Id, bookingStart)
-		bookingPhases = append(bookingPhases, phases...)
+			phases := service.CalculateNewBookingPhases(b.Id, bookingStart)
+			bookingPhases = append(bookingPhases, phases...)
+		}
 	}
 
 	return occurrenceTimestampUpdate{
@@ -171,17 +175,21 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 	}, nil
 }
 
-func makeExistingParticipantsMap(customerIdsByBooking map[int][]uuid.UUID) map[int]map[uuid.UUID]struct{} {
-	existingMap := make(map[int]map[uuid.UUID]struct{}, len(customerIdsByBooking))
+func makeExistingParticipantsMap(bookingIds []int, customerIdsByBooking map[int][]uuid.UUID) map[int]map[uuid.UUID]struct{} {
+	existingMap := make(map[int]map[uuid.UUID]struct{}, len(bookingIds))
 
-	for bookingId, customerIds := range customerIdsByBooking {
+	for _, id := range bookingIds {
+		customerIds, ok := customerIdsByBooking[id]
+		if !ok {
+			existingMap[id] = make(map[uuid.UUID]struct{})
+		}
+
 		participants := make(map[uuid.UUID]struct{}, len(customerIds))
-
 		for _, cid := range customerIds {
 			participants[cid] = struct{}{}
 		}
 
-		existingMap[bookingId] = participants
+		existingMap[id] = participants
 	}
 
 	return existingMap
@@ -194,50 +202,59 @@ type capacityUpdate struct {
 	ByBooking          map[int]int
 }
 
-func calculateCapacity(customerIdsByBooking map[int][]uuid.UUID, futureBookingsMap map[int]domain.Booking, existingParticipantsByBooking map[int]map[uuid.UUID]struct{},
+func calculateCapacity(futureBookingsMap map[int]domain.Booking, existingParticipantsByBooking map[int]map[uuid.UUID]struct{},
 	toDeleteMap, toInsertMap map[uuid.UUID]struct{}) capacityUpdate {
 	var capacity capacityUpdate
 
 	capacityDelta := make(map[int]int)
 
 	// calculate the change required
-	for bookignId, customerIds := range customerIdsByBooking {
+	for bookignId, customerIds := range existingParticipantsByBooking {
 		capacityDelta[bookignId] = 0
 
-		for _, id := range customerIds {
-			if _, inDelete := toDeleteMap[id]; inDelete {
+		for cid := range customerIds {
+			if _, inDelete := toDeleteMap[cid]; inDelete {
 				capacityDelta[bookignId] -= 1
 			}
 		}
 
-		existingParticipants := existingParticipantsByBooking[bookignId]
-
-		for customerId := range toInsertMap {
-			if _, ok := existingParticipants[customerId]; !ok {
+		for cid := range toInsertMap {
+			if _, ok := customerIds[cid]; !ok {
 				capacityDelta[bookignId] += 1
 			}
 		}
 	}
 
 	capacity.ByBooking = make(map[int]int)
+	capacity.BookingIdsExceeded = []int{}
+	capacity.BookingIdsToUpdate = []int{}
+	capacity.DeltaToInsert = []int{}
+
+	// sort to make the order of booking updates deterministic
+	sortedBookingIds := slices.Sorted(maps.Keys(futureBookingsMap))
 
 	// check if the change causes current participants to exceed max
-	for _, booking := range futureBookingsMap {
+	for _, bookingId := range sortedBookingIds {
+		booking := futureBookingsMap[bookingId]
 		delta := capacityDelta[booking.Id]
-		existingParticipants := existingParticipantsByBooking[booking.Id]
 
 		currentParticipants := booking.CurrentParticipants
+		existingParticipantCount := len(existingParticipantsByBooking[booking.Id])
 
 		// ideally this never happens but if it for some reason does, we need to correct it
-		if currentParticipants != len(existingParticipants) {
-			currentParticipants = len(existingParticipants)
+		if currentParticipants != existingParticipantCount {
+			currentParticipants = existingParticipantCount
 		}
 
 		if currentParticipants+delta > booking.MaxParticipants {
 			capacity.BookingIdsExceeded = append(capacity.BookingIdsExceeded, booking.Id)
+			capacity.ByBooking[booking.Id] = currentParticipants
 		} else {
-			capacity.BookingIdsToUpdate = append(capacity.BookingIdsToUpdate, booking.Id)
-			capacity.DeltaToInsert = append(capacity.DeltaToInsert, delta)
+			if delta != 0 {
+				capacity.BookingIdsToUpdate = append(capacity.BookingIdsToUpdate, booking.Id)
+				capacity.DeltaToInsert = append(capacity.DeltaToInsert, delta)
+			}
+
 			capacity.ByBooking[booking.Id] = currentParticipants + delta
 		}
 	}
@@ -310,8 +327,8 @@ func calculateTotalPrices(pricePerPerson currencyx.Price, bookingIds []int, capa
 }
 
 // This whole function assumes that the series was updated before it ran and is up to date
-func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, service domain.Service, originalFromDate time.Time,
-	fromDateOffset time.Duration, priceChanged bool, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
+func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, service domain.Service, seriesOriginalDateOffset time.Duration,
+	priceChanged bool, statusChangedToCancelled bool, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
 
 	// TODO: somehow present this to the user...
 	// maybe with notifications once we implement that
@@ -320,24 +337,28 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 
 	// avoid repeated operations as much as possible
 	// ------
-	var err error
 	var timestampUpdateContext occurrenceTimestampUpdateContext
 
-	timestampChanged := fromDateOffset != time.Duration(0)
+	timestampChanged := seriesOriginalDateOffset != time.Duration(0)
 
 	if timestampChanged {
-		timestampUpdateContext.rrule, err = rrule.StrToRRule(series.Rrule)
+		parsedRrule, err := rrule.StrToRRule(series.Rrule)
 		if err != nil {
 			return fmt.Errorf("failed to parse existing rrule: %w", err)
 		}
 
-		timestampUpdateContext.merchantTz, err = time.LoadLocation(series.Timezone)
+		merchantTz, err := time.LoadLocation(series.Timezone)
 		if err != nil {
 			return fmt.Errorf("failed to parse series timezone: %w", err)
 		}
 
-		timestampUpdateContext.duration = service.GetTotalDuration()
-		timestampUpdateContext.servicePhaseCount = len(service.Phases)
+		timestampUpdateContext = occurrenceTimestampUpdateContext{
+			rrule:                    parsedRrule,
+			merchantTz:               merchantTz,
+			duration:                 service.GetTotalDuration(),
+			servicePhaseCount:        len(service.Phases),
+			seriesOriginalDateOffset: seriesOriginalDateOffset,
+		}
 	}
 
 	var toInsertMap map[uuid.UUID]struct{}
@@ -360,29 +381,52 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 	}
 	// ------
 
-	lastBookingStart := originalFromDate
+	lastBookingStart := series.Dstart.UTC()
+	finshed := false
 
-	for {
-		// the given fromDate is not included in the future bookings
-		seriesFutureBookings, err := s.bookingRepo.GetFutureSeriesBookingsWithLock(ctx, series.Id, lastBookingStart.UTC(), 50)
-		if err != nil {
-			return fmt.Errorf("failed to fetch future series bookings: %w", err)
-		}
+	for !finshed {
+		err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+			// the given fromDate is not included in the future bookings
+			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, lastBookingStart, 50)
+			if err != nil {
+				return fmt.Errorf("failed to fetch future series bookings: %w", err)
+			}
 
-		seriesFutureBookingsCount := len(seriesFutureBookings)
+			if len(futureBookings) == 0 {
+				finshed = true
+				return nil
+			}
 
-		if seriesFutureBookingsCount == 0 {
-			break
-		}
+			// TODO: this is fragile as we only lock 50 at a time and one in the future could change before locking it
+			// should be replaced with occurrence index once introduced
+			lastBookingStart = futureBookings[len(futureBookings)-1].FromDate
 
-		lastBookingStart = seriesFutureBookings[seriesFutureBookingsCount-1].FromDate
+			if statusChangedToCancelled {
+				var bookingsToCancel []int
 
-		err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-			if timestampChanged {
-				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, seriesFutureBookings, service)
+				for _, b := range futureBookings {
+					if err = b.CanCancel(); err == nil {
+						bookingsToCancel = append(bookingsToCancel, b.Id)
+					}
+				}
+
+				err = s.bookingRepo.WithTx(tx).CancelBookingByMerchantBatch(ctx, bookingsToCancel)
 				if err != nil {
 					return err
 				}
+
+				return nil
+			}
+
+			if timestampChanged {
+				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, service)
+				if err != nil {
+					return err
+				}
+
+				// time stamp changed and so should the last booking start so we do not accidentally
+				// query it back in the for loop's next iteration
+				lastBookingStart = timestampUpdate.FromDates[len(timestampUpdate.FromDates)-1]
 
 				err = s.bookingRepo.WithTx(tx).UpdateBookingOccurrencesBatch(ctx, timestampUpdate.BookingIds, timestampUpdate.FromDates, timestampUpdate.ToDates, series.Id)
 				if err != nil {
@@ -401,12 +445,14 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			}
 
 			if participantsChanged || priceChanged {
-				futureBookingIds := make([]int, seriesFutureBookingsCount)
-				seriesfutureBookingsMap := make(map[int]domain.Booking, seriesFutureBookingsCount)
+				var futureBookingIds []int
+				futureBookingsMap := make(map[int]domain.Booking)
 
-				for i, b := range seriesFutureBookings {
-					futureBookingIds[i] = b.Id
-					seriesfutureBookingsMap[b.Id] = b
+				for _, b := range futureBookings {
+					if b.IsModifiable() {
+						futureBookingIds = append(futureBookingIds, b.Id)
+						futureBookingsMap[b.Id] = b
+					}
 				}
 
 				customerIdsByBooking, err := s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, futureBookingIds)
@@ -414,24 +460,26 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
 				}
 
-				existingParticipantsByBooking := makeExistingParticipantsMap(customerIdsByBooking)
+				existingParticipantsByBooking := makeExistingParticipantsMap(futureBookingIds, customerIdsByBooking)
 
-				capacity := calculateCapacity(customerIdsByBooking, seriesfutureBookingsMap, existingParticipantsByBooking, toDeleteMap, toInsertMap)
+				capacity := calculateCapacity(futureBookingsMap, existingParticipantsByBooking, toDeleteMap, toInsertMap)
 
 				bookingsExceedingMaxParticipants = append(bookingsExceedingMaxParticipants, capacity.BookingIdsExceeded...)
 
 				// updating the total prices relies on this as we only want to update
 				// bookings which participant count updated if the participants changed
-				updatedBookingIds := futureBookingIds
+				updatedBookingIds := capacity.BookingIdsToUpdate
 
 				if participantsChanged {
-					updatedBookingIds, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, capacity.BookingIdsToUpdate, capacity.DeltaToInsert)
-					if err != nil {
-						return fmt.Errorf("error updating participant count: %w", err)
-					}
+					if len(capacity.BookingIdsToUpdate) > 0 {
+						updatedBookingIds, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, capacity.BookingIdsToUpdate, capacity.DeltaToInsert)
+						if err != nil {
+							return fmt.Errorf("error updating participant count: %w", err)
+						}
 
-					failedToUpdate := checkCapacityUpdateSuccess(capacity.BookingIdsToUpdate, updatedBookingIds)
-					bookingsExceedingMaxParticipants = append(bookingsExceedingMaxParticipants, failedToUpdate...)
+						failedToUpdate := checkCapacityUpdateSuccess(capacity.BookingIdsToUpdate, updatedBookingIds)
+						bookingsExceedingMaxParticipants = append(bookingsExceedingMaxParticipants, failedToUpdate...)
+					}
 
 					if requestedToDeleteCount > 0 {
 						err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, futureBookingIds, requestedParticipantsToDelete)
@@ -443,10 +491,12 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					if requestedToInsertCount > 0 {
 						participantsToInsert := buildOccurrenceParticipantsToInsert(updatedBookingIds, requestedParticipantsToInsert, existingParticipantsByBooking)
 
-						// we do not want to override participant statuses on conflict
-						err = s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToInsert, false)
-						if err != nil {
-							return fmt.Errorf("failed to add participants: %w", err)
+						if len(participantsToInsert) > 0 {
+							// we do not want to override participant statuses on conflict
+							err = s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToInsert, false)
+							if err != nil {
+								return fmt.Errorf("failed to add participants: %w", err)
+							}
 						}
 					}
 				}
@@ -460,14 +510,16 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 
 				// If the participants changed and and the participant count update failed for a booking
 				// then we should not calculate and override the totalPrice, hence the use of 'updatedBookingIds'
-				totalPrices, err := calculateTotalPrices(series.PricePerPerson, updatedBookingIds, capacity.ByBooking)
-				if err != nil {
-					return err
-				}
+				if len(updatedBookingIds) > 0 {
+					totalPrices, err := calculateTotalPrices(series.PricePerPerson, updatedBookingIds, capacity.ByBooking)
+					if err != nil {
+						return err
+					}
 
-				err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, updatedBookingIds, totalPrices)
-				if err != nil {
-					return fmt.Errorf("failed to btach update future booking total prices: %w", err)
+					err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, updatedBookingIds, totalPrices)
+					if err != nil {
+						return fmt.Errorf("failed to btach update future booking total prices: %w", err)
+					}
 				}
 			}
 

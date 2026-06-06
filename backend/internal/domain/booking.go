@@ -25,6 +25,7 @@ type BookingRepository interface {
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
 	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error
+	UpdateBookingSeriesOriginalDate(ctx context.Context, bookingId int, seriesOriginalDate time.Time) error
 	UpdateBookingPricePerPersonBatch(ctx context.Context, bookingIds []int, price currencyx.Price) error
 	UpdateBookingTotalPriceBatch(ctx context.Context, bookingIds []int, prices []currencyx.Price) error
 	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details []BookingDetails) error
@@ -37,6 +38,7 @@ type BookingRepository interface {
 	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 
 	CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error
+	CancelBookingByMerchantBatch(ctx context.Context, bookingIds []int) error
 	DeleteAppointmentsByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
@@ -72,6 +74,8 @@ type BookingRepository interface {
 
 	GetBookingSeries(ctx context.Context, seriesId int) (BookingSeries, error)
 	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
+	// this query intentionally does not filter out completed bookings, because if it did
+	// it would be hard to match the bookings to the generated occurrences
 	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId int, fromDate time.Time, limit int) ([]Booking, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 }

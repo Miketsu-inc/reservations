@@ -235,6 +235,21 @@ func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchant
 	return nil
 }
 
+func (r *bookingRepository) UpdateBookingSeriesOriginalDate(ctx context.Context, bookingId int, seriesOriginalDate time.Time) error {
+	query := `
+	update "Booking"
+	set series_original_date = $2
+	where id = $1 and status not in ('cancelled', 'completed', 'no-show')
+	`
+
+	_, err := r.db.Exec(ctx, query, bookingId, seriesOriginalDate)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *bookingRepository) UpdateBookingPricePerPersonBatch(ctx context.Context, bookingIds []int, price currencyx.Price) error {
 	query := `
 	update "Booking"
@@ -306,7 +321,7 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 func (r *bookingRepository) UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int) error {
 	query := `
 	update "Booking" b
-	set from_date = u.from_date, to_date = u.to_date, seriesId = $4, series_original_date = u.from_date
+	set from_date = u.from_date, to_date = u.to_date, booking_series_id = $4, series_original_date = u.from_date
 	from unnest($1::int[], $2::timestamptz[], $3::timestamptz[])
 		as u(id, from_date, to_date)
 	where b.id = u.id and b.from_date > now() and b.status not in ('cancelled', 'completed', 'no-show')
@@ -384,7 +399,7 @@ func (r *bookingRepository) UpdateParticipantCountBatch(ctx context.Context, boo
 	from unnest($1::int[], $2::int[]) as u(id, delta)
 	where b.id = u.id and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed')
 		and b.current_participants + u.delta <= b.max_participants and b.current_participants + u.delta > 0
-	returning id
+	returning b.id
 	`
 
 	rows, _ := r.db.Query(ctx, query, bookingIds, participantDelta)
@@ -437,6 +452,21 @@ func (r *bookingRepository) CancelBookingByMerchant(ctx context.Context, merchan
 	`
 
 	_, err := r.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, bookingId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) CancelBookingByMerchantBatch(ctx context.Context, bookingIds []int) error {
+	query := `
+	update "Booking"
+	set status = 'cancelled', cancelled_by_merchant_on = $2
+	where id = any($1::int[]) and status not in ('cancelled', 'completed', 'no-show') and from_date > now()
+	`
+
+	_, err := r.db.Exec(ctx, query, bookingIds, time.Now().UTC())
 	if err != nil {
 		return err
 	}
@@ -698,32 +728,29 @@ func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingI
 
 func (r *bookingRepository) GetParticipantCustomerIdsForBookings(ctx context.Context, bookingIds []int) (map[int][]uuid.UUID, error) {
 	query := `
-	select booking_id, customer_id
+	select booking_id, array_agg(customer_id) as customer_ids
 	from "BookingParticipant"
-	where booking_id = any($1)
+	where booking_id = any($1::int[])
+	group by booking_id
 	`
 
-	type bookingIdCustomerId struct {
-		BookingId  int       `db:"booking_id"`
-		CustomerId uuid.UUID `db:"customer_id"`
+	type bookingCustomers struct {
+		BookingId   int         `db:"booking_id"`
+		CustomerIds []uuid.UUID `db:"customer_ids"`
 	}
 
 	rows, _ := r.db.Query(ctx, query, bookingIds)
-	bookingCustomerPairs, err := pgx.CollectRows(rows, pgx.RowToStructByName[bookingIdCustomerId])
+	bookingsWithCustomers, err := pgx.CollectRows(rows, pgx.RowToStructByName[bookingCustomers])
 	if err != nil {
 		return map[int][]uuid.UUID{}, err
 	}
 
-	bookingCustomerIdMap := make(map[int][]uuid.UUID, len(bookingIds))
-	for _, b := range bookingCustomerPairs {
-		if customerIds, ok := bookingCustomerIdMap[b.BookingId]; ok {
-			bookingCustomerIdMap[b.BookingId] = append(customerIds, b.CustomerId)
-		} else {
-			bookingCustomerIdMap[b.BookingId] = []uuid.UUID{b.CustomerId}
-		}
+	bookingCustomersMap := make(map[int][]uuid.UUID, len(bookingsWithCustomers))
+	for _, b := range bookingsWithCustomers {
+		bookingCustomersMap[b.BookingId] = b.CustomerIds
 	}
 
-	return bookingCustomerIdMap, nil
+	return bookingCustomersMap, nil
 }
 
 func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
@@ -860,10 +887,10 @@ func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Conte
 }
 
 func (r *bookingRepository) GetClosestAvailableGroupBooking(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, searchStart, searchEnd time.Time) (domain.Booking, error) {
-	query := `select id, status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date, price_per_person, 
-	cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants, cancelled_by_merchant_on, cancellation_reason from "Booking" 
+	query := `select id, status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date, price_per_person,
+	cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants, cancelled_by_merchant_on, cancellation_reason from "Booking"
 	where merchant_id = $1 and service_id = $2 and location_id = $3 and from_date >= $4 and to_date <= $5 and current_participants < max_participants and status not in ('cancelled', 'completed')
-	order by from_date asc 
+	order by from_date asc
 	limit 1`
 
 	row, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, searchStart, searchEnd)
@@ -996,7 +1023,7 @@ func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context,
 func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId int, fromDate time.Time, limit int) ([]domain.Booking, error) {
 	query := `
 	select * from "Booking"
-	where booking_series_id = $1 and from_date > $2 and status not in ('cancelled', 'completed', 'no-show')
+	where booking_series_id = $1 and from_date > $2
 	order by id asc
 	limit $3
 	for update
