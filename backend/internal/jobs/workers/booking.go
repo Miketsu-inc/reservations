@@ -91,7 +91,12 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 		generateFrom = job.Args.GenerateFrom
 	}
 
-	return w.bookingService.GenerateRecurringBookings(ctx, series, seriesParticipants, service, generateFrom)
+	occurrenceIndex, err := w.bookingRepo.GetSeriesLastOccurrenceIndex(ctx, series.Id)
+	if err != nil {
+		return err
+	}
+
+	return w.bookingService.GenerateRecurringBookings(ctx, series, seriesParticipants, service, generateFrom, occurrenceIndex+1)
 }
 
 type UpdateFutureBookingOccurrences struct {
@@ -118,5 +123,5 @@ func (w *UpdateFutureBookingOccurrences) Work(ctx context.Context, job *river.Jo
 	}
 
 	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, service, job.Args.SeriesOriginalDateOffset, job.Args.PriceChanged,
-		job.Args.StatusChangedToCancelled, job.Args.ParticipantsToInsert, job.Args.ParticipantsToDelete)
+		job.Args.StatusChangedToCancelled, job.Args.OccurrenceIndex, job.Args.ParticipantsToInsert, job.Args.ParticipantsToDelete)
 }

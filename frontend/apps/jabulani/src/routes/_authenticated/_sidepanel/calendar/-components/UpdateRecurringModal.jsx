@@ -9,7 +9,7 @@ const options = [
   },
   {
     id: "future",
-    label: "All future occurences",
+    label: "All future occurrences",
     description: "This and all future occurrences will be updated.",
   },
 ];

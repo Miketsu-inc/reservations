@@ -36,6 +36,7 @@ func (BookingOccurrenceGenerator) InsertOpts() river.InsertOpts {
 
 type UpdateFutureBookingOccurrences struct {
 	BookingSeriesId          int           `json:"booking_series_id"`
+	OccurrenceIndex          int           `json:"occurrence_index"`
 	SeriesOriginalDateOffset time.Duration `json:"series_original_date_offset"`
 	StatusChangedToCancelled bool          `json:"status_changed_to_cancelled"`
 	PriceChanged             bool          `json:"price_changed"`

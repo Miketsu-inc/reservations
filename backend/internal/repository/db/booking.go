@@ -29,8 +29,8 @@ func (r *bookingRepository) WithTx(tx db.DBTX) domain.BookingRepository {
 func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booking) (int, error) {
 	query := `
 	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date,
-		price_per_person, total_price, merchant_note, min_participants, max_participants, current_participants)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		price_per_person, total_price, merchant_note, min_participants, max_participants, current_participants, occurrence_index, series_version)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 	returning id
 	`
 
@@ -38,7 +38,7 @@ func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booki
 
 	err := r.db.QueryRow(ctx, query, booking.Status, booking.BookingType, booking.IsRecurring, booking.MerchantId, booking.EmployeeId, booking.ServiceId, booking.LocationId,
 		booking.BookingSeriesId, booking.SeriesOriginalDate, booking.FromDate, booking.ToDate, booking.PricePerPerson, booking.TotalPrice,
-		booking.MerchantNote, booking.MinParticipants, booking.MaxParticipants, booking.CurrentParticipants).Scan(&bookingId)
+		booking.MerchantNote, booking.MinParticipants, booking.MaxParticipants, booking.CurrentParticipants, booking.OccurrenceIndex, booking.SeriesVersion).Scan(&bookingId)
 	if err != nil {
 		return 0, err
 	}
@@ -49,31 +49,35 @@ func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booki
 func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.Booking) ([]int, error) {
 	query := `
 	insert into "Booking" (status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date,
-		price_per_person, total_price, merchant_note, min_participants, max_participants, current_participants)
+		price_per_person, total_price, merchant_note, min_participants, max_participants, current_participants, occurrence_index, series_version)
 	select unnest($1::text[]), unnest($2::text[]), unnest($3::boolean[]), unnest($4::uuid[]), unnest($5::int[]), unnest($6::int[]), unnest($7::int[]),
 		unnest($8::int[]), unnest($9::timestamptz[]), unnest($10::timestamptz[]), unnest($11::timestamptz[]), unnest($12::price[]), unnest($13::price[]),
-		unnest($14::text[]), unnest($15::int[]), unnest($16::int[]), unnest($17::int[])
+		unnest($14::text[]), unnest($15::int[]), unnest($16::int[]), unnest($17::int[]), unnest($18::int[]), unnest($19::int[])
 	returning id
 	`
 
 	var bookingIds []int
 
-	statuses := make([]string, len(bookings))
-	types := make([]string, len(bookings))
-	isRecurrings := make([]bool, len(bookings))
-	merchantIds := make([]uuid.UUID, len(bookings))
-	employeeIds := make([]pgtype.Int4, len(bookings))
-	serviceIds := make([]int, len(bookings))
-	locationIds := make([]int, len(bookings))
-	seriesIds := make([]pgtype.Int4, len(bookings))
-	fromDates := make([]time.Time, len(bookings))
-	toDates := make([]time.Time, len(bookings))
-	pricePerPersons := make([]currencyx.Price, len(bookings))
-	totalPrices := make([]currencyx.Price, len(bookings))
-	merchantNotes := make([]pgtype.Text, len(bookings))
-	minParicipants := make([]int, len(bookings))
-	maxParicipants := make([]int, len(bookings))
-	currentParicipants := make([]int, len(bookings))
+	bookingsCount := len(bookings)
+
+	statuses := make([]string, bookingsCount)
+	types := make([]string, bookingsCount)
+	isRecurrings := make([]bool, bookingsCount)
+	merchantIds := make([]uuid.UUID, bookingsCount)
+	employeeIds := make([]pgtype.Int4, bookingsCount)
+	serviceIds := make([]int, bookingsCount)
+	locationIds := make([]int, bookingsCount)
+	seriesIds := make([]pgtype.Int4, bookingsCount)
+	fromDates := make([]time.Time, bookingsCount)
+	toDates := make([]time.Time, bookingsCount)
+	pricePerPersons := make([]currencyx.Price, bookingsCount)
+	totalPrices := make([]currencyx.Price, bookingsCount)
+	merchantNotes := make([]pgtype.Text, bookingsCount)
+	minParicipants := make([]int, bookingsCount)
+	maxParicipants := make([]int, bookingsCount)
+	currentParicipants := make([]int, bookingsCount)
+	occurrenceIndexes := make([]pgtype.Int4, bookingsCount)
+	seriesVersions := make([]pgtype.Int4, bookingsCount)
 
 	for i, b := range bookings {
 		statuses[i] = b.Status.String()
@@ -104,10 +108,21 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 		minParicipants[i] = b.MinParticipants
 		maxParicipants[i] = b.MaxParticipants
 		currentParicipants[i] = b.CurrentParticipants
+		if b.OccurrenceIndex == nil {
+			occurrenceIndexes[i] = pgtype.Int4{Valid: false}
+		} else {
+			occurrenceIndexes[i] = pgtype.Int4{Int32: int32(*b.OccurrenceIndex), Valid: true}
+		}
+		if b.SeriesVersion == nil {
+			seriesVersions[i] = pgtype.Int4{Valid: false}
+		} else {
+			seriesVersions[i] = pgtype.Int4{Int32: int32(*b.SeriesVersion), Valid: true}
+		}
 	}
 
 	rows, _ := r.db.Query(ctx, query, statuses, types, isRecurrings, merchantIds, employeeIds, serviceIds, locationIds, seriesIds, fromDates,
-		fromDates, toDates, pricePerPersons, totalPrices, merchantNotes, minParicipants, maxParicipants, currentParicipants)
+		fromDates, toDates, pricePerPersons, totalPrices, merchantNotes, minParicipants, maxParicipants, currentParicipants, occurrenceIndexes,
+		seriesVersions)
 	bookingIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
 		return []int{}, err
@@ -235,14 +250,14 @@ func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchant
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingSeriesOriginalDate(ctx context.Context, bookingId int, seriesOriginalDate time.Time) error {
+func (r *bookingRepository) UpdateBookingSeriesOriginalDateAndVersion(ctx context.Context, bookingId int, seriesOriginalDate time.Time, seriesVersion int) error {
 	query := `
 	update "Booking"
-	set series_original_date = $2
+	set series_original_date = $2, series_version = $3
 	where id = $1 and status not in ('cancelled', 'completed', 'no-show')
 	`
 
-	_, err := r.db.Exec(ctx, query, bookingId, seriesOriginalDate)
+	_, err := r.db.Exec(ctx, query, bookingId, seriesOriginalDate, seriesVersion)
 	if err != nil {
 		return err
 	}
@@ -318,16 +333,16 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int) error {
+func (r *bookingRepository) UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int, seriesVersion int) error {
 	query := `
 	update "Booking" b
-	set from_date = u.from_date, to_date = u.to_date, booking_series_id = $4, series_original_date = u.from_date
+	set from_date = u.from_date, to_date = u.to_date, booking_series_id = $4, series_original_date = u.from_date, series_version = $5
 	from unnest($1::int[], $2::timestamptz[], $3::timestamptz[])
 		as u(id, from_date, to_date)
 	where b.id = u.id and b.from_date > now() and b.status not in ('cancelled', 'completed', 'no-show')
 	`
 
-	_, err := r.db.Exec(ctx, query, bookingIds, fromDates, toDates, seriesId)
+	_, err := r.db.Exec(ctx, query, bookingIds, fromDates, toDates, seriesId, seriesVersion)
 	if err != nil {
 		return err
 	}
@@ -950,16 +965,22 @@ func (r *bookingRepository) NewBookingSeriesParticipants(ctx context.Context, bo
 	return bookingSeriesParticipants, nil
 }
 
-func (r *bookingRepository) UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error {
-	query := `update "BookingSeries" set service_id = $2, booking_type = $3, rrule = $4, dstart = $5
-	where id = $1`
+func (r *bookingRepository) UpdateBookingSeriesRrule(ctx context.Context, seriesId int, rrule string, dstart time.Time) (int, error) {
+	query := `
+	update "BookingSeries"
+	set rrule = $2, dstart = $3, version = version + 1
+	where id = $1
+	returning version
+	`
 
-	_, err := r.db.Exec(ctx, query, seriesId, serviceId, bookingType, rrule, dstart)
+	var seriesVersion int
+
+	err := r.db.QueryRow(ctx, query, seriesId, rrule, dstart).Scan(&seriesVersion)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return seriesVersion, nil
 }
 
 func (r *bookingRepository) UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error {
@@ -1020,16 +1041,16 @@ func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context,
 	return nil
 }
 
-func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId int, fromDate time.Time, limit int) ([]domain.Booking, error) {
+func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, seriesVersion, fromOccurrenceIndex, limit int) ([]domain.Booking, error) {
 	query := `
 	select * from "Booking"
-	where booking_series_id = $1 and from_date > $2
-	order by id asc
-	limit $3
+	where booking_series_id = $1 and occurrence_index > $2 and series_version < $3
+	order by occurrence_index asc
+	limit $4
 	for update
 	`
 
-	rows, _ := r.db.Query(ctx, query, seriesId, fromDate, limit)
+	rows, _ := r.db.Query(ctx, query, seriesId, fromOccurrenceIndex, seriesVersion, limit)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Booking])
 	if err != nil {
 		return nil, err
@@ -1067,6 +1088,23 @@ func (r *bookingRepository) GetActiveBookingSeriesIds(ctx context.Context, tresh
 	}
 
 	return ids, nil
+}
+
+func (r *bookingRepository) GetSeriesLastOccurrenceIndex(ctx context.Context, seriesId int) (int, error) {
+	query := `
+	select coalesce(max(occurrence_index), 0)
+	from "Booking"
+	where booking_series_id = $1
+	`
+
+	var occurrenceIndex int
+
+	err := r.db.QueryRow(ctx, query, seriesId).Scan(&occurrenceIndex)
+	if err != nil {
+		return 0, err
+	}
+
+	return occurrenceIndex, err
 }
 
 func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]domain.BookingSeriesParticipant, error) {

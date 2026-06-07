@@ -609,6 +609,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		var bookingSeriesId *int
 		var seriesOriginalDate *time.Time
+		var occurrenceIndex *int
+		var seriesVersion *int
 
 		if input.IsRecurring && input.Rrule != nil {
 			merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
@@ -666,8 +668,12 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return fmt.Errorf("error scheduling recurring booking generation: %w", err)
 			}
 
+			one := 1
+
 			bookingSeriesId = &series.Id
 			seriesOriginalDate = &fromDate
+			occurrenceIndex = &one
+			seriesVersion = &one
 		}
 
 		booking := domain.Booking{
@@ -688,6 +694,8 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			MinParticipants:     service.MinParticipants,
 			MaxParticipants:     service.MaxParticipants,
 			CurrentParticipants: participantCount,
+			OccurrenceIndex:     occurrenceIndex,
+			SeriesVersion:       seriesVersion,
 		}
 
 		participants := make([]domain.BookingParticipant, len(incomingCustomerIds))
@@ -852,7 +860,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	if input.UpdateAllFuture && !booking.IsRecurring {
-		return fmt.Errorf("cannot update future occurences of non-recurring booking")
+		return fmt.Errorf("cannot update future occurrences of non-recurring booking")
 	}
 
 	err = booking.CanModify()
@@ -1043,12 +1051,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 				rrule.DTStart(seriesFromDate)
 
-				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesCore(ctx, bookingSeries.Id, booking.ServiceId, booking.BookingType, rrule.String(), seriesFromDate)
+				seriesVersion, err := s.bookingRepo.WithTx(tx).UpdateBookingSeriesRrule(ctx, bookingSeries.Id, rrule.String(), seriesFromDate)
 				if err != nil {
 					return fmt.Errorf("failed to update booking series core: %w", err)
 				}
 
-				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDate(ctx, booking.Id, fromDate)
+				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDateAndVersion(ctx, booking.Id, fromDate, seriesVersion)
 				if err != nil {
 					return err
 				}
@@ -1097,6 +1105,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.UpdateFutureBookingOccurrences{
 				BookingSeriesId:          bookingSeries.Id,
+				OccurrenceIndex:          *booking.OccurrenceIndex,
 				SeriesOriginalDateOffset: seriesOriginalDateOffset,
 				PriceChanged:             priceChanged,
 				StatusChangedToCancelled: statusChangedToCancelled,
@@ -1104,7 +1113,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				ParticipantsToDelete:     seriesParticipantChanges.ToDelete,
 			}, &river.InsertOpts{})
 			if err != nil {
-				return fmt.Errorf("failed to insert update future occurences job: %w", err)
+				return fmt.Errorf("failed to insert update future occurrences job: %w", err)
 			}
 		}
 

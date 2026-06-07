@@ -149,7 +149,8 @@ create table if not exists "BookingSeries" (
     total_price              price           not null,
     min_participants         integer         not null,
     max_participants         integer         not null,
-    current_participants     integer         not null
+    current_participants     integer         not null,
+    version                  integer         default 1 not null
 );
 
 create table if not exists "BookingSeriesParticipant" (
@@ -182,7 +183,9 @@ create table if not exists "Booking" (
     max_participants         integer         not null,
     current_participants     integer         not null,
     cancelled_by_merchant_on timestamptz,
-    cancellation_reason      text
+    cancellation_reason      text,
+    occurrence_index         integer,
+    series_version           integer
 );
 
 create table if not exists "BookingPhase" (

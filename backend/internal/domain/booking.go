@@ -25,11 +25,11 @@ type BookingRepository interface {
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
 	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error
-	UpdateBookingSeriesOriginalDate(ctx context.Context, bookingId int, seriesOriginalDate time.Time) error
+	UpdateBookingSeriesOriginalDateAndVersion(ctx context.Context, bookingId int, seriesOriginalDate time.Time, seriesVersion int) error
 	UpdateBookingPricePerPersonBatch(ctx context.Context, bookingIds []int, price currencyx.Price) error
 	UpdateBookingTotalPriceBatch(ctx context.Context, bookingIds []int, prices []currencyx.Price) error
 	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details []BookingDetails) error
-	UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int) error
+	UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int, seriesVersion int) error
 	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant, updateStatusOnConflict bool) error
 	UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, status types.BookingStatus) error
 	UpdateParticipantCountBatch(ctx context.Context, bookingIds []int, participantDelta []int) ([]int, error)
@@ -65,7 +65,7 @@ type BookingRepository interface {
 	NewBookingSeries(ctx context.Context, bookingSeries BookingSeries) (BookingSeries, error)
 	NewBookingSeriesParticipants(ctx context.Context, bookingSeriesParticipants []BookingSeriesParticipant) ([]BookingSeriesParticipant, error)
 
-	UpdateBookingSeriesCore(ctx context.Context, seriesId int, serviceId int, bookingType types.BookingType, rrule string, dstart time.Time) error
+	UpdateBookingSeriesRrule(ctx context.Context, seriesId int, rrule string, dstart time.Time) (int, error)
 	UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error
 	DeactivateBookingSeries(ctx context.Context, seriesId int) error
 	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingDetails) error
@@ -76,7 +76,8 @@ type BookingRepository interface {
 	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
 	// this query intentionally does not filter out completed bookings, because if it did
 	// it would be hard to match the bookings to the generated occurrences
-	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId int, fromDate time.Time, limit int) ([]Booking, error)
+	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, seriesVersion, fromOccurrenceIndex, limit int) ([]Booking, error)
+	GetSeriesLastOccurrenceIndex(ctx context.Context, seriesId int) (int, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 }
 
@@ -101,6 +102,8 @@ type Booking struct {
 	CurrentParticipants   int                 `db:"current_participants"`
 	CancelledByMerchantOn *time.Time          `db:"cancelled_by_merchant_on"`
 	CancellationReason    *string             `db:"cancellation_reason"`
+	OccurrenceIndex       *int                `db:"occurrence_index"`
+	SeriesVersion         *int                `db:"series_version"`
 }
 
 func (b Booking) IsCancelled() bool {
@@ -382,6 +385,7 @@ type BookingSeries struct {
 	MinParticipants     int               `db:"min_participants"`
 	MaxParticipants     int               `db:"max_participants"`
 	CurrentParticipants int               `db:"current_participants"`
+	Version             int               `db:"version"`
 }
 
 type BookingSeriesParticipant struct {
