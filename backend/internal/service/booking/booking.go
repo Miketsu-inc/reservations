@@ -833,14 +833,12 @@ func detectSeriesParticipantChanges(existing []domain.BookingParticipant, existi
 
 type UpdateByMerchantInput struct {
 	Customers       []CustomerInput
-	ServiceId       int
 	TimeStamp       time.Time
 	MerchantNote    *string
 	BookingStatus   types.BookingStatus
 	UpdateAllFuture bool
 }
 
-// TODO: Service updates are not applied on 'updateAllFuture' as we plan to remove service updates entirely
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
@@ -873,23 +871,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	isGroupBooking := booking.IsGroupBooking()
-	serviceChanged := booking.ServiceId != input.ServiceId
-
-	var service domain.Service
-
-	if serviceChanged {
-		service, err = s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
-		if err != nil {
-			return fmt.Errorf("error retrieving service: %s", err.Error())
-		}
-
-		isGroupBooking = service.IsGroupService()
-	} else {
-		service, err = s.catalogRepo.GetServiceWithPhases(ctx, booking.ServiceId, actor.MerchantId)
-		if err != nil {
-			return fmt.Errorf("error retrieving service: %s", err.Error())
-		}
-	}
 
 	var participantCount int
 	var seriesParticipantCount int
@@ -940,37 +921,24 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	seriesParticipantsChanged := len(seriesParticipantChanges.ToInsert) != 0 || len(seriesParticipantChanges.ToDelete) != 0
 
 	if participantsChanged {
-		if participantCount > service.MaxParticipants {
-			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", participantCount, service.MaxParticipants)
+		if participantCount > booking.MaxParticipants {
+			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", participantCount, booking.MaxParticipants)
 		}
 	}
 
 	if seriesParticipantsChanged {
-		if seriesParticipantCount > service.MaxParticipants {
-			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", seriesParticipantCount, service.MaxParticipants)
+		if seriesParticipantCount > booking.MaxParticipants {
+			return fmt.Errorf("participant count (%d) cannot be higher than maximum (%d)", seriesParticipantCount, booking.MaxParticipants)
 		}
 	}
 
-	if serviceChanged {
-		if !isGroupBooking && participantCount > 1 {
-			return fmt.Errorf("appointments cannot have more than 1 customer")
-		}
-
-		if isGroupBooking && participantCount > service.MaxParticipants {
-			return fmt.Errorf("customer count (%d) exceeds class limit of %d", participantCount, service.MaxParticipants)
-		}
-	}
-
-	priceChanged := serviceChanged || participantsChanged
+	priceChanged := participantsChanged
 
 	var pricePerPerson currencyx.Price
 	var totalPrice, seriesTotalPrice currency.Amount
 
 	if priceChanged {
-		pricePerPerson, err = s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
-		if err != nil {
-			return err
-		}
+		pricePerPerson := booking.PricePerPerson
 
 		if isWalkIn && isGroupBooking {
 			totalPrice, err = currency.NewAmount("0", pricePerPerson.CurrencyCode())
@@ -1010,8 +978,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
 	statusChanged := booking.Status != input.BookingStatus
 
-	duration := service.GetTotalDuration()
-
 	fromDate := booking.FromDate
 	toDate := booking.ToDate
 	fromDateOffset := time.Duration(0)
@@ -1020,6 +986,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	seriesFromDate := booking.FromDate.In(merchantTz)
 
 	if timeStampChanged {
+		duration := booking.ToDate.Sub(booking.FromDate)
 		fromDateOffset = input.TimeStamp.UTC().Sub(booking.FromDate)
 
 		fromDate = fromDate.Add(fromDateOffset)
@@ -1030,10 +997,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			// could have been modified. Also it has to be in the merchant's timezone to avoid DST problems
 			seriesFromDate = input.TimeStamp.In(merchantTz)
 			seriesOriginalDateOffset = input.TimeStamp.UTC().Sub(*booking.SeriesOriginalDate)
-		}
-	} else {
-		if serviceChanged {
-			toDate = fromDate.Add(duration)
 		}
 	}
 
@@ -1072,9 +1035,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				seriesTotalPrice = bookingSeries.TotalPrice.Amount
 			}
 
-			// service changed does not necessarily mean that we should recalculate the occurrences, but it's highly likely
-			// that the duration changed and the booking phases would have to be recalculated anyway
-			if serviceChanged || timeStampChanged {
+			if timeStampChanged {
 				rrule, err := rrule.StrToRRule(bookingSeries.Rrule)
 				if err != nil {
 					return fmt.Errorf("failed to parse existing rrule: %w", err)
@@ -1082,25 +1043,23 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 				rrule.DTStart(seriesFromDate)
 
-				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesCore(ctx, bookingSeries.Id, service.Id, service.BookingType, rrule.String(), seriesFromDate)
+				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesCore(ctx, bookingSeries.Id, booking.ServiceId, booking.BookingType, rrule.String(), seriesFromDate)
 				if err != nil {
 					return fmt.Errorf("failed to update booking series core: %w", err)
 				}
 
-				if timeStampChanged {
-					err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDate(ctx, booking.Id, fromDate)
-					if err != nil {
-						return err
-					}
+				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDate(ctx, booking.Id, fromDate)
+				if err != nil {
+					return err
 				}
 			}
 
-			if seriesParticipantsChanged || serviceChanged || priceChanged {
+			if seriesParticipantsChanged || priceChanged {
 				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesDetails(ctx, bookingSeries.Id, domain.BookingDetails{
 					PricePerPerson:      pricePerPerson,
 					TotalPrice:          currencyx.Price{Amount: seriesTotalPrice},
-					MinParticipants:     service.MinParticipants,
-					MaxParticipants:     service.MaxParticipants,
+					MinParticipants:     booking.MinParticipants,
+					MaxParticipants:     booking.MaxParticipants,
 					CurrentParticipants: seriesParticipantCount,
 				})
 				if err != nil {
@@ -1149,20 +1108,20 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		if timeStampChanged || serviceChanged || statusChanged || merchantNoteChanged {
-			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, []int{booking.Id}, service.Id,
-				[]time.Time{fromDate}, []time.Time{toDate}, service.BookingType, bookingStatus, merchantNote)
+		if timeStampChanged || statusChanged || merchantNoteChanged {
+			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, []int{booking.Id}, booking.ServiceId,
+				[]time.Time{fromDate}, []time.Time{toDate}, booking.BookingType, bookingStatus, merchantNote)
 			if err != nil {
 				return fmt.Errorf("failed to batch update booking core: %s", err.Error())
 			}
 		}
 
-		if serviceChanged || priceChanged || participantsChanged {
+		if priceChanged || participantsChanged {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingDetailsBatch(ctx, actor.MerchantId, []int{booking.Id}, []domain.BookingDetails{{
 				PricePerPerson:      pricePerPerson,
 				TotalPrice:          currencyx.Price{Amount: totalPrice},
-				MinParticipants:     service.MinParticipants,
-				MaxParticipants:     service.MaxParticipants,
+				MinParticipants:     booking.MinParticipants,
+				MaxParticipants:     booking.MaxParticipants,
 				CurrentParticipants: participantCount,
 			}})
 			if err != nil {
@@ -1170,10 +1129,15 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		if serviceChanged || timeStampChanged {
+		if timeStampChanged {
 			err := s.bookingRepo.WithTx(tx).DeleteBookingPhasesBatch(ctx, []int{booking.Id})
 			if err != nil {
 				return fmt.Errorf("failed to delete booking phases: %s", err.Error())
+			}
+
+			service, err := s.catalogRepo.GetServiceWithPhases(ctx, booking.ServiceId, actor.MerchantId)
+			if err != nil {
+				return fmt.Errorf("error retrieving service: %s", err.Error())
 			}
 
 			bookingPhasesToInsert := service.CalculateNewBookingPhases(booking.Id, fromDate)
@@ -1308,20 +1272,19 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}
 
 				// TODO: we should send a modification when the price is changed, but the email does not handle it currently
-				if serviceChanged {
-					_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{
-						Language:   lang,
-						BookingId:  booking.Id,
-						CustomerId: id,
-						// TODO: This works incorrectly currently
-						// booking should have a name field and we should rely on that here
-						OldServiceName: service.Name,
-						OldFromDate:    booking.FromDate,
-						OldToDate:      booking.ToDate,
-					}, nil)
-					if err != nil {
-						return fmt.Errorf("could not schedule booking modification email job: %w", err)
-					}
+				// should be revisited once changing price and name is allowed
+				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{
+					Language:   lang,
+					BookingId:  booking.Id,
+					CustomerId: id,
+					// TODO: This works incorrectly currently
+					// booking should have a name field and we should rely on that here
+					OldServiceName: "",
+					OldFromDate:    booking.FromDate,
+					OldToDate:      booking.ToDate,
+				}, nil)
+				if err != nil {
+					return fmt.Errorf("could not schedule booking modification email job: %w", err)
 				}
 			}
 		}

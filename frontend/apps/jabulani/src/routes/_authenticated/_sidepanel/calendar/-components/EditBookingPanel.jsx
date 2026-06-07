@@ -178,7 +178,6 @@ export default function EditBookingPanel({
           },
           body: JSON.stringify({
             customers: customerInput,
-            service_id: bookingData.serviceId,
             timestamp: timestamp,
             merchant_note: bookingData.merchantNote,
             booking_status: bookingData.bookingStatus,

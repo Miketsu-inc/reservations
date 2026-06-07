@@ -92,7 +92,6 @@ func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) {
 // if an empty string arrives as a note
 type updateByMerchantReq struct {
 	Customers       []customerReq       `json:"customers"`
-	ServiceId       int                 `json:"service_id" validate:"required"`
 	TimeStamp       string              `json:"timestamp" validate:"required"`
 	MerchantNote    *string             `json:"merchant_note"`
 	BookingStatus   types.BookingStatus `json:"booking_status"`
