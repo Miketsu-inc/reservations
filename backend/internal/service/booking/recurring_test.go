@@ -34,7 +34,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 
 		rrule, _ := rrule.NewRRule(rrule.ROption{
 			Freq:      rrule.WEEKLY,
-			Dtstart:   ct(2026, time.June, 14, "16:00", tz),
+			Dtstart:   ct(2026, time.June, 7, "16:00", tz),
 			Interval:  1,
 			Byweekday: []rrule.Weekday{},
 			Until:     ct(2026, time.July, 4, "16:00", tz),
@@ -47,6 +47,8 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(1) * time.Hour,
 		}
+
+		lastOccurrenceDate := ct(2026, time.June, 7, "14:00", time.UTC)
 
 		fromDates := []time.Time{
 			ct(2026, time.June, 14, "13:00", time.UTC),
@@ -77,7 +79,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 28, "14:10", time.UTC),
 		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")
@@ -89,7 +91,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 
 		rrule, _ := rrule.NewRRule(rrule.ROption{
 			Freq:      rrule.WEEKLY,
-			Dtstart:   ct(2026, time.June, 14, "16:00", tz),
+			Dtstart:   ct(2026, time.June, 7, "16:00", tz),
 			Interval:  1,
 			Byweekday: []rrule.Weekday{},
 			Until:     ct(2026, time.July, 4, "16:00", tz),
@@ -102,6 +104,8 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(-1) * time.Hour,
 		}
+
+		lastOccurrenceDate := ct(2026, time.June, 7, "14:00", time.UTC)
 
 		fromDates := []time.Time{
 			ct(2026, time.June, 14, "15:00", time.UTC),
@@ -134,7 +138,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 28, "14:10", time.UTC),
 		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")
@@ -146,7 +150,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 
 		rrule, _ := rrule.NewRRule(rrule.ROption{
 			Freq:      rrule.WEEKLY,
-			Dtstart:   ct(2026, time.March, 22, "01:00", tz),
+			Dtstart:   ct(2026, time.March, 15, "01:00", tz),
 			Interval:  1,
 			Byweekday: []rrule.Weekday{},
 			Until:     ct(2026, time.April, 5, "01:00", tz),
@@ -159,6 +163,8 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(2) * time.Hour,
 		}
+
+		lastOccurrenceDate := ct(2026, time.March, 15, "00:00", time.UTC)
 
 		fromDates := []time.Time{
 			ct(2026, time.March, 21, "22:00", time.UTC),
@@ -189,7 +195,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.April, 4, "23:10", time.UTC),
 		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")

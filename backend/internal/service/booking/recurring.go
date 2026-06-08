@@ -120,6 +120,15 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 	})
 }
 
+func getNextOccurrence(rrule *rrule.RRule, prev time.Time) (time.Time, error) {
+	// we do not allow secondly rrule frequency so this should be fine
+	d := rrule.After(prev.Add(1*time.Second), true)
+	if d.IsZero() {
+		return time.Time{}, fmt.Errorf("rrule ended after: %s", prev)
+	}
+	return d, nil
+}
+
 type occurrenceTimestampUpdateContext struct {
 	rrule                    *rrule.RRule
 	merchantTz               *time.Location
@@ -135,32 +144,22 @@ type occurrenceTimestampUpdate struct {
 	BookingPhases []domain.BookingPhase
 }
 
-func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, futureBookings []domain.Booking, service domain.Service) (occurrenceTimestampUpdate, error) {
-	futureBookingsCount := len(futureBookings)
-
-	// fromDateOffset is necessary here to get the correct amount of occurrences
-	// because the rrule should have already changed with the offset
-	occurrencesStart := futureBookings[0].SeriesOriginalDate.In(context.merchantTz).Add(context.seriesOriginalDateOffset)
-	occurrencesEnd := futureBookings[futureBookingsCount-1].SeriesOriginalDate.In(context.merchantTz).Add(context.seriesOriginalDateOffset)
-
-	occurrences := context.rrule.Between(occurrencesStart, occurrencesEnd, true)
-
-	if len(occurrences) != futureBookingsCount {
-		return occurrenceTimestampUpdate{}, fmt.Errorf("number of generated occurrences (%d) and future bookings (%d) should match", len(occurrences), futureBookingsCount)
-	}
-
-	if occurrences[0].UTC().Sub(*futureBookings[0].SeriesOriginalDate) != context.seriesOriginalDateOffset {
-		return occurrenceTimestampUpdate{}, fmt.Errorf("from date offset should match (%s) != (%s)", occurrences[0].UTC().Sub(*futureBookings[0].SeriesOriginalDate), context.seriesOriginalDateOffset)
-	}
-
+func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, futureBookings []domain.Booking, service domain.Service, lastOccurrenceDate time.Time) (occurrenceTimestampUpdate, error) {
 	var bookingIds []int
 	var fromDates []time.Time
 	var toDates []time.Time
 	var bookingPhases []domain.BookingPhase
 
-	for i, b := range futureBookings {
+	nextOccurrence := lastOccurrenceDate.In(context.merchantTz)
+
+	for _, b := range futureBookings {
+		occurrence, err := getNextOccurrence(context.rrule, nextOccurrence)
+		if err != nil {
+			return occurrenceTimestampUpdate{}, fmt.Errorf("series ended earlier than expected: %w", err)
+		}
+
 		if b.IsModifiable() {
-			bookingStart := occurrences[i].UTC()
+			bookingStart := occurrence.UTC()
 
 			bookingIds = append(bookingIds, b.Id)
 			fromDates = append(fromDates, bookingStart)
@@ -169,6 +168,8 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 			phases := service.CalculateNewBookingPhases(b.Id, bookingStart)
 			bookingPhases = append(bookingPhases, phases...)
 		}
+
+		nextOccurrence = occurrence
 	}
 
 	return occurrenceTimestampUpdate{
@@ -391,7 +392,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 	for !finshed {
 		err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 			// the given occurrence index is not included
-			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, series.Version, lastOccurrenceIndex, 50)
+			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, series.Version, lastOccurrenceIndex, 2)
 			if err != nil {
 				return fmt.Errorf("failed to fetch future series bookings: %w", err)
 			}
@@ -400,8 +401,6 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 				finshed = true
 				return nil
 			}
-
-			lastOccurrenceIndex = *futureBookings[len(futureBookings)-1].OccurrenceIndex
 
 			if statusChangedToCancelled {
 				var bookingsToCancel []int
@@ -421,7 +420,12 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			}
 
 			if timestampChanged {
-				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, service)
+				lastOccurrenceDate, err := s.bookingRepo.WithTx(tx).GetSeriesOccurrenceDateByIndex(ctx, lastOccurrenceIndex)
+				if err != nil {
+					return fmt.Errorf("error retrieving last occurrence date: %w", err)
+				}
+
+				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, service, lastOccurrenceDate)
 				if err != nil {
 					return err
 				}
@@ -443,6 +447,8 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					}
 				}
 			}
+
+			lastOccurrenceIndex = *futureBookings[len(futureBookings)-1].OccurrenceIndex
 
 			if participantsChanged || priceChanged {
 				var futureBookingIds []int

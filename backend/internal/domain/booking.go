@@ -78,6 +78,7 @@ type BookingRepository interface {
 	// it would be hard to match the bookings to the generated occurrences
 	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, seriesVersion, fromOccurrenceIndex, limit int) ([]Booking, error)
 	GetSeriesLastOccurrenceIndex(ctx context.Context, seriesId int) (int, error)
+	GetSeriesOccurrenceDateByIndex(ctx context.Context, occurrenceIndex int) (time.Time, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 }
 

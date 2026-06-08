@@ -1107,6 +1107,23 @@ func (r *bookingRepository) GetSeriesLastOccurrenceIndex(ctx context.Context, se
 	return occurrenceIndex, err
 }
 
+func (r *bookingRepository) GetSeriesOccurrenceDateByIndex(ctx context.Context, occurrenceIndex int) (time.Time, error) {
+	query := `
+	select series_original_date
+	from "Booking"
+	where occurrence_index = $1
+	`
+
+	var occurrenceDate time.Time
+
+	err := r.db.QueryRow(ctx, query, occurrenceIndex).Scan(&occurrenceDate)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return occurrenceDate, nil
+}
+
 func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]domain.BookingSeriesParticipant, error) {
 	query := `
 	select *
