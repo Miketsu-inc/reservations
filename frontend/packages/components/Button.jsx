@@ -16,13 +16,14 @@ const Button = React.forwardRef(function Button(
   ref
 ) {
   const variants = {
-    primary: "bg-primary hover:bg-hvr_primary text-white shadow-md",
+    primary:
+      "bg-primary hover:not-disabled:bg-hvr_primary text-white shadow-md",
     secondary:
-      "bg-transparent text-primary hover:text-hvr_primary border-2 border-primary hover:border-hvr_primary",
+      "bg-transparent text-primary hover:not-disabled:text-hvr_primary border-2 border-primary hover:not-disabled:border-hvr_primary",
     tertiary:
-      "bg-transparent hover:bg-gray-300 dark:hover:bg-gray-800 text-text_color shadow-none border-2 border-gray-300 dark:border-gray-800",
+      "bg-transparent hover:not-disabled:bg-gray-300 dark:hover:not-disabled:bg-gray-800 text-text_color shadow-none border-2 border-gray-300 dark:border-gray-800",
     danger:
-      "dark:hover:bg-red-800 dark:bg-red-700 bg-red-500 hover:bg-red-600 text-white shadow-md",
+      "dark:hover:not-disabled:bg-red-800 dark:bg-red-700 bg-red-500 hover:not-disabled:bg-red-600 text-white shadow-md",
   };
 
   return (
