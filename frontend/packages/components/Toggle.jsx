@@ -44,7 +44,8 @@ export function Toggle({
         isPressed
           ? "text-white [transition-delay:150ms] dark:text-black"
           : "text-text_color [transition-delay:0ms]"
-        } cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
+        } shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold
+        text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -59,8 +60,6 @@ export function Toggle({
     </button>
   );
 }
-
-//autoscroll when a toggle is clicked
 
 export function ToggleGroup({
   styles,
@@ -89,12 +88,9 @@ export function ToggleGroup({
     const activeElement = itemRefs.current[currentValue];
     if (!activeElement) return;
 
-    const groupRect = groupRef.current.getBoundingClientRect();
-    const activeRect = activeElement.getBoundingClientRect();
-
     setPillStyle({
-      width: `${activeRect.width}px`,
-      transform: `translateX(${activeRect.left - groupRect.left}px)`,
+      width: `${activeElement.offsetWidth}px`,
+      transform: `translateX(${activeElement.offsetLeft}px)`,
       opacity: 1,
       // Suppress transition on the very first render
       transition: isReady.current ? "" : "none",
@@ -114,6 +110,13 @@ export function ToggleGroup({
   }
 
   function onToggle(itemValue) {
+    itemRefs.current[itemValue]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      container: "nearest",
+      inline: "center",
+    });
+
     let val;
 
     if (multiple) {
@@ -138,7 +141,12 @@ export function ToggleGroup({
     <ToggleGroupContext.Provider
       value={{ multiple, value: currentValue, registerRef, onToggle }}
     >
-      <div ref={groupRef} role="group" className={`${styles} relative flex`}>
+      <div
+        ref={groupRef}
+        role="group"
+        className={`${styles} relative flex h-full scrollbar-thin
+          overflow-x-auto`}
+      >
         {!multiple && (
           <div
             aria-hidden="true"
