@@ -3,7 +3,7 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 7 vite-jabulani tailwindcss-jabulani vite-tango tailwindcss-tango air db caddy
+	@make -j 8 vite-jabulani tailwindcss-jabulani vite-tango tailwindcss-tango air db kv caddy
 
 build:
 	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
@@ -60,6 +60,15 @@ create-db:
 
 connect-db:
 	@docker exec -it postgresdb psql -U ${DB_USERNAME} ${DB_DATABASE}
+
+kv:
+	@docker start redis
+
+create-kv:
+	@docker run --name redis -p ${KV_PORT}:${KV_PORT} -d redis
+
+connect-kv:
+	@docker exec -it redis redis-cli
 
 lint:
 	@npm run lint

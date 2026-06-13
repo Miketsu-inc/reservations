@@ -114,7 +114,7 @@ heading = "Elfelejtetted a jelszavadat?"
 main_text = "Semmi gond, előfordul! Kattints az alábbi gombra az új jelszó beállitásához."
 primary_button = "Új jelszó beállitása"
 expiration_note = "Ez a link "
-expiration_note2 = "30 percig "
+expiration_note2 = "10 percig "
 expiration_note3 = "érvényes biztonsági okokból."
 ignore_email_note = """
 Ha nem te kérted a jelszó visszaállítását, figyelmen kívül \

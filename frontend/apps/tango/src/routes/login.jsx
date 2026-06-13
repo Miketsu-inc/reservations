@@ -212,13 +212,13 @@ function LoginPage() {
             inputValidation={passwordValidation}
             inputData={handleInputData}
           />
-          <a
-            href="#"
+          <Link
+            to="/forgot-password"
             className="text-right text-sm hover:underline focus:underline
               focus:outline-hidden"
           >
             Forgot your password?
-          </a>
+          </Link>
           <Button
             variant="primary"
             name="login"

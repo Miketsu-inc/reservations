@@ -15,7 +15,7 @@ type UserRepository interface {
 	NewUser(ctx context.Context, user User) error
 
 	GetUser(ctx context.Context, userId uuid.UUID) (User, error)
-	GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, *string, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
 	GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error)
 	GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeAuthInfo, error)

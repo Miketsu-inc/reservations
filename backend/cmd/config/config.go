@@ -20,6 +20,8 @@ type Config struct {
 	DB_PASSWORD string
 	DB_SCHEMA   string
 
+	KV_PORT string
+
 	JWT_ACCESS_SECRET   string
 	JWT_ACCESS_EXP_MIN  int
 	JWT_REFRESH_SECRET  string
@@ -48,6 +50,7 @@ func LoadEnvVars() *Config {
 		db_username := os.Getenv("DB_USERNAME")
 		db_password := os.Getenv("DB_PASSWORD")
 		db_schema := os.Getenv("DB_SCHEMA")
+		kv_port := os.Getenv("KV_PORT")
 		jwt_access_secret := os.Getenv("JWT_ACCESS_SECRET")
 		jwt_access_exp_min, _ := strconv.Atoi(os.Getenv("JWT_ACCESS_EXP_MIN"))
 		jwt_refresh_secret := os.Getenv("JWT_REFRESH_SECRET")
@@ -69,6 +72,7 @@ func LoadEnvVars() *Config {
 			DB_USERNAME:                  db_username,
 			DB_PASSWORD:                  db_password,
 			DB_SCHEMA:                    db_schema,
+			KV_PORT:                      kv_port,
 			JWT_ACCESS_SECRET:            jwt_access_secret,
 			JWT_ACCESS_EXP_MIN:           jwt_access_exp_min,
 			JWT_REFRESH_SECRET:           jwt_refresh_secret,
@@ -94,6 +98,7 @@ func (c *Config) Validate() {
 	assert.True(c.DB_USERNAME != "", "DB_USERNAME environment variable could not be found")
 	assert.True(c.DB_PASSWORD != "", "DB_PASSWORD environment variable could not be found")
 	assert.True(c.DB_SCHEMA != "", "DB_SCHEMA environment variable could not be found")
+	assert.True(c.KV_PORT != "", "KV_PORT environment variable could not be found")
 	assert.True(c.JWT_ACCESS_SECRET != "", "JWT_ACCESS_SECRET environment variable could not be found")
 	assert.True(c.JWT_ACCESS_EXP_MIN != 0, "JWT_ACCESS_EXP_MIN environment variable could not be found")
 	assert.True(c.JWT_REFRESH_SECRET != "", "JWT_REFRESH_SECRET environment variable could not be found")

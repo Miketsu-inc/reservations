@@ -40,7 +40,7 @@ export default function ForgotPassword() {
 
               <Section className="mb-8 text-center">
                 <Button
-                  href="{{ .PasswordLink }}"
+                  href={"{{ .PasswordLink }}"}
                   className="bg-blue-600 px-5 py-3 font-semibold text-white"
                   style={{ borderRadius: "6px" }}
                 >

@@ -2,9 +2,11 @@ package workers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
@@ -311,5 +313,31 @@ func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args
 		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
 		OldTime:     fmt.Sprintf("%s - %s", oldFromDateMerchantTz.Format("15:04"), oldToDateMerchantTz.Format("15:04")),
 		OldDate:     oldFromDateMerchantTz.Format("Monday, January 2"),
+	})
+}
+
+type ForgotPasswordEmail struct {
+	river.WorkerDefaults[args.ForgotPasswordEmail]
+
+	emailService *email.Service
+	userRepo     domain.UserRepository
+}
+
+func NewForgotPasswordEmail(emailService *email.Service, userRepo domain.UserRepository) *ForgotPasswordEmail {
+	return &ForgotPasswordEmail{emailService: emailService, userRepo: userRepo}
+}
+
+func (w *ForgotPasswordEmail) Work(ctx context.Context, job *river.Job[args.ForgotPasswordEmail]) error {
+	user, err := w.userRepo.GetUser(ctx, job.Args.UserId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	}
+
+	return w.emailService.ForgotPassword(ctx, job.Args.Language, user.Email, email.ForgotPasswordData{
+		PasswordLink: fmt.Sprintf("http://reservations.local:3000/reset-password?token=%s", job.Args.Token),
 	})
 }

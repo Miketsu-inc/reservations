@@ -19,6 +19,7 @@ type Deps struct {
 	ExtCalendarService *externalcalendar.Service
 	BookingRepo        domain.BookingRepository
 	CatalogRepo        domain.CatalogRepository
+	UserRepo           domain.UserRepository
 	ExtCalendarRepo    domain.ExternalCalendarRepository
 	TxManager          db.TransactionManager
 }
@@ -29,6 +30,7 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewBookingReminderEmailWorker(deps.EmailService, deps.BookingRepo))
 	river.AddWorker(workers, NewBookingCancellationEmail(deps.EmailService, deps.BookingRepo))
 	river.AddWorker(workers, NewBookingModificationEmail(deps.EmailService, deps.BookingRepo))
+	river.AddWorker(workers, NewForgotPasswordEmail(deps.EmailService, deps.UserRepo))
 
 	river.AddWorker(workers, NewIncrementalCalendarSync(deps.ExtCalendarService, deps.ExtCalendarRepo))
 	river.AddWorker(workers, NewSyncNewBooking(deps.ExtCalendarService))

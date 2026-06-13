@@ -108,7 +108,7 @@ heading = "Forgot Your Password?"
 main_text = "No worries, it happens! Click the button below to set a new password."
 primary_button = "Set New Password"
 expiration_note = "This link is valid for "
-expiration_note2 = "30 minutes "
+expiration_note2 = "10 minutes "
 expiration_note3 = "for security reasons."
 ignore_email_note = """
 If you didn't request a password reset, you can safely ignore this email. \

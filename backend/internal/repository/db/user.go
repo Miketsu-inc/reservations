@@ -43,13 +43,14 @@ func (r *userRepository) NewUser(ctx context.Context, user domain.User) error {
 
 func (r *userRepository) GetUser(ctx context.Context, user_id uuid.UUID) (domain.User, error) {
 	query := `
-	select * from "User"
+	select *
+	from "User"
 	where id = $1
 	`
 
 	var user domain.User
-	err := r.db.QueryRow(ctx, query, user_id).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PhoneNumber, &user.PasswordHash,
-		&user.JwtRefreshVersion, &user.PreferredLang, &user.AuthProvider, &user.ProviderId)
+	rows, _ := r.db.Query(ctx, query, user_id)
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.User])
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -57,20 +58,20 @@ func (r *userRepository) GetUser(ctx context.Context, user_id uuid.UUID) (domain
 	return user, nil
 }
 
-func (r *userRepository) GetUserPasswordAndIDByUserEmail(ctx context.Context, email string) (uuid.UUID, *string, error) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (domain.User, error) {
 	query := `
-	select id, password_hash from "User"
+	select *
+	from "User"
 	where email = $1
 	`
 
-	var userID uuid.UUID
-	var password *string
-	err := r.db.QueryRow(ctx, query, email).Scan(&userID, &password)
+	rows, _ := r.db.Query(ctx, query, email)
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.User])
 	if err != nil {
-		return uuid.Nil, nil, err
+		return domain.User{}, err
 	}
 
-	return userID, password, nil
+	return user, nil
 }
 
 func (r *userRepository) GetUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {

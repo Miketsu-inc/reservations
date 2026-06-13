@@ -33,6 +33,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Use(h.middleware.Language)
 
 		r.Post("/login", h.Login)
+		r.Post("/forgot-password", h.ForgotPassword)
+		r.Post("/reset-password", h.ResetPassword)
 
 		r.Post("/users", h.UserSignup)
 
@@ -73,6 +75,48 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.service.Login(r.Context(), mapToLoginInput(req))
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
+	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
+}
+
+type forgotPasswordReq struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgotPasswordReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err := h.service.ForgotPassword(r.Context(), mapToForgotPasswordInput(req))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+}
+
+type resetPasswordReq struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	tokens, err := h.service.ResetPassword(r.Context(), mapToResetPassordInput(req))
+	if err != nil {
+		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 

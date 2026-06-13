@@ -42,7 +42,9 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/kv"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
 )
 
@@ -50,10 +52,11 @@ type App struct {
 	server     *http.Server
 	dbConn     *pgxpool.Pool
 	jobsClient *river.Client[pgx.Tx]
+	kvClient   *redis.Client
 }
 
 func New(ctx context.Context, cfg *config.Config) *App {
-	dbConn := db.New(ctx, RegisterTypes)
+	dbConn := db.New(ctx, registerTypes)
 
 	blockedTimeRepo := repos.NewBlockedTimeRepository(dbConn)
 	bookingRepo := repos.NewBookingRepository(dbConn)
@@ -67,8 +70,10 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	transactionManager := db.NewTransactionManager(dbConn)
 
+	kvClient := kv.NewClient()
+
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
-	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, transactionManager)
+	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, nil, transactionManager)
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
@@ -85,11 +90,13 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		ExtCalendarService: externalCalendarService,
 		BookingRepo:        bookingRepo,
 		CatalogRepo:        catalogRepo,
+		UserRepo:           userRepo,
 		ExtCalendarRepo:    externalCalendarRepo,
 		TxManager:          transactionManager,
 	}, workers.RegisterWorkers, workers.GetPeriodicJobs())
 	assert.Nil(err, "Failed to create new river client")
 
+	authService.SetEnqueuer(enqueuer)
 	bookingService.SetEnqueuer(enqueuer)
 	externalCalendarService.SetEnqueuer(enqueuer)
 	blockedTimeService.SetEnqueuer(enqueuer)
@@ -127,6 +134,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		server:     srv,
 		dbConn:     dbConn,
 		jobsClient: enqueuer,
+		kvClient:   kvClient,
 	}
 }
 
@@ -141,10 +149,11 @@ func (a *App) Start(ctx context.Context) error {
 
 func (a *App) Stop(ctx context.Context) {
 	_ = a.jobsClient.Stop(ctx)
+	_ = a.kvClient.Close()
 	a.dbConn.Close()
 }
 
-func RegisterTypes(ctx context.Context, conn *pgx.Conn) error {
+func registerTypes(ctx context.Context, conn *pgx.Conn) error {
 	types, err := conn.LoadTypes(ctx, []string{"price", "_price"})
 	if err != nil {
 		return err

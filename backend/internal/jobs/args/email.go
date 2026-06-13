@@ -82,3 +82,17 @@ func (BookingModificationEmail) InsertOpts() river.InsertOpts {
 		Queue: "email",
 	}
 }
+
+type ForgotPasswordEmail struct {
+	Language language.Tag `json:"language"`
+	UserId   uuid.UUID    `json:"user_id"`
+	Token    string       `json:"token"`
+}
+
+func (ForgotPasswordEmail) Kind() string { return "forgot_password_email" }
+
+func (ForgotPasswordEmail) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue: "email",
+	}
+}

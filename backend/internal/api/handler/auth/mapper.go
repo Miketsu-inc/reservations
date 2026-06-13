@@ -12,6 +12,19 @@ func mapToLoginInput(in loginReq) authServ.LoginInput {
 	}
 }
 
+func mapToForgotPasswordInput(in forgotPasswordReq) authServ.ForgotPasswordInput {
+	return authServ.ForgotPasswordInput{
+		Email: in.Email,
+	}
+}
+
+func mapToResetPassordInput(in resetPasswordReq) authServ.ResetPasswordInput {
+	return authServ.ResetPasswordInput{
+		Token:    in.Token,
+		Password: in.Password,
+	}
+}
+
 func mapToUserSignupInput(in userSignupReq) authServ.UserSignupInput {
 	return authServ.UserSignupInput{
 		FirstName:   in.FirstName,

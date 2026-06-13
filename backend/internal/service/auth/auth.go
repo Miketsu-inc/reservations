@@ -11,11 +11,17 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/keys"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
+	"github.com/miketsu-inc/reservations/backend/pkg/queue"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
+	"github.com/redis/go-redis/v9"
+	"github.com/riverqueue/river"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,17 +29,25 @@ type Service struct {
 	merchantRepo domain.MerchantRepository
 	userRepo     domain.UserRepository
 	teamRepo     domain.TeamRepository
+	kv           *redis.Client
+	enqueuer     queue.Enqueuer
 	txManager    db.TransactionManager
 }
 
 func NewService(merchant domain.MerchantRepository, user domain.UserRepository, team domain.TeamRepository,
-	txManager db.TransactionManager) *Service {
+	kv *redis.Client, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		merchantRepo: merchant,
 		userRepo:     user,
 		teamRepo:     team,
+		kv:           kv,
+		enqueuer:     enqueuer,
 		txManager:    txManager,
 	}
+}
+
+func (s *Service) SetEnqueuer(client queue.Enqueuer) {
+	s.enqueuer = client
 }
 
 func hashPassword(password string) (string, error) {
@@ -60,38 +74,42 @@ func hashCompare(password, hash string) error {
 	return nil
 }
 
+func newJwtTokens(userId uuid.UUID, refreshVersion int) (jwt.TokenPair, error) {
+	accessToken, err := jwt.NewAccessToken(userId)
+	if err != nil {
+		return jwt.TokenPair{}, err
+	}
+
+	refreshToken, err := jwt.NewRefreshToken(userId, refreshVersion)
+	if err != nil {
+		return jwt.TokenPair{}, err
+	}
+
+	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+}
+
 type LoginInput struct {
 	Email    string
 	Password string
 }
 
 func (s *Service) Login(ctx context.Context, input LoginInput) (jwt.TokenPair, error) {
-	userID, password, err := s.userRepo.GetUserPasswordAndIDByUserEmail(ctx, input.Email)
+	user, err := s.userRepo.GetUserByEmail(ctx, input.Email)
 	if err != nil {
 		return jwt.TokenPair{}, fmt.Errorf("incorrect email or password %s", err.Error())
 	}
 
-	err = hashCompare(input.Password, *password)
+	err = hashCompare(input.Password, *user.PasswordHash)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshVersion, err := s.userRepo.GetUserJwtRefreshVersion(ctx, userID)
-	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("unexpected error when getting refresh version: %s", err.Error())
-	}
-
-	accessToken, err := jwt.NewAccessToken(userID)
+	tokens, err := newJwtTokens(user.Id, user.JwtRefreshVersion)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userID, refreshVersion)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return tokens, nil
 }
 
 type UserSignupInput struct {
@@ -136,17 +154,12 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		return jwt.TokenPair{}, fmt.Errorf("unexpected error when creating user: %s", err.Error())
 	}
 
-	accessToken, err := jwt.NewAccessToken(userID)
+	tokens, err := newJwtTokens(userID, 0)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userID, 0)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return tokens, nil
 }
 
 type MerchantSignupInput struct {
@@ -297,15 +310,102 @@ func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) (j
 		return jwt.TokenPair{}, fmt.Errorf("error incrementing jwt refresh version: %s", err.Error())
 	}
 
-	accessToken, err := jwt.NewAccessToken(userId)
+	tokens, err := newJwtTokens(userId, refreshVersion)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	refreshToken, err := jwt.NewRefreshToken(userId, refreshVersion)
+	return tokens, nil
+}
+
+type ForgotPasswordInput struct {
+	Email string
+}
+
+func (s *Service) ForgotPassword(ctx context.Context, in ForgotPasswordInput) error {
+	user, err := s.userRepo.GetUserByEmail(ctx, in.Email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return fmt.Errorf("error retrieving user by email: %w", err)
+	}
+
+	if user.IsOauthUser() {
+		return fmt.Errorf("oauth users must use the auth provider for password reset")
+	}
+
+	token, err := oauthutil.RandomString(32)
+	if err != nil {
+		return fmt.Errorf("error generating token: %w", err)
+	}
+
+	key := keys.PasswordReset{Token: token}.String()
+
+	err = s.kv.Set(ctx, key, user.Id.String(), time.Minute*10).Err()
+	if err != nil {
+		return fmt.Errorf("error setting password reset token: %w", err)
+	}
+
+	_, err = s.enqueuer.Insert(ctx, args.ForgotPasswordEmail{
+		Language: lang.LangFromContext(ctx),
+		UserId:   user.Id,
+		Token:    token,
+	}, &river.InsertOpts{})
+	if err != nil {
+		return fmt.Errorf("error scheduling forgot password email: %w", err)
+	}
+
+	return nil
+}
+
+type ResetPasswordInput struct {
+	Token    string
+	Password string
+}
+
+func (s *Service) ResetPassword(ctx context.Context, in ResetPasswordInput) (jwt.TokenPair, error) {
+	key := keys.PasswordReset{Token: in.Token}.String()
+
+	userIdStr, err := s.kv.Get(ctx, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return jwt.TokenPair{}, fmt.Errorf("invalid or expired token")
+		}
+
+		return jwt.TokenPair{}, fmt.Errorf("error retrieving userId from token: %w", err)
+	}
+
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error parsing uuid string: %w", err)
+	}
+
+	passwordHash, err := hashPassword(in.Password)
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error hashing password: %w", err)
+	}
+
+	err = s.userRepo.UpdatePassword(ctx, userId, passwordHash)
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error updating password: %w", err)
+	}
+
+	err = s.kv.Del(ctx, key).Err()
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error deleting key: %w", err)
+	}
+
+	refreshVersion, err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
+	if err != nil {
+		return jwt.TokenPair{}, fmt.Errorf("error incrementing jwt refresh version: %s", err.Error())
+	}
+
+	tokens, err := newJwtTokens(userId, refreshVersion)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return tokens, nil
 }
