@@ -7,7 +7,6 @@ import {
 import {
   invalidateLocalStorageAuth,
   MAX_INPUT_LENGTH,
-  MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from "@reservations/lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
@@ -82,14 +81,6 @@ function LoginPage() {
       updateErrors(
         "password",
         `Password must be ${MIN_PASSWORD_LENGTH} characters or more!`
-      );
-      return false;
-    }
-
-    if (password.length > MAX_PASSWORD_LENGTH) {
-      updateErrors(
-        "password",
-        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
       );
       return false;
     }

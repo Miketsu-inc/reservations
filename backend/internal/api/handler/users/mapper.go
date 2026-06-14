@@ -45,8 +45,7 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 
 func mapToUpdatePasswordInput(in updatePasswordReq) authServ.UpdatePasswordInput {
 	return authServ.UpdatePasswordInput{
-		OldPassword:        in.OldPassword,
-		NewPassword:        in.NewPassword,
-		ConfirmNewPassword: in.ConfirmNewPassword,
+		OldPassword: in.OldPassword,
+		NewPassword: in.NewPassword,
 	}
 }

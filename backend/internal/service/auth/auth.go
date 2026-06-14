@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"time"
@@ -51,20 +52,18 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 }
 
 func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	passwordShaHash := fmt.Sprintf("%x", sha256.Sum256([]byte(password)))
+	bytes, err := bcrypt.GenerateFromPassword([]byte(passwordShaHash), 14)
 	return string(bytes), err
 }
 
 func hashCompare(password, hash string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	passwordShaHash := fmt.Sprintf("%x", sha256.Sum256([]byte(password)))
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(passwordShaHash))
 
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return fmt.Errorf("incorrect email or password")
-
-		} else if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-			return fmt.Errorf("password is too long")
-
 		} else {
 			// for debug purposes
 			return err
@@ -133,7 +132,7 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 
 	hashedPassword, err := hashPassword(input.Password)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("the password is too long")
+		return jwt.TokenPair{}, err
 	}
 
 	userID, err := uuid.NewV7()
@@ -269,9 +268,8 @@ func (s *Service) LogoutAllDevices(ctx context.Context) error {
 }
 
 type UpdatePasswordInput struct {
-	OldPassword        string
-	NewPassword        string
-	ConfirmNewPassword string
+	OldPassword string
+	NewPassword string
 }
 
 func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) (jwt.TokenPair, error) {
@@ -289,10 +287,6 @@ func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) (j
 	err = hashCompare(in.OldPassword, *user.PasswordHash)
 	if err != nil {
 		return jwt.TokenPair{}, err
-	}
-
-	if in.NewPassword != in.ConfirmNewPassword {
-		return jwt.TokenPair{}, fmt.Errorf("new passwords do not match")
 	}
 
 	newPasswordHash, err := hashPassword(in.NewPassword)

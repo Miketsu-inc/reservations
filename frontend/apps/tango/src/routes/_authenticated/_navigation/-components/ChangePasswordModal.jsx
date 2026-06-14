@@ -34,7 +34,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
       body: JSON.stringify({
         old_password: passwords.oldPassword,
         new_password: passwords.newPassword,
-        confirm_new_password: passwords.confirmNewPassword,
       }),
     });
 

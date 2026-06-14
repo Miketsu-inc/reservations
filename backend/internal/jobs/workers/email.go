@@ -337,6 +337,10 @@ func (w *ForgotPasswordEmail) Work(ctx context.Context, job *river.Job[args.Forg
 		return err
 	}
 
+	if user.IsOauthUser() {
+		return nil
+	}
+
 	return w.emailService.ForgotPassword(ctx, job.Args.Language, user.Email, email.ForgotPasswordData{
 		PasswordLink: fmt.Sprintf("http://reservations.local:3000/reset-password?token=%s", job.Args.Token),
 	})

@@ -129,9 +129,8 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) {
 }
 
 type updatePasswordReq struct {
-	OldPassword        string `json:"old_password"`
-	NewPassword        string `json:"new_password"`
-	ConfirmNewPassword string `json:"confirm_new_password"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
 }
 
 func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) {

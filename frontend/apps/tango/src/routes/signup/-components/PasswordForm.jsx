@@ -1,5 +1,5 @@
 import { Button, FloatingLabelInput } from "@reservations/components";
-import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@reservations/lib";
+import { MIN_PASSWORD_LENGTH } from "@reservations/lib";
 import { useRef, useState } from "react";
 
 const defaultPasswordData = {
@@ -39,24 +39,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
       );
       return false;
     }
-    if (password.length > MAX_PASSWORD_LENGTH) {
-      updateErrors(
-        "password",
-        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
-      );
-      return false;
-    }
-    return true;
-  }
 
-  function confirmPasswordValidation(confirmPassword) {
-    if (confirmPassword.length > MAX_PASSWORD_LENGTH) {
-      updateErrors(
-        "confirmPassword",
-        `Password must be ${MAX_PASSWORD_LENGTH} characters or less!`
-      );
-      return false;
-    }
     return true;
   }
 
@@ -123,7 +106,6 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         autoComplete="new-password"
         labelText="Confirm Password"
         errorText={errorMessage.confirmPassword}
-        inputValidation={confirmPasswordValidation}
         inputData={handleInputData}
       />
       <div className="mt-10 flex items-center justify-center">
