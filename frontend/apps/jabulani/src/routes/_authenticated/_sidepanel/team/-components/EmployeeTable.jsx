@@ -1,5 +1,5 @@
 import { Delete02Icon, Edit03Icon } from "@hugeicons/core-free-icons";
-import { DeleteModal, Icon, Loading } from "@reservations/components";
+import { Avatar, DeleteModal, Icon, Loading } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 
@@ -14,7 +14,7 @@ export default function EmployeeTable({
 }) {
   const windowSize = useWindowSize();
   const isSmallScreen =
-    windowSize !== "xl" || windowSize != +"2xl" || windowSize !== "3xl";
+    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const [selected, setSelected] = useState({
     id: 0,
@@ -29,27 +29,47 @@ export default function EmployeeTable({
       field: "name",
       headerName: "Name",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 160 } : {}),
+      resizable: false,
+      ...(isSmallScreen ? { minWidth: 180 } : {}),
       valueGetter: (params) =>
         `${params.data.first_name} ${params.data.last_name}`.trim(),
+      cellRenderer: (params) => {
+        return (
+          <div className="flex h-full flex-row items-center gap-2">
+            <Avatar
+              styles="size-12! text-sm shrink-0"
+              initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
+            />
+            <div className="flex flex-col justify-center">
+              <p className="text-base">{`${params.data.first_name} ${params.data.last_name}`}</p>
+              <p className="text-text_color/60 text-sm">{params.data.email}</p>
+            </div>
+          </div>
+        );
+      },
     },
     {
       field: "role",
       headerName: "Role",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      resizable: false,
+      ...(isSmallScreen ? { minWidth: 80 } : {}),
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+      },
     },
     {
       field: "phone_number",
       headerName: "Phone number",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      resizable: false,
+      hide: isSmallScreen,
+      ...(isSmallScreen ? { minWidth: 140 } : {}),
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+      },
     },
     {
       field: "actions",
@@ -112,6 +132,7 @@ export default function EmployeeTable({
           onRowClick={onRowClick}
           exportName="team_members"
           columnsToExport={["name, role, email, phone_number"]}
+          rowHeight={80}
         />
       </Suspense>
     </div>

@@ -6,7 +6,7 @@ import {
   User03Icon,
   UserSwitchIcon,
 } from "@hugeicons/core-free-icons";
-import { DeleteModal, Icon, Loading } from "@reservations/components";
+import { Avatar, DeleteModal, Icon, Loading } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 import BookingRing from "./BookingRing";
@@ -30,7 +30,8 @@ export default function CustomersTable({
     last_name: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const isSmallScreen = windowSize !== "xl" || windowSize !== "2xl";
+  const isSmallScreen =
+    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const columnDef = [
     { field: "id", hide: true },
@@ -38,30 +39,45 @@ export default function CustomersTable({
       field: "name",
       headerName: "Name",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 160 } : {}),
+      resizable: false,
+      ...(isSmallScreen ? { minWidth: 180 } : {}),
       valueGetter: (params) =>
         `${params.data.first_name} ${params.data.last_name}`.trim(),
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      cellRenderer: (params) => {
+        return (
+          <div className="flex h-full flex-row items-center gap-2">
+            <Avatar
+              styles="size-12! text-sm shrink-0"
+              initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
+            />
+            <div className="flex flex-col justify-center">
+              <p className="text-base">{`${params.data.first_name} ${params.data.last_name}`}</p>
+              <p className="text-text_color/60 text-sm">{params.data.email}</p>
+            </div>
+          </div>
+        );
+      },
     },
     {
       field: "phone_number",
       headerName: "Phone number",
       flex: 1,
+      resizable: false,
       ...(isSmallScreen ? { minWidth: 120 } : {}),
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+      },
     },
     {
       field: "booking_history",
       headerName: "Booking history",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      resizable: false,
+      hide: isSmallScreen,
       cellRenderer: (params) => {
         return (
-          <div className="flex flex-row items-center justify-center gap-2">
+          <div className="flex h-full flex-row items-center gap-2">
             <p>
               {params.data.times_booked} / {params.data.times_cancelled}
             </p>
@@ -190,6 +206,7 @@ export default function CustomersTable({
             noRowsOverlayComponent || DefaultNoRowsOverlay
           }
           showControls={false}
+          rowHeight={80}
         />
       </Suspense>
     </div>

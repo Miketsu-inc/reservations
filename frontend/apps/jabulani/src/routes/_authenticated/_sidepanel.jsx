@@ -382,7 +382,7 @@ function SidePanelLayout() {
         >
           <div
             className={`${!isWindowSmall ? "md:px-4 md:pt-4" : ""} bg-bg_color
-              flex-1 overflow-y-auto rounded-t-xl`}
+              flex-1 overflow-y-auto md:rounded-t-xl`}
           >
             <Outlet />
           </div>

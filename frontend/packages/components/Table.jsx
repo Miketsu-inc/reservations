@@ -7,13 +7,25 @@ import {
   ColumnAutoSizeModule,
   CsvExportModule,
   QuickFilterModule,
-  themeAlpine,
+  themeQuartz,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useRef, useState } from "react";
 import { Icon } from ".";
 import Button from "./Button";
 import SearchInput from "./SearchInput";
+
+const theme = themeQuartz.withParams({
+  browserColorScheme: "inherit",
+  fontFamily: "inherit",
+  headerVerticalPaddingScale: 1,
+  rowBorder: true,
+  // wrapperBorder: false,
+  borderColor: "rgb(var(--border-color))",
+  backgroundColor: "rgb(var(--bg-color))",
+  headerBackgroundColor: "rgb(var(--layer-bg))",
+  accentColor: "rgb(var(--primary))",
+});
 
 export default function Table({
   rowData,
@@ -24,21 +36,13 @@ export default function Table({
   exportName = "export",
   onRowClick,
   columnsToExport,
-  noRowsOverlayComponent,
   showControls = true,
+  ...props
 }) {
   const tableRef = useRef();
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const windowSize = useWindowSize();
-
-  // you should only autosize columns which does not have a flex field
-  // as with that the autosize will get applied instead of flex
-  // making the table potentially not fill it's grid
-  const resetView = useCallback(() => {
-    tableRef.current.api.resetColumnState();
-    tableRef.current.api.autoSizeColumns(columnsToAutoSize || []);
-  }, [columnsToAutoSize]);
 
   const onBtnExport = useCallback(() => {
     tableRef.current.api.exportDataAsCsv({
@@ -48,10 +52,7 @@ export default function Table({
   }, [exportName, columnsToExport]);
 
   return (
-    <div
-      className="md:bg-layer_bg md:border-border_color flex h-full w-full flex-1
-        flex-col md:rounded-lg md:border md:px-4 md:py-4 md:shadow-sm"
-    >
+    <div className="flex h-full w-full flex-1 flex-col">
       <div
         className="flex flex-col-reverse justify-between gap-2 pb-2 sm:flex-row
           sm:gap-0"
@@ -79,12 +80,6 @@ export default function Table({
           <div className="flex flex-row justify-between sm:gap-3">
             <Button
               variant="primary"
-              onClick={resetView}
-              styles="p-2 text-sm w-fit"
-              buttonText="Reset view"
-            />
-            <Button
-              variant="primary"
               onClick={onNewItem}
               styles="p-2 text-sm w-fit"
               buttonText={`New ${itemName}`}
@@ -103,7 +98,7 @@ export default function Table({
       >
         <AgGridReact
           ref={tableRef}
-          theme={themeAlpine}
+          theme={theme}
           quickFilterText={searchText}
           modules={[
             ClientSideRowModelModule,
@@ -125,7 +120,7 @@ export default function Table({
           // if disabled only columns in view will get autosized
           suppressColumnVirtualisation={true}
           onRowClicked={onRowClick}
-          noRowsOverlayComponent={noRowsOverlayComponent}
+          {...props}
         />
       </div>
     </div>
