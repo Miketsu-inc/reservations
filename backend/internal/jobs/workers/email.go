@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/riverqueue/river"
+	"golang.org/x/text/language"
 )
 
 type BookingConfirmationEmail struct {
@@ -61,7 +63,16 @@ func (w *BookingConfirmationEmail) Work(ctx context.Context, job *river.Job[args
 	fromDateMerchantTz := booking.FromDate.In(merchantTz)
 	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	return w.emailService.BookingConfirmation(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingConfirmationData{
+	lang := lang.GetDefaultLang()
+
+	if booking.UserLanguage != nil {
+		lang, err = language.Parse(*booking.UserLanguage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.emailService.BookingConfirmation(ctx, lang, *booking.CustomerEmail, email.BookingConfirmationData{
 		Time:        fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
 		Location:    booking.FormattedLocation,
@@ -122,7 +133,16 @@ func (w *BookingStatusConfirmedEmail) Work(ctx context.Context, job *river.Job[a
 	fromDateMerchantTz := booking.FromDate.In(merchantTz)
 	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	return w.emailService.BookingStatusConfirmed(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingConfirmationData{
+	lang := lang.GetDefaultLang()
+
+	if booking.UserLanguage != nil {
+		lang, err = language.Parse(*booking.UserLanguage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.emailService.BookingStatusConfirmed(ctx, lang, *booking.CustomerEmail, email.BookingConfirmationData{
 		Time:        fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
 		Location:    booking.FormattedLocation,
@@ -187,7 +207,16 @@ func (w *BookingReminderEmail) Work(ctx context.Context, job *river.Job[args.Boo
 		return nil
 	}
 
-	return w.emailService.BookingReminder(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingConfirmationData{
+	lang := lang.GetDefaultLang()
+
+	if booking.UserLanguage != nil {
+		lang, err = language.Parse(*booking.UserLanguage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.emailService.BookingReminder(ctx, lang, *booking.CustomerEmail, email.BookingConfirmationData{
 		Time:        fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
 		Location:    booking.FormattedLocation,
@@ -243,7 +272,16 @@ func (w *BookingCancellationEmail) Work(ctx context.Context, job *river.Job[args
 	fromDateMerchantTz := booking.FromDate.In(merchantTz)
 	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	return w.emailService.BookingCancellation(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingCancellationData{
+	lang := lang.GetDefaultLang()
+
+	if booking.UserLanguage != nil {
+		lang, err = language.Parse(*booking.UserLanguage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.emailService.BookingCancellation(ctx, lang, *booking.CustomerEmail, email.BookingCancellationData{
 		Time:           fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
 		Date:           fromDateMerchantTz.Format("Monday, January 2"),
 		Location:       booking.FormattedLocation,
@@ -304,7 +342,16 @@ func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args
 	fromDateMerchantTz := booking.FromDate.In(merchantTz)
 	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	return w.emailService.BookingModification(ctx, job.Args.Language, *booking.CustomerEmail, email.BookingModificationData{
+	lang := lang.GetDefaultLang()
+
+	if booking.UserLanguage != nil {
+		lang, err = language.Parse(*booking.UserLanguage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return w.emailService.BookingModification(ctx, lang, *booking.CustomerEmail, email.BookingModificationData{
 		Time:        fmt.Sprintf("%s - %s", fromDateMerchantTz.Format("15:04"), toDateMerchantTz.Format("15:04")),
 		Date:        fromDateMerchantTz.Format("Monday, January 2"),
 		Location:    booking.FormattedLocation,

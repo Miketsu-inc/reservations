@@ -27,13 +27,13 @@ func (r *userRepository) WithTx(tx db.DBTX) domain.UserRepository {
 
 func (r *userRepository) NewUser(ctx context.Context, user domain.User) error {
 	query := `
-	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, preferred_lang,
+	insert into "User" (id, first_name, last_name, email, phone_number, password_hash, jwt_refresh_version, language,
 		auth_provider, provider_id)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := r.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
-		user.JwtRefreshVersion, user.PreferredLang, user.AuthProvider, user.ProviderId)
+		user.JwtRefreshVersion, user.Language, user.AuthProvider, user.ProviderId)
 	if err != nil {
 		return err
 	}
@@ -89,28 +89,24 @@ func (r *userRepository) GetUserJwtRefreshVersion(ctx context.Context, userID uu
 	return refreshVersion, nil
 }
 
-func (r *userRepository) GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error) {
+func (r *userRepository) GetUserLanguage(ctx context.Context, userId uuid.UUID) (language.Tag, error) {
 	query := `
-	select preferred_lang from "User"
+	select language from "User"
 	where id = $1
 	`
 
-	var pl *string
-	err := r.db.QueryRow(ctx, query, userId).Scan(&pl)
+	var langStr string
+	err := r.db.QueryRow(ctx, query, userId).Scan(&langStr)
 	if err != nil {
-		return nil, err
+		return language.Tag{}, err
 	}
 
-	if pl == nil {
-		return nil, err
-	}
-
-	tag, err := language.Parse(*pl)
+	tag, err := language.Parse(langStr)
 	if err != nil {
-		return nil, err
+		return language.Tag{}, err
 	}
 
-	return &tag, nil
+	return tag, nil
 }
 
 func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeAuthInfo, error) {

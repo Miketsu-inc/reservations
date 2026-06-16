@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
@@ -449,8 +448,6 @@ func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, 
 func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, customers []uuid.UUID, statuses []types.BookingStatus, bookingId int, fromDate time.Time) error {
 	assert.True(len(customers) == len(statuses), "customers and statuses length shall be the same", len(customers), len(statuses))
 
-	lang := lang.LangFromContext(ctx)
-
 	reminderDate := fromDate.Add(-24 * time.Hour)
 
 	var statusConfirmedParams []river.InsertManyParams
@@ -461,7 +458,6 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 		if statuses[i] == types.BookingStatusConfirmed {
 			statusConfirmedParams = append(statusConfirmedParams, river.InsertManyParams{
 				Args: args.BookingConfirmationEmail{
-					Language:   lang,
 					BookingId:  bookingId,
 					CustomerId: customerId,
 				},
@@ -469,7 +465,6 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 		} else {
 			confirmationParams = append(confirmationParams, river.InsertManyParams{
 				Args: args.BookingConfirmationEmail{
-					Language:   lang,
 					BookingId:  bookingId,
 					CustomerId: customerId,
 				},
@@ -478,7 +473,6 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 
 		reminderParams[i] = river.InsertManyParams{
 			Args: args.BookingReminderEmail{
-				Language:         lang,
 				BookingId:        bookingId,
 				CustomerId:       customerId,
 				ExpectedFromDate: fromDate,
@@ -1209,12 +1203,9 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		lang := lang.LangFromContext(ctx)
-
 		if participantsChanged {
 			for _, id := range participantChanges.ToDelete {
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
-					Language:           lang,
 					BookingId:          booking.Id,
 					CustomerId:         id,
 					CancellationReason: "",
@@ -1245,7 +1236,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if statusChanged {
 				if bookingStatus == types.BookingStatusCancelled {
 					_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
-						Language:           lang,
 						BookingId:          booking.Id,
 						CustomerId:         id,
 						CancellationReason: "",
@@ -1258,7 +1248,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			if statusChangedToConfirmed {
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingStatusConfirmedEmail{
-					Language:   lang,
 					BookingId:  booking.Id,
 					CustomerId: id,
 				}, nil)
@@ -1269,7 +1258,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			if timeStampChanged {
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
-					Language:         lang,
 					BookingId:        booking.Id,
 					CustomerId:       id,
 					ExpectedFromDate: fromDate,
@@ -1283,7 +1271,6 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				// TODO: we should send a modification when the price is changed, but the email does not handle it currently
 				// should be revisited once changing price and name is allowed
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{
-					Language:   lang,
 					BookingId:  booking.Id,
 					CustomerId: id,
 					// TODO: This works incorrectly currently
@@ -1331,13 +1318,10 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 			return err
 		}
 
-		lang := lang.LangFromContext(ctx)
-
 		for _, participant := range bookingParticipants {
 			// if not walk-in
 			if participant.CustomerId != nil {
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
-					Language:           lang,
 					BookingId:          booking.Id,
 					CancellationReason: input.CancellationReason,
 					CustomerId:         *participant.CustomerId,

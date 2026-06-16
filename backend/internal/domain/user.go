@@ -17,7 +17,7 @@ type UserRepository interface {
 	GetUser(ctx context.Context, userId uuid.UUID) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
-	GetUserPreferredLanguage(ctx context.Context, userId uuid.UUID) (*language.Tag, error)
+	GetUserLanguage(ctx context.Context, userId uuid.UUID) (language.Tag, error)
 	GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeAuthInfo, error)
 	GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error)
 
@@ -42,7 +42,7 @@ type User struct {
 	PhoneNumber       *string                 `json:"phone_number" db:"phone_number"`
 	PasswordHash      *string                 `json:"password_hash" db:"password_hash"`
 	JwtRefreshVersion int                     `json:"jwt_refresh_version" db:"jwt_refresh_version"`
-	PreferredLang     *string                 `json:"preferred_lang" db:"preferred_lang"`
+	Language          string                  `json:"language" db:"language"`
 	AuthProvider      *types.AuthProviderType `json:"auth_provider" db:"auth_provider"`
 	ProviderId        *string                 `json:"provider_id" db:"provider_id"`
 }

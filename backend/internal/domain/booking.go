@@ -367,6 +367,7 @@ type BookingForEmail struct {
 	CustomerId        *uuid.UUID           `db:"customer_id"`
 	CustomerEmail     *string              `db:"customer_email"`
 	ParticipantStatus *types.BookingStatus `db:"participant_status"`
+	UserLanguage      *string              `db:"language"`
 }
 
 type BookingSeries struct {

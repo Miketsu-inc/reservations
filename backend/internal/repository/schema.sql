@@ -18,7 +18,7 @@ create table if not exists "User" (
     phone_number             varchar(30),
     password_hash            varchar(72),
     jwt_refresh_version      integer,
-    preferred_lang           varchar(10),
+    language                 varchar(10)     not null,
     auth_provider            text            check (auth_provider in ('facebook', 'google')),
     provider_id              text
 );

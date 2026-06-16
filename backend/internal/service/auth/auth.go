@@ -148,6 +148,7 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		PhoneNumber:       &input.PhoneNumber,
 		PasswordHash:      &hashedPassword,
 		JwtRefreshVersion: 0,
+		Language:          lang.LangFromContext(ctx).String(),
 	})
 	if err != nil {
 		return jwt.TokenPair{}, fmt.Errorf("unexpected error when creating user: %s", err.Error())

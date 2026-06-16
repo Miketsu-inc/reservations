@@ -672,7 +672,7 @@ func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId in
 	query := `
 	select b.id, b.status, b.from_date, b.to_date, s.name as service_name, s.id as service_id, m.name as merchant_name, m.url_name as merchant_url, m.timezone,
 		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, l.formatted_location, c.id as customer_id, coalesce(c.email, u.email) as customer_email,
-		bp.status as participant_status
+		bp.status as participant_status, u.language
 	from "Booking" b
 	join "Service" s on s.id = b.service_id
 	join "Merchant" m on m.id = b.merchant_id

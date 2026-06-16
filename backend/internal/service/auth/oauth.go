@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
@@ -90,7 +91,7 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 			PhoneNumber:       nil,
 			PasswordHash:      nil,
 			JwtRefreshVersion: 0,
-			PreferredLang:     nil,
+			Language:          lang.LangFromContext(ctx).String(),
 			AuthProvider:      &types.AuthProviderTypeGoogle,
 			ProviderId:        &g.Id,
 		})
@@ -187,7 +188,7 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 			PhoneNumber:       nil,
 			PasswordHash:      nil,
 			JwtRefreshVersion: 0,
-			PreferredLang:     nil,
+			Language:          lang.LangFromContext(ctx).String(),
 			AuthProvider:      &types.AuthProviderTypeFacebook,
 			ProviderId:        &fb.Id,
 		})
