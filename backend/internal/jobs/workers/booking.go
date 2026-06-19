@@ -122,6 +122,6 @@ func (w *UpdateFutureBookingOccurrences) Work(ctx context.Context, job *river.Jo
 		return err
 	}
 
-	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, service, job.Args.SeriesOriginalDateOffset, job.Args.PriceChanged,
+	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, job.Args.ParticipantsBefore, service, job.Args.SeriesOriginalDateOffset, job.Args.PriceChanged,
 		job.Args.StatusChangedToCancelled, job.Args.OccurrenceIndex, job.Args.ParticipantsToInsert, job.Args.ParticipantsToDelete)
 }

@@ -76,7 +76,7 @@ type BookingRepository interface {
 	GetActiveBookingSeriesIds(ctx context.Context, tresholdTime time.Time) ([]int, error)
 	// this query intentionally does not filter out completed bookings, because if it did
 	// it would be hard to match the bookings to the generated occurrences
-	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, seriesVersion, fromOccurrenceIndex, limit int) ([]Booking, error)
+	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, fromOccurrenceIndex, limit int) ([]Booking, error)
 	GetSeriesLastOccurrenceIndex(ctx context.Context, seriesId int) (int, error)
 	GetSeriesOccurrenceDateByIndex(ctx context.Context, occurrenceIndex int) (time.Time, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)

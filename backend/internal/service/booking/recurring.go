@@ -12,8 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
+	"github.com/riverqueue/river"
 	"github.com/teambition/rrule-go"
 )
 
@@ -78,9 +80,12 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 
 		bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(service.Phases))
 		participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(seriesParticipants))
+		var reminderInsertParams []river.InsertManyParams
 
 		for i, id := range bookingIds {
-			phases := service.CalculateNewBookingPhases(id, bookings[i].FromDate)
+			fromDate := bookings[i].FromDate
+
+			phases := service.CalculateNewBookingPhases(id, fromDate)
 			bookingPhases = append(bookingPhases, phases...)
 
 			for _, p := range seriesParticipants {
@@ -90,6 +95,18 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 					CustomerId:   p.CustomerId,
 					CustomerNote: nil,
 				})
+
+				if p.CustomerId != nil {
+					reminderInsertParams = append(reminderInsertParams, river.InsertManyParams{
+						Args: args.BookingReminderEmail{
+							BookingId:        id,
+							CustomerId:       *p.CustomerId,
+							ExpectedFromDate: fromDate,
+						}, InsertOpts: &river.InsertOpts{
+							ScheduledAt: fromDate.Add(-24 * time.Hour),
+						},
+					})
+				}
 			}
 		}
 
@@ -106,6 +123,13 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 		err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesGeneratedUntil(ctx, series.Id, occurrences[len(occurrences)-1])
 		if err != nil {
 			return err
+		}
+
+		if len(reminderInsertParams) > 0 {
+			_, err = s.enqueuer.InsertManyFastTx(ctx, tx, reminderInsertParams)
+			if err != nil {
+				return err
+			}
 		}
 
 		// does not have future occurrences
@@ -135,6 +159,7 @@ type occurrenceTimestampUpdateContext struct {
 	duration                 time.Duration
 	servicePhaseCount        int
 	seriesOriginalDateOffset time.Duration
+	seriesVersion            int
 }
 
 type occurrenceTimestampUpdate struct {
@@ -158,6 +183,12 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 			return occurrenceTimestampUpdate{}, fmt.Errorf("series ended earlier than expected: %w", err)
 		}
 
+		nextOccurrence = occurrence
+
+		if *b.SeriesVersion >= context.seriesVersion {
+			continue
+		}
+
 		if b.IsModifiable() {
 			bookingStart := occurrence.UTC()
 
@@ -168,8 +199,6 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 			phases := service.CalculateNewBookingPhases(b.Id, bookingStart)
 			bookingPhases = append(bookingPhases, phases...)
 		}
-
-		nextOccurrence = occurrence
 	}
 
 	return occurrenceTimestampUpdate{
@@ -331,9 +360,108 @@ func calculateTotalPrices(pricePerPerson currencyx.Price, bookingIds []int, capa
 	return totalPrices, nil
 }
 
+func buildCancellationEmailParams(seriesParticipants map[uuid.UUID]struct{}, customerIdsByBooking map[int][]uuid.UUID, reason string) []river.InsertManyParams {
+	var params []river.InsertManyParams
+
+	for bookingId, customerIds := range customerIdsByBooking {
+		for _, cid := range customerIds {
+			// for series participants we send cancellation emails for the entire series in one email
+			// which is handled in the UpdateByMerchant function
+			if _, inSeries := seriesParticipants[cid]; !inSeries {
+				params = append(params, river.InsertManyParams{
+					Args: args.BookingCancellationEmail{
+						BookingId:          bookingId,
+						CustomerId:         cid,
+						CancellationReason: reason,
+					},
+				})
+			}
+		}
+	}
+
+	return params
+}
+
+func buildModificationEmailParams(seriesParticipants map[uuid.UUID]struct{}, bookings []domain.Booking, customerIdsByBooking map[int][]uuid.UUID) []river.InsertManyParams {
+	var params []river.InsertManyParams
+
+	for _, b := range bookings {
+		if !b.IsModifiable() {
+			continue
+		}
+
+		for _, cid := range customerIdsByBooking[b.Id] {
+			// for series participants we send modification emails for the entire series in one email
+			// which is handled in the UpdateByMerchant function
+			if _, inSeries := seriesParticipants[cid]; !inSeries {
+				params = append(params, river.InsertManyParams{
+					Args: args.BookingModificationEmail{
+						BookingId:  b.Id,
+						CustomerId: cid,
+						// TODO: replace once it's on booking
+						OldServiceName: "",
+						OldFromDate:    b.FromDate,
+						OldToDate:      b.ToDate,
+					},
+				})
+			}
+		}
+	}
+
+	return params
+}
+
+func buildNewParticipantReminderEmailParams(participants []domain.BookingParticipant, fromDateByBooking map[int]time.Time) []river.InsertManyParams {
+	var params []river.InsertManyParams
+
+	for _, p := range participants {
+		if p.CustomerId == nil {
+			return nil
+		}
+
+		if fromDate, ok := fromDateByBooking[p.BookingId]; ok {
+			params = append(params, river.InsertManyParams{
+				Args: args.BookingReminderEmail{
+					BookingId:        p.BookingId,
+					CustomerId:       *p.CustomerId,
+					ExpectedFromDate: fromDate,
+				},
+				InsertOpts: &river.InsertOpts{
+					ScheduledAt: fromDate.Add(-24 * time.Hour),
+				},
+			})
+		}
+	}
+
+	return params
+}
+
+func buildReminderEmailParams(bookingIds []int, fromDates []time.Time, customerIdsByBooking map[int][]uuid.UUID) []river.InsertManyParams {
+	var params []river.InsertManyParams
+
+	for i, bookingId := range bookingIds {
+		fromDate := fromDates[i]
+
+		for _, cid := range customerIdsByBooking[bookingId] {
+			params = append(params, river.InsertManyParams{
+				Args: args.BookingReminderEmail{
+					BookingId:        bookingId,
+					CustomerId:       cid,
+					ExpectedFromDate: fromDate,
+				},
+				InsertOpts: &river.InsertOpts{
+					ScheduledAt: fromDate.Add(-24 * time.Hour),
+				},
+			})
+		}
+	}
+
+	return params
+}
+
 // This whole function assumes that the series was updated before it ran and is up to date
-func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, service domain.Service, seriesOriginalDateOffset time.Duration,
-	priceChanged bool, statusChangedToCancelled bool, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
+func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant, service domain.Service,
+	seriesOriginalDateOffset time.Duration, priceChanged bool, statusChangedToCancelled bool, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
 
 	// TODO: somehow present this to the user...
 	// maybe with notifications once we implement that
@@ -363,25 +491,31 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			duration:                 service.GetTotalDuration(),
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: seriesOriginalDateOffset,
+			seriesVersion:            series.Version,
 		}
 	}
 
 	var toInsertMap map[uuid.UUID]struct{}
 	var toDeleteMap map[uuid.UUID]struct{}
-	requestedToInsertCount := len(requestedParticipantsToInsert)
-	requestedToDeleteCount := len(requestedParticipantsToDelete)
 
-	participantsChanged := requestedToInsertCount > 0 || requestedToDeleteCount > 0
+	participantsChanged := len(requestedParticipantsToInsert) > 0 || len(requestedParticipantsToDelete) > 0
 
 	if participantsChanged {
-		toInsertMap = make(map[uuid.UUID]struct{}, requestedToInsertCount)
+		toInsertMap = make(map[uuid.UUID]struct{}, len(requestedParticipantsToInsert))
 		for _, id := range requestedParticipantsToInsert {
 			toInsertMap[id] = struct{}{}
 		}
 
-		toDeleteMap = make(map[uuid.UUID]struct{}, requestedToDeleteCount)
+		toDeleteMap = make(map[uuid.UUID]struct{}, len(requestedParticipantsToDelete))
 		for _, id := range requestedParticipantsToDelete {
 			toDeleteMap[id] = struct{}{}
+		}
+	}
+
+	seriesParticipantsMap := make(map[uuid.UUID]struct{}, len(seriesParticipants))
+	for _, p := range seriesParticipants {
+		if p.CustomerId != nil {
+			seriesParticipantsMap[*p.CustomerId] = struct{}{}
 		}
 	}
 	// ------
@@ -392,7 +526,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 	for !finshed {
 		err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 			// the given occurrence index is not included
-			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, series.Version, lastOccurrenceIndex, 2)
+			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, lastOccurrenceIndex, 2)
 			if err != nil {
 				return fmt.Errorf("failed to fetch future series bookings: %w", err)
 			}
@@ -416,7 +550,45 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					return err
 				}
 
+				customerIdsByBooking, err := s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, bookingsToCancel)
+				if err != nil {
+					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
+				}
+
+				cancellationParams := buildCancellationEmailParams(seriesParticipantsMap, customerIdsByBooking, "")
+				if len(cancellationParams) > 0 {
+					_, err := s.enqueuer.InsertManyFastTx(ctx, tx, cancellationParams)
+					if err != nil {
+						return fmt.Errorf("failed to schedule cancellation email: %w", err)
+					}
+				}
+
 				return nil
+			}
+
+			var futureBookingIds []int
+			futureBookingsMap := make(map[int]domain.Booking)
+
+			for _, b := range futureBookings {
+				if b.IsModifiable() {
+					futureBookingIds = append(futureBookingIds, b.Id)
+					futureBookingsMap[b.Id] = b
+				}
+			}
+
+			// needed to send booking reminders with the new from date if timestamp was changed
+			fromDateByBooking := make(map[int]time.Time, len(futureBookingsMap))
+			for id, b := range futureBookingsMap {
+				fromDateByBooking[id] = b.FromDate
+			}
+
+			var customerIdsByBooking map[int][]uuid.UUID
+
+			if timestampChanged || participantsChanged || priceChanged {
+				customerIdsByBooking, err = s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, futureBookingIds)
+				if err != nil {
+					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
+				}
 			}
 
 			if timestampChanged {
@@ -445,27 +617,24 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					if err != nil {
 						return fmt.Errorf("failed to insert booking phases: %w", err)
 					}
+
+					for i, id := range timestampUpdate.BookingIds {
+						fromDateByBooking[id] = timestampUpdate.FromDates[i]
+					}
+
+					reminderParams := buildReminderEmailParams(timestampUpdate.BookingIds, timestampUpdate.FromDates, customerIdsByBooking)
+					if len(reminderParams) > 0 {
+						_, err := s.enqueuer.InsertManyFastTx(ctx, tx, reminderParams)
+						if err != nil {
+							return fmt.Errorf("failed to schedule booking reminder emails: %w", err)
+						}
+					}
 				}
 			}
 
 			lastOccurrenceIndex = *futureBookings[len(futureBookings)-1].OccurrenceIndex
 
 			if participantsChanged || priceChanged {
-				var futureBookingIds []int
-				futureBookingsMap := make(map[int]domain.Booking)
-
-				for _, b := range futureBookings {
-					if b.IsModifiable() {
-						futureBookingIds = append(futureBookingIds, b.Id)
-						futureBookingsMap[b.Id] = b
-					}
-				}
-
-				customerIdsByBooking, err := s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, futureBookingIds)
-				if err != nil {
-					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
-				}
-
 				existingParticipantsByBooking := makeExistingParticipantsMap(futureBookingIds, customerIdsByBooking)
 
 				capacity := calculateCapacity(futureBookingsMap, existingParticipantsByBooking, toDeleteMap, toInsertMap)
@@ -487,14 +656,27 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 						bookingsExceedingMaxParticipants = append(bookingsExceedingMaxParticipants, failedToUpdate...)
 					}
 
-					if requestedToDeleteCount > 0 {
+					if len(requestedParticipantsToDelete) > 0 {
 						err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, futureBookingIds, requestedParticipantsToDelete)
 						if err != nil {
 							return fmt.Errorf("failed to remove participants for future bookings: %w", err)
 						}
+
+						customerIdsToDeleteByBooking := make(map[int][]uuid.UUID, len(futureBookingIds))
+						for _, bid := range futureBookingIds {
+							customerIdsToDeleteByBooking[bid] = requestedParticipantsToDelete
+						}
+
+						cancellationParams := buildCancellationEmailParams(seriesParticipantsMap, customerIdsToDeleteByBooking, "")
+						if len(cancellationParams) > 0 {
+							_, err = s.enqueuer.InsertManyFastTx(ctx, tx, cancellationParams)
+							if err != nil {
+								return fmt.Errorf("failed to schedule cancellation emails: %w", err)
+							}
+						}
 					}
 
-					if requestedToInsertCount > 0 {
+					if len(requestedParticipantsToInsert) > 0 {
 						participantsToInsert := buildOccurrenceParticipantsToInsert(updatedBookingIds, requestedParticipantsToInsert, existingParticipantsByBooking)
 
 						if len(participantsToInsert) > 0 {
@@ -502,6 +684,14 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 							err = s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToInsert, false)
 							if err != nil {
 								return fmt.Errorf("failed to add participants: %w", err)
+							}
+
+							reminderParams := buildNewParticipantReminderEmailParams(participantsToInsert, fromDateByBooking)
+							if len(reminderParams) > 0 {
+								_, err := s.enqueuer.InsertManyFastTx(ctx, tx, reminderParams)
+								if err != nil {
+									return fmt.Errorf("failed to schedule new participant reminder emails: %w", err)
+								}
 							}
 						}
 					}
@@ -514,7 +704,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					}
 				}
 
-				// If the participants changed and and the participant count update failed for a booking
+				// If the participants changed and the participant count update failed for a booking
 				// then we should not calculate and override the totalPrice, hence the use of 'updatedBookingIds'
 				if len(updatedBookingIds) > 0 {
 					totalPrices, err := calculateTotalPrices(series.PricePerPerson, updatedBookingIds, capacity.ByBooking)
@@ -525,6 +715,16 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, updatedBookingIds, totalPrices)
 					if err != nil {
 						return fmt.Errorf("failed to btach update future booking total prices: %w", err)
+					}
+				}
+
+				if timestampChanged || priceChanged {
+					modificationParams := buildModificationEmailParams(seriesParticipantsMap, futureBookings, customerIdsByBooking)
+					if len(modificationParams) > 0 {
+						_, err = s.enqueuer.InsertManyFastTx(ctx, tx, modificationParams)
+						if err != nil {
+							return fmt.Errorf("failed to schedule booking modification emails: %w", err)
+						}
 					}
 				}
 			}

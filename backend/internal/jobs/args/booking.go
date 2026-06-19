@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/riverqueue/river"
 )
 
@@ -35,13 +36,14 @@ func (BookingOccurrenceGenerator) InsertOpts() river.InsertOpts {
 }
 
 type UpdateFutureBookingOccurrences struct {
-	BookingSeriesId          int           `json:"booking_series_id"`
-	OccurrenceIndex          int           `json:"occurrence_index"`
-	SeriesOriginalDateOffset time.Duration `json:"series_original_date_offset"`
-	StatusChangedToCancelled bool          `json:"status_changed_to_cancelled"`
-	PriceChanged             bool          `json:"price_changed"`
-	ParticipantsToInsert     []uuid.UUID   `json:"particiapnts_to_insert"`
-	ParticipantsToDelete     []uuid.UUID   `json:"particiapnts_to_delete"`
+	BookingSeriesId          int                               `json:"booking_series_id"`
+	OccurrenceIndex          int                               `json:"occurrence_index"`
+	SeriesOriginalDateOffset time.Duration                     `json:"series_original_date_offset"`
+	StatusChangedToCancelled bool                              `json:"status_changed_to_cancelled"`
+	PriceChanged             bool                              `json:"price_changed"`
+	ParticipantsToInsert     []uuid.UUID                       `json:"particiapnts_to_insert"`
+	ParticipantsToDelete     []uuid.UUID                       `json:"particiapnts_to_delete"`
+	ParticipantsBefore       []domain.BookingSeriesParticipant `json:"participants_before"`
 }
 
 func (UpdateFutureBookingOccurrences) Kind() string { return "update_booking_occurrences" }

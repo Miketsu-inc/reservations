@@ -1041,16 +1041,16 @@ func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context,
 	return nil
 }
 
-func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, seriesVersion, fromOccurrenceIndex, limit int) ([]domain.Booking, error) {
+func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, fromOccurrenceIndex, limit int) ([]domain.Booking, error) {
 	query := `
 	select * from "Booking"
-	where booking_series_id = $1 and occurrence_index > $2 and series_version < $3
+	where booking_series_id = $1 and occurrence_index > $2
 	order by occurrence_index asc
-	limit $4
+	limit $3
 	for update
 	`
 
-	rows, _ := r.db.Query(ctx, query, seriesId, fromOccurrenceIndex, seriesVersion, limit)
+	rows, _ := r.db.Query(ctx, query, seriesId, fromOccurrenceIndex, limit)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Booking])
 	if err != nil {
 		return nil, err

@@ -878,6 +878,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	var seriesParticipantCount int
 	var participantChanges participantChanges
 	var seriesParticipantChanges seriesParticipantChanges
+	var seriesParticipants []domain.BookingSeriesParticipant
 
 	isWalkIn := len(input.Customers) == 0
 
@@ -895,7 +896,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		participantCount = len(participantChanges.ToInsert) + len(participantChanges.ToKeep)
 
 		if input.UpdateAllFuture && booking.IsRecurring {
-			seriesParticipants, err := s.bookingRepo.GetBookingSeriesParticipants(ctx, *booking.BookingSeriesId)
+			seriesParticipants, err = s.bookingRepo.GetBookingSeriesParticipants(ctx, *booking.BookingSeriesId)
 			if err != nil {
 				return fmt.Errorf("error getting series participants: %w", err)
 			}
@@ -934,13 +935,14 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		}
 	}
 
+	// TODO: priceChanged should only indicate if pricePerPerson changed. Change this once changing price is introduced
 	priceChanged := participantsChanged
 
 	var pricePerPerson currencyx.Price
 	var totalPrice, seriesTotalPrice currency.Amount
 
 	if priceChanged {
-		pricePerPerson := booking.PricePerPerson
+		pricePerPerson = booking.PricePerPerson
 
 		if isWalkIn && isGroupBooking {
 			totalPrice, err = currency.NewAmount("0", pricePerPerson.CurrencyCode())
@@ -1105,6 +1107,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				StatusChangedToCancelled: statusChangedToCancelled,
 				ParticipantsToInsert:     seriesParticipantChanges.ToInsert,
 				ParticipantsToDelete:     seriesParticipantChanges.ToDelete,
+				ParticipantsBefore:       seriesParticipants,
 			}, &river.InsertOpts{})
 			if err != nil {
 				return fmt.Errorf("failed to insert update future occurrences job: %w", err)
@@ -1205,6 +1208,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 		if participantsChanged {
 			for _, id := range participantChanges.ToDelete {
+				// TODO: send a modification email for the entire series for series participants if recurring
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
 					BookingId:          booking.Id,
 					CustomerId:         id,
@@ -1235,6 +1239,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		for _, id := range participantChanges.ToKeep {
 			if statusChanged {
 				if bookingStatus == types.BookingStatusCancelled {
+					// TODO: send a modification email for the entire series for series participants if recurring
 					_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingCancellationEmail{
 						BookingId:          booking.Id,
 						CustomerId:         id,
@@ -1268,6 +1273,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					return fmt.Errorf("could not schedule booking reminder email job: %w", err)
 				}
 
+				// TODO: send a modification email for the entire series for series participants if recurring
 				// TODO: we should send a modification when the price is changed, but the email does not handle it currently
 				// should be revisited once changing price and name is allowed
 				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingModificationEmail{

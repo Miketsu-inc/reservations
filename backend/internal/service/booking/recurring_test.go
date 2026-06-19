@@ -37,7 +37,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			Dtstart:   ct(2026, time.June, 7, "16:00", tz),
 			Interval:  1,
 			Byweekday: []rrule.Weekday{},
-			Until:     ct(2026, time.July, 4, "16:00", tz),
+			Until:     ct(2026, time.July, 11, "16:00", tz),
 		})
 
 		context := occurrenceTimestampUpdateContext{
@@ -46,6 +46,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			duration:                 duration,
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(1) * time.Hour,
+			seriesVersion:            3,
 		}
 
 		lastOccurrenceDate := ct(2026, time.June, 7, "14:00", time.UTC)
@@ -54,7 +55,10 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 14, "13:00", time.UTC),
 			ct(2026, time.June, 21, "13:00", time.UTC),
 			ct(2026, time.June, 28, "13:00", time.UTC),
+			ct(2026, time.July, 5, "13:00", time.UTC),
 		}
+
+		seriesVersion := 1
 
 		bookings := make([]domain.Booking, len(fromDates))
 		for i, d := range fromDates {
@@ -64,19 +68,23 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 				FromDate:           d,
 				ToDate:             d.Add(duration),
 				SeriesOriginalDate: &d,
+				SeriesVersion:      &seriesVersion,
 			}
 		}
 
 		bookings[0].Status = types.BookingStatusCompleted
 
-		expectedBookingIds := []int{1, 2}
+		seriesVersionDiff := 3
+		bookings[2].SeriesVersion = &seriesVersionDiff
+
+		expectedBookingIds := []int{1, 3}
 		expectedFromDates := []time.Time{
 			ct(2026, time.June, 21, "14:00", time.UTC),
-			ct(2026, time.June, 28, "14:00", time.UTC),
+			ct(2026, time.July, 5, "14:00", time.UTC),
 		}
 		expectedToDates := []time.Time{
 			ct(2026, time.June, 21, "14:10", time.UTC),
-			ct(2026, time.June, 28, "14:10", time.UTC),
+			ct(2026, time.July, 5, "14:10", time.UTC),
 		}
 
 		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
@@ -103,6 +111,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			duration:                 duration,
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(-1) * time.Hour,
+			seriesVersion:            2,
 		}
 
 		lastOccurrenceDate := ct(2026, time.June, 7, "14:00", time.UTC)
@@ -113,6 +122,8 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 28, "15:00", time.UTC),
 		}
 
+		seriesVersion := 1
+
 		bookings := make([]domain.Booking, len(fromDates))
 		for i, d := range fromDates {
 			bookings[i] = domain.Booking{
@@ -121,6 +132,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 				FromDate:           d,
 				ToDate:             d.Add(duration),
 				SeriesOriginalDate: &d,
+				SeriesVersion:      &seriesVersion,
 			}
 		}
 
@@ -162,6 +174,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			duration:                 duration,
 			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(2) * time.Hour,
+			seriesVersion:            2,
 		}
 
 		lastOccurrenceDate := ct(2026, time.March, 15, "00:00", time.UTC)
@@ -172,6 +185,8 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.April, 4, "23:00", time.UTC),
 		}
 
+		seriesVersion := 1
+
 		bookings := make([]domain.Booking, len(fromDates))
 		for i, d := range fromDates {
 			bookings[i] = domain.Booking{
@@ -180,6 +195,7 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 				FromDate:           d,
 				ToDate:             d.Add(duration),
 				SeriesOriginalDate: &d,
+				SeriesVersion:      &seriesVersion,
 			}
 		}
 
