@@ -105,10 +105,11 @@ function RouteComponent() {
               />
             </div>
             <Input
+              id="PhoneNumber"
               name="Phonenumber"
-              styles="p-2"
+              type="tel"
               labelText="Phone number"
-              childrenSide="left"
+              placeholder="+36 20 678 2012"
               value={userData.phone_number}
               inputData={(data) => updateUserData({ phone_number: data.value })}
             />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import SearchInput from "./SearchInput";
 import Select from "./Select";
 
@@ -12,12 +12,19 @@ export default function ComboBox({
   emptyText,
   onOpenChange,
   labelText,
+  ...props
 }) {
   const [searchText, setSearchText] = useState("");
 
-  const filteredOptions = options?.filter((option) =>
-    option.label.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredOptions = useMemo(() => {
+    if (!options) return [];
+    if (!searchText) return options;
+
+    const lowerSearch = searchText.toLowerCase();
+    options?.filter((option) =>
+      option.label.toLowerCase().includes(lowerSearch)
+    );
+  }, [options, searchText]);
 
   return (
     <Select
@@ -39,6 +46,7 @@ export default function ComboBox({
       onClose={() => setSearchText("")}
       emptyText={emptyText}
       onOpenChange={onOpenChange}
+      {...props}
     />
   );
 }

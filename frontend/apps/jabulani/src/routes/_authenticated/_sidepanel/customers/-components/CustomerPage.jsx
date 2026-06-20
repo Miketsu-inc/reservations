@@ -142,10 +142,9 @@ export default function CustomerPage({ customer, onSave }) {
               disabled={customer ? !customer.is_dummy : false}
             />
             <Input
-              styles="p-2"
               id="PhoneNumber"
               name="PhoneNumber"
-              type="text"
+              type="tel"
               labelText="Phone Number"
               placeholder="+36 20 678 2012"
               required={false}

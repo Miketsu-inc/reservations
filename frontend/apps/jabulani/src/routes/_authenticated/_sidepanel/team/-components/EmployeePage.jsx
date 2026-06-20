@@ -105,10 +105,9 @@ export default function EmployeePage({ employee, onSave }) {
             inputData={(data) => updateEmployeeData({ email: data.value })}
           />
           <Input
-            styles="p-2"
             id="PhoneNumber"
             name="PhoneNumber"
-            type="text"
+            type="tel"
             labelText="Phone Number"
             placeholder="+36 20 678 2012"
             required={false}

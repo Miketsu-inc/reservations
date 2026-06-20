@@ -28,7 +28,12 @@ export default function NewCustomerOverlay({
         </DrawerContent>
       </Drawer>
     ) : (
-      <Modal isOpen={isOpen} styles="p-5" onClose={onClose}>
+      <Modal
+        isOpen={isOpen}
+        styles="p-5"
+        onClose={onClose}
+        disableFocusTrap={true}
+      >
         <NewCustomerForm
           onSave={onSave}
           isWindowSmall={isWindowSmall}
@@ -114,10 +119,9 @@ function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
           inputData={(data) => updateCustomerData({ email: data.value })}
         />
         <Input
-          styles="p-2"
           id="PhoneNumber"
           name="PhoneNumber"
-          type="text"
+          type="tel"
           labelText="Phone Number"
           placeholder="+36 20 678 2012"
           required={false}

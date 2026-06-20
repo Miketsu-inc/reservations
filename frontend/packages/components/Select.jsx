@@ -1,5 +1,5 @@
 import { ArrowLeft01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Icon } from ".";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
@@ -20,6 +20,8 @@ export default function Select({
   emptyText,
   onOpenChange,
   disabled,
+  dropDownSameWidth = true,
+  showOnlyIcon = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
@@ -38,7 +40,7 @@ export default function Select({
     setIsOpen(true);
     setHighlightedIndex(selectedIndex > -1 ? selectedIndex : 0);
 
-    if (containerRef.current) {
+    if (dropDownSameWidth && containerRef.current) {
       setTriggerWidth(containerRef.current.offsetWidth);
     }
   }
@@ -125,18 +127,19 @@ export default function Select({
             ref={containerRef}
             disabled={disabled}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span
                 className={`${selectedOption ? "text-text_color" : "text-gray-500"}
-                  min-h-6 flex-1 truncate
-                  ${disabled ? "text-text_color/70" : ""}`}
+                  min-h-6 ${disabled ? "text-text_color/70" : ""}`}
               >
                 {!selectedOption ? (
                   placeholder
                 ) : selectedOption.icon ? (
                   <span className="flex items-center gap-2">
-                    <span className="shrink-0">{selectedOption.icon}</span>
-                    <span className="truncate">{selectedOption.label}</span>
+                    <span className={"shrink-0"}>{selectedOption.icon}</span>
+                    {!showOnlyIcon && (
+                      <span className="truncate">{selectedOption.label}</span>
+                    )}
                   </span>
                 ) : (
                   selectedOption.label
@@ -154,9 +157,10 @@ export default function Select({
       <PopoverContent
         forceMount
         styles={`p-0! ${labelText && "data-[side=top]:translate-y-6"}`}
+        align={dropDownSameWidth ? "center" : "start"}
         onKeyDown={handleKeyDown}
         style={{
-          width: triggerWidth || "auto",
+          width: dropDownSameWidth ? triggerWidth : "auto",
         }}
       >
         {extraContent && <div className="p-2">{extraContent}</div>}
@@ -182,47 +186,61 @@ export default function Select({
               {emptyText || "No results found"}
             </li>
           ) : (
-            options?.map((option, index) => {
-              const isSelected = value === option.value;
-              const isHighlighted = index === highlightedIndex;
-
-              return (
-                <li
-                  onClick={() => {
-                    onSelect(option);
-                    handleClose();
-                  }}
-                  key={index}
-                  className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                    dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5
-                    pl-2 text-gray-700 select-none`}
-                  role="option"
-                  aria-selected={isSelected}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {option.icon && (
-                        <span
-                          className="flex shrink-0 items-center justify-center"
-                        >
-                          {option.icon}
-                        </span>
-                      )}
-                      <span className="truncate">{option.label}</span>
-                    </div>
-                    {isSelected && (
-                      <Icon
-                        icon={Tick02Icon}
-                        styles="size-6 text-text_color shrink-0"
-                      />
-                    )}
-                  </div>
-                </li>
-              );
-            })
+            options?.map((option, index) => (
+              <SelectItem
+                key={index}
+                option={option}
+                isSelected={value === option.value}
+                isHighlighted={index === highlightedIndex}
+                isUsingKeyboard={isUsingKeyboard}
+                onSelect={onSelect}
+                handleClose={handleClose}
+              />
+            ))
           )}
         </ul>
       </PopoverContent>
     </Popover>
   );
 }
+
+const SelectItem = memo(
+  ({
+    option,
+    isSelected,
+    isHighlighted,
+    isUsingKeyboard,
+    onSelect,
+    handleClose,
+  }) => {
+    return (
+      <li
+        onClick={() => {
+          onSelect(option);
+          handleClose();
+        }}
+        className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
+          dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2
+          text-gray-700 select-none`}
+        role="option"
+        aria-selected={isSelected}
+      >
+        <div className="flex w-full items-center justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {option.icon && (
+              <span className="flex shrink-0 items-center justify-center">
+                {option.icon}
+              </span>
+            )}
+            <span className="truncate">{option.label}</span>
+          </div>
+          {isSelected && (
+            <Icon icon={Tick02Icon} styles="size-6 text-primary shrink-0" />
+          )}
+        </div>
+      </li>
+    );
+  }
+);
+
+SelectItem.displayName = "SelectItem";

@@ -1,7 +1,7 @@
 import { LoaderIcon } from "@reservations/assets";
-import React from "react";
+import { forwardRef } from "react";
 
-const Button = React.forwardRef(function Button(
+const Button = forwardRef(function Button(
   {
     children,
     name,
