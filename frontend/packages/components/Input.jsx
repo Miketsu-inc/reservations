@@ -86,6 +86,7 @@ function PhoneInput({
   value,
   required,
   inputData,
+  onOpenChange,
   ...props
 }) {
   const { inputValue, handlePhoneValueChange, country, setCountry } =
@@ -112,6 +113,7 @@ function PhoneInput({
           }}
           dropDownSameWidth={false}
           showOnlyIcon={true}
+          onOpenChange={onOpenChange}
         />
         <InputBase
           styles={`${sharedStyles} flex-1 rounded-l-none p-2`}

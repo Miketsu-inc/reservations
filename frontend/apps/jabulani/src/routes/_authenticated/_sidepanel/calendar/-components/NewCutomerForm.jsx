@@ -14,6 +14,9 @@ export default function NewCustomerOverlay({
   isWindowSmall,
   isOpen,
 }) {
+  const [isPhoneCountrySelectOpen, setIsPhoneCountrySelectOpen] =
+    useState(false);
+
   {
     return isWindowSmall ? (
       <Drawer
@@ -24,7 +27,11 @@ export default function NewCustomerOverlay({
         styles="p-0!"
       >
         <DrawerContent styles="h-full" popUpStyles="">
-          <NewCustomerForm onSave={onSave} isWindowSmall={isWindowSmall} />
+          <NewCustomerForm
+            onSave={onSave}
+            isWindowSmall={isWindowSmall}
+            setSelectOpen={setIsPhoneCountrySelectOpen}
+          />
         </DrawerContent>
       </Drawer>
     ) : (
@@ -33,11 +40,13 @@ export default function NewCustomerOverlay({
         styles="p-5"
         onClose={onClose}
         disableFocusTrap={true}
+        suspendCloseOnClickOutside={isPhoneCountrySelectOpen}
       >
         <NewCustomerForm
           onSave={onSave}
           isWindowSmall={isWindowSmall}
           onClose={onClose}
+          setSelectOpen={setIsPhoneCountrySelectOpen}
         />
       </Modal>
     );
@@ -51,7 +60,7 @@ const defaultCustomerData = {
   phone_number: "",
 };
 
-function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
+function NewCustomerForm({ onSave, isWindowSmall, onClose, setSelectOpen }) {
   const [customerData, setCustomerData] = useState(defaultCustomerData);
 
   function updateCustomerData(data) {
@@ -124,6 +133,7 @@ function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
           required={false}
           value={customerData.phone_number}
           inputData={(data) => updateCustomerData({ phone_number: data.value })}
+          onOpenChange={(open) => setSelectOpen(open)}
         />
       </div>
       <Button
