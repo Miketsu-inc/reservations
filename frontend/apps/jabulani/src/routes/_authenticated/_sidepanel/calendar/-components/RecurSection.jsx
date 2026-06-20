@@ -157,7 +157,6 @@ export default function RecurSection({ booking, recurringData, onSave }) {
                     </div>
                   </div>
                   <Input
-                    styles="p-2"
                     labelText="Interval"
                     childrenSide="right"
                     required={false}

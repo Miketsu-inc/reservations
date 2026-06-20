@@ -165,7 +165,6 @@ export default function ServicePage({
                 <div className="flex w-full flex-col gap-6">
                   <div className="flex w-full flex-row items-end gap-2">
                     <Input
-                      styles="p-2"
                       id="ServiceName"
                       name="ServiceName"
                       type="text"
@@ -192,7 +191,7 @@ export default function ServicePage({
                   </div>
                   <div className="flex w-full gap-4 sm:grid sm:grid-cols-2">
                     <Input
-                      styles="p-2 peer flex-1 w-full"
+                      styles="peer flex-1 w-full"
                       id="price"
                       name="price"
                       type="number"

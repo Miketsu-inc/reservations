@@ -249,7 +249,7 @@ function ProductForm({
       >
         <div className="flex w-full flex-col gap-4">
           <Input
-            styles="p-2 w-full"
+            styles="w-full"
             id="productAmount"
             name="productAmount"
             type="number"

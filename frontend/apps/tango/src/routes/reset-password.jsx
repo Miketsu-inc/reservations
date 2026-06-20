@@ -88,7 +88,6 @@ function RouteComponent() {
           <Input
             name="NewPassword"
             type="password"
-            styles="p-2"
             labelText="New password"
             inputData={(data) => updatePasswords({ password: data.value })}
             value={passwords.password}
@@ -96,7 +95,6 @@ function RouteComponent() {
           <Input
             name="ConfirmNewPassword"
             type="password"
-            styles="p-2"
             labelText="Confirm new password"
             inputData={(data) =>
               updatePasswords({ confirmPassword: data.value })

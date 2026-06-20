@@ -56,7 +56,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
           <Input
             name="OldPassword"
             type="password"
-            styles="p-2"
             labelText="Old password"
             inputData={(data) => updatePasswords({ oldPassword: data.value })}
             value={passwords.oldPassword}
@@ -64,7 +63,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
           <Input
             name="NewPassword"
             type="password"
-            styles="p-2"
             labelText="New password"
             inputData={(data) => updatePasswords({ newPassword: data.value })}
             value={passwords.newPassword}
@@ -72,7 +70,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
           <Input
             name="ConfirmNewPassword"
             type="password"
-            styles="p-2"
             labelText="Confirm new password"
             inputData={(data) =>
               updatePasswords({ confirmNewPassword: data.value })

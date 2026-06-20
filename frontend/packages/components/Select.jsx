@@ -235,7 +235,7 @@ const SelectItem = memo(
             <span className="truncate">{option.label}</span>
           </div>
           {isSelected && (
-            <Icon icon={Tick02Icon} styles="size-6 text-primary shrink-0" />
+            <Icon icon={Tick02Icon} styles="size-6 text-text_color shrink-0" />
           )}
         </div>
       </li>

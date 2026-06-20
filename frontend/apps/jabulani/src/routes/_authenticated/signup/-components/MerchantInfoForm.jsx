@@ -125,7 +125,6 @@ export default function MerchantInfoForm({ isCompleted }) {
         <ServerError styles="mt-4 mb-2" error={serverError} />
         <Input
           type="text"
-          styles="p-2"
           placeholder="Global Serve kft"
           pattern=".{0,255}"
           name="name"
@@ -147,7 +146,6 @@ export default function MerchantInfoForm({ isCompleted }) {
         </p>
         <Input
           type="email"
-          styles="p-2"
           placeholder="mycompany@gmail.com"
           pattern=".{0,254}@.*"
           name="contact_email"

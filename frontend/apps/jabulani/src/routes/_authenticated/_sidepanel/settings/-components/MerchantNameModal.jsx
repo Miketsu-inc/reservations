@@ -69,7 +69,6 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
         <ServerError styles="mt-4 mb-2" error={serverError} />
 
         <Input
-          styles="p-2"
           type="text"
           labelText="New Merchant Name"
           name="merchant_name"

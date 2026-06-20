@@ -19,7 +19,7 @@ const sharedStyles = `
   ease-in-out duration-150 border-input_border_color
   focus:border-primary focus:ring-4 focus:ring-primary/30
   disabled:text-text_color/70 disabled:border-input_border_color/60
-  disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20
+  disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20 p-2
 `;
 
 export default function Input({ type, ...props }) {

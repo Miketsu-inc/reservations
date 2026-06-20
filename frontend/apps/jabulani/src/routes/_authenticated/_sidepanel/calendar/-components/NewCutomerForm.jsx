@@ -88,7 +88,6 @@ function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
       </div>
       <div className="flex w-full flex-col gap-3">
         <Input
-          styles="p-2"
           id="FirstName"
           name="FirstName"
           type="text"
@@ -98,7 +97,6 @@ function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
           inputData={(data) => updateCustomerData({ first_name: data.value })}
         />
         <Input
-          styles="p-2"
           id="LastName"
           name="LastName"
           type="text"
@@ -108,7 +106,6 @@ function NewCustomerForm({ onSave, isWindowSmall, onClose }) {
           inputData={(data) => updateCustomerData({ last_name: data.value })}
         />
         <Input
-          styles="p-2"
           id="Email"
           name="Email"
           type="email"

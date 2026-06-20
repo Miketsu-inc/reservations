@@ -322,7 +322,7 @@ export default function BlockedTimePanel({
         />
         {activeType === "custom" && (
           <Input
-            styles="w-full p-2"
+            styles="w-full"
             type="text"
             id="name"
             name="name"

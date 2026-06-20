@@ -17,7 +17,7 @@ export default function SearchInput({
         <Icon icon={Search01Icon} styles="size-4" />
       </div>
       <Input
-        styles={`p-2 ps-9 w-44 md:w-full text-sm ${styles}`}
+        styles={`ps-9 w-44 md:w-full text-sm ${styles}`}
         name="search"
         type="search"
         pattern=".{0,255}"

@@ -69,7 +69,6 @@ export default function EditServiceCategoryModal({
             ></img>
           </div>
           <Input
-            styles="p-2"
             id="CategoryName"
             name="CategoryName"
             type="text"

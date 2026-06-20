@@ -137,7 +137,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
         <div className="flex flex-col gap-3 pb-1 md:flex-row md:gap-8">
           <div className="flex flex-col gap-4 md:w-80">
             <Input
-              styles="p-2"
               labelText="Product Name"
               id="name"
               name="name"
@@ -147,7 +146,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               inputData={(data) => updateProductData({ name: data.value })}
             />
             <Input
-              styles="p-2"
               id="price"
               labelText="Price"
               name="price"
@@ -190,7 +188,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
             <div className="flex flex-col gap-2 md:gap-4">
               <div className="flex items-end justify-center gap-1">
                 <Input
-                  styles="p-2"
                   id="current_amount"
                   labelText="Current Amount"
                   name="current_amount"
@@ -220,7 +217,6 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
               </div>
               <div className="flex items-end justify-center gap-1">
                 <Input
-                  styles="p-2"
                   id="max_amount"
                   labelText="Max Amount"
                   name="max_amount"

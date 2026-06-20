@@ -187,7 +187,6 @@ export default function GroupServicePage({
 
                     <div className="flex w-full flex-col justify-between">
                       <Input
-                        styles="p-2"
                         id="ServiceName"
                         name="ServiceName"
                         type="text"
@@ -247,7 +246,6 @@ export default function GroupServicePage({
 
                   <div className="flex flex-col gap-4">
                     <Input
-                      styles="p-2"
                       id="duration"
                       name="duration"
                       type="number"
@@ -274,7 +272,7 @@ export default function GroupServicePage({
                     </Input>
                     <div className="flex w-full gap-4 sm:grid sm:grid-cols-2">
                       <Input
-                        styles="p-2 peer flex-1 w-full"
+                        styles="peer flex-1 w-full"
                         id="price"
                         name="price"
                         type="number"
@@ -347,7 +345,6 @@ export default function GroupServicePage({
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      styles="p-2"
                       id="min_participants"
                       name="min_participants"
                       type="number"
@@ -363,7 +360,6 @@ export default function GroupServicePage({
                       }
                     />
                     <Input
-                      styles="p-2"
                       id="max_participants"
                       name="max_participants"
                       type="number"
@@ -380,7 +376,7 @@ export default function GroupServicePage({
                   </div>
 
                   <Textarea
-                    styles="p-2 h-full md:min-h-0 min-h-35"
+                    styles="h-full md:min-h-0 min-h-35"
                     id="description"
                     name="description"
                     labelText="Description"

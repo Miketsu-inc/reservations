@@ -167,7 +167,6 @@ export default function BlockedTypesModal({
           </div>
 
           <Input
-            styles="p-2"
             id="name"
             name="name"
             type="text"
@@ -179,7 +178,6 @@ export default function BlockedTypesModal({
 
           <div className="flex w-full flex-row items-end gap-2">
             <Input
-              styles="p-2"
               id="duration"
               name="duration"
               type="number"

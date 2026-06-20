@@ -69,7 +69,6 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
             ></img>
           </div>
           <Input
-            styles="p-2"
             id="CategoryName"
             name="CategoryName"
             type="text"

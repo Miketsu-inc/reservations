@@ -91,14 +91,12 @@ function RouteComponent() {
             >
               <Input
                 name="Firstname"
-                styles="p-2"
                 labelText="First name"
                 value={userData.first_name}
                 inputData={(data) => updateUserData({ first_name: data.value })}
               />
               <Input
                 name="Lastname"
-                styles="p-2"
                 labelText="Last name"
                 value={userData.last_name}
                 inputData={(data) => updateUserData({ last_name: data.value })}
@@ -115,7 +113,6 @@ function RouteComponent() {
             />
             <Input
               name="Email"
-              styles="p-2"
               labelText="Email"
               value={userData.email}
               inputData={(data) => updateUserData({ email: data.value })}

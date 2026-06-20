@@ -51,7 +51,6 @@ function RouteComponent() {
         </div>
         <form onSubmit={submitHandler} className="flex h-full flex-col gap-6">
           <Input
-            styles="p-2"
             name="email"
             labelText="Email"
             type="email"

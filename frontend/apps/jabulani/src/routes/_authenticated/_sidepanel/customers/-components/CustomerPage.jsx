@@ -105,7 +105,6 @@ export default function CustomerPage({ customer, onSave }) {
           <Card styles="flex flex-col gap-4">
             <div className="flex flex-col gap-4 md:flex-row">
               <Input
-                styles="p-2"
                 id="FirstName"
                 name="FirstName"
                 type="text"
@@ -117,7 +116,6 @@ export default function CustomerPage({ customer, onSave }) {
                 }
               />
               <Input
-                styles="p-2"
                 id="LastName"
                 name="LastName"
                 type="text"
@@ -130,7 +128,6 @@ export default function CustomerPage({ customer, onSave }) {
               />
             </div>
             <Input
-              styles="p-2"
               id="Email"
               name="Email"
               type="email"
@@ -154,7 +151,6 @@ export default function CustomerPage({ customer, onSave }) {
               }
             />
             <Input
-              styles="p-2"
               id="Birthday"
               name="Birthday"
               type="number"
