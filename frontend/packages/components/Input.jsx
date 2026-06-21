@@ -91,8 +91,9 @@ function PhoneInput({
 }) {
   const { inputValue, handlePhoneValueChange, country, setCountry } =
     usePhoneInput({
-      defaultCountry: "hu",
-      value,
+      disableDialCodePrefill: true,
+      defaultCountry: "hu", // TODO: this should be based on the language maybe
+      value: value ?? "",
       onChange: (data) => {
         inputData({
           name,
