@@ -22,36 +22,14 @@ func (r *blockedTimeRepository) WithTx(tx db.DBTX) domain.BlockedTimeRepository 
 	return &blockedTimeRepository{db: tx}
 }
 
-func (r *blockedTimeRepository) NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate, toDate time.Time, allDay bool, blockedTypeId *int) ([]int, error) {
-	query := `
-	insert into "BlockedTime" (merchant_id, employee_id, blocked_type_id, name, from_date, to_date, all_day) values ($1, $2, $3, $4, $5, $6, $7)
-	returning id`
-
-	var ids []int
-
-	for _, empId := range employeeIds {
-		var id int
-
-		err := r.db.QueryRow(ctx, query, merchantId, empId, blockedTypeId, name, fromDate, toDate, allDay).Scan(&id)
-		if err != nil {
-			return []int{}, err
-		}
-
-		ids = append(ids, id)
-	}
-
-	return ids, nil
-}
-
 func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []domain.BlockedTime) ([]int, error) {
 	query := `
-	insert into "BlockedTime" (merchant_id, employee_id, name, from_date, to_date, all_day, source)
-	select $1, $2, unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
+	insert into "BlockedTime" (merchant_id, name, from_date, to_date, all_day, source)
+	select $1, unnest($2::text[]), unnest($3::timestamptz[]), unnest($4::timestamptz[]), unnest($5::boolean[]), $6
 	returning id
 	`
 
 	merchantId := bt[0].MerchantId
-	employeeId := bt[0].EmployeeId
 	source := bt[0].Source
 
 	names := make([]string, len(bt))
@@ -68,7 +46,7 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 
 	var btIds []int
 
-	rows, _ := r.db.Query(ctx, query, merchantId, employeeId, names, fromDates, toDates, isAllDay, source)
+	rows, _ := r.db.Query(ctx, query, merchantId, names, fromDates, toDates, isAllDay, source)
 	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
 		return []int{}, err
@@ -77,13 +55,27 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 	return btIds, nil
 }
 
+func (r *blockedTimeRepository) BulkInsertEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int, employeeIds []int) error {
+	query := `
+	insert into "EmployeeBlockedTime" (blocked_time_id, employee_id)
+	select unnest($1::int[]), unnest($2::int[])
+	`
+
+	_, err := r.db.Exec(ctx, query, blockedTimeIds, employeeIds)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *blockedTimeRepository) UpdateBlockedTime(ctx context.Context, bt domain.BlockedTime) error {
 	query := `
 	update "BlockedTime"
-	set blocked_type_id = $4, name = $5, from_date = $6, to_date = $7, all_day = $8
-	where merchant_id = $1 and employee_id = $2 and ID = $3`
+	set blocked_type_id = $3, name = $4, from_date = $5, to_date = $6, all_day = $7
+	where merchant_id = $1 and ID = $2`
 
-	_, err := r.db.Exec(ctx, query, bt.MerchantId, bt.EmployeeId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
+	_, err := r.db.Exec(ctx, query, bt.MerchantId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
 	if err != nil {
 		return err
 	}
@@ -122,19 +114,6 @@ func (r *blockedTimeRepository) BulkUpdateBlockedTime(ctx context.Context, bt []
 	return nil
 }
 
-func (r *blockedTimeRepository) DeleteBlockedTime(ctx context.Context, blockedTimeId int, merchantId uuid.UUID, employeeId int) error {
-	query := `
-	delete from "BlockedTime"
-	where merchant_id = $1 and employee_id = $2 and ID = $3`
-
-	_, err := r.db.Exec(ctx, query, merchantId, employeeId, blockedTimeId)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *blockedTimeRepository) BulkDeleteBlockedTime(ctx context.Context, btIds []int) error {
 	query := `
 	delete from "BlockedTime"
@@ -142,6 +121,20 @@ func (r *blockedTimeRepository) BulkDeleteBlockedTime(ctx context.Context, btIds
 	`
 
 	_, err := r.db.Exec(ctx, query, btIds)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *blockedTimeRepository) BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int) error {
+	query := `
+	delete from "EmployeeBlockedTime"
+	where id = any($1::int[])
+	`
+
+	_, err := r.db.Exec(ctx, query, blockedTimeIds)
 	if err != nil {
 		return err
 	}
@@ -183,12 +176,68 @@ func (r *blockedTimeRepository) GetBlockedTime(ctx context.Context, blockedTimeI
 	return blockedTime, nil
 }
 
+func (r *blockedTimeRepository) GetBlockedTimeForEmployee(ctx context.Context, blockedTimeId int, employeeId int) (domain.BlockedTime, error) {
+	query := `
+	select bt.*
+	from "BlockedTime" bt
+	where id = $1 and (
+		not exists (
+			select 1
+			from "EmployeeBlockedTime" ebt
+			where ebt.blocked_time_id = bt.id
+		)
+		or exists (
+			select 1
+			from "EmployeeBlockedTime" ebt
+			where ebt.blocked_time_id = bt.id and ebt.employee_id = $2
+		)
+	)
+	`
+
+	rows, _ := r.db.Query(ctx, query, blockedTimeId, employeeId)
+	blockedTime, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BlockedTime])
+	if err != nil {
+		return domain.BlockedTime{}, err
+	}
+
+	return blockedTime, nil
+}
+
+func (r *blockedTimeRepository) GetBlockedTimeEmployees(ctx context.Context, blockedTimeId int) (domain.BlockedTimeEmployees, error) {
+	query := `
+	select bt.*,
+		coalesce(
+			array_agg(ebt.employee_id order by ebt.employee_id) filter (where ebt.employee_id is not null),
+			'{}'::int[]
+		) as employee_ids
+	from "BlockedTime" bt
+	left join "EmployeeBlockedTime" ebt on ebt.blocked_time_id = bt.id
+	where bt.id = $1
+	group by bt.id
+	`
+
+	rows, _ := r.db.Query(ctx, query, blockedTimeId)
+	blockedTime, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BlockedTimeEmployees])
+	if err != nil {
+		return domain.BlockedTimeEmployees{}, err
+	}
+
+	return blockedTime, nil
+}
+
 func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]domain.BlockedTimeEvent, error) {
 	query := `
-	select b.id, b.employee_id, b.name, b.from_date, b.to_date, b.all_day, btt.icon, btt.id as blocked_type_id from "BlockedTime" b
-	left join "BlockedTimeType" btt on btt.id = b.blocked_type_id
-	where b.merchant_id = $1 and b.from_date <= $3 and b.to_date >= $2
-	order by b.id
+	select bt.id, bt.name, bt.from_date, bt.to_date, bt.all_day, btt.icon, btt.id as blocked_type_id,
+		coalesce(
+			array_agg(ebt.employee_id order by ebt.employee_id) filter (where ebt.employee_id is not null),
+			'{}'::int[]
+		) as employee_ids
+	from "BlockedTime" bt
+	left join "EmployeeBlockedTime" ebt on ebt.blocked_time_id = bt.id
+	left join "BlockedTimeType" btt on btt.id = bt.blocked_type_id
+	where bt.merchant_id = $1 and bt.from_date <= $3 and bt.to_date >= $2
+	group by bt.id, btt.id, btt.icon
+	order by bt.id
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime)

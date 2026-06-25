@@ -255,13 +255,18 @@ create table if not exists "BusinessHours" (
 create table if not exists "BlockedTime" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
-    employee_id              integer         references "Employee" (ID) on delete cascade not null,
     blocked_type_id          integer         references "BlockedTimeType" (ID) on delete set null,
     name                     varchar(50)     not null,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,
     all_day                  boolean         not null,
     source                   text            check (source in ('internal', 'google'))
+);
+
+create table if not exists "EmployeeBlockedTime" (
+    employee_id              integer         references "Employee" (ID) on delete cascade not null,
+    blocked_time_id          integer         references "BlockedTime" (ID) on delete cascade not null,
+    primary key (employee_id, blocked_time_id)
 );
 
 create table if not exists "BlockedTimeType" (

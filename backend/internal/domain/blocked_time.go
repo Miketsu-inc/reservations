@@ -12,15 +12,17 @@ import (
 type BlockedTimeRepository interface {
 	WithTx(db.DBTX) BlockedTimeRepository
 
-	NewBlockedTime(ctx context.Context, merchantId uuid.UUID, employeeIds []int, name string, fromDate time.Time, toDate time.Time, allDay bool, blockedTypeId *int) ([]int, error)
 	BulkInsertBlockedTime(ctx context.Context, blockedTimes []BlockedTime) ([]int, error)
+	BulkInsertEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int, employeeIds []int) error
 	UpdateBlockedTime(ctx context.Context, blockedTime BlockedTime) error
 	BulkUpdateBlockedTime(ctx context.Context, blockedTime []BlockedTime) error
-	DeleteBlockedTime(ctx context.Context, blockedTimeId int, merchantId uuid.UUID, employeeId int) error
 	BulkDeleteBlockedTime(ctx context.Context, blockedTimeIds []int) error
+	BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int) error
 	DeleteExternalCalendarBlockedTimes(ctx context.Context, extCalendarId int) error
 
 	GetBlockedTime(ctx context.Context, blockedTimeId int) (BlockedTime, error)
+	GetBlockedTimeForEmployee(ctx context.Context, blockedTime int, employeeId int) (BlockedTime, error)
+	GetBlockedTimeEmployees(ctx context.Context, blockedTimeId int) (BlockedTimeEmployees, error)
 	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime string, endTime string) ([]BlockedTimeEvent, error)
 	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, start time.Time, end time.Time) ([]BlockedTimes, error)
 
@@ -34,13 +36,17 @@ type BlockedTimeRepository interface {
 type BlockedTime struct {
 	Id            int                `json:"id" db:"id"`
 	MerchantId    uuid.UUID          `json:"merchant_id" db:"merchant_id"`
-	EmployeeId    int                `json:"employee_id" db:"employee_id"`
 	BlockedTypeId *int               `json:"blocked_type_id" db:"blocked_type_id"`
 	Name          string             `json:"name" db:"name"`
 	FromDate      time.Time          `json:"from_date" db:"from_date"`
 	ToDate        time.Time          `json:"to_date" db:"to_date"`
 	AllDay        bool               `json:"all_day" db:"all_day"`
 	Source        *types.EventSource `json:"source" db:"source"`
+}
+
+type BlockedTimeEmployees struct {
+	BlockedTime
+	EmployeeIds []int `db:"employee_ids"`
 }
 
 type BlockedTimes struct {
@@ -58,7 +64,7 @@ type BlockedTimeType struct {
 
 type BlockedTimeEvent struct {
 	ID            int       `json:"id" db:"id"`
-	EmployeeId    int       `json:"employee_id" db:"employee_id"`
+	EmployeeIds   []int     `json:"employee_ids" db:"employee_ids"`
 	Name          string    `json:"name" db:"name"`
 	FromDate      time.Time `json:"from_date" db:"from_date"`
 	ToDate        time.Time `json:"to_date" db:"to_date"`

@@ -411,7 +411,7 @@ type bookingParticipantForCalendar struct {
 
 type blockedTime struct {
 	ID            int       `json:"id"`
-	EmployeeId    int       `json:"employee_id"`
+	EmployeeIds   []int     `json:"employee_ids"`
 	Name          string    `json:"name"`
 	FromDate      time.Time `json:"from_date"`
 	ToDate        time.Time `json:"to_date"`

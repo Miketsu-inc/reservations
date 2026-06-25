@@ -56,7 +56,7 @@ const defaultFormData = {
   id: null,
   blocked_type_id: null,
   name: "",
-  employee_id: "",
+  employee_ids: [],
   date: new Date(),
   from_time: "09:00",
   to_time: "17:00",
@@ -110,7 +110,7 @@ export default function BlockedTimePanel({
     id: blockedTime?.extendedProps?.id || null,
     blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
     name: blockedTime?.extendedProps?.name || "",
-    employee_id: blockedTime?.extendedProps.employee_id || "",
+    employee_ids: [],
     date: blockedTime?.start || new Date(),
     from_time: initialFromTime,
     to_time: initialToTime,
@@ -153,6 +153,7 @@ export default function BlockedTimePanel({
       blocked_type_id: blockedTypeId,
       name: formData.name,
       all_day: formData.all_day,
+      employee_ids: [],
     };
 
     if (formData.all_day) {
@@ -173,16 +174,12 @@ export default function BlockedTimePanel({
     let url = "";
     let method = "";
 
-    // when three is more than one employee the ids at insert are sent as an array but the updating is not (not implemented yet)
-    // means that the blocek time was already added and now should be modified
     if (formData.id != null) {
-      // body.employee_id = blockedTime?.extendedProps?.employee_id;
       url = `/api/v1/merchants/${merchantId}/blocked-times/${formData.id}`;
       method = "PUT";
     } else {
       // for correct json sending
       delete body.id;
-      // body.employee_ids = [formData.employee_id];
       url = `/api/v1/merchants/${merchantId}/blocked-times`;
       method = "POST";
     }
@@ -229,9 +226,6 @@ export default function BlockedTimePanel({
             Accept: "application/json",
             "content-type": "application/json",
           },
-          // body: JSON.stringify({
-          //   employee_id: bt.employee_id,
-          // }),
         }
       );
 
@@ -388,20 +382,6 @@ export default function BlockedTimePanel({
             />
           </div>
         )}
-        {/* <div className="flex w-full flex-col gap-1">
-                        <label className="text-text_color text-sm">Team members</label>
-                        <Select
-                          options={employeeOptions}
-                          value={formData.employee_id}
-                          onSelect={(selected) =>
-                            updateBlockedTimeData({ employee_id: selected.value })
-                            }
-                            styles="w-full"
-                            placeholder="Select employee"
-                            disabled={isEditing}
-                          onOpenChange={(open) => setIsSelectOpen(open)}
-                          />
-                      </div> */}
       </div>
 
       <div

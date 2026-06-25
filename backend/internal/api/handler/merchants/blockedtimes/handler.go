@@ -1,6 +1,7 @@
 package blockedtimes
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -29,8 +30,8 @@ func (h *Handler) Routes() chi.Router {
 }
 
 type newReq struct {
-	Name string `json:"name" validate:"required"`
-	// EmployeeIds []int  `json:"employee_ids" validate:"required"`
+	Name          string `json:"name" validate:"required"`
+	EmployeeIds   []int  `json:"employee_ids"`
 	BlockedTypeId *int   `json:"blocked_type_id"`
 	FromDate      string `json:"from_date" validate:"required"`
 	ToDate        string `json:"to_date" validate:"required"`
@@ -60,11 +61,10 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// employee id not ids but its a front end issue
 type updateReq struct {
-	Id   int    `json:"id" validate:"required"`
-	Name string `json:"name" validate:"required"`
-	// EmployeeId int    `json:"employee_id" validate:"required"`
+	Id            int    `json:"id" validate:"required"`
+	Name          string `json:"name" validate:"required"`
+	EmployeeIds   []int  `json:"employee_id"`
 	BlockedTypeId *int   `json:"blocked_type_id"`
 	FromDate      string `json:"from_date" validate:"required"`
 	ToDate        string `json:"to_date" validate:"required"`
@@ -85,44 +85,31 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if UrlBlockedTimeId != req.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid blocked time id"))
+		return
+	}
+
 	input, err := mapToUpdateInput(req)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	err = h.service.Update(r.Context(), UrlBlockedTimeId, input)
+	err = h.service.Update(r.Context(), input)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 }
 
-// type deleteReq struct {
-// 	EmployeeId int `json:"employee_id" validate:"required"`
-// }
-
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	// var req deleteReq
-
-	// if err := validate.ParseStruct(r, &req); err != nil {
-	// 	httputil.Error(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-
 	UrlBlockedTimeId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
-	// input, err := mapToDeleteInput(req)
-	// if err != nil {
-	// 	httputil.Error(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-
-	// err = h.service.Delete(r.Context(), UrlBlockedTimeId, input)
 	err = h.service.Delete(r.Context(), UrlBlockedTimeId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)

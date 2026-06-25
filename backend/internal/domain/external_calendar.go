@@ -28,8 +28,9 @@ type ExternalCalendarRepository interface {
 	DeleteExternalCalendarEvent(ctx context.Context, externalEventId int) error
 	DeleteAllExternalCalendarEvents(ctx context.Context, extCalendarId int) error
 
+	GetExternalCalendarEvent(ctx context.Context, extCalendarEventId int) (ExternalCalendarEvent, error)
 	GetExternalCalendarEvents(ctx context.Context, extCalendarIds int, eventIds []string) ([]ExternalCalendarEvent, error)
-	GetExternalCalendarEventByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) (ExternalCalendarEvent, error)
+	GetExternalCalendarEventsByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) ([]ExternalCalendarEvent, error)
 	GetExpiringExternalCalendars(ctx context.Context, timeLeft time.Time) ([]ExternalCalendar, error)
 }
 

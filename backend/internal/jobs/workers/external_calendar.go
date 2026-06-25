@@ -76,6 +76,20 @@ func (w *SyncDeleteBooking) Work(ctx context.Context, job *river.Job[args.SyncDe
 	return w.externalCalendarService.SyncDeleteBooking(ctx, job.Args.BookingId)
 }
 
+type SyncNewBlockedTimeDispatcher struct {
+	river.WorkerDefaults[args.SyncNewBlockedTimeDispatcher]
+
+	externalCalendarService *externalcalendar.Service
+}
+
+func NewSyncNewBlockedTimeDispatcher(extCalendarService *externalcalendar.Service) *SyncNewBlockedTimeDispatcher {
+	return &SyncNewBlockedTimeDispatcher{externalCalendarService: extCalendarService}
+}
+
+func (w *SyncNewBlockedTimeDispatcher) Work(ctx context.Context, job *river.Job[args.SyncNewBlockedTimeDispatcher]) error {
+	return w.externalCalendarService.SyncNewBlockedTimeDispatcher(ctx, job.Args.BlockedTimeId)
+}
+
 type SyncNewBlockedTime struct {
 	river.WorkerDefaults[args.SyncNewBlockedTime]
 
@@ -87,7 +101,21 @@ func NewSyncNewBlockedTime(extCalendarService *externalcalendar.Service) *SyncNe
 }
 
 func (w *SyncNewBlockedTime) Work(ctx context.Context, job *river.Job[args.SyncNewBlockedTime]) error {
-	return w.externalCalendarService.SyncNewBlockedTime(ctx, job.Args.BlockedTimeId)
+	return w.externalCalendarService.SyncNewBlockedTime(ctx, job.Args.BlockedTimeId, job.Args.EmployeeId)
+}
+
+type SyncUpdateBlockedTimeDispatcher struct {
+	river.WorkerDefaults[args.SyncUpdateBlockedTimeDispatcher]
+
+	externalCalendarService *externalcalendar.Service
+}
+
+func NewSyncUpdateBlockedTimeDispatcher(extCalendarService *externalcalendar.Service) *SyncUpdateBlockedTimeDispatcher {
+	return &SyncUpdateBlockedTimeDispatcher{externalCalendarService: extCalendarService}
+}
+
+func (w *SyncUpdateBlockedTimeDispatcher) Work(ctx context.Context, job *river.Job[args.SyncUpdateBlockedTimeDispatcher]) error {
+	return w.externalCalendarService.SyncUpdateBlockedTimeDispatcher(ctx, job.Args.BlockedTimeId)
 }
 
 type SyncUpdateBlockedTime struct {
@@ -101,7 +129,21 @@ func NewSyncUpdateBlockedTime(extCalendarService *externalcalendar.Service) *Syn
 }
 
 func (w *SyncUpdateBlockedTime) Work(ctx context.Context, job *river.Job[args.SyncUpdateBlockedTime]) error {
-	return w.externalCalendarService.SyncUpdateBlockedTime(ctx, job.Args.BlockedTimeId)
+	return w.externalCalendarService.SyncUpdateBlockedTime(ctx, job.Args.BlockedTimeId, job.Args.ExternalCalendarEventId)
+}
+
+type SyncDeleteBlockedTimeDispatcher struct {
+	river.WorkerDefaults[args.SyncDeleteBlockedTimeDispatcher]
+
+	externalCalendarService *externalcalendar.Service
+}
+
+func NewSyncDeleteBlockedTimeDispatcher(extCalendarService *externalcalendar.Service) *SyncDeleteBlockedTimeDispatcher {
+	return &SyncDeleteBlockedTimeDispatcher{externalCalendarService: extCalendarService}
+}
+
+func (w *SyncDeleteBlockedTimeDispatcher) Work(ctx context.Context, job *river.Job[args.SyncDeleteBlockedTimeDispatcher]) error {
+	return w.externalCalendarService.SyncDeleteBlockedTimeDispatcher(ctx, job.Args.BlockedTimeId)
 }
 
 type SyncDeleteBlockedTime struct {
@@ -115,7 +157,7 @@ func NewSyncDeleteBlockedTime(extCalendarService *externalcalendar.Service) *Syn
 }
 
 func (w *SyncDeleteBlockedTime) Work(ctx context.Context, job *river.Job[args.SyncDeleteBlockedTime]) error {
-	return w.externalCalendarService.SyncDeleteBlockedTime(ctx, job.Args.BlockedTimeId)
+	return w.externalCalendarService.SyncDeleteBlockedTime(ctx, job.Args.BlockedTimeId, job.Args.ExternalCalendarEventId)
 }
 
 type HandleChannelExpiration struct {

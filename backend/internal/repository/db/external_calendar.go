@@ -305,6 +305,22 @@ func (r *externalCalendarRepository) DeleteAllExternalCalendarEvents(ctx context
 	return nil
 }
 
+func (r *externalCalendarRepository) GetExternalCalendarEvent(ctx context.Context, extCalendarEventId int) (domain.ExternalCalendarEvent, error) {
+	query := `
+	select *
+	from "ExternalCalendarEvent"
+	where id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, extCalendarEventId)
+	event, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
+	if err != nil {
+		return domain.ExternalCalendarEvent{}, err
+	}
+
+	return event, nil
+}
+
 func (r *externalCalendarRepository) GetExternalCalendarEvents(ctx context.Context, extCalendarId int, eventIds []string) ([]domain.ExternalCalendarEvent, error) {
 	query := `
 	select *
@@ -321,7 +337,7 @@ func (r *externalCalendarRepository) GetExternalCalendarEvents(ctx context.Conte
 	return events, nil
 }
 
-func (r *externalCalendarRepository) GetExternalCalendarEventByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) (domain.ExternalCalendarEvent, error) {
+func (r *externalCalendarRepository) GetExternalCalendarEventsByInternal(ctx context.Context, internalType types.EventInternalType, internalId int) ([]domain.ExternalCalendarEvent, error) {
 	query := `
 	select *
 	from "ExternalCalendarEvent"
@@ -329,12 +345,12 @@ func (r *externalCalendarRepository) GetExternalCalendarEventByInternal(ctx cont
 	`
 
 	rows, _ := r.db.Query(ctx, query, internalType, internalId)
-	event, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
+	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
 	if err != nil {
-		return domain.ExternalCalendarEvent{}, err
+		return []domain.ExternalCalendarEvent{}, err
 	}
 
-	return event, err
+	return events, err
 }
 
 func (r *externalCalendarRepository) GetExpiringExternalCalendars(ctx context.Context, timeLeft time.Time) ([]domain.ExternalCalendar, error) {

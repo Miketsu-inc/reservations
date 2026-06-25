@@ -3,7 +3,7 @@ package externalcalendar
 import (
 	"context"
 	"errors"
-	"log/slog"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -11,15 +11,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
+	"github.com/riverqueue/river"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
 
-func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, employeeId int, calendarTz *time.Location) (domain.BlockedTime, error) {
+func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, calendarTz *time.Location) (domain.BlockedTime, error) {
 	fromDate, toDate, isAllDay, err := parseEventDates(event, calendarTz)
 	if err != nil {
 		return domain.BlockedTime{}, err
@@ -27,7 +30,6 @@ func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, employeeId 
 
 	return domain.BlockedTime{
 		MerchantId:    merchantId,
-		EmployeeId:    employeeId,
 		BlockedTypeId: nil,
 		Name:          event.Summary,
 		FromDate:      fromDate,
@@ -111,13 +113,18 @@ func parseEventDates(event *calendar.Event, calendarTz *time.Location) (time.Tim
 	return fromDate, toDate, isAllDay, nil
 }
 
-func (s *Service) initialCalendarSyncToDB(ctx context.Context, blockedTimes []domain.BlockedTime, blockingIdxs []int, externalEvents []domain.ExternalCalendarEvent) error {
+func (s *Service) initialCalendarSyncToDB(ctx context.Context, employeeId int, blockedTimes []domain.BlockedTime, blockingIdxs []int, externalEvents []domain.ExternalCalendarEvent) error {
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		var btIds []int
 		var err error
 
 		if len(blockedTimes) > 0 {
 			btIds, err = s.blockedTimeRepo.WithTx(tx).BulkInsertBlockedTime(ctx, blockedTimes)
+			if err != nil {
+				return err
+			}
+
+			err := s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, utils.RepeatEach([]int{employeeId}, len(btIds)))
 			if err != nil {
 				return err
 			}
@@ -178,7 +185,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 			ece.IsBlocking = isBlocking
 
 			if isBlocking {
-				bt, err := eventToBlockedTime(ev, merchantId, extCalendar.EmployeeId, calendarTz)
+				bt, err := eventToBlockedTime(ev, merchantId, calendarTz)
 				if err != nil {
 					return err
 				}
@@ -190,7 +197,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 			externalEvents = append(externalEvents, ece)
 
 			if len(externalEvents) >= batchSize {
-				err := s.initialCalendarSyncToDB(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+				err := s.initialCalendarSyncToDB(ctx, extCalendar.EmployeeId, blockedTimes, blockingEventsIdxs, externalEvents)
 				if err != nil {
 					return err
 				}
@@ -209,7 +216,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 		req.PageToken(events.NextPageToken)
 	}
 
-	err := s.initialCalendarSyncToDB(ctx, blockedTimes, blockingEventsIdxs, externalEvents)
+	err := s.initialCalendarSyncToDB(ctx, extCalendar.EmployeeId, blockedTimes, blockingEventsIdxs, externalEvents)
 	if err != nil {
 		return err
 	}
@@ -239,9 +246,10 @@ type externalEventBlockedTimeLink struct {
 	BlockedTimeIdx   int
 }
 
-func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, newBlockedTimes []domain.BlockedTime,
+func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, employeeId int, newBlockedTimes []domain.BlockedTime,
 	updateBlockedTimes []domain.BlockedTime, deleteBlockedTimes []int, blockingIdxs []int, newExtEvents []domain.ExternalCalendarEvent,
 	updateExtEvents []domain.ExternalCalendarEvent, pendingBlockingLinks []externalEventBlockedTimeLink) error {
+
 	assert.True(len(blockingIdxs)+len(pendingBlockingLinks) == len(newBlockedTimes), "ExternalCalendarEvent and BlockedTime link mismatch!",
 		len(blockingIdxs), len(pendingBlockingLinks), len(newBlockedTimes))
 
@@ -251,6 +259,11 @@ func (s *Service) incrementalCalendarSyncToDB(ctx context.Context, newBlockedTim
 
 		if len(newBlockedTimes) > 0 {
 			btIds, err = s.blockedTimeRepo.WithTx(tx).BulkInsertBlockedTime(ctx, newBlockedTimes)
+			if err != nil {
+				return err
+			}
+
+			err := s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, utils.RepeatEach([]int{employeeId}, len(btIds)))
 			if err != nil {
 				return err
 			}
@@ -457,7 +470,7 @@ func (s *Service) IncrementalCalendarSync(ctx context.Context, extCalendar domai
 
 			var bt domain.BlockedTime
 			if isBlocking {
-				bt, err = eventToBlockedTime(ev, merchantId, extCalendar.EmployeeId, calendarTz)
+				bt, err = eventToBlockedTime(ev, merchantId, calendarTz)
 				if err != nil {
 					return err
 				}
@@ -519,7 +532,7 @@ func (s *Service) IncrementalCalendarSync(ctx context.Context, extCalendar domai
 		req.PageToken(events.NextPageToken)
 	}
 
-	err = s.incrementalCalendarSyncToDB(ctx, newBlockedTimes, updateBlockedTimes, deleteBlockedTimes,
+	err = s.incrementalCalendarSyncToDB(ctx, extCalendar.EmployeeId, newBlockedTimes, updateBlockedTimes, deleteBlockedTimes,
 		newBlockingEventIdxs, newExternalEvents, updateExternalEvents, pendingBlockingLinks)
 	if err != nil {
 		return err
@@ -709,25 +722,27 @@ func (s *Service) syncGoogleEvent(ctx context.Context, extCalendar domain.Extern
 	return s.persistTokenIfRefreshed(ctx, extCalendar, ts)
 }
 
-// TODO: maybe return nil in every sync function if booking/blockedTime is not found?
 func (s *Service) SyncNewBooking(ctx context.Context, bookingId int) error {
 	booking, err := s.bookingRepo.GetBookingForExternalCalendar(ctx, bookingId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
 		return err
 	}
 
 	if booking.EmployeeId == nil {
-		slog.DebugContext(ctx, "New booking sync scheduled without an employee!", slog.Any("booking", booking))
 		return nil
 	}
 
 	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarByEmployeeId(ctx, *booking.EmployeeId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendar does not exist for this employee!", slog.Any("employee_id", *booking.EmployeeId))
-		} else {
-			return err
+			return nil
 		}
+
+		return err
 	}
 
 	return s.syncGoogleEvent(ctx, extCalendar, syncType{
@@ -747,26 +762,33 @@ func (s *Service) SyncNewBooking(ctx context.Context, bookingId int) error {
 func (s *Service) SyncUpdateBooking(ctx context.Context, bookingId int) error {
 	booking, err := s.bookingRepo.GetBookingForExternalCalendar(ctx, bookingId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
 		return err
 	}
 
-	event, err := s.externalCalendarRepo.GetExternalCalendarEventByInternal(ctx, types.EventInternalTypeBooking, bookingId)
+	events, err := s.externalCalendarRepo.GetExternalCalendarEventsByInternal(ctx, types.EventInternalTypeBooking, bookingId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendarEvent does not exist with this internal id", slog.Any("booking", booking))
-			return nil
-		} else {
-			return err
-		}
+		return err
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
+	if len(events) == 0 {
+		return nil
+	}
+
+	if len(events) > 1 {
+		return fmt.Errorf("bookings and external calendar events should match 1 to 1")
+	}
+
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, events[0].ExternalCalendarId)
 	if err != nil {
 		return err
 	}
 
 	return s.syncGoogleEvent(ctx, extCalendar, syncType{
-		ExternalEventId: &event.ExternalEventId,
+		ExternalEventId: &events[0].ExternalEventId,
 		InternalType:    types.EventInternalTypeBooking,
 		InternalId:      bookingId,
 		Action:          "UPDATE",
@@ -780,23 +802,26 @@ func (s *Service) SyncUpdateBooking(ctx context.Context, bookingId int) error {
 }
 
 func (s *Service) SyncDeleteBooking(ctx context.Context, bookingId int) error {
-	event, err := s.externalCalendarRepo.GetExternalCalendarEventByInternal(ctx, types.EventInternalTypeBooking, bookingId)
+	events, err := s.externalCalendarRepo.GetExternalCalendarEventsByInternal(ctx, types.EventInternalTypeBooking, bookingId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendarEvent does not exist with this internal id", slog.Any("bookingId", bookingId))
-			return nil
-		} else {
-			return err
-		}
+		return err
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
+	if len(events) == 0 {
+		return nil
+	}
+
+	if len(events) > 1 {
+		return fmt.Errorf("bookings and external calendar events should match 1 to 1")
+	}
+
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, events[0].ExternalCalendarId)
 	if err != nil {
 		return err
 	}
 
 	return s.syncGoogleEvent(ctx, extCalendar, syncType{
-		ExternalEventId: &event.ExternalEventId,
+		ExternalEventId: &events[0].ExternalEventId,
 		InternalType:    types.EventInternalTypeBooking,
 		InternalId:      bookingId,
 		Action:          "DELETE",
@@ -808,20 +833,70 @@ func (s *Service) SyncDeleteBooking(ctx context.Context, bookingId int) error {
 	})
 }
 
-func (s *Service) SyncNewBlockedTime(ctx context.Context, blockedTimeId int) error {
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTime(ctx, blockedTimeId)
+func (s *Service) SyncNewBlockedTimeDispatcher(ctx context.Context, blockedTimeId int) error {
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, blockedTimeId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	}
+
+	var employeeIds []int
+
+	if len(blockedTime.EmployeeIds) == 0 {
+		employees, err := s.teamRepo.GetActiveEmployees(ctx, blockedTime.MerchantId)
+		if err != nil {
+			return err
+		}
+
+		if len(employees) == 0 {
+			return nil
+		}
+
+		for _, e := range employees {
+			employeeIds = append(employeeIds, e.Id)
+		}
+	} else {
+		employeeIds = blockedTime.EmployeeIds
+	}
+
+	insertParams := make([]river.InsertManyParams, len(employeeIds))
+	for i, e := range employeeIds {
+		insertParams[i] = river.InsertManyParams{
+			Args: args.SyncNewBlockedTime{
+				BlockedTimeId: blockedTimeId,
+				EmployeeId:    e,
+			},
+		}
+	}
+
+	_, err = s.enqueuer.InsertManyFast(ctx, insertParams)
 	if err != nil {
 		return err
 	}
 
-	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarByEmployeeId(ctx, blockedTime.EmployeeId)
+	return nil
+}
+
+func (s *Service) SyncNewBlockedTime(ctx context.Context, blockedTimeId int, employeeId int) error {
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, employeeId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendar does not exist for this employee!", slog.Any("employee_id", blockedTime.EmployeeId))
 			return nil
-		} else {
-			return err
 		}
+
+		return err
+	}
+
+	extCalendar, err := s.externalCalendarRepo.GetExternalCalendarByEmployeeId(ctx, employeeId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return err
 	}
 
 	return s.syncGoogleEvent(ctx, extCalendar, syncType{
@@ -838,24 +913,54 @@ func (s *Service) SyncNewBlockedTime(ctx context.Context, blockedTimeId int) err
 	})
 }
 
-func (s *Service) SyncUpdateBlockedTime(ctx context.Context, blockedTimeId int) error {
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTime(ctx, blockedTimeId)
+func (s *Service) SyncUpdateBlockedTimeDispatcher(ctx context.Context, blockedTimeId int) error {
+	events, err := s.externalCalendarRepo.GetExternalCalendarEventsByInternal(ctx, types.EventInternalTypeBlockedTime, blockedTimeId)
 	if err != nil {
 		return err
 	}
 
-	event, err := s.externalCalendarRepo.GetExternalCalendarEventByInternal(ctx, types.EventInternalTypeBlockedTime, blockedTimeId)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendarEvent does not exist with this internal id", slog.Any("blocked_time", blockedTime))
-			return nil
-		} else {
+	if len(events) > 0 {
+		insertParams := make([]river.InsertManyParams, len(events))
+
+		for i, e := range events {
+			insertParams[i] = river.InsertManyParams{
+				Args: args.SyncUpdateBlockedTime{
+					BlockedTimeId:           blockedTimeId,
+					ExternalCalendarEventId: e.Id,
+				},
+			}
+		}
+
+		_, err = s.enqueuer.InsertManyFast(ctx, insertParams)
+		if err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func (s *Service) SyncUpdateBlockedTime(ctx context.Context, blockedTimeId int, extCalendarEventId int) error {
+	event, err := s.externalCalendarRepo.GetExternalCalendarEvent(ctx, extCalendarEventId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	}
+
 	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)
 	if err != nil {
+		return err
+	}
+
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, extCalendar.EmployeeId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
 		return err
 	}
 
@@ -873,15 +978,41 @@ func (s *Service) SyncUpdateBlockedTime(ctx context.Context, blockedTimeId int) 
 	})
 }
 
-func (s *Service) SyncDeleteBlockedTime(ctx context.Context, blockedTimeId int) error {
-	event, err := s.externalCalendarRepo.GetExternalCalendarEventByInternal(ctx, types.EventInternalTypeBlockedTime, blockedTimeId)
+func (s *Service) SyncDeleteBlockedTimeDispatcher(ctx context.Context, blockedTimeId int) error {
+	events, err := s.externalCalendarRepo.GetExternalCalendarEventsByInternal(ctx, types.EventInternalTypeBlockedTime, blockedTimeId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "ExternalCalendarEvent does not exist with this internal id", slog.Any("blocked_time_id", blockedTimeId))
-			return nil
-		} else {
+		return err
+	}
+
+	if len(events) > 0 {
+		insertParams := make([]river.InsertManyParams, len(events))
+
+		for i, e := range events {
+			insertParams[i] = river.InsertManyParams{
+				Args: args.SyncDeleteBlockedTime{
+					BlockedTimeId:           blockedTimeId,
+					ExternalCalendarEventId: e.Id,
+				},
+			}
+		}
+
+		_, err = s.enqueuer.InsertManyFast(ctx, insertParams)
+		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (s *Service) SyncDeleteBlockedTime(ctx context.Context, blockedTimeId int, extCalendarEventId int) error {
+	event, err := s.externalCalendarRepo.GetExternalCalendarEvent(ctx, extCalendarEventId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+
+		return err
 	}
 
 	extCalendar, err := s.externalCalendarRepo.GetExternalCalendar(ctx, event.ExternalCalendarId)

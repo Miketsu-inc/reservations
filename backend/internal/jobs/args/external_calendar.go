@@ -30,20 +30,41 @@ type SyncDeleteBooking struct {
 
 func (SyncDeleteBooking) Kind() string { return "sync_delete_booking" }
 
+type SyncNewBlockedTimeDispatcher struct {
+	BlockedTimeId int `json:"blocked_time_id"`
+}
+
+func (SyncNewBlockedTimeDispatcher) Kind() string { return "sync_new_blocked_time_dispatcher" }
+
 type SyncNewBlockedTime struct {
 	BlockedTimeId int `json:"blocked_time_id"`
+	EmployeeId    int `json:"employee_id"`
 }
 
 func (SyncNewBlockedTime) Kind() string { return "sync_new_blocked_time" }
 
-type SyncUpdateBlockedTime struct {
+type SyncUpdateBlockedTimeDispatcher struct {
 	BlockedTimeId int `json:"blocked_time_id"`
+}
+
+func (SyncUpdateBlockedTimeDispatcher) Kind() string { return "sync_update_blocked_time_dispatcher" }
+
+type SyncUpdateBlockedTime struct {
+	BlockedTimeId           int `json:"blocked_time_id"`
+	ExternalCalendarEventId int `json:"external_calendar_event_id"`
 }
 
 func (SyncUpdateBlockedTime) Kind() string { return "sync_update_blocked_time" }
 
-type SyncDeleteBlockedTime struct {
+type SyncDeleteBlockedTimeDispatcher struct {
 	BlockedTimeId int `json:"blocked_time_id"`
+}
+
+func (SyncDeleteBlockedTimeDispatcher) Kind() string { return "sync_delete_blocked_time_dispatcher" }
+
+type SyncDeleteBlockedTime struct {
+	BlockedTimeId           int `json:"blocked_time_id"`
+	ExternalCalendarEventId int `json:"external_calendar_event_id"`
 }
 
 func (SyncDeleteBlockedTime) Kind() string { return "sync_delete_blocked_time" }

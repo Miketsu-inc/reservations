@@ -20,6 +20,7 @@ func mapToNewInput(in newReq) (blockedtimeServ.NewInput, error) {
 
 	return blockedtimeServ.NewInput{
 		Name:          in.Name,
+		EmployeeIds:   in.EmployeeIds,
 		BlockedTypeId: in.BlockedTypeId,
 		FromDate:      fromDate,
 		ToDate:        toDate,
@@ -39,17 +40,12 @@ func mapToUpdateInput(in updateReq) (blockedtimeServ.UpdateInput, error) {
 	}
 
 	return blockedtimeServ.UpdateInput{
-		Id:            in.Id,
+		BlockedTimeId: in.Id,
 		Name:          in.Name,
 		BlockedTypeId: in.BlockedTypeId,
 		FromDate:      fromDate,
 		ToDate:        toDate,
 		AllDay:        in.AllDay,
+		EmployeeIds:   in.EmployeeIds,
 	}, nil
 }
-
-// func mapToDeleteInput(in deleteReq) blockedtimeServ.DeleteInput {
-// 	return blockedtimeServ.DeleteInput{
-// 		EmployeeId: in.EmployeeId,
-// 	}
-// }

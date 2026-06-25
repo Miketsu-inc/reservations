@@ -354,7 +354,7 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 	for i, b := range in.BlockedTimes {
 		blockedTimes[i] = blockedTime{
 			ID:            b.ID,
-			EmployeeId:    b.EmployeeId,
+			EmployeeIds:   b.EmployeeIds,
 			Name:          b.Name,
 			FromDate:      b.FromDate,
 			ToDate:        b.ToDate,

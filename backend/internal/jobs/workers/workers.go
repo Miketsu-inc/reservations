@@ -36,8 +36,11 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewSyncNewBooking(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncUpdateBooking(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncDeleteBooking(deps.ExtCalendarService))
+	river.AddWorker(workers, NewSyncNewBlockedTimeDispatcher(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncNewBlockedTime(deps.ExtCalendarService))
+	river.AddWorker(workers, NewSyncUpdateBlockedTimeDispatcher(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncUpdateBlockedTime(deps.ExtCalendarService))
+	river.AddWorker(workers, NewSyncDeleteBlockedTimeDispatcher(deps.ExtCalendarService))
 	river.AddWorker(workers, NewSyncDeleteBlockedTime(deps.ExtCalendarService))
 	river.AddWorker(workers, NewHandleChannelExpiration(deps.ExtCalendarService))
 

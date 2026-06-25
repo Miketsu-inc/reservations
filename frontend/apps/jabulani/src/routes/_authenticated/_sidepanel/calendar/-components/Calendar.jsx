@@ -116,7 +116,7 @@ function formatBlockedTimes(data) {
       type: "blocked",
       name: blockedTime.name,
       blocked_type_id: blockedTime.blocked_type_id,
-      employee_id: blockedTime.employee_id,
+      employee_ids: blockedTime.employee_ids,
       allDay: blockedTime.all_day,
     },
   }));
