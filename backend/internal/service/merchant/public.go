@@ -121,18 +121,47 @@ func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, se
 	return serviceDetails, nil
 }
 
-func (s *Service) GetSummary(ctx context.Context, merchantName string, serviceId, locationId int) (domain.MinimalServiceInfo, error) {
+type BookingSummary struct {
+	MerchantName string
+	Location     string
+	Service      *domain.MinimalServiceInfo
+	Employee     *domain.PublicEmployee
+}
+
+// this function should be optimized later
+func (s *Service) GetSummary(ctx context.Context, merchantName string, locationId int, serviceId, employeeId *int) (BookingSummary, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return domain.MinimalServiceInfo{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return BookingSummary{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
 	}
 
-	serviceInfo, err := s.catalogRepo.GetMinimalServiceInfo(ctx, merchantId, serviceId, locationId)
+	merchantName, location, err := s.merchantRepo.GetMerchantNameAndLocation(ctx, merchantId, locationId)
 	if err != nil {
-		return domain.MinimalServiceInfo{}, fmt.Errorf("error while retrieving minimal service info: %s", err.Error())
+		return BookingSummary{}, fmt.Errorf("error while getting merchant name and location %s", err)
 	}
 
-	return serviceInfo, nil
+	summary := BookingSummary{
+		MerchantName: merchantName,
+		Location:     location,
+	}
+
+	if serviceId != nil {
+		serviceInfo, err := s.catalogRepo.GetMinimalServiceInfo(ctx, merchantId, *serviceId, locationId)
+		if err != nil {
+			return BookingSummary{}, fmt.Errorf("error while retrieving minimal service info: %s", err.Error())
+		}
+		summary.Service = &serviceInfo
+	}
+
+	if employeeId != nil {
+		employee, err := s.teamRepo.GetEmployee(ctx, merchantId, *employeeId)
+		if err != nil {
+			return BookingSummary{}, fmt.Errorf("error while retrieving employee %s", err.Error())
+		}
+		summary.Employee = &employee
+	}
+
+	return summary, nil
 }
 
 func (s *Service) GetAvailability(ctx context.Context, merchantName string, serviceId, locationId int, startDate, endDate time.Time) ([]MultiDayAvailableTimes, error) {

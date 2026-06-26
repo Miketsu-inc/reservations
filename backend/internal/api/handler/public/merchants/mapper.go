@@ -138,14 +138,25 @@ func mapToGetServiceDetailsResp(in domain.PublicServiceDetails) getServiceDetail
 	}
 }
 
-func mapToGetSummaryResp(in domain.MinimalServiceInfo) getSummaryResp {
-	return getSummaryResp{
-		Name:              in.Name,
-		TotalDuration:     in.TotalDuration,
-		Price:             currencyx.FormatPrice(in.Price),
-		PriceType:         in.PriceType,
-		FormattedLocation: in.FormattedLocation,
+func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
+	resp := getSummaryResp{
+		MerchantName:      in.MerchantName,
+		FormattedLocation: in.Location,
 	}
+
+	if in.Service != nil {
+		resp.ServiceName = &in.Service.Name
+		resp.Price = currencyx.FormatPrice(in.Service.Price)
+		resp.PriceType = &in.Service.PriceType
+		resp.TotalDuration = &in.Service.TotalDuration
+	}
+
+	if in.Employee != nil {
+		resp.EmployeeFirstName = in.Employee.FirstName
+		resp.EMployeeLastName = in.Employee.LastName
+	}
+
+	return resp
 }
 
 func mapToGetAvailabilityResp(in []merchantServ.MultiDayAvailableTimes) []getAvailabilityResp {

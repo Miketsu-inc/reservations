@@ -21,6 +21,7 @@ import {
   timeStringFromDate,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 async function fetchNextAvailable(merchantName, serviceId, locationId) {
   const response = await fetch(
@@ -57,8 +58,8 @@ export default function ServiceDetails({
   service,
   isOpen,
   onClose,
-  onReserve,
   isWindowSmall,
+  router,
 }) {
   const {
     data: nextAvailable,
@@ -90,12 +91,13 @@ export default function ServiceDetails({
         <DetailsContent
           nextAvailable={nextAvailable}
           service={service}
-          onReserve={onReserve}
           onClose={onClose}
           hasAvailable={hasAvailableSlot}
           isWindowSmall={isWindowSmall}
           category={category}
           isLoading={isLoading}
+          router={router}
+          locationId={locationId}
         />
       </DrawerContent>
     </Drawer>
@@ -104,12 +106,13 @@ export default function ServiceDetails({
       <DetailsContent
         nextAvailable={nextAvailable}
         service={service}
-        onReserve={onReserve}
         onClose={onClose}
         isWindowSmall={isWindowSmall}
         hasAvailable={hasAvailableSlot}
         category={category}
         isLoading={isLoading}
+        router={router}
+        locationId={locationId}
       />
     </Modal>
   );
@@ -131,10 +134,11 @@ function DetailsContent({
   category,
   nextAvailable,
   hasAvailable,
-  onReserve,
+  router,
   isWindowSmall,
   isLoading,
   onClose,
+  locationId,
 }) {
   const isGroupService = service?.booking_type !== "appointment";
 
@@ -292,12 +296,23 @@ function DetailsContent({
         <span className="text-lg font-medium">
           {getDisplayPrice(service?.price, service?.price_type)}
         </span>
-        <Button
-          variant="primary"
-          styles="w-fit py-2 px-8"
-          buttonText="Reserve"
-          onClick={onReserve}
-        />
+
+        <Link
+          from={router.fullPath}
+          to="book"
+          search={{
+            locationId: locationId,
+            serviceId: service.id,
+            type: service.booking_type,
+          }}
+        >
+          <Button
+            variant="primary"
+            styles="w-fit py-2 px-8"
+            name="Reserve"
+            buttonText="Reserve"
+          />
+        </Link>
       </div>
     </div>
   );

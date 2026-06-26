@@ -240,3 +240,18 @@ export function GenerateTimeOptions(time_format) {
   }
   return options;
 }
+
+export function formatTimeRange(timeString, durationMinutes) {
+  const baseDate = new Date(`2000-01-01T${timeString}`);
+  const endDate = new Date(baseDate.getTime() + durationMinutes * 60000);
+
+  const formattedEndTime = new Intl.DateTimeFormat("hu-HU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(endDate);
+
+  const formattedStartTime = timeString.substring(0, 5);
+
+  return `${formattedStartTime} - ${formattedEndTime}`;
+}

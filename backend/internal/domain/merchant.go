@@ -28,6 +28,7 @@ type MerchantRepository interface {
 	GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error)
 	GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error)
 	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
+	GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error)
 
 	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
 	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time) ([]RevenueStat, error)

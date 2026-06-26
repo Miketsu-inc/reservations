@@ -265,6 +265,20 @@ func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.
 	return mbs, nil
 }
 
+func (r *merchantRepository) GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error) {
+	query := `select m.name, l.formatted_location from "Merchant" m
+	inner join "Location" l on l.merchant_id = m.id and l.id = $2
+	where m.id = $1`
+
+	var name, loc string
+	err := r.db.QueryRow(ctx, query, merchantId, locationId).Scan(&name, &loc)
+	if err != nil {
+		return "", "", err
+	}
+
+	return name, loc, nil
+}
+
 func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate, endDate, prevStartDate time.Time) (domain.DashboardStatistics, error) {
 	query := `
 	WITH participant as (

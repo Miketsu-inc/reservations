@@ -36,7 +36,7 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/locations/{locationId}/business-hours/normalized", h.GetNormalizedBusinessHours)
 
 		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
-		r.Get("/locations/{locationId}/services/{serviceId}/summary", h.GetSummary)
+		r.Get("/locations/{locationId}/summary", h.GetSummary)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability", h.GetAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/next", h.GetNextAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/disabled-days", h.GetDisabledDays)
@@ -232,24 +232,20 @@ func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 type getSummaryResp struct {
-	Name              string                    `json:"name"`
-	TotalDuration     int                       `json:"total_duration"`
-	Price             *currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType           `json:"price_type"`
+	MerchantName      string                    `json:"merchant_name"`
 	FormattedLocation string                    `json:"formatted_location"`
+	ServiceName       *string                   `json:"service_name"`
+	Price             *currencyx.FormattedPrice `json:"price"`
+	PriceType         *types.PriceType          `json:"price_type"`
+	TotalDuration     *int                      `json:"total_duration"`
+	EmployeeFirstName *string                   `json:"employee_first_name"`
+	EMployeeLastName  *string                   `json:"employee_last_name"`
 }
 
 func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	urlName := chi.URLParam(r, "merchantName")
-
 	if urlName == "" {
 		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
-	}
-
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
 		return
 	}
 
@@ -259,7 +255,26 @@ func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summaryInfo, err := h.service.GetSummary(r.Context(), urlName, urlServiceId, urlLocationId)
+	var urlServiceId *int
+	if sId := r.URL.Query().Get("serviceId"); sId != "" {
+		parsedId, err := strconv.Atoi(sId)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %w", err))
+			return
+		}
+		urlServiceId = &parsedId
+	}
+
+	var urlEmployeeId *int
+	if eId := r.URL.Query().Get("employeeId"); eId != "" {
+		parsedId, err := strconv.Atoi(eId)
+		if err != nil {
+			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid employeeId %s", err.Error()))
+		}
+		urlEmployeeId = &parsedId
+	}
+
+	summaryInfo, err := h.service.GetSummary(r.Context(), urlName, urlLocationId, urlServiceId, urlEmployeeId)
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return

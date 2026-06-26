@@ -158,3 +158,45 @@ export function meQueryOptions() {
     queryFn: fetchMe,
   });
 }
+
+async function fetchActiveTeam(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}/team`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function activeTeamQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["active-team", name],
+    queryFn: () => fetchActiveTeam(name),
+  });
+}
+
+async function fetchMerchantServices(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}/services`, {
+    method: "GET",
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export default function merchantServicesQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-services", name],
+    queryFn: () => fetchMerchantServices(name),
+  });
+}

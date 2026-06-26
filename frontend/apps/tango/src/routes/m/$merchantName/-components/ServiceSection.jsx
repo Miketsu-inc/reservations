@@ -9,29 +9,11 @@ import {
   ToggleGroup,
 } from "@reservations/components";
 import { formatDuration, getDisplayPrice } from "@reservations/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import merchantServicesQueryOptions from "@reservations/lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import ServiceDetails from "./ServiceDetails";
-
-async function fetchMerchantServices(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/services`, {
-    method: "GET",
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function merchantServicesQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-services", name],
-    queryFn: () => fetchMerchantServices(name),
-  });
-}
 
 export default function ServiceSection({
   isWindowSmall,
@@ -96,6 +78,7 @@ export default function ServiceSection({
         }}
         isWindowSmall={isWindowSmall}
         category={categories[0].name}
+        router={router}
       />
       <div className="flex flex-col gap-5 pb-5">
         {!showToggles && (
@@ -202,10 +185,11 @@ function ServiceItem({ service, router, locationId, onClick }) {
       </div>
       <Link
         from={router.fullPath}
-        to="booking"
+        to="book"
         search={{
           locationId: locationId,
           serviceId: service.id,
+          type: service.booking_type,
         }}
       >
         <Button

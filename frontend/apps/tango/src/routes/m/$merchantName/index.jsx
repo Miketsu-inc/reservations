@@ -97,7 +97,10 @@ function MerchantPage() {
   }
 
   return (
-    <div className="bg-layer_bg relative flex min-h-screen w-full flex-col">
+    <div
+      className="bg-layer_bg lg:bg-bg_color relative flex min-h-screen w-full
+        flex-col"
+    >
       {isWindowSmall && (
         <div
           className="bg-layer_bg border-border_color sticky top-0 z-50 flex
@@ -106,7 +109,7 @@ function MerchantPage() {
           <Link
             className="hover:bg-hvr_gray rounded-md p-1"
             to={`http://app.reservations.local:3000/dashboard`}
-            from=""
+            from={Route.fullPath}
           >
             <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
           </Link>
@@ -132,8 +135,9 @@ function MerchantPage() {
         {!isWindowSmall && (
           <>
             <Link
-              className="hover:bg-hvr_gray/20 border-border_color mb-5 flex
-                h-fit w-fit rounded-full border p-3 shadow-sm transition-colors"
+              className="hover:bg-hvr_gray/20 border-border_color bg-layer_bg
+                mb-5 flex h-fit w-fit rounded-full border p-3 shadow-sm
+                transition-colors"
               to={`http://app.reservations.local:3000/dashboard`}
               from=""
             >
@@ -247,8 +251,8 @@ function MerchantPage() {
             lg:pt-14 xl:gap-18"
         >
           <div
-            className="bg-layer_bg relative z-10 -mt-6 flex w-full flex-col
-              gap-10 rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%] lg:gap-12
+            className="relative z-10 -mt-6 flex w-full flex-col gap-10
+              rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%] lg:gap-12
               lg:rounded-none lg:px-0 lg:pt-0"
           >
             {isWindowSmall && (
@@ -384,7 +388,13 @@ function MerchantPage() {
                   flex w-full items-center justify-between border-y py-4"
               >
                 <span>{merchantName}</span>
-                <Button buttonText="Reserve" styles="px-4 py-2" />
+                <Link
+                  from={Route.fullPath}
+                  to="book"
+                  search={{ locationId: merchantInfo.location_id }}
+                >
+                  <Button buttonText="Reserve Now" styles="py-2 px-4" />
+                </Link>
               </div>
             )}
 
@@ -486,12 +496,16 @@ function MerchantPage() {
                     />
                   </button>
                 </div>
-
-                <Button
-                  buttonText="Reserve Now"
-                  styles="w-full py-2.5 text-lg"
-                  onClick={() => {}}
-                />
+                <Link
+                  from={Route.fullPath}
+                  to="book"
+                  search={{ locationId: merchantInfo.location_id }}
+                >
+                  <Button
+                    buttonText="Reserve Now"
+                    styles="w-full py-2.5 text-lg"
+                  />
+                </Link>
 
                 <div
                   className="border-border_color mt-2 flex flex-col gap-5

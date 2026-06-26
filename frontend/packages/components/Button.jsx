@@ -32,7 +32,7 @@ const Button = forwardRef(function Button(
       onClick={onClick}
       className={`${styles} ${variants[variant]} rounded-lg
         focus-visible:outline-1
-        ${isLoading || disabled ? "opacity-50 transition-opacity" : "cursor-pointer"}`}
+        ${isLoading || disabled ? "opacity-50 transition-opacity duration-300" : "cursor-pointer"}`}
       name={name}
       type={type}
       disabled={isLoading || disabled}
@@ -43,7 +43,7 @@ const Button = forwardRef(function Button(
           <LoaderIcon styles="-ml-1 mr-3 h-5 w-5" />
         </div>
       ) : children ? (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
           <span>{children}</span>
           <span>{buttonText}</span>
         </div>

@@ -1,25 +1,7 @@
 import { StarIcon } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, Loading, ServerError } from "@reservations/components";
-import { queryOptions, useQuery } from "@tanstack/react-query";
-
-async function fetchMerchantTeam(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/team`, {
-    method: "GET",
-  });
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function merchantTeamQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-team", name],
-    queryFn: () => fetchMerchantTeam(name),
-  });
-}
+import { activeTeamQueryOptions } from "@reservations/lib";
+import { useQuery } from "@tanstack/react-query";
 
 export default function TeamSection({ isWindowSmall, merchantName }) {
   const {
@@ -27,7 +9,7 @@ export default function TeamSection({ isWindowSmall, merchantName }) {
     isLoading,
     isError,
     error,
-  } = useQuery({ ...merchantTeamQueryOptions(merchantName) });
+  } = useQuery({ ...activeTeamQueryOptions(merchantName) });
 
   if (isError) {
     return <ServerError error={error.message} />;

@@ -2,7 +2,7 @@ import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/m/$merchantName/booking/completed")({
+export const Route = createFileRoute("/m/$merchantName/book/completed")({
   component: BookingCompleted,
 });
 

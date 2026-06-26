@@ -11,9 +11,10 @@ export default function AvailableTimeSection({
           {availableTimes.map((hour, index) => (
             <button
               key={`${timeSection}-${index}`}
-              className={`bg-accent/90 hover:bg-accent/80 cursor-pointer
-                rounded-md py-1 font-bold text-black transition-all
-                ${selectedHour === hour ? "ring-2 ring-blue-500" : ""}`}
+              className={`bg-layer_bg border-border_color text-text_color
+                cursor-pointer rounded-md border py-1.5 transition-all
+                hover:bg-gray-50 dark:hover:bg-gray-200/5
+                ${selectedHour === hour ? "ring-primary ring-2" : ""}`}
               onClick={clickedHour}
               value={hour}
               type="button"
@@ -23,7 +24,7 @@ export default function AvailableTimeSection({
           ))}
         </div>
       ) : (
-        <p className="text-md flex items-center justify-center font-bold">
+        <p className="text-md flex items-center justify-center">
           No available {timeSection} hours for this day
         </p>
       )}
