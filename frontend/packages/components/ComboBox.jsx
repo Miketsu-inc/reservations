@@ -21,7 +21,7 @@ export default function ComboBox({
     if (!searchText) return options;
 
     const lowerSearch = searchText.toLowerCase();
-    options?.filter((option) =>
+    return options?.filter((option) =>
       option.label.toLowerCase().includes(lowerSearch)
     );
   }, [options, searchText]);
