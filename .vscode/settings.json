@@ -18,6 +18,11 @@
     "**/frontend/apps/tango/src/routeTree.gen.js": true
   },
   "tailwindCSS.classAttributes": ["class", "className", "styles"],
+  "tailwindCSS.experimental.configFile": {
+    "frontend/apps/jabulani/input.css": "frontend/apps/jabulani/src/**",
+    "frontend/apps/tango/input.css": "frontend/apps/tango/src/**",
+    "frontend/input.css": "frontend/packages/**"
+  },
   "emmet.showAbbreviationSuggestions": false,
   "emmet.showExpandedAbbreviation": "never",
   "eslint.workingDirectories": [{ "directory": "frontend", "!cwd": true }],

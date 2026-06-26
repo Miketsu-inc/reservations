@@ -41,11 +41,9 @@ export function Toggle({
             : ""
           : "relative z-10 transition-colors duration-150"
         } ${
-        isPressed
-          ? "text-white [transition-delay:150ms] dark:text-black"
-          : "text-text_color [transition-delay:0ms]"
-        } shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold
-        text-nowrap`}
+        isPressed ? "text-white delay-150 dark:text-black" : "text-text_color"
+      }
+        shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);

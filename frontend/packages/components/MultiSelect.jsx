@@ -238,7 +238,7 @@ export default function MultiSelect({
                           initials={
                             option.initials || option.label?.substring(0, 2)
                           }
-                          styles="!size-6 !text-[10px] shrink-0 !rounded-full"
+                          styles="size-6! text-[10px]! shrink-0 rounded-full!"
                         />
                         <span className="mb-0.5 truncate text-sm">
                           {option.label}

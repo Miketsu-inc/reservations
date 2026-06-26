@@ -11,7 +11,7 @@ export default function SearchInput({
   return (
     <div className="relative">
       <div
-        className="pointer-events-none absolute inset-y-0 start-0 flex
+        className="pointer-events-none absolute inset-y-0 inset-s-0 flex
           items-center ps-3"
       >
         <Icon icon={Search01Icon} styles="size-4" />

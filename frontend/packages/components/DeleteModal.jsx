@@ -12,7 +12,7 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
             <Icon
               icon={Alert02Icon}
               styles="size-8 text-red-600 dark:text-red-200
-                -translate-y-[0.15rem]"
+                translate-y-[-0.15rem]"
             />
           </div>
         </div>
