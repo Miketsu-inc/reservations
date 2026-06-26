@@ -903,7 +903,7 @@ func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Conte
 
 func (r *bookingRepository) GetClosestAvailableGroupBooking(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, searchStart, searchEnd time.Time) (domain.Booking, error) {
 	query := `select id, status, booking_type, is_recurring, merchant_id, employee_id, service_id, location_id, booking_series_id, series_original_date, from_date, to_date, price_per_person,
-	cost_per_person, total_price, total_cost, merchant_note, min_participants, max_participants, current_participants, cancelled_by_merchant_on, cancellation_reason from "Booking"
+    total_price, merchant_note, min_participants, max_participants, current_participants, cancelled_by_merchant_on, cancellation_reason from "Booking"
 	where merchant_id = $1 and service_id = $2 and location_id = $3 and from_date >= $4 and to_date <= $5 and current_participants < max_participants and status not in ('cancelled', 'completed')
 	order by from_date asc
 	limit 1`

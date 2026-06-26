@@ -172,7 +172,7 @@ export default function AppointmentTimeSelectionStep({
     disabledDaysQueryOptions(merchantName, locationId, serviceId, employeeId)
   );
 
-  // Auto-skip logic
+  // TODO: solve this
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!availableTimesWindow || skipCount > 3 || isInitialSkipDone) return;
@@ -248,11 +248,7 @@ export default function AppointmentTimeSelectionStep({
             <Avatar
               styles="size-8! text-[10px]! shrink-0 rounded-full!"
               img={employee?.avatar_url}
-              initials={
-                employee?.first_name && employee?.last_name
-                  ? `${employee.first_name[0]}${employee.last_name[0]}`
-                  : "?"
-              }
+              initials={`${employee.first_name[0]}${employee.last_name[0]}`}
             />
             <span className="text-sm font-medium">
               {employee.first_name} {employee.last_name}

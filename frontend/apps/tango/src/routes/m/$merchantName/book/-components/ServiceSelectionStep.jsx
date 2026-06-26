@@ -103,11 +103,7 @@ export default function ServiceSelectionStep({
           <Avatar
             styles="size-8! text-[12px]! shrink-0 rounded-full!"
             img={employee?.avatar_url}
-            initials={
-              employee?.first_name && employee?.last_name
-                ? `${employee.first_name[0]}${employee.last_name[0]}`
-                : "?"
-            }
+            initials={`${employee.first_name[0]}${employee.last_name[0]}`}
           />
           <span className="text-sm font-medium">
             {employee.first_name} {employee.last_name}
