@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -24,20 +25,28 @@ func (r *blockedTimeRepository) WithTx(tx db.DBTX) domain.BlockedTimeRepository 
 
 func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []domain.BlockedTime) ([]int, error) {
 	query := `
-	insert into "BlockedTime" (merchant_id, name, from_date, to_date, all_day, source)
-	select $1, unnest($2::text[]), unnest($3::timestamptz[]), unnest($4::timestamptz[]), unnest($5::boolean[]), $6
+	insert into "BlockedTime" (merchant_id, blocked_type_id, name, from_date, to_date, all_day, source)
+	select $1, unnest($2::int[]), unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
 	returning id
 	`
+
+	btCount := len(bt)
 
 	merchantId := bt[0].MerchantId
 	source := bt[0].Source
 
-	names := make([]string, len(bt))
-	fromDates := make([]time.Time, len(bt))
-	toDates := make([]time.Time, len(bt))
-	isAllDay := make([]bool, len(bt))
+	blockedTimeTypeIds := make([]pgtype.Int4, btCount)
+	names := make([]string, btCount)
+	fromDates := make([]time.Time, btCount)
+	toDates := make([]time.Time, btCount)
+	isAllDay := make([]bool, btCount)
 
 	for i, blockedTime := range bt {
+		if blockedTime.BlockedTypeId == nil {
+			blockedTimeTypeIds[i] = pgtype.Int4{Valid: false}
+		} else {
+			blockedTimeTypeIds[i] = pgtype.Int4{Int32: int32(*blockedTime.BlockedTypeId), Valid: true}
+		}
 		names[i] = blockedTime.Name
 		fromDates[i] = blockedTime.FromDate
 		toDates[i] = blockedTime.ToDate
@@ -46,7 +55,7 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 
 	var btIds []int
 
-	rows, _ := r.db.Query(ctx, query, merchantId, names, fromDates, toDates, isAllDay, source)
+	rows, _ := r.db.Query(ctx, query, merchantId, blockedTimeTypeIds, names, fromDates, toDates, isAllDay, source)
 	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
 		return []int{}, err
