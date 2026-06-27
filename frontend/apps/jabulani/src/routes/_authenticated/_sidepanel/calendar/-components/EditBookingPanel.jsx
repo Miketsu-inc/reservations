@@ -261,6 +261,7 @@ export default function EditBookingPanel({
           setIsCancelModalOpen(false);
           onSave();
         }}
+        isRecurring={isRecurring}
       />
       {!isWindowSmall && (
         <div

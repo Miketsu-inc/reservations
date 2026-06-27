@@ -70,6 +70,7 @@ func mapToUpdateByMerchantInput(in updateByMerchantReq) (bookingServ.UpdateByMer
 func mapToCancelByMerchantInput(in cancelByMerchantReq) bookingServ.CancelByMerchantInput {
 	return bookingServ.CancelByMerchantInput{
 		CancellationReason: in.CancellationReason,
+		CancelFuture:       in.CancelFuture,
 	}
 }
 

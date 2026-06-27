@@ -461,7 +461,7 @@ func buildReminderEmailParams(bookingIds []int, fromDates []time.Time, customerI
 
 // This whole function assumes that the series was updated before it ran and is up to date
 func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant, service domain.Service,
-	seriesOriginalDateOffset time.Duration, priceChanged bool, statusChangedToCancelled bool, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
+	seriesOriginalDateOffset time.Duration, priceChanged bool, statusChangedToCancelled bool, cancellation_reason string, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
 
 	// TODO: somehow present this to the user...
 	// maybe with notifications once we implement that
@@ -526,7 +526,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 	for !finshed {
 		err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 			// the given occurrence index is not included
-			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, lastOccurrenceIndex, 2)
+			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, lastOccurrenceIndex, 50)
 			if err != nil {
 				return fmt.Errorf("failed to fetch future series bookings: %w", err)
 			}
@@ -555,13 +555,15 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
 				}
 
-				cancellationParams := buildCancellationEmailParams(seriesParticipantsMap, customerIdsByBooking, "")
+				cancellationParams := buildCancellationEmailParams(seriesParticipantsMap, customerIdsByBooking, cancellation_reason)
 				if len(cancellationParams) > 0 {
 					_, err := s.enqueuer.InsertManyFastTx(ctx, tx, cancellationParams)
 					if err != nil {
 						return fmt.Errorf("failed to schedule cancellation email: %w", err)
 					}
 				}
+
+				lastOccurrenceIndex = *futureBookings[len(futureBookings)-1].OccurrenceIndex
 
 				return nil
 			}

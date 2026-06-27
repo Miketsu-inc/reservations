@@ -127,6 +127,7 @@ func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) {
 
 type cancelByMerchantReq struct {
 	CancellationReason string `json:"cancellation_reason"`
+	CancelFuture       bool   `json:"cancel_future"`
 }
 
 func (h *Handler) CancelByMerchant(w http.ResponseWriter, r *http.Request) {

@@ -40,6 +40,7 @@ type UpdateFutureBookingOccurrences struct {
 	OccurrenceIndex          int                               `json:"occurrence_index"`
 	SeriesOriginalDateOffset time.Duration                     `json:"series_original_date_offset"`
 	StatusChangedToCancelled bool                              `json:"status_changed_to_cancelled"`
+	CancellationReason       string                            `json:"cancellation_reason"`
 	PriceChanged             bool                              `json:"price_changed"`
 	ParticipantsToInsert     []uuid.UUID                       `json:"particiapnts_to_insert"`
 	ParticipantsToDelete     []uuid.UUID                       `json:"particiapnts_to_delete"`

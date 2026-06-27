@@ -1097,14 +1097,14 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}
 			}
 
-			statusChangedToCancelled := statusChanged && bookingStatus == types.BookingStatusCancelled
-
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.UpdateFutureBookingOccurrences{
 				BookingSeriesId:          bookingSeries.Id,
 				OccurrenceIndex:          *booking.OccurrenceIndex,
 				SeriesOriginalDateOffset: seriesOriginalDateOffset,
 				PriceChanged:             priceChanged,
-				StatusChangedToCancelled: statusChangedToCancelled,
+				// series cancellation is handled by CancelByMerchant()
+				StatusChangedToCancelled: false,
+				CancellationReason:       "",
 				ParticipantsToInsert:     seriesParticipantChanges.ToInsert,
 				ParticipantsToDelete:     seriesParticipantChanges.ToDelete,
 				ParticipantsBefore:       seriesParticipants,
@@ -1297,6 +1297,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 type CancelByMerchantInput struct {
 	CancellationReason string
+	CancelFuture       bool
 }
 
 // TODO: what should the booking participant statuses be here?
@@ -1306,6 +1307,10 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
 		return err
+	}
+
+	if input.CancelFuture && !booking.IsRecurring {
+		return fmt.Errorf("cannot cancel future occurrences of non-recurring booking")
 	}
 
 	err = booking.CanCancel()
@@ -1322,6 +1327,28 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 		err = s.bookingRepo.WithTx(tx).CancelBookingByMerchant(ctx, actor.MerchantId, booking.Id, input.CancellationReason)
 		if err != nil {
 			return err
+		}
+
+		if input.CancelFuture {
+			seriesParticipants, err := s.bookingRepo.WithTx(tx).GetBookingSeriesParticipants(ctx, *booking.BookingSeriesId)
+			if err != nil {
+				return err
+			}
+
+			_, err = s.enqueuer.InsertTx(ctx, tx, args.UpdateFutureBookingOccurrences{
+				BookingSeriesId:          *booking.BookingSeriesId,
+				OccurrenceIndex:          *booking.OccurrenceIndex,
+				SeriesOriginalDateOffset: time.Duration(0),
+				PriceChanged:             false,
+				StatusChangedToCancelled: true,
+				CancellationReason:       input.CancellationReason,
+				ParticipantsToInsert:     nil,
+				ParticipantsToDelete:     nil,
+				ParticipantsBefore:       seriesParticipants,
+			}, &river.InsertOpts{})
+			if err != nil {
+				return fmt.Errorf("failed to insert update future occurrences job: %w", err)
+			}
 		}
 
 		for _, participant := range bookingParticipants {
