@@ -26,17 +26,38 @@ func NewService(catalog domain.CatalogRepository, merchant domain.MerchantReposi
 	}
 }
 
+func validateService(phaseCount int, bookingType types.BookingType, maxParticipants *int) error {
+	if phaseCount == 0 {
+		return fmt.Errorf("service phases can not be empty")
+	}
+
+	if bookingType == types.BookingTypeClass || bookingType == types.BookingTypeEvent {
+		if phaseCount != 1 {
+			return fmt.Errorf("group service shall have one phase")
+		}
+
+		if maxParticipants == nil {
+			return fmt.Errorf("service must have max participants")
+		}
+	}
+
+	return nil
+}
+
 type NewInput struct {
-	Name         string
-	Description  *string
-	Color        string
-	Price        *currencyx.Price
-	PriceType    types.PriceType
-	CategoryId   *int
-	IsActive     bool
-	Settings     ServiceSettingsInput
-	Phases       []NewPhasesInput
-	UsedProducts []ConnectedProductsInput
+	BookingType     types.BookingType
+	Name            string
+	Description     *string
+	Color           string
+	Price           *currencyx.Price
+	PriceType       types.PriceType
+	CategoryId      *int
+	MinParticipants *int
+	MaxParticipants *int
+	IsActive        bool
+	Settings        ServiceSettingsInput
+	Phases          []NewPhasesInput
+	UsedProducts    []ConnectedProductsInput
 }
 
 type ServiceSettingsInput struct {
@@ -62,13 +83,23 @@ type ConnectedProductsInput struct {
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	if len(input.Phases) == 0 {
-		return fmt.Errorf("service phases can not be empty")
+	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
+		return err
+	}
+
+	minParticipants := 1
+	if input.MinParticipants != nil {
+		minParticipants = *input.MinParticipants
+	}
+
+	maxParticipants := 1
+	if input.MaxParticipants != nil {
+		maxParticipants = *input.MaxParticipants
 	}
 
 	var phases []domain.ServicePhase
 
-	durationSum := 0
+	totalDuration := 0
 	for _, phase := range input.Phases {
 		phases = append(phases, domain.ServicePhase{
 			ServiceId: 0,
@@ -78,7 +109,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			PhaseType: phase.PhaseType,
 		})
 
-		durationSum += phase.Duration
+		totalDuration += phase.Duration
 	}
 
 	var connectedProducts []domain.ConnectedProducts
@@ -106,18 +137,18 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			Id:            0,
 			MerchantId:    actor.MerchantId,
 			CategoryId:    input.CategoryId,
-			BookingType:   types.BookingTypeAppointment,
+			BookingType:   input.BookingType,
 			Name:          input.Name,
 			Description:   input.Description,
 			Color:         input.Color,
-			TotalDuration: durationSum,
+			TotalDuration: totalDuration,
 			Price:         input.Price,
 			PriceType:     input.PriceType,
 			IsActive:      input.IsActive,
 			// sequence get's calculated in the query
 			Sequence:         0,
-			MinParticipants:  1,
-			MaxParticipants:  1,
+			MinParticipants:  minParticipants,
+			MaxParticipants:  maxParticipants,
 			CancelDeadline:   input.Settings.CancelDeadline,
 			BookingWindowMin: input.Settings.BookingWindowMin,
 			BookingWindowMax: input.Settings.BookingWindowMax,
@@ -149,144 +180,182 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	return nil
 }
 
-type UpdateInput struct {
-	Id          int
-	Name        string
-	Description *string
-	Color       string
-	Price       *currencyx.Price
-	PriceType   types.PriceType
-	CategoryId  *int
-	IsActive    bool
-	Settings    ServiceSettingsInput
-	Phases      []PhasesInput
+type phaseChanges struct {
+	ToInsert []domain.ServicePhase
+	ToUpdate []domain.ServicePhase
+	ToDelete []int
 }
 
-type PhasesInput struct {
-	Id        int
-	ServiceId int
-	Name      string
-	Sequence  int
-	Duration  int
-	PhaseType types.ServicePhaseType
-}
-
-func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) error {
-	if serviceId != input.Id {
-		return fmt.Errorf("invalid service id provided")
+func detectPhaseChanges(existingPhases []domain.ServicePhase, incomingPhases []domain.ServicePhase) phaseChanges {
+	pc := phaseChanges{
+		ToInsert: []domain.ServicePhase{},
+		ToUpdate: []domain.ServicePhase{},
+		ToDelete: []int{},
 	}
 
-	if len(input.Phases) == 0 {
-		return fmt.Errorf("service phases can not be empty")
+	existingMap := map[int]domain.ServicePhase{}
+	for _, p := range existingPhases {
+		existingMap[p.Id] = domain.ServicePhase{
+			Id:        p.Id,
+			ServiceId: p.ServiceId,
+			Name:      p.Name,
+			Sequence:  p.Sequence,
+			Duration:  p.Duration,
+			PhaseType: p.PhaseType,
+		}
 	}
 
-	actor := actor.MustGetFromContext(ctx)
+	incomingNotNewMap := map[int]domain.ServicePhase{}
+	serviceId := existingPhases[0].ServiceId
 
-	var phases []domain.ServicePhase
-
-	durationSum := 0
-	for _, phase := range input.Phases {
-		phases = append(phases, domain.ServicePhase{
-			Id:        phase.Id,
-			ServiceId: phase.ServiceId,
-			Name:      phase.Name,
-			Sequence:  phase.Sequence,
-			Duration:  phase.Duration,
-			PhaseType: phase.PhaseType,
-		})
-
-		durationSum += phase.Duration
-	}
-
-	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		existingPhases, err := s.catalogRepo.WithTx(tx).GetServicePhases(ctx, serviceId)
-		if err != nil {
-			return err
-		}
-
-		existingPhasesMap := map[int]domain.ServicePhase{}
-		for _, p := range existingPhases {
-			existingPhasesMap[p.Id] = domain.ServicePhase{
-				Id:        p.Id,
-				ServiceId: p.ServiceId,
-				Name:      p.Name,
-				Sequence:  p.Sequence,
-				Duration:  p.Duration,
-				PhaseType: p.PhaseType,
-			}
-		}
-
-		updatedPhasesMap := map[int]domain.ServicePhase{}
-		newPhases := []domain.ServicePhase{}
-		for _, p := range phases {
-			if p.Id == 0 {
-				newPhases = append(newPhases, p)
-			} else {
-				updatedPhasesMap[p.Id] = p
-			}
-		}
-
-		var phaseIdsToDelete []int
-		for id := range existingPhasesMap {
-			if _, exists := updatedPhasesMap[id]; !exists {
-				phaseIdsToDelete = append(phaseIdsToDelete, id)
-			}
-		}
-
-		err = s.catalogRepo.WithTx(tx).DeleteServicePhases(ctx, phaseIdsToDelete)
-		if err != nil {
-			return err
-		}
-
-		var phasesToUpdate []domain.ServicePhase
-		for id, phase := range updatedPhasesMap {
-			existingPhase := existingPhasesMap[id]
-			if !existingPhase.IsEqual(phase) {
-				phasesToUpdate = append(phasesToUpdate, domain.ServicePhase{
-					Id:        id,
-					ServiceId: serviceId,
-					Name:      phase.Name,
-					Sequence:  phase.Sequence,
-					Duration:  phase.Duration,
-					PhaseType: phase.PhaseType,
-				})
-			}
-		}
-
-		err = s.catalogRepo.WithTx(tx).UpdateServicePhases(ctx, phasesToUpdate)
-		if err != nil {
-			return err
-		}
-
-		var phasesToInsert []domain.ServicePhase
-		for _, p := range newPhases {
-			phasesToInsert = append(phasesToInsert, domain.ServicePhase{
+	for _, p := range incomingPhases {
+		if p.Id == -1 {
+			pc.ToInsert = append(pc.ToInsert, domain.ServicePhase{
 				ServiceId: serviceId,
 				Name:      p.Name,
 				Sequence:  p.Sequence,
 				Duration:  p.Duration,
 				PhaseType: p.PhaseType,
 			})
-		}
+		} else {
+			existingPhase := existingMap[p.Id]
 
-		err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, serviceId, phasesToInsert)
+			if !existingPhase.IsEqual(p) {
+				pc.ToUpdate = append(pc.ToUpdate, domain.ServicePhase{
+					Id:        p.Id,
+					ServiceId: existingPhase.ServiceId,
+					Name:      p.Name,
+					Sequence:  p.Sequence,
+					Duration:  p.Duration,
+					PhaseType: p.PhaseType,
+				})
+			}
+
+			incomingNotNewMap[p.Id] = p
+		}
+	}
+
+	for id := range existingMap {
+		if _, exists := incomingNotNewMap[id]; !exists {
+			pc.ToDelete = append(pc.ToDelete, id)
+		}
+	}
+
+	return pc
+}
+
+type UpdateInput struct {
+	Id              int
+	BookingType     types.BookingType
+	Name            string
+	Description     *string
+	Color           string
+	Price           *currencyx.Price
+	PriceType       types.PriceType
+	CategoryId      *int
+	MinParticipants *int
+	MaxParticipants *int
+	IsActive        bool
+	Settings        ServiceSettingsInput
+	Phases          []PhasesInput
+}
+
+type PhasesInput struct {
+	Id        int
+	Name      string
+	Sequence  int
+	Duration  int
+	PhaseType types.ServicePhaseType
+}
+
+func (s *Service) Update(ctx context.Context, input UpdateInput) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
+		return err
+	}
+
+	minParticipants := 1
+	if input.MinParticipants != nil {
+		minParticipants = *input.MinParticipants
+	}
+
+	maxParticipants := 1
+	if input.MaxParticipants != nil {
+		maxParticipants = *input.MaxParticipants
+	}
+
+	var phases []domain.ServicePhase
+	totalDuration := 0
+
+	for _, phase := range input.Phases {
+		phases = append(phases, domain.ServicePhase{
+			Id:        phase.Id,
+			ServiceId: input.Id,
+			Name:      phase.Name,
+			Sequence:  phase.Sequence,
+			Duration:  phase.Duration,
+			PhaseType: phase.PhaseType,
+		})
+
+		totalDuration += phase.Duration
+	}
+
+	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
+	if err != nil {
+		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+	}
+
+	if input.Price != nil {
+		if input.Price.CurrencyCode() != curr {
+			return fmt.Errorf("service price's currency does not match merchant's currency")
+		}
+	}
+
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		existingPhases, err := s.catalogRepo.WithTx(tx).GetServicePhases(ctx, input.Id)
 		if err != nil {
 			return err
 		}
 
+		phaseChanges := detectPhaseChanges(existingPhases, phases)
+
+		if len(phaseChanges.ToDelete) > 0 {
+			err = s.catalogRepo.WithTx(tx).DeleteServicePhases(ctx, phaseChanges.ToDelete)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(phaseChanges.ToUpdate) > 0 {
+			err = s.catalogRepo.WithTx(tx).UpdateServicePhases(ctx, phaseChanges.ToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(phaseChanges.ToInsert) > 0 {
+			err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, input.Id, phaseChanges.ToInsert)
+			if err != nil {
+				return err
+			}
+		}
+
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
-			Id:               serviceId,
-			MerchantId:       actor.MerchantId,
-			CategoryId:       input.CategoryId,
-			Name:             input.Name,
-			Description:      input.Description,
-			Color:            input.Color,
-			TotalDuration:    durationSum,
-			Price:            input.Price,
-			PriceType:        input.PriceType,
-			IsActive:         input.IsActive,
-			MinParticipants:  1,
-			MaxParticipants:  1,
+			Id:            input.Id,
+			MerchantId:    actor.MerchantId,
+			CategoryId:    input.CategoryId,
+			Name:          input.Name,
+			Description:   input.Description,
+			Color:         input.Color,
+			TotalDuration: totalDuration,
+			Price:         input.Price,
+			PriceType:     input.PriceType,
+			IsActive:      input.IsActive,
+			// sequence get's calculated in the query
+			Sequence:         0,
+			MinParticipants:  minParticipants,
+			MaxParticipants:  maxParticipants,
 			CancelDeadline:   input.Settings.CancelDeadline,
 			BookingWindowMin: input.Settings.BookingWindowMin,
 			BookingWindowMax: input.Settings.BookingWindowMax,
@@ -299,7 +368,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 
 		// the categoryId has changed, reordering services is needed
 		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, actor.MerchantId, &serviceId)
+			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, actor.MerchantId, &input.Id)
 			if err != nil {
 				return err
 			}
@@ -313,7 +382,7 @@ func (s *Service) Update(ctx context.Context, serviceId int, input UpdateInput) 
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating service for merchant: %s", err.Error())
+		return fmt.Errorf("error while updating service for merchant: %w", err)
 	}
 
 	return nil
@@ -489,187 +558,4 @@ func (s *Service) GetFormOptions(ctx context.Context) (domain.ServicePageFormOpt
 	}
 
 	return formOptions, nil
-}
-
-type NewGroupInput struct {
-	Name            string
-	Description     *string
-	Color           string
-	Price           *currencyx.Price
-	PriceType       types.PriceType
-	Duration        int
-	CategoryId      *int
-	MinParticipants *int
-	MaxParticipants int
-	IsActive        bool
-	Settings        ServiceSettingsInput
-	UsedProducts    []ConnectedProductsInput
-}
-
-func (s *Service) NewGroup(ctx context.Context, input NewGroupInput) error {
-	actor := actor.MustGetFromContext(ctx)
-
-	var products []domain.ConnectedProducts
-	for _, p := range input.UsedProducts {
-		products = append(products, domain.ConnectedProducts{
-			ProductId:  p.ProductId,
-			ServiceId:  0,
-			AmountUsed: p.AmountUsed,
-		})
-	}
-
-	var phases = []domain.ServicePhase{{
-		Id:        0,
-		ServiceId: 0,
-		Name:      "",
-		Sequence:  1,
-		Duration:  input.Duration,
-		PhaseType: types.ServicePhaseTypeActive,
-	}}
-
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
-		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
-	}
-
-	if input.Price != nil {
-		if input.Price.CurrencyCode() != curr {
-			return fmt.Errorf("new service price's currency does not match merchant's currency")
-		}
-	}
-
-	minParticipants := 1
-	if input.MinParticipants != nil {
-		minParticipants = *input.MinParticipants
-	}
-
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
-			Id:               0,
-			MerchantId:       actor.MerchantId,
-			CategoryId:       input.CategoryId,
-			BookingType:      types.BookingTypeClass,
-			Name:             input.Name,
-			Description:      input.Description,
-			Color:            input.Color,
-			TotalDuration:    input.Duration,
-			Price:            input.Price,
-			PriceType:        input.PriceType,
-			IsActive:         input.IsActive,
-			Sequence:         0,
-			MinParticipants:  minParticipants,
-			MaxParticipants:  input.MaxParticipants,
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-			ApprovalPolicy:   input.Settings.ApprovalPolicy,
-		})
-		if err != nil {
-			return err
-		}
-
-		err = s.catalogRepo.WithTx(tx).NewServicePhases(ctx, serviceId, phases)
-		if err != nil {
-			return err
-		}
-
-		if len(products) != 0 {
-			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, actor.MerchantId, products)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("unexpected error inserting group service: %s", err.Error())
-	}
-
-	return nil
-}
-
-type UpdateGroupInput struct {
-	Id              int
-	Name            string
-	Description     *string
-	Color           string
-	Price           *currencyx.Price
-	PriceType       types.PriceType
-	Duration        int
-	CategoryId      *int
-	MinParticipants *int
-	MaxParticipants int
-	IsActive        bool
-	Settings        ServiceSettingsInput
-}
-
-func (s *Service) UpdateGroup(ctx context.Context, serviceId int, input UpdateGroupInput) error {
-	if serviceId != input.Id {
-		return fmt.Errorf("invalid service id")
-	}
-
-	actor := actor.MustGetFromContext(ctx)
-
-	minParticipants := 1
-	if input.MinParticipants != nil {
-		minParticipants = *input.MinParticipants
-	}
-
-	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.catalogRepo.WithTx(tx).UpdateServicePhaseDuration(ctx, serviceId, input.Duration)
-		if err != nil {
-			return err
-		}
-
-		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
-			Id:               serviceId,
-			MerchantId:       actor.MerchantId,
-			CategoryId:       input.CategoryId,
-			Name:             input.Name,
-			Description:      input.Description,
-			Color:            input.Color,
-			TotalDuration:    input.Duration,
-			Price:            input.Price,
-			PriceType:        input.PriceType,
-			IsActive:         input.IsActive,
-			MinParticipants:  minParticipants,
-			MaxParticipants:  input.MaxParticipants,
-			CancelDeadline:   input.Settings.CancelDeadline,
-			BookingWindowMin: input.Settings.BookingWindowMin,
-			BookingWindowMax: input.Settings.BookingWindowMax,
-			BufferTime:       input.Settings.BufferTime,
-			ApprovalPolicy:   input.Settings.ApprovalPolicy,
-		})
-		if err != nil {
-			return err
-		}
-
-		// the categoryId has changed, reordering services is needed
-		if (oldCategoryId == nil && input.CategoryId != nil) || (oldCategoryId != nil && (input.CategoryId == nil || *oldCategoryId != *input.CategoryId)) {
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, oldCategoryId, actor.MerchantId, &serviceId)
-			if err != nil {
-				return err
-			}
-
-			err = s.catalogRepo.WithTx(tx).ReorderServicesAfterUpdate(ctx, input.CategoryId, actor.MerchantId, nil)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
-func (s *Service) GetGroup(ctx context.Context, serviceId int) (domain.GroupServicePageData, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	service, err := s.catalogRepo.GetGroupServicePageData(ctx, actor.MerchantId, serviceId)
-	if err != nil {
-		return domain.GroupServicePageData{}, fmt.Errorf("error while retrieving service for merchant: %s", err.Error())
-	}
-
-	return service, nil
 }

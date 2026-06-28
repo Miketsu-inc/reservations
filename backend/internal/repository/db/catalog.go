@@ -494,7 +494,8 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 		where p.deleted_on is null
 		group by sprod.service_id
 	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration, s.price_per_person as price, s.price_type, s.is_active, s.sequence,
+	select s.id, s.name, s.booking_type, s.category_id, s.description, s.color, s.total_duration, s.price_per_person, s.price_type, s.is_active, s.sequence,
+		min_participants, max_participants,
 		jsonb_build_object(
 		 	'cancel_deadline', s.cancel_deadline,
          	'booking_window_min', s.booking_window_min,
@@ -515,8 +516,9 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 	var phaseJson []byte
 	var productJson []byte
 
-	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.CategoryId, &spd.Description,
-		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceType, &spd.IsActive, &spd.Sequence, &settingsJson, &phaseJson, &productJson)
+	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.BookingType, &spd.CategoryId, &spd.Description,
+		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceType, &spd.IsActive, &spd.Sequence, &spd.MinParicipants, &spd.MaxParticipants,
+		&settingsJson, &phaseJson, &productJson)
 	if err != nil {
 		return domain.ServicePageData{}, err
 	}
@@ -546,65 +548,6 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 	}
 
 	return spd, nil
-}
-
-func (r *catalogRepository) GetGroupServicePageData(ctx context.Context, merchantId uuid.UUID, serviceId int) (domain.GroupServicePageData, error) {
-	query := `
-		with products as (
-		select sprod.service_id,
-			jsonb_agg(
-				jsonb_build_object(
-					'id', p.id,
-					'name', p.name,
-					'unit', p.unit,
-					'amount_used', sprod.amount_used
-				)
-			) as products
-		from "ServiceProduct" sprod
-		join "Product" p on sprod.product_id = p.id
-		where p.deleted_on is null
-		group by sprod.service_id
-	)
-	select s.id, s.name, s.category_id, s.description, s.color, s.total_duration as duration, s.price_per_person as price, s.price_type, s.is_active, s.sequence, s.min_participants, s.max_participants,
-		jsonb_build_object(
-		 	'cancel_deadline', s.cancel_deadline,
-         	'booking_window_min', s.booking_window_min,
-         	'booking_window_max', s.booking_window_max,
-         	'buffer_time', s.buffer_time,
-			'approval_policy', s.approval_policy
-		) as settings,
-		coalesce(products.products, '[]'::jsonb) as products
-	from "Service" s
-	left join products on s.id = products.service_id
-	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null `
-
-	var gspd domain.GroupServicePageData
-	var settingsJson []byte
-	var productJson []byte
-
-	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&gspd.Id, &gspd.Name, &gspd.CategoryId, &gspd.Description,
-		&gspd.Color, &gspd.Duration, &gspd.Price, &gspd.PriceType, &gspd.IsActive, &gspd.Sequence,
-		&gspd.MinParicipants, &gspd.MaxParticipants, &settingsJson, &productJson)
-	if err != nil {
-		return domain.GroupServicePageData{}, err
-	}
-
-	if len(settingsJson) > 0 {
-		if err := json.Unmarshal(settingsJson, &gspd.Settings); err != nil {
-			return domain.GroupServicePageData{}, err
-		}
-	}
-
-	if len(productJson) > 0 {
-		err = json.Unmarshal(productJson, &gspd.Products)
-		if err != nil {
-			return domain.GroupServicePageData{}, err
-		}
-	} else {
-		gspd.Products = []domain.MinimalProductInfoWithUsage{}
-	}
-
-	return gspd, nil
 }
 
 func (r *catalogRepository) GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (domain.ServicePageFormOptions, error) {

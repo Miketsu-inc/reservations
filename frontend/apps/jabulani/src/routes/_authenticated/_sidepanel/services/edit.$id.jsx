@@ -31,7 +31,7 @@ async function fetchServiceData(merchantId, id) {
   }
 }
 
-function serviceQueryOptions(merchantId, id) {
+export function serviceQueryOptions(merchantId, id) {
   return queryOptions({
     queryKey: [merchantId, "service", id],
     queryFn: () => fetchServiceData(merchantId, id),

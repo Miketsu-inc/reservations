@@ -36,6 +36,7 @@ export default function GroupServicePage({
   const originalData = useMemo(
     () => ({
       id: service?.id,
+      booking_type: "class",
       name: service?.name || "",
       description: service?.description || "",
       color: service?.color || "#2334b8",
@@ -43,7 +44,7 @@ export default function GroupServicePage({
       price_type: service?.price_type || "fixed",
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
-      duration: service?.duration || "",
+      duration: service?.total_duration || "",
       duration_unit: service?.duration_unit || "min",
       min_participants: service?.min_participants || undefined,
       max_participants: service?.max_participants || "",
@@ -54,6 +55,7 @@ export default function GroupServicePage({
         buffer_time: service?.settings?.buffer_time || null,
         approval_policy: service?.settings?.approval_policy || null,
       },
+      phases: service?.phases || [],
       used_products: service?.used_products || [],
     }),
     [service]
@@ -118,13 +120,28 @@ export default function GroupServicePage({
 
     const durationInMinutes =
       serviceData.duration_unit === "hour"
-        ? serviceData.duration * 60
-        : serviceData.duration;
+        ? Number(serviceData.duration * 60)
+        : Number(serviceData.duration);
+
     const data = {
       ...serviceData,
-      duration: Number(durationInMinutes),
     };
+
+    delete data.duration;
     delete data.duration_unit;
+
+    if (serviceData.phases.length !== 0) {
+      data.phases[0].duration = durationInMinutes;
+    } else {
+      data.phases = [
+        {
+          name: "",
+          phase_type: "active",
+          sequence: 1,
+          duration: durationInMinutes,
+        },
+      ];
+    }
 
     setLastSavedData(serviceData);
     onSave(data);
@@ -352,7 +369,7 @@ export default function GroupServicePage({
                       labelText="Min Participants"
                       placeholder="1"
                       required={false}
-                      value={serviceData.min_participants}
+                      value={serviceData.min_participants || ""}
                       inputData={(data) =>
                         updateServiceData({
                           min_participants: Number(data.value),
@@ -376,7 +393,7 @@ export default function GroupServicePage({
                   </div>
 
                   <Textarea
-                    styles="h-full md:min-h-0 min-h-35"
+                    styles="h-full md:min-h-0 min-h-35 p-2"
                     id="description"
                     name="description"
                     labelText="Description"
@@ -409,7 +426,7 @@ export default function GroupServicePage({
               <Button
                 type="button"
                 styles="py-4 mb-2 shadow-none bg-transparent
-                  hover:bg-transparent text-red-500!"
+                  hover:bg-transparent! text-red-500!"
                 buttonText="Delete Group Service"
                 onClick={() => setShowDeleteModal(true)}
               />

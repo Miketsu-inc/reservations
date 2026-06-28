@@ -52,17 +52,14 @@ function RouteComponent() {
 
   async function saveHandler(service) {
     try {
-      const response = await fetch(
-        `/api/v1/merchants/${merchantId}/services/group`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(service),
-        }
-      );
+      const response = await fetch(`/api/v1/merchants/${merchantId}/services`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(service),
+      });
 
       if (!response.ok) {
         invalidateLocalStorageAuth(response.status);

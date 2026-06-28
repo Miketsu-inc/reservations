@@ -15,7 +15,7 @@ export function useServicePhases(setServiceData) {
             ...prev.phases,
             {
               ...newPhase,
-              id: 0,
+              id: -1,
               sequence: maxSequence + 1,
             },
           ],

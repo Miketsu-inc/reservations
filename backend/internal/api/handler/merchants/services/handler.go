@@ -39,24 +39,23 @@ func (h *Handler) Routes() chi.Router {
 	r.Put("/reorder", h.Reorder)
 	r.Get("/form-options", h.GetFormOptions)
 
-	r.Post("/group", h.NewGroup)
-	r.Put("/group/{id}", h.UpdateGroup)
-	r.Get("/group/{id}", h.GetGroup)
-
 	return r
 }
 
 type newReq struct {
-	Name         string                 `json:"name" validate:"required"`
-	Description  *string                `json:"description"`
-	Color        string                 `json:"color" validate:"required,hexcolor"`
-	Price        *currencyx.Price       `json:"price"`
-	PriceType    types.PriceType        `json:"price_type"`
-	CategoryId   *int                   `json:"category_id"`
-	IsActive     bool                   `json:"is_active"`
-	Settings     serviceSettingsReq     `json:"settings"`
-	Phases       []newPhaseReq          `json:"phases" validate:"required"`
-	UsedProducts []connectedProductsReq `json:"used_products" validate:"required"`
+	BookingType     types.BookingType      `json:"booking_type" validate:"required"`
+	Name            string                 `json:"name" validate:"required"`
+	Description     *string                `json:"description"`
+	Color           string                 `json:"color" validate:"required,hexcolor"`
+	Price           *currencyx.Price       `json:"price"`
+	PriceType       types.PriceType        `json:"price_type" validate:"required"`
+	CategoryId      *int                   `json:"category_id"`
+	MinParticipants *int                   `json:"min_participants"`
+	MaxParticipants *int                   `json:"max_participants"`
+	IsActive        bool                   `json:"is_active"`
+	Settings        serviceSettingsReq     `json:"settings"`
+	Phases          []newPhaseReq          `json:"phases" validate:"required"`
+	UsedProducts    []connectedProductsReq `json:"used_products" validate:"required"`
 }
 
 type serviceSettingsReq struct {
@@ -68,8 +67,8 @@ type serviceSettingsReq struct {
 }
 
 type newPhaseReq struct {
-	Name      string                 `json:"name" validate:"required"`
-	Sequence  int                    `json:"sequence" validate:"required"`
+	Name      string                 `json:"name"`
+	Sequence  int                    `json:"sequence" validate:"required,min=1"`
 	Duration  int                    `json:"duration" validate:"required,min=1,max=1440"`
 	PhaseType types.ServicePhaseType `json:"phase_type" validate:"required,eq=wait|eq=active"`
 }
@@ -97,23 +96,25 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
 }
 
 type updateReq struct {
-	Id          int                `json:"id"`
-	Name        string             `json:"name" validate:"required"`
-	Description *string            `json:"description"`
-	Color       string             `json:"color" validate:"required,hexcolor"`
-	Price       *currencyx.Price   `json:"price"`
-	PriceType   types.PriceType    `json:"price_type"`
-	CategoryId  *int               `json:"category_id"`
-	IsActive    bool               `json:"is_active"`
-	Settings    serviceSettingsReq `json:"settings"`
-	Phases      []phaseReq         `json:"phases" validate:"required"`
+	Id              int                `json:"id"`
+	BookingType     types.BookingType  `json:"booking_type" validate:"required"`
+	Name            string             `json:"name" validate:"required"`
+	Description     *string            `json:"description"`
+	Color           string             `json:"color" validate:"required,hexcolor"`
+	Price           *currencyx.Price   `json:"price"`
+	PriceType       types.PriceType    `json:"price_type" validate:"required"`
+	CategoryId      *int               `json:"category_id"`
+	MinParticipants *int               `json:"min_participants"`
+	MaxParticipants *int               `json:"max_participants"`
+	IsActive        bool               `json:"is_active"`
+	Settings        serviceSettingsReq `json:"settings"`
+	Phases          []phaseReq         `json:"phases" validate:"required"`
 }
 
 type phaseReq struct {
 	Id        int                    `json:"id"`
-	ServiceId int                    `json:"service_id"`
-	Name      string                 `json:"name" validate:"required"`
-	Sequence  int                    `json:"sequence" validate:"required"`
+	Name      string                 `json:"name"`
+	Sequence  int                    `json:"sequence" validate:"required,min=1"`
 	Duration  int                    `json:"duration" validate:"required,min=1,max=1440"`
 	PhaseType types.ServicePhaseType `json:"phase_type" validate:"required,eq=wait|eq=active"`
 }
@@ -132,7 +133,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.Update(r.Context(), urlServiceId, mapToUpdateInput(req))
+	if urlServiceId != req.Id {
+		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
+		return
+	}
+
+	err = h.service.Update(r.Context(), mapToUpdateInput(req))
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
@@ -154,19 +160,22 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 type getResp struct {
-	Id            int                `json:"id"`
-	CategoryId    *int               `json:"category_id"`
-	Name          string             `json:"name"`
-	Description   *string            `json:"description"`
-	Color         string             `json:"color"`
-	TotalDuration int                `json:"total_duration"`
-	Price         *currencyx.Price   `json:"price"`
-	PriceType     types.PriceType    `json:"price_type"`
-	IsActive      bool               `json:"is_active"`
-	Sequence      int                `json:"sequence"`
-	Settings      serviceSettingsReq `json:"settings"`
-	Phases        []phaseReq         `json:"phases"`
-	UsedProducts  []productResp      `json:"used_products"`
+	Id              int                `json:"id"`
+	BookingType     types.BookingType  `json:"booking_type"`
+	CategoryId      *int               `json:"category_id"`
+	Name            string             `json:"name"`
+	Description     *string            `json:"description"`
+	Color           string             `json:"color"`
+	TotalDuration   int                `json:"total_duration"`
+	Price           *currencyx.Price   `json:"price"`
+	PriceType       types.PriceType    `json:"price_type"`
+	IsActive        bool               `json:"is_active"`
+	Sequence        int                `json:"sequence"`
+	MinParicipants  int                `json:"min_participants"`
+	MaxParticipants int                `json:"max_participants"`
+	Settings        serviceSettingsReq `json:"settings"`
+	Phases          []phaseReq         `json:"phases"`
+	UsedProducts    []productResp      `json:"used_products"`
 }
 
 type productResp struct {
@@ -329,105 +338,4 @@ func (h *Handler) GetFormOptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetFormOptionsResp(formOptions))
-}
-
-type newGroupReq struct {
-	Name            string                 `json:"name" validate:"required"`
-	Description     *string                `json:"description"`
-	Color           string                 `json:"color" validate:"required,hexcolor"`
-	Price           *currencyx.Price       `json:"price"`
-	PriceType       types.PriceType        `json:"price_type"`
-	Duration        int                    `json:"duration" validate:"required"`
-	CategoryId      *int                   `json:"category_id"`
-	MinParticipants *int                   `json:"min_participants"`
-	MaxParticipants int                    `json:"max_participants" validate:"required"`
-	IsActive        bool                   `json:"is_active"`
-	Settings        serviceSettingsReq     `json:"settings"`
-	UsedProducts    []connectedProductsReq `json:"used_products" validate:"required"`
-}
-
-func (h *Handler) NewGroup(w http.ResponseWriter, r *http.Request) {
-	var req newGroupReq
-
-	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	err := h.service.NewGroup(r.Context(), mapToNewGroupInput(req))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-}
-
-type updateGroupReq struct {
-	Id              int                `json:"id" validate:"required"`
-	Name            string             `json:"name" validate:"required"`
-	Description     *string            `json:"description"`
-	Color           string             `json:"color" validate:"required,hexcolor"`
-	Price           *currencyx.Price   `json:"price"`
-	PriceType       types.PriceType    `json:"price_type"`
-	Duration        int                `json:"duration" validate:"required"`
-	CategoryId      *int               `json:"category_id"`
-	MinParticipants *int               `json:"min_participants"`
-	MaxParticipants int                `json:"max_participants" validate:"required"`
-	IsActive        bool               `json:"is_active"`
-	Settings        serviceSettingsReq `json:"settings"`
-}
-
-func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
-	var req updateGroupReq
-
-	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
-	}
-
-	err = h.service.UpdateGroup(r.Context(), urlServiceId, mapToUpdateGroupInput(req))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-}
-
-type getGroupResp struct {
-	Id              int                  `json:"id"`
-	CategoryId      *int                 `json:"category_id"`
-	Name            string               `json:"name"`
-	Description     *string              `json:"description"`
-	Color           string               `json:"color"`
-	Duration        int                  `json:"duration"`
-	Price           *currencyx.Price     `json:"price"`
-	PriceType       types.PriceType      `json:"price_type"`
-	IsActive        bool                 `json:"is_active"`
-	Sequence        int                  `json:"sequence"`
-	MinParicipants  int                  `json:"min_participants"`
-	MaxParticipants int                  `json:"max_participants"`
-	Settings        serviceSettingsReq   `json:"settings"`
-	Products        []minimalProductResp `json:"used_products"`
-}
-
-func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
-	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
-	}
-
-	service, err := h.service.GetGroup(r.Context(), urlServiceId)
-	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
-	}
-
-	httputil.Success(w, http.StatusOK, mapToGetGroupResp(service))
 }

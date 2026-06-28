@@ -27,13 +27,16 @@ func mapToNewInput(in newReq) catalogServ.NewInput {
 	}
 
 	return catalogServ.NewInput{
-		Name:        in.Name,
-		Description: in.Description,
-		Color:       in.Color,
-		Price:       in.Price,
-		PriceType:   in.PriceType,
-		CategoryId:  in.CategoryId,
-		IsActive:    in.IsActive,
+		BookingType:     in.BookingType,
+		Name:            in.Name,
+		Description:     in.Description,
+		Color:           in.Color,
+		Price:           in.Price,
+		PriceType:       in.PriceType,
+		CategoryId:      in.CategoryId,
+		MinParticipants: in.MinParticipants,
+		MaxParticipants: in.MaxParticipants,
+		IsActive:        in.IsActive,
 		Settings: catalogServ.ServiceSettingsInput{
 			CancelDeadline:   in.Settings.CancelDeadline,
 			BookingWindowMin: in.Settings.BookingWindowMin,
@@ -52,7 +55,6 @@ func mapToUpdateInput(in updateReq) catalogServ.UpdateInput {
 	for i, p := range in.Phases {
 		phases[i] = catalogServ.PhasesInput{
 			Id:        p.Id,
-			ServiceId: p.ServiceId,
 			Name:      p.Name,
 			Sequence:  p.Sequence,
 			Duration:  p.Duration,
@@ -61,14 +63,17 @@ func mapToUpdateInput(in updateReq) catalogServ.UpdateInput {
 	}
 
 	return catalogServ.UpdateInput{
-		Id:          in.Id,
-		Name:        in.Name,
-		Description: in.Description,
-		Color:       in.Color,
-		Price:       in.Price,
-		PriceType:   in.PriceType,
-		CategoryId:  in.CategoryId,
-		IsActive:    in.IsActive,
+		Id:              in.Id,
+		BookingType:     in.BookingType,
+		Name:            in.Name,
+		Description:     in.Description,
+		Color:           in.Color,
+		Price:           in.Price,
+		PriceType:       in.PriceType,
+		CategoryId:      in.CategoryId,
+		MinParticipants: in.MinParticipants,
+		MaxParticipants: in.MaxParticipants,
+		IsActive:        in.IsActive,
 		Settings: catalogServ.ServiceSettingsInput{
 			CancelDeadline:   in.Settings.CancelDeadline,
 			BookingWindowMin: in.Settings.BookingWindowMin,
@@ -86,7 +91,6 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 	for i, p := range in.Phases {
 		phases[i] = phaseReq{
 			Id:        p.Id,
-			ServiceId: p.ServiceId,
 			Name:      p.Name,
 			Sequence:  p.Sequence,
 			Duration:  p.Duration,
@@ -106,16 +110,19 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 	}
 
 	return getResp{
-		Id:            in.Id,
-		CategoryId:    in.CategoryId,
-		Name:          in.Name,
-		Description:   in.Description,
-		Color:         in.Color,
-		TotalDuration: in.TotalDuration,
-		Price:         in.Price,
-		PriceType:     in.PriceType,
-		IsActive:      in.IsActive,
-		Sequence:      in.Sequence,
+		Id:              in.Id,
+		BookingType:     in.BookingType,
+		CategoryId:      in.CategoryId,
+		Name:            in.Name,
+		Description:     in.Description,
+		Color:           in.Color,
+		TotalDuration:   in.TotalDuration,
+		Price:           in.Price,
+		PriceType:       in.PriceType,
+		IsActive:        in.IsActive,
+		Sequence:        in.Sequence,
+		MinParicipants:  in.MinParicipants,
+		MaxParticipants: in.MaxParticipants,
 		Settings: serviceSettingsReq{
 			CancelDeadline:   in.Settings.CancelDeadline,
 			BookingWindowMin: in.Settings.BookingWindowMin,
@@ -156,7 +163,6 @@ func mapToGetAllResp(in []domain.ServicesGroupedByCategory) []getAllResp {
 			for k, p := range s.Phases {
 				phases[k] = phaseReq{
 					Id:        p.Id,
-					ServiceId: p.ServiceId,
 					Name:      p.Name,
 					Sequence:  p.Sequence,
 					Duration:  p.Duration,
@@ -227,95 +233,5 @@ func mapToGetFormOptionsResp(in domain.ServicePageFormOptions) getFormOptionsRes
 	return getFormOptionsResp{
 		Products:   products,
 		Categories: categories,
-	}
-}
-
-func mapToNewGroupInput(in newGroupReq) catalogServ.NewGroupInput {
-	products := make([]catalogServ.ConnectedProductsInput, len(in.UsedProducts))
-
-	for i, p := range in.UsedProducts {
-		products[i] = catalogServ.ConnectedProductsInput{
-			ProductId:  p.ProductId,
-			AmountUsed: p.AmountUsed,
-		}
-	}
-
-	return catalogServ.NewGroupInput{
-		Name:            in.Name,
-		Description:     in.Description,
-		Color:           in.Color,
-		Price:           in.Price,
-		PriceType:       in.PriceType,
-		Duration:        in.Duration,
-		CategoryId:      in.CategoryId,
-		MinParticipants: in.MinParticipants,
-		MaxParticipants: in.MaxParticipants,
-		IsActive:        in.IsActive,
-		Settings: catalogServ.ServiceSettingsInput{
-			CancelDeadline:   in.Settings.CancelDeadline,
-			BookingWindowMin: in.Settings.BookingWindowMin,
-			BookingWindowMax: in.Settings.BookingWindowMax,
-			BufferTime:       in.Settings.BufferTime,
-			ApprovalPolicy:   in.Settings.ApprovalPolicy,
-		},
-		UsedProducts: products,
-	}
-}
-
-func mapToUpdateGroupInput(in updateGroupReq) catalogServ.UpdateGroupInput {
-	return catalogServ.UpdateGroupInput{
-		Id:              in.Id,
-		Name:            in.Name,
-		Description:     in.Description,
-		Color:           in.Color,
-		Price:           in.Price,
-		PriceType:       in.PriceType,
-		Duration:        in.Duration,
-		CategoryId:      in.CategoryId,
-		MinParticipants: in.MinParticipants,
-		MaxParticipants: in.MaxParticipants,
-		IsActive:        in.IsActive,
-		Settings: catalogServ.ServiceSettingsInput{
-			CancelDeadline:   in.Settings.CancelDeadline,
-			BookingWindowMin: in.Settings.BookingWindowMin,
-			BookingWindowMax: in.Settings.BookingWindowMax,
-			BufferTime:       in.Settings.BufferTime,
-			ApprovalPolicy:   in.Settings.ApprovalPolicy,
-		},
-	}
-}
-
-func mapToGetGroupResp(in domain.GroupServicePageData) getGroupResp {
-	products := make([]minimalProductResp, len(in.Products))
-
-	for i, p := range in.Products {
-		products[i] = minimalProductResp{
-			Id:   p.Id,
-			Name: p.Name,
-			Unit: p.Unit,
-		}
-	}
-
-	return getGroupResp{
-		Id:              in.Id,
-		CategoryId:      in.CategoryId,
-		Name:            in.Name,
-		Description:     in.Description,
-		Color:           in.Color,
-		Duration:        in.Duration,
-		Price:           in.Price,
-		PriceType:       in.PriceType,
-		IsActive:        in.IsActive,
-		Sequence:        in.Sequence,
-		MinParicipants:  in.MinParicipants,
-		MaxParticipants: in.MaxParticipants,
-		Settings: serviceSettingsReq{
-			CancelDeadline:   in.Settings.CancelDeadline,
-			BookingWindowMin: in.Settings.BookingWindowMin,
-			BookingWindowMax: in.Settings.BookingWindowMax,
-			BufferTime:       in.Settings.BufferTime,
-			ApprovalPolicy:   in.Settings.ApprovalPolicy,
-		},
-		Products: products,
 	}
 }

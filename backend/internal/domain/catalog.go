@@ -29,7 +29,6 @@ type CatalogRepository interface {
 	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
 	GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error)
 	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
-	GetGroupServicePageData(ctx context.Context, merchantId uuid.UUID, serviceId int) (GroupServicePageData, error)
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
 	GetServiceCancelDeadline(ctx context.Context, merchantId uuid.UUID, serviceId int) (int, error)
@@ -120,7 +119,9 @@ type ServicePhase struct {
 }
 
 func (sp *ServicePhase) IsEqual(phase ServicePhase) bool {
-	return sp.Name == phase.Name &&
+	return sp.Id == phase.Id &&
+		sp.ServiceId == phase.ServiceId &&
+		sp.Name == phase.Name &&
 		sp.Sequence == phase.Sequence &&
 		sp.Duration == phase.Duration &&
 		sp.PhaseType == phase.PhaseType
@@ -174,19 +175,22 @@ type MerchantPageServicesGroupedByCategory struct {
 }
 
 type ServicePageData struct {
-	Id            int                           `json:"id"`
-	CategoryId    *int                          `json:"category_id"`
-	Name          string                        `json:"name"`
-	Description   *string                       `json:"description"`
-	Color         string                        `json:"color"`
-	TotalDuration int                           `json:"total_duration"`
-	Price         *currencyx.Price              `json:"price"`
-	PriceType     types.PriceType               `json:"price_type"`
-	IsActive      bool                          `json:"is_active"`
-	Sequence      int                           `json:"sequence"`
-	Settings      ServiceSettings               `json:"settings"`
-	Phases        []ServicePhase                `json:"phases"`
-	Products      []MinimalProductInfoWithUsage `json:"used_products"`
+	Id              int                           `db:"id"`
+	BookingType     types.BookingType             `db:"booking_type"`
+	CategoryId      *int                          `db:"category_id"`
+	Name            string                        `db:"name"`
+	Description     *string                       `db:"description"`
+	Color           string                        `db:"color"`
+	TotalDuration   int                           `db:"total_duration"`
+	Price           *currencyx.Price              `db:"price_per_person"`
+	PriceType       types.PriceType               `db:"price_type"`
+	IsActive        bool                          `db:"is_active"`
+	Sequence        int                           `db:"sequence"`
+	MinParicipants  int                           `db:"min_participants"`
+	MaxParticipants int                           `db:"max_participants"`
+	Settings        ServiceSettings               `db:"settings"`
+	Phases          []ServicePhase                `db:"phases"`
+	Products        []MinimalProductInfoWithUsage `db:"used_products"`
 }
 
 type ServicePageFormOptions struct {
@@ -241,21 +245,4 @@ type CalendarService struct {
 	Color           string            `json:"color"`
 	BookingType     types.BookingType `json:"booking_type"`
 	MaxParticipants int               `json:"max_participants"`
-}
-
-type GroupServicePageData struct {
-	Id              int                           `json:"id"`
-	CategoryId      *int                          `json:"category_id"`
-	Name            string                        `json:"name"`
-	Description     *string                       `json:"description"`
-	Color           string                        `json:"color"`
-	Duration        int                           `json:"duration"`
-	Price           *currencyx.Price              `json:"price"`
-	PriceType       types.PriceType               `json:"price_type"`
-	IsActive        bool                          `json:"is_active"`
-	Sequence        int                           `json:"sequence"`
-	MinParicipants  int                           `json:"min_participants"`
-	MaxParticipants int                           `json:"max_participants"`
-	Settings        ServiceSettings               `json:"settings"`
-	Products        []MinimalProductInfoWithUsage `json:"used_products"`
 }

@@ -5,38 +5,11 @@ import {
   serviceFormOptionsQueryOptions,
   useToast,
 } from "@reservations/lib";
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { serviceQueryOptions } from "../edit.$id";
 import GroupServicePage from "./-components/GroupServicePage";
-
-async function fetchGroupServiceData(merchantId, id) {
-  const response = await fetch(
-    `/api/v1/merchants/${merchantId}/services/group/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function groupServiceQueryOptions(merchantId, id) {
-  return queryOptions({
-    queryKey: [merchantId, "group-service", id],
-    queryFn: () => fetchGroupServiceData(merchantId, id),
-  });
-}
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/services/group/edit/$id"
@@ -50,7 +23,7 @@ export const Route = createFileRoute(
     },
   }) => {
     await queryClient.ensureQueryData(
-      groupServiceQueryOptions(merchantId, params.id)
+      serviceQueryOptions(merchantId, params.id)
     );
     await queryClient.ensureQueryData(
       serviceFormOptionsQueryOptions(merchantId)
@@ -71,7 +44,7 @@ function RouteComponent() {
 
   const queryResults = useQueries({
     queries: [
-      groupServiceQueryOptions(merchantId, id),
+      serviceQueryOptions(merchantId, id),
       serviceFormOptionsQueryOptions(merchantId),
     ],
   });
@@ -108,7 +81,7 @@ function RouteComponent() {
 
   async function updateServiceData(serviceId, serviceData) {
     const response = await fetch(
-      `/api/v1/merchants/${merchantId}/services/group/${serviceId}`,
+      `/api/v1/merchants/${merchantId}/services/${serviceId}`,
       {
         method: "PUT",
         headers: {

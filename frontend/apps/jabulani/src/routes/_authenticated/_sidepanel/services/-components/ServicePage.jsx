@@ -37,6 +37,7 @@ export default function ServicePage({
   const originalData = useMemo(
     () => ({
       id: service?.id,
+      booking_type: "appointment",
       name: service?.name || "",
       description: service?.description || "",
       color: service?.color || "#2334b8",
@@ -44,6 +45,8 @@ export default function ServicePage({
       price_type: service?.price_type || "fixed",
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
+      min_participants: service?.min_participants || 1,
+      max_participants: service?.max_participants || 1,
       settings: {
         cancel_deadline: service?.settings?.cancel_deadline || null,
         booking_window_min: service?.settings?.booking_window_min || null,
@@ -326,7 +329,7 @@ export default function ServicePage({
               <Button
                 type="button"
                 styles="py-4 mb-2 shadow-none bg-transparent
-                  hover:bg-transparent text-red-500!"
+                  hover:bg-transparent! text-red-500!"
                 buttonText="Delete service"
                 onClick={() => setShowDeleteModal(true)}
               ></Button>

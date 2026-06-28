@@ -193,7 +193,7 @@ export default function ServicePhases({
 
 function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
   const [phaseData, setPhaseData] = useState({
-    id: phase?.id || 0,
+    id: phase?.id || -1,
     sequence: phase?.sequence || null,
     name: phase?.name || "",
     duration: phase?.duration || "",
@@ -228,7 +228,7 @@ function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
 
     if (!isEdit) {
       setPhaseData({
-        id: 0,
+        id: -1,
         sequence: null,
         name: "",
         duration: "",
