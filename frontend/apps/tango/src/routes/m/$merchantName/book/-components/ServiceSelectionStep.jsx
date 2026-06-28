@@ -124,7 +124,7 @@ export default function ServiceSelectionStep({
             />
           )}
           {showToggles && (
-            <div className="flex w-full overflow-x-auto pb-1">
+            <div className="flex w-full pb-1">
               <ToggleGroup
                 styles="w-full"
                 value={currentCategoryId}

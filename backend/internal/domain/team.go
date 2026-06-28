@@ -17,7 +17,6 @@ type TeamRepository interface {
 	GetEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) (PublicEmployee, error)
 
 	GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
-	GetEmployeesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]EmployeeForCalendar, error)
 
 	GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
 
@@ -33,10 +32,4 @@ type PublicEmployee struct {
 	Email       *string            `json:"email" db:"email"`
 	PhoneNumber *string            `json:"phone_number" db:"phone_number"`
 	IsActive    bool               `json:"is_active" db:"is_active"`
-}
-
-type EmployeeForCalendar struct {
-	Id        int    `json:"id" db:"id"`
-	FirstName string `json:"first_name" db:"first_name"`
-	LastName  string `json:"last_name" db:"last_name"`
 }

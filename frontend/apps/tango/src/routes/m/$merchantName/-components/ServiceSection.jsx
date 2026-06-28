@@ -80,7 +80,7 @@ export default function ServiceSection({
         category={categories[0].name}
         router={router}
       />
-      <div className="flex flex-col gap-5 pb-5">
+      <div className="flex w-full flex-col gap-5 pb-5">
         {!showToggles && (
           <SearchInput
             searchText={searchText}
@@ -91,8 +91,9 @@ export default function ServiceSection({
         )}
 
         {showToggles && (
-          <div className="hide-scrollbar flex w-full overflow-x-auto pb-1">
+          <div className="flex w-full pb-1">
             <ToggleGroup
+              styles="w-full"
               multiple={false}
               value={currentCategoryId}
               onValueChange={(val) => {
@@ -112,7 +113,7 @@ export default function ServiceSection({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto dark:scheme-dark">
+      <div className="flex-1">
         {displayCategories.length > 0 &&
         displayCategories[0].services.length > 0 ? (
           <div className="flex flex-col gap-8">

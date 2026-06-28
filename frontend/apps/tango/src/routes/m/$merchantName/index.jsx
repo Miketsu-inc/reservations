@@ -417,17 +417,11 @@ function MerchantPage() {
                       lg:gap-6"
                   >
                     <div className="flex items-center gap-4 lg:text-lg">
-                      <Icon
-                        icon={Mail01Icon}
-                        styles="size-5 lg:size-6 text-gray-500"
-                      />
+                      <Icon icon={Mail01Icon} styles="size-5 lg:size-6" />
                       {merchantInfo.contact_email}
                     </div>
                     <div className="flex items-center gap-4 lg:text-lg">
-                      <Icon
-                        icon={Call02Icon}
-                        styles="size-5 lg:size-6 text-gray-500"
-                      />
+                      <Icon icon={Call02Icon} styles="size-5 lg:size-6" />
                       {"+36 20 538  3565"}
                     </div>
                   </div>
@@ -437,8 +431,8 @@ function MerchantPage() {
                       lg:pt-6"
                   >
                     <p
-                      className="mb-4 text-sm font-semibold tracking-wider
-                        text-gray-500 lg:mb-5 lg:uppercase"
+                      className="mb-4 font-semibold text-gray-500 lg:mb-5
+                        dark:text-gray-400"
                     >
                       Follow us
                     </p>

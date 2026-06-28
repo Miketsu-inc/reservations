@@ -9,6 +9,7 @@ import {
   DatePicker,
   Icon,
   Input,
+  MultiSelect,
   Select,
   Switch,
 } from "@reservations/components";
@@ -70,6 +71,8 @@ export default function BlockedTimePanel({
   onDeleted,
   onSubmitted,
   isWindowSmall,
+  team,
+  currentEmployee,
 }) {
   const isEditing = blockedTime !== null;
   const originalTimeOptions = GenerateTimeOptions(preferences?.time_format);
@@ -103,6 +106,12 @@ export default function BlockedTimePanel({
     return options;
   });
 
+  // when the incoming blockedtime has empty eId array it means all team members
+  const initialEmployees =
+    isEditing && blockedTime?.extendedProps?.employee_ids.length === 0
+      ? team?.map((member) => member.id)
+      : (blockedTime?.extendedProps?.employee_ids ?? [currentEmployee]);
+
   const { showToast } = useToast();
   const { merchantId } = useAuth();
 
@@ -110,7 +119,7 @@ export default function BlockedTimePanel({
     id: blockedTime?.extendedProps?.id || null,
     blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
     name: blockedTime?.extendedProps?.name || "",
-    employee_ids: [],
+    employee_ids: initialEmployees,
     date: blockedTime?.start || new Date(),
     from_time: initialFromTime,
     to_time: initialToTime,
@@ -123,10 +132,11 @@ export default function BlockedTimePanel({
     blockedTimeTypesQueryOptions(merchantId)
   );
 
-  // const employeeOptions = employees?.map((employee) => ({
-  //   value: employee.id,
-  //   label: employee.first_name + " " + employee.last_name,
-  // }));
+  const teamOptions = team?.map((member) => ({
+    value: member.id,
+    label: member.first_name + " " + member.last_name,
+    initials: `${member.first_name[0]}${member.last_name[0]}`,
+  }));
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -143,6 +153,18 @@ export default function BlockedTimePanel({
       return;
     }
 
+    if (formData.employee_ids.length === 0) {
+      showToast({
+        message: "Please select a team member",
+        variant: "error",
+      });
+      return;
+    }
+
+    // send back empty array meaning blocked time for all employees
+    const isAllEmployees = formData.employee_ids.length === team.length;
+    const payloadEmployeeIds = isAllEmployees ? [] : formData.employee_ids;
+
     let blockedTypeId =
       formData.blocked_type_id === "custom"
         ? undefined
@@ -153,7 +175,7 @@ export default function BlockedTimePanel({
       blocked_type_id: blockedTypeId,
       name: formData.name,
       all_day: formData.all_day,
-      employee_ids: [],
+      employee_ids: payloadEmployeeIds,
     };
 
     if (formData.all_day) {
@@ -381,6 +403,18 @@ export default function BlockedTimePanel({
               maxVisibleItems={7}
             />
           </div>
+        )}
+        {team.length > 1 && (
+          <MultiSelect
+            options={teamOptions}
+            values={formData.employee_ids ? formData.employee_ids : []}
+            onSelect={(values) =>
+              updateBlockedTimeData({ employee_ids: values })
+            }
+            labelText="Team members"
+            displayText="member"
+            placeholder="Select team members"
+          />
         )}
       </div>
 

@@ -253,14 +253,14 @@ func mapToUpdatePreferencesInput(in updatePreferencesReq) (merchantServ.UpdatePr
 	}, nil
 }
 
-func mapToGetTeamMembersForCalendarResp(in []domain.EmployeeForCalendar) []getTeamMembersForCalendarResp {
+func mapToGetTeamMembersForCalendarResp(in []domain.PublicEmployee) []getTeamMembersForCalendarResp {
 	teamMembers := make([]getTeamMembersForCalendarResp, len(in))
 
 	for i, m := range in {
 		teamMembers[i] = getTeamMembersForCalendarResp{
 			Id:        m.Id,
-			FirstName: m.FirstName,
-			LastName:  m.LastName,
+			FirstName: *m.FirstName,
+			LastName:  *m.LastName,
 		}
 	}
 

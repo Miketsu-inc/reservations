@@ -7,29 +7,32 @@ import BlockedTimePanel from "./BlockedTimePanel";
 import EditBookingPanel from "./EditBookingPanel";
 import NewBookingPanel from "./NewBookingPanel";
 
-// async function fetchEmployees(merchantId) {
-//   const response = await fetch(`/api/v1/merchants/${merchantId}/calendar/employees`, {
-//     method: "GET",
-//     headers: {
-//       Accept: "application/json",
-//       "constent-type": "application/json",
-//     },
-//   });
+async function fetchTeamMembers(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/calendar/team`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "constent-type": "application/json",
+      },
+    }
+  );
 
-//   const result = await response.json();
-//   if (!response.ok) {
-//     throw result.error;
-//   } else {
-//     return result.data;
-//   }
-// }
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
 
-// function employeeQueryOptions(merchantId) {
-//   return queryOptions({
-//     queryKey: [merchantId, "calendar-employees"],
-//     queryFn: () => fetchEmployees(merchantId),
-//   });
-// }
+function teamMembersQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "calendar-team"],
+    queryFn: () => fetchTeamMembers(merchantId),
+  });
+}
 
 async function fetchCustomersForCalendar(merchantId) {
   const response = await fetch(
@@ -98,8 +101,7 @@ export default function CalendarSidePanel({
 }) {
   const windowSize = useWindowSize();
   const isWindowSmall = windowSize === "sm" || windowSize === "md";
-  const { merchantId } = useAuth();
-  // const { data: employees = [] } = useQuery(employeeQueryOptions(merchantId));
+  const { merchantId, employeeId } = useAuth();
 
   const {
     data: customers = [],
@@ -113,9 +115,19 @@ export default function CalendarSidePanel({
     error: servicesError,
   } = useQuery(servicesForCalendarQueryOptions(merchantId));
 
-  if (customersIsError || servicesIsError) {
+  const {
+    data: team = [],
+    isError: teamIsError,
+    error: teamError,
+  } = useQuery(teamMembersQueryOptions(merchantId));
+
+  if (customersIsError || servicesIsError || teamIsError) {
     return (
-      <ServerError error={customersError.message || servicesError.message} />
+      <ServerError
+        error={
+          customersError.message || servicesError.message || teamError.message
+        }
+      />
     );
   }
 
@@ -166,6 +178,8 @@ export default function CalendarSidePanel({
               onSubmitted={onSave}
               onDeleted={onSave}
               isWindowSmall={isWindowSmall}
+              team={team}
+              currentEmployee={employeeId}
             />
           )}
           {type === "edit-booking" && (

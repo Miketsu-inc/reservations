@@ -100,22 +100,6 @@ func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID)
 	return members, nil
 }
 
-func (r *teamRepository) GetEmployeesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.EmployeeForCalendar, error) {
-	query := `
-	select e.id, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name
-	from "Employee" e
-	left join "User" u on u.id = e.user_id
-	where merchant_id = $1`
-
-	rows, _ := r.db.Query(ctx, query, merchantId)
-	employees, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeForCalendar])
-	if err != nil {
-		return []domain.EmployeeForCalendar{}, err
-	}
-
-	return employees, nil
-}
-
 func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.PublicEmployee, error) {
 	query := `
 	select e.id, e.user_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,

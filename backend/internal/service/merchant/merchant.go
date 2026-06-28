@@ -291,15 +291,15 @@ func (s *Service) UpdatePreferences(ctx context.Context, input UpdatePreferences
 	return nil
 }
 
-func (s *Service) GetTeamMembersForCalendar(ctx context.Context) ([]domain.EmployeeForCalendar, error) {
+func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.PublicEmployee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	teamMember, err := s.teamRepo.GetEmployeesForCalendar(ctx, actor.MerchantId)
+	team, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.EmployeeForCalendar{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
+		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
 	}
 
-	return teamMember, nil
+	return team, nil
 }
 
 func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {

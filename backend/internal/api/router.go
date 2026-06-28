@@ -91,7 +91,7 @@ func NewRouter(h *Handlers) *chi.Mux {
 				r.Get("/preferences", h.Merchants.GetPreferences)
 				r.Patch("/preferences", h.Merchants.UpdatePreferences)
 
-				r.Get("/calendar/team", h.Merchants.GetTeamMembersForCalendar)
+				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
 				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
 				r.Get("/calendar/events", h.Merchants.GetCalendarEvents)

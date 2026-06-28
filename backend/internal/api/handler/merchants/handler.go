@@ -321,8 +321,8 @@ type getTeamMembersForCalendarResp struct {
 	LastName  string `json:"last_name"`
 }
 
-func (h *Handler) GetTeamMembersForCalendar(w http.ResponseWriter, r *http.Request) {
-	teamMembers, err := h.service.GetTeamMembersForCalendar(r.Context())
+func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) {
+	teamMembers, err := h.service.GetTeamForCalendar(r.Context())
 	if err != nil {
 		httputil.Error(w, http.StatusBadRequest, err)
 		return
