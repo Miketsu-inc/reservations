@@ -1,5 +1,11 @@
 import { Search01Icon } from "@hugeicons/core-free-icons";
-import { CloseButton, Icon, SearchInput } from "@reservations/components";
+import {
+  CloseButton,
+  Icon,
+  SearchInput,
+  Toggle,
+  ToggleGroup,
+} from "@reservations/components";
 import { useMemo, useState } from "react";
 import { ServiceCard } from "./BookingCards";
 
@@ -77,22 +83,16 @@ export default function ServiceSelector({
           />
         </div>
         {hasMultipleBookingTypes && (
-          <div className="flex items-center justify-start gap-3">
-            <FilterButton
-              name="All services"
-              onClick={() => setFilterType("all")}
-              isSelected={filterType === "all"}
-            />
-            <FilterButton
-              name="1-on-1"
-              onClick={() => setFilterType("appointment")}
-              isSelected={filterType === "appointment"}
-            />
-            <FilterButton
-              name="Group"
-              onClick={() => setFilterType("class")}
-              isSelected={filterType === "class"}
-            />
+          <div className="text-sm">
+            <ToggleGroup
+              multiple={false}
+              value={filterType}
+              onValueChange={(type) => setFilterType(type)}
+            >
+              <Toggle value="all">All Services</Toggle>
+              <Toggle value="appointment">1-on-1</Toggle>
+              <Toggle value="class">Group</Toggle>
+            </ToggleGroup>
           </div>
         )}
       </div>
@@ -137,22 +137,5 @@ export default function ServiceSelector({
         )}
       </div>
     </div>
-  );
-}
-
-function FilterButton({ name, onClick, isSelected }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium
-        transition-colors ${
-          isSelected
-            ? "bg-primary/80 text-white"
-            : `hover:bg-border_color/60 text-text_color dark:bg-border_color
-              bg-gray-200 dark:hover:bg-gray-400/20`
-        }`}
-    >
-      {name}
-    </button>
   );
 }

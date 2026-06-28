@@ -227,6 +227,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
+	// TODO: if the actor is not on the block time this will give an error
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
 	if err != nil {
 		return fmt.Errorf("error retrieving blocked time: %w", err)

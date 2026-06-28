@@ -147,6 +147,18 @@ export default function EditBookingPanel({
       return;
     }
 
+    if (
+      !isGroupBooking &&
+      isRecurring &&
+      bookingData.participants.length === 0
+    ) {
+      showToast({
+        message: "You must have a participant for a repeating 1-on-1 booking",
+        variant: "error",
+      });
+      return;
+    }
+
     const timestamp = combineDateTimeLocal(
       bookingData.date,
       bookingData.time
