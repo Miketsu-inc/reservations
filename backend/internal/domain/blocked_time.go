@@ -17,7 +17,7 @@ type BlockedTimeRepository interface {
 	UpdateBlockedTime(ctx context.Context, blockedTime BlockedTime) error
 	BulkUpdateBlockedTime(ctx context.Context, blockedTime []BlockedTime) error
 	BulkDeleteBlockedTime(ctx context.Context, blockedTimeIds []int) error
-	BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int) error
+	BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int, employeeIds []int) error
 	DeleteExternalCalendarBlockedTimes(ctx context.Context, extCalendarId int) error
 
 	GetBlockedTime(ctx context.Context, blockedTimeId int) (BlockedTime, error)

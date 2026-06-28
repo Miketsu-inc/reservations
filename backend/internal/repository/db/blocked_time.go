@@ -137,13 +137,13 @@ func (r *blockedTimeRepository) BulkDeleteBlockedTime(ctx context.Context, btIds
 	return nil
 }
 
-func (r *blockedTimeRepository) BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int) error {
+func (r *blockedTimeRepository) BulkDeleteEmployeeBlockedTime(ctx context.Context, blockedTimeIds []int, employeeIds []int) error {
 	query := `
 	delete from "EmployeeBlockedTime"
-	where id = any($1::int[])
+	where blocked_time_id = any($1::int[]) and employee_id = any($2::int[])
 	`
 
-	_, err := r.db.Exec(ctx, query, blockedTimeIds)
+	_, err := r.db.Exec(ctx, query, blockedTimeIds, employeeIds)
 	if err != nil {
 		return err
 	}

@@ -64,7 +64,7 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
 type updateReq struct {
 	Id            int    `json:"id" validate:"required"`
 	Name          string `json:"name" validate:"required"`
-	EmployeeIds   []int  `json:"employee_id"`
+	EmployeeIds   []int  `json:"employee_ids"`
 	BlockedTypeId *int   `json:"blocked_type_id"`
 	FromDate      string `json:"from_date" validate:"required"`
 	ToDate        string `json:"to_date" validate:"required"`

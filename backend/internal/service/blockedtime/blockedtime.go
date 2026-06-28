@@ -61,11 +61,21 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			AllDay:        input.AllDay,
 		}})
 		if err != nil {
-			return fmt.Errorf("could not make new blocked time %s", err.Error())
+			return fmt.Errorf("could not make new blocked time %w", err)
 		}
 
 		if len(input.EmployeeIds) > 0 {
-			err = s.blockedTimeRepo.BulkInsertEmployeeBlockedTime(ctx, ids, input.EmployeeIds)
+			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
+			if err != nil {
+				return fmt.Errorf("error retrieving employees: %w", err)
+			}
+
+			err = checkIfInActiveEmployees(employees, input.EmployeeIds)
+			if err != nil {
+				return err
+			}
+
+			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, utils.RepeatEach(ids, len(input.EmployeeIds)), input.EmployeeIds)
 			if err != nil {
 				return fmt.Errorf("could not make new employee blocked time: %w", err)
 			}
@@ -80,6 +90,54 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 		return nil
 	})
+}
+
+func checkIfInActiveEmployees(activeEmployees []domain.PublicEmployee, incomingIds []int) error {
+	activeIdsMap := make(map[int]struct{}, len(activeEmployees))
+	for _, e := range activeEmployees {
+		activeIdsMap[e.Id] = struct{}{}
+	}
+
+	for _, id := range incomingIds {
+		if _, ok := activeIdsMap[id]; !ok {
+			return fmt.Errorf("active employee with this id  does not exist")
+		}
+	}
+
+	return nil
+}
+
+type employeeChanges struct {
+	ToInsert []int
+	ToDelete []int
+}
+
+func detectEmployeeChanges(existing, incoming []int) (employeeChanges, error) {
+	var ec employeeChanges
+
+	existingMap := make(map[int]struct{}, len(existing))
+	for _, id := range existing {
+		existingMap[id] = struct{}{}
+	}
+
+	incomingMap := make(map[int]struct{}, len(incoming))
+	for _, id := range incoming {
+		incomingMap[id] = struct{}{}
+	}
+
+	for _, id := range existing {
+		if _, ok := incomingMap[id]; !ok {
+			ec.ToDelete = append(ec.ToDelete, id)
+		}
+	}
+
+	for _, id := range incoming {
+		if _, ok := existingMap[id]; !ok {
+			ec.ToInsert = append(ec.ToInsert, id)
+		}
+	}
+
+	return ec, nil
 }
 
 type UpdateInput struct {
@@ -122,37 +180,34 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return fmt.Errorf("error while updating blocked time for merchant: %s", err.Error())
 		}
 
-		if len(blockedTime.EmployeeIds) != len(input.EmployeeIds) {
-			if len(blockedTime.EmployeeIds) > 0 {
-				err := s.blockedTimeRepo.WithTx(tx).BulkDeleteEmployeeBlockedTime(ctx, []int{blockedTime.Id})
-				if err != nil {
-					return fmt.Errorf("error bulk deleting employee blocked times: %w", err)
-				}
+		employeeChanges, err := detectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
+		if err != nil {
+			return err
+		}
+
+		if len(employeeChanges.ToDelete) > 0 {
+			err := s.blockedTimeRepo.WithTx(tx).BulkDeleteEmployeeBlockedTime(ctx, []int{blockedTime.Id}, employeeChanges.ToDelete)
+			if err != nil {
+				return fmt.Errorf("error bulk deleting employee blocked times: %w", err)
+			}
+		}
+
+		if len(employeeChanges.ToInsert) > 0 {
+			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
+			if err != nil {
+				return fmt.Errorf("error retrieving employees: %w", err)
 			}
 
-			if len(input.EmployeeIds) > 0 {
-				employees, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
-				if err != nil {
-					return fmt.Errorf("error retrieving employees: %w", err)
-				}
+			err = checkIfInActiveEmployees(employees, employeeChanges.ToInsert)
+			if err != nil {
+				return err
+			}
 
-				activeEmployeeIdsMap := make(map[int]struct{}, len(employees))
-				for _, e := range employees {
-					activeEmployeeIdsMap[e.Id] = struct{}{}
-				}
+			btIds := utils.RepeatSlice([]int{input.BlockedTimeId}, len(employeeChanges.ToInsert))
 
-				for _, id := range input.EmployeeIds {
-					if _, ok := activeEmployeeIdsMap[id]; !ok {
-						return fmt.Errorf("active employee with this id does not exist: %d", id)
-					}
-				}
-
-				btIds := utils.RepeatSlice([]int{input.BlockedTimeId}, len(input.EmployeeIds))
-
-				err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, input.EmployeeIds)
-				if err != nil {
-					return fmt.Errorf("error bulk inserting employee blocked times: %w", err)
-				}
+			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, employeeChanges.ToInsert)
+			if err != nil {
+				return fmt.Errorf("error bulk inserting employee blocked times: %w", err)
 			}
 		}
 
