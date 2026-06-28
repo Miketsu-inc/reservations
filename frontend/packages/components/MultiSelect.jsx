@@ -11,8 +11,7 @@ export default function MultiSelect({
   onSelect,
   placeholder,
   labelText,
-  displayText = "items",
-  icon,
+  displayText = "item",
   required,
   styles,
   maxVisibleItems = 7,
@@ -60,18 +59,8 @@ export default function MultiSelect({
     }
   }
 
-  function getDisplayText() {
-    if (!values || values.length === 0) return placeholder;
-    if (values.length === options.length) return `All ${displayText}`;
-    if (values.length === 1) {
-      const selectedItem = options.find((o) => o.id === values[0]);
-      return selectedItem ? selectedItem.label : `1 ${displayText} selected`;
-    }
-    return `${values.length} ${displayText} selected`;
-  }
-
   function handleKeyDown(e) {
-    // options + 1 for 'All' - 1 for 0-index
+    // options + 1 for the 'All' option and - 1 for 0-index
     const maxIndex = options.length;
     setIsUsingKeyboard(true);
     if (e.key === "Enter" || e.key === " ") {
@@ -138,16 +127,13 @@ export default function MultiSelect({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {icon && values.length > 0 && (
-                  <span className="text-gray-500">{icon}</span>
-                )}
-                <span
-                  className={`${values.length > 0 ? "text-text_color" : "text-gray-500"}
-                    min-h-6 flex-1 truncate
-                    ${disabled ? "text-text_color/70" : ""}`}
-                >
-                  {getDisplayText()}
-                </span>
+                <TriggerContent
+                  values={values}
+                  options={options}
+                  placeholder={placeholder}
+                  displayText={displayText}
+                  disabled={disabled}
+                />
               </div>
               <Icon
                 icon={ArrowLeft01Icon}
@@ -253,5 +239,69 @@ export default function MultiSelect({
         </ul>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function TriggerContent({
+  options,
+  values,
+  placeholder,
+  displayText,
+  disabled,
+}) {
+  if (!values || values.length === 0) {
+    return (
+      <span
+        className={`${disabled ? "text-gray-500/70" : "text-gray-500"} min-h-6
+          flex-1 truncate`}
+      >
+        {placeholder}
+      </span>
+    );
+  }
+
+  const selectedOptions = values
+    .map((val) => options.find((o) => o.value === val))
+    .filter(Boolean);
+
+  const displayedOptions = selectedOptions.slice(0, 2);
+  const remainingCount = selectedOptions.length - 2;
+
+  let text = `${values.length} ${displayText} selected`;
+  if (values.length === options.length) {
+    text = `All ${displayText}`;
+  } else if (values.length === 1 && selectedOptions[0]) {
+    text = selectedOptions[0].label;
+  }
+
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <div className="flex shrink-0 -space-x-3">
+        {displayedOptions.map((option) => (
+          <Avatar
+            key={option.value}
+            img={option.img}
+            initials={option.initials || option.label?.substring(0, 2)}
+            styles="size-6! text-[10px]! rounded-full! border border-layer_bg"
+          />
+        ))}
+        {remainingCount > 0 && (
+          <div
+            className="border-layer_bg flex size-6 items-center justify-center
+              rounded-full border-2 bg-gray-300 text-[10px] font-semibold
+              text-white dark:bg-gray-600"
+          >
+            +{remainingCount}
+          </div>
+        )}
+      </div>
+      <span
+        className={`truncate text-sm ${
+          disabled ? "text-text_color/70" : "text-text_color"
+        }`}
+      >
+        {text}
+      </span>
+    </div>
   );
 }
