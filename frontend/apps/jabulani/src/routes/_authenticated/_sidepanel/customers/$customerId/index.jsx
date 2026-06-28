@@ -129,7 +129,7 @@ function CustomerDetailsPage() {
 
   if (queryResults.some((r) => r.isError)) {
     const error = queryResults.find((r) => r.error);
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   const completedBookings = queryResults[0].data.bookings.filter(

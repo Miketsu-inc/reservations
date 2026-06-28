@@ -82,7 +82,7 @@ function RouteComponent() {
 
   if (queryResults.some((r) => r.isError)) {
     const error = queryResults.find((r) => r.error);
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   async function saveServiceHandler(service) {

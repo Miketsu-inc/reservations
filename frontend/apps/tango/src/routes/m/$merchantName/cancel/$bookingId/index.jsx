@@ -82,7 +82,7 @@ function CancelPage() {
   }
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   const dateInfo = formatDate(bookingData.from_date);

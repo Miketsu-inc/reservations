@@ -47,7 +47,7 @@ function RouteComponent() {
   }
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   async function saveServiceHandler(service) {

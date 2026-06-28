@@ -72,7 +72,7 @@ function BlockedTimesManager() {
   }
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   function handleOpenModal(timeType) {

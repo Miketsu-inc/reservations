@@ -82,7 +82,7 @@ function MerchantPage() {
   }
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   const businessHoursStatus = merchantInfo.business_hours_status;

@@ -114,7 +114,7 @@ function ServicesPage() {
   }
 
   if (isError) {
-    return <ServerError error={error} />;
+    return <ServerError error={error.message} />;
   }
 
   async function invalidateServicesQuery() {
