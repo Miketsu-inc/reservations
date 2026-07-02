@@ -99,8 +99,8 @@ export default function CalendarSidePanel({
   onSoftUpdate,
   preferences,
 }) {
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
+
   const { merchantId, employeeId } = useAuth();
 
   const {

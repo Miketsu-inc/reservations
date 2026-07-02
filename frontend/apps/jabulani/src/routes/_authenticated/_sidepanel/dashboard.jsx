@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
 });
 
 function DashboardPage() {
-  const windowSize = useWindowSize();
+  const { isWindowSmall, windowSize } = useWindowSize();
   const [period, setPeriod] = useState(7);
   const { queryClient } = useRouteContext({ from: Route.id });
   const { merchantId } = useAuth();
@@ -83,7 +83,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex h-full flex-col px-4 py-2 md:px-0 md:py-0 lg:h-[90svh]">
+    <div className="flex h-full flex-col px-4 py-2 lg:h-[90svh] lg:px-0 lg:py-0">
       <div className="flex flex-row items-center justify-between pb-3">
         <p className="text-xl">Your dashboard</p>
         <Select
@@ -111,35 +111,33 @@ function DashboardPage() {
                 title="Revenue"
                 text={`${data.statistics.revenue_sum}`}
                 percent={data.statistics.revenue_change}
-                tooltip={windowSize !== "sm" && windowSize !== "md"}
+                tooltip={!isWindowSmall}
                 tooltipText="Calculated by adding up all your completed bookings for this period"
               />
               <StatisticsCard
                 title="Bookings"
                 text={data.statistics.bookings}
                 percent={data.statistics.bookings_change}
-                tooltip={windowSize !== "sm" && windowSize !== "md"}
+                tooltip={!isWindowSmall}
                 tooltipText="The amount of completed bookings in this period"
               />
-              {windowSize === "lg" ||
-              windowSize === "2xl" ||
-              windowSize === "3xl" ? (
+              {windowSize === "lg" || windowSize === "2xl" ? (
                 <StatisticsCard
                   title="Cancellations"
                   text={data.statistics.cancellations}
                   percent={data.statistics.cancellations_change}
-                  tooltip={windowSize !== "sm" && windowSize !== "md"}
+                  tooltip={!isWindowSmall}
                   tooltipText="The amount of cancelled bookings (by customers) in this period"
                 />
               ) : (
                 <></>
               )}
-              {windowSize === "3xl" ? (
+              {windowSize === "2xl" ? (
                 <StatisticsCard
                   title="Average duration"
                   text={data.statistics.average_duration}
                   percent={data.statistics.average_duration_change}
-                  tooltip={windowSize !== "sm" && windowSize !== "md"}
+                  tooltip={!isWindowSmall}
                   tooltipText="The average duration of services from your completed bookings in this period"
                 />
               ) : (

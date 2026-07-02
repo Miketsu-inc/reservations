@@ -105,7 +105,7 @@ export const Route = createFileRoute(
 
 function CustomerDetailsPage() {
   const navigate = Route.useNavigate();
-  const windowSize = useWindowSize();
+  const { windowSize } = useWindowSize();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -288,7 +288,7 @@ function CustomerDetailsPage() {
         onDelete={() => deleteHandler(queryResults[0].data.id)}
       />
       <div
-        className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2"
+        className="flex w-full flex-col gap-5 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
       >
         <ServerError error={serverError} />
         <Card styles="flex flex-col items-start gap-4">

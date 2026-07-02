@@ -583,7 +583,7 @@ export default function EditBookingPanel({
         {!isBookingCompleted && (
           <div
             className="border-border_color bg-layer_bg items center fixed
-              bottom-0 flex w-full border-t px-6 py-4 md:w-110"
+              bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
           >
             <Button
               styles="py-2 px-4 w-full"

@@ -38,7 +38,7 @@ export default function CustomerProfile({
             initials={`${customer?.first_name?.[0] || "?"}${customer?.last_name?.[0] || ""}`}
           />
           <div className="text-text_color text-center text-xl font-bold">
-            {customer.first_name} {customer.last_name}
+            {customer?.first_name} {customer?.last_name}
           </div>
         </div>
 

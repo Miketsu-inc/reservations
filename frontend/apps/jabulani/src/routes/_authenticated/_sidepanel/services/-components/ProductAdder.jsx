@@ -180,8 +180,8 @@ function ProductForm({
     unit: product?.unit || "",
     amount_used: product?.amount_used || "",
   });
-  const windowSize = useWindowSize();
-  const isWindowSmall = ["sm", "md", "lg"].includes(windowSize);
+  const { isWindowSmall } = useWindowSize();
+
   const productOptions = useMemo(
     () =>
       availableProducts.map((product) => ({

@@ -19,12 +19,12 @@ export const Route = createFileRoute(
 });
 
 function CustomersLayout() {
-  const windowSize = useWindowSize();
+  const { windowSize } = useWindowSize();
   const pathName = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <div
-      className="flex flex-col justify-center gap-6 px-4 py-2 md:px-0 md:py-0"
+      className="flex flex-col justify-center gap-6 px-4 py-2 lg:px-0 lg:py-0"
     >
       <div className="flex w-full flex-col gap-4">
         <h1 className="text-text_color text-xl">Customers</h1>
@@ -64,12 +64,12 @@ function CustomersLayout() {
             <Link from={Route.fullPath} to="new">
               <Button
                 variant="primary"
-                styles="sm:py-2 sm:px-4 w-fit p-2"
+                styles="p-2 md:px-4 w-fit"
                 buttonText={windowSize !== "sm" ? "New Customer" : ""}
               >
                 <Icon
                   icon={PlusSignIcon}
-                  styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white"
+                  styles="size-6 md:size-5 md:mr-2 text-white"
                 />
               </Button>
             </Link>

@@ -29,8 +29,7 @@ function RouteComponent() {
   const { showToast } = useToast();
   const navigate = Route.useNavigate();
   const { queryClient } = useRouteContext({ from: Route.id });
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
 
   async function invalidateMeQuery() {
     await queryClient.invalidateQueries({

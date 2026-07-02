@@ -23,15 +23,13 @@ export default function CustomersTable({
   onRowClick,
   noRowsOverlayComponent,
 }) {
-  const windowSize = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const [selected, setSelected] = useState({
     id: 0,
     first_name: "",
     last_name: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const isSmallScreen =
-    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const columnDef = [
     { field: "id", hide: true },
@@ -40,7 +38,7 @@ export default function CustomersTable({
       headerName: "Name",
       flex: 1,
       resizable: false,
-      ...(isSmallScreen ? { minWidth: 180 } : {}),
+      ...(isWindowSmall ? { minWidth: 180 } : {}),
       valueGetter: (params) =>
         `${params.data.first_name} ${params.data.last_name}`.trim(),
       cellRenderer: (params) => {
@@ -63,7 +61,7 @@ export default function CustomersTable({
       headerName: "Phone number",
       flex: 1,
       resizable: false,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      ...(isWindowSmall ? { minWidth: 120 } : {}),
       cellStyle: {
         display: "flex",
         alignItems: "center",
@@ -74,7 +72,7 @@ export default function CustomersTable({
       headerName: "Booking history",
       flex: 1,
       resizable: false,
-      hide: isSmallScreen,
+      hide: isWindowSmall,
       cellRenderer: (params) => {
         return (
           <div className="flex h-full flex-row items-center gap-2">

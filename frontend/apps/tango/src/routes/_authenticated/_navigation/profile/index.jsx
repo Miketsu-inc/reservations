@@ -26,8 +26,7 @@ export const Route = createFileRoute("/_authenticated/_navigation/profile/")({
 
 function RouteComponent() {
   const { data: user, isLoading } = useQuery(meQueryOptions());
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
 
   if (isLoading) {
     return <Loading />;

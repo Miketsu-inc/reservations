@@ -42,7 +42,7 @@ export default function Table({
   const tableRef = useRef();
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const windowSize = useWindowSize();
+  const { windowSize } = useWindowSize();
 
   const onBtnExport = useCallback(() => {
     tableRef.current.api.exportDataAsCsv({

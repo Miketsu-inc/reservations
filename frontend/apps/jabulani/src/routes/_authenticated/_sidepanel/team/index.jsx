@@ -116,7 +116,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="h-screen px-4 py-2 md:px-0 md:py-0">
+    <div className="h-screen px-4 py-2 lg:px-0 lg:py-0">
       <p className="pb-6 text-xl">Team members</p>
       <ServerError error={serverError} />
       <div className="h-2/3">

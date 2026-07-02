@@ -37,8 +37,7 @@ export const Route = createFileRoute("/_authenticated/_navigation")({
 
 function NavLayout() {
   const navigate = Route.useNavigate();
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
 

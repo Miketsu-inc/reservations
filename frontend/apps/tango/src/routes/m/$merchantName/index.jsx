@@ -67,8 +67,7 @@ const days = [
 function MerchantPage() {
   const { merchantName } = Route.useParams({ from: Route.id });
   const [isFavourite, setIsFavourite] = useState(false);
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
 
   const {
     data: merchantInfo,
@@ -101,35 +100,33 @@ function MerchantPage() {
       className="bg-layer_bg lg:bg-bg_color relative flex min-h-screen w-full
         flex-col"
     >
-      {isWindowSmall && (
-        <div
-          className="bg-layer_bg border-border_color sticky top-0 z-50 flex
-            w-full items-center justify-between border-b-2 p-3 shadow-sm"
+      <div
+        className="bg-layer_bg border-border_color sticky top-0 z-50 flex w-full
+          items-center justify-between border-b-2 p-3 shadow-sm lg:hidden"
+      >
+        <Link
+          className="hover:bg-hvr_gray rounded-md p-1"
+          to={`http://app.reservations.local:3000/dashboard`}
+          from={Route.fullPath}
         >
-          <Link
-            className="hover:bg-hvr_gray rounded-md p-1"
-            to={`http://app.reservations.local:3000/dashboard`}
-            from={Route.fullPath}
-          >
-            <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
-          </Link>
-          <span className="truncate px-2.5 text-lg font-semibold">
-            {merchantInfo.merchant_name}
-          </span>
-          <button
-            className="hover:bg-hvr_gray rounded-md p-1"
-            onClick={() => {
-              setIsFavourite(!isFavourite);
-            }}
-          >
-            <Icon
-              icon={FavouriteIcon}
-              styles={` size-6
+          <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
+        </Link>
+        <span className="truncate px-2.5 text-lg font-semibold">
+          {merchantInfo.merchant_name}
+        </span>
+        <button
+          className="hover:bg-hvr_gray rounded-md p-1"
+          onClick={() => {
+            setIsFavourite(!isFavourite);
+          }}
+        >
+          <Icon
+            icon={FavouriteIcon}
+            styles={` size-6
               ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
-            />
-          </button>
-        </div>
-      )}
+          />
+        </button>
+      </div>
 
       <div className="mx-auto flex w-full max-w-360 flex-col lg:px-10 lg:pt-6">
         {!isWindowSmall && (
@@ -251,60 +248,58 @@ function MerchantPage() {
             lg:pt-14 xl:gap-18"
         >
           <div
-            className="relative z-10 -mt-6 flex w-full flex-col gap-10
-              rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%] lg:gap-12
-              lg:rounded-none lg:px-0 lg:pt-0"
+            className="bg-layer_bg lg:bg-bg_color relative z-10 -mt-6 flex
+              w-full flex-col gap-10 rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0
+              lg:w-[65%] lg:gap-12 lg:rounded-none lg:px-0 lg:pt-0"
           >
-            {isWindowSmall && (
-              <div className="flex flex-col gap-3.5">
-                <h1 className="text-3xl font-bold">
-                  {merchantInfo.merchant_name}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 text-yellow-500">
-                    <Icon icon={StarIcon} styles="size-5 fill-yellow-500" />
-                    <div className="flex items-center gap-1">
-                      <span>4.6</span>
-                      <button className="text-primary" onClick={() => {}}>
-                        (9)
-                      </button>
-                    </div>
-                  </div>
-                  <span className="text-gray-400">•</span>
-                  <div className="flex items-center gap-2">
-                    <Icon icon={Clock01Icon} styles="size-5" />
-                    {businessHoursStatus.is_business_open ? (
-                      <span className="flex items-center gap-1">
-                        <span
-                          className="font-medium text-green-600
-                            dark:text-green-500"
-                        >
-                          Open
-                        </span>
-                        - closes at {businessHoursStatus.close_time}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-nowrap">
-                        <span
-                          className="font-medium text-orange-700
-                            dark:text-orange-500"
-                        >
-                          Closed
-                        </span>
-                        - opens {nextOpenStr}
-                      </span>
-                    )}
+            <div className="flex flex-col gap-3.5 lg:hidden">
+              <h1 className="text-3xl font-bold">
+                {merchantInfo.merchant_name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 text-yellow-500">
+                  <Icon icon={StarIcon} styles="size-5 fill-yellow-500" />
+                  <div className="flex items-center gap-1">
+                    <span>4.6</span>
+                    <button className="text-primary" onClick={() => {}}>
+                      (9)
+                    </button>
                   </div>
                 </div>
-                <div
-                  className="flex items-center gap-3 text-gray-600
-                    dark:text-gray-300"
-                >
-                  <Icon icon={Location01Icon} styles="size-5" />
-                  <span>{merchantInfo.formatted_location}</span>
+                <span className="text-gray-400">•</span>
+                <div className="flex items-center gap-2">
+                  <Icon icon={Clock01Icon} styles="size-5" />
+                  {businessHoursStatus.is_business_open ? (
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="font-medium text-green-600
+                          dark:text-green-500"
+                      >
+                        Open
+                      </span>
+                      - closes at {businessHoursStatus.close_time}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-nowrap">
+                      <span
+                        className="font-medium text-orange-700
+                          dark:text-orange-500"
+                      >
+                        Closed
+                      </span>
+                      - opens {nextOpenStr}
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
+              <div
+                className="flex items-center gap-3 text-gray-600
+                  dark:text-gray-300"
+              >
+                <Icon icon={Location01Icon} styles="size-5" />
+                <span>{merchantInfo.formatted_location}</span>
+              </div>
+            </div>
 
             <div className="flex w-full flex-col gap-2 lg:gap-4">
               <h2 className="text-xl font-semibold lg:text-2xl">
@@ -382,21 +377,20 @@ function MerchantPage() {
               </div>
             </ReservationSection>
 
-            {isWindowSmall && (
-              <div
-                className="border-border_color bg-layer_bg sticky bottom-0 z-10
-                  flex w-full items-center justify-between border-y py-4"
+            <div
+              className="border-border_color bg-layer_bg sticky bottom-0 z-10
+                flex w-full items-center justify-between border-y py-4
+                lg:hidden"
+            >
+              <span>{merchantName}</span>
+              <Link
+                from={Route.fullPath}
+                to="book"
+                search={{ locationId: merchantInfo.location_id }}
               >
-                <span>{merchantName}</span>
-                <Link
-                  from={Route.fullPath}
-                  to="book"
-                  search={{ locationId: merchantInfo.location_id }}
-                >
-                  <Button buttonText="Reserve Now" styles="py-2 px-4" />
-                </Link>
-              </div>
-            )}
+                <Button buttonText="Reserve Now" styles="py-2 px-4" />
+              </Link>
+            </div>
 
             <div className="flex w-full flex-col gap-10 lg:flex-row lg:gap-20">
               <ReservationSection name="Business Hours" show={true}>
@@ -453,90 +447,88 @@ function MerchantPage() {
             </div>
           </div>
 
-          {!isWindowSmall && (
-            <div className="lg:w-[35%]">
-              <div
-                className="border-border_color bg-layer_bg sticky top-14 flex
-                  flex-col gap-5 rounded-xl border p-8 shadow-lg"
-              >
-                <div className="flex items-start justify-between gap-2 pb-4">
-                  <div className="flex flex-col gap-2">
-                    <h2 className="text-4xl font-bold">
-                      {merchantInfo.merchant_name}
-                    </h2>
-                    <div className="flex items-center gap-2 text-xl font-medium">
-                      <Icon
-                        icon={StarIcon}
-                        styles="size-5 fill-yellow-500 text-yellow-500"
-                      />
-                      <span>4.6</span>
-                      <span className="text-primary ml-1 font-normal">
-                        (9 reviews)
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    className="bg-layer_bg hover:bg-hvr_gray/20
-                      border-border_color h-fit rounded-full border p-3
-                      shadow-md transition-colors"
-                    onClick={() => {
-                      setIsFavourite(!isFavourite);
-                    }}
-                  >
+          <div className="hidden lg:block lg:w-[35%]">
+            <div
+              className="border-border_color bg-layer_bg sticky top-14 flex
+                flex-col gap-5 rounded-xl border p-8 shadow-lg"
+            >
+              <div className="flex items-start justify-between gap-2 pb-4">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-4xl font-bold">
+                    {merchantInfo.merchant_name}
+                  </h2>
+                  <div className="flex items-center gap-2 text-xl font-medium">
                     <Icon
-                      icon={FavouriteIcon}
-                      styles={` size-6
-                      ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
+                      icon={StarIcon}
+                      styles="size-5 fill-yellow-500 text-yellow-500"
                     />
-                  </button>
+                    <span>4.6</span>
+                    <span className="text-primary ml-1 font-normal">
+                      (9 reviews)
+                    </span>
+                  </div>
                 </div>
-                <Link
-                  from={Route.fullPath}
-                  to="book"
-                  search={{ locationId: merchantInfo.location_id }}
+                <button
+                  className="bg-layer_bg hover:bg-hvr_gray/20
+                    border-border_color h-fit rounded-full border p-3 shadow-md
+                    transition-colors"
+                  onClick={() => {
+                    setIsFavourite(!isFavourite);
+                  }}
                 >
-                  <Button
-                    buttonText="Reserve Now"
-                    styles="w-full py-2.5 text-lg"
+                  <Icon
+                    icon={FavouriteIcon}
+                    styles={` size-6
+                      ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
                   />
-                </Link>
+                </button>
+              </div>
+              <Link
+                from={Route.fullPath}
+                to="book"
+                search={{ locationId: merchantInfo.location_id }}
+              >
+                <Button
+                  buttonText="Reserve Now"
+                  styles="w-full py-2.5 text-lg"
+                />
+              </Link>
 
-                <div
-                  className="border-border_color mt-2 flex flex-col gap-5
-                    border-t pt-6 text-gray-600 dark:text-gray-300"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon icon={Clock01Icon} styles="size-5" />
-                    {businessHoursStatus.is_business_open ? (
-                      <span className="flex items-center gap-1">
-                        <span
-                          className="font-medium text-green-600
-                            dark:text-green-500"
-                        >
-                          Open
-                        </span>
-                        - closes at {businessHoursStatus.close_time}
+              <div
+                className="border-border_color mt-2 flex flex-col gap-5 border-t
+                  pt-6 text-gray-600 dark:text-gray-300"
+              >
+                <div className="flex items-center gap-2">
+                  <Icon icon={Clock01Icon} styles="size-5" />
+                  {businessHoursStatus.is_business_open ? (
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="font-medium text-green-600
+                          dark:text-green-500"
+                      >
+                        Open
                       </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-nowrap">
-                        <span
-                          className="font-medium text-orange-700
-                            dark:text-orange-500"
-                        >
-                          Closed
-                        </span>
-                        - opens {nextOpenStr}
+                      - closes at {businessHoursStatus.close_time}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-nowrap">
+                      <span
+                        className="font-medium text-orange-700
+                          dark:text-orange-500"
+                      >
+                        Closed
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-start gap-1.5">
-                    <Icon icon={Location01Icon} styles="size-5 mt-0.5" />
-                    <span>{merchantInfo.formatted_location}</span>
-                  </div>
+                      - opens {nextOpenStr}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <Icon icon={Location01Icon} styles="size-5 mt-0.5" />
+                  <span>{merchantInfo.formatted_location}</span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

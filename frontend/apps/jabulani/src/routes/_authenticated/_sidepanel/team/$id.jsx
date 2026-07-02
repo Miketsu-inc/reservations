@@ -18,11 +18,7 @@ import {
   ServerError,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  invalidateLocalStorageAuth,
-  useToast,
-  useWindowSize,
-} from "@reservations/lib";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -49,7 +45,6 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/team/$id")({
 function RouteComponent() {
   const { id } = Route.useParams({ from: Route.id });
   const router = useRouter();
-  const windowSize = useWindowSize();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
@@ -113,7 +108,7 @@ function RouteComponent() {
         onDelete={deleteHandler}
       />
       <div
-        className="flex w-full flex-col gap-5 px-3 sm:px-0 lg:w-2/3 2xl:w-1/2"
+        className="flex w-full flex-col gap-5 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
       >
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
@@ -123,10 +118,7 @@ function RouteComponent() {
               />
 
               <div className="flex flex-col gap-1">
-                <div
-                  className={`flex flex-col gap-2
-                    ${windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
-                >
+                <div className="flex flex-col gap-2 md:flex-row md:gap-4">
                   <h2 className="text-text_color text-lg font-bold">
                     {employee.first_name} {employee.last_name}
                   </h2>

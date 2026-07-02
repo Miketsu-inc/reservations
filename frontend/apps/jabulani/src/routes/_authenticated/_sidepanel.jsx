@@ -47,8 +47,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel")({
 
 function SidePanelLayout() {
   const navigate = Route.useNavigate();
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
   const [isOpenend, setIsOpened] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(
     localStorage.getItem("sidepanel_collapsed") === "true"

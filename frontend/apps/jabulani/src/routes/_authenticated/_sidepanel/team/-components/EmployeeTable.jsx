@@ -12,9 +12,7 @@ export default function EmployeeTable({
   onEdit,
   onDelete,
 }) {
-  const windowSize = useWindowSize();
-  const isSmallScreen =
-    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
+  const { isWindowSmall } = useWindowSize();
 
   const [selected, setSelected] = useState({
     id: 0,
@@ -30,7 +28,7 @@ export default function EmployeeTable({
       headerName: "Name",
       flex: 1,
       resizable: false,
-      ...(isSmallScreen ? { minWidth: 180 } : {}),
+      ...(isWindowSmall ? { minWidth: 180 } : {}),
       valueGetter: (params) =>
         `${params.data.first_name} ${params.data.last_name}`.trim(),
       cellRenderer: (params) => {
@@ -53,7 +51,7 @@ export default function EmployeeTable({
       headerName: "Role",
       flex: 1,
       resizable: false,
-      ...(isSmallScreen ? { minWidth: 80 } : {}),
+      ...(isWindowSmall ? { minWidth: 80 } : {}),
       cellStyle: {
         display: "flex",
         alignItems: "center",
@@ -64,8 +62,8 @@ export default function EmployeeTable({
       headerName: "Phone number",
       flex: 1,
       resizable: false,
-      hide: isSmallScreen,
-      ...(isSmallScreen ? { minWidth: 140 } : {}),
+      hide: isWindowSmall,
+      ...(isWindowSmall ? { minWidth: 140 } : {}),
       cellStyle: {
         display: "flex",
         alignItems: "center",

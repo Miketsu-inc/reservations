@@ -49,7 +49,7 @@ function BlockedTimesManager() {
   const { queryClient } = Route.useRouteContext();
   const { merchantId } = useAuth();
   const { showToast } = useToast();
-  const windowSize = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const {
@@ -124,13 +124,13 @@ function BlockedTimesManager() {
         {hasData && (
           <Button
             variant="primary"
-            styles="sm:py-2 sm:px-4 w-fit p-2"
-            buttonText={windowSize !== "sm" ? "Add" : ""}
+            styles="lg:py-2 lg:px-4 w-fit p-2"
+            buttonText={!isWindowSmall ? "Add" : ""}
             onClick={() => handleOpenModal()}
           >
             <Icon
               icon={PlusSignIcon}
-              styles="size-6 sm:size-5 sm:mr-2 sm:mb-0.5 text-white"
+              styles="size-6 lg:size-5 lg:mr-2 lg:mb-0.5 text-white"
             />
           </Button>
         )}

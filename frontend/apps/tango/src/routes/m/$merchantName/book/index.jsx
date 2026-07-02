@@ -96,8 +96,7 @@ function BookingFLow() {
     time: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const windowSize = useWindowSize();
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
+  const { isWindowSmall } = useWindowSize();
 
   const [isScrolled, setIsScrolled] = useState(false);
 

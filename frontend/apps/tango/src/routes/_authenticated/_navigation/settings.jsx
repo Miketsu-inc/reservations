@@ -21,14 +21,12 @@ export const Route = createFileRoute("/_authenticated/_navigation/settings")({
 
 function RouteComponent() {
   const navigate = Route.useNavigate();
-  const windowSize = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const { showToast } = useToast();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState();
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState();
 
   const { isDarkTheme, switchTheme } = useTheme();
-
-  const isWindowSmall = windowSize === "sm" || windowSize === "md";
 
   async function logoutHandler() {
     const response = await fetch("/api/v1/auth/logout", {

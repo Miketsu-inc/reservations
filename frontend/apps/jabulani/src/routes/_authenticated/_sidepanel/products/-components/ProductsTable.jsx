@@ -16,7 +16,7 @@ export default function ProductsTable({
   onEdit,
   onNewItem,
 }) {
-  const windowSize = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const [selected, setSelected] = useState({
     id: 0,
     first_name: "",
@@ -24,20 +24,18 @@ export default function ProductsTable({
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const isSmallScreen = windowSize !== "xl" || windowSize !== "2xl";
-
   const columnDef = [
     { field: "id", hide: true },
     {
       field: "name",
       headerName: "Product Name",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      ...(isWindowSmall ? { minWidth: 120 } : {}),
     },
     {
       field: "description",
       flex: 1,
-      ...(isSmallScreen ? { minWidth: 120 } : {}),
+      ...(isWindowSmall ? { minWidth: 120 } : {}),
       headerName: "Description",
     },
     {

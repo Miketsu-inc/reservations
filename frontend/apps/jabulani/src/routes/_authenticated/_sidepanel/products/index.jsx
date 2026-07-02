@@ -151,7 +151,7 @@ function ProductsPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center px-4 py-2 md:px-0 md:py-0">
+    <div className="flex h-screen justify-center px-4 py-2 lg:px-0 lg:py-0">
       <ProductModal
         key={modalData?.id || "new"}
         data={modalData}

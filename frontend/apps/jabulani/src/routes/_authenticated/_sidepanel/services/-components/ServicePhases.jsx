@@ -29,9 +29,7 @@ export default function ServicePhases({
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editPhase, setEditPhase] = useState(null);
-  const windowSize = useWindowSize();
-
-  const isWindowSmall = windowSize === "sm";
+  const { isWindowSmall } = useWindowSize();
 
   // Sort phases by sequence to ensure proper display order
   const sortedPhases = useMemo(() => {

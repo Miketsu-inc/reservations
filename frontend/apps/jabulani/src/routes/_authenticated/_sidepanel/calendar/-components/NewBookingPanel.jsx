@@ -284,7 +284,7 @@ export default function NewBookingPanel({
             isNested={false}
           />
         ) : (
-          <>
+          <div className="w-full">
             <NestedSidePanel
               isOpen={isNestedPanelOpen}
               onBack={() =>
@@ -365,7 +365,7 @@ export default function NewBookingPanel({
             </NestedSidePanel>
             <div
               className={`no-scrollbar relative h-full w-full overflow-y-auto
-                pb-20 ${isWindowSmall ? "pt-0" : "pt-10"} md:w-110`}
+                pb-20 ${isWindowSmall ? "pt-0" : "pt-10"} `}
             >
               {isWindowSmall && (
                 <div className="flex w-full items-center justify-end px-4 pt-5">
@@ -490,7 +490,7 @@ export default function NewBookingPanel({
               </div>
               <div
                 className="border-border_color bg-layer_bg items center fixed
-                  bottom-0 flex w-full border-t px-6 py-4 md:w-110"
+                  bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
               >
                 <Button
                   styles="py-2 px-4 w-full"
@@ -501,7 +501,7 @@ export default function NewBookingPanel({
                 />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

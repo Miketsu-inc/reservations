@@ -22,11 +22,8 @@ export default function TeamSection({ isWindowSmall, merchantName }) {
   return (
     <div className="flex flex-col">
       <div
-        className={`flex w-full ${
-          isWindowSmall
-            ? "scrollbar-thin gap-8 overflow-x-auto"
-            : "flex-wrap gap-x-16 gap-y-12"
-          } dark:scheme-dark`}
+        className="flex w-full scrollbar-thin gap-8 overflow-x-auto lg:flex-wrap
+          lg:gap-x-16 lg:gap-y-12 dark:scheme-dark"
       >
         {employees.map((employee) => (
           <div

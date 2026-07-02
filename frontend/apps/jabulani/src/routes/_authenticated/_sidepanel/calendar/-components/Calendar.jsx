@@ -149,11 +149,8 @@ export default function Calendar({ router, route, search }) {
   });
   const [calendarView, setCalendarView] = useState(search.view);
 
-  const windowSize = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const calendarRef = useRef();
-
-  const isWindowSmall =
-    windowSize === "sm" || windowSize === "md" || windowSize === "lg";
 
   const invalidateBookingsQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -234,7 +231,7 @@ export default function Calendar({ router, route, search }) {
   return (
     <div
       className="flex h-[85svh] flex-col px-4 py-2 md:h-fit md:max-h-[90svh]
-        md:px-0 md:py-0"
+        lg:px-0 lg:py-0"
     >
       <CalendarSidePanel
         isOpen={sidePanelState.isOpen}

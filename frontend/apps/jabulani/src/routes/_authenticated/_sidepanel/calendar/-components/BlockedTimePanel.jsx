@@ -310,7 +310,7 @@ export default function BlockedTimePanel({
   return (
     <form
       className={`no-scrollbar relative h-full w-full justify-between
-        overflow-y-auto ${isWindowSmall ? "pt-0" : "pt-10"} md:w-110`}
+        overflow-y-auto ${isWindowSmall ? "pt-0" : "pt-10"} lg:w-110`}
       d="BlockedTimeForm"
       onSubmit={handleSubmit}
     >
