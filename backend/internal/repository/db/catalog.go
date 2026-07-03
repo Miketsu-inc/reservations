@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -28,7 +27,7 @@ func (r *catalogRepository) NewService(ctx context.Context, serv domain.Service)
 	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person,
 		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((
-		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1 and deleted_on is null
+		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1
 		), 1), $11, $12, $13, $14, $15, $16, $17)
 	returning id
 	`
@@ -48,7 +47,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 	query := `
 	with old as (
 		select id, category_id from "Service"
-		where id = $1 and merchant_id = $2 and deleted_on is null
+		where id = $1 and merchant_id = $2
 	)
 	update "Service"
 	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8,
@@ -57,7 +56,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 		sequence = case
 			when old.category_id is distinct from $3 then (
 				coalesce((
-					select max(sequence) + 1 from "Service" where category_id is not distinct from $3 and merchant_id = $2 and deleted_on is null
+					select max(sequence) + 1 from "Service" where category_id is not distinct from $3 and merchant_id = $2
 				), 1)
 			)
 			else sequence
@@ -80,12 +79,11 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 
 func (r *catalogRepository) DeleteService(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
 	query := `
-	update "Service"
-	set deleted_on = $1
-	where merchant_id = $2 and ID = $3
+	delete from "Service"
+	where merchant_id = $1 and ID = $2
 	`
 
-	_, err := r.db.Exec(ctx, query, time.Now().UTC(), merchantId, serviceId)
+	_, err := r.db.Exec(ctx, query, merchantId, serviceId)
 	if err != nil {
 		return err
 	}
@@ -146,7 +144,7 @@ func (r *catalogRepository) ReorderServicesAfterUpdate(ctx context.Context, cate
 	with reordered as (
 		select id, row_number() over (order by sequence) as new_sequence
 		from "Service"
-		where category_id is not distinct from $1 and merchant_id = $2 and deleted_on is null and ($3::int is null or id != $3)
+		where category_id is not distinct from $1 and merchant_id = $2 and ($3::int is null or id != $3)
 	)
 	update "Service" s
 	set sequence = r.new_sequence
@@ -168,7 +166,7 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 	with services as (
 		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.price_type,
 			s.is_active, s.sequence, s.min_participants, s.max_participants, s.cancel_deadline, s.booking_window_min, s.booking_window_max,
-			s.buffer_time, s.approval_policy, s.deleted_on,
+			s.buffer_time, s.approval_policy,
 		coalesce (
 			jsonb_agg(
 				jsonb_build_object(
@@ -177,14 +175,13 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 					'name', sp.name,
 					'sequence', sp.sequence,
 					'duration', sp.duration,
-					'phase_type', sp.phase_type,
-					'deleted_on', sp.deleted_on
+					'phase_type', sp.phase_type
 				) order by sp.sequence
 			) filter (where sp.id is not null),
 		'[]'::jsonb) as phases
 		from "Service" s
-		left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
-		where s.merchant_id = $1 and s.deleted_on is null
+		left join "ServicePhase" sp on s.id = sp.service_id
+		where s.merchant_id = $1
 		group by s.id
 	)
 	select sc.id, sc.name, sc.sequence,
@@ -209,7 +206,6 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 				'booking_window_max', s.booking_window_max,
 				'buffer_time', s.buffer_time,
 				'approval_policy', s.approval_policy,
-				'deleted_on', s.deleted_on,
 				'phases', s.phases
 			) order by s.sequence
 		) filter (where s.id is not null),
@@ -274,7 +270,7 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 	'[]'::jsonb) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
-	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	where s.merchant_id = $1 and s.is_active = true
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
@@ -317,7 +313,7 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 	query := `
 	select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.price_type,
 		s.is_active, s.sequence, s.min_participants, s.max_participants, s.cancel_deadline, s.booking_window_min, s.booking_window_max,
-		s.buffer_time, s.approval_policy, s.deleted_on,
+		s.buffer_time, s.approval_policy,
 	coalesce (
 		jsonb_agg(
 			jsonb_build_object(
@@ -326,14 +322,13 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 				'name', sp.name,
 				'sequence', sp.sequence,
 				'duration', sp.duration,
-				'phase_type', sp.phase_type,
-				'deleted_on', sp.deleted_on
+				'phase_type', sp.phase_type
 			) order by sp.sequence
 		) filter (where sp.id is not null),
 	'[]'::jsonb) as phases
 	from "Service" s
-	left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
-	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
+	left join "ServicePhase" sp on s.id = sp.service_id
+	where s.id = $1 and s.merchant_id = $2
 	group by s.id
 	`
 
@@ -342,7 +337,7 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 
 	err := r.db.QueryRow(ctx, query, serviceID, merchantId).Scan(&s.Id, &s.MerchantId, &s.CategoryId, &s.BookingType, &s.Name, &s.Description, &s.Color, &s.TotalDuration,
 		&s.Price, &s.PriceType, &s.IsActive, &s.Sequence, &s.MinParticipants, &s.MaxParticipants, &s.CancelDeadline, &s.BookingWindowMin,
-		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &s.DeletedOn, &phasesJson)
+		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &phasesJson)
 	if err != nil {
 		return domain.Service{}, err
 	}
@@ -379,7 +374,7 @@ func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merc
 	'[]'::jsonb) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
-	where s.merchant_id = $1 and s.is_active = true and s.deleted_on is null
+	where s.merchant_id = $1 and s.is_active = true
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
@@ -435,9 +430,9 @@ func (r *catalogRepository) GetServiceDetailsForMerchantPage(ctx context.Context
 		'[]'::jsonb
 	) as phases
 	from "Service" s
-	left join "ServicePhase" sp on s.id = sp.service_id and sp.deleted_on is null
+	left join "ServicePhase" sp on s.id = sp.service_id
 	left join "Location" l on l.merchant_id = $2 and l.id = $3
-	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
+	where s.id = $1 and s.merchant_id = $2
 	group by s.id, l.formatted_location, l.geo_point`
 
 	var data domain.PublicServiceDetails
@@ -476,7 +471,6 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 				)
 			) as phases
 		from "ServicePhase" sp
-		where sp.deleted_on is null
 		group by sp.service_id
 	),
 	products as (
@@ -491,7 +485,6 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 			) as products
 		from "ServiceProduct" sprod
 		join "Product" p on sprod.product_id = p.id
-		where p.deleted_on is null
 		group by sprod.service_id
 	)
 	select s.id, s.name, s.booking_type, s.category_id, s.description, s.color, s.total_duration, s.price_per_person, s.price_type, s.is_active, s.sequence,
@@ -508,7 +501,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 	from "Service" s
 	left join phases on s.id = phases.service_id
 	left join products on s.id = products.service_id
-	where s.id = $1 and s.merchant_id = $2 and s.deleted_on is null
+	where s.id = $1 and s.merchant_id = $2
 	`
 
 	var spd domain.ServicePageData
@@ -553,7 +546,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 func (r *catalogRepository) GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (domain.ServicePageFormOptions, error) {
 	query := `
 	with product as (
-		select id, name, unit from "Product" where merchant_id = $1 and deleted_on is null
+		select id, name, unit from "Product" where merchant_id = $1
 	),
 	category as (
 		select id, name from "ServiceCategory" where merchant_id = $1
@@ -598,7 +591,7 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	select s.name, s.total_duration, s.price_per_person as price, s.price_type, l.formatted_location
 	from "Service" s
 	left join "Location" l on l.merchant_id = $1 and l.id = $3
-	where s.merchant_id = $1 and s.id = $2 and s.deleted_on is null
+	where s.merchant_id = $1 and s.id = $2
 	`
 	var msi domain.MinimalServiceInfo
 	err := r.db.QueryRow(ctx, query, merchantId, serviceId, locationId).Scan(&msi.Name, &msi.TotalDuration, &msi.Price, &msi.PriceType, &msi.FormattedLocation)
@@ -607,24 +600,6 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	}
 
 	return msi, nil
-}
-
-func (r *catalogRepository) GetServiceCancelDeadline(ctx context.Context, merchantId uuid.UUID, serviceId int) (int, error) {
-	query := `
-	select coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline
-	from "Service" s
-	join "Merchant" m on m.id = s.merchant_id
-	where m.id = $1 and s.id = $2
-	`
-
-	var cancelDeadline int
-
-	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&cancelDeadline)
-	if err != nil {
-		return 0, err
-	}
-
-	return cancelDeadline, nil
 }
 
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
@@ -700,12 +675,11 @@ func (r *catalogRepository) UpdateServicePhaseDuration(ctx context.Context, serv
 
 func (r *catalogRepository) DeleteServicePhases(ctx context.Context, phaseIds []int) error {
 	query := `
-	update "ServicePhase"
-	set deleted_on = $2
+	delete from "ServicePhase"
 	where id = any($1::int[])
 	`
 
-	_, err := r.db.Exec(ctx, query, phaseIds, time.Now().UTC())
+	_, err := r.db.Exec(ctx, query, phaseIds)
 	if err != nil {
 		return err
 	}
@@ -715,12 +689,11 @@ func (r *catalogRepository) DeleteServicePhases(ctx context.Context, phaseIds []
 
 func (r *catalogRepository) DeleteServicePhasesForService(ctx context.Context, serviceId int) error {
 	query := `
-	update "ServicePhase"
-	set deleted_on = $2
+	delete from "ServicePhase"
 	where service_id = $1
 	`
 
-	_, err := r.db.Exec(ctx, query, serviceId, time.Now().UTC())
+	_, err := r.db.Exec(ctx, query, serviceId)
 	if err != nil {
 		return err
 	}
@@ -732,7 +705,7 @@ func (r *catalogRepository) GetServicePhases(ctx context.Context, serviceId int)
 	query := `
 	select *
 	from "ServicePhase"
-	where service_id = $1 and deleted_on is null
+	where service_id = $1
 	`
 
 	rows, _ := r.db.Query(ctx, query, serviceId)

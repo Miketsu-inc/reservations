@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   combineDateTimeLocal,
+  DEFAULT_SERVICE_COLOR,
   timeStringFromDate,
   useToast,
 } from "@reservations/lib";
@@ -47,6 +48,18 @@ function monthDateFormat(date) {
     day: "numeric",
     weekday: "long",
   });
+}
+
+function resolveServiceData(service, booking) {
+  return {
+    booking_type: service.booking_type ?? booking.booking_type,
+    color: service.color ?? DEFAULT_SERVICE_COLOR,
+    name: service.name ?? booking.service_name,
+    duration: service.duration ?? booking.duration,
+    max_participants: service.max_participants ?? booking.max_participants,
+    price: service.price ?? booking.price,
+    price_type: service.price_type ?? booking.price_type,
+  };
 }
 
 export default function EditBookingPanel({
@@ -114,7 +127,9 @@ export default function EditBookingPanel({
     .flatMap((category) => category.services)
     .find((service) => service.id === bookingData.serviceId);
 
-  const isGroupBooking = selectedService?.booking_type !== "appointment";
+  const isGroupBooking =
+    (selectedService?.booking_type ??
+      originalBookingData.extendedProps.booking_type) !== "appointment";
 
   const teamOptions = team?.map((member) => ({
     value: member.id,
@@ -301,7 +316,10 @@ export default function EditBookingPanel({
             <ParticipantManager
               customers={customers}
               participants={bookingData.participants}
-              maxParticipants={selectedService.max_participants}
+              maxParticipants={
+                selectedService?.max_participants ??
+                originalBookingData.extendedProps.max_participants
+              }
               isWindowSmall={isWindowSmall}
               disabled={isPastBooking}
               onAdd={handleSelectCustomers}
@@ -413,7 +431,10 @@ export default function EditBookingPanel({
                 <ParticipantManager
                   customers={customers}
                   participants={bookingData.participants}
-                  maxParticipants={selectedService.max_participants}
+                  maxParticipants={
+                    selectedService?.max_participants ??
+                    originalBookingData.extendedProps.max_participants
+                  }
                   isWindowSmall={isWindowSmall}
                   disabled={isPastBooking}
                   onAdd={handleSelectCustomers}
@@ -429,31 +450,31 @@ export default function EditBookingPanel({
             overflow-y-auto"
         >
           <BookingHeader
-            originalBookingData={originalBookingData}
             bookingData={bookingData}
             isBookingCompleted={isBookingCompleted}
             isPastBooking={isPastBooking}
             isGroupBooking={isGroupBooking}
             isWindowSmall={isWindowSmall}
-            selectedService={selectedService}
+            serviceColor={selectedService?.color ?? DEFAULT_SERVICE_COLOR}
             updateBookingData={updateBookingData}
             onCancel={() => setIsCancelModalOpen(true)}
             onClose={onClose}
           />
           <div className="flex w-full flex-col gap-8 px-6 pt-9 pb-28">
             <label className="flex flex-col gap-1">
-              <span className="">Service</span>
+              <span>Service</span>
               <ServiceCard
-                service={selectedService}
+                service={resolveServiceData(
+                  selectedService,
+                  originalBookingData.extendedProps
+                )}
                 isGroup={isGroupBooking}
                 disabled={true}
               />
             </label>
             {isWindowSmall && (
               <div className="flex flex-col gap-1">
-                <span className="">
-                  {isGroupBooking ? "Participants" : "Customer"}
-                </span>
+                <span>{isGroupBooking ? "Participants" : "Customer"}</span>
                 {isGroupBooking ? (
                   isPastBooking && !hasSelection ? (
                     <div
@@ -633,13 +654,12 @@ export default function EditBookingPanel({
 }
 
 function BookingHeader({
-  originalBookingData,
   bookingData,
   isBookingCompleted,
   isPastBooking,
   isGroupBooking,
   isWindowSmall,
-  selectedService,
+  serviceColor,
   updateBookingData,
   onCancel,
   onClose,
@@ -649,7 +669,7 @@ function BookingHeader({
       {isWindowSmall && (
         <div
           className="flex w-full items-center justify-end px-4 pt-4"
-          style={{ backgroundColor: selectedService.color }}
+          style={{ backgroundColor: serviceColor }}
         >
           <CloseButton onClick={onClose} styles="size-8 fill-white" />
         </div>
@@ -657,7 +677,7 @@ function BookingHeader({
       <div
         className="sticky top-0 z-10 -mt-1 flex w-full items-center
           justify-between rounded-b-xl px-5 pt-4 pb-5"
-        style={{ backgroundColor: selectedService.color }}
+        style={{ backgroundColor: serviceColor }}
       >
         <span className="text-[20px] font-medium text-white opacity-100!">
           {monthDateFormat(bookingData.date)}
@@ -747,9 +767,7 @@ function BookingHeader({
                     <button
                       className="hover:bg-hvr_gray text-red-600
                         dark:text-red-800"
-                      onClick={() =>
-                        onCancel(originalBookingData.extendedProps)
-                      }
+                      onClick={onCancel}
                     >
                       Cancel
                     </button>

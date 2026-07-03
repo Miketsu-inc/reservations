@@ -66,3 +66,5 @@ export const BUFFER_TIME_OPTIONS = [
   { value: 25, label: "25 minutes" },
   { value: 30, label: "30 minutes" },
 ];
+
+export const DEFAULT_SERVICE_COLOR = "#035afc";

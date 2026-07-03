@@ -14,6 +14,7 @@ import {
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
+  DEFAULT_SERVICE_COLOR,
   formatToDateString,
   preferencesQueryOptions,
   timeStringFromDate,
@@ -107,8 +108,8 @@ function BookingCard({ booking, route, onCancel, onAccept }) {
           <span
             className="w-fit rounded-full px-2 py-1 text-xs"
             style={{
-              backgroundColor: `${booking.service_color}20`,
-              color: booking.service_color,
+              backgroundColor: `${booking.service_color ?? DEFAULT_SERVICE_COLOR}20`,
+              color: booking.service_color ?? DEFAULT_SERVICE_COLOR,
             }}
           >
             {booking.service_name}

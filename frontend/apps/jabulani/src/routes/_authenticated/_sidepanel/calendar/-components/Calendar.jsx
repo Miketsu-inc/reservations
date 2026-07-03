@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
+  DEFAULT_SERVICE_COLOR,
   formatToDateString,
   getMonthFromCalendarStart,
   preferencesQueryOptions,
@@ -70,13 +71,16 @@ function formatBookings(data) {
       const participant = booking.participants[0];
       title = `${participant.first_name} ${participant.last_name}`;
     }
+
+    const serviceColor = booking.service_color ?? DEFAULT_SERVICE_COLOR;
+
     return {
       id: booking.id,
       title: title,
       start: booking.from_date,
       end: booking.to_date,
-      color: booking.service_color,
-      textColor: getContrastColor(booking.service_color),
+      color: serviceColor,
+      textColor: getContrastColor(serviceColor),
       durationEditable: false,
       startEditable: new Date(booking.to_date) > new Date() ? true : false,
       extendedProps: {
@@ -92,8 +96,9 @@ function formatBookings(data) {
         service_name: booking.service_name,
         service_id: booking.service_id,
         employee_id: booking.employee_id,
-        service_duration: booking.service_duration,
+        duration: booking.duration,
         price: booking.price,
+        price_type: booking.price_type,
       },
     };
   });

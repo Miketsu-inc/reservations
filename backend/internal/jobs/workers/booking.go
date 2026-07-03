@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -55,11 +56,10 @@ type BookingOccurrenceGenerator struct {
 
 	bookingService *bookingServ.Service
 	bookingRepo    domain.BookingRepository
-	catalogRepo    domain.CatalogRepository
 }
 
-func NewBookingOccurrenceGenerator(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository, catalogRepo domain.CatalogRepository) *BookingOccurrenceGenerator {
-	return &BookingOccurrenceGenerator{bookingService: bookingService, bookingRepo: bookingRepo, catalogRepo: catalogRepo}
+func NewBookingOccurrenceGenerator(bookingService *bookingServ.Service, bookingRepo domain.BookingRepository) *BookingOccurrenceGenerator {
+	return &BookingOccurrenceGenerator{bookingService: bookingService, bookingRepo: bookingRepo}
 }
 
 func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[args.BookingOccurrenceGenerator]) error {
@@ -77,9 +77,13 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 		return err
 	}
 
-	service, err := w.catalogRepo.GetServiceWithPhases(ctx, series.ServiceId, series.MerchantId)
+	seriesPhases, err := w.bookingRepo.GetBookingSeriesPhases(ctx, job.Args.BookingSeriesId)
 	if err != nil {
 		return err
+	}
+
+	if len(seriesPhases) == 0 {
+		return fmt.Errorf("booking series phases are missing")
 	}
 
 	var generateFrom time.Time
@@ -96,7 +100,7 @@ func (w *BookingOccurrenceGenerator) Work(ctx context.Context, job *river.Job[ar
 		return err
 	}
 
-	return w.bookingService.GenerateRecurringBookings(ctx, series, seriesParticipants, service, generateFrom, occurrenceIndex+1)
+	return w.bookingService.GenerateRecurringBookings(ctx, series, seriesParticipants, seriesPhases, generateFrom, occurrenceIndex+1)
 }
 
 type UpdateFutureBookingOccurrences struct {
@@ -117,11 +121,15 @@ func (w *UpdateFutureBookingOccurrences) Work(ctx context.Context, job *river.Jo
 		return err
 	}
 
-	service, err := w.catalogRepo.GetServiceWithPhases(ctx, series.ServiceId, series.MerchantId)
+	seriesPhases, err := w.bookingRepo.GetBookingSeriesPhases(ctx, job.Args.BookingSeriesId)
 	if err != nil {
 		return err
 	}
 
-	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, job.Args.ParticipantsBefore, service, job.Args.SeriesOriginalDateOffset, job.Args.PriceChanged,
+	if len(seriesPhases) == 0 {
+		return fmt.Errorf("booking series phases are missing")
+	}
+
+	return w.bookingService.UpdateFutureBookingOccurrences(ctx, series, job.Args.ParticipantsBefore, seriesPhases, job.Args.SeriesOriginalDateOffset, job.Args.PriceChanged,
 		job.Args.StatusChangedToCancelled, job.Args.CancellationReason, job.Args.OccurrenceIndex, job.Args.ParticipantsToInsert, job.Args.ParticipantsToDelete)
 }

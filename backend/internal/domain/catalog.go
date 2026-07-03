@@ -31,7 +31,6 @@ type CatalogRepository interface {
 	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
-	GetServiceCancelDeadline(ctx context.Context, merchantId uuid.UUID, serviceId int) (int, error)
 
 	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
 	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error
@@ -71,7 +70,6 @@ type Service struct {
 	BookingWindowMax *int                `db:"booking_window_max" json:"booking_window_max"`
 	BufferTime       *int                `db:"buffer_time" json:"buffer_time"`
 	ApprovalPolicy   *types.ApprovalType `db:"approval_policy" json:"approval_policy"`
-	DeletedOn        *time.Time          `db:"deleted_on" json:"deleted_on"`
 	// for convenience we do not really query the service without the phases anyway
 	Phases []ServicePhase
 }
@@ -97,9 +95,10 @@ func (s *Service) CalculateNewBookingPhases(bookingId int, startTime time.Time) 
 
 		bookingPhases[i] = BookingPhase{
 			BookingId:      bookingId,
-			ServicePhaseId: phase.Id,
+			ServicePhaseId: &phase.Id,
 			FromDate:       bookingStart,
 			ToDate:         bookingEnd,
+			PhaseType:      phase.PhaseType,
 		}
 
 		bookingStart = bookingEnd
@@ -115,7 +114,6 @@ type ServicePhase struct {
 	Sequence  int                    `db:"sequence" json:"sequence"`
 	Duration  int                    `db:"duration" json:"duration"`
 	PhaseType types.ServicePhaseType `db:"phase_type" json:"phase_type"`
-	DeletedOn *time.Time             `db:"deleted_on" json:"deleted_on"`
 }
 
 func (sp *ServicePhase) IsEqual(phase ServicePhase) bool {

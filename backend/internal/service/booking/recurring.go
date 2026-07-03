@@ -19,8 +19,39 @@ import (
 	"github.com/teambition/rrule-go"
 )
 
+func calculateBookingDuration(phases []domain.BookingSeriesPhase) time.Duration {
+	durationSum := 0
+	for _, p := range phases {
+		durationSum += p.Duration
+	}
+	return time.Duration(durationSum) * time.Minute
+}
+
+func calculateNewBookingPhases(phases []domain.BookingSeriesPhase, bookingId int, startTime time.Time) []domain.BookingPhase {
+	bookingPhases := make([]domain.BookingPhase, len(phases))
+	bookingStart := startTime
+
+	for i, phase := range phases {
+		bookingEnd := bookingStart.Add(time.Duration(phase.Duration) * time.Minute)
+
+		bookingPhases[i] = domain.BookingPhase{
+			BookingId:      bookingId,
+			ServicePhaseId: phase.ServicePhaseId,
+			FromDate:       bookingStart,
+			ToDate:         bookingEnd,
+			PhaseType:      phase.PhaseType,
+		}
+
+		bookingStart = bookingEnd
+	}
+
+	return bookingPhases
+}
+
+// TODO: think about what happens to recurring bookings with deleted service ids...
+// we should warn/notify the merchant somehow, especially group bookings as they won't show up as bookable after it
 func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant,
-	service domain.Service, generateFrom time.Time, fromOccurrenceIndex int) error {
+	seriesPhases []domain.BookingSeriesPhase, generateFrom time.Time, fromOccurrenceIndex int) error {
 	tz, err := time.LoadLocation(series.Timezone)
 	if err != nil {
 		return fmt.Errorf("error parsing location from booking series: %s", err.Error())
@@ -40,7 +71,7 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 		return nil
 	}
 
-	totalDuration := service.GetTotalDuration()
+	totalDuration := calculateBookingDuration(seriesPhases)
 
 	bookings := make([]domain.Booking, 0, len(occurrences))
 	for i, date := range occurrences {
@@ -61,8 +92,11 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 			SeriesOriginalDate:  &fromDate,
 			FromDate:            fromDate,
 			ToDate:              toDate,
+			ServiceName:         series.ServiceName,
 			PricePerPerson:      series.PricePerPerson,
 			TotalPrice:          series.TotalPrice,
+			PriceType:           series.PriceType,
+			FormattedLocation:   series.FormattedLocation,
 			MerchantNote:        nil,
 			MinParticipants:     series.MinParticipants,
 			MaxParticipants:     series.MaxParticipants,
@@ -78,14 +112,14 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 			return err
 		}
 
-		bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(service.Phases))
+		bookingPhases := make([]domain.BookingPhase, 0, len(bookingIds)*len(seriesPhases))
 		participants := make([]domain.BookingParticipant, 0, len(bookingIds)*len(seriesParticipants))
 		var reminderInsertParams []river.InsertManyParams
 
 		for i, id := range bookingIds {
 			fromDate := bookings[i].FromDate
 
-			phases := service.CalculateNewBookingPhases(id, fromDate)
+			phases := calculateNewBookingPhases(seriesPhases, id, fromDate)
 			bookingPhases = append(bookingPhases, phases...)
 
 			for _, p := range seriesParticipants {
@@ -157,7 +191,6 @@ type occurrenceTimestampUpdateContext struct {
 	rrule                    *rrule.RRule
 	merchantTz               *time.Location
 	duration                 time.Duration
-	servicePhaseCount        int
 	seriesOriginalDateOffset time.Duration
 	seriesVersion            int
 }
@@ -169,7 +202,8 @@ type occurrenceTimestampUpdate struct {
 	BookingPhases []domain.BookingPhase
 }
 
-func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, futureBookings []domain.Booking, service domain.Service, lastOccurrenceDate time.Time) (occurrenceTimestampUpdate, error) {
+func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, futureBookings []domain.Booking, seriesPhases []domain.BookingSeriesPhase,
+	lastOccurrenceDate time.Time) (occurrenceTimestampUpdate, error) {
 	var bookingIds []int
 	var fromDates []time.Time
 	var toDates []time.Time
@@ -196,7 +230,7 @@ func buildOccurrenceTimestampUpdate(context occurrenceTimestampUpdateContext, fu
 			fromDates = append(fromDates, bookingStart)
 			toDates = append(toDates, bookingStart.Add(context.duration))
 
-			phases := service.CalculateNewBookingPhases(b.Id, bookingStart)
+			phases := calculateNewBookingPhases(seriesPhases, b.Id, bookingStart)
 			bookingPhases = append(bookingPhases, phases...)
 		}
 	}
@@ -460,7 +494,7 @@ func buildReminderEmailParams(bookingIds []int, fromDates []time.Time, customerI
 }
 
 // This whole function assumes that the series was updated before it ran and is up to date
-func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant, service domain.Service,
+func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant, seriesPhases []domain.BookingSeriesPhase,
 	seriesOriginalDateOffset time.Duration, priceChanged bool, statusChangedToCancelled bool, cancellation_reason string, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
 
 	// TODO: somehow present this to the user...
@@ -488,8 +522,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 		timestampUpdateContext = occurrenceTimestampUpdateContext{
 			rrule:                    parsedRrule,
 			merchantTz:               merchantTz,
-			duration:                 service.GetTotalDuration(),
-			servicePhaseCount:        len(service.Phases),
+			duration:                 calculateBookingDuration(seriesPhases),
 			seriesOriginalDateOffset: seriesOriginalDateOffset,
 			seriesVersion:            series.Version,
 		}
@@ -599,7 +632,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					return fmt.Errorf("error retrieving last occurrence date: %w", err)
 				}
 
-				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, service, lastOccurrenceDate)
+				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, seriesPhases, lastOccurrenceDate)
 				if err != nil {
 					return err
 				}

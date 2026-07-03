@@ -24,11 +24,12 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 
 	duration := time.Duration(10) * time.Minute
 
-	service := domain.Service{
-		Phases: []domain.ServicePhase{{
-			Duration: int(duration.Minutes()),
-		}},
-	}
+	servicePhaseId := 0
+	seriesPhases := []domain.BookingSeriesPhase{{
+		ServicePhaseId: &servicePhaseId,
+		Duration:       int(duration.Minutes()),
+		PhaseType:      types.ServicePhaseTypeActive,
+	}}
 
 	t.Run("1 hour offset", func(t *testing.T) {
 
@@ -44,7 +45,6 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			rrule:                    rrule,
 			merchantTz:               tz,
 			duration:                 duration,
-			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(1) * time.Hour,
 			seriesVersion:            3,
 		}
@@ -86,12 +86,29 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 21, "14:10", time.UTC),
 			ct(2026, time.July, 5, "14:10", time.UTC),
 		}
+		expectedBookingPhases := []domain.BookingPhase{
+			{
+				BookingId:      1,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[0],
+				ToDate:         expectedToDates[0],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+			{
+				BookingId:      3,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[1],
+				ToDate:         expectedToDates[1],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, seriesPhases, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")
 			assert.Equal(t, expectedToDates, update.ToDates, "to dates shall match")
+			assert.Equal(t, expectedBookingPhases, update.BookingPhases, "booking phases shall match")
 		}
 	})
 
@@ -109,7 +126,6 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			rrule:                    rrule,
 			merchantTz:               tz,
 			duration:                 duration,
-			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(-1) * time.Hour,
 			seriesVersion:            2,
 		}
@@ -149,12 +165,36 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.June, 21, "14:10", time.UTC),
 			ct(2026, time.June, 28, "14:10", time.UTC),
 		}
+		expectedBookingPhases := []domain.BookingPhase{
+			{
+				BookingId:      0,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[0],
+				ToDate:         expectedToDates[0],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+			{
+				BookingId:      1,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[1],
+				ToDate:         expectedToDates[1],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+			{
+				BookingId:      2,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[2],
+				ToDate:         expectedToDates[2],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, seriesPhases, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")
 			assert.Equal(t, expectedToDates, update.ToDates, "to dates shall match")
+			assert.Equal(t, expectedBookingPhases, update.BookingPhases, "booking phases shall match")
 		}
 	})
 
@@ -172,7 +212,6 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			rrule:                    rrule,
 			merchantTz:               tz,
 			duration:                 duration,
-			servicePhaseCount:        len(service.Phases),
 			seriesOriginalDateOffset: time.Duration(2) * time.Hour,
 			seriesVersion:            2,
 		}
@@ -210,12 +249,36 @@ func TestBuildOccurrenceTimestampUpdate(t *testing.T) {
 			ct(2026, time.March, 29, "00:10", time.UTC),
 			ct(2026, time.April, 4, "23:10", time.UTC),
 		}
+		expectedBookingPhases := []domain.BookingPhase{
+			{
+				BookingId:      0,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[0],
+				ToDate:         expectedToDates[0],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+			{
+				BookingId:      1,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[1],
+				ToDate:         expectedToDates[1],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+			{
+				BookingId:      2,
+				ServicePhaseId: &servicePhaseId,
+				FromDate:       expectedFromDates[2],
+				ToDate:         expectedToDates[2],
+				PhaseType:      types.ServicePhaseTypeActive,
+			},
+		}
 
-		update, err := buildOccurrenceTimestampUpdate(context, bookings, service, lastOccurrenceDate)
+		update, err := buildOccurrenceTimestampUpdate(context, bookings, seriesPhases, lastOccurrenceDate)
 		if assert.NoError(t, err, "'buildOccurrenceTimestampUpdate' should not error") {
 			assert.Equal(t, expectedBookingIds, update.BookingIds, "booking ids shall match")
 			assert.Equal(t, expectedFromDates, update.FromDates, "from dates shall match")
 			assert.Equal(t, expectedToDates, update.ToDates, "to dates shall match")
+			assert.Equal(t, expectedBookingPhases, update.BookingPhases, "booking phases shall match")
 		}
 	})
 }

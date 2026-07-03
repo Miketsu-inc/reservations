@@ -45,7 +45,7 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewHandleChannelExpiration(deps.ExtCalendarService))
 
 	river.AddWorker(workers, NewRecurringBookingScheduler(deps.BookingRepo))
-	river.AddWorker(workers, NewBookingOccurrenceGenerator(deps.BookingService, deps.BookingRepo, deps.CatalogRepo))
+	river.AddWorker(workers, NewBookingOccurrenceGenerator(deps.BookingService, deps.BookingRepo))
 	river.AddWorker(workers, NewUpdateFutureBookingOccurrences(deps.BookingService, deps.BookingRepo, deps.CatalogRepo))
 }
 

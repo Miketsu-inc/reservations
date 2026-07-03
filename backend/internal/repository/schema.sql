@@ -100,8 +100,7 @@ create table if not exists "Service" (
     booking_window_min       integer,
     booking_window_max       integer,
     buffer_time              integer,
-    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new')),
-    deleted_on               timestamptz
+    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new'))
 );
 
 create table if not exists "ServicePhase" (
@@ -111,7 +110,6 @@ create table if not exists "ServicePhase" (
     sequence                 integer                not null,
     duration                 integer                not null,
     phase_type               text                   check (phase_type in ('active', 'wait')) not null,
-    deleted_on               timestamptz,
 
     constraint unique_service_phase_sequence unique (service_id, sequence)
 );
@@ -138,15 +136,18 @@ create table if not exists "BookingSeries" (
     booking_type             text            check (booking_type in ('appointment', 'event', 'class')) not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              integer         references "Employee" (ID) on delete set null,
-    service_id               integer         references "Service" (ID) not null,
+    service_id               integer         references "Service" (ID) on delete set null,
     location_id              integer         references "Location" (ID) not null,
     rrule                    text            not null,
     dstart                   timestamptz     not null,
     timezone                 text            not null,
     is_active                boolean         not null default true,
     generated_until          timestamptz,
+    service_name             text            not null,
     price_per_person         price           not null,
     total_price              price           not null,
+    price_type               text            default 'fixed' check (price_type in ('fixed', 'free', 'from')) not null,
+    formatted_location       text            not null,
     min_participants         integer         not null,
     max_participants         integer         not null,
     current_participants     integer         not null,
@@ -163,6 +164,18 @@ create table if not exists "BookingSeriesParticipant" (
     constraint unique_booking_series_participant unique (booking_series_id, customer_id)
 );
 
+create table if not exists "BookingSeriesPhase" (
+    ID                       serial          primary key unique not null,
+    booking_series_id        integer         references "BookingSeries" (ID) on delete cascade not null,
+    service_phase_id         integer         references "ServicePhase" (ID) on delete set null,
+    name                     text            not null,
+    sequence                 integer         not null,
+    duration                 integer         not null,
+    phase_type               text            check (phase_type in ('active', 'wait')) not null,
+
+    constraint unique_booking_series_phase_sequence unique (booking_series_id, sequence)
+);
+
 create table if not exists "Booking" (
     ID                       serial          primary key unique not null,
     status                   text            default 'booked' check (booking_status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
@@ -170,14 +183,17 @@ create table if not exists "Booking" (
     is_recurring             boolean         not null default false,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     employee_id              integer         references "Employee" (ID) on delete set null,
-    service_id               integer         references "Service" (ID) not null,
+    service_id               integer         references "Service" (ID) on delete set null,
     location_id              integer         references "Location" (ID) not null,
     booking_series_id        integer         references "BookingSeries" (ID) on delete set null,
     series_original_date     timestamptz,
     from_date                timestamptz     not null,
     to_date                  timestamptz     not null,
+    service_name             text            not null,
     price_per_person         price           not null,
     total_price              price           not null,
+    price_type               text            default 'fixed' check (price_type in ('fixed', 'free', 'from')) not null,
+    formatted_location       text            not null,
     merchant_note            text,
     min_participants         integer         not null,
     max_participants         integer         not null,
@@ -191,11 +207,10 @@ create table if not exists "Booking" (
 create table if not exists "BookingPhase" (
     ID                       serial           primary key unique not null,
     booking_id               integer          references "Booking" (ID) on delete cascade not null,
-    service_phase_id         integer          references "ServicePhase" (ID) not null,
+    service_phase_id         integer          references "ServicePhase" (ID) on delete set null,
     from_date                timestamptz      not null,
     to_date                  timestamptz      not null,
-
-    constraint unique_booking_phase unique (booking_id, service_phase_id)
+    phase_type               text             check (phase_type in ('active', 'wait')) not null
 );
 
 create table if not exists "BookingParticipant" (

@@ -88,7 +88,7 @@ func (r *productRepository) GetProducts(ctx context.Context, merchantId uuid.UUI
 	'[]'::json) as services
 	from "Product" p
 	left join "ServiceProduct" sp on p.id = sp.product_id
-	left join "Service" s on sp.service_id = s.id and s.deleted_on is null
+	left join "Service" s on sp.service_id = s.id
 	where p.merchant_id = $1 and p.deleted_on is null
 	group by p.id`
 

@@ -85,7 +85,7 @@ type bookingDetailsResp struct {
 	CustomerNote    *string                  `json:"customer_note"`
 	MerchantNote    *string                  `json:"merchant_note"`
 	ServiceName     string                   `json:"service_name"`
-	ServiceColor    string                   `json:"service_color"`
+	ServiceColor    *string                  `json:"service_color"`
 	ServiceDuration int                      `json:"service_duration"`
 	Price           currencyx.FormattedPrice `json:"price"`
 	FirstName       *string                  `json:"first_name"`
@@ -391,13 +391,15 @@ type bookingForCalendar struct {
 	FromDate        time.Time                       `json:"from_date"`
 	ToDate          time.Time                       `json:"to_date"`
 	IsRecurring     bool                            `json:"is_recurring"`
+	Duration        int                             `json:"duration"`
 	MerchantNote    *string                         `json:"merchant_note"`
 	EmployeeId      *int                            `json:"employee_id"`
-	ServiceId       int                             `json:"service_id"`
+	ServiceId       *int                            `json:"service_id"`
 	ServiceName     string                          `json:"service_name"`
-	ServiceColor    string                          `json:"service_color" `
+	ServiceColor    *string                         `json:"service_color"`
 	MaxParticipants int                             `json:"max_participants"`
 	Price           currencyx.FormattedPrice        `json:"price"`
+	PriceType       types.PriceType                 `json:"price_type"`
 	Participants    []bookingParticipantForCalendar `json:"participants"`
 }
 
