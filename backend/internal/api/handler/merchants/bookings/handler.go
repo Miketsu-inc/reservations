@@ -44,6 +44,7 @@ func (h *Handler) Routes() chi.Router {
 type createByMerchantReq struct {
 	Customers    []customerReq     `json:"customers"`
 	ServiceId    int               `json:"service_id" validate:"required"`
+	EmployeeId   int               `json:"employee_id" validate:"required"`
 	TimeStamp    string            `json:"timestamp" validate:"required"`
 	MerchantNote *string           `json:"merchant_note"`
 	IsRecurring  bool              `json:"is_recurring"`
@@ -94,6 +95,7 @@ type updateByMerchantReq struct {
 	Customers       []customerReq       `json:"customers"`
 	TimeStamp       string              `json:"timestamp" validate:"required"`
 	MerchantNote    *string             `json:"merchant_note"`
+	EmployeeId      int                 `json:"employee_id" validate:"required"`
 	BookingStatus   types.BookingStatus `json:"booking_status"`
 	UpdateAllFuture bool                `json:"update_all_future"`
 }

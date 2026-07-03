@@ -631,7 +631,7 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 		group by bp.booking_id
 	)
 	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.total_price as price,
-		s.id as service_id, s.name as service_name, s.color as service_color, b.max_participants,
+		b.employee_id, s.id as service_id, s.name as service_name, s.color as service_color, b.max_participants,
 		coalesce(p.participants, '[]'::jsonb) as participants
 	from "Booking" b
 	join "Service" s on b.service_id = s.id

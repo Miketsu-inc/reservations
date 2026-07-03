@@ -327,6 +327,7 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 			ToDate:          b.ToDate,
 			IsRecurring:     b.IsRecurring,
 			MerchantNote:    b.MerchantNote,
+			EmployeeId:      b.EmployeeId,
 			ServiceId:       b.ServiceId,
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,

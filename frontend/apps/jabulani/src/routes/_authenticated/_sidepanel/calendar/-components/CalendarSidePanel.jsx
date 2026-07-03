@@ -168,6 +168,8 @@ export default function CalendarSidePanel({
               isWindowSmall={isWindowSmall}
               categories={services}
               customers={customers}
+              team={team}
+              currentEmployee={employeeId}
             />
           )}
           {type === "blocked-time" && (
@@ -192,6 +194,7 @@ export default function CalendarSidePanel({
               categories={services}
               isWindowSmall={isWindowSmall}
               preferences={preferences}
+              team={team}
             />
           )}
         </div>

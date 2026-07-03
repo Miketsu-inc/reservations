@@ -1,9 +1,11 @@
 import { PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
+  Avatar,
   Button,
   CloseButton,
   DatePicker,
   Icon,
+  Select,
   Textarea,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -34,6 +36,8 @@ export default function NewBookingPanel({
   onClose,
   categories,
   customers,
+  team,
+  currentEmployee,
 }) {
   const [isCustomerSectionExpanded, setIsCustomerSectionExpanded] =
     useState(false);
@@ -57,7 +61,7 @@ export default function NewBookingPanel({
     time: timeStringFromDate(new Date()).split(" ")[0],
     serviceId: null,
     customers: [],
-    // employeeId: 0,
+    employee_id: currentEmployee,
     merchantNote: "",
   });
 
@@ -74,6 +78,17 @@ export default function NewBookingPanel({
 
   const isNestedPanelOpen =
     nestedPageState.isOpen && (isWindowSmall || !isMobilePanelActive);
+
+  const teamOptions = team?.map((member) => ({
+    value: member.id,
+    label: member.first_name + " " + member.last_name,
+    icon: (
+      <Avatar
+        styles="size-6! rounded-full! text-[10px]!"
+        initials={`${member.first_name[0]}${member.last_name[0]}`}
+      />
+    ),
+  }));
 
   function updateBookingData(data) {
     setBookingData((prev) => ({ ...prev, ...data }));
@@ -179,6 +194,7 @@ export default function NewBookingPanel({
         body: JSON.stringify({
           customers: customerInput,
           service_id: bookingData.serviceId,
+          employee_id: bookingData.employee_id,
           timestamp: timestamp,
           merchant_note: bookingData.merchantNote,
           is_recurring: recurData.isRecurring,
@@ -461,6 +477,16 @@ export default function NewBookingPanel({
                       }}
                     />
                   </div>
+                  {teamOptions.length > 1 && (
+                    <Select
+                      options={teamOptions}
+                      value={bookingData.employee_id}
+                      labelText="Employee"
+                      onSelect={(option) =>
+                        updateBookingData({ employee_id: option.value })
+                      }
+                    />
+                  )}
                   <RecurSummaryCard
                     recurData={recurData}
                     booking={{

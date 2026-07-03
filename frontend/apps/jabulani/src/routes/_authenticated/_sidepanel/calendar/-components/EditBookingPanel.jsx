@@ -9,6 +9,7 @@ import {
   WalkingIcon,
 } from "@hugeicons/core-free-icons";
 import {
+  Avatar,
   Button,
   CloseButton,
   DatePicker,
@@ -17,6 +18,7 @@ import {
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
+  Select,
   Textarea,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -56,6 +58,7 @@ export default function EditBookingPanel({
   onSave,
   onSoftUpdate,
   preferences,
+  team,
 }) {
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -99,6 +102,7 @@ export default function EditBookingPanel({
     date: originalBookingData.start,
     time: timeStringFromDate(originalBookingData.start).split(" ")[0],
     serviceId: originalBookingData.extendedProps.service_id,
+    employeeId: originalBookingData.extendedProps.employee_id,
     bookingStatus: originalBookingData.extendedProps.booking_status,
     participants: mappedParticipants,
     merchantNote: originalBookingData.extendedProps.merchant_note || "",
@@ -111,6 +115,17 @@ export default function EditBookingPanel({
     .find((service) => service.id === bookingData.serviceId);
 
   const isGroupBooking = selectedService?.booking_type !== "appointment";
+
+  const teamOptions = team?.map((member) => ({
+    value: member.id,
+    label: member.first_name + " " + member.last_name,
+    icon: (
+      <Avatar
+        styles="size-6! rounded-full! text-[10px]!"
+        initials={`${member.first_name[0]}${member.last_name[0]}`}
+      />
+    ),
+  }));
 
   function updateBookingData(newData) {
     if (isBookingCompleted) return;
@@ -192,6 +207,7 @@ export default function EditBookingPanel({
             customers: customerInput,
             timestamp: timestamp,
             merchant_note: bookingData.merchantNote,
+            employee_id: bookingData.employeeId,
             booking_status: bookingData.bookingStatus,
             update_all_future: option !== "this",
           }),
@@ -547,6 +563,17 @@ export default function EditBookingPanel({
               </div>
             )}
 
+            {teamOptions.length > 1 && (
+              <Select
+                options={teamOptions}
+                value={bookingData.employeeId}
+                labelText="Employee"
+                onSelect={(option) =>
+                  updateBookingData({ employeeId: option.value })
+                }
+                disabled={isPastBooking || isBookingCompleted}
+              />
+            )}
             {isRecurring && (
               <div
                 className="border-input_border_color flex items-center gap-2

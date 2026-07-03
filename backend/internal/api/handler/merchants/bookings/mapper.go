@@ -28,6 +28,7 @@ func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMer
 	return bookingServ.CreateByMerchantInput{
 		Customers:    customers,
 		ServiceId:    in.ServiceId,
+		EmployeeId:   in.EmployeeId,
 		TimeStamp:    timeStamp,
 		MerchantNote: in.MerchantNote,
 		IsRecurring:  in.IsRecurring,
@@ -62,6 +63,7 @@ func mapToUpdateByMerchantInput(in updateByMerchantReq) (bookingServ.UpdateByMer
 		Customers:       customers,
 		TimeStamp:       timeStamp,
 		MerchantNote:    in.MerchantNote,
+		EmployeeId:      in.EmployeeId,
 		BookingStatus:   in.BookingStatus,
 		UpdateAllFuture: in.UpdateAllFuture,
 	}, nil

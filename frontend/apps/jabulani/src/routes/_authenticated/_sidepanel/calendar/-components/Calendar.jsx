@@ -91,6 +91,7 @@ function formatBookings(data) {
         merchant_note: booking.merchant_note,
         service_name: booking.service_name,
         service_id: booking.service_id,
+        employee_id: booking.employee_id,
         service_duration: booking.service_duration,
         price: booking.price,
       },

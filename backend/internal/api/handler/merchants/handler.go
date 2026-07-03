@@ -392,6 +392,7 @@ type bookingForCalendar struct {
 	ToDate          time.Time                       `json:"to_date"`
 	IsRecurring     bool                            `json:"is_recurring"`
 	MerchantNote    *string                         `json:"merchant_note"`
+	EmployeeId      *int                            `json:"employee_id"`
 	ServiceId       int                             `json:"service_id"`
 	ServiceName     string                          `json:"service_name"`
 	ServiceColor    string                          `json:"service_color" `

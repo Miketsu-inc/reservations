@@ -509,6 +509,7 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 type CreateByMerchantInput struct {
 	Customers    []CustomerInput
 	ServiceId    int
+	EmployeeId   int
 	TimeStamp    time.Time
 	MerchantNote *string
 	IsRecurring  bool
@@ -623,7 +624,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			series, err := s.bookingRepo.WithTx(tx).NewBookingSeries(ctx, domain.BookingSeries{
 				BookingType:         service.BookingType,
 				MerchantId:          actor.MerchantId,
-				EmployeeId:          &actor.EmployeeId,
+				EmployeeId:          &input.EmployeeId,
 				ServiceId:           service.Id,
 				LocationId:          bookedLocation.Id,
 				Rrule:               rrule.String(),
@@ -675,7 +676,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 			BookingType:         service.BookingType,
 			IsRecurring:         input.IsRecurring,
 			MerchantId:          actor.MerchantId,
-			EmployeeId:          &actor.EmployeeId,
+			EmployeeId:          &input.EmployeeId,
 			ServiceId:           service.Id,
 			LocationId:          bookedLocation.Id,
 			BookingSeriesId:     bookingSeriesId,
@@ -836,6 +837,7 @@ func detectSeriesParticipantChanges(existing []domain.BookingParticipant, existi
 type UpdateByMerchantInput struct {
 	Customers       []CustomerInput
 	TimeStamp       time.Time
+	EmployeeId      int
 	MerchantNote    *string
 	BookingStatus   types.BookingStatus
 	UpdateAllFuture bool
