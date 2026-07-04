@@ -495,7 +495,7 @@ func buildReminderEmailParams(bookingIds []int, fromDates []time.Time, customerI
 
 // This whole function assumes that the series was updated before it ran and is up to date
 func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series domain.BookingSeries, seriesParticipants []domain.BookingSeriesParticipant, seriesPhases []domain.BookingSeriesPhase,
-	seriesOriginalDateOffset time.Duration, priceChanged bool, statusChangedToCancelled bool, cancellation_reason string, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
+	seriesOriginalDateOffset time.Duration, priceChanged, employeeChanged, statusChangedToCancelled bool, cancellation_reason string, occurrenceIndex int, requestedParticipantsToInsert []uuid.UUID, requestedParticipantsToDelete []uuid.UUID) error {
 
 	// TODO: somehow present this to the user...
 	// maybe with notifications once we implement that
@@ -627,7 +627,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			}
 
 			if timestampChanged {
-				lastOccurrenceDate, err := s.bookingRepo.WithTx(tx).GetSeriesOccurrenceDateByIndex(ctx, lastOccurrenceIndex)
+				lastOccurrenceDate, err := s.bookingRepo.WithTx(tx).GetSeriesOccurrenceDateByIndex(ctx, series.Id, lastOccurrenceIndex)
 				if err != nil {
 					return fmt.Errorf("error retrieving last occurrence date: %w", err)
 				}
@@ -760,6 +760,13 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 						if err != nil {
 							return fmt.Errorf("failed to schedule booking modification emails: %w", err)
 						}
+					}
+				}
+
+				if employeeChanged {
+					err = s.bookingRepo.WithTx(tx).UpdateBookingEmployeeBatch(ctx, futureBookingIds, series.EmployeeId)
+					if err != nil {
+						return fmt.Errorf("failed to batch update future booking employee ids: %w", err)
 					}
 				}
 			}

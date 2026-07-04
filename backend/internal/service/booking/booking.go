@@ -667,6 +667,23 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 				return err
 			}
 
+			seriesPhases := make([]domain.BookingSeriesPhase, len(service.Phases))
+			for i, p := range service.Phases {
+				seriesPhases[i] = domain.BookingSeriesPhase{
+					BookingSeriesId: series.Id,
+					ServicePhaseId:  &p.Id,
+					Name:            p.Name,
+					Sequence:        p.Sequence,
+					Duration:        p.Duration,
+					PhaseType:       p.PhaseType,
+				}
+			}
+
+			err = s.bookingRepo.WithTx(tx).NewBookingSeriesPhases(ctx, seriesPhases)
+			if err != nil {
+				return err
+			}
+
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingOccurrenceGenerator{
 				BookingSeriesId: series.Id,
 				GenerateFrom:    toDate,
@@ -998,6 +1015,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	timeStampChanged := !booking.FromDate.Equal(input.TimeStamp.UTC())
 	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
 	statusChanged := booking.Status != input.BookingStatus
+	employeeChanged := booking.EmployeeId != &input.EmployeeId
 
 	fromDate := booking.FromDate
 	toDate := booking.ToDate
@@ -1062,6 +1080,9 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				}
 
 				rrule.DTStart(seriesFromDate)
+				// adjusting the until time is needed because a large timestamp offset might
+				// make the last occurrences fall out of the rrule, causing occurrence calulcation problems
+				rrule.Until(rrule.GetUntil().Add(seriesOriginalDateOffset))
 
 				seriesVersion, err := s.bookingRepo.WithTx(tx).UpdateBookingSeriesRrule(ctx, bookingSeries.Id, rrule.String(), seriesFromDate)
 				if err != nil {
@@ -1121,6 +1142,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				// series cancellation is handled by CancelByMerchant()
 				StatusChangedToCancelled: false,
 				CancellationReason:       "",
+				EmployeeChanged:          employeeChanged,
 				ParticipantsToInsert:     seriesParticipantChanges.ToInsert,
 				ParticipantsToDelete:     seriesParticipantChanges.ToDelete,
 				ParticipantsBefore:       seriesParticipants,
@@ -1130,9 +1152,9 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 		}
 
-		if timeStampChanged || statusChanged || merchantNoteChanged {
+		if timeStampChanged || statusChanged || merchantNoteChanged || employeeChanged {
 			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, []int{booking.Id}, booking.ServiceId,
-				[]time.Time{fromDate}, []time.Time{toDate}, booking.BookingType, bookingStatus, merchantNote)
+				&input.EmployeeId, []time.Time{fromDate}, []time.Time{toDate}, booking.BookingType, bookingStatus, merchantNote)
 			if err != nil {
 				return fmt.Errorf("failed to batch update booking core: %s", err.Error())
 			}

@@ -254,7 +254,8 @@ func (r *bookingRepository) UpdateBookingStatus(ctx context.Context, merchantId 
 	return nil
 }
 
-func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId *int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error {
+func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId *int, employeeId *int,
+	fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error {
 	query := `
 	update "Booking" as b
 	set from_date = data.new_from_dates,
@@ -262,12 +263,13 @@ func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchant
 	    service_id = $2,
 	    booking_type = $3,
 	    status = $4,
-		merchant_note = $8
+		merchant_note = $8,
+		employee_id = $9
 	from (select unnest($1::int[]) as id, unnest($5::timestamptz[]) as new_from_dates, unnest($6::timestamptz[]) as new_to_dates) as data
 	where b.id = data.id and b.merchant_id = $7 and b.status not in ('cancelled', 'completed')
 	`
 
-	_, err := r.db.Exec(ctx, query, bookingIds, serviceId, bookingType, status, fromDates, toDates, merchantId, merchantNote)
+	_, err := r.db.Exec(ctx, query, bookingIds, serviceId, bookingType, status, fromDates, toDates, merchantId, merchantNote, employeeId)
 	if err != nil {
 		return err
 	}
@@ -351,6 +353,21 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 
 	_, err := r.db.Exec(ctx, query, merchantId, bookingIds, pricePerPersons, totalPrices,
 		minParticipants, maxParicipants, currentParicipants)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) UpdateBookingEmployeeBatch(ctx context.Context, bookingIds []int, employeeId *int) error {
+	query := `
+	update "Booking"
+	set employee_id = $2
+	where id = any($1::int[]) and status not in ('cancelled', 'completed', 'no-show')
+	`
+
+	_, err := r.db.Exec(ctx, query, bookingIds, employeeId)
 	if err != nil {
 		return err
 	}
@@ -1231,16 +1248,16 @@ func (r *bookingRepository) GetSeriesLastOccurrenceIndex(ctx context.Context, se
 	return occurrenceIndex, err
 }
 
-func (r *bookingRepository) GetSeriesOccurrenceDateByIndex(ctx context.Context, occurrenceIndex int) (time.Time, error) {
+func (r *bookingRepository) GetSeriesOccurrenceDateByIndex(ctx context.Context, seriesId int, occurrenceIndex int) (time.Time, error) {
 	query := `
 	select series_original_date
 	from "Booking"
-	where occurrence_index = $1
+	where booking_series_id = $1 and occurrence_index = $2
 	`
 
 	var occurrenceDate time.Time
 
-	err := r.db.QueryRow(ctx, query, occurrenceIndex).Scan(&occurrenceDate)
+	err := r.db.QueryRow(ctx, query, seriesId, occurrenceIndex).Scan(&occurrenceDate)
 	if err != nil {
 		return time.Time{}, err
 	}

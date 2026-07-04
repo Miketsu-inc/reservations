@@ -70,6 +70,9 @@ create-kv:
 connect-kv:
 	@docker exec -it redis redis-cli
 
+connect-river:
+	@DATABASE_URL="postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}" PORT="2020" ~/go/bin/riverui
+
 lint:
 	@npm run lint
 	@golangci-lint run

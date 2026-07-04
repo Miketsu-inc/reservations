@@ -24,11 +24,12 @@ type BookingRepository interface {
 	DeleteBookingParticipantsBatch(ctx context.Context, bookingIds []int, participantIds []uuid.UUID) error
 
 	UpdateBookingStatus(ctx context.Context, merchantId uuid.UUID, bookingId int, status types.BookingStatus) error
-	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId *int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error
+	UpdateBookingCoreBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, serviceId *int, employeeId *int, fromDates []time.Time, toDates []time.Time, bookingType types.BookingType, status types.BookingStatus, merchantNote *string) error
 	UpdateBookingSeriesOriginalDateAndVersion(ctx context.Context, bookingId int, seriesOriginalDate time.Time, seriesVersion int) error
 	UpdateBookingPricePerPersonBatch(ctx context.Context, bookingIds []int, price currencyx.Price) error
 	UpdateBookingTotalPriceBatch(ctx context.Context, bookingIds []int, prices []currencyx.Price) error
 	UpdateBookingDetailsBatch(ctx context.Context, merchantId uuid.UUID, bookingIds []int, details []BookingDetails) error
+	UpdateBookingEmployeeBatch(ctx context.Context, bookingIds []int, employeeId *int) error
 	UpdateBookingOccurrencesBatch(ctx context.Context, bookingIds []int, fromDates, toDates []time.Time, seriesId int, seriesVersion int) error
 	UpdateBookingParticipants(ctx context.Context, participants []BookingParticipant, updateStatusOnConflict bool) error
 	UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, status types.BookingStatus) error
@@ -82,7 +83,7 @@ type BookingRepository interface {
 	// it would be hard to match the bookings to the generated occurrences
 	GetFutureSeriesBookingsWithLock(ctx context.Context, seriesId, fromOccurrenceIndex, limit int) ([]Booking, error)
 	GetSeriesLastOccurrenceIndex(ctx context.Context, seriesId int) (int, error)
-	GetSeriesOccurrenceDateByIndex(ctx context.Context, occurrenceIndex int) (time.Time, error)
+	GetSeriesOccurrenceDateByIndex(ctx context.Context, seriesId int, occurrenceIndex int) (time.Time, error)
 	GetBookingSeriesParticipants(ctx context.Context, seriesId int) ([]BookingSeriesParticipant, error)
 	GetBookingSeriesPhases(ctx context.Context, seriesId int) ([]BookingSeriesPhase, error)
 }

@@ -42,6 +42,7 @@ type UpdateFutureBookingOccurrences struct {
 	StatusChangedToCancelled bool                              `json:"status_changed_to_cancelled"`
 	CancellationReason       string                            `json:"cancellation_reason"`
 	PriceChanged             bool                              `json:"price_changed"`
+	EmployeeChanged          bool                              `json:"employee_changed"`
 	ParticipantsToInsert     []uuid.UUID                       `json:"particiapnts_to_insert"`
 	ParticipantsToDelete     []uuid.UUID                       `json:"particiapnts_to_delete"`
 	ParticipantsBefore       []domain.BookingSeriesParticipant `json:"participants_before"`
