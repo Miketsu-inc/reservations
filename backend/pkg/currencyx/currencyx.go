@@ -77,13 +77,7 @@ type priceScanState struct {
 }
 
 func (f FormattedPrice) MarshalJSON() ([]byte, error) {
-	var priceStr string
-	if f.IsZero() {
-		priceStr = ""
-	} else {
-		priceStr = Format(f.Amount)
-	}
-	return json.Marshal(priceStr)
+	return json.Marshal(Format(f.Amount))
 }
 
 func (p Price) ToFormatted() FormattedPrice {

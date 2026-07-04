@@ -178,7 +178,7 @@ create table if not exists "BookingSeriesPhase" (
 
 create table if not exists "Booking" (
     ID                       serial          primary key unique not null,
-    status                   text            default 'booked' check (booking_status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
+    status                   text            default 'booked' check (status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
     booking_type             text            check (booking_type in ('appointment', 'event', 'class')) not null,
     is_recurring             boolean         not null default false,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
@@ -215,7 +215,7 @@ create table if not exists "BookingPhase" (
 
 create table if not exists "BookingParticipant" (
     ID                       serial           primary key unique not null,
-    status                   text             default 'booked' check (booking_status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
+    status                   text             default 'booked' check (status in ('booked', 'confirmed', 'completed', 'cancelled', 'no-show')) not null,
     booking_id               integer          references "Booking" (ID) on delete cascade not null,
     customer_id              uuid             references "Customer" (ID) on delete cascade,
     customer_note            text,

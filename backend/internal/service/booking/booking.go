@@ -1010,7 +1010,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		timestampOffset = input.TimeStamp.UTC().Sub(booking.FromDate)
 
 		fromDate = fromDate.Add(timestampOffset)
-		toDate = fromDate.Add(timestampOffset)
+		toDate = toDate.Add(timestampOffset)
 
 		if booking.IsRecurring && booking.SeriesOriginalDate != nil {
 			// For a recurring bookings we cannot use an offset as individual bookings which are part of the series
