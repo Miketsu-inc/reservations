@@ -1,5 +1,11 @@
 import { ToastContext } from "@reservations/components";
-import { useCallback, useContext, useEffect, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import "./autofill/detect-autofill";
 import { SCREEN_LG } from "./constants";
 import { getBreakPoint } from "./utils";
@@ -30,31 +36,26 @@ export function useMultiStepForm(steps) {
   };
 }
 
+function getWindowWidthSnapshot() {
+  return window.innerWidth;
+}
+
+function subscribeWindowWidth(callback) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
 export function useWindowSize() {
-  const isWindowClient = typeof window === "object";
+  const width = useSyncExternalStore(
+    subscribeWindowWidth,
+    getWindowWidthSnapshot
+  );
 
-  const [windowState, setWindowState] = useState({
-    windowSize: isWindowClient ? getBreakPoint(window.innerWidth) : undefined,
-    isWindowSmall: isWindowClient ? window.innerWidth < SCREEN_LG : false,
-  });
-
-  useEffect(() => {
-    if (!isWindowClient) return;
-
-    function handleResize() {
-      const width = window.innerWidth;
-      setWindowState({
-        windowSize: getBreakPoint(width),
-        isWindowSmall: width < SCREEN_LG,
-      });
-    }
-
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isWindowClient]);
-
-  return windowState;
+  return {
+    width,
+    windowSize: getBreakPoint(width),
+    isWindowSmall: width < SCREEN_LG,
+  };
 }
 
 export function useClickOutside(ref, callback) {
