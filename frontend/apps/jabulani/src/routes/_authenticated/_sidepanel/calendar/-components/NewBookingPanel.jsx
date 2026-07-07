@@ -1,10 +1,8 @@
-import { PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Button,
   CloseButton,
   DatePicker,
-  Icon,
   Select,
   Textarea,
 } from "@reservations/components";
@@ -16,16 +14,14 @@ import {
   useToast,
 } from "@reservations/lib";
 import { useCallback, useState } from "react";
-import {
-  AddCustomerCard,
-  ParticipantsCard,
-  RecurSummaryCard,
-  SelectedCustomerCard,
-  ServiceCard,
-} from "./BookingCards";
+import { RecurSummaryCard, ServiceCard } from "./BookingCards";
 import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
 import NestedSidePanel from "./NestedSidePanel";
+import {
+  MobileParticipantSection,
+  ParticipantSideBar,
+} from "./ParticipantLogic";
 import ParticipantManager from "./ParticipantManager";
 import RecurSection from "./RecurSection";
 import ServiceSelector from "./ServiceSelector";
@@ -235,61 +231,20 @@ export default function NewBookingPanel({
 
   return (
     <div className="flex h-full transition-all duration-300 ease-in-out">
-      {!isWindowSmall && (
-        <div
-          className={`border-border_color overflow-hidden border-r
-          transition-all duration-300 ease-in-out
-          ${isCustomerSectionExpanded || hasSelection || isGroupBooking ? "w-80" : "w-40"}`}
-        >
-          {isGroupBooking ? (
-            <ParticipantManager
-              customers={customers}
-              participants={bookingData.customers}
-              onAdd={handleSelectCustomers}
-              onRemove={handleRemoveParticipant}
-              maxParticipants={selectedService?.max_participants}
-              isWindowSmall={isWindowSmall}
-            />
-          ) : isCustomerSectionExpanded ? (
-            <CustomerSelector
-              onSave={handleSelectCustomers}
-              customers={customers}
-              isGroupMode={false}
-              walkIn={() => setIsCustomerSectionExpanded(false)}
-              selected={bookingData.customers}
-              isWindowSmall={isWindowSmall}
-            />
-          ) : hasSelection ? (
-            <CustomerProfile
-              customer={bookingData.customers[0]}
-              onRemove={handleRemoveCustomer}
-            />
-          ) : (
-            <button
-              className="flex h-full w-full cursor-pointer flex-col items-start
-                px-3 py-10 hover:bg-gray-200/40 dark:hover:bg-gray-700/10"
-              onClick={() => {
-                setIsCustomerSectionExpanded(true);
-              }}
-            >
-              <div className="flex flex-col items-center justify-center gap-3">
-                <div
-                  className="bg-primary/20 text-primary flex size-14
-                    items-center justify-center rounded-full"
-                >
-                  <Icon icon={PlusSignIcon} styles="size-6" />
-                </div>
-                <div>
-                  <p className="font-semibold">Add customer</p>
-                  <span className="text-gray-400 dark:text-gray-500">
-                    Or leave empty for walk-ins
-                  </span>
-                </div>
-              </div>
-            </button>
-          )}
-        </div>
-      )}
+      <ParticipantSideBar
+        isGroupBooking={isGroupBooking}
+        hasSelection={hasSelection}
+        isExpanded={isCustomerSectionExpanded}
+        setIsExpanded={setIsCustomerSectionExpanded}
+        customers={customers}
+        selectedCustomers={bookingData.customers}
+        maxParticipants={selectedService?.max_participants}
+        isWindowSmall={isWindowSmall}
+        onAddCustomer={handleSelectCustomers}
+        onRemoveCustomer={handleRemoveCustomer}
+        onRemoveParticipant={handleRemoveParticipant}
+      />
+
       <div className={`${isWindowSmall ? "w-full" : "w-110"} relative`}>
         {!selectedService ? (
           <ServiceSelector
@@ -410,50 +365,32 @@ export default function NewBookingPanel({
                     />
                   </label>
 
-                  {isWindowSmall && (
-                    <div className="flex flex-col gap-1">
-                      <span>
-                        {isGroupBooking ? "Participants" : "Customer"}
-                      </span>
-                      {isGroupBooking ? (
-                        <ParticipantsCard
-                          participants={bookingData.customers}
-                          onClick={() =>
-                            setNestedPageState({
-                              isOpen: true,
-                              active: "participant-manager",
-                            })
-                          }
-                          maxParticipants={selectedService.max_participants}
-                        />
-                      ) : (
-                        <div className="flex flex-col gap-2">
-                          {hasSelection ? (
-                            <SelectedCustomerCard
-                              customer={bookingData.customers[0]}
-                              onRemove={handleRemoveCustomer}
-                              isGroupBooking={isGroupBooking}
-                              onView={() =>
-                                setNestedPageState({
-                                  isOpen: true,
-                                  active: "customer-profile",
-                                })
-                              }
-                            />
-                          ) : (
-                            <AddCustomerCard
-                              onClick={() =>
-                                setNestedPageState({
-                                  isOpen: true,
-                                  active: "customer-selector",
-                                })
-                              }
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <MobileParticipantSection
+                    isWindowSmall={isWindowSmall}
+                    isGroupBooking={isGroupBooking}
+                    hasSelection={hasSelection}
+                    selectedCustomers={bookingData.customers}
+                    maxParticipants={selectedService?.max_participants}
+                    onRemoveCustomer={handleRemoveCustomer}
+                    onOpenCustomerSelector={() =>
+                      setNestedPageState({
+                        isOpen: true,
+                        active: "customer-selector",
+                      })
+                    }
+                    onOpenProfile={() =>
+                      setNestedPageState({
+                        isOpen: true,
+                        active: "customer-profile",
+                      })
+                    }
+                    onOpenParticipantManager={() =>
+                      setNestedPageState({
+                        isOpen: true,
+                        active: "participant-manager",
+                      })
+                    }
+                  />
                   <div className="flex flex-row items-end gap-2">
                     <DatePicker
                       styles=""
