@@ -7,20 +7,21 @@ import BlockedTimePanel from "./BlockedTimePanel";
 import EditBookingPanel from "./EditBookingPanel";
 import NewBookingPanel from "./NewBookingPanel";
 
-async function fetchTeamMembers(merchantId) {
+async function fetchSidePanelResource(merchantId, resource) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/team`,
+    `/api/v1/merchants/${merchantId}/calendar/${resource}`,
     {
       method: "GET",
       headers: {
         Accept: "application/json",
-        "constent-type": "application/json",
+        "content-type": "application/json",
       },
     }
   );
 
   const result = await response.json();
   if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
@@ -30,63 +31,21 @@ async function fetchTeamMembers(merchantId) {
 function teamMembersQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "calendar-team"],
-    queryFn: () => fetchTeamMembers(merchantId),
+    queryFn: () => fetchSidePanelResource(merchantId, "team"),
   });
-}
-
-async function fetchCustomersForCalendar(merchantId) {
-  const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/customers`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    return result.data;
-  }
 }
 
 function customersForCalendarQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "customers-calendar"],
-    queryFn: () => fetchCustomersForCalendar(merchantId),
+    queryFn: () => fetchSidePanelResource(merchantId, "customers"),
   });
-}
-
-async function fetchServicesForCalendar(merchantId) {
-  const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/services`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    return result.data;
-  }
 }
 
 function servicesForCalendarQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "services-calendar"],
-    queryFn: () => fetchServicesForCalendar(merchantId),
+    queryFn: () => fetchSidePanelResource(merchantId, "services"),
   });
 }
 
@@ -95,6 +54,7 @@ export default function CalendarSidePanel({
   onClose,
   type,
   data,
+  panelKey,
   onSave,
   onSoftUpdate,
   preferences,
@@ -157,10 +117,7 @@ export default function CalendarSidePanel({
             <Icon icon={Cancel01Icon} styles="size-7 fill-text_color" />
           </button>
         )}
-        <div
-          key={isOpen ? "open" : "closed"}
-          className="bg-layer_bg h-full min-w-full"
-        >
+        <div key={panelKey} className="bg-layer_bg h-full min-w-full">
           {type === "new-booking" && (
             <NewBookingPanel
               onSave={onSave}

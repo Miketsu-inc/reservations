@@ -244,13 +244,17 @@ export default function EditBookingPanel({
     }
   }
 
+  function updateParticipantStatus(id, status) {
+    setBookingData((prev) => ({
+      ...prev,
+      participants: prev.participants.map((p) =>
+        p.participant_id === id ? { ...p, status } : p
+      ),
+    }));
+  }
+
   async function handleStatusChange(participantId, newStatus, oldStatus) {
-    setBookingData((prev) => {
-      const updatedParticipants = prev.participants.map((p) =>
-        p.participant_id === participantId ? { ...p, status: newStatus } : p
-      );
-      return { ...prev, participants: updatedParticipants };
-    });
+    updateParticipantStatus(participantId, newStatus);
 
     try {
       const response = await fetch(
@@ -278,13 +282,7 @@ export default function EditBookingPanel({
         onSoftUpdate();
       }
     } catch (err) {
-      setBookingData((prev) => {
-        const revertedParticipants = prev.participants.map((p) =>
-          p.participant_id === participantId ? { ...p, status: oldStatus } : p
-        );
-        return { ...prev, participants: revertedParticipants };
-      });
-
+      updateParticipantStatus(participantId, oldStatus);
       showToast({ message: err.message, variant: "error" });
     }
   }

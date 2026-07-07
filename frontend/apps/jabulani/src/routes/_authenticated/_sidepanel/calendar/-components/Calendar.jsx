@@ -134,6 +134,7 @@ export default function Calendar({ router, route, search }) {
     type: null,
     data: null,
     revert: null,
+    panelKey: null,
   });
   const [calendarTitle, setCalendarTitle] = useState("");
 
@@ -243,6 +244,7 @@ export default function Calendar({ router, route, search }) {
         isOpen={sidePanelState.isOpen}
         type={sidePanelState.type}
         data={sidePanelState.data}
+        panelKey={sidePanelState.panelKey}
         onClose={() => {
           if (sidePanelState.revert) {
             sidePanelState.revert();
@@ -277,6 +279,7 @@ export default function Calendar({ router, route, search }) {
                     isOpen: true,
                     type: "blocked-time",
                     data: null,
+                    panelKey: Date.now(),
                   })
                 }
                 onCreateBooking={() =>
@@ -284,6 +287,7 @@ export default function Calendar({ router, route, search }) {
                     isOpen: true,
                     type: "new-booking",
                     data: null,
+                    panelKey: Date.now(),
                   })
                 }
               />
@@ -364,6 +368,7 @@ export default function Calendar({ router, route, search }) {
                 type: "blocked-time",
                 data: e.event,
                 revert: null,
+                panelKey: Date.now(),
               });
               return;
             }
@@ -372,6 +377,7 @@ export default function Calendar({ router, route, search }) {
               type: "edit-booking",
               data: e.event,
               revert: null,
+              panelKey: Date.now(),
             });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
@@ -404,6 +410,7 @@ export default function Calendar({ router, route, search }) {
                 type: "blocked-time",
                 data: e.event,
                 revert: e.revert(),
+                panelKey: Date.now(),
               });
               return;
             }
@@ -413,6 +420,7 @@ export default function Calendar({ router, route, search }) {
               type: "edit-booking",
               data: e.event,
               revert: e.revert(),
+              panelKey: Date.now(),
             });
           }}
           eventAllow={(dropInfo) => {
