@@ -61,13 +61,13 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			AllDay:        input.AllDay,
 		}})
 		if err != nil {
-			return fmt.Errorf("could not make new blocked time %w", err)
+			return err
 		}
 
 		if len(input.EmployeeIds) > 0 {
 			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
 			if err != nil {
-				return fmt.Errorf("error retrieving employees: %w", err)
+				return err
 			}
 
 			err = checkIfInActiveEmployees(employees, input.EmployeeIds)
@@ -77,7 +77,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, utils.RepeatEach(ids, len(input.EmployeeIds)), input.EmployeeIds)
 			if err != nil {
-				return fmt.Errorf("could not make new employee blocked time: %w", err)
+				return err
 			}
 
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBlockedTimeDispatcher{
@@ -155,7 +155,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, input.BlockedTimeId)
 	if err != nil {
-		return fmt.Errorf("error retrieving blocked time: %w", err)
+		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
@@ -177,7 +177,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			AllDay:        input.AllDay,
 		})
 		if err != nil {
-			return fmt.Errorf("error while updating blocked time for merchant: %s", err.Error())
+			return err
 		}
 
 		employeeChanges, err := detectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
@@ -188,14 +188,14 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		if len(employeeChanges.ToDelete) > 0 {
 			err := s.blockedTimeRepo.WithTx(tx).BulkDeleteEmployeeBlockedTime(ctx, []int{blockedTime.Id}, employeeChanges.ToDelete)
 			if err != nil {
-				return fmt.Errorf("error bulk deleting employee blocked times: %w", err)
+				return err
 			}
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
 			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
 			if err != nil {
-				return fmt.Errorf("error retrieving employees: %w", err)
+				return err
 			}
 
 			err = checkIfInActiveEmployees(employees, employeeChanges.ToInsert)
@@ -207,7 +207,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, employeeChanges.ToInsert)
 			if err != nil {
-				return fmt.Errorf("error bulk inserting employee blocked times: %w", err)
+				return err
 			}
 		}
 
@@ -230,7 +230,7 @@ func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	// TODO: if the actor is not on the block time this will give an error
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
 	if err != nil {
-		return fmt.Errorf("error retrieving blocked time: %w", err)
+		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
@@ -240,7 +240,7 @@ func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.blockedTimeRepo.WithTx(tx).BulkDeleteBlockedTime(ctx, []int{blockedTime.Id})
 		if err != nil {
-			return fmt.Errorf("error while deleting blocked time for merchant: %s", err.Error())
+			return err
 		}
 
 		_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncDeleteBlockedTimeDispatcher{

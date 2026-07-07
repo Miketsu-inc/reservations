@@ -41,7 +41,7 @@ func (r *merchantRepository) NewMerchant(ctx context.Context, userId uuid.UUID, 
 		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo,
 		merchant.Timezone, merchant.CurrencyCode, merchant.SubscriptionTier)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewMerchant: %w", err)
 	}
 
 	return nil
@@ -56,7 +56,7 @@ func (r *merchantRepository) DeleteMerchant(ctx context.Context, employeeId int,
 
 	_, err := r.db.Exec(ctx, query, employeeId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteMerchant: %w", err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (r *merchantRepository) ChangeMerchantNameAndURL(ctx context.Context, merch
 
 	_, err := r.db.Exec(ctx, query, merchantId, MerchantName, urlName)
 	if err != nil {
-		return err
+		return fmt.Errorf("ChangeMerchantNameAndURL: %w", err)
 	}
 
 	return nil
@@ -86,7 +86,7 @@ func (r *merchantRepository) UpdateMerchantFields(ctx context.Context, merchantI
 	_, err := r.db.Exec(ctx, query, merchantId, ms.Introduction, ms.Announcement, ms.AboutUs, ms.PaymentInfo, ms.ParkingInfo,
 		ms.CancelDeadline, ms.BookingWindowMin, ms.BookingWindowMax, ms.BufferTime, ms.ApprovalPolicy)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateMerchantFields: %w", err)
 	}
 
 	return nil
@@ -100,12 +100,11 @@ func (r *merchantRepository) IsMerchantUrlUnique(ctx context.Context, merchantUr
 
 	var exists int
 	err := r.db.QueryRow(ctx, query, merchantUrl).Scan(&exists)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return true, nil
-	}
-
 	if err != nil {
-		return false, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return true, nil
+		}
+		return false, fmt.Errorf("IsMerchantUrlUnique: %w", err)
 	}
 
 	return false, nil
@@ -120,7 +119,7 @@ func (r *merchantRepository) GetMerchantIdByUrlName(ctx context.Context, UrlName
 	var merchantId uuid.UUID
 	err := r.db.QueryRow(ctx, query, UrlName).Scan(&merchantId)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("GetMerchantIdByUrlName: %w", err)
 	}
 
 	return merchantId, nil
@@ -136,7 +135,7 @@ func (r *merchantRepository) GetMerchantUrlName(ctx context.Context, merchantId 
 	var urlName string
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&urlName)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("GetMerchantUrlName: %w", err)
 	}
 
 	return urlName, nil
@@ -151,12 +150,12 @@ func (r *merchantRepository) GetMerchantTimezone(ctx context.Context, merchantId
 	var timzone string
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&timzone)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetMerchantTimezone: %w", err)
 	}
 
 	tz, err := time.LoadLocation(timzone)
 	if err != nil {
-		return nil, fmt.Errorf("error while parsing merchant's timezone: %s", err.Error())
+		return nil, fmt.Errorf("GetMerchantTimezone: %w", err)
 	}
 
 	return tz, nil
@@ -170,7 +169,7 @@ func (r *merchantRepository) GetMerchantCurrency(ctx context.Context, merchantId
 	var curr string
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&curr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("GetMerchantCurrency: %w", err)
 	}
 
 	return curr, nil
@@ -185,7 +184,7 @@ func (r *merchantRepository) GetMerchantSubscriptionTier(ctx context.Context, me
 	var tier types.SubTier
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&tier)
 	if err != nil {
-		return types.SubTier{}, err
+		return types.SubTier{}, fmt.Errorf("GetMerchantSubscriptionTier: %w", err)
 	}
 
 	return tier, nil
@@ -205,12 +204,12 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address,
 		&mi.FormattedLocation, &mi.GeoPoint)
 	if err != nil {
-		return domain.MerchantInfo{}, err
+		return domain.MerchantInfo{}, fmt.Errorf("GetAllMerchantInfo: %w", err)
 	}
 
 	businnessHours, err := r.GetBusinessHours(ctx, merchantId)
 	if err != nil {
-		return domain.MerchantInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)
+		return domain.MerchantInfo{}, fmt.Errorf("GetAllMerchantInfo/GetBusinessHours: %w", err)
 	}
 
 	mi.BusinessHours = businnessHours
@@ -233,12 +232,12 @@ func (r *merchantRepository) GetMerchantSettingsInfo(ctx context.Context, mercha
 		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.ApprovalPolicy,
 		&msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address, &msi.FormattedLocation)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, err
+		return domain.MerchantSettingsInfo{}, fmt.Errorf("GetMerchantSettingsInfo: %w", err)
 	}
 
 	businessHours, err := r.GetBusinessHours(ctx, merchantId)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, fmt.Errorf("failed to get business hours for merchant: %v", err)
+		return domain.MerchantSettingsInfo{}, fmt.Errorf("GetMerchantSettingsInfo/GetBusinessHours: %w", err)
 	}
 
 	msi.BusinessHours = businessHours
@@ -259,7 +258,7 @@ func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.
 	var mbs domain.MerchantBookingSettings
 	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin, &mbs.ApprovalPolicy)
 	if err != nil {
-		return domain.MerchantBookingSettings{}, err
+		return domain.MerchantBookingSettings{}, fmt.Errorf("GetBookingSettingsByMerchantAndService: %w", err)
 	}
 
 	return mbs, nil
@@ -273,7 +272,7 @@ func (r *merchantRepository) GetMerchantNameAndLocation(ctx context.Context, mer
 	var name, loc string
 	err := r.db.QueryRow(ctx, query, merchantId, locationId).Scan(&name, &loc)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("GetMerchantNameAndLocation: %w", err)
 	}
 
 	return name, loc, nil
@@ -364,7 +363,7 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			return domain.DashboardStatistics{}, err
+			return domain.DashboardStatistics{}, fmt.Errorf("GetDashboardStats: %w", err)
 		}
 	}
 
@@ -374,7 +373,7 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 	if curr != "" {
 		amount, err := currency.NewAmount(strconv.Itoa(currRevenue), curr)
 		if err != nil {
-			return domain.DashboardStatistics{}, fmt.Errorf("new amount creation failed: %v", err)
+			return domain.DashboardStatistics{}, fmt.Errorf("GetDashboardStats: %w", err)
 		}
 		formattedRevenue = currencyx.Format(amount)
 	} else {
@@ -413,7 +412,7 @@ func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uui
 	rows, _ := r.db.Query(ctx, query, merchantId, startDate, endDate)
 	revenue, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.RevenueStat])
 	if err != nil {
-		return []domain.RevenueStat{}, err
+		return []domain.RevenueStat{}, fmt.Errorf("GetRevenueStats: %w", err)
 	}
 
 	return revenue, nil
@@ -442,7 +441,7 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
 
 	_, err := r.db.Exec(ctx, query, merchantId, days, startTimes, endTimes)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewBusinessHours: %w", err)
 	}
 
 	return nil
@@ -473,7 +472,7 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
 
 	_, err := r.db.Exec(ctx, query, merchantId, days, startTimes, endTimes)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteOutdatedBusinessHours: %w", err)
 	}
 
 	return nil
@@ -503,7 +502,7 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 		return nil
 	})
 	if err != nil {
-		return domain.BusinessHours{}, err
+		return domain.BusinessHours{}, fmt.Errorf("GetBusinessHours: %w", err)
 	}
 
 	return businessHours, nil
@@ -523,7 +522,7 @@ func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchan
 		return ts, err
 	})
 	if err != nil {
-		return []domain.TimeSlot{}, err
+		return []domain.TimeSlot{}, fmt.Errorf("GetBusinessHoursForDay: %w", err)
 	}
 
 	return bHours, nil
@@ -552,7 +551,7 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetNormalizedBusinessHours: %w", err)
 	}
 
 	return result, nil
@@ -567,7 +566,7 @@ func (r *merchantRepository) NewLocation(ctx context.Context, location domain.Lo
 	_, err := r.db.Exec(ctx, query, location.MerchantId, location.Country, location.City, location.PostalCode, location.Address, location.GeoPoint,
 		location.PlaceId, location.FormattedLocation, location.IsPrimary, location.IsActive)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewLocation: %w", err)
 	}
 
 	return nil
@@ -583,7 +582,7 @@ func (r *merchantRepository) GetLocation(ctx context.Context, locationId int, me
 	err := r.db.QueryRow(ctx, query, locationId, merchantId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City, &location.PostalCode,
 		&location.Address, &location.GeoPoint, &location.PlaceId, &location.FormattedLocation, &location.IsPrimary, &location.IsActive)
 	if err != nil {
-		return domain.Location{}, err
+		return domain.Location{}, fmt.Errorf("GetLocation: %w", err)
 	}
 
 	return location, nil
@@ -596,7 +595,7 @@ func (r *merchantRepository) NewPreferences(ctx context.Context, merchantId uuid
 
 	_, err := r.db.Exec(ctx, query, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewPreferences: %w", err)
 	}
 
 	return err
@@ -610,7 +609,7 @@ func (r *merchantRepository) UpdatePreferences(ctx context.Context, merchantId u
 
 	_, err := r.db.Exec(ctx, query, merchantId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.CalendarViewMobile, p.StartHour, p.EndHour, p.TimeFrequency)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdatePreferences: %w", err)
 	}
 
 	return nil
@@ -625,7 +624,7 @@ func (r *merchantRepository) GetPreferences(ctx context.Context, merchantId uuid
 	var p domain.PreferenceData
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.CalendarViewMobile, &p.StartHour, &p.EndHour, &p.TimeFrequency)
 	if err != nil {
-		return domain.PreferenceData{}, err
+		return domain.PreferenceData{}, fmt.Errorf("GetPreferences: %w", err)
 	}
 
 	return p, nil

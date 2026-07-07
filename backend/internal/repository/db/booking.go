@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,7 +43,7 @@ func (r *bookingRepository) NewBooking(ctx context.Context, booking domain.Booki
 		booking.PriceType, booking.FormattedLocation, booking.MerchantNote, booking.MinParticipants, booking.MaxParticipants, booking.CurrentParticipants,
 		booking.OccurrenceIndex, booking.SeriesVersion).Scan(&bookingId)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("NewBooking: %w", err)
 	}
 
 	return bookingId, nil
@@ -144,7 +145,7 @@ func (r *bookingRepository) NewBookings(ctx context.Context, bookings []domain.B
 		occurrenceIndexes, seriesVersions)
 	bookingIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
-		return []int{}, err
+		return []int{}, fmt.Errorf("NewBookings: %w", err)
 	}
 
 	return bookingIds, nil
@@ -176,7 +177,7 @@ func (r *bookingRepository) NewBookingPhases(ctx context.Context, bookingPhases 
 
 	_, err := r.db.Exec(ctx, query, bookingIds, servicePhaseIds, fromDates, toDates, phaseTypes)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewBookingPhases: %w", err)
 	}
 
 	return nil
@@ -210,7 +211,7 @@ func (r *bookingRepository) NewBookingParticipants(ctx context.Context, bookingP
 
 	_, err := r.db.Exec(ctx, query, statuses, bookingIds, customerIds, customerNotes)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewBookingParticipants: %w", err)
 	}
 
 	return nil
@@ -221,7 +222,7 @@ func (r *bookingRepository) DeleteBookingPhasesBatch(ctx context.Context, bookin
 
 	_, err := r.db.Exec(ctx, query, bookingIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteBookingPhasesBatch: %w", err)
 	}
 
 	return nil
@@ -233,7 +234,7 @@ func (r *bookingRepository) DeleteBookingParticipantsBatch(ctx context.Context, 
 
 	_, err := r.db.Exec(ctx, query, bookingIds, participantIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteBookingParticipantsBatch: %w", err)
 	}
 
 	return nil
@@ -248,7 +249,7 @@ func (r *bookingRepository) UpdateBookingStatus(ctx context.Context, merchantId 
 
 	_, err := r.db.Exec(ctx, query, bookingId, merchantId, status)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingStatus: %w", err)
 	}
 
 	return nil
@@ -271,7 +272,7 @@ func (r *bookingRepository) UpdateBookingCoreBatch(ctx context.Context, merchant
 
 	_, err := r.db.Exec(ctx, query, bookingIds, serviceId, bookingType, status, fromDates, toDates, merchantId, merchantNote, employeeId)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingCoreBatch: %w", err)
 	}
 
 	return nil
@@ -286,7 +287,7 @@ func (r *bookingRepository) UpdateBookingSeriesOriginalDateAndVersion(ctx contex
 
 	_, err := r.db.Exec(ctx, query, bookingId, seriesOriginalDate, seriesVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingSeriesOriginalDateAndVersion: %w", err)
 	}
 
 	return nil
@@ -301,7 +302,7 @@ func (r *bookingRepository) UpdateBookingPricePerPersonBatch(ctx context.Context
 
 	_, err := r.db.Exec(ctx, query, bookingIds, price)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingPricePerPersonBatch: %w", err)
 	}
 
 	return nil
@@ -319,7 +320,7 @@ func (r *bookingRepository) UpdateBookingTotalPriceBatch(ctx context.Context, bo
 
 	_, err := r.db.Exec(ctx, query, bookingIds, prices)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingTotalPriceBatch: %w", err)
 	}
 
 	return nil
@@ -354,7 +355,7 @@ func (r *bookingRepository) UpdateBookingDetailsBatch(ctx context.Context, merch
 	_, err := r.db.Exec(ctx, query, merchantId, bookingIds, pricePerPersons, totalPrices,
 		minParticipants, maxParicipants, currentParicipants)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingDetailsBatch: %w", err)
 	}
 
 	return nil
@@ -369,7 +370,7 @@ func (r *bookingRepository) UpdateBookingEmployeeBatch(ctx context.Context, book
 
 	_, err := r.db.Exec(ctx, query, bookingIds, employeeId)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingEmployeeBatch: %w", err)
 	}
 
 	return nil
@@ -386,7 +387,7 @@ func (r *bookingRepository) UpdateBookingOccurrencesBatch(ctx context.Context, b
 
 	_, err := r.db.Exec(ctx, query, bookingIds, fromDates, toDates, seriesId, seriesVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingOccurrencesBatch: %w", err)
 	}
 
 	return nil
@@ -421,7 +422,7 @@ func (r *bookingRepository) UpdateBookingParticipants(ctx context.Context, parti
 
 	_, err := r.db.Exec(ctx, query, bookingIds, customerIds, statuses, updateStatusOnConflict)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingParticipants: %w", err)
 	}
 
 	return nil
@@ -441,7 +442,7 @@ func (r *bookingRepository) UpdateParticipantStatus(ctx context.Context, booking
 
 	_, err := r.db.Exec(ctx, query, bookingId, participantId, status)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateParticipantStatus: %w", err)
 	}
 
 	return nil
@@ -462,7 +463,7 @@ func (r *bookingRepository) UpdateParticipantCountBatch(ctx context.Context, boo
 	rows, _ := r.db.Query(ctx, query, bookingIds, participantDelta)
 	bookingIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
-		return []int{}, err
+		return []int{}, fmt.Errorf("UpdateParticipantCountBatch: %w", err)
 	}
 
 	return bookingIds, nil
@@ -478,7 +479,7 @@ func (r *bookingRepository) DecrementEveryParticipantCountForCustomer(ctx contex
 
 	_, err := r.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DecrementEveryParticipantCountForCustomer: %w", err)
 	}
 
 	return nil
@@ -495,7 +496,7 @@ func (r *bookingRepository) TransferDummyBookings(ctx context.Context, merchantI
 
 	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
 	if err != nil {
-		return err
+		return fmt.Errorf("TransferDummyBookings: %w", err)
 	}
 
 	return nil
@@ -534,7 +535,7 @@ func (r *bookingRepository) UpdateBookingPhasesBatch(ctx context.Context, bookin
 
 	_, err := r.db.Exec(ctx, query, ids, bookingIds, servicePhaseIds, fromDates, toDates, phaseTypes)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingPhasesBatch: %w", err)
 	}
 
 	return nil
@@ -549,7 +550,7 @@ func (r *bookingRepository) CancelBookingByMerchant(ctx context.Context, merchan
 
 	_, err := r.db.Exec(ctx, query, time.Now().UTC(), cancellationReason, merchantId, bookingId)
 	if err != nil {
-		return err
+		return fmt.Errorf("CancelBookingByMerchant: %w", err)
 	}
 
 	return nil
@@ -564,7 +565,7 @@ func (r *bookingRepository) CancelBookingByMerchantBatch(ctx context.Context, bo
 
 	_, err := r.db.Exec(ctx, query, bookingIds, time.Now().UTC())
 	if err != nil {
-		return err
+		return fmt.Errorf("CancelBookingByMerchantBatch: %w", err)
 	}
 
 	return nil
@@ -579,7 +580,7 @@ func (r *bookingRepository) DeleteAppointmentsByCustomer(ctx context.Context, cu
 
 	_, err := r.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteAppointmentsByCustomer: %w", err)
 	}
 
 	return nil
@@ -594,7 +595,7 @@ func (r *bookingRepository) DeleteParticipantByCustomer(ctx context.Context, cus
 
 	_, err := r.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteParticipantByCustomer: %w", err)
 	}
 
 	return nil
@@ -609,7 +610,7 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 	rows, _ := r.db.Query(ctx, query, bookingId)
 	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Booking])
 	if err != nil {
-		return domain.Booking{}, err
+		return domain.Booking{}, fmt.Errorf("GetBooking: %w", err)
 	}
 
 	return booking, nil
@@ -630,7 +631,7 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int,
 	err := r.db.QueryRow(ctx, query, bookingId, userId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
 		&data.ServiceName, &data.CancelDeadline, &data.PriceType, &data.Status, &data.FormattedLocation)
 	if err != nil {
-		return domain.PublicBooking{}, err
+		return domain.PublicBooking{}, fmt.Errorf("GetPublicBooking: %w", err)
 	}
 
 	return data, nil
@@ -656,7 +657,7 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
 	if err != nil {
-		return []domain.PublicBookingDetails{}, err
+		return []domain.PublicBookingDetails{}, fmt.Errorf("GetLatestBookings: %w", err)
 	}
 
 	return bookings, nil
@@ -682,7 +683,7 @@ func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId 
 	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
 	if err != nil {
-		return []domain.PublicBookingDetails{}, err
+		return []domain.PublicBookingDetails{}, fmt.Errorf("GetUpcomingBookings: %w", err)
 	}
 
 	return bookings, nil
@@ -722,7 +723,7 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForCalendar])
 	if err != nil {
-		return []domain.BookingForCalendar{}, err
+		return []domain.BookingForCalendar{}, fmt.Errorf("GetBookingsForCalendar: %w", err)
 	}
 
 	return bookings, nil
@@ -740,7 +741,7 @@ func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, b
 	rows, _ := r.db.Query(ctx, query, bookingId)
 	bookingData, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForExternalCalendar])
 	if err != nil {
-		return domain.BookingForExternalCalendar{}, nil
+		return domain.BookingForExternalCalendar{}, fmt.Errorf("GetBookingForExternalCalendar: %w", err)
 	}
 
 	return bookingData, nil
@@ -763,7 +764,7 @@ func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId in
 	rows, _ := r.db.Query(ctx, query, bookingId, customerId)
 	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForEmail])
 	if err != nil {
-		return domain.BookingForEmail{}, err
+		return domain.BookingForEmail{}, fmt.Errorf("GetBookingForEmail: %w", err)
 	}
 
 	return booking, nil
@@ -780,7 +781,7 @@ func (r *bookingRepository) GetBookingParticipantByUser(ctx context.Context, boo
 	rows, _ := r.db.Query(ctx, query, bookingId, userId)
 	participant, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingParticipant])
 	if err != nil {
-		return domain.BookingParticipant{}, err
+		return domain.BookingParticipant{}, fmt.Errorf("GetBookingParticipantByUser: %w", err)
 	}
 
 	return participant, nil
@@ -796,7 +797,7 @@ func (r *bookingRepository) GetBookingParticipant(ctx context.Context, participa
 	rows, _ := r.db.Query(ctx, query, participantId)
 	participant, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingParticipant])
 	if err != nil {
-		return domain.BookingParticipant{}, err
+		return domain.BookingParticipant{}, fmt.Errorf("GetBookingParticipant: %w", err)
 	}
 
 	return participant, nil
@@ -812,7 +813,7 @@ func (r *bookingRepository) GetBookingParticipants(ctx context.Context, bookingI
 	rows, _ := r.db.Query(ctx, query, bookingId)
 	participants, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingParticipant])
 	if err != nil {
-		return []domain.BookingParticipant{}, err
+		return []domain.BookingParticipant{}, fmt.Errorf("GetBookingParticipants: %w", err)
 	}
 
 	return participants, nil
@@ -834,7 +835,7 @@ func (r *bookingRepository) GetParticipantCustomerIdsForBookings(ctx context.Con
 	rows, _ := r.db.Query(ctx, query, bookingIds)
 	bookingsWithCustomers, err := pgx.CollectRows(rows, pgx.RowToStructByName[bookingCustomers])
 	if err != nil {
-		return map[int][]uuid.UUID{}, err
+		return map[int][]uuid.UUID{}, fmt.Errorf("GetParticipantCustomerIdsForBookings: %w", err)
 	}
 
 	bookingCustomersMap := make(map[int][]uuid.UUID, len(bookingsWithCustomers))
@@ -863,7 +864,7 @@ func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, user
 	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
 	if err != nil {
-		return []domain.BookingForUser{}, err
+		return []domain.BookingForUser{}, fmt.Errorf("GetUpcomingBookingsForUser: %w", err)
 	}
 
 	return bookings, nil
@@ -887,7 +888,7 @@ func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, use
 	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
 	if err != nil {
-		return []domain.BookingForUser{}, err
+		return []domain.BookingForUser{}, fmt.Errorf("GetCompletedBookingsForUser: %w", err)
 	}
 
 	return bookings, nil
@@ -912,7 +913,7 @@ func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, use
 	rows, _ := r.db.Query(ctx, query, userId, limit, cursorStart, cursorId)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForUser])
 	if err != nil {
-		return []domain.BookingForUser{}, err
+		return []domain.BookingForUser{}, fmt.Errorf("GetCancelledBookingsForUser: %w", err)
 	}
 
 	return bookings, nil
@@ -928,7 +929,7 @@ func (r *bookingRepository) GetBookingPhases(ctx context.Context, bookingId int)
 	rows, _ := r.db.Query(ctx, query, bookingId)
 	bookingPhases, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingPhase])
 	if err != nil {
-		return []domain.BookingPhase{}, err
+		return []domain.BookingPhase{}, fmt.Errorf("GetBookingPhases: %w", err)
 	}
 
 	return bookingPhases, nil
@@ -947,7 +948,7 @@ func (r *bookingRepository) GetBookingCancelDeadline(ctx context.Context, bookin
 
 	err := r.db.QueryRow(ctx, query, bookingId).Scan(&cancelDeadline)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("GetBookingCancelDeadline: %w", err)
 	}
 
 	return cancelDeadline, nil
@@ -964,7 +965,7 @@ func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uu
 	rows, _ := r.db.Query(ctx, query, merchant_id, location_id, day)
 	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetReservedTimes: %w", err)
 	}
 
 	return reservedTimes, nil
@@ -982,7 +983,7 @@ func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merch
 	rows, _ := r.db.Query(ctx, query, merchantId, locationId, startDate, endDate)
 	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetReservedTimesForPeriod: %w", err)
 	}
 
 	return reservedTimes, nil
@@ -999,7 +1000,7 @@ func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Conte
 	rows, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, startTime, endTime)
 	availableBookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetAvailableGroupBookingsForPeriod: %w", err)
 	}
 
 	return availableBookings, nil
@@ -1016,7 +1017,7 @@ func (r *bookingRepository) GetClosestAvailableGroupBooking(ctx context.Context,
 	row, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, searchStart, searchEnd)
 	booking, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[domain.Booking])
 	if err != nil {
-		return domain.Booking{}, err
+		return domain.Booking{}, fmt.Errorf("GetClosestAvailableGroupBooking: %w", err)
 	}
 
 	return booking, nil
@@ -1034,7 +1035,7 @@ func (r *bookingRepository) NewBookingSeries(ctx context.Context, bs domain.Book
 		bs.ServiceName, bs.PricePerPerson, bs.TotalPrice, bs.PriceType, bs.FormattedLocation, bs.MinParticipants, bs.MaxParticipants, bs.CurrentParticipants)
 	bookingSeries, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.BookingSeries])
 	if err != nil {
-		return domain.BookingSeries{}, err
+		return domain.BookingSeries{}, fmt.Errorf("NewBookingSeries: %w", err)
 	}
 
 	return bookingSeries, nil
@@ -1064,7 +1065,7 @@ func (r *bookingRepository) NewBookingSeriesParticipants(ctx context.Context, bo
 	rows, _ := r.db.Query(ctx, query, seriesIds, customerIds, isActives)
 	bookingSeriesParticipants, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSeriesParticipant])
 	if err != nil {
-		return []domain.BookingSeriesParticipant{}, err
+		return []domain.BookingSeriesParticipant{}, fmt.Errorf("NewBookingSeriesParticipants: %w", err)
 	}
 
 	return bookingSeriesParticipants, nil
@@ -1100,7 +1101,7 @@ func (r *bookingRepository) NewBookingSeriesPhases(ctx context.Context, bookingS
 
 	_, err := r.db.Exec(ctx, query, bookingSeriesIds, servicePhaseIds, names, sequences, durations, phaseTypes)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewBookingSeriesPhases: %w", err)
 	}
 
 	return nil
@@ -1118,7 +1119,7 @@ func (r *bookingRepository) UpdateBookingSeriesRrule(ctx context.Context, series
 
 	err := r.db.QueryRow(ctx, query, seriesId, rrule, dstart).Scan(&seriesVersion)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("UpdateBookingSeriesRrule: %w", err)
 	}
 
 	return seriesVersion, nil
@@ -1133,7 +1134,7 @@ func (r *bookingRepository) UpdateBookingSeriesGeneratedUntil(ctx context.Contex
 
 	_, err := r.db.Exec(ctx, query, seriesId, generatedUntil)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingSeriesGeneratedUntil: %w", err)
 	}
 
 	return nil
@@ -1148,7 +1149,7 @@ func (r *bookingRepository) DeactivateBookingSeries(ctx context.Context, seriesI
 
 	_, err := r.db.Exec(ctx, query, seriesId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeactivateBookingSeries: %w", err)
 	}
 
 	return nil
@@ -1164,7 +1165,7 @@ func (r *bookingRepository) UpdateBookingSeriesDetails(ctx context.Context, seri
 	_, err := r.db.Exec(ctx, query, seriesId, details.PricePerPerson, details.TotalPrice,
 		details.MinParticipants, details.MaxParticipants, details.CurrentParticipants)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBookingSeriesDetails: %w", err)
 	}
 
 	return nil
@@ -1176,7 +1177,7 @@ func (r *bookingRepository) DeleteBookingSeriesParticipants(ctx context.Context,
 
 	_, err := r.db.Exec(ctx, query, seriesId, customerIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteBookingSeriesParticipants: %w", err)
 	}
 
 	return nil
@@ -1194,7 +1195,7 @@ func (r *bookingRepository) GetFutureSeriesBookingsWithLock(ctx context.Context,
 	rows, _ := r.db.Query(ctx, query, seriesId, fromOccurrenceIndex, limit)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Booking])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetFutureSeriesBookingsWithLock: %w", err)
 	}
 
 	return bookings, nil
@@ -1210,7 +1211,7 @@ func (r *bookingRepository) GetBookingSeries(ctx context.Context, seriesId int) 
 	rows, _ := r.db.Query(ctx, query, seriesId)
 	bookingSeries, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingSeries])
 	if err != nil {
-		return domain.BookingSeries{}, err
+		return domain.BookingSeries{}, fmt.Errorf("GetBookingSeries: %w", err)
 	}
 	return bookingSeries, nil
 }
@@ -1225,7 +1226,7 @@ func (r *bookingRepository) GetActiveBookingSeriesIds(ctx context.Context, tresh
 	rows, _ := r.db.Query(ctx, query, tresholdTime)
 	ids, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
-		return []int{}, err
+		return []int{}, fmt.Errorf("GetActiveBookingSeriesIds: %w", err)
 	}
 
 	return ids, nil
@@ -1242,7 +1243,7 @@ func (r *bookingRepository) GetSeriesLastOccurrenceIndex(ctx context.Context, se
 
 	err := r.db.QueryRow(ctx, query, seriesId).Scan(&occurrenceIndex)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("GetSeriesLastOccurrenceIndex: %w", err)
 	}
 
 	return occurrenceIndex, err
@@ -1259,7 +1260,7 @@ func (r *bookingRepository) GetSeriesOccurrenceDateByIndex(ctx context.Context, 
 
 	err := r.db.QueryRow(ctx, query, seriesId, occurrenceIndex).Scan(&occurrenceDate)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, fmt.Errorf("GetSeriesOccurrenceDateByIndex: %w", err)
 	}
 
 	return occurrenceDate, nil
@@ -1275,7 +1276,7 @@ func (r *bookingRepository) GetBookingSeriesParticipants(ctx context.Context, se
 	rows, _ := r.db.Query(ctx, query, seriesId)
 	participants, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSeriesParticipant])
 	if err != nil {
-		return []domain.BookingSeriesParticipant{}, err
+		return []domain.BookingSeriesParticipant{}, fmt.Errorf("GetBookingSeriesParticipants: %w", err)
 	}
 
 	return participants, nil
@@ -1291,7 +1292,7 @@ func (r *bookingRepository) GetBookingSeriesPhases(ctx context.Context, seriesId
 	rows, _ := r.db.Query(ctx, query, seriesId)
 	bookingSeriesPhases, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSeriesPhase])
 	if err != nil {
-		return []domain.BookingSeriesPhase{}, err
+		return []domain.BookingSeriesPhase{}, fmt.Errorf("GetBookingSeriesPhases: %w", err)
 	}
 
 	return bookingSeriesPhases, nil

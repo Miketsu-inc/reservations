@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,7 +59,7 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 	rows, _ := r.db.Query(ctx, query, merchantId, blockedTimeTypeIds, names, fromDates, toDates, isAllDay, source)
 	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
-		return []int{}, err
+		return []int{}, fmt.Errorf("BulkInsertBlockedTime: %w", err)
 	}
 
 	return btIds, nil
@@ -86,7 +87,7 @@ func (r *blockedTimeRepository) UpdateBlockedTime(ctx context.Context, bt domain
 
 	_, err := r.db.Exec(ctx, query, bt.MerchantId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkInsertEmployeeBlockedTime: %w", err)
 	}
 
 	return nil
@@ -117,7 +118,7 @@ func (r *blockedTimeRepository) BulkUpdateBlockedTime(ctx context.Context, bt []
 
 	_, err := r.db.Exec(ctx, query, ids, names, fromDates, toDates, isAllDay)
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkUpdateBlockedTime: %w", err)
 	}
 
 	return nil
@@ -131,7 +132,7 @@ func (r *blockedTimeRepository) BulkDeleteBlockedTime(ctx context.Context, btIds
 
 	_, err := r.db.Exec(ctx, query, btIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkDeleteBlockedTime: %w", err)
 	}
 
 	return nil
@@ -145,7 +146,7 @@ func (r *blockedTimeRepository) BulkDeleteEmployeeBlockedTime(ctx context.Contex
 
 	_, err := r.db.Exec(ctx, query, blockedTimeIds, employeeIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkDeleteEmployeeBlockedTime: %w", err)
 	}
 
 	return nil
@@ -163,7 +164,7 @@ func (r *blockedTimeRepository) DeleteExternalCalendarBlockedTimes(ctx context.C
 
 	_, err := r.db.Exec(ctx, query, extCalendarId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteExternalCalendarBlockedTimes: %w", err)
 	}
 
 	return nil
@@ -179,7 +180,7 @@ func (r *blockedTimeRepository) GetBlockedTime(ctx context.Context, blockedTimeI
 	rows, _ := r.db.Query(ctx, query, blockedTimeId)
 	blockedTime, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BlockedTime])
 	if err != nil {
-		return domain.BlockedTime{}, err
+		return domain.BlockedTime{}, fmt.Errorf("GetBlockedTime: %w", err)
 	}
 
 	return blockedTime, nil
@@ -206,7 +207,7 @@ func (r *blockedTimeRepository) GetBlockedTimeForEmployee(ctx context.Context, b
 	rows, _ := r.db.Query(ctx, query, blockedTimeId, employeeId)
 	blockedTime, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BlockedTime])
 	if err != nil {
-		return domain.BlockedTime{}, err
+		return domain.BlockedTime{}, fmt.Errorf("GetBlockedTimeForEmployee: %w", err)
 	}
 
 	return blockedTime, nil
@@ -228,7 +229,7 @@ func (r *blockedTimeRepository) GetBlockedTimeEmployees(ctx context.Context, blo
 	rows, _ := r.db.Query(ctx, query, blockedTimeId)
 	blockedTime, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BlockedTimeEmployees])
 	if err != nil {
-		return domain.BlockedTimeEmployees{}, err
+		return domain.BlockedTimeEmployees{}, fmt.Errorf("GetBlockedTimeEmployees: %w", err)
 	}
 
 	return blockedTime, nil
@@ -252,7 +253,7 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimeEvent])
 	if err != nil {
-		return []domain.BlockedTimeEvent{}, err
+		return []domain.BlockedTimeEvent{}, fmt.Errorf("GetBlockedTimesForCalendar: %w", err)
 	}
 
 	return blockedTimes, nil
@@ -267,7 +268,7 @@ func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId 
 	rows, _ := r.db.Query(ctx, query, merchantId, start, end)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimes])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetBlockedTimes: %w", err)
 	}
 
 	return blockedTimes, nil
@@ -282,7 +283,7 @@ func (r *blockedTimeRepository) NewBlockedTimeType(ctx context.Context, merchant
 
 	_, err := r.db.Exec(ctx, query, merchantId, btt.Name, btt.Duration, btt.Icon)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewBlockedTimeType: %w", err)
 	}
 
 	return nil
@@ -296,7 +297,7 @@ func (r *blockedTimeRepository) UpdateBlockedTimeType(ctx context.Context, merch
 	`
 	_, err := r.db.Exec(ctx, query, merchantId, btt.Id, btt.Name, btt.Duration, btt.Icon)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateBlockedTimeType: %w", err)
 	}
 
 	return nil
@@ -308,7 +309,7 @@ func (r *blockedTimeRepository) DeleteBlockedTimeType(ctx context.Context, merch
 
 	_, err := r.db.Exec(ctx, query, merchantId, typeId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteBlockedTimeType: %w", err)
 	}
 
 	return nil
@@ -324,7 +325,7 @@ func (r *blockedTimeRepository) GetAllBlockedTimeTypes(ctx context.Context, merc
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	types, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimeType])
 	if err != nil {
-		return []domain.BlockedTimeType{}, err
+		return []domain.BlockedTimeType{}, fmt.Errorf("GetAllBlockedTimeTypes: %w", err)
 	}
 
 	return types, nil

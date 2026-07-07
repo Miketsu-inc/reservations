@@ -32,7 +32,7 @@ func (r *productRepository) NewProduct(ctx context.Context, prod domain.Product)
 
 	_, err := r.db.Exec(ctx, query, prod.MerchantId, prod.Name, prod.Description, prod.Price, prod.Unit, prod.MaxAmount, prod.CurrentAmount)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewProduct: %w", err)
 	}
 
 	return nil
@@ -47,7 +47,7 @@ func (r *productRepository) UpdateProduct(ctx context.Context, newProduct domain
 	`
 	_, err := r.db.Exec(ctx, query, newProduct.MerchantId, newProduct.Id, newProduct.Name, newProduct.Description, newProduct.Price, newProduct.Unit, newProduct.MaxAmount, newProduct.CurrentAmount)
 	if err != nil {
-		return fmt.Errorf("failed to update product: %v", err)
+		return fmt.Errorf("UpdateProduct: %w", err)
 	}
 
 	return nil
@@ -67,7 +67,7 @@ func (r *productRepository) DeleteProduct(ctx context.Context, merchantId uuid.U
 
 	_, err := r.db.Exec(ctx, query, time.Now().UTC(), merchantId, productId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteProduct: %w", err)
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func (r *productRepository) GetProducts(ctx context.Context, merchantId uuid.UUI
 	})
 
 	if err != nil {
-		return []domain.ProductInfo{}, err
+		return []domain.ProductInfo{}, fmt.Errorf("GetProducts: %w", err)
 	}
 
 	// if products array is empty the encoded json field will be null
@@ -146,7 +146,7 @@ func (r *productRepository) GetLowStockProducts(ctx context.Context, merchantId 
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	products, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.LowStockProduct])
 	if err != nil {
-		return []domain.LowStockProduct{}, err
+		return []domain.LowStockProduct{}, fmt.Errorf("GetLowStockProducts: %w", err)
 	}
 
 	return products, nil

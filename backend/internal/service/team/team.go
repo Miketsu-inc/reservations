@@ -32,12 +32,12 @@ func (s *Service) Me(ctx context.Context) (MeResult, error) {
 
 	user, err := s.userRepo.GetUser(ctx, userId)
 	if err != nil {
-		return MeResult{}, fmt.Errorf("error while retrieving user: %s", err.Error())
+		return MeResult{}, err
 	}
 
 	employeeInfo, err := s.userRepo.GetEmployeesByUser(ctx, userId)
 	if err != nil {
-		return MeResult{}, fmt.Errorf("error while getting employees for user: %s", err.Error())
+		return MeResult{}, err
 	}
 
 	return MeResult{
@@ -71,7 +71,7 @@ func (s *Service) NewMember(ctx context.Context, input NewMemberInput) error {
 		IsActive:    input.IsActive,
 	})
 	if err != nil {
-		return fmt.Errorf("error while creating new employee by id: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 		IsActive:    input.IsActive,
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating employee by id: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 
 	err := s.teamRepo.DeleteEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
-		return fmt.Errorf("error while deleting employee by id: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmp
 
 	teamMember, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
-		return domain.PublicEmployee{}, fmt.Errorf("error while retrieving employee by id: %s", err.Error())
+		return domain.PublicEmployee{}, err
 	}
 
 	return teamMember, nil
@@ -136,7 +136,7 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.PublicEmployee, error) 
 
 	teamMembers, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
+		return []domain.PublicEmployee{}, err
 	}
 
 	return teamMembers, nil

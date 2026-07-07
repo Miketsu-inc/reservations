@@ -47,7 +47,7 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursor string, 
 		return GetForUserResult{}, fmt.Errorf("invalid status query parameter")
 	}
 	if err != nil {
-		return GetForUserResult{}, fmt.Errorf("error retrieving bookings for user: %s", err.Error())
+		return GetForUserResult{}, err
 	}
 
 	var nextCursor *string

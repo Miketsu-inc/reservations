@@ -24,7 +24,7 @@ func (s *Service) NewType(ctx context.Context, input NewTypeInput) error {
 		Icon:     input.Icon,
 	})
 	if err != nil {
-		return fmt.Errorf("could not create new blocked time type: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -51,7 +51,7 @@ func (s *Service) UpdateType(ctx context.Context, blockedTimeTypeId int, input U
 		Icon:     input.Icon,
 	})
 	if err != nil {
-		return fmt.Errorf("error updating blocked time type: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -62,7 +62,7 @@ func (s *Service) DeleteType(ctx context.Context, blockedTimeTypeId int) error {
 
 	err := s.blockedTimeRepo.DeleteBlockedTimeType(ctx, actor.MerchantId, blockedTimeTypeId)
 	if err != nil {
-		return fmt.Errorf("error deleting blocked time type: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func (s *Service) GetTypes(ctx context.Context) ([]domain.BlockedTimeType, error
 
 	blockedTimetypes, err := s.blockedTimeRepo.GetAllBlockedTimeTypes(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.BlockedTimeType{}, fmt.Errorf("could not fetch blocked time types: %s", err.Error())
+		return []domain.BlockedTimeType{}, err
 	}
 
 	return blockedTimetypes, nil

@@ -95,7 +95,7 @@ type LoginInput struct {
 func (s *Service) Login(ctx context.Context, input LoginInput) (jwt.TokenPair, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, input.Email)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("incorrect email or password %s", err.Error())
+		return jwt.TokenPair{}, err
 	}
 
 	err = hashCompare(input.Password, *user.PasswordHash)
@@ -151,7 +151,7 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		Language:          lang.LangFromContext(ctx).String(),
 	})
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("unexpected error when creating user: %s", err.Error())
+		return jwt.TokenPair{}, err
 	}
 
 	tokens, err := newJwtTokens(userID, 0)
@@ -297,12 +297,12 @@ func (s *Service) UpdatePassword(ctx context.Context, in UpdatePasswordInput) (j
 
 	err = s.userRepo.UpdatePassword(ctx, userId, newPasswordHash)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("error updating password: %s", err.Error())
+		return jwt.TokenPair{}, err
 	}
 
 	refreshVersion, err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("error incrementing jwt refresh version: %s", err.Error())
+		return jwt.TokenPair{}, err
 	}
 
 	tokens, err := newJwtTokens(userId, refreshVersion)
@@ -324,7 +324,7 @@ func (s *Service) ForgotPassword(ctx context.Context, in ForgotPasswordInput) er
 			return nil
 		}
 
-		return fmt.Errorf("error retrieving user by email: %w", err)
+		return err
 	}
 
 	if user.IsOauthUser() {
@@ -384,7 +384,7 @@ func (s *Service) ResetPassword(ctx context.Context, in ResetPasswordInput) (jwt
 
 	err = s.userRepo.UpdatePassword(ctx, userId, passwordHash)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("error updating password: %w", err)
+		return jwt.TokenPair{}, err
 	}
 
 	err = s.kv.Del(ctx, key).Err()
@@ -394,7 +394,7 @@ func (s *Service) ResetPassword(ctx context.Context, in ResetPasswordInput) (jwt
 
 	refreshVersion, err := s.userRepo.IncrementUserJwtRefreshVersion(ctx, userId)
 	if err != nil {
-		return jwt.TokenPair{}, fmt.Errorf("error incrementing jwt refresh version: %s", err.Error())
+		return jwt.TokenPair{}, err
 	}
 
 	tokens, err := newJwtTokens(userId, refreshVersion)

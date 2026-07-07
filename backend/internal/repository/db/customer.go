@@ -35,7 +35,7 @@ func (r *customerRepository) NewCustomer(ctx context.Context, merchantId uuid.UU
 
 	_, err := r.db.Exec(ctx, query, customer.Id, merchantId, customer.FirstName, customer.LastName, customer.Email, customer.PhoneNumber, customer.Birthday, customer.Note)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewCustomer: %w", err)
 	}
 
 	return nil
@@ -54,7 +54,7 @@ func (r *customerRepository) NewCustomerFromUser(ctx context.Context, customerId
 
 	err := r.db.QueryRow(ctx, query, customerId, merchantId, userId).Scan(&custId, &IsBlacklisted, &isNew)
 	if err != nil {
-		return uuid.UUID{}, false, false, err
+		return uuid.UUID{}, false, false, fmt.Errorf("NewCustomerFromUser: %w", err)
 	}
 
 	return custId, IsBlacklisted, isNew, nil
@@ -100,7 +100,7 @@ func (r *customerRepository) UpdateCustomer(ctx context.Context, merchantId uuid
 
 	_, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateCustomer: %w", err)
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (r *customerRepository) DeleteCustomer(ctx context.Context, customerId uuid
 
 	_, err := r.db.Exec(ctx, query, customerId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteCustomer: %w", err)
 	}
 
 	return nil
@@ -138,7 +138,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 	rows, _ := r.db.Query(ctx, query, merchantId, isBlacklisted)
 	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicCustomer])
 	if err != nil {
-		return []domain.PublicCustomer{}, err
+		return []domain.PublicCustomer{}, fmt.Errorf("GetCustomers: %w", err)
 	}
 
 	// if customers array is empty the encoded json field will be null
@@ -162,7 +162,7 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
 		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy)
 	if err != nil {
-		return domain.CustomerInfo{}, err
+		return domain.CustomerInfo{}, fmt.Errorf("GetCustomerInfo: %w", err)
 	}
 
 	return customer, nil
@@ -216,13 +216,13 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesUpcoming,
 		&customer.TimesCompleted, &bookingsJSON)
 	if err != nil {
-		return domain.CustomerStatistics{}, err
+		return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)
 	}
 
 	if len(bookingsJSON) > 0 {
 		err = json.Unmarshal(bookingsJSON, &customer.Bookings)
 		if err != nil {
-			return domain.CustomerStatistics{}, err
+			return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)
 		}
 	} else {
 		customer.Bookings = []domain.PublicBooking{}
@@ -246,7 +246,7 @@ func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, mercha
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.CustomerForCalendar])
 	if err != nil {
-		return []domain.CustomerForCalendar{}, err
+		return []domain.CustomerForCalendar{}, fmt.Errorf("GetCustomersForCalendar: %w", err)
 	}
 
 	return customers, nil
@@ -259,7 +259,7 @@ func (r *customerRepository) SetBlacklistStatusForCustomer(ctx context.Context, 
 
 	_, err := r.db.Exec(ctx, query, merchantId, customerId, isBlacklisted, blacklistReason)
 	if err != nil {
-		return err
+		return fmt.Errorf("SetBlacklistStatusForCustomer: %w", err)
 	}
 
 	return nil
@@ -280,7 +280,7 @@ func (r *customerRepository) GetCustomerEmailById(ctx context.Context, merchantI
 		if errors.Is(err, sql.ErrNoRows) {
 			return email, nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("GetCustomerEmailById: %w", err)
 	}
 
 	return email, nil

@@ -35,7 +35,7 @@ func (r *userRepository) NewUser(ctx context.Context, user domain.User) error {
 	_, err := r.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.PasswordHash,
 		user.JwtRefreshVersion, user.Language, user.AuthProvider, user.ProviderId)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewUser: %w", err)
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func (r *userRepository) GetUser(ctx context.Context, user_id uuid.UUID) (domain
 	rows, _ := r.db.Query(ctx, query, user_id)
 	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.User])
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("GetUser: %w", err)
 	}
 
 	return user, nil
@@ -68,7 +68,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (doma
 	rows, _ := r.db.Query(ctx, query, email)
 	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.User])
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("GetUserByEmail: %w", err)
 	}
 
 	return user, nil
@@ -83,7 +83,7 @@ func (r *userRepository) GetUserJwtRefreshVersion(ctx context.Context, userID uu
 	var refreshVersion int
 	err := r.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("GetUserJwtRefreshVersion: %w", err)
 	}
 
 	return refreshVersion, nil
@@ -98,12 +98,12 @@ func (r *userRepository) GetUserLanguage(ctx context.Context, userId uuid.UUID) 
 	var langStr string
 	err := r.db.QueryRow(ctx, query, userId).Scan(&langStr)
 	if err != nil {
-		return language.Tag{}, err
+		return language.Tag{}, fmt.Errorf("GetUserLanguage: %w", err)
 	}
 
 	tag, err := language.Parse(langStr)
 	if err != nil {
-		return language.Tag{}, err
+		return language.Tag{}, fmt.Errorf("GetUserLanguage: %w", err)
 	}
 
 	return tag, nil
@@ -120,7 +120,7 @@ func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.
 	rows, _ := r.db.Query(ctx, query, merchantId, userId)
 	employeeAuthInfo, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
 	if err != nil {
-		return domain.EmployeeAuthInfo{}, err
+		return domain.EmployeeAuthInfo{}, fmt.Errorf("GetEmployeeByUser: %w", err)
 	}
 
 	return employeeAuthInfo, nil
@@ -137,7 +137,7 @@ func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUI
 	rows, _ := r.db.Query(ctx, query, userId)
 	employeeAuthInfo, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
 	if err != nil {
-		return []domain.EmployeeAuthInfo{}, err
+		return []domain.EmployeeAuthInfo{}, fmt.Errorf("GetEmployeesByUser: %w", err)
 	}
 
 	return employeeAuthInfo, nil
@@ -152,7 +152,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, user domain.UserCore) e
 
 	_, err := r.db.Exec(ctx, query, user.Id, user.FirstName, user.LastName, user.PhoneNumber, user.Email)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateUser: %w", err)
 	}
 
 	return nil
@@ -167,7 +167,7 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userId uuid.UUID, p
 
 	_, err := r.db.Exec(ctx, query, userId, passwordHash)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdatePassword: %w", err)
 	}
 
 	return nil
@@ -181,7 +181,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error
 
 	_, err := r.db.Exec(ctx, query, userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteUser: %w", err)
 	}
 
 	return nil
@@ -193,17 +193,16 @@ func (r *userRepository) IsEmailUnique(ctx context.Context, email string) error 
 	where email = $1
 	`
 
-	var em *string
-	err := r.db.QueryRow(ctx, query, email).Scan(&em)
-	if !errors.Is(err, pgx.ErrNoRows) {
-		if err != nil {
-			return err
-		}
-
-		return fmt.Errorf("this email is already used: %s", email)
+	var exists *int
+	err := r.db.QueryRow(ctx, query, email).Scan(&exists)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("IsEmailUnique: %w", err)
 	}
 
-	return nil
+	return fmt.Errorf("this email is already used: %s", email)
 }
 
 func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error {
@@ -212,17 +211,16 @@ func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber st
 	where phone_number = $1
 	`
 
-	var pn *string
-	err := r.db.QueryRow(ctx, query, phoneNumber).Scan(&pn)
-	if !errors.Is(err, pgx.ErrNoRows) {
-		if err != nil {
-			return err
-		}
-
-		return fmt.Errorf("this phone number is already used: %s", phoneNumber)
+	var exists *int
+	err := r.db.QueryRow(ctx, query, phoneNumber).Scan(&exists)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("IsPhoneNumberUnique: %w", err)
 	}
 
-	return nil
+	return fmt.Errorf("this phone number is already used: %s", phoneNumber)
 }
 
 func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {
@@ -237,7 +235,7 @@ func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, use
 
 	err := r.db.QueryRow(ctx, query, userID).Scan(&refreshVersion)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("IncrementUserJwtRefreshVersion: %w", err)
 	}
 
 	return refreshVersion, nil
@@ -252,7 +250,7 @@ func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthP
 	var id uuid.UUID
 	err := r.db.QueryRow(ctx, query, provider, provider_id).Scan(&id)
 	if err != nil {
-		return uuid.UUID{}, err
+		return uuid.UUID{}, fmt.Errorf("FindOauthUser: %w", err)
 	}
 
 	return id, nil

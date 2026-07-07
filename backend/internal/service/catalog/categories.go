@@ -20,7 +20,7 @@ func (s *Service) NewCategory(ctx context.Context, input NewCategoryInput) error
 		Sequence: 0,
 	})
 	if err != nil {
-		return fmt.Errorf("error while creating new service category %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -38,7 +38,7 @@ func (s *Service) UpdateCategory(ctx context.Context, categoryId int, input Upda
 		Name: input.Name,
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating service category: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -49,7 +49,7 @@ func (s *Service) DeleteCategory(ctx context.Context, categoryId int) error {
 
 	err := s.catalogRepo.DeleteServiceCategory(ctx, actor.MerchantId, categoryId)
 	if err != nil {
-		return fmt.Errorf("error while deleting service category: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func (s *Service) ReorderCategories(ctx context.Context, input ReorderCategories
 
 	err := s.catalogRepo.ReorderServiceCategories(ctx, actor.MerchantId, input.Categories)
 	if err != nil {
-		return fmt.Errorf("error while ordering service categories: %s", err.Error())
+		return err
 	}
 
 	return nil

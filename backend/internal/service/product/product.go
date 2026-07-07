@@ -35,7 +35,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+		return err
 	}
 
 	if input.Price != nil {
@@ -54,7 +54,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		MaxAmount:     input.MaxAmount,
 		CurrentAmount: input.CurrentAmount,
 	}); err != nil {
-		return fmt.Errorf("unexpected error inserting product for merchant: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 		CurrentAmount: input.CurrentAmount,
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating product for merchant: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (s *Service) Delete(ctx context.Context, productId int) error {
 
 	err := s.productRepo.DeleteProduct(ctx, actor.MerchantId, productId)
 	if err != nil {
-		return fmt.Errorf("error while deleting product for merchant: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -110,7 +110,7 @@ func (s *Service) GetAll(ctx context.Context) ([]domain.ProductInfo, error) {
 
 	products, err := s.productRepo.GetProducts(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.ProductInfo{}, fmt.Errorf("error while retrieving products for merchant: %s", err.Error())
+		return []domain.ProductInfo{}, err
 	}
 
 	return products, nil

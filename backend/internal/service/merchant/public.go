@@ -15,12 +15,12 @@ import (
 func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.MerchantInfo, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return domain.MerchantInfo{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return domain.MerchantInfo{}, err
 	}
 
 	merchantInfo, err := s.merchantRepo.GetAllMerchantInfo(ctx, merchantId)
 	if err != nil {
-		return domain.MerchantInfo{}, fmt.Errorf("error while accessing merchant info: %s", err.Error())
+		return domain.MerchantInfo{}, err
 	}
 
 	now := time.Now().In(time.UTC)
@@ -81,12 +81,12 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return []domain.MerchantPageServicesGroupedByCategory{}, err
 	}
 
 	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
 	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("error while getting service for the merchant: %s", err.Error())
+		return []domain.MerchantPageServicesGroupedByCategory{}, err
 	}
 
 	return services, nil
@@ -96,12 +96,12 @@ func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantNa
 func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.PublicEmployee, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return []domain.PublicEmployee{}, err
 	}
 
 	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("error while getting employees for merchant: %s", err.Error())
+		return []domain.PublicEmployee{}, err
 	}
 
 	return employees, nil
@@ -110,12 +110,12 @@ func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.Pu
 func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, serviceId, locationId int) (domain.PublicServiceDetails, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return domain.PublicServiceDetails{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return domain.PublicServiceDetails{}, err
 	}
 
 	serviceDetails, err := s.catalogRepo.GetServiceDetailsForMerchantPage(ctx, merchantId, serviceId, locationId)
 	if err != nil {
-		return domain.PublicServiceDetails{}, fmt.Errorf("error while retrieving service info: %s", err.Error())
+		return domain.PublicServiceDetails{}, err
 	}
 
 	return serviceDetails, nil
@@ -132,12 +132,12 @@ type BookingSummary struct {
 func (s *Service) GetSummary(ctx context.Context, merchantName string, locationId int, serviceId, employeeId *int) (BookingSummary, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return BookingSummary{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return BookingSummary{}, err
 	}
 
 	merchantName, location, err := s.merchantRepo.GetMerchantNameAndLocation(ctx, merchantId, locationId)
 	if err != nil {
-		return BookingSummary{}, fmt.Errorf("error while getting merchant name and location %s", err)
+		return BookingSummary{}, err
 	}
 
 	summary := BookingSummary{
@@ -148,7 +148,7 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 	if serviceId != nil {
 		serviceInfo, err := s.catalogRepo.GetMinimalServiceInfo(ctx, merchantId, *serviceId, locationId)
 		if err != nil {
-			return BookingSummary{}, fmt.Errorf("error while retrieving minimal service info: %s", err.Error())
+			return BookingSummary{}, err
 		}
 		summary.Service = &serviceInfo
 	}
@@ -156,7 +156,7 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 	if employeeId != nil {
 		employee, err := s.teamRepo.GetEmployee(ctx, merchantId, *employeeId)
 		if err != nil {
-			return BookingSummary{}, fmt.Errorf("error while retrieving employee %s", err.Error())
+			return BookingSummary{}, err
 		}
 		summary.Employee = &employee
 	}
@@ -167,12 +167,12 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 func (s *Service) GetAvailability(ctx context.Context, merchantName string, serviceId, locationId int, startDate, endDate time.Time) ([]MultiDayAvailableTimes, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []MultiDayAvailableTimes{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return []MultiDayAvailableTimes{}, err
 	}
 
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
 	if err != nil {
-		return []MultiDayAvailableTimes{}, fmt.Errorf("error while retrieving service: %s", err.Error())
+		return []MultiDayAvailableTimes{}, err
 	}
 
 	if service.MerchantId != merchantId {
@@ -181,7 +181,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
-		return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+		return []MultiDayAvailableTimes{}, err
 	}
 
 	var availableSlots []MultiDayAvailableTimes
@@ -193,22 +193,22 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 
 		bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
 		if err != nil {
-			return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting booking settings for merchant: %s", err.Error())
+			return []MultiDayAvailableTimes{}, err
 		}
 
 		reservedTimes, err := s.bookingRepo.GetReservedTimesForPeriod(ctx, merchantId, locationId, startDate, endDate)
 		if err != nil {
-			return []MultiDayAvailableTimes{}, fmt.Errorf("error while calculating available time slots: %s", err.Error())
+			return []MultiDayAvailableTimes{}, err
 		}
 
 		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
 		if err != nil {
-			return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error())
+			return []MultiDayAvailableTimes{}, err
 		}
 
 		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
 		if err != nil {
-			return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting business hours: %s", err.Error())
+			return []MultiDayAvailableTimes{}, err
 		}
 
 		now := time.Now()
@@ -218,7 +218,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 
 		groupBookings, err := s.bookingRepo.GetAvailableGroupBookingsForPeriod(ctx, merchantId, serviceId, locationId, startDate, endDate)
 		if err != nil {
-			return []MultiDayAvailableTimes{}, fmt.Errorf("error while getting available group bookings for period: %s", err.Error())
+			return []MultiDayAvailableTimes{}, err
 		}
 
 		bookingsByDate := make(map[string][]time.Time)
@@ -272,22 +272,22 @@ type NextAvailable struct {
 func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, serviceId, locationId int) (NextAvailable, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return NextAvailable{}, err
 	}
 
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
 	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while retrieving service: %s", err.Error())
+		return NextAvailable{}, err
 	}
 
 	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
 	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while getting booking setting for merchant: %s", err.Error())
+		return NextAvailable{}, err
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
-		return NextAvailable{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+		return NextAvailable{}, err
 	}
 
 	now := time.Now().In(time.UTC)
@@ -299,17 +299,17 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 
 		reservedTimes, err := s.bookingRepo.GetReservedTimesForPeriod(ctx, merchantId, locationId, startDate, endDate)
 		if err != nil {
-			return NextAvailable{}, fmt.Errorf("error while calculating available time slots: %s", err.Error())
+			return NextAvailable{}, err
 		}
 
 		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
 		if err != nil {
-			return NextAvailable{}, fmt.Errorf("error while getting blocked times for merchant: %s", err.Error())
+			return NextAvailable{}, err
 		}
 
 		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
 		if err != nil {
-			return NextAvailable{}, fmt.Errorf("error while getting business hours: %s", err.Error())
+			return NextAvailable{}, err
 		}
 
 		availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
@@ -347,7 +347,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			if errors.Is(err, pgx.ErrNoRows) {
 				return NextAvailable{}, nil
 			}
-			return NextAvailable{}, fmt.Errorf("error finding group booking: %w", err)
+			return NextAvailable{}, err
 		}
 
 		fromDateMechantTz := booking.FromDate.In(merchantTz)
@@ -372,17 +372,17 @@ type DisabledDays struct {
 func (s *Service) GetDisabledDays(ctx context.Context, merchantName string, serviceId, locationId int) (DisabledDays, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return DisabledDays{}, fmt.Errorf("error while retrieving the merchant's id: %s", err.Error())
+		return DisabledDays{}, err
 	}
 
 	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, serviceId)
 	if err != nil {
-		return DisabledDays{}, fmt.Errorf("error while retrieving booking settings by merchant id: %s", err.Error())
+		return DisabledDays{}, err
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
-		return DisabledDays{}, fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+		return DisabledDays{}, err
 	}
 
 	now := time.Now().In(merchantTz)
@@ -392,7 +392,7 @@ func (s *Service) GetDisabledDays(ctx context.Context, merchantName string, serv
 
 	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId)
 	if err != nil {
-		return DisabledDays{}, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error())
+		return DisabledDays{}, err
 	}
 
 	closedDays := []int{}

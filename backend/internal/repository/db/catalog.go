@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -37,7 +38,7 @@ func (r *catalogRepository) NewService(ctx context.Context, serv domain.Service)
 		serv.TotalDuration, serv.Price, serv.PriceType, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
 		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime, serv.ApprovalPolicy).Scan(&serviceId)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("NewService: %w", err)
 	}
 
 	return serviceId, nil
@@ -71,7 +72,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 		s.Price, s.PriceType, s.IsActive, s.CancelDeadline, s.BookingWindowMin, s.BookingWindowMax, s.BufferTime,
 		s.ApprovalPolicy, s.MinParticipants, s.MaxParticipants).Scan(&oldCategoryId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("UpdateService: %w", err)
 	}
 
 	return oldCategoryId, nil
@@ -85,7 +86,7 @@ func (r *catalogRepository) DeleteService(ctx context.Context, merchantId uuid.U
 
 	_, err := r.db.Exec(ctx, query, merchantId, serviceId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteService: %w", err)
 	}
 
 	return nil
@@ -100,7 +101,7 @@ func (r *catalogRepository) DeactivateService(ctx context.Context, merchantId uu
 
 	_, err := r.db.Exec(ctx, query, serviceId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeactivateService: %w", err)
 	}
 
 	return nil
@@ -115,7 +116,7 @@ func (r *catalogRepository) ActivateService(ctx context.Context, merchantId uuid
 
 	_, err := r.db.Exec(ctx, query, serviceId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("ActivateService: %w", err)
 	}
 
 	return nil
@@ -133,7 +134,7 @@ func (r *catalogRepository) ReorderServices(ctx context.Context, merchantId uuid
 
 	_, err := r.db.Exec(ctx, query, serviceIds, merchantId, categoryId)
 	if err != nil {
-		return err
+		return fmt.Errorf("ReorderServices: %w", err)
 	}
 
 	return nil
@@ -154,7 +155,7 @@ func (r *catalogRepository) ReorderServicesAfterUpdate(ctx context.Context, cate
 
 	_, err := r.db.Exec(ctx, query, categoryId, merchantId, exludeServiceId)
 	if err != nil {
-		return err
+		return fmt.Errorf("ReorderServicesAfterUpdate: %w", err)
 	}
 
 	return nil
@@ -239,7 +240,7 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 		return sgby, nil
 	})
 	if err != nil {
-		return []domain.ServicesGroupedByCategory{}, err
+		return []domain.ServicesGroupedByCategory{}, fmt.Errorf("GetServicesGroupedByCategory: %w", err)
 	}
 
 	// if services array is empty the encoded json field will be null
@@ -297,7 +298,7 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 		return sgby, nil
 	})
 	if err != nil {
-		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
+		return []domain.ServicesGroupedByCategoriesForCalendar{}, fmt.Errorf("GetServicesForCalendar: %w", err)
 	}
 
 	// if services array is empty the encoded json field will be null
@@ -339,13 +340,13 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 		&s.Price, &s.PriceType, &s.IsActive, &s.Sequence, &s.MinParticipants, &s.MaxParticipants, &s.CancelDeadline, &s.BookingWindowMin,
 		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &phasesJson)
 	if err != nil {
-		return domain.Service{}, err
+		return domain.Service{}, fmt.Errorf("GetServiceWithPhases: %w", err)
 	}
 
 	if len(phasesJson) > 0 {
 		err = json.Unmarshal(phasesJson, &s.Phases)
 		if err != nil {
-			return domain.Service{}, err
+			return domain.Service{}, fmt.Errorf("GetServiceWithPhases: %w", err)
 		}
 	} else {
 		s.Phases = []domain.ServicePhase{}
@@ -401,7 +402,7 @@ func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merc
 		return sgby, nil
 	})
 	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, err
+		return []domain.MerchantPageServicesGroupedByCategory{}, fmt.Errorf("GetServicesForMerchantPage: %w", err)
 	}
 
 	// if services array is empty the encoded json field will be null
@@ -441,13 +442,13 @@ func (r *catalogRepository) GetServiceDetailsForMerchantPage(ctx context.Context
 	err := r.db.QueryRow(ctx, query, serviceId, merchantId, locationId).Scan(&data.Id, &data.Name, &data.Description, &data.TotalDuration,
 		&data.Price, &data.PriceType, &data.FormattedLocation, &data.GeoPoint, &phaseJson)
 	if err != nil {
-		return domain.PublicServiceDetails{}, err
+		return domain.PublicServiceDetails{}, fmt.Errorf("GetServiceDetailsForMerchantPage: %w", err)
 	}
 
 	if len(phaseJson) > 0 {
 		err = json.Unmarshal(phaseJson, &data.Phases)
 		if err != nil {
-			return domain.PublicServiceDetails{}, err
+			return domain.PublicServiceDetails{}, fmt.Errorf("GetServiceDetailsForMerchantPage: %w", err)
 		}
 	} else {
 		data.Phases = []domain.ServicePhase{}
@@ -513,19 +514,19 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceType, &spd.IsActive, &spd.Sequence, &spd.MinParicipants, &spd.MaxParticipants,
 		&settingsJson, &phaseJson, &productJson)
 	if err != nil {
-		return domain.ServicePageData{}, err
+		return domain.ServicePageData{}, fmt.Errorf("GetAllServicePageData: %w", err)
 	}
 
 	if len(settingsJson) > 0 {
 		if err := json.Unmarshal(settingsJson, &spd.Settings); err != nil {
-			return domain.ServicePageData{}, err
+			return domain.ServicePageData{}, fmt.Errorf("GetAllServicePageData: %w", err)
 		}
 	}
 
 	if len(phaseJson) > 0 {
 		err = json.Unmarshal(phaseJson, &spd.Phases)
 		if err != nil {
-			return domain.ServicePageData{}, err
+			return domain.ServicePageData{}, fmt.Errorf("GetAllServicePageData: %w", err)
 		}
 	} else {
 		spd.Phases = []domain.ServicePhase{}
@@ -534,7 +535,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 	if len(productJson) > 0 {
 		err = json.Unmarshal(productJson, &spd.Products)
 		if err != nil {
-			return domain.ServicePageData{}, err
+			return domain.ServicePageData{}, fmt.Errorf("GetAllServicePageData: %w", err)
 		}
 	} else {
 		spd.Products = []domain.MinimalProductInfoWithUsage{}
@@ -562,13 +563,13 @@ func (r *catalogRepository) GetServicePageFormOptions(ctx context.Context, merch
 
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&products, &categories)
 	if err != nil {
-		return domain.ServicePageFormOptions{}, err
+		return domain.ServicePageFormOptions{}, fmt.Errorf("GetServicePageFormOptions: %w", err)
 	}
 
 	if len(products) > 0 {
 		err = json.Unmarshal(products, &spfo.Products)
 		if err != nil {
-			return domain.ServicePageFormOptions{}, err
+			return domain.ServicePageFormOptions{}, fmt.Errorf("GetServicePageFormOptions: %w", err)
 		}
 	} else {
 		spfo.Products = []domain.MinimalProductInfo{}
@@ -577,7 +578,7 @@ func (r *catalogRepository) GetServicePageFormOptions(ctx context.Context, merch
 	if len(categories) > 0 {
 		err = json.Unmarshal(categories, &spfo.Categories)
 		if err != nil {
-			return domain.ServicePageFormOptions{}, err
+			return domain.ServicePageFormOptions{}, fmt.Errorf("GetServicePageFormOptions: %w", err)
 		}
 	} else {
 		spfo.Categories = []domain.ServiceCategory{}
@@ -596,7 +597,7 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	var msi domain.MinimalServiceInfo
 	err := r.db.QueryRow(ctx, query, merchantId, serviceId, locationId).Scan(&msi.Name, &msi.TotalDuration, &msi.Price, &msi.PriceType, &msi.FormattedLocation)
 	if err != nil {
-		return domain.MinimalServiceInfo{}, err
+		return domain.MinimalServiceInfo{}, fmt.Errorf("GetMinimalServiceInfo: %w", err)
 	}
 
 	return msi, nil
@@ -622,7 +623,7 @@ func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int,
 
 	_, err := r.db.Exec(ctx, query, serviceId, names, sequences, durations, phaseTypes)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewServicePhases: %w", err)
 	}
 
 	return nil
@@ -652,7 +653,7 @@ func (r *catalogRepository) UpdateServicePhases(ctx context.Context, phases []do
 
 	_, err := r.db.Exec(ctx, query, ids, names, sequences, durations, phaseTypes)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateServicePhases: %w", err)
 	}
 
 	return nil
@@ -667,7 +668,7 @@ func (r *catalogRepository) UpdateServicePhaseDuration(ctx context.Context, serv
 
 	_, err := r.db.Exec(ctx, query, serviceId, duration)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateServicePhaseDuration: %w", err)
 	}
 
 	return nil
@@ -681,7 +682,7 @@ func (r *catalogRepository) DeleteServicePhases(ctx context.Context, phaseIds []
 
 	_, err := r.db.Exec(ctx, query, phaseIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteServicePhases: %w", err)
 	}
 
 	return nil
@@ -695,7 +696,7 @@ func (r *catalogRepository) DeleteServicePhasesForService(ctx context.Context, s
 
 	_, err := r.db.Exec(ctx, query, serviceId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteServicePhasesForService: %w", err)
 	}
 
 	return nil
@@ -711,7 +712,7 @@ func (r *catalogRepository) GetServicePhases(ctx context.Context, serviceId int)
 	rows, _ := r.db.Query(ctx, query, serviceId)
 	phases, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ServicePhase])
 	if err != nil {
-		return []domain.ServicePhase{}, err
+		return []domain.ServicePhase{}, fmt.Errorf("GetServicePhases: %w", err)
 	}
 
 	return phases, nil
@@ -727,7 +728,7 @@ func (r *catalogRepository) NewServiceCategory(ctx context.Context, merchantId u
 
 	_, err := r.db.Exec(ctx, query, merchantId, sc.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewServiceCategory: %w", err)
 	}
 
 	return nil
@@ -742,7 +743,7 @@ func (r *catalogRepository) UpdateServiceCategory(ctx context.Context, merchantI
 
 	_, err := r.db.Exec(ctx, query, sc.Id, merchantId, sc.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateServiceCategory: %w", err)
 	}
 
 	return nil
@@ -756,7 +757,7 @@ func (r *catalogRepository) DeleteServiceCategory(ctx context.Context, merchantI
 
 	_, err := r.db.Exec(ctx, query, categoryId, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteServiceCategory: %w", err)
 	}
 
 	return nil
@@ -772,7 +773,7 @@ func (r *catalogRepository) ReorderServiceCategories(ctx context.Context, mercha
 
 	_, err := r.db.Exec(ctx, query, categoryIds, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("ReorderServiceCategories: %w", err)
 	}
 
 	return nil
@@ -797,7 +798,7 @@ func (r *catalogRepository) NewServiceProduct(ctx context.Context, merchantId uu
 
 	_, err := r.db.Exec(ctx, query, connectedProducts[0].ServiceId, productIds, amountUseds, merchantId)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewServiceProduct: %w", err)
 	}
 
 	return nil
@@ -822,7 +823,7 @@ func (r *catalogRepository) UpdateServiceProducts(ctx context.Context, serviceId
 
 	_, err := r.db.Exec(ctx, query, serviceId, productIds, amountUseds)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateServiceProducts: %w", err)
 	}
 
 	return nil
@@ -836,7 +837,7 @@ func (r *catalogRepository) DeleteServiceProducts(ctx context.Context, serviceId
 
 	_, err := r.db.Exec(ctx, query, serviceId, productIds)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteServiceProducts: %w", err)
 	}
 
 	return nil
@@ -851,7 +852,7 @@ func (r *catalogRepository) GetServiceProducts(ctx context.Context, serviceId in
 	rows, _ := r.db.Query(ctx, query, serviceId)
 	connectedProducts, err := pgx.CollectRows(rows, pgx.RowTo[domain.ConnectedProducts])
 	if err != nil {
-		return []domain.ConnectedProducts{}, err
+		return []domain.ConnectedProducts{}, fmt.Errorf("GetServiceProducts: %w", err)
 	}
 
 	return connectedProducts, nil

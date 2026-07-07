@@ -140,17 +140,17 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, input.MerchantName)
 	if err != nil {
-		return fmt.Errorf("error while searching merchant by this name: %w", err)
+		return err
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 	if err != nil {
-		return fmt.Errorf("error while getting merchant's timezone: %w", err)
+		return err
 	}
 
 	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, input.ServiceId)
 	if err != nil {
-		return fmt.Errorf("error while getting booking settings for merchant %w", err)
+		return err
 	}
 
 	fromDate := input.TimeStamp.UTC()
@@ -228,7 +228,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		} else {
 			service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
 			if err != nil {
-				return fmt.Errorf("error while searching service by this id: %w", err)
+				return err
 			}
 
 			duration := time.Duration(service.TotalDuration) * time.Minute
@@ -241,7 +241,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 
 			location, err := s.merchantRepo.GetLocation(ctx, input.LocationId, merchantId)
 			if err != nil {
-				return fmt.Errorf("error retrieving location: %w", err)
+				return err
 			}
 
 			booking := domain.Booking{
@@ -299,12 +299,12 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 
 	booking, err := s.bookingRepo.GetBooking(ctx, input.BookingId)
 	if err != nil {
-		return fmt.Errorf("error while retrieving booking: %s", err.Error())
+		return err
 	}
 
 	cancelDeadline, err := s.bookingRepo.GetBookingCancelDeadline(ctx, booking.Id)
 	if err != nil {
-		return fmt.Errorf("error while retrieving cancel deadline: %s", err.Error())
+		return err
 	}
 
 	latestCancelTime := booking.FromDate.Add(-time.Duration(cancelDeadline) * time.Minute)
@@ -316,7 +316,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 
 	bookingParticipant, err := s.bookingRepo.GetBookingParticipantByUser(ctx, booking.Id, userId)
 	if err != nil {
-		return fmt.Errorf("error while retrieving booking participant: %s", err.Error())
+		return err
 	}
 
 	err = bookingParticipant.CanModify()
@@ -327,7 +327,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = s.bookingRepo.WithTx(tx).UpdateParticipantStatus(ctx, booking.Id, bookingParticipant.Id, types.BookingStatusCancelled)
 		if err != nil {
-			return fmt.Errorf("error while cancelling the booking by user: %s", err.Error())
+			return err
 		}
 
 		if booking.IsGroupBooking() {
@@ -382,7 +382,7 @@ func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UU
 	if price == nil {
 		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, merchantId)
 		if err != nil {
-			return currencyx.Price{}, fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+			return currencyx.Price{}, err
 		}
 
 		zeroAmount, err := currency.NewAmount("0", curr)
@@ -545,7 +545,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error while searching service by this id: %s", err.Error())
+		return err
 	}
 
 	if !service.IsGroupService() && len(input.Customers) > 1 {
@@ -558,7 +558,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 	bookedLocation, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error while searching location by this id: %s", err.Error())
+		return err
 	}
 
 	price, err := s.preventNilBookingPrice(ctx, actor.MerchantId, service.Price)
@@ -619,7 +619,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		if input.IsRecurring && input.Rrule != nil {
 			merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
 			if err != nil {
-				return fmt.Errorf("error while getting merchant's timezone: %s", err.Error())
+				return err
 			}
 
 			// recurring bookings have to be stored in local time and converted to UTC during generation
@@ -776,7 +776,7 @@ func (s *Service) getParticipants(ctx context.Context, merchantId uuid.UUID, cus
 				Email:       c.Email,
 				PhoneNumber: c.PhoneNumber,
 			}); err != nil {
-				return map[uuid.UUID]struct{}{}, fmt.Errorf("error inserting new customer: %s", err.Error())
+				return map[uuid.UUID]struct{}{}, err
 			}
 
 			customerIds[newId] = struct{}{}
@@ -880,7 +880,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
-		return fmt.Errorf("error while retrieving data for email sending: %s", err.Error())
+		return err
 	}
 
 	if !booking.IsOwnedByMerchant(actor.MerchantId) {
@@ -898,12 +898,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 	participants, err := s.bookingRepo.GetBookingParticipants(ctx, booking.Id)
 	if err != nil {
-		return fmt.Errorf("error getting booking participants: %w", err)
+		return err
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error getting merchant timezone: %s", err.Error())
+		return err
 	}
 
 	isGroupBooking := booking.IsGroupBooking()
@@ -932,7 +932,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		if input.UpdateAllFuture && booking.IsRecurring {
 			seriesParticipants, err = s.bookingRepo.GetBookingSeriesParticipants(ctx, *booking.BookingSeriesId)
 			if err != nil {
-				return fmt.Errorf("error getting series participants: %w", err)
+				return err
 			}
 
 			seriesParticipantChanges, err = detectSeriesParticipantChanges(participants, seriesParticipants, incomingCustomerIds)
@@ -1066,7 +1066,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		if input.UpdateAllFuture && booking.IsRecurring {
 			bookingSeries, err := s.bookingRepo.WithTx(tx).GetBookingSeries(ctx, *booking.BookingSeriesId)
 			if err != nil {
-				return fmt.Errorf("failed to fetch booking series: %w", err)
+				return err
 			}
 
 			if !priceChanged {
@@ -1086,7 +1086,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 				seriesVersion, err := s.bookingRepo.WithTx(tx).UpdateBookingSeriesRrule(ctx, bookingSeries.Id, rrule.String(), seriesFromDate)
 				if err != nil {
-					return fmt.Errorf("failed to update booking series core: %w", err)
+					return err
 				}
 
 				err = s.bookingRepo.WithTx(tx).UpdateBookingSeriesOriginalDateAndVersion(ctx, booking.Id, fromDate, seriesVersion)
@@ -1104,7 +1104,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 					CurrentParticipants: seriesParticipantCount,
 				})
 				if err != nil {
-					return fmt.Errorf("failed to update booking series details: %w", err)
+					return err
 				}
 			}
 
@@ -1112,7 +1112,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				if len(seriesParticipantChanges.ToDelete) > 0 {
 					err = s.bookingRepo.WithTx(tx).DeleteBookingSeriesParticipants(ctx, bookingSeries.Id, seriesParticipantChanges.ToDelete)
 					if err != nil {
-						return fmt.Errorf("failed to delete series participants: %w", err)
+						return err
 					}
 				}
 
@@ -1129,7 +1129,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 					_, err = s.bookingRepo.WithTx(tx).NewBookingSeriesParticipants(ctx, seriesParticipantsInsert)
 					if err != nil {
-						return fmt.Errorf("failed to insert series participants: %w", err)
+						return err
 					}
 				}
 			}
@@ -1156,7 +1156,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			err = s.bookingRepo.WithTx(tx).UpdateBookingCoreBatch(ctx, actor.MerchantId, []int{booking.Id}, booking.ServiceId,
 				&input.EmployeeId, []time.Time{fromDate}, []time.Time{toDate}, booking.BookingType, bookingStatus, merchantNote)
 			if err != nil {
-				return fmt.Errorf("failed to batch update booking core: %s", err.Error())
+				return err
 			}
 		}
 
@@ -1169,14 +1169,14 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 				CurrentParticipants: participantCount,
 			}})
 			if err != nil {
-				return fmt.Errorf("failed to batch update booking details: %s", err.Error())
+				return err
 			}
 		}
 
 		if timeStampChanged {
 			bookingPhases, err := s.bookingRepo.WithTx(tx).GetBookingPhases(ctx, booking.Id)
 			if err != nil {
-				return fmt.Errorf("error to retrieving booking phases: %w", err)
+				return err
 			}
 
 			bookingPhasesToUpdate := make([]domain.BookingPhase, len(bookingPhases))
@@ -1193,7 +1193,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			err = s.bookingRepo.WithTx(tx).UpdateBookingPhasesBatch(ctx, bookingPhasesToUpdate)
 			if err != nil {
-				return fmt.Errorf("failed to update booking phases: %w", err)
+				return err
 			}
 		}
 
@@ -1203,7 +1203,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if len(participantChanges.ToDelete) > 0 {
 				err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, []int{booking.Id}, participantChanges.ToDelete)
 				if err != nil {
-					return fmt.Errorf("failed to remove participants: %s", err.Error())
+					return err
 				}
 			}
 
@@ -1232,7 +1232,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			if len(participantsToUpsert) > 0 {
 				err := s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToUpsert, true)
 				if err != nil {
-					return fmt.Errorf("failed to update participants: %s", err.Error())
+					return err
 				}
 			}
 		}

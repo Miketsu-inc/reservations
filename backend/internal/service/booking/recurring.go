@@ -561,7 +561,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			// the given occurrence index is not included
 			futureBookings, err := s.bookingRepo.WithTx(tx).GetFutureSeriesBookingsWithLock(ctx, series.Id, lastOccurrenceIndex, 50)
 			if err != nil {
-				return fmt.Errorf("failed to fetch future series bookings: %w", err)
+				return err
 			}
 
 			if len(futureBookings) == 0 {
@@ -585,7 +585,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 
 				customerIdsByBooking, err := s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, bookingsToCancel)
 				if err != nil {
-					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
+					return err
 				}
 
 				cancellationParams := buildCancellationEmailParams(seriesParticipantsMap, customerIdsByBooking, cancellation_reason)
@@ -622,14 +622,14 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 			if timestampChanged || participantsChanged || priceChanged {
 				customerIdsByBooking, err = s.bookingRepo.WithTx(tx).GetParticipantCustomerIdsForBookings(ctx, futureBookingIds)
 				if err != nil {
-					return fmt.Errorf("error getting participant customer ids for bookings: %w", err)
+					return err
 				}
 			}
 
 			if timestampChanged {
 				lastOccurrenceDate, err := s.bookingRepo.WithTx(tx).GetSeriesOccurrenceDateByIndex(ctx, series.Id, lastOccurrenceIndex)
 				if err != nil {
-					return fmt.Errorf("error retrieving last occurrence date: %w", err)
+					return err
 				}
 
 				timestampUpdate, err := buildOccurrenceTimestampUpdate(timestampUpdateContext, futureBookings, seriesPhases, lastOccurrenceDate)
@@ -640,17 +640,17 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 				if len(timestampUpdate.BookingIds) > 0 {
 					err = s.bookingRepo.WithTx(tx).UpdateBookingOccurrencesBatch(ctx, timestampUpdate.BookingIds, timestampUpdate.FromDates, timestampUpdate.ToDates, series.Id, series.Version)
 					if err != nil {
-						return fmt.Errorf("error updating booking occurrences: %w", err)
+						return err
 					}
 
 					err = s.bookingRepo.WithTx(tx).DeleteBookingPhasesBatch(ctx, timestampUpdate.BookingIds)
 					if err != nil {
-						return fmt.Errorf("failed to delete booking phases: %w", err)
+						return err
 					}
 
 					err = s.bookingRepo.WithTx(tx).NewBookingPhases(ctx, timestampUpdate.BookingPhases)
 					if err != nil {
-						return fmt.Errorf("failed to insert booking phases: %w", err)
+						return err
 					}
 
 					for i, id := range timestampUpdate.BookingIds {
@@ -684,7 +684,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					if len(capacity.BookingIdsToUpdate) > 0 {
 						updatedBookingIds, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, capacity.BookingIdsToUpdate, capacity.DeltaToInsert)
 						if err != nil {
-							return fmt.Errorf("error updating participant count: %w", err)
+							return err
 						}
 
 						failedToUpdate := checkCapacityUpdateSuccess(capacity.BookingIdsToUpdate, updatedBookingIds)
@@ -694,7 +694,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 					if len(requestedParticipantsToDelete) > 0 {
 						err := s.bookingRepo.WithTx(tx).DeleteBookingParticipantsBatch(ctx, futureBookingIds, requestedParticipantsToDelete)
 						if err != nil {
-							return fmt.Errorf("failed to remove participants for future bookings: %w", err)
+							return err
 						}
 
 						customerIdsToDeleteByBooking := make(map[int][]uuid.UUID, len(futureBookingIds))
@@ -718,7 +718,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 							// we do not want to override participant statuses on conflict
 							err = s.bookingRepo.WithTx(tx).UpdateBookingParticipants(ctx, participantsToInsert, false)
 							if err != nil {
-								return fmt.Errorf("failed to add participants: %w", err)
+								return err
 							}
 
 							reminderParams := buildNewParticipantReminderEmailParams(participantsToInsert, fromDateByBooking)
@@ -735,7 +735,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 				if priceChanged {
 					err = s.bookingRepo.WithTx(tx).UpdateBookingPricePerPersonBatch(ctx, futureBookingIds, series.PricePerPerson)
 					if err != nil {
-						return fmt.Errorf("failed to batch update future booking prices per person: %w", err)
+						return err
 					}
 				}
 
@@ -749,7 +749,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 
 					err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, updatedBookingIds, totalPrices)
 					if err != nil {
-						return fmt.Errorf("failed to btach update future booking total prices: %w", err)
+						return err
 					}
 				}
 
@@ -766,7 +766,7 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 				if employeeChanged {
 					err = s.bookingRepo.WithTx(tx).UpdateBookingEmployeeBatch(ctx, futureBookingIds, series.EmployeeId)
 					if err != nil {
-						return fmt.Errorf("failed to batch update future booking employee ids: %w", err)
+						return err
 					}
 				}
 			}

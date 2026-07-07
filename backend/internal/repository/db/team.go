@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -29,7 +30,7 @@ func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, 
 
 	_, err := r.db.Exec(ctx, query, emp.UserId, merchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber, emp.IsActive)
 	if err != nil {
-		return err
+		return fmt.Errorf("NewEmployee: %w", err)
 	}
 
 	return nil
@@ -45,7 +46,7 @@ func (r *teamRepository) UpdateEmployee(ctx context.Context, merchantId uuid.UUI
 	_, err := r.db.Exec(ctx, query, merchantId, employee.Id, employee.Role, employee.FirstName, employee.LastName, employee.Email,
 		employee.PhoneNumber, employee.IsActive)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateEmployee: %w", err)
 	}
 
 	return nil
@@ -59,7 +60,7 @@ func (r *teamRepository) DeleteEmployee(ctx context.Context, merchantId uuid.UUI
 
 	_, err := r.db.Exec(ctx, query, merchantId, employeeId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteEmployee: %w", err)
 	}
 
 	return nil
@@ -77,7 +78,7 @@ func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, 
 	rows, _ := r.db.Query(ctx, query, merchantId, memberId)
 	member, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.PublicEmployee])
 	if err != nil {
-		return domain.PublicEmployee{}, err
+		return domain.PublicEmployee{}, fmt.Errorf("GetEmployee: %w", err)
 	}
 
 	return member, nil
@@ -94,7 +95,7 @@ func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID)
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicEmployee])
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.PublicEmployee{}, fmt.Errorf("GetEmployees: %w", err)
 	}
 
 	return members, nil
@@ -111,7 +112,7 @@ func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicEmployee])
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.PublicEmployee{}, fmt.Errorf("GetActiveEmployees: %w", err)
 	}
 
 	return members, nil
@@ -128,7 +129,7 @@ func (r *teamRepository) GetMerchantIdByEmployee(ctx context.Context, employeeId
 
 	err := r.db.QueryRow(ctx, query, employeeId).Scan(&merchantId)
 	if err != nil {
-		return uuid.UUID{}, nil
+		return uuid.UUID{}, fmt.Errorf("GetMerchantIdByEmployee: %w", err)
 	}
 
 	return merchantId, nil

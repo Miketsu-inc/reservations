@@ -75,7 +75,7 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 	userId, err := s.userRepo.FindOauthUser(ctx, types.AuthProviderTypeGoogle, g.Id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return jwt.TokenPair{}, fmt.Errorf("error during finding oauth user: %s", err.Error())
+			return jwt.TokenPair{}, err
 		}
 
 		userId, err = uuid.NewV7()
@@ -96,7 +96,7 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 			ProviderId:        &g.Id,
 		})
 		if err != nil {
-			return jwt.TokenPair{}, fmt.Errorf("error creating new oauth user: %s", err.Error())
+			return jwt.TokenPair{}, err
 		}
 	}
 
@@ -172,7 +172,7 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 	userId, err := s.userRepo.FindOauthUser(ctx, types.AuthProviderTypeFacebook, fb.Id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return jwt.TokenPair{}, fmt.Errorf("error during finding oauth user: %s", err.Error())
+			return jwt.TokenPair{}, err
 		}
 
 		userId, err = uuid.NewV7()
@@ -193,7 +193,7 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 			ProviderId:        &fb.Id,
 		})
 		if err != nil {
-			return jwt.TokenPair{}, fmt.Errorf("error creating new oauth user: %s", err.Error())
+			return jwt.TokenPair{}, err
 		}
 	}
 

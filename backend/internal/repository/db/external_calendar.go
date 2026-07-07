@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,7 +34,7 @@ func (r *externalCalendarRepository) NewExternalCalendar(ctx context.Context, ec
 	err := r.db.QueryRow(ctx, query, ec.EmployeeId, ec.CalendarId, ec.AccessToken, ec.RefreshToken, ec.TokenExpiry, ec.ChannelId,
 		ec.ResourceId, ec.ChannelExpiry, ec.Timezone).Scan(&extCalendarId)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("NewExternalCalendar: %w", err)
 	}
 
 	return extCalendarId, nil
@@ -48,7 +49,7 @@ func (r *externalCalendarRepository) UpdateExternalCalendarSyncToken(ctx context
 
 	_, err := r.db.Exec(ctx, query, extCalendarId, syncToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateExternalCalendarSyncToken: %w", err)
 	}
 
 	return nil
@@ -63,7 +64,7 @@ func (r *externalCalendarRepository) UpdateExternalCalendarAuthTokens(ctx contex
 
 	_, err := r.db.Exec(ctx, query, extCalendarId, accessToken, refreshToken, tokenExpiry)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateExternalCalendarAuthTokens: %w", err)
 	}
 
 	return nil
@@ -78,7 +79,7 @@ func (r *externalCalendarRepository) UpdateExternalCalendarChannel(ctx context.C
 
 	_, err := r.db.Exec(ctx, query, calendarId, channelId, resourceId, channelExpiry)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateExternalCalendarChannel: %w", err)
 	}
 
 	return nil
@@ -93,7 +94,7 @@ func (r *externalCalendarRepository) ResetExternalCalendarSyncState(ctx context.
 
 	_, err := r.db.Exec(ctx, query, extCalendarId)
 	if err != nil {
-		return err
+		return fmt.Errorf("ResetExternalCalendarSyncState: %w", err)
 	}
 
 	return nil
@@ -109,7 +110,7 @@ func (r *externalCalendarRepository) GetExternalCalendar(ctx context.Context, ca
 	rows, _ := r.db.Query(ctx, query, calendarId)
 	calendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
 	if err != nil {
-		return domain.ExternalCalendar{}, err
+		return domain.ExternalCalendar{}, fmt.Errorf("GetExternalCalendar: %w", err)
 	}
 
 	return calendar, nil
@@ -125,7 +126,7 @@ func (r *externalCalendarRepository) GetExternalCalendarByChannel(ctx context.Co
 	rows, _ := r.db.Query(ctx, query, channelId, resourceId)
 	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
 	if err != nil {
-		return domain.ExternalCalendar{}, err
+		return domain.ExternalCalendar{}, fmt.Errorf("GetExternalCalendarByChannel: %w", err)
 	}
 
 	return extCalendar, nil
@@ -140,7 +141,7 @@ func (r *externalCalendarRepository) GetExternalCalendarByEmployeeId(ctx context
 	rows, _ := r.db.Query(ctx, query, employeeId)
 	extCalendar, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendar])
 	if err != nil {
-		return domain.ExternalCalendar{}, err
+		return domain.ExternalCalendar{}, fmt.Errorf("GetExternalCalendarByEmployeeId: %w", err)
 	}
 
 	return extCalendar, nil
@@ -156,7 +157,7 @@ func (r *externalCalendarRepository) NewExternalCalendarEvent(ctx context.Contex
 	_, err := r.db.Exec(ctx, query, event.ExternalCalendarId, event.ExternalEventId, event.Etag, event.Status, event.Title, event.Description,
 		event.FromDate, event.ToDate, event.IsAllDay, event.InternalId, event.InternalType, event.IsBlocking, event.Source, time.Now().UTC())
 	if err != nil {
-		return err
+		return fmt.Errorf("NewExternalCalendarEvent: %w", err)
 	}
 
 	return nil
@@ -204,7 +205,7 @@ func (r *externalCalendarRepository) BulkInsertExternalCalendarEvent(ctx context
 	_, err := r.db.Exec(ctx, query, externalEvents[0].ExternalCalendarId, extEventIds, etags, statuses, titles, descriptions, fromDates, toDates,
 		isAllDays, InternalIds, InternalTypes, isBlockings, externalEvents[0].Source, time.Now().UTC())
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkInsertExternalCalendarEvent: %w", err)
 	}
 
 	return nil
@@ -221,7 +222,7 @@ func (r *externalCalendarRepository) UpdateExternalCalendarEvent(ctx context.Con
 	_, err := r.db.Exec(ctx, query, event.Id, event.Etag, event.Status, event.Title, event.Description, event.FromDate, event.ToDate, event.IsAllDay,
 		event.InternalId, event.InternalType, event.IsBlocking, time.Now().UTC())
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateExternalCalendarEvent: %w", err)
 	}
 
 	return nil
@@ -271,7 +272,7 @@ func (r *externalCalendarRepository) BulkUpdateExternalCalendarEvent(ctx context
 	_, err := r.db.Exec(ctx, query, ece[0].ExternalCalendarId, ids, etags, statuses, titles, descriptions, fromDates, toDates, isAllDays, InternalIds, InternalTypes,
 		isBlockings, time.Now().UTC())
 	if err != nil {
-		return err
+		return fmt.Errorf("BulkUpdateExternalCalendarEvent: %w", err)
 	}
 
 	return nil
@@ -285,7 +286,7 @@ func (r *externalCalendarRepository) DeleteExternalCalendarEvent(ctx context.Con
 
 	_, err := r.db.Exec(ctx, query, extEventId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteExternalCalendarEvent: %w", err)
 	}
 
 	return nil
@@ -299,7 +300,7 @@ func (r *externalCalendarRepository) DeleteAllExternalCalendarEvents(ctx context
 
 	_, err := r.db.Exec(ctx, query, extCalendarId)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteAllExternalCalendarEvents: %w", err)
 	}
 
 	return nil
@@ -315,7 +316,7 @@ func (r *externalCalendarRepository) GetExternalCalendarEvent(ctx context.Contex
 	rows, _ := r.db.Query(ctx, query, extCalendarEventId)
 	event, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
 	if err != nil {
-		return domain.ExternalCalendarEvent{}, err
+		return domain.ExternalCalendarEvent{}, fmt.Errorf("GetExternalCalendarEvent: %w", err)
 	}
 
 	return event, nil
@@ -331,7 +332,7 @@ func (r *externalCalendarRepository) GetExternalCalendarEvents(ctx context.Conte
 	rows, _ := r.db.Query(ctx, query, extCalendarId, eventIds)
 	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
 	if err != nil {
-		return []domain.ExternalCalendarEvent{}, err
+		return []domain.ExternalCalendarEvent{}, fmt.Errorf("GetExternalCalendarEvents: %w", err)
 	}
 
 	return events, nil
@@ -347,7 +348,7 @@ func (r *externalCalendarRepository) GetExternalCalendarEventsByInternal(ctx con
 	rows, _ := r.db.Query(ctx, query, internalType, internalId)
 	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendarEvent])
 	if err != nil {
-		return []domain.ExternalCalendarEvent{}, err
+		return []domain.ExternalCalendarEvent{}, fmt.Errorf("GetExternalCalendarEventsByInternal: %w", err)
 	}
 
 	return events, err
@@ -363,7 +364,7 @@ func (r *externalCalendarRepository) GetExpiringExternalCalendars(ctx context.Co
 	rows, _ := r.db.Query(ctx, query, timeLeft)
 	extCalendars, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.ExternalCalendar])
 	if err != nil {
-		return []domain.ExternalCalendar{}, err
+		return []domain.ExternalCalendar{}, fmt.Errorf("GetExpiringExternalCalendars: %w", err)
 	}
 
 	return extCalendars, nil

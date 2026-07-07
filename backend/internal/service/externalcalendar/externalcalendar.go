@@ -181,7 +181,7 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 	externalCalendar, err := s.externalCalendarRepo.GetExternalCalendarByEmployeeId(ctx, state.EmployeeId)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("error while getting existing external calendar: %s", err.Error())
+			return err
 		}
 
 		exists = false
@@ -192,7 +192,7 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 		if token.RefreshToken != "" {
 			err = s.externalCalendarRepo.UpdateExternalCalendarAuthTokens(ctx, externalCalendar.Id, token.AccessToken, token.RefreshToken, token.Expiry)
 			if err != nil {
-				return fmt.Errorf("error updating external calendar auth tokens: %s", err.Error())
+				return err
 			}
 		}
 	} else {
@@ -206,7 +206,7 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 		} else {
 			calendarTz, err = s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
 			if err != nil {
-				return fmt.Errorf("error while loading merchant timezone: %s", err.Error())
+				return err
 			}
 		}
 
@@ -225,7 +225,7 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 
 		extCalendarId, err := s.externalCalendarRepo.NewExternalCalendar(ctx, externalCalendar)
 		if err != nil {
-			return fmt.Errorf("error while creating new external calendar: %s", err.Error())
+			return err
 		}
 
 		externalCalendar.Id = extCalendarId

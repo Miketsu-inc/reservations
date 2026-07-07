@@ -52,7 +52,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		Birthday:    input.Birthday,
 		Note:        input.Note,
 	}); err != nil {
-		return fmt.Errorf("unexpected error inserting customer for merchant: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func (s *Service) Update(ctx context.Context, customerId uuid.UUID, input Update
 		Note:        input.Note,
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating customer for merchant: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -115,7 +115,7 @@ func (s *Service) Delete(ctx context.Context, customerId uuid.UUID) error {
 
 		err = s.customerRepo.DeleteCustomer(ctx, customerId, actor.MerchantId)
 		if err != nil {
-			return fmt.Errorf("error while deleting customer for merchant: %s", err.Error())
+			return err
 		}
 
 		return nil
@@ -127,7 +127,7 @@ func (s *Service) Get(ctx context.Context, customerId uuid.UUID) (domain.Custome
 
 	customer, err := s.customerRepo.GetCustomerInfo(ctx, actor.MerchantId, customerId)
 	if err != nil {
-		return domain.CustomerInfo{}, fmt.Errorf("error while retrieving customer info for merchant: %s", err.Error())
+		return domain.CustomerInfo{}, err
 	}
 
 	return customer, nil
@@ -138,7 +138,7 @@ func (s *Service) GetStats(ctx context.Context, customerId uuid.UUID) (domain.Cu
 
 	customerStats, err := s.customerRepo.GetCustomerStats(ctx, actor.MerchantId, customerId)
 	if err != nil {
-		return domain.CustomerStatistics{}, fmt.Errorf("error while retrieving customer stats for merchant: %s", err.Error())
+		return domain.CustomerStatistics{}, err
 	}
 
 	return customerStats, nil
@@ -158,7 +158,7 @@ func (s *Service) Blacklist(ctx context.Context, customerId uuid.UUID, input Bla
 
 	err := s.customerRepo.SetBlacklistStatusForCustomer(ctx, actor.MerchantId, customerId, true, input.BlacklistReason)
 	if err != nil {
-		return fmt.Errorf("error while adding customer to blacklist: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -169,7 +169,7 @@ func (s *Service) UnBlacklist(ctx context.Context, customerId uuid.UUID) error {
 
 	err := s.customerRepo.SetBlacklistStatusForCustomer(ctx, actor.MerchantId, customerId, false, nil)
 	if err != nil {
-		return fmt.Errorf("error while deleting customer from blacklist: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -180,7 +180,7 @@ func (s *Service) GetAll(ctx context.Context) ([]domain.PublicCustomer, error) {
 
 	customers, err := s.customerRepo.GetCustomers(ctx, actor.MerchantId, false)
 	if err != nil {
-		return []domain.PublicCustomer{}, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error())
+		return []domain.PublicCustomer{}, err
 	}
 
 	return customers, nil
@@ -196,7 +196,7 @@ func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsIn
 
 	err := s.bookingRepo.TransferDummyBookings(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
 	if err != nil {
-		return fmt.Errorf("error while transfering bookings: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -207,7 +207,7 @@ func (s *Service) GetAllBlacklisted(ctx context.Context) ([]domain.PublicCustome
 
 	blacklistedCustomers, err := s.customerRepo.GetCustomers(ctx, actor.MerchantId, true)
 	if err != nil {
-		return []domain.PublicCustomer{}, fmt.Errorf("error while retrieving blacklisted customers for merchant: %s", err.Error())
+		return []domain.PublicCustomer{}, err
 	}
 
 	return blacklistedCustomers, nil

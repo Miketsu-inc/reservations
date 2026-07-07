@@ -74,7 +74,7 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 
 	err = s.merchantRepo.ChangeMerchantNameAndURL(ctx, actor.MerchantId, input.Name, urlName)
 	if err != nil {
-		return fmt.Errorf("error while updating merchant's name: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -116,7 +116,7 @@ func (s *Service) GetDashboard(ctx context.Context, date time.Time, period int) 
 
 	dashboard.Statistics, err = s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart, utcDate, prevPeriodStart)
 	if err != nil {
-		return domain.DashboardData{}, fmt.Errorf("error while retrieving dashboard data: %s", err.Error())
+		return domain.DashboardData{}, err
 	}
 
 	dashboard.Statistics.Revenue, err = s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart, utcDate)
@@ -162,7 +162,7 @@ func (s *Service) GetSettings(ctx context.Context) (domain.MerchantSettingsInfo,
 
 	settings, err := s.merchantRepo.GetMerchantSettingsInfo(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, fmt.Errorf("error while accessing settings merchant info: %s", err.Error())
+		return domain.MerchantSettingsInfo{}, err
 	}
 
 	return settings, nil
@@ -226,7 +226,7 @@ func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.Busine
 
 	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.BusinessHours{}, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error())
+		return domain.BusinessHours{}, err
 	}
 
 	return businessHours, nil
@@ -240,12 +240,12 @@ type GetNormalizedBusinessHoursPublicInput struct {
 func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input GetNormalizedBusinessHoursPublicInput) (domain.BusinessHours, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, input.MerchantUrl)
 	if err != nil {
-		return domain.BusinessHours{}, fmt.Errorf("error while retrieving merchantId by url: %s", err.Error())
+		return domain.BusinessHours{}, err
 	}
 
 	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId)
 	if err != nil {
-		return domain.BusinessHours{}, fmt.Errorf("error while retrieving business hours by merchant id: %s", err.Error())
+		return domain.BusinessHours{}, err
 	}
 
 	return businessHours, nil
@@ -256,7 +256,7 @@ func (s *Service) GetPreferences(ctx context.Context) (domain.PreferenceData, er
 
 	preferences, err := s.merchantRepo.GetPreferences(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.PreferenceData{}, fmt.Errorf("error while accessing merchant preferences: %s", err.Error())
+		return domain.PreferenceData{}, err
 	}
 
 	return preferences, nil
@@ -285,7 +285,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, input UpdatePreferences
 		TimeFrequency:      input.TimeFrequency,
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating preferences: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -296,7 +296,7 @@ func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.PublicEmploy
 
 	team, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("error while retrieving employees for merchant: %s", err.Error())
+		return []domain.PublicEmployee{}, err
 	}
 
 	return team, nil
@@ -307,7 +307,7 @@ func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.Services
 
 	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.ServicesGroupedByCategoriesForCalendar{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
+		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
 	}
 
 	return services, nil
@@ -318,7 +318,7 @@ func (s *Service) GetCustomersForCalendar(ctx context.Context) ([]domain.Custome
 
 	customers, err := s.customerRepo.GetCustomersForCalendar(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.CustomerForCalendar{}, fmt.Errorf("error while retrieving customers for merchant: %s", err.Error())
+		return []domain.CustomerForCalendar{}, err
 	}
 
 	return customers, nil
@@ -371,7 +371,7 @@ func (s *Service) NewLocation(ctx context.Context, req NewLocationInput) error {
 		IsActive:          req.IsActive,
 	})
 	if err != nil {
-		return fmt.Errorf("unexpected error during adding location to database: %s", err.Error())
+		return err
 	}
 
 	return nil

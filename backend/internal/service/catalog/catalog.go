@@ -123,7 +123,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+		return err
 	}
 
 	if input.Price != nil {
@@ -303,7 +303,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
 	if err != nil {
-		return fmt.Errorf("error while getting merchant's currency: %s", err.Error())
+		return err
 	}
 
 	if input.Price != nil {
@@ -416,7 +416,7 @@ func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageDat
 
 	service, err := s.catalogRepo.GetAllServicePageData(ctx, serviceId, actor.MerchantId)
 	if err != nil {
-		return domain.ServicePageData{}, fmt.Errorf("error while retrieving service for merchant: %s", err.Error())
+		return domain.ServicePageData{}, err
 	}
 
 	return service, nil
@@ -496,7 +496,7 @@ func (s *Service) Activate(ctx context.Context, serviceId int) error {
 
 	err := s.catalogRepo.DeactivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
-		return fmt.Errorf("error while activating service: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -507,7 +507,7 @@ func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 
 	err := s.catalogRepo.ActivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
-		return fmt.Errorf("error while deactivating service: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -518,7 +518,7 @@ func (s *Service) GetAll(ctx context.Context) ([]domain.ServicesGroupedByCategor
 
 	services, err := s.catalogRepo.GetServicesGroupedByCategory(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.ServicesGroupedByCategory{}, fmt.Errorf("error while retrieving services for merchant: %s", err.Error())
+		return []domain.ServicesGroupedByCategory{}, err
 	}
 
 	return services, nil
@@ -543,7 +543,7 @@ func (s *Service) Reorder(ctx context.Context, input ReorderInput) error {
 
 	err := s.catalogRepo.ReorderServices(ctx, actor.MerchantId, input.CategoryId, input.Services)
 	if err != nil {
-		return fmt.Errorf("error while ordering services: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -554,7 +554,7 @@ func (s *Service) GetFormOptions(ctx context.Context) (domain.ServicePageFormOpt
 
 	formOptions, err := s.catalogRepo.GetServicePageFormOptions(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.ServicePageFormOptions{}, fmt.Errorf("error while retrieving service form options for merchant: %s", err.Error())
+		return domain.ServicePageFormOptions{}, err
 	}
 
 	return formOptions, nil
