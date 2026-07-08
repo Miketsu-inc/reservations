@@ -333,7 +333,8 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 			ServiceName:     b.ServiceName,
 			ServiceColor:    b.ServiceColor,
 			MaxParticipants: b.MaxParticipants,
-			Price:           b.Price.ToFormatted(),
+			FormattedPrice:  currencyx.FormatPrice(&b.Price),
+			Price:           b.Price,
 			PriceType:       b.PriceType,
 		}
 

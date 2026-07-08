@@ -37,6 +37,7 @@ import {
   ParticipantSideBar,
 } from "./ParticipantLogic";
 import ParticipantManager from "./ParticipantManager";
+import ServiceEditor from "./ServiceEditor";
 import UpdateRecurringModal from "./UpdateRecurringModal";
 
 function monthDateFormat(date) {
@@ -49,13 +50,15 @@ function monthDateFormat(date) {
 
 function resolveServiceData(service, booking) {
   return {
-    booking_type: service.booking_type ?? booking.booking_type,
+    booking_type: booking.booking_type ?? service.booking_type,
     color: service.color ?? DEFAULT_SERVICE_COLOR,
-    name: service.name ?? booking.service_name,
-    duration: service.duration ?? booking.duration,
-    max_participants: service.max_participants ?? booking.max_participants,
-    price: service.price ?? booking.price,
-    price_type: service.price_type ?? booking.price_type,
+    name: booking.service_name ?? service.name,
+    duration: booking.duration ?? service.duration,
+    duration_unit: booking.duration_unit ?? "min",
+    max_participants: booking.max_participants ?? service.max_participants,
+    formatted_price: booking.formatted_price ?? service.price,
+    price: booking.price,
+    price_type: booking.price_type ?? service.price_type,
   };
 }
 
@@ -86,7 +89,9 @@ export default function EditBookingPanel({
   const [isRecurModalOpen, setIsRecurModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const isNestedPanelOpen = nestedPageState.isOpen && isWindowSmall;
+  const isNestedPanelOpen =
+    nestedPageState.isOpen &&
+    (isWindowSmall || nestedPageState !== "service-editor");
 
   const mappedParticipants =
     originalBookingData.extendedProps?.participants.map((participant) => {
@@ -108,10 +113,19 @@ export default function EditBookingPanel({
       };
     });
 
+  const selectedService = categories
+    .flatMap((category) => category.services)
+    .find(
+      (service) => service.id === originalBookingData.extendedProps.service_id
+    );
   const [bookingData, setBookingData] = useState({
     date: originalBookingData.start,
     time: timeStringFromDate(originalBookingData.start).split(" ")[0],
     serviceId: originalBookingData.extendedProps.service_id,
+    service: resolveServiceData(
+      selectedService,
+      originalBookingData.extendedProps
+    ),
     employeeId: originalBookingData.extendedProps.employee_id,
     bookingStatus: originalBookingData.extendedProps.booking_status,
     participants: mappedParticipants,
@@ -120,13 +134,7 @@ export default function EditBookingPanel({
 
   const hasSelection = bookingData.participants.length > 0;
 
-  const selectedService = categories
-    .flatMap((category) => category.services)
-    .find((service) => service.id === bookingData.serviceId);
-
-  const isGroupBooking =
-    (selectedService?.booking_type ??
-      originalBookingData.extendedProps.booking_type) !== "appointment";
+  const isGroupBooking = bookingData.service.booking_type !== "appointment";
 
   const teamOptions = team?.map((member) => ({
     value: member.id,
@@ -217,6 +225,9 @@ export default function EditBookingPanel({
           },
           body: JSON.stringify({
             customers: customerInput,
+            service_name: bookingData.service.name,
+            price: bookingData.service.price,
+            price_type: bookingData.service.price_type,
             timestamp: timestamp,
             merchant_note: bookingData.merchantNote,
             employee_id: bookingData.employeeId,
@@ -310,10 +321,7 @@ export default function EditBookingPanel({
         setIsExpanded={setIsCustomerSectionExpanded}
         customers={customers}
         selectedCustomers={bookingData.participants}
-        maxParticipants={
-          selectedService?.max_participants ??
-          originalBookingData.extendedProps.max_participants
-        }
+        maxParticipants={bookingData.service.max_participants}
         isWindowSmall={isWindowSmall}
         onAddCustomer={handleSelectCustomers}
         onRemoveCustomer={handleRemoveCustomer}
@@ -329,6 +337,19 @@ export default function EditBookingPanel({
           }
           styles="size-8"
         >
+          {nestedPageState.active === "service-editor" && (
+            <ServiceEditor
+              key={nestedPageState.isOpen}
+              serviceData={bookingData.service}
+              onSave={(s) => {
+                updateBookingData({ service: s });
+                setNestedPageState({
+                  isOpen: false,
+                  active: "service-editor",
+                });
+              }}
+            />
+          )}
           {isWindowSmall && (
             <>
               {nestedPageState.active === "customer-selector" && (
@@ -364,10 +385,7 @@ export default function EditBookingPanel({
                 <ParticipantManager
                   customers={customers}
                   participants={bookingData.participants}
-                  maxParticipants={
-                    selectedService?.max_participants ??
-                    originalBookingData.extendedProps.max_participants
-                  }
+                  maxParticipants={bookingData.service.max_participants}
                   isWindowSmall={isWindowSmall}
                   disabled={isPastBooking}
                   onAdd={handleSelectCustomers}
@@ -388,7 +406,7 @@ export default function EditBookingPanel({
             isPastBooking={isPastBooking}
             isGroupBooking={isGroupBooking}
             isWindowSmall={isWindowSmall}
-            serviceColor={selectedService?.color ?? DEFAULT_SERVICE_COLOR}
+            serviceColor={bookingData.service.color}
             updateBookingData={updateBookingData}
             onCancel={() => setIsCancelModalOpen(true)}
             onClose={onClose}
@@ -397,12 +415,8 @@ export default function EditBookingPanel({
             <label className="flex flex-col gap-1">
               <span>Service</span>
               <ServiceCard
-                service={resolveServiceData(
-                  selectedService,
-                  originalBookingData.extendedProps
-                )}
+                service={bookingData.service}
                 isGroup={isGroupBooking}
-                disabled={true}
                 onClick={() =>
                   setNestedPageState({ isOpen: true, active: "service-editor" })
                 }
@@ -414,7 +428,7 @@ export default function EditBookingPanel({
               hasSelection={hasSelection}
               isPastBooking={isPastBooking}
               selectedCustomers={bookingData.participants}
-              maxParticipants={selectedService?.max_participants}
+              maxParticipants={bookingData.service.max_participants}
               onRemoveCustomer={handleRemoveCustomer}
               onOpenCustomerSelector={() =>
                 setNestedPageState({

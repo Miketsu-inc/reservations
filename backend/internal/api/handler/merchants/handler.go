@@ -398,7 +398,8 @@ type bookingForCalendar struct {
 	ServiceName     string                          `json:"service_name"`
 	ServiceColor    *string                         `json:"service_color"`
 	MaxParticipants int                             `json:"max_participants"`
-	Price           currencyx.FormattedPrice        `json:"price"`
+	FormattedPrice  *currencyx.FormattedPrice       `json:"formatted_price"`
+	Price           currencyx.Price                 `json:"price"`
 	PriceType       types.PriceType                 `json:"price_type"`
 	Participants    []bookingParticipantForCalendar `json:"participants"`
 }

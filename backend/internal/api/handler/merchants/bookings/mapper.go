@@ -62,6 +62,9 @@ func mapToUpdateByMerchantInput(in updateByMerchantReq) (bookingServ.UpdateByMer
 	return bookingServ.UpdateByMerchantInput{
 		Customers:       customers,
 		TimeStamp:       timeStamp,
+		ServiceName:     in.ServiceName,
+		Price:           in.Price,
+		PriceType:       in.PriceType,
 		MerchantNote:    in.MerchantNote,
 		EmployeeId:      in.EmployeeId,
 		BookingStatus:   in.BookingStatus,

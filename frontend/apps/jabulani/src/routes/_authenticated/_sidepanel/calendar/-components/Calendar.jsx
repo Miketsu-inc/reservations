@@ -98,6 +98,7 @@ function formatBookings(data) {
         employee_id: booking.employee_id,
         duration: booking.duration,
         price: booking.price,
+        formatted_price: booking.formatted_price,
         price_type: booking.price_type,
       },
     };

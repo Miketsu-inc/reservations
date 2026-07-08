@@ -871,6 +871,9 @@ func detectSeriesParticipantChanges(existing []domain.BookingParticipant, existi
 type UpdateByMerchantInput struct {
 	Customers       []CustomerInput
 	TimeStamp       time.Time
+	ServiceName     string
+	Price           currencyx.Price
+	PriceType       types.PriceType
 	EmployeeId      int
 	MerchantNote    *string
 	BookingStatus   types.BookingStatus

@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -94,6 +95,9 @@ func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) {
 type updateByMerchantReq struct {
 	Customers       []customerReq       `json:"customers"`
 	TimeStamp       string              `json:"timestamp" validate:"required"`
+	ServiceName     string              `json:"service_name"`
+	Price           currencyx.Price     `json:"price"`
+	PriceType       types.PriceType     `json:"price_type" validate:"required"`
 	MerchantNote    *string             `json:"merchant_note"`
 	EmployeeId      int                 `json:"employee_id" validate:"required"`
 	BookingStatus   types.BookingStatus `json:"booking_status"`

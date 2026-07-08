@@ -245,7 +245,7 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
       onClick={onClick}
       disabled={disabled}
       className={`hover:bg-hvr_gray/20 border-input_border_color relative flex
-        w-full cursor-pointer items-center justify-between overflow-hidden
+        w-full cursor-pointer items-center justify-between gap-3 overflow-hidden
         rounded-md border border-l-0 px-7 py-4 disabled:pointer-events-none
         disabled:hover:bg-transparent ${styles}`}
     >
@@ -255,7 +255,10 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
       />
 
       <div className="flex flex-col items-start gap-2">
-        <span className="text-text_color text-left text-lg font-semibold">
+        <span
+          className="text-text_color line-clamp-1 text-left text-lg
+            font-semibold"
+        >
           {service.name}
         </span>
 
@@ -285,7 +288,10 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
 
       <div className="flex items-center">
         <span className="text-text_color text-lg font-medium">
-          {getDisplayPrice(service.price, service.price_type)}
+          {getDisplayPrice(
+            service.formatted_price ?? service.price,
+            service.price_type
+          )}
         </span>
       </div>
     </button>
