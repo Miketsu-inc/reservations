@@ -710,7 +710,7 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 		where bp.status not in ('cancelled')
 		group by bp.booking_id
 	)
-	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.total_price as price, b.price_type,
+	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
 		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
 		coalesce(p.participants, '[]'::jsonb) as participants
 	from "Booking" b

@@ -594,13 +594,15 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		// group bookings can't have walk-ins
 		if service.IsGroupService() {
 			participantCount = 0
+
+			totalPrice, err = currency.NewAmount("0", price.CurrencyCode())
+			if err != nil {
+				return fmt.Errorf("failed to calculate total price: %w", err)
+			}
 		} else {
 			participantCount = 1
-		}
 
-		totalPrice, err = currency.NewAmount("0", price.CurrencyCode())
-		if err != nil {
-			return fmt.Errorf("failed to calculate total price: %w", err)
+			totalPrice = price.Amount
 		}
 	}
 
