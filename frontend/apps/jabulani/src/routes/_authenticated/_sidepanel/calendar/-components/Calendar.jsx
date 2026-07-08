@@ -25,7 +25,7 @@ import {
   useQuery,
   useSuspenseQueries,
 } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu from "./CreateMenu";
@@ -159,6 +159,13 @@ export default function Calendar({ router, route, search }) {
   const { isWindowSmall } = useWindowSize();
   const calendarRef = useRef();
 
+  const calendarEvents = useMemo(() => {
+    return [
+      ...formatBookings(events.bookings),
+      ...formatBlockedTimes(events.blocked_times),
+    ];
+  }, [events.bookings, events.blocked_times]);
+
   const invalidateBookingsQuery = useCallback(async () => {
     await queryClient.invalidateQueries({
       queryKey: [merchantId, "events", search.start, search.end],
@@ -257,7 +264,11 @@ export default function Calendar({ router, route, search }) {
         }}
         onSave={() => {
           invalidateBookingsQuery();
-          setSidePanelState((prev) => ({ ...prev, isOpen: false }));
+          setSidePanelState((prev) => ({
+            ...prev,
+            isOpen: false,
+            revert: null,
+          }));
         }}
         onSoftUpdate={() => invalidateBookingsQuery()}
         preferences={preferences}
@@ -355,10 +366,7 @@ export default function Calendar({ router, route, search }) {
           }
           height="auto"
           headerToolbar={false}
-          events={[
-            ...formatBookings(events.bookings),
-            ...formatBlockedTimes(events.blocked_times),
-          ]}
+          events={calendarEvents}
           eventClick={(e) => {
             const type = e.event.extendedProps.type;
 
@@ -409,7 +417,7 @@ export default function Calendar({ router, route, search }) {
                 isOpen: true,
                 type: "blocked-time",
                 data: e.event,
-                revert: e.revert(),
+                revert: e.revert,
                 panelKey: Date.now(),
               });
               return;
@@ -419,7 +427,7 @@ export default function Calendar({ router, route, search }) {
               isOpen: true,
               type: "edit-booking",
               data: e.event,
-              revert: e.revert(),
+              revert: e.revert,
               panelKey: Date.now(),
             });
           }}
