@@ -4,13 +4,8 @@
   "version": "0.9.0",
   "type": "module",
   "dependencies": {
-    "@fullcalendar/core": "^6.1.20",
-    "@fullcalendar/daygrid": "^6.1.20",
-    "@fullcalendar/interaction": "^6.1.20",
-    "@fullcalendar/list": "^6.1.20",
-    "@fullcalendar/react": "^6.1.20",
-    "@fullcalendar/timegrid": "^6.1.20",
-    "@mapbox/search-js-react": "^1.5.1",
-    "recharts": "^3.8.1"
+    "@fullcalendar/react": "^7.0.2",
+    "@mapbox/search-js-react": "^1.6.0",
+    "recharts": "^3.10.1"
   }
 }
