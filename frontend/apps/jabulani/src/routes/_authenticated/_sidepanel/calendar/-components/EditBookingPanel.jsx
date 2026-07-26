@@ -166,6 +166,8 @@ export default function EditBookingPanel({
   }
 
   async function handleSave(option = "this") {
+    setIsRecurModalOpen(false);
+
     if (isBookingCompleted) {
       showToast({
         message: "You cant update a completed booking",

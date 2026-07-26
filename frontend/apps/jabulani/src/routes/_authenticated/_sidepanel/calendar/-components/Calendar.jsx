@@ -1,7 +1,8 @@
-import FullCalendar from "@fullcalendar/react";
+import { Calendar as FullCalendar } from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
+import themePlugin from "@fullcalendar/react/themes/breezy";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
@@ -29,6 +30,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bookingsQueryOptions } from "..";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu from "./CreateMenu";
+
+import "@fullcalendar/react/skeleton.css";
+import "@fullcalendar/react/themes/breezy/palettes/indigo.css";
+import "@fullcalendar/react/themes/breezy/theme.css";
 
 const calendarViewOptions = [
   { value: "dayGridMonth", label: "Month" },
@@ -339,13 +344,11 @@ export default function Calendar({ router, route, search }) {
           </div>
         </div>
       </div>
-      <div
-        className="max-h-full w-full overflow-auto rounded-lg bg-white
-          text-black"
-      >
+      <div className="max-h-full w-full overflow-auto rounded-lg">
         <FullCalendar
           ref={calendarRef}
           plugins={[
+            themePlugin,
             dayGridPlugin,
             interactionPlugin,
             timeGridPlugin,
@@ -390,7 +393,7 @@ export default function Calendar({ router, route, search }) {
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
           lazyFetching={true}
-          slotLabelFormat={{
+          slotHeaderFormat={{
             hour: "numeric",
             minute: "numeric",
             hour12: preferences.time_format === "12-hour",
@@ -404,7 +407,6 @@ export default function Calendar({ router, route, search }) {
             month: "long",
             day: "numeric",
           }}
-          titleRangeSeparator=" - "
           fixedWeekCount={false}
           allDaySlot={true}
           displayEventEnd={false}
