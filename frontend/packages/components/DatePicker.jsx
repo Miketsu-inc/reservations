@@ -72,7 +72,7 @@ export default function DatePicker({
                 )}
                 <Icon
                   icon={Calendar04Icon}
-                  styles="text-gray-700 dark:text-gray-300 shrink-0 size-4"
+                  styles="text-gray-700 dark:text-gray-300 shrink-0 size-5"
                 />
               </div>
             </button>

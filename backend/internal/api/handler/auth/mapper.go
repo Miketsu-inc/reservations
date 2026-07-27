@@ -48,10 +48,12 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 
 	for i, e := range in.Memberships {
 		memberships[i] = membershipsResp{
-			MerchantId: e.MerchantId,
-			LocationId: e.LocationId,
-			EmployeeId: e.Id,
-			Role:       e.Role,
+			MerchantId:      e.MerchantId,
+			MerchantName:    e.MerchantName,
+			MerchantUrlName: e.MerchantUrlName,
+			LocationId:      e.LocationId,
+			EmployeeId:      e.Id,
+			Role:            e.Role,
 		}
 	}
 

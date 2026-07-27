@@ -18,6 +18,8 @@ export const Route = createFileRoute("/_authenticated")({
       if (membership) {
         authContext = {
           merchantId: membership?.merchant_id,
+          merchantName: membership?.merchant_name,
+          merchantUrlName: membership?.merchant_url_name,
           locationId: membership?.location_id,
           employeeId: membership?.employee_id,
           role: membership?.role,

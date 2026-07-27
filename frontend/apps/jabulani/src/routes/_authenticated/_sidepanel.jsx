@@ -54,7 +54,7 @@ function SidePanelLayout() {
   );
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
-  const { role } = useAuth();
+  const { role, merchantUrlName } = useAuth();
 
   const isOpen = isWindowSmall ? isOpenend : true;
 
@@ -169,7 +169,7 @@ function SidePanelLayout() {
               <a
                 className="hover:bg-primary/20 flex flex-row items-center gap-2
                   rounded-lg p-2"
-                href="http://reservations.local:3000/m/bwnet"
+                href={`http://reservations.local:3000/m/${merchantUrlName}`}
               >
                 <Icon icon={LinkSquare02Icon} styles="size-5" />
                 <span>Live booking page</span>
