@@ -9,6 +9,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
@@ -17,15 +18,17 @@ import (
 type Service struct {
 	blockedTimeRepo domain.BlockedTimeRepository
 	teamRepo        domain.TeamRepository
+	teamService     *team.Service
 	enqueuer        queue.Enqueuer
 	txManager       db.TransactionManager
 }
 
 func NewService(blockedTime domain.BlockedTimeRepository, teamRepo domain.TeamRepository,
-	enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
+	teamService *team.Service, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		blockedTimeRepo: blockedTime,
 		teamRepo:        teamRepo,
+		teamService:     teamService,
 		enqueuer:        enqueuer,
 		txManager:       txManager,
 	}
@@ -65,12 +68,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		}
 
 		if len(input.EmployeeIds) > 0 {
-			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
-			if err != nil {
-				return err
-			}
-
-			err = checkIfInActiveEmployees(employees, input.EmployeeIds)
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
 			if err != nil {
 				return err
 			}
@@ -90,54 +88,6 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 		return nil
 	})
-}
-
-func checkIfInActiveEmployees(activeEmployees []domain.PublicEmployee, incomingIds []int) error {
-	activeIdsMap := make(map[int]struct{}, len(activeEmployees))
-	for _, e := range activeEmployees {
-		activeIdsMap[e.Id] = struct{}{}
-	}
-
-	for _, id := range incomingIds {
-		if _, ok := activeIdsMap[id]; !ok {
-			return fmt.Errorf("active employee with this id  does not exist")
-		}
-	}
-
-	return nil
-}
-
-type employeeChanges struct {
-	ToInsert []int
-	ToDelete []int
-}
-
-func detectEmployeeChanges(existing, incoming []int) (employeeChanges, error) {
-	var ec employeeChanges
-
-	existingMap := make(map[int]struct{}, len(existing))
-	for _, id := range existing {
-		existingMap[id] = struct{}{}
-	}
-
-	incomingMap := make(map[int]struct{}, len(incoming))
-	for _, id := range incoming {
-		incomingMap[id] = struct{}{}
-	}
-
-	for _, id := range existing {
-		if _, ok := incomingMap[id]; !ok {
-			ec.ToDelete = append(ec.ToDelete, id)
-		}
-	}
-
-	for _, id := range incoming {
-		if _, ok := existingMap[id]; !ok {
-			ec.ToInsert = append(ec.ToInsert, id)
-		}
-	}
-
-	return ec, nil
 }
 
 type UpdateInput struct {
@@ -180,7 +130,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return err
 		}
 
-		employeeChanges, err := detectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
+		employeeChanges, err := s.teamService.DetectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
 		if err != nil {
 			return err
 		}
@@ -193,12 +143,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
-			employees, err := s.teamRepo.WithTx(tx).GetActiveEmployees(ctx, actor.MerchantId)
-			if err != nil {
-				return err
-			}
-
-			err = checkIfInActiveEmployees(employees, employeeChanges.ToInsert)
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
 			if err != nil {
 				return err
 			}

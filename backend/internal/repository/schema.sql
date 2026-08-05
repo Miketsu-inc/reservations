@@ -103,6 +103,19 @@ create table if not exists "Service" (
     approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new'))
 );
 
+create table if not exists "EmployeeService" (
+    employee_id              integer         references "Employee" (ID) on delete cascade not null,
+    service_id               integer         references "Service" (ID) on delete cascade not null,
+    total_duration           integer,
+    price_per_person         price,
+    price_type               text,
+    min_participants         integer,
+    max_participants         integer,
+    buffer_time              integer,
+
+    primary key (employee_id, service_id)
+);
+
 create table if not exists "ServicePhase" (
     ID                       serial                 primary key unique not null,
     service_id               integer                references "Service" (ID) on delete cascade not null,
@@ -111,7 +124,19 @@ create table if not exists "ServicePhase" (
     duration                 integer                not null,
     phase_type               text                   check (phase_type in ('active', 'wait')) not null,
 
+    constraint unique_service_phase_id_service unique (ID, service_id),
     constraint unique_service_phase_sequence unique (service_id, sequence)
+);
+
+create table if not exists "EmployeeServicePhase" (
+    employee_id              integer                 not null,
+    service_id               integer                 not null,
+    service_phase_id         integer                 not null,
+    duration                 integer,
+
+    foreign key (employee_id, service_id) references "EmployeeService" (employee_id, service_id) on delete cascade,
+    foreign key (service_phase_id, service_id) references "ServicePhase" (ID, service_id) on delete cascade,
+    primary key (employee_id, service_phase_id)
 );
 
 -- constraint is neccessary for the on conflict

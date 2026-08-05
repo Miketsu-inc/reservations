@@ -44,6 +44,7 @@ func mapToNewInput(in newReq) catalogServ.NewInput {
 			BufferTime:       in.Settings.BufferTime,
 			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
+		EmployeeIds:  in.EmployeeIds,
 		Phases:       phases,
 		UsedProducts: connProducts,
 	}
@@ -81,7 +82,8 @@ func mapToUpdateInput(in updateReq) catalogServ.UpdateInput {
 			BufferTime:       in.Settings.BufferTime,
 			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
-		Phases: phases,
+		EmployeeIds: in.EmployeeIds,
+		Phases:      phases,
 	}
 }
 

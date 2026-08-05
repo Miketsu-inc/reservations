@@ -55,6 +55,7 @@ export default function ServicePage({
         approval_policy: service?.settings?.approval_policy || null,
       },
       phases: service?.phases || [],
+      employee_ids: [],
       used_products: service?.used_products || [],
     }),
     [service]

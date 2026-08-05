@@ -7,7 +7,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -15,13 +17,15 @@ import (
 type Service struct {
 	catalogRepo  domain.CatalogRepository
 	merchantRepo domain.MerchantRepository
+	teamService  *team.Service
 	txManager    db.TransactionManager
 }
 
-func NewService(catalog domain.CatalogRepository, merchant domain.MerchantRepository, txManager db.TransactionManager) *Service {
+func NewService(catalog domain.CatalogRepository, merchant domain.MerchantRepository, teamService *team.Service, txManager db.TransactionManager) *Service {
 	return &Service{
 		catalogRepo:  catalog,
 		merchantRepo: merchant,
+		teamService:  teamService,
 		txManager:    txManager,
 	}
 }
@@ -55,6 +59,7 @@ type NewInput struct {
 	MinParticipants *int
 	MaxParticipants *int
 	IsActive        bool
+	EmployeeIds     []int
 	Settings        ServiceSettingsInput
 	Phases          []NewPhasesInput
 	UsedProducts    []ConnectedProductsInput
@@ -164,6 +169,26 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
+		if len(input.EmployeeIds) > 0 {
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
+			if err != nil {
+				return err
+			}
+
+			employeeServices := make([]domain.EmployeeService, len(input.EmployeeIds))
+			for i, e := range input.EmployeeIds {
+				employeeServices[i] = domain.EmployeeService{
+					EmployeeId: e,
+					ServiceId:  serviceId,
+				}
+			}
+
+			err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
+			if err != nil {
+				return err
+			}
+		}
+
 		if len(connectedProducts) != 0 {
 			err = s.catalogRepo.WithTx(tx).NewServiceProduct(ctx, actor.MerchantId, connectedProducts)
 			if err != nil {
@@ -256,6 +281,7 @@ type UpdateInput struct {
 	MinParticipants *int
 	MaxParticipants *int
 	IsActive        bool
+	EmployeeIds     []int
 	Settings        ServiceSettingsInput
 	Phases          []PhasesInput
 }
@@ -364,6 +390,45 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		})
 		if err != nil {
 			return err
+		}
+
+		existingEmployees, err := s.catalogRepo.GetEmployeeIdsForService(ctx, input.Id)
+		if err != nil {
+			return err
+		}
+
+		employeeChanges, err := s.teamService.DetectEmployeeChanges(existingEmployees, input.EmployeeIds)
+		if err != nil {
+			return err
+		}
+
+		if len(employeeChanges.ToDelete) > 0 {
+			serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
+
+			err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(employeeChanges.ToInsert) > 0 {
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
+			if err != nil {
+				return err
+			}
+
+			employeeServices := make([]domain.EmployeeService, len(input.EmployeeIds))
+			for i, e := range input.EmployeeIds {
+				employeeServices[i] = domain.EmployeeService{
+					EmployeeId: e,
+					ServiceId:  input.Id,
+				}
+			}
+
+			err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
+			if err != nil {
+				return err
+			}
 		}
 
 		// the categoryId has changed, reordering services is needed
@@ -490,7 +555,6 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 	return nil
 }
 
-// TODO: one query instead of separate activate and deactivate queries
 func (s *Service) Activate(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
 

@@ -7,7 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -603,6 +605,74 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	return msi, nil
 }
 
+// TODO: merge into GetServiceWithPhases once employee can be selected during booking
+func (r *catalogRepository) GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (domain.Service, error) {
+	query := `
+	select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, coalesce(es.total_duration, s.total_duration) as total_duration,
+		coalesce(es.price_per_person, s.price_per_person) as price_per_person, coalesce(es.price_type, s.price_type) as price_type, s.is_active, s.sequence,
+		coalesce(es.min_participants, s.min_participants) as min_participants, coalesce(es.max_participants, s.max_participants) as max_participants,
+		s.cancel_deadline, s.booking_window_min, s.booking_window_max, coalesce(es.buffer_time, s.buffer_time) as buffer_time, s.approval_policy,
+	coalesce (
+		jsonb_agg(
+			jsonb_build_object(
+				'id', sp.id,
+				'service_id', sp.service_id,
+				'name', sp.name,
+				'sequence', sp.sequence,
+				'duration', coalesce(esp.duration, sp.duration),
+				'phase_type', sp.phase_type
+			) order by sp.sequence
+		) filter (where sp.id is not null),
+	'[]'::jsonb) as phases
+	from "Service" s
+	left join "EmployeeService" es on es.service_id = s.id and es.employee_id = $2
+	left join "ServicePhase" sp on s.id = sp.service_id
+	left join "EmployeeServicePhase" esp on esp.employee_id = $2 and esp.service_phase_id = sp.id
+	where s.id = $1
+	group by s.id, es.employee_id
+	`
+
+	var s domain.Service
+	var phasesJson []byte
+
+	err := r.db.QueryRow(ctx, query, serviceId, employeeId).Scan(&s.Id, &s.MerchantId, &s.CategoryId, &s.BookingType, &s.Name, &s.Description, &s.Color, &s.TotalDuration,
+		&s.Price, &s.PriceType, &s.IsActive, &s.Sequence, &s.MinParticipants, &s.MaxParticipants, &s.CancelDeadline, &s.BookingWindowMin,
+		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &phasesJson)
+	if err != nil {
+		return domain.Service{}, fmt.Errorf("GetServiceWithPhasesForEmployee: %w", err)
+	}
+
+	if len(phasesJson) > 0 {
+		err = json.Unmarshal(phasesJson, &s.Phases)
+		if err != nil {
+			return domain.Service{}, fmt.Errorf("GetServiceWithPhasesForEmployee: %w", err)
+		}
+	} else {
+		s.Phases = []domain.ServicePhase{}
+	}
+
+	return s, nil
+}
+
+func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error) {
+	query := `
+	select coalesce(
+		array_agg(employee_id order by employee_id),
+		'{}'::int[]
+		)
+	from "EmployeeService"
+	where service_id = $1
+	`
+
+	var employeeIds []int
+	err := r.db.QueryRow(ctx, query, serviceId).Scan(&employeeIds)
+	if err != nil {
+		return []int{}, fmt.Errorf("GetEmployeeIdsForService: %w", err)
+	}
+
+	return employeeIds, nil
+}
+
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
 	query := `
 	insert into "ServicePhase" (service_id, name, sequence, duration, phase_type)
@@ -856,4 +926,74 @@ func (r *catalogRepository) GetServiceProducts(ctx context.Context, serviceId in
 	}
 
 	return connectedProducts, nil
+}
+
+func (r *catalogRepository) BulkInsertEmployeeService(ctx context.Context, employeeServices []domain.EmployeeService) error {
+	query := `
+	insert into "EmployeeService" (employee_id, service_id, total_duration, price_per_person, price_type, min_participants, max_participants, buffer_time)
+	select unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::price[]), unnest($5::tex[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[]),
+	`
+
+	employeeServiceCount := len(employeeServices)
+
+	employeeIds := make([]int, employeeServiceCount)
+	serviceIds := make([]int, employeeServiceCount)
+	totalDurations := make([]pgtype.Int4, employeeServiceCount)
+	pricePerPersons := make([]*currencyx.Price, employeeServiceCount)
+	priceTypes := make([]pgtype.Text, employeeServiceCount)
+	minParticipants := make([]pgtype.Int4, employeeServiceCount)
+	maxParticipants := make([]pgtype.Int4, employeeServiceCount)
+	bufferTimes := make([]pgtype.Int4, employeeServiceCount)
+
+	for i, e := range employeeServices {
+		employeeIds[i] = e.EmployeeId
+		serviceIds[i] = e.ServiceId
+		if e.TotalDuration == nil {
+			totalDurations[i] = pgtype.Int4{Valid: false}
+		} else {
+			totalDurations[i] = pgtype.Int4{Int32: int32(*e.TotalDuration), Valid: true}
+		}
+		pricePerPersons[i] = e.PricePerPerson
+		if e.PriceType == nil {
+			priceTypes[i] = pgtype.Text{Valid: false}
+		} else {
+			priceTypes[i] = pgtype.Text{String: e.PriceType.String(), Valid: true}
+		}
+		if e.MinParticipants == nil {
+			minParticipants[i] = pgtype.Int4{Valid: false}
+		} else {
+			minParticipants[i] = pgtype.Int4{Int32: int32(*e.MinParticipants), Valid: true}
+		}
+		if e.MaxParticipants == nil {
+			maxParticipants[i] = pgtype.Int4{Valid: false}
+		} else {
+			maxParticipants[i] = pgtype.Int4{Int32: int32(*e.MaxParticipants), Valid: true}
+		}
+		if e.BufferTime == nil {
+			bufferTimes[i] = pgtype.Int4{Valid: false}
+		} else {
+			bufferTimes[i] = pgtype.Int4{Int32: int32(*e.BufferTime), Valid: true}
+		}
+	}
+
+	_, err := r.db.Exec(ctx, query, employeeIds, serviceIds, totalDurations, pricePerPersons, priceTypes, minParticipants, maxParticipants, bufferTimes)
+	if err != nil {
+		return fmt.Errorf("BulkInsertEmployeeService: %w", err)
+	}
+
+	return nil
+}
+
+func (r *catalogRepository) BulkDeleteEmployeeService(ctx context.Context, serviceIds []int, employeeIds []int) error {
+	query := `
+	delete from "EmployeeService"
+	where service_id = any($1::int[]) and employee_id = any($2::int[])
+	`
+
+	_, err := r.db.Exec(ctx, query, serviceIds, employeeIds)
+	if err != nil {
+		return fmt.Errorf("BulkDeleteEmployeeService: %w", err)
+	}
+
+	return nil
 }

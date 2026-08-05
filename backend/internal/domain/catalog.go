@@ -31,6 +31,8 @@ type CatalogRepository interface {
 	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
+	GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (Service, error)
+	GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error)
 
 	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
 	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error
@@ -48,6 +50,9 @@ type CatalogRepository interface {
 	UpdateServiceProducts(ctx context.Context, serviceId int, connectedProducts []ConnectedProducts) error
 	DeleteServiceProducts(ctx context.Context, serviceId int, productIds []int) error
 	GetServiceProducts(ctx context.Context, serviceId int) ([]ConnectedProducts, error)
+
+	BulkInsertEmployeeService(ctx context.Context, employeeServices []EmployeeService) error
+	BulkDeleteEmployeeService(ctx context.Context, serviceIds []int, employeeIds []int) error
 }
 
 type Service struct {
@@ -243,4 +248,22 @@ type CalendarService struct {
 	Color           string            `json:"color"`
 	BookingType     types.BookingType `json:"booking_type"`
 	MaxParticipants int               `json:"max_participants"`
+}
+
+type EmployeeService struct {
+	EmployeeId      int
+	ServiceId       int
+	TotalDuration   *int
+	PricePerPerson  *currencyx.Price
+	PriceType       *types.PriceType
+	MinParticipants *int
+	MaxParticipants *int
+	BufferTime      *int
+}
+
+type EmployeeServicePhase struct {
+	EmployeeId     int
+	ServiceId      int
+	ServicePhaseId int
+	Duration       *int
 }

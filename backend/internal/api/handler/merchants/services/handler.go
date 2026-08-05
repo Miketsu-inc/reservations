@@ -54,6 +54,7 @@ type newReq struct {
 	MaxParticipants *int                   `json:"max_participants"`
 	IsActive        bool                   `json:"is_active"`
 	Settings        serviceSettingsReq     `json:"settings"`
+	EmployeeIds     []int                  `json:"employee_ids"`
 	Phases          []newPhaseReq          `json:"phases" validate:"required"`
 	UsedProducts    []connectedProductsReq `json:"used_products" validate:"required"`
 }
@@ -108,6 +109,7 @@ type updateReq struct {
 	MaxParticipants *int               `json:"max_participants"`
 	IsActive        bool               `json:"is_active"`
 	Settings        serviceSettingsReq `json:"settings"`
+	EmployeeIds     []int              `json:"employee_ids"`
 	Phases          []phaseReq         `json:"phases" validate:"required"`
 }
 
