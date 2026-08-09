@@ -17,7 +17,9 @@ func main() {
 	// and I did not find a way to configure it to not do so
 	time.Local = time.UTC
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 	slog.SetDefault(logger)
 
 	cfg := config.LoadEnvVars()

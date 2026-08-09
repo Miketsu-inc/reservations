@@ -3,6 +3,7 @@ package apperr
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -76,7 +77,7 @@ func (m StatusMap) Resolve(err error, source string) error {
 
 	status, ok := m[named]
 	if !ok {
-		// TODO: log it here, so we can see which is missing
+		slog.Info("missing http status", "error", named)
 		status = http.StatusInternalServerError
 	}
 

@@ -2,10 +2,10 @@ package httputil
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/logger"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
@@ -22,7 +22,7 @@ type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
 func Handle(h HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {
-			renderError(w, err)
+			renderError(w, r, err)
 		}
 	}
 }
@@ -72,9 +72,8 @@ type errorResp struct {
 	Meta    map[string]any `json:"meta,omitempty"`
 }
 
-func renderError(w http.ResponseWriter, err error) {
-	// TODO: get logger from context
-	logger := slog.Default()
+func renderError(w http.ResponseWriter, r *http.Request, err error) {
+	logger := logger.FromContext(r.Context())
 
 	var apiErr *apperr.APIError
 	if !errors.As(err, &apiErr) {

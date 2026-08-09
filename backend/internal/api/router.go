@@ -53,6 +53,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.AllowContentType("application/json"))
 	// r.Use(chiMiddleware.Recoverer)
+	r.UseFunc(h.Middleware.RequestID)
 
 	r.Route("/api/v1", func(r *httputil.Router) {
 		r.Mount("/auth", h.Auth.Routes())

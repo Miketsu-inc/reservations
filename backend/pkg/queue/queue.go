@@ -2,11 +2,14 @@ package queue
 
 import (
 	"context"
+	"io"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverlog"
 	"github.com/riverqueue/river/rivertype"
 )
 
@@ -35,5 +38,10 @@ func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc Register
 		PeriodicJobs: periodicJobs,
 		// TODO: Limited to 5 so in dev errored jobs do not pile up
 		MaxAttempts: 5,
+		Plugins: []rivertype.Plugin{
+			riverlog.NewMiddleware(func(w io.Writer) slog.Handler {
+				return slog.NewJSONHandler(w, nil)
+			}, nil),
+		},
 	})
 }
