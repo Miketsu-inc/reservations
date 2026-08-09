@@ -1,10 +1,8 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
@@ -26,11 +24,11 @@ func NewHandler(s *authServ.Service, ts *teamServ.Service, m *middleware.Manager
 	return &Handler{service: s, teamService: ts, middleware: m}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.Language)
 
 		r.Post("/login", h.Login)
 		r.Post("/forgot-password", h.ForgotPassword)
@@ -44,9 +42,9 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/oauth/facebook/callback", h.FacebookCallback)
 	})
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.JwtAuthentication)
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.JwtAuthentication)
+		r.UseFunc(h.middleware.Language)
 
 		r.Get("/me", h.Me)
 
@@ -64,41 +62,41 @@ type loginReq struct {
 	Password string `json:"password" validate:"required,ascii"`
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
 	var req loginReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	tokens, err := h.service.Login(r.Context(), mapToLoginInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusUnauthorized, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "Login")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
+
+	return nil
 }
 
 type forgotPasswordReq struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
-func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) error {
 	var req forgotPasswordReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.ForgotPassword(r.Context(), mapToForgotPasswordInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "ForgotPassword")
 	}
+
+	return nil
 }
 
 type resetPasswordReq struct {
@@ -106,22 +104,22 @@ type resetPasswordReq struct {
 	Password string `json:"password" validate:"required"`
 }
 
-func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) error {
 	var req resetPasswordReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	tokens, err := h.service.ResetPassword(r.Context(), mapToResetPassordInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "ResetPassword")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
+
+	return nil
 }
 
 type userSignupReq struct {
@@ -132,24 +130,24 @@ type userSignupReq struct {
 	Password    string `json:"password" validate:"required,ascii"`
 }
 
-func (h *Handler) UserSignup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UserSignup(w http.ResponseWriter, r *http.Request) error {
 	var req userSignupReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	tokens, err := h.service.UserSignup(r.Context(), mapToUserSignupInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "UserSignup")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type merchantSignupReq struct {
@@ -158,21 +156,21 @@ type merchantSignupReq struct {
 	Timezone     string `json:"timezone" validate:"required,timezone"`
 }
 
-func (h *Handler) MerchantSignup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) MerchantSignup(w http.ResponseWriter, r *http.Request) error {
 	var req merchantSignupReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.MerchantSignup(r.Context(), mapToMerchantSignupInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "MerchantSignup")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type meResp struct {
@@ -193,90 +191,96 @@ type membershipsResp struct {
 	Role            types.EmployeeRole `json:"role"`
 }
 
-func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {
 	result, err := h.teamService.Me(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadGateway, err)
-		return
+		return teamServ.ErrStatus.Resolve(err, "Me")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToMeResp(result))
+
+	return nil
 }
 
-func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) error {
 	jwt.DeleteJwts(w)
+
+	return nil
 }
 
-func (h *Handler) LogoutAllDevices(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LogoutAllDevices(w http.ResponseWriter, r *http.Request) error {
 	err := h.service.LogoutAllDevices(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "LogoutAllDevices.LogoutAllDevices")
 	}
 
 	jwt.DeleteJwts(w)
+
+	return nil
 }
 
-func (h *Handler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GoogleLogin(w http.ResponseWriter, r *http.Request) error {
 	url, state, err := h.service.GoogleLogin(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "GoogleLogin")
 	}
 
 	oauthutil.SetOauthStateCookie(w, state)
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	return nil
 }
 
-func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) error {
 	code := r.URL.Query().Get("code")
 
 	if err := oauthutil.ValidateOauthState(r); err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during oauth state validation: %s", err.Error()))
-		return
+		return err
 	}
 
 	tokens, err := h.service.GoogleCallback(r.Context(), code)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "GoogleCallback")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
 	http.Redirect(w, r, "http://localhost:8080/", http.StatusPermanentRedirect)
+
+	return nil
 }
 
-func (h *Handler) FacebookLogin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacebookLogin(w http.ResponseWriter, r *http.Request) error {
 	url, state, err := h.service.FacebookLogin(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "FacebookLogin")
 	}
 
 	oauthutil.SetOauthStateCookie(w, state)
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	return nil
 }
 
-func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error {
 	code := r.URL.Query().Get("code")
 
 	if err := oauthutil.ValidateOauthState(r); err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("error during oauth state validation: %s", err.Error()))
-		return
+		return err
 	}
 
 	tokens, err := h.service.FacebookCallback(r.Context(), code)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "FacebookCallback")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
 	http.Redirect(w, r, "http://localhost:8080/", http.StatusPermanentRedirect)
+
+	return nil
 }

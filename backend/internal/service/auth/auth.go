@@ -16,6 +16,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/keys"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
@@ -187,7 +188,7 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 	}
 
 	if !unique {
-		return merchantServ.ErrMerchantUrlNotUnique{URL: urlName}
+		return apperr.Wrap(merchantServ.ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
 	}
 
 	userID := jwt.MustGetUserIDFromContext(ctx)

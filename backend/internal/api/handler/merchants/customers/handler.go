@@ -1,7 +1,6 @@
 package customers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -22,8 +21,8 @@ func NewHandler(s *customerServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
@@ -50,21 +49,21 @@ type newReq struct {
 	Note        *string    `json:"note"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.New(r.Context(), mapToNewInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "New")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type updateReq struct {
@@ -77,39 +76,38 @@ type updateReq struct {
 	Note        *string    `json:"note"`
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	var req updateReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	err = h.service.Update(r.Context(), urlCustomerId, mapToUpdateInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "Update")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	err = h.service.Delete(r.Context(), urlCustomerId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "Delete")
 	}
+
+	return nil
 }
 
 type getResp struct {
@@ -123,20 +121,20 @@ type getResp struct {
 	IsDummy     bool       `json:"is_dummy"`
 }
 
-func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	customer, err := h.service.Get(r.Context(), urlCustomerId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "Get")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetResp(customer))
+
+	return nil
 }
 
 type getStatsResp struct {
@@ -169,20 +167,20 @@ type customerBookingsResp struct {
 	Status            types.BookingStatus      `json:"status"`
 }
 
-func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	customerStats, err := h.service.GetStats(r.Context(), urlCustomerId)
 	if err != nil {
-		httputil.Error(w, http.StatusOK, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "GetStats")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetStatsResp(customerStats))
+
+	return nil
 }
 
 type blacklistReq struct {
@@ -190,39 +188,38 @@ type blacklistReq struct {
 	BlacklistReason *string   `json:"blacklist_reason"`
 }
 
-func (h *Handler) Blacklist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Blacklist(w http.ResponseWriter, r *http.Request) error {
 	var req blacklistReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	err = h.service.Blacklist(r.Context(), urlCustomerId, mapToBlacklistInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "Blacklist")
 	}
+
+	return nil
 }
 
-func (h *Handler) UnBlacklist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UnBlacklist(w http.ResponseWriter, r *http.Request) error {
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid customer id: %s", err.Error()))
-		return
+		return validate.NewError("invalid customer id")
 	}
 
 	err = h.service.UnBlacklist(r.Context(), urlCustomerId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "UnBlacklist")
 	}
+
+	return nil
 }
 
 type getAllResp struct {
@@ -240,14 +237,15 @@ type getAllResp struct {
 	TimesCancelled  int        `json:"times_cancelled"`
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	customers, err := h.service.GetAll(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "GetAll")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetAllResp(customers))
+
+	return nil
 }
 
 type transferBookingsReq struct {
@@ -255,27 +253,28 @@ type transferBookingsReq struct {
 	ToCustomerId   uuid.UUID `json:"to_customer_id"`
 }
 
-func (h *Handler) TransferBookings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) TransferBookings(w http.ResponseWriter, r *http.Request) error {
 	var req transferBookingsReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.TransferBookings(r.Context(), mapToTransferBookingsInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "TransferBookings")
 	}
+
+	return nil
 }
 
-func (h *Handler) GetAllBlacklisted(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAllBlacklisted(w http.ResponseWriter, r *http.Request) error {
 	blacklistedCustomers, err := h.service.GetAllBlacklisted(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return customerServ.ErrStatus.Resolve(err, "GetAllBlacklisted")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetAllResp(blacklistedCustomers))
+
+	return nil
 }

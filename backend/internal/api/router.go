@@ -23,6 +23,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
 	"github.com/miketsu-inc/reservations/frontend/apps/tango"
 )
@@ -46,41 +47,41 @@ type Handlers struct {
 	Middleware        *middleware.Manager
 }
 
-func NewRouter(h *Handlers) *chi.Mux {
-	r := chi.NewRouter()
+func NewRouter(h *Handlers) *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.AllowContentType("application/json"))
 	// r.Use(chiMiddleware.Recoverer)
 
-	r.Route("/api/v1", func(r chi.Router) {
+	r.Route("/api/v1", func(r *httputil.Router) {
 		r.Mount("/auth", h.Auth.Routes())
 		r.Mount("/integrations", h.Integrations.Routes())
 		r.Mount("/users", h.Users.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
-		r.Route("/merchants", func(r chi.Router) {
-			r.Use(h.Middleware.JwtAuthentication)
-			r.Use(h.Middleware.Language)
+		r.Route("/merchants", func(r *httputil.Router) {
+			r.UseFunc(h.Middleware.JwtAuthentication)
+			r.UseFunc(h.Middleware.Language)
 
 			r.Post("/check-url", h.Merchants.CheckUrl)
 		})
-		r.Route("/merchants/{merchantId}", func(r chi.Router) {
-			r.Use(h.Middleware.JwtAuthentication)
-			r.Use(h.Middleware.EmployeeAuthentication)
-			r.Use(h.Middleware.Language)
+		r.Route("/merchants/{merchantId}", func(r *httputil.Router) {
+			r.UseFunc(h.Middleware.JwtAuthentication)
+			r.UseFunc(h.Middleware.EmployeeAuthentication)
+			r.UseFunc(h.Middleware.Language)
 
 			r.Get("/me", h.Merchants.Me)
 
-			r.Group(func(r chi.Router) {
-				r.Use(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner))
+			r.Group(func(r *httputil.Router) {
+				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner))
 
 				r.Delete("/", h.Merchants.Delete)
 				r.Patch("/name", h.Merchants.UpdateName)
 			})
 
-			r.Group(func(r chi.Router) {
-				r.Use(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
+			r.Group(func(r *httputil.Router) {
+				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
 
 				r.Get("/dashboard", h.Merchants.GetDashboard)
 
@@ -114,7 +115,7 @@ func NewRouter(h *Handlers) *chi.Mux {
 	jabulani := jabulaniRouter()
 	tango := tangoRouter()
 
-	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) error {
 		host := r.Host
 
 		if strings.HasPrefix(host, "app.") {
@@ -122,6 +123,8 @@ func NewRouter(h *Handlers) *chi.Mux {
 		} else {
 			tango.ServeHTTP(w, r)
 		}
+
+		return nil
 	})
 
 	return r

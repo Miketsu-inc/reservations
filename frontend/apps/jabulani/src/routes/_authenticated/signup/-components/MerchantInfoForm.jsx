@@ -82,7 +82,7 @@ export default function MerchantInfoForm({ isCompleted }) {
           invalidateLocalStorageAuth(response.status);
           setMerchantUrl({
             valid: false,
-            url: result.error.merchant_url,
+            url: result.error.meta.merchant_url,
           });
         }
       } catch (err) {

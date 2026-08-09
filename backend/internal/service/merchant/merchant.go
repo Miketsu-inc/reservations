@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -67,7 +68,7 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 	}
 
 	if !unique {
-		return ErrMerchantUrlNotUnique{URL: urlName}
+		return apperr.Wrap(ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
 	}
 
 	actor := actor.MustGetFromContext(ctx)
@@ -127,34 +128,26 @@ func (s *Service) GetDashboard(ctx context.Context, date time.Time, period int) 
 	return dashboard, nil
 }
 
-type ErrMerchantUrlNotUnique struct {
-	URL string
-}
-
-func (e ErrMerchantUrlNotUnique) Error() string {
-	return "this merchant url is already used"
-}
-
 type CheckUrlInput struct {
 	Name string
 }
 
-func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (CheckUrlInput, error) {
+func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (string, error) {
 	urlName, err := validate.MerchantNameToUrlName(input.Name)
 	if err != nil {
-		return CheckUrlInput{}, fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error())
+		return "", fmt.Errorf("unexpected error during merchant url name conversion: %w", err)
 	}
 
 	unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
 	if err != nil {
-		return CheckUrlInput{Name: urlName}, err
+		return "", err
 	}
 
 	if !unique {
-		return CheckUrlInput{Name: urlName}, ErrMerchantUrlNotUnique{URL: urlName}
+		return "", apperr.Wrap(ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
 	}
 
-	return CheckUrlInput{Name: urlName}, nil
+	return "", nil
 }
 
 func (s *Service) GetSettings(ctx context.Context) (domain.MerchantSettingsInfo, error) {

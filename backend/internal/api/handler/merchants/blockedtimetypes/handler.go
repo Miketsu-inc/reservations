@@ -18,8 +18,8 @@ func NewHandler(s *blockedtimeServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
@@ -36,21 +36,21 @@ type newReq struct {
 	Icon     string `json:"icon" validate:"max=20"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.NewType(r.Context(), mapToNewTypeInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "NewType")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type updateReq struct {
@@ -60,39 +60,38 @@ type updateReq struct {
 	Icon     string `json:"icon" validate:"max=20"`
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	var req updateReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlBlockedTimeTypeId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError("invalid blocked time type id")
 	}
 
 	err = h.service.UpdateType(r.Context(), urlBlockedTimeTypeId, mapToUpdateTypeInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "UpdateType")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	urlBlockedTimeTypeId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError("invalid blocked time type id")
 	}
 
 	err = h.service.DeleteType(r.Context(), urlBlockedTimeTypeId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "DeleteType")
 	}
+
+	return nil
 }
 
 type getTypesResp struct {
@@ -102,12 +101,13 @@ type getTypesResp struct {
 	Icon     string `json:"icon"`
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	blockedTimeTypes, err := h.service.GetTypes(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "GetTypes")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetTypesResp(blockedTimeTypes))
+
+	return nil
 }

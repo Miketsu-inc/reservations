@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Handler struct {
@@ -23,11 +24,11 @@ func NewHandler(s *merchantServ.Service, m *middleware.Manager) *Handler {
 	return &Handler{service: s, middleware: m}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.Language)
 
 		r.Get("/", h.GetInfo)
 		r.Get("/services", h.GetServices)
@@ -79,21 +80,21 @@ type businessHoursStatusResp struct {
 	NextOpenDay *int    `json:"next_open_day"`
 }
 
-func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	info, err := h.service.GetInfo(r.Context(), urlName)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetInfo")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetInfo(info))
+
+	return nil
 }
 
 type servicesGroupedByCategoryResp struct {
@@ -116,19 +117,21 @@ type serviceResp struct {
 	Sequence        int                       `json:"sequence"`
 }
 
-func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+		return validate.NewError("invalid merchant name")
 	}
 
+	// TODO: this should probably be in the catalog service
 	services, err := h.service.GetServicesGroupedByCategories(r.Context(), urlName)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetServicesGroupedByCategories")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetServicesGroupedByCategories(services))
+
+	return nil
 }
 
 type teamResponse struct {
@@ -140,33 +143,33 @@ type teamResponse struct {
 	PhoneNumber *string            `json:"phone_number"`
 }
 
-func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
+		return validate.NewError("invalid merchant name")
 	}
 
+	// TODO: this should probably be in the team service
 	team, err := h.service.GetTeam(r.Context(), urlName)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetTeam")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetTeam(team))
+
+	return nil
 }
 
-func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
 	businessHours, err := h.service.GetNormalizedBusinessHoursPublic(r.Context(), merchantServ.GetNormalizedBusinessHoursPublicInput{
@@ -174,11 +177,12 @@ func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Requ
 		LocationId:  urlLocationId,
 	})
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetNormalizedBusinessHoursPublic")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetNormalizedBusinessHoursResp(businessHours))
+
+	return nil
 }
 
 type getServiceDetailsResp struct {
@@ -202,33 +206,32 @@ type phaseResp struct {
 	PhaseType types.ServicePhaseType `json:"phase_type"`
 }
 
-func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
+	// TODO: this should probably be in the catalog service
 	serviceDetails, err := h.service.GetServiceDetails(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetServiceDetails")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetServiceDetailsResp(serviceDetails))
+
+	return nil
 }
 
 type getSummaryResp struct {
@@ -242,25 +245,22 @@ type getSummaryResp struct {
 	EMployeeLastName  *string                   `json:"employee_last_name"`
 }
 
-func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
 	var urlServiceId *int
 	if sId := r.URL.Query().Get("serviceId"); sId != "" {
 		parsedId, err := strconv.Atoi(sId)
 		if err != nil {
-			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %w", err))
-			return
+			return validate.NewError("invalid service id")
 		}
 		urlServiceId = &parsedId
 	}
@@ -269,18 +269,19 @@ func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	if eId := r.URL.Query().Get("employeeId"); eId != "" {
 		parsedId, err := strconv.Atoi(eId)
 		if err != nil {
-			httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid employeeId %s", err.Error()))
+			return validate.NewError("invalid employee id")
 		}
 		urlEmployeeId = &parsedId
 	}
 
 	summaryInfo, err := h.service.GetSummary(r.Context(), urlName, urlLocationId, urlServiceId, urlEmployeeId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetSummary")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetSummaryResp(summaryInfo))
+
+	return nil
 }
 
 type getAvailabilityResp struct {
@@ -290,45 +291,41 @@ type getAvailabilityResp struct {
 	Afternoon   []string `json:"afternoon"`
 }
 
-func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
 	urlStartDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
-		return
+		return validate.NewError(fmt.Sprintf("invalid start date format: %s", err.Error()))
 	}
 
 	urlEndDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date format: %s", err.Error()))
-		return
+		return validate.NewError(fmt.Sprintf("invalid end date format: %s", err.Error()))
 	}
 
 	availability, err := h.service.GetAvailability(r.Context(), urlName, urlServiceId, urlLocationId, urlStartDate, urlEndDate)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetAvailability")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetAvailabilityResp(availability))
+
+	return nil
 }
 
 type getNextAvailabilityResp struct {
@@ -338,33 +335,31 @@ type getNextAvailabilityResp struct {
 	Employee            *int       `json:"employee"`
 }
 
-func (h *Handler) GetNextAvailability(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetNextAvailability(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
 	nextAvailability, err := h.service.GetNextAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetNextAvailability")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetNextAvailabilityResp(nextAvailability))
+
+	return nil
 }
 
 type getDisabledDaysResp struct {
@@ -373,31 +368,29 @@ type getDisabledDaysResp struct {
 	MaxDate    time.Time `json:"max_date"`
 }
 
-func (h *Handler) GetDisabledDays(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetDisabledDays(w http.ResponseWriter, r *http.Request) error {
 	urlName := chi.URLParam(r, "merchantName")
 
 	if urlName == "" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid merchant name"))
-		return
+		return validate.NewError("invalid merchant name")
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid serviceId: %s", err.Error()))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid locationId: %s", err.Error()))
-		return
+		return validate.NewError("invalid location id")
 	}
 
 	disabledDays, err := h.service.GetDisabledDays(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetDisabledDays")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetDisabledDaysResp(disabledDays))
+
+	return nil
 }

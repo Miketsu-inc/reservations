@@ -80,7 +80,7 @@ func NewAccessToken(userID uuid.UUID) (string, error) {
 
 	token, err := new([]byte(config.LoadEnvVars().JWT_ACCESS_SECRET), claims)
 	if err != nil {
-		return "", fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
+		return "", fmt.Errorf("jwt: error creating new access token: %w", err)
 	}
 
 	return token, nil
@@ -99,7 +99,7 @@ func NewRefreshToken(userID uuid.UUID, refreshVersion int) (string, error) {
 
 	token, err := new([]byte(config.LoadEnvVars().JWT_REFRESH_SECRET), claims)
 	if err != nil {
-		return "", fmt.Errorf("unexpected error when creating jwt token: %s", err.Error())
+		return "", fmt.Errorf("jwt: error creating new refresh token: %w", err)
 	}
 
 	return token, nil

@@ -1,7 +1,6 @@
 package products
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -20,8 +19,8 @@ func NewHandler(s *productServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
@@ -41,21 +40,21 @@ type newReq struct {
 	CurrentAmount int              `json:"current_amount" validate:"min=0,max=10000000000"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.New(r.Context(), mapToNewInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return productServ.ErrStatus.Resolve(err, "New")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type updateReq struct {
@@ -68,39 +67,38 @@ type updateReq struct {
 	CurrentAmount int              `json:"current_amount" validate:"min=0,max=10000000000"`
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	var req updateReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlProductId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid product id"))
-		return
+		return validate.NewError("invalid product id")
 	}
 
 	err = h.service.Update(r.Context(), urlProductId, mapToUpdateInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return productServ.ErrStatus.Resolve(err, "Update")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	urlProductId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid product id"))
-		return
+		return validate.NewError("invalid product id")
 	}
 
 	err = h.service.Delete(r.Context(), urlProductId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return productServ.ErrStatus.Resolve(err, "Delete")
 	}
+
+	return nil
 }
 
 type getAllResp struct {
@@ -120,14 +118,13 @@ type servicesForProdcutResp struct {
 	Color string `json:"color"`
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	products, err := h.service.GetAll(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return productServ.ErrStatus.Resolve(err, "GetAll")
 	}
 
-	result := mapToGetAllResp(products)
+	httputil.Success(w, http.StatusOK, mapToGetAllResp(products))
 
-	httputil.Success(w, http.StatusOK, result)
+	return nil
 }

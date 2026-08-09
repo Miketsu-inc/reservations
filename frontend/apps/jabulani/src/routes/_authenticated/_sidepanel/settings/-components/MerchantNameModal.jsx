@@ -26,7 +26,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
           setMerchantUrl({ valid: true, url: result.data.merchant_url });
         } else {
           invalidateLocalStorageAuth(response.status);
-          setMerchantUrl({ valid: false, url: result.error.merchant_url });
+          setMerchantUrl({ valid: false, url: result.error.meta.merchant_url });
         }
       } catch (err) {
         setServerError(err.message);

@@ -4,9 +4,10 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 func RandomString(n int) (string, error) {
@@ -20,16 +21,16 @@ func RandomString(n int) (string, error) {
 func ValidateOauthState(r *http.Request) error {
 	state := r.URL.Query().Get("state")
 	if state == "" {
-		return fmt.Errorf("missing state in callback")
+		return validate.NewError("oauth: missing state in callback")
 	}
 
 	stateCookie, err := r.Cookie("oauth-state")
 	if err != nil {
-		return fmt.Errorf("missing oauth-sate cookie")
+		return validate.NewError("oauth: missing oauth-sate cookie")
 	}
 
 	if subtle.ConstantTimeCompare([]byte(state), []byte(stateCookie.Value)) != 1 {
-		return fmt.Errorf("invalid oauth state")
+		return validate.NewError("oauth: invalid state")
 	}
 
 	return nil

@@ -3,7 +3,6 @@ package locations
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -18,8 +17,8 @@ func NewHandler(s *merchantServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	// TODO: temp until signup flow is figured out?
 	r.Post("/", h.New)
@@ -39,19 +38,19 @@ type newReq struct {
 	IsActive          bool           `json:"is_active"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.NewLocation(r.Context(), mapToNewLocationInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "NewLocation")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }

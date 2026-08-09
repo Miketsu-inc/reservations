@@ -36,36 +36,40 @@ type meResp struct {
 	Role       types.EmployeeRole `json:"role"`
 }
 
-func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {
 	actor := actor.MustGetFromContext(r.Context())
 
 	httputil.Success(w, http.StatusOK, mapToMeResp(actor))
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	err := h.service.Delete(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadGateway, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "Delete")
 	}
+
+	return nil
 }
 
 type updateNameReq struct {
 	Name string `json:"name" validate:"required"`
 }
 
-func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) error {
 	var req updateNameReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
+		return err
 	}
 
 	err := h.service.UpdateName(r.Context(), mapToUpdateNameInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadGateway, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "UpdateName")
 	}
+
+	return nil
 }
 
 type getDashboardResp struct {
@@ -121,26 +125,25 @@ type revenueStatResp struct {
 	Day   time.Time `json:"day"`
 }
 
-func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) error {
 	urlDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("date"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid date: %s", err.Error()))
-		return
+		return validate.NewError(fmt.Sprintf("invalid date: %s", err.Error()))
 	}
 
 	urlPeriod, err := strconv.Atoi(r.URL.Query().Get("period"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid period: %s", err.Error()))
-		return
+		return validate.NewError("invalid period")
 	}
 
 	dashboard, err := h.service.GetDashboard(r.Context(), urlDate, urlPeriod)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetDashboard")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetDashboardResp(dashboard))
+
+	return nil
 }
 
 type checkUrlReq struct {
@@ -151,33 +154,21 @@ type checkUrlResp struct {
 	Name string `json:"merchant_name"`
 }
 
-func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
 	var req checkUrlReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	merchantUrl, err := h.service.CheckUrl(r.Context(), mapToCheckUrlInput(req))
 	if err != nil {
-		switch e := err.(type) {
-		case merchantServ.ErrMerchantUrlNotUnique:
-			httputil.WriteJSON(w, http.StatusConflict, map[string]map[string]string{
-				"error": {
-					"message":      err.Error(),
-					"merchant_url": e.URL},
-			})
-			return
-
-		default:
-			httputil.Error(w, http.StatusBadRequest, err)
-			return
-		}
+		return merchantServ.ErrStatus.Resolve(err, "CheckUrl")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToCheckUrlResp(merchantUrl))
 
+	return nil
 }
 
 type getSettingsResp struct {
@@ -209,14 +200,15 @@ type timeSlotResp struct {
 	EndTime   string `json:"end_time"`
 }
 
-func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) error {
 	settings, err := h.service.GetSettings(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetSettings")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetSettingsResp(settings))
+
+	return nil
 }
 
 type updateSettingsReq struct {
@@ -233,35 +225,35 @@ type updateSettingsReq struct {
 	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
 }
 
-func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) error {
 	var req updateSettingsReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	updateSettingsInput, err := mapToUpdateSettingsInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.UpdateSettings(r.Context(), updateSettingsInput)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "UpdateSettings")
 	}
+
+	return nil
 }
 
-func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) error {
 	businessHours, err := h.service.GetNormalizedBusinessHours(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetNormalizedBusinessHours")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetNormalizedBusinessHoursResp(businessHours))
+
+	return nil
 }
 
 type getPreferencesResp struct {
@@ -274,14 +266,15 @@ type getPreferencesResp struct {
 	TimeFrequency      string `json:"time_frequency"`
 }
 
-func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) error {
 	preferences, err := h.service.GetPreferences(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetPreferences")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetPreferencesResp(preferences))
+
+	return nil
 }
 
 type updatePreferencesReq struct {
@@ -294,25 +287,24 @@ type updatePreferencesReq struct {
 	TimeFrequency      string `json:"time_frequency"`
 }
 
-func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) error {
 	var req updatePreferencesReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	updatePreferencesInput, err := mapToUpdatePreferencesInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.UpdatePreferences(r.Context(), updatePreferencesInput)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "UpdatePreferences")
 	}
+
+	return nil
 }
 
 type getTeamMembersForCalendarResp struct {
@@ -321,14 +313,16 @@ type getTeamMembersForCalendarResp struct {
 	LastName  string `json:"last_name"`
 }
 
-func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) error {
+	// TODO: should be in team service
 	teamMembers, err := h.service.GetTeamForCalendar(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetTeamForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetTeamMembersForCalendarResp(teamMembers))
+
+	return nil
 }
 
 type getServicesForCalendarResp struct {
@@ -348,14 +342,16 @@ type calendarServiceResp struct {
 	MaxParticipants int                       `json:"max_participants"`
 }
 
-func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) error {
+	// TODO: should be in catalog service
 	services, err := h.service.GetServicesForCalendar(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetServicesForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetServicesForCalendarResp(services))
+
+	return nil
 }
 
 type getCustomersForCalendarResp struct {
@@ -369,14 +365,16 @@ type getCustomersForCalendarResp struct {
 	LastVisited *time.Time `json:"last_visited"`
 }
 
-func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) error {
+	// TODO: should be in customer service
 	customers, err := h.service.GetCustomersForCalendar(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetCustomersForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetCustomersForCalendarResp(customers))
+
+	return nil
 }
 
 type getCalendarEventsResp struct {
@@ -423,25 +421,27 @@ type blockedTime struct {
 	BlockedTypeId *int      `json:"blocked_type_id"`
 }
 
-func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
 	start := r.URL.Query().Get("start")
 	end := r.URL.Query().Get("end")
 
 	bookings, err := h.service.GetCalendarEvents(r.Context(), start, end)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return merchantServ.ErrStatus.Resolve(err, "GetCalendarEvents")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetCalendarEventsResp(bookings))
+
+	return nil
 }
 
-func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) error {
 	url, err := h.extcalendarServ.GoogleCalendar(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return externalcalendarServ.ErrStatus.Resolve(err, "GoogleCalendar")
 	}
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	return nil
 }

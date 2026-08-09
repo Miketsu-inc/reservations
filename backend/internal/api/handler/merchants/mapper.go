@@ -114,9 +114,9 @@ func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
 	}
 }
 
-func mapToCheckUrlResp(in merchantServ.CheckUrlInput) checkUrlResp {
+func mapToCheckUrlResp(in string) checkUrlResp {
 	return checkUrlResp{
-		Name: in.Name,
+		Name: in,
 	}
 }
 

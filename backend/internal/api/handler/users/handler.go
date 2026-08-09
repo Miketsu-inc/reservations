@@ -1,12 +1,10 @@
 package users
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
@@ -28,12 +26,12 @@ func NewHandler(s *userServ.Service, b *bookingServ.Service, a *authServ.Service
 	return &Handler{service: s, bookingServ: b, authServ: a, middleware: m}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.JwtAuthentication)
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.JwtAuthentication)
+		r.UseFunc(h.middleware.Language)
 
 		r.Put("/", h.Edit)
 		r.Delete("/", h.Delete)
@@ -52,29 +50,30 @@ type editReq struct {
 	Email       string `json:"email" validate:"required,email"`
 }
 
-func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) error {
 	var req editReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.Edit(r.Context(), mapToEditInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return userServ.ErrStatus.Resolve(err, "Edit")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	err := h.service.Delete(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return userServ.ErrStatus.Resolve(err, "Delete")
 	}
 
 	jwt.DeleteJwts(w)
+
+	return nil
 }
 
 type getBookingsResp struct {
@@ -99,33 +98,31 @@ type bookingForUser struct {
 	EmployeeLastName  *string                  `json:"employee_last_name"`
 }
 
-func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 	urlStatus := r.URL.Query().Get("status")
 	if urlStatus != "upcoming" && urlStatus != "completed" && urlStatus != "cancelled" {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid status query parameter"))
-		return
+		return validate.NewError("invalid status query parameter")
 	}
 
 	urlCursor := r.URL.Query().Get("cursor")
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid limit query parameter"))
-		return
+		return validate.NewError("invalid limit query parameter")
 	}
 
 	if limit > 10 {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("limit cannot be higher than 10"))
-		return
+		return validate.NewError("limit cannot be higher than 10")
 	}
 
 	bookings, err := h.bookingServ.GetForUser(r.Context(), urlStatus, urlCursor, limit)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "GetForUser")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetBookingsResp(bookings))
+
+	return nil
 }
 
 type updatePasswordReq struct {
@@ -133,20 +130,20 @@ type updatePasswordReq struct {
 	NewPassword string `json:"new_password"`
 }
 
-func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) error {
 	var req updatePasswordReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	tokens, err := h.authServ.UpdatePassword(r.Context(), mapToUpdatePasswordInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return authServ.ErrStatus.Resolve(err, "UpdatePassword")
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
+
+	return nil
 }

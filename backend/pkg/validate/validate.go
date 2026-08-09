@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"golang.org/x/text/runes"
@@ -20,21 +21,23 @@ import (
 
 var validate = validator.New(validator.WithRequiredStructEnabled())
 
+var ErrValidation = &apperr.Error{Code: "validation_error", Message: "Validation failed"}
+
 // Parse json from the request's body then validate the parsed struct and return nil or the first error
 func ParseStruct(r *http.Request, data any) error {
 	if err := httputil.ParseJSON(r, &data); err != nil {
-		return fmt.Errorf("unexpected error during json parsing: %s", err.Error())
+		return NewError(fmt.Sprintf("Invalid request body: %s", err.Error()))
 	}
 
-	if err := Struct(data); err != nil {
-		return err
+	if err := validateStruct(data); err != nil {
+		return NewError(err.Error())
 	}
 
 	return nil
 }
 
 // Validate a struct and return nil or the first error
-func Struct(s any) error {
+func validateStruct(s any) error {
 	err := validate.Struct(s)
 	if err != nil {
 
@@ -185,4 +188,12 @@ func sanitize(s interface{}) (interface{}, error) {
 		}
 	}
 	return sanitizedData.Interface(), nil
+}
+
+func NewError(message string) *apperr.APIError {
+	return &apperr.APIError{
+		Status:  http.StatusBadRequest,
+		Err:     ErrValidation,
+		Message: message,
+	}
 }

@@ -1,7 +1,6 @@
 package bookings
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -23,13 +22,13 @@ func NewHandler(s *bookingServ.Service, m *middleware.Manager) *Handler {
 	return &Handler{service: s, middleware: m}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.JwtAuthentication)
-		r.Use(h.middleware.EmployeeAuthentication)
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.JwtAuthentication)
+		r.UseFunc(h.middleware.EmployeeAuthentication)
+		r.UseFunc(h.middleware.Language)
 
 		r.Post("/", h.CreateByMerchant)
 		r.Patch("/{id}", h.UpdateByMerchant)
@@ -66,27 +65,26 @@ type recurringRuleReq struct {
 	Until     string   `json:"until"`
 }
 
-func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) error {
 	var req createByMerchantReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	input, err := mapToCreateByMerchantInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.CreateByMerchant(r.Context(), input)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "CreateByMerchant")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 // validate:"required" on MerchantNote would fail
@@ -100,31 +98,29 @@ type updateByMerchantReq struct {
 	UpdateAllFuture bool                `json:"update_all_future"`
 }
 
-func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateByMerchant(w http.ResponseWriter, r *http.Request) error {
 	var req updateByMerchantReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	input, err := mapToUpdateByMerchantInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.UpdateByMerchant(r.Context(), urlId, input)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "UpdateByMerchant")
 	}
+
+	return nil
 }
 
 type cancelByMerchantReq struct {
@@ -132,55 +128,51 @@ type cancelByMerchantReq struct {
 	CancelFuture       bool   `json:"cancel_future"`
 }
 
-func (h *Handler) CancelByMerchant(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CancelByMerchant(w http.ResponseWriter, r *http.Request) error {
 	var req cancelByMerchantReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	err = h.service.CancelByMerchant(r.Context(), urlId, mapToCancelByMerchantInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "CancelByMerchant")
 	}
+
+	return nil
 }
 
 type updatePaticipantStatusReq struct {
 	Status types.BookingStatus `json:"status"`
 }
 
-func (h *Handler) UpdateParticipantStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateParticipantStatus(w http.ResponseWriter, r *http.Request) error {
 	var req updatePaticipantStatusReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlBookingId, err := strconv.Atoi(chi.URLParam(r, "b_id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	urlParticipantId, err := strconv.Atoi(chi.URLParam(r, "p_id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid participant id: %w", err))
-		return
+		return validate.NewError("invalid participant id")
 	}
 
 	err = h.service.UpdateParticipantStatus(r.Context(), urlBookingId, urlParticipantId, mapToUpdateParticipantStatusInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "UpdateParticipantStatus")
 	}
 
+	return nil
 }

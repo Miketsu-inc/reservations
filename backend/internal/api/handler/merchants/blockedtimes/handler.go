@@ -1,7 +1,6 @@
 package blockedtimes
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,8 +18,8 @@ func NewHandler(s *blockedtimeServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
@@ -38,27 +37,26 @@ type newReq struct {
 	AllDay        bool   `json:"all_day"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	input, err := mapToNewInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.New(r.Context(), input)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "New")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type updateReq struct {
@@ -71,48 +69,45 @@ type updateReq struct {
 	AllDay        bool   `json:"all_day"`
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	var req updateReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	UrlBlockedTimeId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError("invalid blocked time id")
 	}
 
 	if UrlBlockedTimeId != req.Id {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid blocked time id"))
-		return
+		return validate.NewError("invalid blocked time id")
 	}
 
 	input, err := mapToUpdateInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err = h.service.Update(r.Context(), input)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "Update")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	UrlBlockedTimeId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError("invalid blocked time id")
 	}
 
 	err = h.service.Delete(r.Context(), UrlBlockedTimeId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return blockedtimeServ.ErrStatus.Resolve(err, "Delete")
 	}
+
+	return nil
 }

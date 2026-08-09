@@ -1,7 +1,6 @@
 package bookings
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,12 +23,12 @@ func NewHandler(s *bookingServ.Service, m *middleware.Manager) *Handler {
 	return &Handler{service: s, middleware: m}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.middleware.JwtAuthentication)
-		r.Use(h.middleware.Language)
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.JwtAuthentication)
+		r.UseFunc(h.middleware.Language)
 
 		r.Post("/", h.CreateByCustomer)
 		r.Delete("/{id}", h.CancelByCustomer)
@@ -49,27 +48,26 @@ type createBookingByCustomerReq struct {
 	BookingId *int `json:"booking_id"`
 }
 
-func (h *Handler) CreateByCustomer(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateByCustomer(w http.ResponseWriter, r *http.Request) error {
 	var req createBookingByCustomerReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	input, err := mapToCreateByCustomerInput(req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.CreateByCustomer(r.Context(), input)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "CreateByCustomer")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 // TODO: why do we need these? a bookingId in the url should be fine as of now
@@ -78,30 +76,28 @@ type cancelByCustomerReq struct {
 	MerchantName string `json:"merchant_name" validate:"required"`
 }
 
-func (h *Handler) CancelByCustomer(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CancelByCustomer(w http.ResponseWriter, r *http.Request) error {
 	var req cancelByCustomerReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	if urlId != req.BookingId {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id"))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	err = h.service.CancelByCustomer(r.Context(), mapToCancelByCustomerInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "CancelByCustomer")
 	}
+
+	return nil
 }
 
 type getByCustomerResp struct {
@@ -116,18 +112,18 @@ type getByCustomerResp struct {
 	Status            types.BookingStatus      `json:"status"`
 }
 
-func (h *Handler) GetByCustomer(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetByCustomer(w http.ResponseWriter, r *http.Request) error {
 	urlId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid booking id: %w", err))
-		return
+		return validate.NewError("invalid booking id")
 	}
 
 	publicBooking, err := h.service.GetByCustomer(r.Context(), urlId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return bookingServ.ErrStatus.Resolve(err, "GetByCustomer")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetByCustomerResp(publicBooking))
+
+	return nil
 }

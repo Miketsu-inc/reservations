@@ -9,16 +9,23 @@ import (
 	"github.com/go-chi/chi/v5"
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
+var ErrInvalidRefreshVersion = &apperr.Error{Code: "invalid_refresh_version", Message: "invalid refresh version"}
+var ErrRefreshTokenVersionMismatch = &apperr.Error{Code: "refresh_token_version_mismatch", Message: "refresh token version does not match"}
+var ErrAuthenticationRequired = &apperr.Error{Code: "authentication_required", Message: "authentication is required for this resource"}
+
 // Jwt authentication middleware. Uses refresh and access tokens
-func (m *Manager) JwtAuthentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) JwtAuthentication(next http.Handler) httputil.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		// try to verify request with access token
@@ -26,48 +33,70 @@ func (m *Manager) JwtAuthentication(next http.Handler) http.Handler {
 		if err != nil {
 			// if access token could not be found in cookies it means it's either expired or did not exist
 			// if it is found but invalid unauthorized status can be returned
-			if !errors.Is(err, ErrJwtNotFound) {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
-				return
+			if !errors.Is(err, ErrTokenMissing) {
+				if errors.Is(err, ErrInvalidAccessToken) {
+					return &apperr.APIError{
+						Status: http.StatusUnauthorized,
+						Err:    ErrInvalidAccessToken,
+						Cause:  err,
+					}
+				}
+
+				return err
 			}
 
 			// try to verify request with refresh token
 			claims, err = verifyRequest(r, jwt.RefreshToken, getTokenFromCookie)
 			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("%v", err.Error()))
-				return
+				if errors.Is(err, ErrTokenMissing) {
+					return &apperr.APIError{
+						Status: http.StatusUnauthorized,
+						Err:    ErrAuthenticationRequired,
+						Cause:  err,
+					}
+				} else if errors.Is(err, ErrInvalidRefreshToken) {
+					return &apperr.APIError{
+						Status: http.StatusUnauthorized,
+						Err:    ErrInvalidRefreshToken,
+						Cause:  err,
+					}
+				}
+
+				return err
 			}
 
 			userID, err := getUserIdFromClaims(claims)
 			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims: %s", err.Error()))
-				return
+				return err
 			}
 
 			dbRefreshVersion, err := m.userRepo.GetUserJwtRefreshVersion(ctx, userID)
 			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("unexpected error when reading jwt refresh version %s", err.Error()))
-				return
+				return err
 			}
 
-			tokenRefreshVersion, err := getRefreshVersionFromClaims(claims)
-			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("unexpected error when parsing refresh version: %s", err.Error()))
-				return
+			tokenRefreshVersion, ok := getRefreshVersionFromClaims(claims)
+			if !ok {
+				return &apperr.APIError{
+					Status: http.StatusUnauthorized,
+					Err:    ErrInvalidRefreshVersion,
+				}
 			}
 
 			// check if refresh version matches in the resfresh token and database
 			// if they match a new access token can be issued
 			if dbRefreshVersion != tokenRefreshVersion {
 				jwt.DeleteJwts(w)
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("refresh token version does not match"))
-				return
+
+				return &apperr.APIError{
+					Status: http.StatusUnauthorized,
+					Err:    ErrRefreshTokenVersionMismatch,
+				}
 			}
 
 			token, err := jwt.NewAccessToken(userID)
 			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not create new access jwt"))
-				return
+				return err
 			}
 
 			jwt.SetJwtCookie(w, jwt.AccessToken, token)
@@ -75,32 +104,40 @@ func (m *Manager) JwtAuthentication(next http.Handler) http.Handler {
 
 		userID, err := getUserIdFromClaims(claims)
 		if err != nil {
-			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("could not parse jwt claims: %s", err.Error()))
-			return
+			return err
 		}
 
 		ctx = jwt.SetUserIdInContext(ctx, userID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+
+		return nil
+	}
 }
 
-func (m *Manager) EmployeeAuthentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var ErrUserNotMerchantEmployee = &apperr.Error{Code: "user_not_merchant_employee", Message: "user is not a member of this merchant's team"}
+
+func (m *Manager) EmployeeAuthentication(next http.Handler) httputil.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		merchantId, err := uuid.Parse(chi.URLParam(r, "merchantId"))
 		if err != nil {
-			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("invalid merchantId: %s", err.Error()))
-			return
+			return validate.NewError("invalid merchant id")
 		}
 
 		userId := jwt.MustGetUserIDFromContext(r.Context())
 
 		authInfo, err := m.userRepo.GetEmployeeByUser(ctx, merchantId, userId)
 		if err != nil {
-			httputil.Error(w, http.StatusUnauthorized, fmt.Errorf("user is not a team member for this merchant"))
-			return
+			if errors.Is(err, pgx.ErrNoRows) {
+				return &apperr.APIError{
+					Status: http.StatusUnauthorized,
+					Err:    ErrUserNotMerchantEmployee,
+				}
+			}
+
+			return err
 		}
 
 		ctx = actor.SetMerchantIdInContext(ctx, merchantId)
@@ -109,41 +146,46 @@ func (m *Manager) EmployeeAuthentication(next http.Handler) http.Handler {
 		ctx = actor.SetEmployeeRoleInContext(ctx, authInfo.Role)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+
+		return nil
+	}
 }
 
 func getUserIdFromClaims(claims jwtlib.MapClaims) (uuid.UUID, error) {
 	uuidStr, err := claims.GetSubject()
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("jwt: error parsing claims: %w", err)
 	}
 
 	userID, err := uuid.Parse(uuidStr)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("jwt: error parsing claims: %w", err)
 	}
 
 	return userID, nil
 }
 
-func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, error) {
+func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, bool) {
 	val, ok := claims["refresh_version"]
 	if !ok {
-		return 0, nil
+		return 0, false
 	}
 
 	switch refreshVersion := val.(type) {
 	case float64:
-		return int(refreshVersion), nil
+		return int(refreshVersion), true
 
 	case json.Number:
 		val, _ := refreshVersion.Float64()
 
-		return int(val), nil
+		return int(val), true
 	}
 
-	return 0, nil
+	return 0, false
 }
+
+var ErrInvalidAccessToken = &apperr.Error{Code: "invalid_access_token", Message: "invalid access token"}
+var ErrInvalidRefreshToken = &apperr.Error{Code: "invalid_refresh_token", Message: "invalid refresh token"}
 
 // parse and validate jwt, returning the claims if valid
 func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, error) {
@@ -154,23 +196,36 @@ func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, e
 		case jwt.RefreshToken:
 			return []byte(config.LoadEnvVars().JWT_REFRESH_SECRET), nil
 		default:
-			assert.Never("jwt token type can be either refresh or access", tokenType)
-			return "", fmt.Errorf("jwt token type can be either refresh or access")
+			return "", fmt.Errorf("jwt: unexpected token type: %v", tokenType)
 		}
 	})
-
 	if err != nil {
-		return nil, err
+		switch tokenType {
+		case jwt.AccessToken:
+			return nil, apperr.Wrap(ErrInvalidAccessToken, err)
+		case jwt.RefreshToken:
+			return nil, apperr.Wrap(ErrInvalidRefreshToken, err)
+		default:
+			return nil, err
+		}
 	}
 
-	if claims, ok := token.Claims.(jwtlib.MapClaims); ok && token.Valid {
-		return claims, nil
+	claims, ok := token.Claims.(jwtlib.MapClaims)
+	if !ok || !token.Valid {
+		switch tokenType {
+		case jwt.AccessToken:
+			return nil, ErrInvalidAccessToken
+		case jwt.RefreshToken:
+			return nil, ErrInvalidRefreshToken
+		default:
+			return nil, fmt.Errorf("jwt: invalid token")
+		}
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	return claims, nil
 }
 
-var ErrJwtNotFound = errors.New("jwt token could not be found")
+var ErrTokenMissing = errors.New("jwt: token is missing")
 
 // check if a token is sent with the request
 func verifyRequest(r *http.Request, tokenType jwt.JwtType, findTokenFns ...func(r *http.Request, tokenType jwt.JwtType) string) (jwtlib.MapClaims, error) {
@@ -183,7 +238,7 @@ func verifyRequest(r *http.Request, tokenType jwt.JwtType, findTokenFns ...func(
 		}
 	}
 	if tokenString == "" {
-		return nil, ErrJwtNotFound
+		return nil, ErrTokenMissing
 	}
 
 	return verifyToken(tokenString, tokenType)

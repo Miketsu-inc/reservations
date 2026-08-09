@@ -5,13 +5,14 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
+	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"golang.org/x/text/language"
 )
 
 // Language middleware that puts the language tag in the context
 // always should be called after the authentication middleware
-func (m *Manager) Language(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Language(next http.Handler) httputil.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		var langTag language.Tag
@@ -30,5 +31,7 @@ func (m *Manager) Language(next http.Handler) http.Handler {
 
 		ctx = lang.SetLangInContext(ctx, langTag)
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+
+		return nil
+	}
 }

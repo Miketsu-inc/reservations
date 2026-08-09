@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,8 +21,8 @@ func NewHandler(s *catalogServ.Service) *Handler {
 	return &Handler{service: s}
 }
 
-func (h *Handler) Routes() chi.Router {
-	r := chi.NewRouter()
+func (h *Handler) Routes() *httputil.Router {
+	r := httputil.NewRouter()
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
@@ -79,21 +78,21 @@ type connectedProductsReq struct {
 	AmountUsed int `json:"amount_used" validate:"min=0,max=1000000"`
 }
 
-func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err := h.service.New(r.Context(), mapToNewInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "New")
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+	return nil
 }
 
 type updateReq struct {
@@ -121,44 +120,42 @@ type phaseReq struct {
 	PhaseType types.ServicePhaseType `json:"phase_type" validate:"required,eq=wait|eq=active"`
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	var req updateReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	if urlServiceId != req.Id {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	err = h.service.Update(r.Context(), mapToUpdateInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Update")
 	}
+
+	return nil
 }
 
-func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	err = h.service.Delete(r.Context(), urlServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Delete")
 	}
+
+	return nil
 }
 
 type getResp struct {
@@ -187,20 +184,20 @@ type productResp struct {
 	AmountUsed int    `json:"amount_used"`
 }
 
-func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	service, err := h.service.Get(r.Context(), urlServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Get")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetResp(service))
+
+	return nil
 }
 
 type updateServiceProductReq struct {
@@ -208,53 +205,52 @@ type updateServiceProductReq struct {
 	UsedProducts []connectedProductsReq `json:"used_products" validate:"required"`
 }
 
-func (h *Handler) UpdateServiceProduct(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateServiceProduct(w http.ResponseWriter, r *http.Request) error {
 	var req updateServiceProductReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	err = h.service.UpdateServiceProduct(r.Context(), urlServiceId, mapToUpdateServiceProductInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "UpdateServiceProduct")
 	}
+
+	return nil
 }
 
-func (h *Handler) Activate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Activate(w http.ResponseWriter, r *http.Request) error {
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	err = h.service.Activate(r.Context(), urlServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Activate")
 	}
+
+	return nil
 }
 
-func (h *Handler) Deactivate(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Deactivate(w http.ResponseWriter, r *http.Request) error {
 	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, fmt.Errorf("invalid service id"))
-		return
+		return validate.NewError("invalid service id")
 	}
 
 	err = h.service.Deactivate(r.Context(), urlServiceId)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Deactivate")
 	}
+
+	return nil
 }
 
 type getAllResp struct {
@@ -282,14 +278,15 @@ type serviceResp struct {
 	Phases          []phaseReq        `json:"phases"`
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	services, err := h.service.GetAll(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "GetAll")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetAllResp(services))
+
+	return nil
 }
 
 type reorderReq struct {
@@ -297,20 +294,20 @@ type reorderReq struct {
 	Services   []int `json:"services" validate:"required"`
 }
 
-func (h *Handler) Reorder(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Reorder(w http.ResponseWriter, r *http.Request) error {
 	var req reorderReq
 
 	err := validate.ParseStruct(r, &req)
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return err
 	}
 
 	err = h.service.Reorder(r.Context(), mapToReorderInput(req))
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "Reorder")
 	}
+
+	return nil
 }
 
 type getFormOptionsResp struct {
@@ -332,12 +329,13 @@ type serviceCategoryResp struct {
 	Sequence   int       `json:"sequence"`
 }
 
-func (h *Handler) GetFormOptions(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetFormOptions(w http.ResponseWriter, r *http.Request) error {
 	formOptions, err := h.service.GetFormOptions(r.Context())
 	if err != nil {
-		httputil.Error(w, http.StatusBadRequest, err)
-		return
+		return catalogServ.ErrStatus.Resolve(err, "GetFormOptions")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetFormOptionsResp(formOptions))
+
+	return nil
 }
