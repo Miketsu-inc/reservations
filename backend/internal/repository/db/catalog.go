@@ -198,7 +198,7 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 				'description', s.description,
 				'color', s.color,
 				'total_duration', s.total_duration,
-				'price', s.price_per_person,
+				'price_per_person', s.price_per_person,
 				'price_type', s.price_type,
 				'is_active', s.is_active,
 				'sequence', s.sequence,
@@ -250,6 +250,8 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 	if len(servicesGroupByCategory) == 0 {
 		servicesGroupByCategory = []domain.ServicesGroupedByCategory{}
 	}
+
+	fmt.Println(servicesGroupByCategory[0].Services[0].Price)
 
 	return servicesGroupByCategory, nil
 }

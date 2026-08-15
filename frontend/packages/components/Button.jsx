@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 const Button = forwardRef(function Button(
   {
     children,
+    childSide = "left",
     name,
     type,
     styles,
@@ -43,7 +44,10 @@ const Button = forwardRef(function Button(
           <LoaderIcon styles="-ml-1 mr-3 h-5 w-5" />
         </div>
       ) : children ? (
-        <div className="flex items-center justify-center">
+        <div
+          className={`flex ${childSide == "right" ? "flex-row-reverse" : ""}
+            items-center justify-center`}
+        >
           <span>{children}</span>
           <span>{buttonText}</span>
         </div>

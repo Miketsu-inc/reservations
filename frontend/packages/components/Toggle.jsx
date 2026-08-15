@@ -15,6 +15,7 @@ export function Toggle({
   onPressedChange,
   defaultPressed = false,
   disabled = false,
+  badgeText = null,
   children,
 }) {
   const group = useContext(ToggleGroupContext);
@@ -55,6 +56,20 @@ export function Toggle({
       }}
     >
       {children}
+      {badgeText !== null && (
+        <span
+          className={`ml-2 inline-flex items-center justify-center rounded-full
+          px-2 py-1 text-sm leading-none font-bold transition-colors
+          duration-150 ${
+            isPressed
+              ? "bg-white/20 text-white dark:bg-black/15 dark:text-black"
+              : `text-text_color dark:text-text_color bg-black/10
+                dark:bg-white/10`
+          }`}
+        >
+          {badgeText}
+        </span>
+      )}
     </button>
   );
 }
@@ -142,7 +157,7 @@ export function ToggleGroup({
       <div
         ref={groupRef}
         role="group"
-        className={`${styles} relative flex h-full scrollbar-thin
+        className={`${styles} relative flex h-fit scrollbar-thin
           overflow-x-auto`}
       >
         {!multiple && (

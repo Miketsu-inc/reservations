@@ -1,4 +1,4 @@
-import { PlusSignIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   DeleteModal,
@@ -11,17 +11,13 @@ import {
   ServerError,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  invalidateLocalStorageAuth,
-  useToast,
-  useWindowSize,
-} from "@reservations/lib";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
 import ServiceCard from "./-components/ServiceCard";
-import ServiceCategoryCard from "./-components/ServiceCategoryCard";
+import ServiceCategorySection from "./-components/ServiceCategorySection";
 
 async function fetchServices(merchantId) {
   const response = await fetch(`/api/v1/merchants/${merchantId}/services`, {
@@ -87,12 +83,10 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
 });
 
 function ServicesPage() {
-  const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
 
-  const { isWindowSmall } = useWindowSize();
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -232,74 +226,40 @@ function ServicesPage() {
   }
 
   return (
-    <div className="flex h-full flex-col px-4 py-2 lg:px-0 lg:py-0">
-      <DeleteModal
-        itemName={selected.name}
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onDelete={() => deleteHandler(selected)}
-      />
-      <AddServiceCategoryModal
-        isOpen={showAddCategoryModal}
-        onClose={() => setShowAddCategoryModal(false)}
-        onAdded={invalidateServicesQuery}
-      />
-      <div className="flex w-full flex-col gap-8 pb-6">
-        <p className="text-xl">Services</p>
-        <ServerError error={serverError} />
-        <div className="flex flex-row items-center justify-between">
-          <SearchInput
-            searchText={searchText}
-            onChange={(text) => setSearchText(text)}
-          />
-          {isWindowSmall ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button styles="p-2" variant="primary">
-                  <Icon icon={PlusSignIcon} styles="size-6" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end">
-                <div
-                  className="*:hover:bg-hvr_gray flex flex-col items-start
-                    *:w-full *:rounded-lg *:p-2"
-                >
-                  <Link from={Route.fullPath} to="/services/new">
-                    New Service
-                  </Link>
-                  <Link from={Route.fullPath} to="/services/group/new">
-                    New Group Service
-                  </Link>
-                  <button
-                    onClick={() => setShowAddCategoryModal(true)}
-                    className="cursor-pointer text-left"
-                  >
-                    New Category
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <div className="flex flex-row items-center gap-4">
-              <Button
-                styles="py-2 px-4"
-                variant="secondary"
-                buttonText="New category"
-                onClick={() => setShowAddCategoryModal(true)}
-              >
-                <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
-              </Button>
+    <div className="flex justify-center px-4 py-4 lg:px-0">
+      <div className="w-full max-w-4xl">
+        <DeleteModal
+          itemName={selected.name}
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={() => deleteHandler(selected)}
+        />
+        <AddServiceCategoryModal
+          isOpen={showAddCategoryModal}
+          onClose={() => setShowAddCategoryModal(false)}
+          onAdded={invalidateServicesQuery}
+        />
+        <p className="pb-12 text-2xl">Services</p>
+        <div className="flex flex-col gap-8">
+          <div className="flex w-full flex-col">
+            <ServerError error={serverError} />
+            <div className="flex flex-row items-center justify-between">
+              <SearchInput
+                searchText={searchText}
+                onChange={(text) => setSearchText(text)}
+              />
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     styles="py-2 px-4"
+                    childSide="right"
                     variant="primary"
-                    buttonText="New service"
+                    buttonText="New"
                   >
-                    <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
+                    <Icon icon={ArrowDown01Icon} styles="size-5 ml-2" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent>
+                <PopoverContent align="end">
                   <div
                     className="*:hover:bg-hvr_gray flex flex-col items-start
                       *:w-full *:rounded-lg *:p-2"
@@ -308,70 +268,52 @@ function ServicesPage() {
                       1-on-1 service
                     </Link>
                     <Link from={Route.fullPath} to="/services/group/new">
-                      Group Service
+                      Group service
                     </Link>
+                    <button
+                      onClick={() => setShowAddCategoryModal(true)}
+                      className="cursor-pointer text-left"
+                    >
+                      Category
+                    </button>
                   </div>
                 </PopoverContent>
               </Popover>
             </div>
-          )}
-        </div>
-      </div>
-      <div className="py-6">
-        <ul className="flex flex-wrap gap-4">
-          {filteredServicesGroupedByCategories.map((category) => (
-            <li className="w-full" key={category.id}>
-              <ServiceCategoryCard
-                category={category}
-                // -1 due to uncategorized. Which should always be the last
-                categoryCount={services.length - 1}
-                refresh={invalidateServicesQuery}
-                onMoveUp={async (id) =>
-                  await moveCategoryHandler(id, "forward")
-                }
-                onMoveDown={async (id) =>
-                  await moveCategoryHandler(id, "backward")
-                }
-              >
-                <ul className="flex flex-wrap gap-4">
-                  {category.services.map((service) => (
-                    <li className="w-full md:w-fit" key={service.id}>
-                      <ServiceCard
-                        isWindowSmall={isWindowSmall}
-                        service={service}
-                        serviceCount={category.services.length}
-                        onDelete={() => {
-                          setSelected({ name: service.name, id: service.id });
-                          setShowDeleteModal(true);
-                        }}
-                        onEdit={() => {
-                          if (service.booking_type === "appointment") {
-                            router.navigate({
-                              from: Route.fullPath,
-                              to: `/services/edit/${service.id}`,
-                            });
-                          } else {
-                            router.navigate({
-                              from: Route.fullPath,
-                              to: `/services/group/edit/${service.id}`,
-                            });
+          </div>
+          <ul className="flex flex-col gap-4">
+            {filteredServicesGroupedByCategories.map((category) => (
+              <li className="w-full" key={category.id}>
+                <ServiceCategorySection
+                  category={category}
+                  // -1 due to uncategorized. Which should always be the last
+                  categoryCount={services.length - 1}
+                  refresh={invalidateServicesQuery}
+                  onMove={moveCategoryHandler}
+                >
+                  <ul className="flex flex-col gap-4">
+                    {category.services.map((service) => (
+                      <li className="w-full" key={service.id}>
+                        <ServiceCard
+                          service={service}
+                          serviceCount={category.services.length}
+                          onDelete={() => {
+                            setSelected({ name: service.name, id: service.id });
+                            setShowDeleteModal(true);
+                          }}
+                          refresh={invalidateServicesQuery}
+                          onMove={async (id, direction) =>
+                            await moveServiceHandler(category.id, id, direction)
                           }
-                        }}
-                        refresh={invalidateServicesQuery}
-                        onMoveForth={async (id) =>
-                          await moveServiceHandler(category.id, id, "forward")
-                        }
-                        onMoveBack={async (id) =>
-                          await moveServiceHandler(category.id, id, "backward")
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </ServiceCategoryCard>
-            </li>
-          ))}
-        </ul>
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </ServiceCategorySection>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

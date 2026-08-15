@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToNewInput(in newReq) catalogServ.NewInput {
@@ -181,7 +182,7 @@ func mapToGetAllResp(in []domain.ServicesGroupedByCategory) []getAllResp {
 				Description:     s.Description,
 				Color:           s.Color,
 				TotalDuration:   s.TotalDuration,
-				Price:           s.Price,
+				Price:           currencyx.FormatPrice(s.Price),
 				PriceType:       s.PriceType,
 				IsActive:        s.IsActive,
 				MinParticipants: s.MinParticipants,

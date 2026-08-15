@@ -4,9 +4,9 @@ import {
   Delete02Icon,
   Edit03Icon,
   MoreVerticalIcon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import {
-  Button,
   Icon,
   Popover,
   PopoverClose,
@@ -19,18 +19,18 @@ import {
   formatDuration,
   invalidateLocalStorageAuth,
   useToast,
+  useWindowSize,
 } from "@reservations/lib";
+import { Link } from "@tanstack/react-router";
 
 export default function ServiceCard({
-  isWindowSmall,
   service,
   serviceCount,
   onDelete,
-  onEdit,
   refresh,
-  onMoveBack,
-  onMoveForth,
+  onMove,
 }) {
+  const { windowSize } = useWindowSize();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
 
@@ -75,119 +75,141 @@ export default function ServiceCard({
           background: `linear-gradient(90deg, ${service.color} 0%, ${service.color}30 30%, transparent 70%)`,
         }}
       />
-      <div className="border-border_color bg-layer_bg w-sm rounded-r-lg border">
-        <div
-          className="border-border_color relative z-5 flex flex-row
-            justify-between border-b p-4"
-        >
-          <div className="flex flex-row gap-4">
-            <div
-              style={{ backgroundColor: service.color }}
-              className="flex size-17.5 shrink-0 overflow-hidden rounded-lg"
-            >
-              <img
-                className="size-full object-cover"
-                src="https://dummyimage.com/70x70/d156c3/000000.jpg"
-                alt="service photo"
-              />
-            </div>
-            <div className="flex flex-col justify-center gap-2">
-              <p className="flex-wrap font-semibold">{service.name}</p>
-              <div className="flex flex-row items-center gap-2">
-                <span
-                  className="fill-gray-400 dark:fill-gray-500"
-                  style={{
-                    fill: service.is_active ? service.color : undefined,
-                  }}
+      <div
+        className="border-border_color bg-layer_bg w-full rounded-r-lg border"
+      >
+        <div className="relative z-5 flex flex-row items-center p-4">
+          <Link
+            to={
+              service.booking_type === "appointment"
+                ? `/services/edit/${service.id}`
+                : `/services/group/edit/${service.id}`
+            }
+            className="flex flex-1 cursor-pointer sm:cursor-default"
+            disabled={windowSize !== "sm"}
+          >
+            <div className="flex flex-row gap-4">
+              <div className="flex flex-col justify-center gap-2">
+                <p className="truncate font-semibold">{service.name}</p>
+                <div
+                  className="text-text_color/80 flex min-h-8 flex-row
+                    items-center gap-2 text-sm"
                 >
                   <Icon icon={Clock01Icon} styles="size-4" />
-                </span>
-                <p className="text-sm">
-                  {formatDuration(service.total_duration)}
-                </p>
+                  <p>{formatDuration(service.total_duration)}</p>
+                  {service.booking_type !== "appointment" && (
+                    <div
+                      className="border-border_color bg-bg_color
+                        text-text_color/60 ml-2 flex w-fit flex-row items-center
+                        gap-1 rounded-lg border px-2 py-1 text-sm"
+                    >
+                      <Icon icon={UserGroupIcon} styles="size-4" />
+                      <p>Group</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          </Link>
+          <div className="flex flex-row items-center gap-2 text-base">
+            <Link
+              className="hover:bg-hvr_gray hidden cursor-pointer rounded-lg p-2
+                md:block"
+              to={
+                service.booking_type === "appointment"
+                  ? `/services/edit/${service.id}`
+                  : `/services/group/edit/${service.id}`
+              }
+            >
+              <Icon
+                icon={Edit03Icon}
+                styles="size-6 text-text_color/40 dark:text-text_color/50"
+              />
+            </Link>
+            <ServiceOptions
+              service={service}
+              serviceCount={serviceCount}
+              onActiveSwitch={serviceStatusHandler}
+              onMoveDown={() => onMove(service.id, "backward")}
+              onMoveUp={() => onMove(service.id, "forward")}
+              onDelte={onDelete}
+            />
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
-                  cursor-pointer rounded-lg p-1"
-              >
-                <Icon
-                  icon={MoreVerticalIcon}
-                  styles="size-6 text-gray-400 dark:text-gray-500 rotate-90"
-                />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="left">
-              <div
-                className="flex flex-col items-start *:flex *:w-full *:flex-row
-                  *:items-center *:rounded-lg *:p-2"
-              >
-                <div className="flex flex-row items-center gap-3">
-                  <Switch
-                    onSwitch={serviceStatusHandler}
-                    defaultValue={service.is_active}
-                  />
-                  <p>Active</p>
-                </div>
-                <PopoverClose asChild>
-                  <button
-                    disabled={service.sequence === serviceCount}
-                    onClick={() => onMoveBack(service.id)}
-                    className={`${
-                      service.sequence === serviceCount
-                        ? "opacity-35"
-                        : "hover:bg-hvr_gray cursor-pointer"
-                      } gap-5`}
-                  >
-                    <Icon
-                      icon={ArrowLeft02Icon}
-                      styles="size-6 rotate-180 ml-2"
-                    />
-                    <p>Move back</p>
-                  </button>
-                </PopoverClose>
-                <PopoverClose asChild>
-                  <button
-                    disabled={service.sequence === 1}
-                    onClick={() => onMoveForth(service.id)}
-                    className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
-                      gap-5`}
-                  >
-                    <Icon icon={ArrowLeft02Icon} styles="size-6 ml-2" />
-                    <p>Move forth</p>
-                  </button>
-                </PopoverClose>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div
-          className="relative z-5 flex flex-row items-center justify-between
-            gap-4 p-4"
-        >
-          <Button
-            type="button"
-            styles="py-2 px-4"
-            variant="danger"
-            buttonText={`${!isWindowSmall ? "Delete" : ""}`}
-            onClick={onDelete}
-          >
-            <Icon icon={Delete02Icon} styles="size-5 text-white! mr-1 mb-0.5" />
-          </Button>
-          <Button
-            type="button"
-            styles="py-2 px-4 flex-1"
-            variant="primary"
-            buttonText="Edit"
-            onClick={onEdit}
-          >
-            <Icon icon={Edit03Icon} styles="size-5 mr-2" />
-          </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+function ServiceOptions({
+  service,
+  serviceCount,
+  onMoveDown,
+  onMoveUp,
+  onActiveSwitch,
+  onDelte,
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
+            cursor-pointer rounded-lg p-1"
+        >
+          <Icon
+            icon={MoreVerticalIcon}
+            styles="size-8 text-text_color/40 dark:text-text_color/50 rotate-90"
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="left">
+        <div
+          className="flex flex-col items-start *:flex *:w-full *:flex-row
+            *:items-center *:gap-5 *:rounded-lg *:p-2"
+        >
+          <div className="flex flex-row items-center gap-3!">
+            <Switch
+              onSwitch={onActiveSwitch}
+              defaultValue={service.is_active}
+            />
+            <p>Active</p>
+          </div>
+          <PopoverClose asChild>
+            <button
+              disabled={service.sequence === serviceCount}
+              onClick={onMoveDown}
+              className={`${
+                service.sequence === serviceCount
+                  ? "opacity-35"
+                  : "hover:bg-hvr_gray cursor-pointer"
+                }`}
+            >
+              <Icon icon={ArrowLeft02Icon} styles="size-6 -rotate-90 ml-1.5" />
+              <p className="ml-0.5">Move down</p>
+            </button>
+          </PopoverClose>
+          <PopoverClose asChild>
+            <button
+              disabled={service.sequence === 1}
+              onClick={onMoveUp}
+              className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}`}
+            >
+              <Icon icon={ArrowLeft02Icon} styles="size-6 rotate-90 ml-1.5" />
+              <p className="ml-0.5">Move up</p>
+            </button>
+          </PopoverClose>
+          <PopoverClose asChild>
+            <button
+              onClick={onDelte}
+              className="hover:bg-hvr_gray cursor-pointer text-red-600
+                dark:text-red-500"
+            >
+              <Icon icon={Delete02Icon} styles="size-6 ml-1.5 mb-0.5" />
+              <p className="ml-0.5">Delete</p>
+            </button>
+          </PopoverClose>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

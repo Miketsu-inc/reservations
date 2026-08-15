@@ -61,13 +61,6 @@ export default function EditServiceCategoryModal({
       <form className="p-4 sm:w-lg" onSubmit={submitHandler}>
         <p className="pb-8 text-xl font-semibold">Edit category</p>
         <div className="flex flex-col gap-6">
-          <div className="size-18 shrink-0 overflow-hidden rounded-lg">
-            <img
-              className="size-full object-cover"
-              src="https://dummyimage.com/120x120/d156c3/000000.jpg"
-              alt="service photo"
-            ></img>
-          </div>
           <Input
             id="CategoryName"
             name="CategoryName"
