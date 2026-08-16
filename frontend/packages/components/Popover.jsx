@@ -1,20 +1,52 @@
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Popover as PopoverPrimitive } from "@base-ui/react";
+import React from "react";
 
 export function Popover({ ...props }) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-export function PopoverClose({ ...props }) {
-  return <PopoverPrimitive.PopoverClose {...props} />;
+export function PopoverClose({
+  asChild = false,
+  nativeButton = true,
+  children,
+  ...props
+}) {
+  return (
+    <PopoverPrimitive.Close
+      render={
+        asChild &&
+        (React.isValidElement(children) || typeof children == "function")
+          ? children
+          : undefined
+      }
+      nativeButton={nativeButton}
+      {...props}
+    >
+      {asChild ? undefined : children}
+    </PopoverPrimitive.Close>
+  );
 }
 
-export function PopoverTrigger({ asChild, ...props }) {
+export function PopoverTrigger({
+  asChild = false,
+  nativeButton = true,
+  children,
+  ...props
+}) {
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
-      asChild={asChild}
+      render={
+        asChild &&
+        (React.isValidElement(children) || typeof children == "function")
+          ? children
+          : undefined
+      }
+      nativeButton={nativeButton}
       {...props}
-    />
+    >
+      {asChild ? undefined : children}
+    </PopoverPrimitive.Trigger>
   );
 }
 
@@ -26,28 +58,31 @@ export function PopoverContent({
   ...props
 }) {
   return (
+    // TODO: see if removed 'forceMount' from Select is causing problems.
+    // could use 'keepMounted' if required
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        side={side}
+      <PopoverPrimitive.Backdrop />
+      <PopoverPrimitive.Positioner
         align={align}
+        side={side}
         sideOffset={sideOffset}
-        className={`${styles} bg-layer_bg text-text_color
-          data-[state=open]:animate-in data-[state=closed]:animate-out
-          data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
-          data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
-          data-[side=bottom]:slide-in-from-top-2
-          data-[side=left]:slide-in-from-right-2
-          data-[side=right]:slide-in-from-left-2
-          data-[side=top]:slide-in-from-bottom-2 border-border_color z-50 w-48
-          origin-(--radix-popover-content-transform-origin) rounded-lg border
-          p-2 shadow-md outline-hidden dark:shadow-gray-950`}
-        {...props}
-      />
+      >
+        <PopoverPrimitive.Popup
+          data-slot="popover-content"
+          className={`${styles} bg-layer_bg text-text_color border-border_color
+            data-[side=bottom]:slide-in-from-top-2
+            data-[side=inline-end]:slide-in-from-left-2
+            data-[side=inline-start]:slide-in-from-right-2
+            data-[side=left]:slide-in-from-right-2
+            data-[side=right]:slide-in-from-left-2
+            data-[side=top]:slide-in-from-bottom-2 data-open:animate-in
+            data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out
+            data-closed:fade-out-0 data-closed:zoom-out-95 z-50 w-48
+            origin-(--transform-origin) rounded-lg border p-2 shadow-md
+            outline-hidden duration-100 dark:shadow-gray-950`}
+          {...props}
+        />
+      </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   );
-}
-
-export function PopoverAnchor({ ...props }) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
 }

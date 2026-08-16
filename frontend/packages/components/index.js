@@ -22,7 +22,6 @@ export { default as Modal } from "./Modal.jsx";
 export { default as MultiSelect } from "./MultiSelect.jsx";
 export {
   Popover,
-  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverTrigger,

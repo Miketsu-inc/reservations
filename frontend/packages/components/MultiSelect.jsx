@@ -106,7 +106,7 @@ export default function MultiSelect({
         onOpenChange?.(open);
       }}
     >
-      <PopoverTrigger asChild>
+      <PopoverTrigger nativeButton={false} asChild>
         <label className={`w-full ${styles}`}>
           {labelText && (
             <span className="flex items-center gap-1 pb-1 text-sm">
@@ -145,7 +145,6 @@ export default function MultiSelect({
         </label>
       </PopoverTrigger>
       <PopoverContent
-        forceMount
         styles="p-0! data-[side=top]:translate-y-6"
         onKeyDown={handleKeyDown}
         style={{

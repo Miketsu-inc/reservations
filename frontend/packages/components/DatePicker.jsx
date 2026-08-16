@@ -42,7 +42,7 @@ export default function DatePicker({
           onOpenChange?.(open);
         }}
       >
-        <PopoverTrigger disabled={disabled} asChild>
+        <PopoverTrigger nativeButton={false} disabled={disabled} asChild>
           <label className="w-full">
             {labelText && (
               <span className="flex items-center gap-1 pb-1 text-sm">

@@ -187,7 +187,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
               </PopoverClose>
             )}
             {customer.phone_number && (
-              <PopoverClose asChild>
+              <PopoverClose nativeButton={false} asChild>
                 <a
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
                   href={`tel:${customer.phone_number}`}
@@ -201,7 +201,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
               </PopoverClose>
             )}
             {customer.email && (
-              <PopoverClose asChild>
+              <PopoverClose nativeButton={false} asChild>
                 <a
                   className="hover:bg-hvr_gray cursor-pointer gap-3"
                   href={`mailto:${customer.email}`}
