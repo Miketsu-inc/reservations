@@ -27,6 +27,7 @@ export {
   PopoverTrigger,
 } from "./Popover.jsx";
 export { default as ProgressBar } from "./ProgressBar.jsx";
+export { default as ResponsiveDialog } from "./ResponsiveDialog.jsx";
 export { default as SearchInput } from "./SearchInput.jsx";
 export { default as Select } from "./Select.jsx";
 export { default as ServerError } from "./ServerError.jsx";

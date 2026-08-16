@@ -1,4 +1,4 @@
-import { Button, Input, Modal } from "@reservations/components";
+import { Button, Input, ResponsiveDialog } from "@reservations/components";
 import { useToast } from "@reservations/lib";
 import { useState } from "react";
 
@@ -49,8 +49,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={submitHandler} className="p-4">
+    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
+      <form onSubmit={submitHandler} className="w-full p-4">
         <p className="mb-6 text-xl">Change password</p>
         <div className="flex flex-col gap-4">
           <Input
@@ -79,19 +79,19 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
           <div className="flex flex-row items-center justify-end gap-2 pt-4">
             <Button
               variant="tertiary"
-              styles="px-4 py-2"
+              styles="px-4 py-2 hidden lg:block"
               buttonText="Close"
               onClick={onClose}
             />
             <Button
               type="submit"
-              styles="px-4 py-2"
+              styles="px-4 py-2 w-full lg:w-auto"
               buttonText="Update"
               disabled={!doNewPasswordsMatch}
             />
           </div>
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

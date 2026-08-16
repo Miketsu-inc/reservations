@@ -1,4 +1,4 @@
-import { Button, Input, Modal } from "@reservations/components";
+import { Button, Input, ResponsiveDialog } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
@@ -53,8 +53,8 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <form className="p-4 sm:w-lg" onSubmit={submitHandler}>
+    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
+      <form className="p-4 md:w-lg" onSubmit={submitHandler}>
         <p className="pb-8 text-xl font-semibold">Create a new category</p>
         <div className="flex flex-col gap-6">
           <p>
@@ -72,14 +72,14 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
           />
           <div className="flex items-center justify-end gap-2">
             <Button
-              styles="py-2 px-4"
+              styles="py-2 px-4 hidden lg:block"
               buttonText="Cancel"
               variant="tertiary"
               type="button"
               onClick={onClose}
             />
             <Button
-              styles="py-2 px-4"
+              styles="py-2 px-4 w-full lg:w-auto"
               buttonText="Create"
               variant="primary"
               type="submit"
@@ -87,6 +87,6 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
           </div>
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

@@ -2,7 +2,7 @@ import {
   Button,
   CloseButton,
   Input,
-  Modal,
+  ResponsiveDialog,
   Select,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -117,7 +117,7 @@ export default function BlockedTypesModal({
   }
 
   return (
-    <Modal
+    <ResponsiveDialog
       styles="max-w-md"
       isOpen={isOpen}
       onClose={() => {
@@ -137,6 +137,7 @@ export default function BlockedTypesModal({
             {editData ? "Edit Blocked Time Type" : "New Blocked Time Type"}
           </div>
           <CloseButton
+            styles="hidden lg:block"
             onClick={() => {
               onClose();
               setFormData(defaultFormData);
@@ -207,7 +208,7 @@ export default function BlockedTypesModal({
 
           <div className="flex gap-3 pt-4">
             <Button
-              styles="px-4 py-2 flex-1"
+              styles="px-4 py-2 flex-1 hidden lg:block"
               buttonText="Cancel"
               variant="tertiary"
               type="button"
@@ -219,12 +220,12 @@ export default function BlockedTypesModal({
             <Button
               type="submit"
               variant="primary"
-              styles="px-4 py-2 flex-1"
+              styles="px-4 py-2 flex-1 w-full lg:w-auto"
               buttonText={editData ? "Save " : "Add Type"}
             />
           </div>
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

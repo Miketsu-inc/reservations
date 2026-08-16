@@ -1,4 +1,9 @@
-import { Button, CloseButton, Modal, Textarea } from "@reservations/components";
+import {
+  Button,
+  CloseButton,
+  ResponsiveDialog,
+  Textarea,
+} from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
@@ -67,19 +72,13 @@ export default function CancelBookingModal({
   }
 
   return (
-    <Modal
-      styles="w-full sm:w-80"
-      isOpen={isOpen}
-      onClose={onClose}
-      zindex={60}
-      disableFocusTrap={true}
-    >
+    <ResponsiveDialog styles="w-full" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={deleteBookingHandler} className="h-auto p-6 sm:w-130">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <p className="text-lg font-medium">Cancel booking</p>
-              <CloseButton onClick={onClose} />
+              <CloseButton styles="hidden lg:block" onClick={onClose} />
             </div>
             {isRecurring && (
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -132,13 +131,13 @@ export default function CancelBookingModal({
         </div>
         <div className="flex justify-end pt-4">
           <Button
-            styles="px-4 py-1"
+            styles="px-4 py-2 w-full lg:w-auto"
             buttonText="Cancel"
             variant="danger"
             type="submit"
           />
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

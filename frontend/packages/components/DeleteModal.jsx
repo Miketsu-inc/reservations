@@ -1,11 +1,11 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { Icon } from ".";
 import Button from "./Button";
-import Modal from "./Modal";
+import ResponsiveDialog from "./ResponsiveDialog";
 
 export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
       <div className="m-2 md:m-4">
         <div className="flex justify-center py-2">
           <div className="flex rounded-full bg-red-200 p-3 dark:bg-red-600">
@@ -33,14 +33,14 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
           <Button
             variant="tertiary"
             name="cancel"
-            styles="py-2 px-3"
+            styles="py-2 px-3 hidden lg:block"
             buttonText="Cancel"
             onClick={onClose}
           />
           <Button
             variant="danger"
             name="delete"
-            styles="py-2 px-3"
+            styles="py-2 px-3 w-full lg:w-auto"
             buttonText="Delete"
             onClick={(e) => {
               onDelete(e);
@@ -49,6 +49,6 @@ export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
           />
         </div>
       </div>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

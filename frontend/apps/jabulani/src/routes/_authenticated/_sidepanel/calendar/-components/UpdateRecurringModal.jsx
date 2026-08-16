@@ -1,4 +1,8 @@
-import { Button, CloseButton, Modal } from "@reservations/components";
+import {
+  Button,
+  CloseButton,
+  ResponsiveDialog,
+} from "@reservations/components";
 import { useState } from "react";
 
 const options = [
@@ -17,8 +21,8 @@ const options = [
 export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
   const [selected, setSelected] = useState("this");
   return (
-    <Modal
-      styles="w-full sm:w-80 p-5 flex flex-col gap-5"
+    <ResponsiveDialog
+      styles="w-full p-5 flex flex-col gap-5"
       isOpen={isOpen}
       onClose={onClose}
       zindex={60}
@@ -32,9 +36,9 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
           Edit recurring booking
         </p>
 
-        <CloseButton onClick={onClose} styles="size-4" />
+        <CloseButton onClick={onClose} styles="size-4 hidden lg:block" />
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex w-full flex-col gap-3 lg:flex-row">
         {options.map((opt) => {
           const active = selected === opt.id;
           return (
@@ -64,21 +68,21 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
           );
         })}
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex w-full justify-end gap-2">
         <Button
           variant="tertiary"
           onClick={onClose}
-          styles="py-1 px-3"
+          styles="py-1 px-3 hidden lg:block"
           buttonText="Cancel"
         />
 
         <Button
           variant="primary"
           onClick={() => onSave(selected)}
-          styles="py-1 px-4"
+          styles="py-1 px-4 w-full lg:w-auto"
           buttonText="Save Changes"
         />
       </div>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

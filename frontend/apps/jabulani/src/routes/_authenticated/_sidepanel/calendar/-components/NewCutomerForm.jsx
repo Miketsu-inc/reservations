@@ -1,56 +1,30 @@
 import {
   Button,
   CloseButton,
-  Drawer,
-  DrawerContent,
   Input,
-  Modal,
+  ResponsiveDialog,
 } from "@reservations/components";
+import { useWindowSize } from "@reservations/lib";
 import { useState } from "react";
 
-export default function NewCustomerOverlay({
-  onSave,
-  onClose,
-  isWindowSmall,
-  isOpen,
-}) {
+export default function NewCustomerOverlay({ onSave, onClose, isOpen }) {
   const [isPhoneCountrySelectOpen, setIsPhoneCountrySelectOpen] =
     useState(false);
 
-  {
-    return isWindowSmall ? (
-      <Drawer
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-        styles="p-0!"
-      >
-        <DrawerContent styles="h-full" popUpStyles="">
-          <NewCustomerForm
-            onSave={onSave}
-            isWindowSmall={isWindowSmall}
-            setSelectOpen={setIsPhoneCountrySelectOpen}
-          />
-        </DrawerContent>
-      </Drawer>
-    ) : (
-      <Modal
-        isOpen={isOpen}
-        styles="p-5"
+  return (
+    <ResponsiveDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      disableFocusTrap={true}
+      suspendCloseOnClickOutside={isPhoneCountrySelectOpen}
+    >
+      <NewCustomerForm
+        onSave={onSave}
         onClose={onClose}
-        disableFocusTrap={true}
-        suspendCloseOnClickOutside={isPhoneCountrySelectOpen}
-      >
-        <NewCustomerForm
-          onSave={onSave}
-          isWindowSmall={isWindowSmall}
-          onClose={onClose}
-          setSelectOpen={setIsPhoneCountrySelectOpen}
-        />
-      </Modal>
-    );
-  }
+        setSelectOpen={setIsPhoneCountrySelectOpen}
+      />
+    </ResponsiveDialog>
+  );
 }
 
 const defaultCustomerData = {
@@ -90,7 +64,7 @@ function NewCustomerForm({ onSave, onClose, setSelectOpen }) {
   return (
     <form
       onSubmit={submitHandler}
-      className="flex h-full flex-col gap-5 sm:w-80"
+      className="flex h-full w-full flex-col gap-5 p-4"
     >
       <div className="flex justify-between">
         <p className="text-lg font-medium">Create Customer</p>{" "}

@@ -1,11 +1,11 @@
-import { Button, Modal, Textarea } from "@reservations/components";
+import { Button, ResponsiveDialog, Textarea } from "@reservations/components";
 import { useState } from "react";
 
 export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
   const [reason, setReason] = useState(data?.blacklist_reason || "");
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
       <div className="m-3 sm:w-md md:m-4">
         <p className="pb-6 text-xl">
           {data?.is_blacklisted
@@ -49,7 +49,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
           <Button
             variant="tertiary"
             name="cancel"
-            styles="py-2 px-3"
+            styles="py-2 px-3 hidden lg:block"
             buttonText="Cancel"
             type="button"
             onClick={() => {
@@ -64,7 +64,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
           <Button
             variant="primary"
             name={data?.is_blacklisted ? "remove" : "blacklist"}
-            styles="py-2 px-3"
+            styles="py-2 px-3 w-full lg:w-auto"
             buttonText={data?.is_blacklisted ? "Remove" : "Blacklist"}
             type="button"
             onClick={() => {
@@ -77,6 +77,6 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
           />
         </div>
       </div>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

@@ -1,4 +1,9 @@
-import { Button, Input, Modal, ServerError } from "@reservations/components";
+import {
+  Button,
+  Input,
+  ResponsiveDialog,
+  ServerError,
+} from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { useCallback, useRef, useState } from "react";
 
@@ -58,7 +63,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <Modal styles="md:max-w-1/2 max-w-md" isOpen={isOpen} onClose={onClose}>
+    <ResponsiveDialog styles="lg:max-w-xl" isOpen={isOpen} onClose={onClose}>
       <form className="m-4 flex flex-col gap-4" onSubmit={handleSubmit}>
         <h2 className="text-xl font-semibold">Change Merchant Name</h2>
         <p className="text-gray-700 dark:text-gray-300">
@@ -93,7 +98,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
         <div className="mt-1 flex justify-end gap-3">
           <Button
             variant="tertiary"
-            styles="p-2"
+            styles="p-2 hidden lg:block"
             buttonText="Cancel"
             onClick={() => {
               setNewName("");
@@ -105,10 +110,10 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
             variant="primary"
             type="submit"
             buttonText="Change Name"
-            styles="p-2"
+            styles="p-2 w-full lg:w-auto"
           />
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }

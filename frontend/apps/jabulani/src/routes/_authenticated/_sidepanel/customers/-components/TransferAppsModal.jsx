@@ -1,5 +1,10 @@
 import { UserSwitchIcon } from "@hugeicons/core-free-icons";
-import { Button, ComboBox, Icon, Modal } from "@reservations/components";
+import {
+  Button,
+  ComboBox,
+  Icon,
+  ResponsiveDialog,
+} from "@reservations/components";
 import { useState } from "react";
 
 export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
@@ -35,7 +40,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <Modal
+    <ResponsiveDialog
       isOpen={isOpen}
       onClose={() => {
         setShowError("");
@@ -86,7 +91,7 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
           <Button
             variant="tertiary"
             name="cancel"
-            styles="py-2 px-3"
+            styles="py-2 px-3 hidden lg:block"
             buttonText="Cancel"
             type="button"
             onClick={() => {
@@ -98,12 +103,12 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
           <Button
             variant="danger"
             name="transfer"
-            styles="py-2 px-3"
+            styles="py-2 px-3 w-full lg:w-auto"
             buttonText="Transfer"
             type="submit"
           />
         </div>
       </form>
-    </Modal>
+    </ResponsiveDialog>
   );
 }
