@@ -194,7 +194,7 @@ async function fetchMerchantServices(name) {
   }
 }
 
-export default function merchantServicesQueryOptions(name) {
+export function merchantServicesQueryOptions(name) {
   return queryOptions({
     queryKey: ["merchant-services", name],
     queryFn: () => fetchMerchantServices(name),

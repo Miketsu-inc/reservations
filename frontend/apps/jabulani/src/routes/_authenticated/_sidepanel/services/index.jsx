@@ -5,6 +5,7 @@ import {
   Icon,
   Loading,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
   SearchInput,
@@ -270,12 +271,14 @@ function ServicesPage() {
                     <Link from={Route.fullPath} to="/services/group/new">
                       Group service
                     </Link>
-                    <button
-                      onClick={() => setShowAddCategoryModal(true)}
-                      className="cursor-pointer text-left"
-                    >
-                      Category
-                    </button>
+                    <PopoverClose asChild>
+                      <button
+                        onClick={() => setShowAddCategoryModal(true)}
+                        className="cursor-pointer text-left"
+                      >
+                        Category
+                      </button>
+                    </PopoverClose>
                   </div>
                 </PopoverContent>
               </Popover>

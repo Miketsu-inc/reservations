@@ -16,9 +16,9 @@ import {
 import {
   formatDuration,
   getDisplayPrice,
+  merchantServicesQueryOptions,
   useActiveSection,
 } from "@reservations/lib";
-import merchantServicesQueryOptions from "@reservations/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { StepContentSkeleton } from "./StepContentSkeleton";

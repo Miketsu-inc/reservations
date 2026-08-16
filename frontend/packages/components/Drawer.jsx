@@ -49,7 +49,7 @@ export function DrawerContent({ styles, popUpStyles, ...props }) {
           className={`bg-layer_bg text-text_color outline-border_color -mb-12
             max-h-[calc(80vh+3rem)] w-full
             transform-[translateY(var(--drawer-swipe-movement-y))] touch-auto
-            overflow-y-auto overscroll-contain rounded-t-2xl px-4 pt-4
+            overflow-y-auto overscroll-contain rounded-t-2xl px-2 pt-4
             pb-[calc(1.5rem+env(safe-area-inset-bottom,0)+3rem)] outline
             transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]
             data-ending-style:transform-[translateY(calc(100%-3rem+2px))]
@@ -62,8 +62,8 @@ export function DrawerContent({ styles, popUpStyles, ...props }) {
               dark:bg-gray-600"
           />
           <DrawerPrimitive.Content
-            className={`${styles} mx-auto flex w-full max-w-md flex-col
-              justify-center`}
+            className={`${styles} mx-auto flex h-full w-full max-w-md flex-col
+              items-center`}
             {...props}
           />
         </DrawerPrimitive.Popup>

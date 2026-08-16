@@ -23,8 +23,9 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { isWindowSmall } = useWindowSize();
   const { showToast } = useToast();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState();
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
 
   const { isDarkTheme, switchTheme } = useTheme();
 
