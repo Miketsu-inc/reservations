@@ -19,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
+import { useWindowSize } from "@reservations/lib";
 import { useState } from "react";
 import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
@@ -52,7 +53,6 @@ export default function ParticipantManager({
   maxParticipants,
   disabled,
   onStatusChange,
-  isWindowSmall,
 }) {
   const [nestedPageState, setNestedPageState] = useState({
     isOpen: false,
@@ -61,6 +61,8 @@ export default function ParticipantManager({
 
   const [activeProfile, setActiveProfile] = useState(null);
   const [isAddNewOpen, setIsAddNewOpen] = useState(false);
+
+  const { isWindowSmall } = useWindowSize();
 
   const handleOpenAdd = () => {
     setNestedPageState({ isOpen: true, active: "add" });
@@ -89,8 +91,6 @@ export default function ParticipantManager({
           isGroupMode={true}
           selected={participants}
           styles="pt-0!"
-          isInDrawer={isWindowSmall}
-          isWindowSmall={isWindowSmall}
         />
       )}
       {nestedPageState.active === "view" && activeProfile && (
@@ -113,7 +113,6 @@ export default function ParticipantManager({
         onSave={handleSaveNewCustomer}
         onClose={() => setIsAddNewOpen(false)}
         isOpen={isAddNewOpen}
-        isWindowSmall={isWindowSmall}
       />
       {isWindowSmall ? (
         <Drawer

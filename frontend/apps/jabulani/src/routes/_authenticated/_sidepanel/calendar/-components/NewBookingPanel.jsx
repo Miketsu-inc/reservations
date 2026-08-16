@@ -12,6 +12,7 @@ import {
   combineDateTimeLocal,
   timeStringFromDate,
   useToast,
+  useWindowSize,
 } from "@reservations/lib";
 import { useCallback, useState } from "react";
 import { RecurSummaryCard, ServiceCard } from "./BookingCards";
@@ -28,7 +29,6 @@ import ServiceSelector from "./ServiceSelector";
 
 export default function NewBookingPanel({
   onSave,
-  isWindowSmall,
   onClose,
   categories,
   customers,
@@ -60,6 +60,8 @@ export default function NewBookingPanel({
     employee_id: currentEmployee,
     merchantNote: "",
   });
+
+  const { isWindowSmall } = useWindowSize();
 
   const selectedService = categories
     .flatMap((category) => category.services)
@@ -239,7 +241,6 @@ export default function NewBookingPanel({
         customers={customers}
         selectedCustomers={bookingData.customers}
         maxParticipants={selectedService?.max_participants}
-        isWindowSmall={isWindowSmall}
         onAddCustomer={handleSelectCustomers}
         onRemoveCustomer={handleRemoveCustomer}
         onRemoveParticipant={handleRemoveParticipant}
@@ -250,7 +251,6 @@ export default function NewBookingPanel({
           <ServiceSelector
             categories={categories}
             onClose={onClose}
-            isWindowSmall={isWindowSmall}
             onSelect={handleServiceChange}
             isNested={false}
           />
@@ -267,7 +267,6 @@ export default function NewBookingPanel({
                 <ServiceSelector
                   categories={categories}
                   onClose={onClose}
-                  isWindowSmall={isWindowSmall}
                   isNested={true}
                   onSelect={handleServiceChange}
                 />
@@ -311,7 +310,6 @@ export default function NewBookingPanel({
                         });
                       }}
                       selected={bookingData.customers}
-                      isWindowSmall={isWindowSmall}
                     />
                   )}
 
@@ -328,7 +326,6 @@ export default function NewBookingPanel({
                       onAdd={handleSelectCustomers}
                       onRemove={handleRemoveParticipant}
                       maxParticipants={selectedService?.max_participants}
-                      isWindowSmall={isWindowSmall}
                     />
                   )}
                 </>
@@ -366,7 +363,6 @@ export default function NewBookingPanel({
                   </label>
 
                   <MobileParticipantSection
-                    isWindowSmall={isWindowSmall}
                     isGroupBooking={isGroupBooking}
                     hasSelection={hasSelection}
                     selectedCustomers={bookingData.customers}

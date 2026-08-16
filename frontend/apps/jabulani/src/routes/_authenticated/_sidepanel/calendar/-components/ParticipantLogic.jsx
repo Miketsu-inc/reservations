@@ -1,5 +1,6 @@
 import { PlusSignIcon, WalkingIcon } from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
+import { useWindowSize } from "@reservations/lib";
 import {
   AddCustomerCard,
   ParticipantsCard,
@@ -18,12 +19,13 @@ export function ParticipantSideBar({
   customers,
   selectedCustomers,
   maxParticipants,
-  isWindowSmall,
   onAddCustomer,
   onRemoveCustomer,
   onRemoveParticipant,
   onStatusChange,
 }) {
+  const { isWindowSmall } = useWindowSize();
+
   function renderContent() {
     if (isGroupBooking) {
       return (
@@ -31,7 +33,6 @@ export function ParticipantSideBar({
           customers={customers}
           participants={selectedCustomers}
           maxParticipants={maxParticipants}
-          isWindowSmall={isWindowSmall}
           disabled={isPastBooking}
           onAdd={onAddCustomer}
           onRemove={onRemoveParticipant}
@@ -73,7 +74,6 @@ export function ParticipantSideBar({
           isGroupMode={false}
           walkIn={() => setIsExpanded(false)}
           selected={selectedCustomers}
-          isWindowSmall={isWindowSmall}
         />
       );
     }
@@ -126,7 +126,6 @@ export function ParticipantSideBar({
 }
 
 export function MobileParticipantSection({
-  isWindowSmall,
   isGroupBooking,
   hasSelection,
   isPastBooking = false,
@@ -137,6 +136,8 @@ export function MobileParticipantSection({
   onOpenProfile,
   onOpenParticipantManager,
 }) {
+  const { isWindowSmall } = useWindowSize();
+
   if (isWindowSmall) {
     return (
       <div className="flex flex-col gap-1">

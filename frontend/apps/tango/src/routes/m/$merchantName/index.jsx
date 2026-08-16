@@ -322,7 +322,6 @@ function MerchantPage() {
                 onSelect={() => {}}
                 router={Route}
                 merchantInfo={merchantInfo}
-                isWindowSmall={isWindowSmall}
                 merchantName={merchantName}
               />
             </ReservationSection>
@@ -331,10 +330,7 @@ function MerchantPage() {
             </ReservationSection>
 
             <ReservationSection name="Team" show={true}>
-              <TeamSection
-                isWindowSmall={isWindowSmall}
-                merchantName={merchantName}
-              />
+              <TeamSection merchantName={merchantName} />
             </ReservationSection>
 
             <ReservationSection

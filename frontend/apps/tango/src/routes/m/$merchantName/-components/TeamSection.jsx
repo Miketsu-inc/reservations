@@ -1,9 +1,11 @@
 import { StarIcon } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, Loading, ServerError } from "@reservations/components";
-import { activeTeamQueryOptions } from "@reservations/lib";
+import { activeTeamQueryOptions, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 
-export default function TeamSection({ isWindowSmall, merchantName }) {
+export default function TeamSection({ merchantName }) {
+  const { isWindowSmall } = useWindowSize();
+
   const {
     data: employees,
     isLoading,

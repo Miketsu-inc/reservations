@@ -122,7 +122,6 @@ export default function CalendarSidePanel({
             <NewBookingPanel
               onSave={onSave}
               onClose={onClose}
-              isWindowSmall={isWindowSmall}
               categories={services}
               customers={customers}
               team={team}
@@ -136,7 +135,6 @@ export default function CalendarSidePanel({
               onClose={onClose}
               onSubmitted={onSave}
               onDeleted={onSave}
-              isWindowSmall={isWindowSmall}
               team={team}
               currentEmployee={employeeId}
             />
@@ -149,7 +147,6 @@ export default function CalendarSidePanel({
               onSoftUpdate={onSoftUpdate}
               customers={customers}
               categories={services}
-              isWindowSmall={isWindowSmall}
               preferences={preferences}
               team={team}
             />

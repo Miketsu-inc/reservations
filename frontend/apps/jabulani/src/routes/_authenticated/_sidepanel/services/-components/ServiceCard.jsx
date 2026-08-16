@@ -30,7 +30,7 @@ export default function ServiceCard({
   refresh,
   onMove,
 }) {
-  const { windowSize } = useWindowSize();
+  const { isWindowSmall } = useWindowSize();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
 
@@ -85,8 +85,8 @@ export default function ServiceCard({
                 ? `/services/edit/${service.id}`
                 : `/services/group/edit/${service.id}`
             }
-            className="flex flex-1 cursor-pointer sm:cursor-default"
-            disabled={windowSize !== "sm"}
+            className="flex flex-1 cursor-pointer lg:cursor-default"
+            disabled={!isWindowSmall}
           >
             <div className="flex flex-row gap-4">
               <div className="flex flex-col justify-center gap-2">
@@ -114,7 +114,7 @@ export default function ServiceCard({
           <div className="flex flex-row items-center gap-2 text-base">
             <Link
               className="hover:bg-hvr_gray hidden cursor-pointer rounded-lg p-2
-                md:block"
+                lg:block"
               to={
                 service.booking_type === "appointment"
                   ? `/services/edit/${service.id}`

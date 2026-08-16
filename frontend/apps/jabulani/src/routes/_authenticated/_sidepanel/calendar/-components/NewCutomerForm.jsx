@@ -60,7 +60,8 @@ const defaultCustomerData = {
   phone_number: "",
 };
 
-function NewCustomerForm({ onSave, isWindowSmall, onClose, setSelectOpen }) {
+function NewCustomerForm({ onSave, onClose, setSelectOpen }) {
+  const { isWindowSmall } = useWindowSize();
   const [customerData, setCustomerData] = useState(defaultCustomerData);
 
   function updateCustomerData(data) {

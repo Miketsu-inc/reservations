@@ -6,18 +6,20 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
+import { useWindowSize } from "@reservations/lib";
 import { useMemo, useState } from "react";
 import { ServiceCard } from "./BookingCards";
 
 export default function ServiceSelector({
   categories,
   onSelect,
-  isWindowSmall,
   onClose,
   isNested,
 }) {
   const [searchText, setSearchText] = useState("");
   const [filterType, setFilterType] = useState("all");
+
+  const { isWindowSmall } = useWindowSize();
 
   const hasMultipleBookingTypes = useMemo(() => {
     const allServices = categories.flatMap((c) => c.services);

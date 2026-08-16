@@ -19,6 +19,7 @@ import {
   getDisplayPrice,
   invalidateLocalStorageAuth,
   timeStringFromDate,
+  useWindowSize,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -58,9 +59,10 @@ export default function ServiceDetails({
   service,
   isOpen,
   onClose,
-  isWindowSmall,
   router,
 }) {
+  const { isWindowSmall } = useWindowSize();
+
   const {
     data: nextAvailable,
     isLoading,
@@ -85,7 +87,7 @@ export default function ServiceDetails({
       }}
     >
       <DrawerContent
-        styles="h-full relative"
+        styles="relative"
         popUpStyles="h-[calc(80vh+3rem)]! overflow-y-hidden!"
       >
         <DetailsContent
@@ -93,7 +95,6 @@ export default function ServiceDetails({
           service={service}
           onClose={onClose}
           hasAvailable={hasAvailableSlot}
-          isWindowSmall={isWindowSmall}
           category={category}
           isLoading={isLoading}
           router={router}
@@ -107,7 +108,6 @@ export default function ServiceDetails({
         nextAvailable={nextAvailable}
         service={service}
         onClose={onClose}
-        isWindowSmall={isWindowSmall}
         hasAvailable={hasAvailableSlot}
         category={category}
         isLoading={isLoading}
@@ -135,11 +135,11 @@ function DetailsContent({
   nextAvailable,
   hasAvailable,
   router,
-  isWindowSmall,
   isLoading,
   onClose,
   locationId,
 }) {
+  const { isWindowSmall } = useWindowSize();
   const isGroupService = service?.booking_type !== "appointment";
 
   return (

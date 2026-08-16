@@ -6,6 +6,7 @@ import {
   Icon,
   SearchInput,
 } from "@reservations/components";
+import { useWindowSize } from "@reservations/lib";
 import { useState } from "react";
 import NewCustomerOverlay from "./NewCutomerForm";
 
@@ -15,12 +16,12 @@ export default function CustomerSelector({
   isGroupMode = true,
   styles,
   selected = [],
-  isInDrawer = false,
-  isWindowSmall,
 }) {
   const [searchText, setSearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState(selected);
   const [isAddNewOpen, setIsAddNewOpen] = useState(false);
+
+  const { isWindowSmall: isInDrawer } = useWindowSize();
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -54,8 +55,8 @@ export default function CustomerSelector({
 
   return (
     <div
-      className={`relative flex h-full flex-col ${isInDrawer ? "px-0" : "px-4"}
-        `}
+      className={`relative flex h-full flex-col
+        ${isInDrawer ? "w-full px-0" : "px-4"} `}
     >
       <div className={`flex flex-col gap-5 pt-6 pb-2 ${styles}`}>
         <div className="flex items-center justify-between">
@@ -83,7 +84,6 @@ export default function CustomerSelector({
           <NewCustomerOverlay
             onClose={() => setIsAddNewOpen(false)}
             onSave={handleNewCustomer}
-            isWindowSmall={isWindowSmall}
             isOpen={isAddNewOpen}
           />
           <CustomerRow

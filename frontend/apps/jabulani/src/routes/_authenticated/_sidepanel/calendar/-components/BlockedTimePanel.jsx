@@ -22,6 +22,7 @@ import {
   invalidateLocalStorageAuth,
   timeStringFromDate,
   useToast,
+  useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -70,10 +71,11 @@ export default function BlockedTimePanel({
   preferences,
   onDeleted,
   onSubmitted,
-  isWindowSmall,
   team,
   currentEmployee,
 }) {
+  const { isWindowSmall } = useWindowSize();
+
   const isEditing = blockedTime !== null;
   const originalTimeOptions = GenerateTimeOptions(preferences?.time_format);
 

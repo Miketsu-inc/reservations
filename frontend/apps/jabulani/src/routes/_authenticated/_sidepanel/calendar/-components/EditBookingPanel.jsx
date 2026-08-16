@@ -25,6 +25,7 @@ import {
   DEFAULT_SERVICE_COLOR,
   timeStringFromDate,
   useToast,
+  useWindowSize,
 } from "@reservations/lib";
 import { useState } from "react";
 import { ServiceCard } from "./BookingCards";
@@ -63,7 +64,6 @@ export default function EditBookingPanel({
   originalBookingData,
   customers,
   categories,
-  isWindowSmall,
   onClose,
   onSave,
   onSoftUpdate,
@@ -85,6 +85,8 @@ export default function EditBookingPanel({
   });
   const [isRecurModalOpen, setIsRecurModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const { isWindowSmall } = useWindowSize();
 
   const isNestedPanelOpen = nestedPageState.isOpen && isWindowSmall;
 
@@ -316,7 +318,6 @@ export default function EditBookingPanel({
           selectedService?.max_participants ??
           originalBookingData.extendedProps.max_participants
         }
-        isWindowSmall={isWindowSmall}
         onAddCustomer={handleSelectCustomers}
         onRemoveCustomer={handleRemoveCustomer}
         onRemoveParticipant={handleRemoveParticipant}
@@ -352,7 +353,6 @@ export default function EditBookingPanel({
                     });
                   }}
                   selected={bookingData.participants}
-                  isWindowSmall={isWindowSmall}
                 />
               )}
               {nestedPageState.active === "customer-profile" && (
@@ -370,7 +370,6 @@ export default function EditBookingPanel({
                     selectedService?.max_participants ??
                     originalBookingData.extendedProps.max_participants
                   }
-                  isWindowSmall={isWindowSmall}
                   disabled={isPastBooking}
                   onAdd={handleSelectCustomers}
                   onRemove={handleRemoveParticipant}
@@ -389,7 +388,6 @@ export default function EditBookingPanel({
             isBookingCompleted={isBookingCompleted}
             isPastBooking={isPastBooking}
             isGroupBooking={isGroupBooking}
-            isWindowSmall={isWindowSmall}
             serviceColor={selectedService?.color ?? DEFAULT_SERVICE_COLOR}
             updateBookingData={updateBookingData}
             onCancel={() => setIsCancelModalOpen(true)}
@@ -411,7 +409,6 @@ export default function EditBookingPanel({
               />
             </label>
             <MobileParticipantSection
-              isWindowSmall={isWindowSmall}
               isGroupBooking={isGroupBooking}
               hasSelection={hasSelection}
               isPastBooking={isPastBooking}
@@ -548,12 +545,13 @@ function BookingHeader({
   isBookingCompleted,
   isPastBooking,
   isGroupBooking,
-  isWindowSmall,
   serviceColor,
   updateBookingData,
   onCancel,
   onClose,
 }) {
+  const { isWindowSmall } = useWindowSize();
+
   return (
     <>
       {isWindowSmall && (

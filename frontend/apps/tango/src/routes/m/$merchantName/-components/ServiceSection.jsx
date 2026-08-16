@@ -8,19 +8,17 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
-import { formatDuration, getDisplayPrice } from "@reservations/lib";
-import merchantServicesQueryOptions from "@reservations/lib/queries";
+import {
+  formatDuration,
+  getDisplayPrice,
+  merchantServicesQueryOptions,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import ServiceDetails from "./ServiceDetails";
 
-export default function ServiceSection({
-  isWindowSmall,
-  router,
-  merchantInfo,
-  merchantName,
-}) {
+export default function ServiceSection({ router, merchantInfo, merchantName }) {
   const {
     data: categories,
     isLoading,
@@ -76,7 +74,6 @@ export default function ServiceSection({
           setSelectedService(null);
           setIsDetailsOpen(false);
         }}
-        isWindowSmall={isWindowSmall}
         category={categories[0].name}
         router={router}
       />
