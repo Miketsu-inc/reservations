@@ -1,28 +1,21 @@
 import {
-  ArrowLeft01Icon,
   Calendar02Icon,
   Clock01Icon,
-  Delete02Icon,
+  Note01Icon,
   Tick02Icon,
+  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
-import {
-  Card,
-  Icon,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@reservations/components";
+import { Avatar, Icon } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
   formatToDateString,
   preferencesQueryOptions,
   timeStringFromDate,
+  useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import DeleteBookingPopoverContent from "../calendar/-components/DeleteBookingPopoverContent";
 
 export default function BookingsList({
   bookings,
@@ -68,109 +61,158 @@ export default function BookingsList({
   );
 }
 
-function monthDateFormat(date) {
-  return date.toLocaleDateString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+function monthNameFromDate(date) {
+  return date.toLocaleDateString([], { month: "short" });
 }
 
-function BookingCard({ booking, route, onCancel, onAccept }) {
-  const [showNote, setShowNote] = useState(false);
+const STATUS_STYLES = {
+  booked:
+    "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
+  confirmed:
+    "bg-blue-600/20 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  completed:
+    "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
+  cancelled: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+  "no-show":
+    "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
+};
+
+function BookingCard({ booking, route, onAccept }) {
+  const { isWindowSmall } = useWindowSize();
+
+  const fromDate = new Date(booking.from_date);
+  const toDate = new Date(booking.to_date);
+
+  const isGroupBooking = booking.booking_type !== "appointment";
+  const status = isGroupBooking
+    ? booking.participant_status
+    : booking.booking_status;
+  const isNotConfirmed = status === "booked";
+
+  const isWalkIn =
+    booking.customer_first_name === null && booking.customer_last_name === null;
+
   const { merchantId } = useAuth();
   const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
 
   return (
-    <Card styles="py-2">
-      <div className="flex h-fit flex-row items-center">
-        <div
-          className="flex w-full flex-col lg:flex-row lg:items-center
-            lg:justify-between lg:pr-3 xl:pr-6"
+    <div
+      className="border-border_color bg-layer_bg dark:hover:bg-layer_bg/80
+        rounded-lg border shadow-sm hover:border-gray-400 hover:bg-gray-100
+        dark:hover:border-zinc-700"
+    >
+      <div
+        className="border-border_color flex flex-row justify-between border-b
+          px-4 py-4"
+      >
+        <Link
+          className="flex flex-1 cursor-pointer flex-row gap-4
+            lg:cursor-default"
+          from={route.fullPath}
+          to="/calendar"
+          params={{
+            start: formatToDateString(fromDate),
+          }}
+          disabled={!isWindowSmall}
         >
-          <div className="flex flex-col gap-2 py-1">
-            <span className="dark:font-semibold">
-              {booking.first_name && booking.last_name
-                ? `${booking.first_name} ${booking.last_name}`
-                : "Walk-in"}
-            </span>
-            <div className="flex flex-row items-center gap-3">
-              <span className="text-sm">{`${monthDateFormat(new Date(booking.from_date))}`}</span>
-              <div className="flex flex-row items-center gap-2">
-                <Icon
-                  icon={Clock01Icon}
-                  styles="size-3 text-gray-500 dark:text-gray-400"
-                />
-                <span className="text-sm">{`${timeStringFromDate(new Date(booking.from_date), preferences?.time_format)} - ${timeStringFromDate(new Date(booking.to_date), preferences?.time_format)}`}</span>
+          <div className="flex flex-col items-center justify-center">
+            <p className="text-lg font-semibold">{fromDate.getDate()}</p>
+            <p className="text-text_color/60 text-sm">
+              {monthNameFromDate(fromDate)}
+            </p>
+          </div>
+          <div className="border-border_color border-r" />
+          <div className="flex flex-col items-start justify-center">
+            <div className="flex flex-row items-center gap-2">
+              <div
+                className="rounded-lg p-1"
+                style={{
+                  backgroundColor:
+                    booking.service_color ?? DEFAULT_SERVICE_COLOR,
+                }}
+              />
+              <p className="text-lg">{booking.service_name}</p>
+              <div
+                className={`${STATUS_STYLES[status]} w-fit rounded-full px-2
+                  py-1 text-sm`}
+              >
+                <p>{status}</p>
               </div>
             </div>
+            <div
+              className="text-text_color/60 flex flex-row items-center gap-2
+                text-sm"
+            >
+              <Icon icon={Clock01Icon} styles="size-3.5" />
+              <p>
+                {`${timeStringFromDate(fromDate, preferences?.time_format)} - ${timeStringFromDate(toDate, preferences?.time_format)}`}
+              </p>
+            </div>
           </div>
-          <span
-            className="w-fit rounded-full px-2 py-1 text-xs"
-            style={{
-              backgroundColor: `${booking.service_color ?? DEFAULT_SERVICE_COLOR}20`,
-              color: booking.service_color ?? DEFAULT_SERVICE_COLOR,
-            }}
-          >
-            {booking.service_name}
-          </span>
-        </div>
-        <div className="flex flex-row items-center gap-1">
+        </Link>
+        <div className="flex flex-row items-center">
+          {isNotConfirmed && (
+            <button
+              className="size-full cursor-pointer px-2"
+              onClick={() => onAccept(booking)}
+            >
+              <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
+            </button>
+          )}
           <Link
+            className="hidden size-full items-center px-2 lg:flex"
             from={route.fullPath}
             to="/calendar"
             params={{
-              start: formatToDateString(new Date(booking.from_date)),
+              start: formatToDateString(fromDate),
             }}
           >
             <Icon icon={Calendar02Icon} styles="size-5 text-text_color" />
           </Link>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="cursor-pointer ps-1">
-                <Icon
-                  icon={Delete02Icon}
-                  styles="text-red-600 dark:text-red-500 size-5"
-                />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="bottom" align="end" styles="w-fit">
-              <DeleteBookingPopoverContent
-                booking={booking}
-                onDeleted={onCancel}
-              />
-            </PopoverContent>
-          </Popover>
-          <button className="cursor-pointer" onClick={() => onAccept(booking)}>
-            <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
-          </button>
         </div>
       </div>
-      {booking.customer_note && (
-        <div className="pt-3 md:pt-2">
-          <button
-            className="flex cursor-pointer flex-row items-center gap-2
-              text-gray-500 dark:text-gray-400"
-            onClick={() => setShowNote(!showNote)}
-          >
-            <Icon
-              icon={ArrowLeft01Icon}
-              styles={`${showNote ? "rotate-90" : "-rotate-90"}
-              transition-transform duration-300 size-3 text-gray-500
-              dark:text-gray-400`}
+      <div className="flex flex-row items-center justify-between px-3 py-2">
+        <div className="flex min-w-0 flex-row items-center gap-2">
+          {!isWalkIn && (
+            <Avatar
+              styles="size-8! text-xs!"
+              initials={`${booking.customer_first_name[0]}${booking.customer_last_name[0]}`}
             />
-            <span className="text-xs">{showNote ? "Hide" : "View"} note</span>
-          </button>
-          <div
-            className={`${showNote ? "mt-2 max-h-8 opacity-100 md:max-h-4" : "max-h-0 opacity-0"}
-            overflow-hidden transition-all duration-300`}
-          >
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {booking.customer_note}
-            </p>
-          </div>
+          )}
+          <p className="truncate text-sm">
+            {isWalkIn
+              ? "Walk-in"
+              : `${booking.customer_first_name} ${booking.customer_last_name}`}
+          </p>
         </div>
-      )}
-    </Card>
+        <div className="flex flex-row items-center gap-2">
+          {booking?.customer_note && (
+            <Pill>
+              <Icon icon={Note01Icon} styles="size-4" />
+              <p>Note</p>
+            </Pill>
+          )}
+          {isGroupBooking && (
+            <Pill>
+              <Icon icon={UserGroupIcon} styles="size-4" />
+              <p>
+                Group {booking.current_participants}/{booking.max_participants}
+              </p>
+            </Pill>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Pill({ children }) {
+  return (
+    <div
+      className="border-border_color bg-bg_color text-text_color/60 flex w-fit
+        flex-row items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+    >
+      {children}
+    </div>
   );
 }

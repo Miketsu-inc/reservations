@@ -152,7 +152,7 @@ function BookingCard({ booking }) {
           )}
         </div>
       </div>
-      <div className="flex flex-row items-center justify-between px-4 py-2">
+      <div className="flex flex-row items-center justify-between px-3 py-2">
         <div className="flex flex-row items-center gap-2">
           <Avatar
             styles="size-8! text-xs!"

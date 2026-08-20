@@ -82,19 +82,25 @@ type getDashboardResp struct {
 }
 
 type bookingDetailsResp struct {
-	ID              int                      `json:"id"`
-	Status          types.BookingStatus      `json:"status"`
-	FromDate        time.Time                `json:"from_date"`
-	ToDate          time.Time                `json:"to_date"`
-	CustomerNote    *string                  `json:"customer_note"`
-	MerchantNote    *string                  `json:"merchant_note"`
-	ServiceName     string                   `json:"service_name"`
-	ServiceColor    *string                  `json:"service_color"`
-	ServiceDuration int                      `json:"service_duration"`
-	Price           currencyx.FormattedPrice `json:"price"`
-	FirstName       *string                  `json:"first_name"`
-	LastName        *string                  `json:"last_name"`
-	PhoneNumber     *string                  `json:"phone_number"`
+	ID                  int                      `json:"id"`
+	BookingType         types.BookingType        `json:"booking_type"`
+	BookingStatus       types.BookingStatus      `json:"booking_status"`
+	ParticipantStatus   *types.BookingStatus     `json:"participant_status"`
+	IsRecurring         bool                     `json:"is_recurring"`
+	FromDate            time.Time                `json:"from_date"`
+	ToDate              time.Time                `json:"to_date"`
+	CustomerNote        *string                  `json:"customer_note"`
+	MerchantNote        *string                  `json:"merchant_note"`
+	ServiceName         string                   `json:"service_name"`
+	ServiceColor        *string                  `json:"service_color"`
+	Price               currencyx.FormattedPrice `json:"price"`
+	PriceType           types.PriceType          `json:"price_type"`
+	CurrentParticipants int                      `json:"current_participants"`
+	MaxParticipants     int                      `json:"max_participants"`
+	CustomerFirstName   *string                  `json:"customer_first_name"`
+	CustomerLastName    *string                  `json:"customer_last_name"`
+	EmployeeFirstName   *string                  `json:"employee_first_name"`
+	EmployeeLastName    *string                  `json:"employee_last_name"`
 }
 
 type lowStockProductResp struct {

@@ -639,16 +639,16 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int,
 
 func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, b.merchant_note, b.total_price as price, b.service_name,
-		s.color as service_color,
-		coalesce(c.first_name, u.first_name) as first_name,
-		coalesce(c.last_name, u.last_name) as last_name,
-		coalesce(c.phone_number, u.phone_number) as phone_number
+	select b.id, b.booking_type, b.status as booking_status, bp.status as participant_status, b.is_recurring, b.from_date, b.to_date, bp.customer_note, b.merchant_note,
+		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
+		coalesce(c.first_name, u.first_name) as customer_first_name, coalesce(c.last_name, u.last_name) as customer_last_name,
+		e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	left join "Service" s on b.service_id = s.id
 	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
 	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
+	left join "Employee" e on b.employee_id = e.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled')
 	order by b.id desc
 	limit $3
@@ -665,16 +665,16 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 
 func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
-	select b.id, b.status, b.from_date, b.to_date, bp.customer_note, b.merchant_note, b.total_price as price, b.service_name,
-		s.color as service_color,
-		coalesce(c.first_name, u.first_name) as first_name,
-		coalesce(c.last_name, u.last_name) as last_name,
-		coalesce(c.phone_number, u.phone_number) as phone_number
+	select b.id, b.booking_type, b.status as booking_status, bp.status as participant_status, b.is_recurring, b.from_date, b.to_date, bp.customer_note, b.merchant_note,
+		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
+		coalesce(c.first_name, u.first_name) as customer_first_name, coalesce(c.last_name, u.last_name) as customer_last_name,
+		e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	left join "Service" s on b.service_id = s.id
 	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
 	left join "Customer" c on bp.customer_id = c.id
 	left join "User" u on c.user_id = u.id
+	left join "Employee" e on b.employee_id = e.id
 	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled')
 	order by b.from_date
 	limit $3
