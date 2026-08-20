@@ -143,7 +143,7 @@ export default function Calendar({ router, route, search }) {
   });
   const [calendarTitle, setCalendarTitle] = useState("");
 
-  const { merchantId } = useAuth();
+  const { merchantId, employeeId } = useAuth();
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },
@@ -155,7 +155,7 @@ export default function Calendar({ router, route, search }) {
   });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
     queries: [
-      preferencesQueryOptions(merchantId),
+      preferencesQueryOptions(merchantId, employeeId),
       businessHoursQueryOptions(merchantId),
     ],
   });

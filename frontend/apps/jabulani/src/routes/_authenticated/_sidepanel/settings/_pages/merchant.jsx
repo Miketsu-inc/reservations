@@ -134,7 +134,7 @@ export const Route = createFileRoute(
 });
 
 function MerchantPage() {
-  const { merchantId } = useAuth();
+  const { merchantId, employeeId } = useAuth();
 
   const {
     data: merchantData,
@@ -158,7 +158,9 @@ function MerchantPage() {
   const [serverError, setServerError] = useState("");
   const { showToast } = useToast();
 
-  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
+  const { data: preferences } = useQuery(
+    preferencesQueryOptions(merchantId, employeeId)
+  );
 
   function handleInputData(data) {
     setMerchantInfo((prevFormData) => ({

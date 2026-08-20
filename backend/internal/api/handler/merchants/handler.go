@@ -262,57 +262,6 @@ func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Requ
 	return nil
 }
 
-type getPreferencesResp struct {
-	FirstDayOfWeek     string `json:"first_day_of_week"`
-	TimeFormat         string `json:"time_format"`
-	CalendarView       string `json:"calendar_view"`
-	CalendarViewMobile string `json:"calendar_view_mobile"`
-	StartHour          string `json:"start_hour"`
-	EndHour            string `json:"end_hour"`
-	TimeFrequency      string `json:"time_frequency"`
-}
-
-func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) error {
-	preferences, err := h.service.GetPreferences(r.Context())
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetPreferences")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToGetPreferencesResp(preferences))
-
-	return nil
-}
-
-type updatePreferencesReq struct {
-	FirstDayOfWeek     string `json:"first_day_of_week"`
-	TimeFormat         string `json:"time_format"`
-	CalendarView       string `json:"calendar_view"`
-	CalendarViewMobile string `json:"calendar_view_mobile"`
-	StartHour          string `json:"start_hour"`
-	EndHour            string `json:"end_hour"`
-	TimeFrequency      string `json:"time_frequency"`
-}
-
-func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) error {
-	var req updatePreferencesReq
-
-	if err := validate.ParseStruct(r, &req); err != nil {
-		return err
-	}
-
-	updatePreferencesInput, err := mapToUpdatePreferencesInput(req)
-	if err != nil {
-		return validate.NewError(err.Error())
-	}
-
-	err = h.service.UpdatePreferences(r.Context(), updatePreferencesInput)
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "UpdatePreferences")
-	}
-
-	return nil
-}
-
 type getTeamMembersForCalendarResp struct {
 	Id        int    `json:"id"`
 	FirstName string `json:"first_name"`

@@ -28,15 +28,18 @@ function convertTimeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
-async function updatePreferences(merchantId, preferences) {
-  const response = await fetch(`/api/v1/merchants/${merchantId}/preferences`, {
-    method: "PATCH",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(preferences),
-  });
+async function updatePreferences(merchantId, employeeId, preferences) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/team/${employeeId}/preferences`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(preferences),
+    }
+  );
 
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
@@ -71,10 +74,12 @@ export const Route = createFileRoute(
   loader: async ({
     context: {
       queryClient,
-      authContext: { merchantId },
+      authContext: { merchantId, employeeId },
     },
   }) => {
-    await queryClient.ensureQueryData(preferencesQueryOptions(merchantId));
+    await queryClient.ensureQueryData(
+      preferencesQueryOptions(merchantId, employeeId)
+    );
   },
 });
 
@@ -83,18 +88,22 @@ function CalendarPage() {
   const [serverError, setServerError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const { merchantId } = useAuth();
+  const { merchantId, employeeId } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
-    preferencesQueryOptions(merchantId)
+    preferencesQueryOptions(merchantId, employeeId)
   );
 
   const preferences = { ...(data || defaultPreferences), ...unsavedChanges };
 
   const updateMutation = useMutation({
-    mutationFn: (preferences) => updatePreferences(merchantId, preferences),
+    mutationFn: (preferences) =>
+      updatePreferences(merchantId, employeeId, preferences),
     onSuccess: () => {
-      queryClient.setQueryData([merchantId, "preferences"], preferences);
+      queryClient.setQueryData(
+        [merchantId, employeeId, "preferences"],
+        preferences
+      );
       setUnsavedChanges({});
       setServerError("");
     },

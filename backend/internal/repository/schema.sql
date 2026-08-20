@@ -251,9 +251,8 @@ create table if not exists "BookingParticipant" (
     constraint unique_booking_participant unique (booking_id, customer_id)
 );
 
-create table if not exists "Preferences" (
-    ID                       serial           primary key unique not null,
-    merchant_id              uuid             references "Merchant" (ID) on delete cascade not null,
+create table if not exists "EmployeePreferences" (
+    employee_id              integer          primary key unique references "Employee" (ID) on delete cascade not null,
     first_day_of_week        varchar(10)      default 'Monday' check (first_day_of_week in ('Monday', 'Sunday')) not null,
     time_format              varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')) not null,
     calendar_view            varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')) not null,

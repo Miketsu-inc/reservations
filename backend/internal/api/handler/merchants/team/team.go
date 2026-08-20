@@ -29,6 +29,9 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Get("/", h.GetTeam)
 
+	r.Get("/{id}/preferences", h.GetPreferences)
+	r.Patch("/{id}/preferences", h.UpdatePreferences)
+
 	return r
 }
 
@@ -139,6 +142,67 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, result)
+
+	return nil
+}
+
+type getPreferencesResp struct {
+	FirstDayOfWeek     string `json:"first_day_of_week"`
+	TimeFormat         string `json:"time_format"`
+	CalendarView       string `json:"calendar_view"`
+	CalendarViewMobile string `json:"calendar_view_mobile"`
+	StartHour          string `json:"start_hour"`
+	EndHour            string `json:"end_hour"`
+	TimeFrequency      string `json:"time_frequency"`
+}
+
+func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) error {
+	urlMemberId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid team member id")
+	}
+
+	preferences, err := h.service.GetPreferences(r.Context(), urlMemberId)
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "GetPreferences")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetPreferencesResp(preferences))
+
+	return nil
+}
+
+type updatePreferencesReq struct {
+	FirstDayOfWeek     string `json:"first_day_of_week"`
+	TimeFormat         string `json:"time_format"`
+	CalendarView       string `json:"calendar_view"`
+	CalendarViewMobile string `json:"calendar_view_mobile"`
+	StartHour          string `json:"start_hour"`
+	EndHour            string `json:"end_hour"`
+	TimeFrequency      string `json:"time_frequency"`
+}
+
+func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) error {
+	var req updatePreferencesReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	urlMemberId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid team member id")
+	}
+
+	updatePreferencesInput, err := mapToUpdatePreferencesInput(req)
+	if err != nil {
+		return validate.NewError(err.Error())
+	}
+
+	err = h.service.UpdatePreferences(r.Context(), urlMemberId, updatePreferencesInput)
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "UpdatePreferences")
+	}
 
 	return nil
 }

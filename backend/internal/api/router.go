@@ -90,9 +90,6 @@ func NewRouter(h *Handlers) *httputil.Router {
 				r.Patch("/settings", h.Merchants.UpdateSettings)
 				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
 
-				r.Get("/preferences", h.Merchants.GetPreferences)
-				r.Patch("/preferences", h.Merchants.UpdatePreferences)
-
 				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
 				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)

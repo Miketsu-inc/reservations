@@ -42,10 +42,6 @@ type MerchantRepository interface {
 
 	NewLocation(ctx context.Context, location Location) error
 	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
-
-	NewPreferences(ctx context.Context, merchantId uuid.UUID) error
-	UpdatePreferences(ctx context.Context, merchantId uuid.UUID, preferences PreferenceData) error
-	GetPreferences(ctx context.Context, merchantId uuid.UUID) (PreferenceData, error)
 }
 
 type Merchant struct {
@@ -192,14 +188,4 @@ type Location struct {
 	FormattedLocation string         `json:"formatted_location"`
 	IsPrimary         bool           `json:"is_primary"`
 	IsActive          bool           `json:"is_active"`
-}
-
-type PreferenceData struct {
-	FirstDayOfWeek     string    `json:"first_day_of_week"`
-	TimeFormat         string    `json:"time_format"`
-	CalendarView       string    `json:"calendar_view"`
-	CalendarViewMobile string    `json:"calendar_view_mobile"`
-	StartHour          time.Time `json:"start_hour"`
-	EndHour            time.Time `json:"end_hour"`
-	TimeFrequency      time.Time `json:"time_frequency"`
 }

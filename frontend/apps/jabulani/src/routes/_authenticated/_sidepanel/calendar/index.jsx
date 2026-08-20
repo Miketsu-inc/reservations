@@ -87,11 +87,11 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
     deps: search,
     context: {
       queryClient,
-      authContext: { merchantId },
+      authContext: { merchantId, employeeId },
     },
   }) => {
     const preferences = await queryClient.ensureQueryData(
-      preferencesQueryOptions(merchantId)
+      preferencesQueryOptions(merchantId, employeeId)
     );
 
     let defaultView = preferences?.calendar_view

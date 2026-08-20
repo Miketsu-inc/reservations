@@ -92,8 +92,10 @@ function BookingCard({ booking, route, onAccept }) {
   const isWalkIn =
     booking.customer_first_name === null && booking.customer_last_name === null;
 
-  const { merchantId } = useAuth();
-  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
+  const { merchantId, employeeId } = useAuth();
+  const { data: preferences } = useQuery(
+    preferencesQueryOptions(merchantId, employeeId)
+  );
 
   return (
     <div

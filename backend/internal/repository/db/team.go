@@ -22,18 +22,21 @@ func (r *teamRepository) WithTx(tx db.DBTX) domain.TeamRepository {
 	return &teamRepository{db: tx}
 }
 
-func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, emp domain.PublicEmployee) error {
+func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, emp domain.PublicEmployee) (int, error) {
 	query := `
 	insert into "Employee" (user_id, merchant_id, role, first_name, last_name, email, phone_number, is_active)
 	values ($1, $2, $3, $4, $5, $6, $7, $8)
+	returning id
 	`
 
-	_, err := r.db.Exec(ctx, query, emp.UserId, merchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber, emp.IsActive)
+	var employeeId int
+	err := r.db.QueryRow(ctx, query, emp.UserId, merchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber,
+		emp.IsActive).Scan(&employeeId)
 	if err != nil {
-		return fmt.Errorf("NewEmployee: %w", err)
+		return 0, fmt.Errorf("NewEmployee: %w", err)
 	}
 
-	return nil
+	return employeeId, nil
 }
 
 func (r *teamRepository) UpdateEmployee(ctx context.Context, merchantId uuid.UUID, employee domain.PublicEmployee) error {
@@ -133,4 +136,48 @@ func (r *teamRepository) GetMerchantIdByEmployee(ctx context.Context, employeeId
 	}
 
 	return merchantId, nil
+}
+
+func (r *teamRepository) NewEmployeePreferences(ctx context.Context, employeeId int) error {
+	query := `
+	insert into "EmployeePreferences" (employee_id) values ($1)
+	`
+
+	_, err := r.db.Exec(ctx, query, employeeId)
+	if err != nil {
+		return fmt.Errorf("NewEmployeePreferences: %w", err)
+	}
+
+	return err
+}
+
+func (r *teamRepository) UpdateEmployeePreferences(ctx context.Context, employeeId int, p domain.EmployeePreferences) error {
+	query := `
+	update "EmployeePreferences"
+	set first_day_of_week = $2, time_format = $3, calendar_view = $4, calendar_view_mobile = $5, start_hour = $6, end_hour = $7, time_frequency = $8
+	where employee_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, employeeId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.CalendarViewMobile, p.StartHour, p.EndHour, p.TimeFrequency)
+	if err != nil {
+		return fmt.Errorf("UpdateEmployeePreferences: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) GetEmployeePreferences(ctx context.Context, employeeId int) (domain.EmployeePreferences, error) {
+	query := `
+	select first_day_of_week, time_format, calendar_view, calendar_view_mobile, start_hour, end_hour, time_frequency
+	from "EmployeePreferences"
+	where employee_id = $1
+	`
+
+	var p domain.EmployeePreferences
+	err := r.db.QueryRow(ctx, query, employeeId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.CalendarViewMobile, &p.StartHour, &p.EndHour, &p.TimeFrequency)
+	if err != nil {
+		return domain.EmployeePreferences{}, fmt.Errorf("GetEmployeePreferences: %w", err)
+	}
+
+	return p, nil
 }

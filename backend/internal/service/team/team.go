@@ -62,7 +62,7 @@ func (s *Service) NewMember(ctx context.Context, input NewMemberInput) error {
 
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.NewEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
+	_, err := s.teamRepo.NewEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
 		LastName:    &input.LastName,

@@ -226,45 +226,6 @@ func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSl
 	return businessHours
 }
 
-func mapToGetPreferencesResp(in domain.PreferenceData) getPreferencesResp {
-	return getPreferencesResp{
-		FirstDayOfWeek:     in.FirstDayOfWeek,
-		TimeFormat:         in.TimeFormat,
-		CalendarView:       in.CalendarView,
-		CalendarViewMobile: in.CalendarViewMobile,
-		StartHour:          in.StartHour.Format("15:04"),
-		EndHour:            in.EndHour.Format("15:04"),
-		TimeFrequency:      in.TimeFrequency.Format("15:04"),
-	}
-}
-
-func mapToUpdatePreferencesInput(in updatePreferencesReq) (merchantServ.UpdatePreferencesInput, error) {
-	startHour, err := time.Parse("15:04", in.StartHour)
-	if err != nil {
-		return merchantServ.UpdatePreferencesInput{}, err
-	}
-
-	endHour, err := time.Parse("15:04", in.EndHour)
-	if err != nil {
-		return merchantServ.UpdatePreferencesInput{}, err
-	}
-
-	timeFreq, err := time.Parse("15:04", in.TimeFrequency)
-	if err != nil {
-		return merchantServ.UpdatePreferencesInput{}, err
-	}
-
-	return merchantServ.UpdatePreferencesInput{
-		FirstDayOfWeek:     in.FirstDayOfWeek,
-		TimeFormat:         in.TimeFormat,
-		CalendarView:       in.CalendarView,
-		CalendarViewMobile: in.CalendarViewMobile,
-		StartHour:          startHour,
-		EndHour:            endHour,
-		TimeFrequency:      timeFreq,
-	}, nil
-}
-
 func mapToGetTeamMembersForCalendarResp(in []domain.PublicEmployee) []getTeamMembersForCalendarResp {
 	teamMembers := make([]getTeamMembersForCalendarResp, len(in))
 

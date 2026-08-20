@@ -36,8 +36,10 @@ const statusMap = {
 };
 
 export default function BookingItem({ booking, customerName }) {
-  const { merchantId } = useAuth();
-  const { data: preferences } = useQuery(preferencesQueryOptions(merchantId));
+  const { merchantId, employeeId } = useAuth();
+  const { data: preferences } = useQuery(
+    preferencesQueryOptions(merchantId, employeeId)
+  );
 
   const currentStatus = statusMap[booking.status];
   const statusLabel = currentStatus.getLabel(customerName);

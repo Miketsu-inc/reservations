@@ -1,14 +1,17 @@
 import { queryOptions } from "@tanstack/react-query";
 import { invalidateLocalStorageAuth } from "./lib";
 
-async function fetchPreferences(merchantId) {
-  const response = await fetch(`/api/v1/merchants/${merchantId}/preferences`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchPreferences(merchantId, employeeId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/team/${employeeId}/preferences`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   const result = await response.json();
   if (!response.ok) {
@@ -19,10 +22,10 @@ async function fetchPreferences(merchantId) {
   }
 }
 
-export function preferencesQueryOptions(merchantId) {
+export function preferencesQueryOptions(merchantId, employeeId) {
   return queryOptions({
-    queryKey: [merchantId, "preferences"],
-    queryFn: () => fetchPreferences(merchantId),
+    queryKey: [merchantId, employeeId, "preferences"],
+    queryFn: () => fetchPreferences(merchantId, employeeId),
   });
 }
 

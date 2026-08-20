@@ -244,46 +244,6 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 	return businessHours, nil
 }
 
-func (s *Service) GetPreferences(ctx context.Context) (domain.PreferenceData, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	preferences, err := s.merchantRepo.GetPreferences(ctx, actor.MerchantId)
-	if err != nil {
-		return domain.PreferenceData{}, err
-	}
-
-	return preferences, nil
-}
-
-type UpdatePreferencesInput struct {
-	FirstDayOfWeek     string
-	TimeFormat         string
-	CalendarView       string
-	CalendarViewMobile string
-	StartHour          time.Time
-	EndHour            time.Time
-	TimeFrequency      time.Time
-}
-
-func (s *Service) UpdatePreferences(ctx context.Context, input UpdatePreferencesInput) error {
-	actor := actor.MustGetFromContext(ctx)
-
-	err := s.merchantRepo.UpdatePreferences(ctx, actor.MerchantId, domain.PreferenceData{
-		FirstDayOfWeek:     input.FirstDayOfWeek,
-		TimeFormat:         input.TimeFormat,
-		CalendarView:       input.CalendarView,
-		CalendarViewMobile: input.CalendarViewMobile,
-		StartHour:          input.StartHour,
-		EndHour:            input.EndHour,
-		TimeFrequency:      input.TimeFrequency,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.PublicEmployee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
