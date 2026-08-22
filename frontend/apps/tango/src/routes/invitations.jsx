@@ -29,6 +29,7 @@ function invitationQueryOptions(token) {
 
 export const Route = createFileRoute("/invitations")({
   component: RouteComponent,
+  loaderDeps: ({ search }) => search,
   beforeLoad: async ({ context: { queryClient } }) => {
     try {
       await queryClient.ensureQueryData(meQueryOptions());
@@ -44,7 +45,6 @@ export const Route = createFileRoute("/invitations")({
       throw error;
     }
   },
-  loaderDeps: ({ search }) => search,
   loader: async ({ context: { queryClient }, deps: search }) => {
     await queryClient.ensureQueryData(invitationQueryOptions(search.token));
   },
@@ -57,6 +57,14 @@ function RouteComponent() {
   const { token } = Route.useSearch();
   const { showToast } = useToast();
   const navigate = Route.useNavigate();
+
+  const { data: invitation, isLoading } = useQuery(
+    invitationQueryOptions(token)
+  );
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   async function acceptHandler() {
     const response = await fetch(`/api/v1/invitations/${token}/accept`, {
@@ -110,14 +118,6 @@ function RouteComponent() {
         </div>
       </div>
     );
-  }
-
-  const { data: invitation, isLoading } = useQuery(
-    invitationQueryOptions(token)
-  );
-
-  if (isLoading) {
-    return <Loading />;
   }
 
   return (

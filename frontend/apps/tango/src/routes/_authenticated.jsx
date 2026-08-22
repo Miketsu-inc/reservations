@@ -13,9 +13,9 @@ export const Route = createFileRoute("/_authenticated")({
           search: { redirect: location.href },
         });
       }
-    }
 
-    throw error;
+      throw error;
+    }
   },
   component: AuthComponent,
   pendingComponent: Loading,
