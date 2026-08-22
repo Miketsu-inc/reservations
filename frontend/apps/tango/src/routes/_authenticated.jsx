@@ -7,13 +7,15 @@ export const Route = createFileRoute("/_authenticated")({
     try {
       await queryClient.ensureQueryData(meQueryOptions());
     } catch (error) {
-      if (error.staus === 401) {
+      if (error.status === 401) {
         throw redirect({
           to: "/login",
           search: { redirect: location.href },
         });
       }
     }
+
+    throw error;
   },
   component: AuthComponent,
   pendingComponent: Loading,

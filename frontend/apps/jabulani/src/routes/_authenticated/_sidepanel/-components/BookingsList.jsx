@@ -155,14 +155,16 @@ function BookingCard({ booking, route, onAccept }) {
         <div className="flex flex-row items-center">
           {isNotConfirmed && (
             <button
-              className="size-full cursor-pointer px-2"
+              className="lg:hover:bg-hvr_gray h-full cursor-pointer rounded-lg
+                px-2 lg:h-fit lg:py-2"
               onClick={() => onAccept(booking)}
             >
               <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
             </button>
           )}
           <Link
-            className="hidden size-full items-center px-2 lg:flex"
+            className="lg:hover:bg-hvr_gray hidden h-full items-center
+              rounded-lg px-2.5 lg:flex lg:h-fit lg:py-2.5"
             from={route.fullPath}
             to="/calendar"
             params={{
