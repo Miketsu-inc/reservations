@@ -8,6 +8,7 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/auth"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/invitations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
@@ -38,6 +39,7 @@ type Handlers struct {
 	BlockedTimeTypes  *blockedtimetypes.Handler
 	Customers         *customers.Handler
 	Integrations      *integrations.Handler
+	Invitations       *invitations.Handler
 	Users             *users.Handler
 	Locations         *locations.Handler
 	Products          *products.Handler
@@ -58,6 +60,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 	r.Route("/api/v1", func(r *httputil.Router) {
 		r.Mount("/auth", h.Auth.Routes())
 		r.Mount("/integrations", h.Integrations.Routes())
+		r.Mount("/invitations", h.Invitations.Routes())
 		r.Mount("/users", h.Users.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())

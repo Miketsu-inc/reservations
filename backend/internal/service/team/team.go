@@ -8,18 +8,31 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/queue"
 )
 
 type Service struct {
-	teamRepo domain.TeamRepository
-	userRepo domain.UserRepository
+	teamRepo     domain.TeamRepository
+	userRepo     domain.UserRepository
+	merchantRepo domain.MerchantRepository
+	enqueuer     queue.Enqueuer
+	txManager    db.TransactionManager
 }
 
-func NewService(team domain.TeamRepository, user domain.UserRepository) *Service {
+func NewService(team domain.TeamRepository, user domain.UserRepository, merchant domain.MerchantRepository, enqueuer queue.Enqueuer,
+	txManager db.TransactionManager) *Service {
 	return &Service{
-		teamRepo: team,
-		userRepo: user,
+		teamRepo:     team,
+		userRepo:     user,
+		merchantRepo: merchant,
+		enqueuer:     enqueuer,
+		txManager:    txManager,
 	}
+}
+
+func (s *Service) SetEnqueuer(client queue.Enqueuer) {
+	s.enqueuer = client
 }
 
 type MeResult struct {

@@ -41,6 +41,23 @@ func mapToGetMemberResp(in domain.PublicEmployee) getMemberResp {
 	}
 }
 
+func mapToGetInvitationsResp(in []domain.EmployeeInvitation) []getInvitationsResp {
+	invitations := make([]getInvitationsResp, len(in))
+
+	for i, inv := range in {
+		invitations[i] = getInvitationsResp{
+			Id:        inv.Id,
+			Status:    inv.Status,
+			Email:     inv.Email,
+			Role:      inv.Role,
+			InvitedAt: inv.InvitedAt,
+			ExpiresAt: inv.ExpiresAt,
+		}
+	}
+
+	return invitations
+}
+
 func mapToGetPreferencesResp(in domain.EmployeePreferences) getPreferencesResp {
 	return getPreferencesResp{
 		FirstDayOfWeek:     in.FirstDayOfWeek,

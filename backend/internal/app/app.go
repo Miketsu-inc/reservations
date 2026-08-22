@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/auth"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/invitations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
@@ -74,7 +75,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
-	teamService := teamSrv.NewService(teamRepo, userRepo)
+	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, nil, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, teamService, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, teamRepo, teamService, nil, transactionManager)
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
@@ -92,11 +93,14 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		CatalogRepo:        catalogRepo,
 		UserRepo:           userRepo,
 		ExtCalendarRepo:    externalCalendarRepo,
+		TeamRepo:           teamRepo,
+		MerchantRepo:       merchantRepo,
 		TxManager:          transactionManager,
 	}, workers.RegisterWorkers, workers.GetPeriodicJobs())
 	assert.Nil(err, "Failed to create new river client")
 
 	authService.SetEnqueuer(enqueuer)
+	teamService.SetEnqueuer(enqueuer)
 	bookingService.SetEnqueuer(enqueuer)
 	externalCalendarService.SetEnqueuer(enqueuer)
 	blockedTimeService.SetEnqueuer(enqueuer)
@@ -113,12 +117,13 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),
 		Customers:         customers.NewHandler(customerService),
 		Integrations:      integrations.NewHandler(externalCalendarService),
+		Invitations:       invitations.NewHandler(teamService, middlewareManager),
 		Users:             users.NewHandler(userService, bookingService, authService, middlewareManager),
 		Locations:         locations.NewHandler(merchantService),
 		Products:          products.NewHandler(productService),
 		Services:          services.NewHandler(catalogService),
 		ServiceCategories: servicecategories.NewHandler(catalogService),
-		Team:              team.NewHandler(teamService),
+		Team:              team.NewHandler(teamService, middlewareManager),
 		Middleware:        middlewareManager,
 	})
 

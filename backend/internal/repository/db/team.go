@@ -3,10 +3,12 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -136,6 +138,178 @@ func (r *teamRepository) GetMerchantIdByEmployee(ctx context.Context, employeeId
 	}
 
 	return merchantId, nil
+}
+
+func (r *teamRepository) NewEmployeeInvitation(ctx context.Context, inv domain.EmployeeInvitation) (int, error) {
+	query := `
+	insert into "EmployeeInvitation" (merchant_id, status, email, role, token, invited_by, invited_at, expires_at)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)
+	returning id
+	`
+
+	var invitationId int
+	err := r.db.QueryRow(ctx, query, inv.MerchantId, inv.Status, inv.Email, inv.Role, inv.Token, inv.InvitedBy, inv.InvitedAt, inv.ExpiresAt).Scan(&invitationId)
+	if err != nil {
+		return 0, fmt.Errorf("NewEmployeeInvitation: %w", err)
+	}
+
+	return invitationId, nil
+}
+
+func (r *teamRepository) UpdateEmployeeInvitation(ctx context.Context, inv domain.EmployeeInvitation) error {
+	query := `
+	update "EmployeeInvitation"
+	set status = $2, role = $3, token = $4, invited_by = $5, invited_at = $6, expires_at = $7
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, inv.Id, inv.Status, inv.Role, inv.Token, inv.InvitedBy, inv.InvitedAt, inv.ExpiresAt)
+	if err != nil {
+		return fmt.Errorf("UpdateEmployeeInvitation: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) UpdateEmployeeInvitationsStatus(ctx context.Context, invitationIds []int, status types.EmployeeInvitationStatus) error {
+	query := `
+	update "EmployeeInvitation"
+	set status = $2
+	where id = any($1::int[])
+	`
+
+	_, err := r.db.Exec(ctx, query, invitationIds, status)
+	if err != nil {
+		return fmt.Errorf("UpdateEmployeeInvitationsStatus: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) AcceptEmployeeInvitation(ctx context.Context, invitationId int) error {
+	query := `
+	update "EmployeeInvitation"
+	set status = 'accepted', accepted_at = $2
+	where id = $1 and status in ('pending')
+	`
+
+	_, err := r.db.Exec(ctx, query, invitationId, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("AcceptEmployeeInvitation: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) DeclineEmployeeInvitation(ctx context.Context, invitationId int) error {
+	query := `
+	update "EmployeeInvitation"
+	set status = 'declined', declined_at = $2
+	where id = $1 and status in ('pending')
+	`
+
+	_, err := r.db.Exec(ctx, query, invitationId, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("DeclineEmployeeInvitation: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) RevokeEmployeeInvitation(ctx context.Context, invitationId int) error {
+	query := `
+	update "EmployeeInvitation"
+	set status = 'revoked', revoked_at = $2
+	where id = $1 and status in ('pending')
+	`
+
+	_, err := r.db.Exec(ctx, query, invitationId, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("RevokeEmployeeInvitation: %w", err)
+	}
+
+	return nil
+}
+
+func (r *teamRepository) GetEmployeeInvitation(ctx context.Context, invitationId int) (domain.EmployeeInvitation, error) {
+	query := `
+	select *
+	from "EmployeeInvitation"
+	where id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, invitationId)
+	invitation, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.EmployeeInvitation])
+	if err != nil {
+		return domain.EmployeeInvitation{}, fmt.Errorf("GetEmployeeInvitation: %w", err)
+	}
+
+	return invitation, nil
+}
+
+func (r *teamRepository) GetEmployeeInvitationByEmail(ctx context.Context, merchantId uuid.UUID, email string) (domain.EmployeeInvitation, error) {
+	query := `
+	select *
+	from "EmployeeInvitation"
+	where merchant_id = $1 and email = $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId, email)
+	invitation, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.EmployeeInvitation])
+	if err != nil {
+		return domain.EmployeeInvitation{}, fmt.Errorf("GetEmployeeInvitationByEmail: %w", err)
+	}
+
+	return invitation, nil
+}
+
+func (r *teamRepository) GetEmployeeInvitationByToken(ctx context.Context, token string) (domain.EmployeeInvitation, error) {
+	query := `
+	select *
+	from "EmployeeInvitation"
+	where token = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, token)
+	invitation, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.EmployeeInvitation])
+	if err != nil {
+		return domain.EmployeeInvitation{}, fmt.Errorf("GetEmployeeInvitationByToken: %w", err)
+	}
+
+	return invitation, nil
+}
+
+func (r *teamRepository) GetEmployeeInvitations(ctx context.Context, merchantId uuid.UUID) ([]domain.EmployeeInvitation, error) {
+	query := `
+	select *
+	from "EmployeeInvitation"
+	where merchant_id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	invitations, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeInvitation])
+	if err != nil {
+		return []domain.EmployeeInvitation{}, fmt.Errorf("GetEmployeeInvitations: %w", err)
+	}
+
+	return invitations, nil
+}
+
+func (r *teamRepository) GetExpiredEmployeeInvitations(ctx context.Context, expiry time.Time, limit int) ([]domain.EmployeeInvitation, error) {
+	query := `
+	select *
+	from "EmployeeInvitation"
+	where expires_at >= $1 and status not in ('expired')
+	limit $2
+	`
+
+	rows, _ := r.db.Query(ctx, query, expiry, limit)
+	invitations, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeInvitation])
+	if err != nil {
+		return []domain.EmployeeInvitation{}, fmt.Errorf("GetExpiredEmployeeInvitations: %w", err)
+	}
+
+	return invitations, nil
 }
 
 func (r *teamRepository) NewEmployeePreferences(ctx context.Context, employeeId int) error {

@@ -92,6 +92,22 @@ func (r *merchantRepository) UpdateMerchantFields(ctx context.Context, merchantI
 	return nil
 }
 
+func (r *merchantRepository) GetMerchant(ctx context.Context, merchantId uuid.UUID) (domain.Merchant, error) {
+	query := `
+	select *
+	from "Merchant"
+	where id = $1
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	merchant, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Merchant])
+	if err != nil {
+		return domain.Merchant{}, fmt.Errorf("GetMerchant: %w", err)
+	}
+
+	return merchant, nil
+}
+
 func (r *merchantRepository) IsMerchantUrlUnique(ctx context.Context, merchantUrl string) (bool, error) {
 	query := `
 	select 1 from "Merchant"

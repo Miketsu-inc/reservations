@@ -91,3 +91,17 @@ func (ForgotPasswordEmail) InsertOpts() river.InsertOpts {
 		Queue: "email",
 	}
 }
+
+type EmployeeInvitationEmail struct {
+	Language     language.Tag `json:"language"`
+	InvitationId int          `json:"invitation_id"`
+	Token        string       `json:"token"`
+}
+
+func (EmployeeInvitationEmail) Kind() string { return "employee_invitation_email" }
+
+func (EmployeeInvitationEmail) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue: "email",
+	}
+}

@@ -392,3 +392,48 @@ func (w *ForgotPasswordEmail) Work(ctx context.Context, job *river.Job[args.Forg
 		PasswordLink: fmt.Sprintf("http://reservations.local:3000/reset-password?token=%s", job.Args.Token),
 	})
 }
+
+type EmployeeInvitationEmail struct {
+	river.WorkerDefaults[args.EmployeeInvitationEmail]
+
+	emailService *email.Service
+	teamRepo     domain.TeamRepository
+	merchantRepo domain.MerchantRepository
+}
+
+func NewEmployeeInvitationEmail(emailService *email.Service, teamRepo domain.TeamRepository, merchantRepo domain.MerchantRepository) *EmployeeInvitationEmail {
+	return &EmployeeInvitationEmail{emailService: emailService, teamRepo: teamRepo, merchantRepo: merchantRepo}
+}
+
+func (w *EmployeeInvitationEmail) Work(ctx context.Context, job *river.Job[args.EmployeeInvitationEmail]) error {
+	invitation, err := w.teamRepo.GetEmployeeInvitation(ctx, job.Args.InvitationId)
+	if err != nil {
+		return err
+	}
+
+	if !invitation.IsPending() {
+		return nil
+	}
+
+	inviterName := ""
+
+	if invitation.InvitedBy != nil {
+		employee, err := w.teamRepo.GetEmployee(ctx, invitation.MerchantId, *invitation.InvitedBy)
+		if err != nil {
+			return err
+		}
+
+		inviterName = employee.GetName()
+	}
+
+	merchant, err := w.merchantRepo.GetMerchant(ctx, invitation.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	return w.emailService.EmployeeInvitation(ctx, job.Args.Language, invitation.Email, email.EmployeeInvitationData{
+		InviterName:  inviterName,
+		MerchantName: merchant.Name,
+		AcceptLink:   fmt.Sprintf("http://reservations.local:3000/invitations?token=%s", job.Args.Token),
+	})
+}

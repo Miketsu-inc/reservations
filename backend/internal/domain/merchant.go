@@ -20,6 +20,7 @@ type MerchantRepository interface {
 	UpdateMerchantFields(ctx context.Context, merchantId uuid.UUID, merchantFields MerchantSettingFields) error
 
 	IsMerchantUrlUnique(ctx context.Context, urlName string) (bool, error)
+	GetMerchant(ctx context.Context, merchantId uuid.UUID) (Merchant, error)
 	GetMerchantIdByUrlName(ctx context.Context, urlName string) (uuid.UUID, error)
 	GetMerchantUrlName(ctx context.Context, merchantId uuid.UUID) (string, error)
 	GetMerchantTimezone(ctx context.Context, merchantId uuid.UUID) (*time.Location, error)

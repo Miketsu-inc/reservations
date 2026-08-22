@@ -3,8 +3,10 @@ package team
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -12,25 +14,38 @@ import (
 )
 
 type Handler struct {
-	service *teamServ.Service
+	service    *teamServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *teamServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *teamServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Post("/", h.NewMember)
-	r.Put("/{id}", h.UpdateMember)
-	r.Delete("/{id}", h.DeleteMember)
-	r.Get("/{id}", h.GetMember)
-
-	r.Get("/", h.GetTeam)
-
 	r.Get("/{id}/preferences", h.GetPreferences)
 	r.Patch("/{id}/preferences", h.UpdatePreferences)
+
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+
+		r.Post("/", h.NewMember)
+		r.Put("/{id}", h.UpdateMember)
+		r.Delete("/{id}", h.DeleteMember)
+		r.Get("/{id}", h.GetMember)
+
+		r.Get("/", h.GetTeam)
+
+		r.Route("/invitations", func(r *httputil.Router) {
+			r.Get("/", h.GetInvitations)
+			r.Post("/", h.InviteMember)
+
+			r.Post("/{id}/resend", h.ResendInvitation)
+			r.Post("/{id}/revoke", h.RevokeInvitation)
+		})
+	})
 
 	return r
 }
@@ -142,6 +157,76 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, result)
+
+	return nil
+}
+
+type getInvitationsResp struct {
+	Id        int                            `json:"id"`
+	Status    types.EmployeeInvitationStatus `json:"status"`
+	Email     string                         `json:"email"`
+	Role      types.EmployeeInvitationRole   `json:"role"`
+	InvitedAt time.Time                      `json:"invited_at"`
+	ExpiresAt time.Time                      `json:"expires_at"`
+}
+
+func (h *Handler) GetInvitations(w http.ResponseWriter, r *http.Request) error {
+	invitations, err := h.service.GetInvitations(r.Context())
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "GetInvitations")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetInvitationsResp(invitations))
+
+	return nil
+}
+
+type inviteMemberReq struct {
+	Email string                       `json:"email" validate:"required,email"`
+	Role  types.EmployeeInvitationRole `json:"role" validate:"required"`
+}
+
+func (h *Handler) InviteMember(w http.ResponseWriter, r *http.Request) error {
+	var req inviteMemberReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	err := h.service.InviteMember(r.Context(), req.Email, req.Role)
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "InviteMember")
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	return nil
+}
+
+func (h *Handler) ResendInvitation(w http.ResponseWriter, r *http.Request) error {
+	urlInvitationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid invitation id")
+	}
+
+	err = h.service.ResendInvitation(r.Context(), urlInvitationId)
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "ResendInvitation")
+	}
+
+	return nil
+}
+
+func (h *Handler) RevokeInvitation(w http.ResponseWriter, r *http.Request) error {
+	urlInvitationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid invitation id")
+	}
+
+	err = h.service.RevokeInvitation(r.Context(), urlInvitationId)
+	if err != nil {
+		return teamServ.ErrStatus.Resolve(err, "RevokeInvitation")
+	}
 
 	return nil
 }

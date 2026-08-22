@@ -67,10 +67,23 @@ create table if not exists "Employee" (
     email                    varchar(320),
     phone_number             varchar(30),
     is_active                boolean         not null default true,
-    invited_on               timestamptz,
-    accepted_on              timestamptz,
 
     constraint unique_merchant_user_employee unique (merchant_id, user_id)
+);
+
+create table if not exists "EmployeeInvitation" (
+    id                       serial          primary key unique not null,
+    status                   text            check (status in ('pending', 'accepted', 'revoked', 'declined', 'expired')) not null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    email                    text            not null,
+    role                     text            check (role in ('admin', 'staff')) not null,
+    token                    text            not null,
+    invited_by               integer         references "Employee" (ID) on delete set null,
+    invited_at               timestamptz     not null,
+    expires_at               timestamptz     not null,
+    accepted_at              timestamptz,
+    revoked_at               timestamptz,
+    declined_at              timestamptz
 );
 
 create table if not exists "ServiceCategory" (
