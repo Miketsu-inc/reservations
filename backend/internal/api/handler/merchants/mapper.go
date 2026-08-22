@@ -226,7 +226,7 @@ func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSl
 	return businessHours
 }
 
-func mapToGetTeamMembersForCalendarResp(in []domain.PublicEmployee) []getTeamMembersForCalendarResp {
+func mapToGetTeamMembersForCalendarResp(in []domain.Employee) []getTeamMembersForCalendarResp {
 	teamMembers := make([]getTeamMembersForCalendarResp, len(in))
 
 	for i, m := range in {

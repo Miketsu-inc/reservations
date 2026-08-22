@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,13 +12,13 @@ import (
 type TeamRepository interface {
 	WithTx(tx db.DBTX) TeamRepository
 
-	NewEmployee(ctx context.Context, merchantId uuid.UUID, employee PublicEmployee) (int, error)
-	UpdateEmployee(ctx context.Context, merchantId uuid.UUID, employee PublicEmployee) error
+	NewEmployee(ctx context.Context, employee Employee) (int, error)
+	UpdateEmployee(ctx context.Context, employee Employee) error
 	DeleteEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) error
-	GetEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) (PublicEmployee, error)
+	GetEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) (Employee, error)
 
-	GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
-	GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]PublicEmployee, error)
+	GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]Employee, error)
+	GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]Employee, error)
 
 	GetMerchantIdByEmployee(ctx context.Context, employeeId int) (uuid.UUID, error)
 
@@ -42,19 +41,16 @@ type TeamRepository interface {
 	GetEmployeePreferences(ctx context.Context, employeeId int) (EmployeePreferences, error)
 }
 
-type PublicEmployee struct {
-	Id          int                `json:"id" db:"id"`
+type Employee struct {
+	Id          int                `db:"id"`
 	UserId      *uuid.UUID         `db:"user_id"`
-	Role        types.EmployeeRole `json:"role" db:"role"`
-	FirstName   *string            `json:"first_name" db:"first_name"`
-	LastName    *string            `json:"last_name" db:"last_name"`
-	Email       *string            `json:"email" db:"email"`
-	PhoneNumber *string            `json:"phone_number" db:"phone_number"`
-	IsActive    bool               `json:"is_active" db:"is_active"`
-}
-
-func (e PublicEmployee) GetName() string {
-	return fmt.Sprintf("%s %s", *e.FirstName, *e.LastName)
+	MerchantId  uuid.UUID          `db:"merchant_id"`
+	Role        types.EmployeeRole `db:"role"`
+	FirstName   *string            `db:"first_name"`
+	LastName    *string            `db:"last_name"`
+	Email       *string            `db:"email"`
+	PhoneNumber *string            `db:"phone_number"`
+	IsActive    bool               `db:"is_active"`
 }
 
 type EmployeeInvitation struct {

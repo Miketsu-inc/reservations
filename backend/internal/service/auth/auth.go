@@ -220,10 +220,11 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 			return err
 		}
 
-		employeeId, err := s.teamRepo.WithTx(tx).NewEmployee(ctx, merchantID, domain.PublicEmployee{
-			UserId:   &userID,
-			Role:     types.EmployeeRoleOwner,
-			IsActive: true,
+		employeeId, err := s.teamRepo.WithTx(tx).NewEmployee(ctx, domain.Employee{
+			UserId:     &userID,
+			MerchantId: merchantID,
+			Role:       types.EmployeeRoleOwner,
+			IsActive:   true,
 		})
 		if err != nil {
 			return err

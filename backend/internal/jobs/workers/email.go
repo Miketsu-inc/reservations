@@ -423,7 +423,9 @@ func (w *EmployeeInvitationEmail) Work(ctx context.Context, job *river.Job[args.
 			return err
 		}
 
-		inviterName = employee.GetName()
+		if employee.FirstName != nil && employee.LastName != nil {
+			inviterName = fmt.Sprintf("%s %s", *employee.FirstName, *employee.LastName)
+		}
 	}
 
 	merchant, err := w.merchantRepo.GetMerchant(ctx, invitation.MerchantId)

@@ -75,7 +75,8 @@ func (s *Service) NewMember(ctx context.Context, input NewMemberInput) error {
 
 	actor := actor.MustGetFromContext(ctx)
 
-	_, err := s.teamRepo.NewEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
+	_, err := s.teamRepo.NewEmployee(ctx, domain.Employee{
+		MerchantId:  actor.MerchantId,
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
 		LastName:    &input.LastName,
@@ -106,8 +107,9 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.UpdateEmployee(ctx, actor.MerchantId, domain.PublicEmployee{
+	err := s.teamRepo.UpdateEmployee(ctx, domain.Employee{
 		Id:          memberId,
+		MerchantId:  actor.MerchantId,
 		Role:        input.Role,
 		FirstName:   &input.FirstName,
 		LastName:    &input.LastName,
@@ -133,23 +135,23 @@ func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 	return nil
 }
 
-func (s *Service) GetMember(ctx context.Context, memberId int) (domain.PublicEmployee, error) {
+func (s *Service) GetMember(ctx context.Context, memberId int) (domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	teamMember, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
-		return domain.PublicEmployee{}, err
+		return domain.Employee{}, err
 	}
 
 	return teamMember, nil
 }
 
-func (s *Service) GetTeam(ctx context.Context) ([]domain.PublicEmployee, error) {
+func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	teamMembers, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.Employee{}, err
 	}
 
 	return teamMembers, nil

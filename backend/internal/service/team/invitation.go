@@ -244,8 +244,10 @@ func (s *Service) GetInvitation(ctx context.Context, token string) (GetInvitatio
 			return GetInvitationResult{}, err
 		}
 
-		name := employee.GetName()
-		invitorName = &name
+		if employee.FirstName != nil && employee.LastName != nil {
+			name := fmt.Sprintf("%s %s", *employee.FirstName, *employee.LastName)
+			invitorName = &name
+		}
 	}
 
 	result := GetInvitationResult{
@@ -299,12 +301,13 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, e
 			return err
 		}
 
-		_, err = s.teamRepo.NewEmployee(ctx, invitation.MerchantId, domain.PublicEmployee{
-			UserId:    &user.Id,
-			Role:      invitation.Role.ToEmployeeRole(),
-			FirstName: &user.FirstName,
-			LastName:  &user.LastName,
-			IsActive:  true,
+		_, err = s.teamRepo.NewEmployee(ctx, domain.Employee{
+			UserId:     &user.Id,
+			MerchantId: invitation.MerchantId,
+			Role:       invitation.Role.ToEmployeeRole(),
+			FirstName:  &user.FirstName,
+			LastName:   &user.LastName,
+			IsActive:   true,
 		})
 		if err != nil {
 			return err

@@ -29,7 +29,7 @@ func mapToUpdateMemberInput(in updateMemberReq) teamServ.UpdateMemberInput {
 	}
 }
 
-func mapToGetMemberResp(in domain.PublicEmployee) getMemberResp {
+func mapToGetMemberResp(in domain.Employee) getMemberResp {
 	return getMemberResp{
 		Id:          in.Id,
 		Role:        in.Role,

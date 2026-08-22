@@ -244,12 +244,12 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 	return businessHours, nil
 }
 
-func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.PublicEmployee, error) {
+func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	team, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.Employee{}, err
 	}
 
 	return team, nil

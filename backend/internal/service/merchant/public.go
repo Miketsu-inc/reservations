@@ -93,15 +93,15 @@ func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantNa
 
 }
 
-func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.PublicEmployee, error) {
+func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.Employee, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.Employee{}, err
 	}
 
 	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
 	if err != nil {
-		return []domain.PublicEmployee{}, err
+		return []domain.Employee{}, err
 	}
 
 	return employees, nil
@@ -125,7 +125,7 @@ type BookingSummary struct {
 	MerchantName string
 	Location     string
 	Service      *domain.MinimalServiceInfo
-	Employee     *domain.PublicEmployee
+	Employee     *domain.Employee
 }
 
 // this function should be optimized later

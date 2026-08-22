@@ -24,7 +24,7 @@ func (r *teamRepository) WithTx(tx db.DBTX) domain.TeamRepository {
 	return &teamRepository{db: tx}
 }
 
-func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, emp domain.PublicEmployee) (int, error) {
+func (r *teamRepository) NewEmployee(ctx context.Context, emp domain.Employee) (int, error) {
 	query := `
 	insert into "Employee" (user_id, merchant_id, role, first_name, last_name, email, phone_number, is_active)
 	values ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -32,7 +32,7 @@ func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, 
 	`
 
 	var employeeId int
-	err := r.db.QueryRow(ctx, query, emp.UserId, merchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber,
+	err := r.db.QueryRow(ctx, query, emp.UserId, emp.MerchantId, emp.Role, emp.FirstName, emp.LastName, emp.Email, emp.PhoneNumber,
 		emp.IsActive).Scan(&employeeId)
 	if err != nil {
 		return 0, fmt.Errorf("NewEmployee: %w", err)
@@ -41,14 +41,14 @@ func (r *teamRepository) NewEmployee(ctx context.Context, merchantId uuid.UUID, 
 	return employeeId, nil
 }
 
-func (r *teamRepository) UpdateEmployee(ctx context.Context, merchantId uuid.UUID, employee domain.PublicEmployee) error {
+func (r *teamRepository) UpdateEmployee(ctx context.Context, employee domain.Employee) error {
 	query := `
 	update "Employee"
 	set role = $3, first_name = $4, last_name = $5, email = $6, phone_number = $7, is_active = $8
 	where merchant_id = $1 and id = $2
 	`
 
-	_, err := r.db.Exec(ctx, query, merchantId, employee.Id, employee.Role, employee.FirstName, employee.LastName, employee.Email,
+	_, err := r.db.Exec(ctx, query, employee.MerchantId, employee.Id, employee.Role, employee.FirstName, employee.LastName, employee.Email,
 		employee.PhoneNumber, employee.IsActive)
 	if err != nil {
 		return fmt.Errorf("UpdateEmployee: %w", err)
@@ -71,9 +71,9 @@ func (r *teamRepository) DeleteEmployee(ctx context.Context, merchantId uuid.UUI
 	return nil
 }
 
-func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, memberId int) (domain.PublicEmployee, error) {
+func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, memberId int) (domain.Employee, error) {
 	query := `
-	select e.id, e.user_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
 		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
@@ -81,43 +81,43 @@ func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, 
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, memberId)
-	member, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.PublicEmployee])
+	member, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Employee])
 	if err != nil {
-		return domain.PublicEmployee{}, fmt.Errorf("GetEmployee: %w", err)
+		return domain.Employee{}, fmt.Errorf("GetEmployee: %w", err)
 	}
 
 	return member, nil
 }
 
-func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.PublicEmployee, error) {
+func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.Employee, error) {
 	query := `
-	select e.id, e.user_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
 		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
-	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicEmployee])
+	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Employee])
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("GetEmployees: %w", err)
+		return []domain.Employee{}, fmt.Errorf("GetEmployees: %w", err)
 	}
 
 	return members, nil
 }
 
-func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.PublicEmployee, error) {
+func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.Employee, error) {
 	query := `
-	select e.id, e.user_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
 		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1 and e.is_active is true`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
-	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicEmployee])
+	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Employee])
 	if err != nil {
-		return []domain.PublicEmployee{}, fmt.Errorf("GetActiveEmployees: %w", err)
+		return []domain.Employee{}, fmt.Errorf("GetActiveEmployees: %w", err)
 	}
 
 	return members, nil

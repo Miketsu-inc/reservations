@@ -82,7 +82,7 @@ func mapToGetServicesGroupedByCategories(in []domain.MerchantPageServicesGrouped
 	return servicesGroupedByCategory
 }
 
-func mapToGetTeam(in []domain.PublicEmployee) []teamResponse {
+func mapToGetTeam(in []domain.Employee) []teamResponse {
 	employees := make([]teamResponse, len(in))
 
 	for i, emp := range in {
