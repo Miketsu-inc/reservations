@@ -67,6 +67,7 @@ func (r *Router) MethodNotAllowed(h HandlerFunc) {
 }
 
 type errorResp struct {
+	Status  int            `json:"status"`
 	Code    string         `json:"code"`
 	Message string         `json:"message"`
 	Meta    map[string]any `json:"meta,omitempty"`
@@ -80,6 +81,7 @@ func renderError(w http.ResponseWriter, r *http.Request, err error) {
 		logger.Error("unexpected error", "error", err.Error())
 		WriteJSON(w, http.StatusInternalServerError, map[string]errorResp{
 			"error": {
+				Status:  http.StatusInternalServerError,
 				Code:    "internal_server_error",
 				Message: "An unexpected error occurred",
 			},
@@ -89,7 +91,7 @@ func renderError(w http.ResponseWriter, r *http.Request, err error) {
 
 	attrs := []any{
 		"code", apiErr.Err.Code,
-		"error", apiErr.Err.Message,
+		"error", apiErr.Error(),
 		"status", apiErr.Status,
 	}
 	if apiErr.Cause != nil {
@@ -102,8 +104,9 @@ func renderError(w http.ResponseWriter, r *http.Request, err error) {
 
 	WriteJSON(w, apiErr.Status, map[string]errorResp{
 		"error": {
+			Status:  apiErr.Status,
 			Code:    apiErr.Err.Code,
-			Message: apiErr.Err.Error(),
+			Message: apiErr.Error(),
 			Meta:    apiErr.Meta,
 		},
 	})
