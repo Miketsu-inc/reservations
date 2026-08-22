@@ -2,13 +2,12 @@ package booking
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
 )
 
 type bookingCursor struct {
@@ -22,7 +21,7 @@ type GetForUserResult struct {
 	HasNextPage bool
 }
 
-func (s *Service) GetForUser(ctx context.Context, status string, cursor string, pageSize int) (GetForUserResult, error) {
+func (s *Service) GetForUser(ctx context.Context, status string, cursorStr string, pageSize int) (GetForUserResult, error) {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	var bookings []domain.BookingForUser
@@ -31,7 +30,7 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursor string, 
 	// +1 so we can check if there is another page
 	limit := pageSize + 1
 
-	decodedCursor, err := decodeCursor(cursor)
+	decodedCursor, err := cursor.Decode[bookingCursor](cursorStr)
 	if err != nil {
 		return GetForUserResult{}, fmt.Errorf("error during cursor decoding: %s", err.Error())
 	}
@@ -55,7 +54,7 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursor string, 
 	hasNextPage := len(bookings) > pageSize
 
 	if hasNextPage {
-		cursorValue, err := encodeCursor(bookingCursor{
+		encodedCursor, err := cursor.Encode(bookingCursor{
 			Id:       bookings[pageSize-1].Id,
 			FromDate: bookings[pageSize-1].FromDate,
 		})
@@ -63,7 +62,7 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursor string, 
 			return GetForUserResult{}, fmt.Errorf("error during cursor encoding: %s", err.Error())
 		}
 
-		nextCursor = &cursorValue
+		nextCursor = &encodedCursor
 		bookings = bookings[:pageSize]
 	}
 
@@ -72,32 +71,4 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursor string, 
 		NextCursor:  nextCursor,
 		HasNextPage: hasNextPage,
 	}, nil
-}
-
-func encodeCursor(cursor bookingCursor) (string, error) {
-	bytes, err := json.Marshal(cursor)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.RawURLEncoding.EncodeToString(bytes), nil
-}
-
-func decodeCursor(cursor string) (bookingCursor, error) {
-	if cursor == "" {
-		return bookingCursor{}, nil
-	}
-
-	decoded, err := base64.RawURLEncoding.DecodeString(cursor)
-	if err != nil {
-		return bookingCursor{}, nil
-	}
-
-	var bc bookingCursor
-
-	if err := json.Unmarshal(decoded, &bc); err != nil {
-		return bookingCursor{}, err
-	}
-
-	return bc, nil
 }
