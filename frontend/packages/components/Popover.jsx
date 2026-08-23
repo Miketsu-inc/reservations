@@ -63,6 +63,7 @@ export function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Backdrop />
       <PopoverPrimitive.Positioner
+        className="z-50"
         align={align}
         side={side}
         sideOffset={sideOffset}
@@ -77,7 +78,7 @@ export function PopoverContent({
             data-[side=right]:slide-in-from-left-2
             data-[side=top]:slide-in-from-bottom-2 data-open:animate-in
             data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out
-            data-closed:fade-out-0 data-closed:zoom-out-95 z-50 w-48
+            data-closed:fade-out-0 data-closed:zoom-out-95 w-48
             origin-(--transform-origin) rounded-lg border p-2 shadow-md
             outline-hidden duration-100 dark:shadow-gray-950`}
           {...props}
