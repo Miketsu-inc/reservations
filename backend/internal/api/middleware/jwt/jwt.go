@@ -110,13 +110,15 @@ func SetJwtCookie(w http.ResponseWriter, name JwtType, token string) {
 	var cookieName string
 	var expMin int
 
+	cfg := config.LoadEnvVars()
+
 	switch name {
 	case AccessToken:
 		cookieName = AccessCookieName
-		expMin = config.LoadEnvVars().JWT_ACCESS_EXP_MIN
+		expMin = cfg.JWT_ACCESS_EXP_MIN
 	case RefreshToken:
 		cookieName = RefreshCookieName
-		expMin = config.LoadEnvVars().JWT_REFRESH_EXP_MIN
+		expMin = cfg.JWT_REFRESH_EXP_MIN
 	}
 
 	// expMinDuration := time.Minute * time.Duration(expMin)
@@ -127,16 +129,17 @@ func SetJwtCookie(w http.ResponseWriter, name JwtType, token string) {
 		HttpOnly: true,
 		MaxAge:   expMin * 60,
 		// Expires:  time.Now().UTC().Add(expMinDuration),
-		Path: "/",
-		// needs to be true in production
-		Secure:   false,
-		Domain:   ".reservations.local",
+		Path:     "/",
+		Secure:   cfg.IsProd(),
+		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 // Deletes both the access and refresh jwt cookies
 func DeleteJwts(w http.ResponseWriter) {
+	cfg := config.LoadEnvVars()
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     RefreshCookieName,
 		Value:    "",
@@ -144,9 +147,8 @@ func DeleteJwts(w http.ResponseWriter) {
 		HttpOnly: true,
 		MaxAge:   -1,
 		Expires:  time.Now().UTC(),
-		// needs to be true in production
-		Secure:   false,
-		Domain:   ".reservations.local",
+		Secure:   cfg.IsProd(),
+		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -157,9 +159,8 @@ func DeleteJwts(w http.ResponseWriter) {
 		HttpOnly: true,
 		MaxAge:   -1,
 		Expires:  time.Now().UTC(),
-		// needs to be true in production
-		Secure:   false,
-		Domain:   ".reservations.local",
+		Secure:   cfg.IsProd(),
+		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})
 }

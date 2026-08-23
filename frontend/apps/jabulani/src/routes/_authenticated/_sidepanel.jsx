@@ -29,7 +29,12 @@ import {
   Tootlip,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { meQueryOptions, useTheme, useWindowSize } from "@reservations/lib";
+import {
+  meQueryOptions,
+  TANGO_URL,
+  useTheme,
+  useWindowSize,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
@@ -169,7 +174,7 @@ function SidePanelLayout() {
               <a
                 className="hover:bg-primary/20 flex flex-row items-center gap-2
                   rounded-lg p-2"
-                href={`http://reservations.local:3000/m/${merchantUrlName}`}
+                href={`${TANGO_URL}/m/${merchantUrlName}`}
               >
                 <Icon icon={LinkSquare02Icon} styles="size-5" />
                 <span>Live booking page</span>
@@ -208,7 +213,7 @@ function SidePanelLayout() {
               <a
                 className="hover:bg-primary/20 flex flex-row items-center gap-2
                   rounded-lg p-2"
-                href="http://reservations.local:3000/m/bwnet"
+                href={`${TANGO_URL}/m/${merchantUrlName}`}
               >
                 <Icon icon={LinkSquare02Icon} styles="size-5" />
                 <span>Live booking page</span>

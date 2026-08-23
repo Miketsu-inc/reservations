@@ -1,8 +1,10 @@
 package integrations
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
@@ -34,7 +36,7 @@ func (h *Handler) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	// TEMP for testing environment
-	http.Redirect(w, r, "http://app.reservations.local:3000/integrations", http.StatusPermanentRedirect)
+	http.Redirect(w, r, fmt.Sprintf("%s/integrations", config.LoadEnvVars().JABULANI_URL), http.StatusPermanentRedirect)
 
 	return nil
 }

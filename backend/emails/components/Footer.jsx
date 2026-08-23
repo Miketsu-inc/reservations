@@ -3,6 +3,8 @@ import { Link, Section, Text } from "react-email";
 
 void React;
 
+const TANGO_URL = process.env.TANGO_URL;
+
 export default function Footer() {
   return (
     <Section className="px-5 pt-5 text-gray-500">
@@ -13,24 +15,15 @@ export default function Footer() {
         123 Utca Neve, Város, IR 12345
       </Text>
       <Text className="mt-2 text-center text-[12px]">
-        <Link
-          href="http://reservations.local:3000/privacy"
-          className="text-gray-500"
-        >
+        <Link href={`${TANGO_URL}/privacy`} className="text-gray-500">
           <u>{"{{ T .Lang `Footer.privacy_policy` }}"}</u>
         </Link>
         {" • "}
-        <Link
-          href="http://reservations.local:3000/terms"
-          className="text-gray-500"
-        >
+        <Link href={`${TANGO_URL}/terms`} className="text-gray-500">
           <u>{"{{ T .Lang `Footer.terms_of_service` }}"}</u>
         </Link>
         {" • "}
-        <Link
-          href="http://reservations.local:3000/unsubscribe"
-          className="text-gray-500"
-        >
+        <Link href={`${TANGO_URL}/unsubscribe`} className="text-gray-500">
           <u>{"{{ T .Lang `Footer.unsubscribe` }}"}</u>
         </Link>
       </Text>

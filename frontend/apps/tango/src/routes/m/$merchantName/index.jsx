@@ -12,7 +12,7 @@ import {
   Youtube,
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
+import { JABULANI_URL, useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -106,7 +106,7 @@ function MerchantPage() {
       >
         <Link
           className="hover:bg-hvr_gray rounded-md p-1"
-          to={`http://app.reservations.local:3000/dashboard`}
+          to={`${JABULANI_URL}/dashboard`}
           from={Route.fullPath}
         >
           <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
@@ -135,7 +135,7 @@ function MerchantPage() {
               className="hover:bg-hvr_gray/20 border-border_color bg-layer_bg
                 mb-5 flex h-fit w-fit rounded-full border p-3 shadow-sm
                 transition-colors"
-              to={`http://app.reservations.local:3000/dashboard`}
+              to={`${JABULANI_URL}/dashboard`}
               from=""
             >
               <Icon icon={ArrowLeft01Icon} styles="text-text_color size-6" />

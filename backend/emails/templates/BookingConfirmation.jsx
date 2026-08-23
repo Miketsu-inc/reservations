@@ -17,6 +17,8 @@ import LogoHeader from "../components/LogoHeader";
 
 void React;
 
+const JABULANI_URL = process.env.JABULANI_URL;
+
 export default function BookingConfirmation() {
   return (
     <Tailwind>
@@ -79,7 +81,7 @@ export default function BookingConfirmation() {
 
             <Section className="mb-8 text-left">
               <Button
-                href="http://reservations.local:3000/calendar"
+                href={`${JABULANI_URL}/calendar`}
                 className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3
                   text-[14px] font-medium text-white"
                 style={{

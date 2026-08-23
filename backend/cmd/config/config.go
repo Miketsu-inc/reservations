@@ -35,6 +35,10 @@ type Config struct {
 	GOOGLE_OAUTH_CLIENT_SECRET   string
 	FACEBOOK_OAUTH_CLIENT_ID     string
 	FACEBOOK_OAUTH_CLIENT_SECRET string
+
+	TANGO_URL    string
+	JABULANI_URL string
+	DOMAIN       string
 }
 
 var instance *Config
@@ -62,6 +66,9 @@ func LoadEnvVars() *Config {
 		google_oauth_client_secret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 		facebook_oauth_client_id := os.Getenv("FACEBOOK_OAUTH_CLIENT_ID")
 		facebook_oauth_client_secret := os.Getenv("FACEBOOK_OAUTH_CLIENT_SECRET")
+		tango_url := os.Getenv("TANGO_URL")
+		jabulani_url := os.Getenv("JABULANI_URL")
+		domain := os.Getenv("DOMAIN")
 
 		instance = &Config{
 			PORT:                         port,
@@ -84,6 +91,9 @@ func LoadEnvVars() *Config {
 			GOOGLE_OAUTH_CLIENT_SECRET:   google_oauth_client_secret,
 			FACEBOOK_OAUTH_CLIENT_ID:     facebook_oauth_client_id,
 			FACEBOOK_OAUTH_CLIENT_SECRET: facebook_oauth_client_secret,
+			TANGO_URL:                    tango_url,
+			JABULANI_URL:                 jabulani_url,
+			DOMAIN:                       domain,
 		}
 	})
 	return instance
@@ -110,4 +120,11 @@ func (c *Config) Validate() {
 	assert.True(c.GOOGLE_OAUTH_CLIENT_SECRET != "", "GOOGLE_OAUTH_CLIENT_SECRET environment variable could not be found")
 	assert.True(c.FACEBOOK_OAUTH_CLIENT_ID != "", "FACEBOOK_OAUTH_CLIENT_ID environment variable could not be found")
 	assert.True(c.FACEBOOK_OAUTH_CLIENT_SECRET != "", "FACEBOOK_OAUTH_CLIENT_SECRET environment variable could not be found")
+	assert.True(c.TANGO_URL != "", "TANGO_URL environment variable could not be found")
+	assert.True(c.JABULANI_URL != "", "JABULANI_URL environment variable could not be found")
+	assert.True(c.DOMAIN != "", "DOMAIN environment variable could not be found")
+}
+
+func (c *Config) IsProd() bool {
+	return c.APP_ENV == "prod"
 }

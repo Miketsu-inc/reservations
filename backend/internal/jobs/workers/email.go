@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
@@ -78,7 +79,7 @@ func (w *BookingConfirmationEmail) Work(ctx context.Context, job *river.Job[args
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
 	})
 }
 
@@ -148,7 +149,7 @@ func (w *BookingStatusConfirmedEmail) Work(ctx context.Context, job *river.Job[a
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
 	})
 }
 
@@ -222,7 +223,7 @@ func (w *BookingReminderEmail) Work(ctx context.Context, job *river.Job[args.Boo
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
 	})
 }
 
@@ -288,7 +289,7 @@ func (w *BookingCancellationEmail) Work(ctx context.Context, job *river.Job[args
 		ServiceName:    booking.ServiceName,
 		TimeZone:       merchantTz.String(),
 		Reason:         job.Args.CancellationReason,
-		NewBookingLink: fmt.Sprintf("http://reservations.local:3000/m/%s", booking.MerchantUrl),
+		NewBookingLink: fmt.Sprintf("%s/m/%s", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl),
 	})
 }
 
@@ -357,7 +358,7 @@ func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args
 		Location:    booking.FormattedLocation,
 		ServiceName: job.Args.OldServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("http://reservations.local:3000/m/%s/cancel/%d", booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
 		OldTime:     fmt.Sprintf("%s - %s", oldFromDateMerchantTz.Format("15:04"), oldToDateMerchantTz.Format("15:04")),
 		OldDate:     oldFromDateMerchantTz.Format("Monday, January 2"),
 	})
@@ -389,7 +390,7 @@ func (w *ForgotPasswordEmail) Work(ctx context.Context, job *river.Job[args.Forg
 	}
 
 	return w.emailService.ForgotPassword(ctx, job.Args.Language, user.Email, email.ForgotPasswordData{
-		PasswordLink: fmt.Sprintf("http://reservations.local:3000/reset-password?token=%s", job.Args.Token),
+		PasswordLink: fmt.Sprintf("%s/reset-password?token=%s", config.LoadEnvVars().TANGO_URL, job.Args.Token),
 	})
 }
 
@@ -436,6 +437,6 @@ func (w *EmployeeInvitationEmail) Work(ctx context.Context, job *river.Job[args.
 	return w.emailService.EmployeeInvitation(ctx, job.Args.Language, invitation.Email, email.EmployeeInvitationData{
 		InviterName:  inviterName,
 		MerchantName: merchant.Name,
-		AcceptLink:   fmt.Sprintf("http://reservations.local:3000/invitations?token=%s", job.Args.Token),
+		AcceptLink:   fmt.Sprintf("%s/invitations?token=%s", config.LoadEnvVars().TANGO_URL, job.Args.Token),
 	})
 }

@@ -10,7 +10,7 @@ import {
   Loading,
   ServerError,
 } from "@reservations/components";
-import { meQueryOptions, useWindowSize } from "@reservations/lib";
+import { JABULANI_URL, meQueryOptions, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
@@ -93,7 +93,7 @@ function RouteComponent() {
             <Card>
               <a
                 className="flex flex-row items-center justify-between p-2"
-                href="http://app.reservations.local:3000"
+                href={JABULANI_URL}
               >
                 <p className="font-bold">For businesses</p>
                 <Icon

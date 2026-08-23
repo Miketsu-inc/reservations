@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -565,7 +566,7 @@ func bookingToGoogleEvent(booking domain.BookingForExternalCalendar, tz string) 
 		Visibility:   "private",
 		Source: &calendar.EventSource{
 			Title: "Reservations",
-			Url:   "http://app.reservations.local:3000/calendar",
+			Url:   fmt.Sprintf("%s/calendar", config.LoadEnvVars().JABULANI_URL),
 		},
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{
@@ -608,7 +609,7 @@ func blockedTimeToGoogleEvent(blockedTime domain.BlockedTime, tz string) *calend
 		Visibility:   "private",
 		Source: &calendar.EventSource{
 			Title: "Reservations",
-			Url:   "http://app.reservations.local:3000/calendar",
+			Url:   fmt.Sprintf("%s/calendar", config.LoadEnvVars().JABULANI_URL),
 		},
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{

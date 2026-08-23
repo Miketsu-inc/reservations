@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -44,8 +45,7 @@ func SetOauthStateCookie(w http.ResponseWriter, state string) {
 		HttpOnly: true,
 		MaxAge:   5 * 60,
 		Expires:  time.Now().UTC().Add(time.Minute * 5),
-		// needs to be true in production
-		Secure:   false,
+		Secure:   config.LoadEnvVars().IsProd(),
 		SameSite: http.SameSiteLaxMode,
 	})
 }

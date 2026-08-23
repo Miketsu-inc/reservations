@@ -47,7 +47,7 @@ email:
 	@npx email dev --dir "backend/emails/templates"
 
 email-build:
-	@npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty
+	@npx dotenv -e .env -- npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty
 
 caddy:
 	@caddy run --config Caddyfile
