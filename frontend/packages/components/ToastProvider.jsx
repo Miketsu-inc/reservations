@@ -5,7 +5,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { createContext, useCallback, useEffect, useState } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export const ToastContext = createContext();
 

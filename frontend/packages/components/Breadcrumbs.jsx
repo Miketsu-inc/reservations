@@ -1,6 +1,6 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { isMatch, Link, useMatches } from "@tanstack/react-router";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export default function Breadcrumbs() {
   const matches = useMatches();

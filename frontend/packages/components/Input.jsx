@@ -3,24 +3,14 @@ import {
   FlagImage,
   usePhoneInput,
 } from "react-international-phone";
-import { ComboBox } from ".";
-import InputBase from "./InputBase";
+import ComboBox from "./ComboBox.jsx";
+import { StyledInputBase } from "./InputBase.jsx";
 
 const countryOptions = defaultCountries.map(([name, iso2, dialCode]) => ({
   value: iso2,
   label: `${name} (+${dialCode})`,
   icon: <FlagImage iso2={iso2} size="24px" />,
 }));
-
-// TODO: maybe move this over to InputBase and decide what to do with the FloatingLabelInput
-const sharedStyles = `
-  peer border bg-layer_bg outline-hidden placeholder-stone-500
-  dark:placeholder-zinc-400 transition-[border-color,box-shadow]
-  ease-in-out duration-150 border-input_border_color
-  focus:border-primary focus:ring-4 focus:ring-primary/30
-  disabled:text-text_color/70 disabled:border-input_border_color/60
-  disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20 p-2
-`;
 
 export default function Input({ type, ...props }) {
   if (type === "tel") {
@@ -56,13 +46,13 @@ function StandardInput({
           className={`${childrenSide !== "right" ? "flex-row-reverse" : "flex-row"}
             flex items-center`}
         >
-          <InputBase
+          <StyledInputBase
             styles={`${styles} ${
               children &&
               (childrenSide === "right"
                 ? "border-r-0 rounded-r-none"
                 : "border-l-0 rounded-l-none")
-              } ${sharedStyles}`}
+              }`}
             id={id}
             name={name}
             onChange={handleChange}
@@ -116,8 +106,8 @@ function PhoneInput({
           showOnlyIcon={true}
           onOpenChange={onOpenChange}
         />
-        <InputBase
-          styles={`${sharedStyles} flex-1 rounded-l-none p-2`}
+        <StyledInputBase
+          styles="flex-1 rounded-l-none p-2"
           id={id}
           name={name}
           type="tel"

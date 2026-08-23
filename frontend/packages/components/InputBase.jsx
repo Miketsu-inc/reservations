@@ -1,7 +1,7 @@
 import { ViewIcon, ViewOffSlashIcon } from "@hugeicons/core-free-icons";
 import { useAutofill } from "@reservations/lib";
 import { useRef, useState } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export default function InputBase({
   id,
@@ -61,5 +61,22 @@ export default function InputBase({
         <></>
       )}
     </div>
+  );
+}
+
+// TODO: Temporary solution to avoid import cycles until we decide wether to
+// get rid of FloatingLabelInput and put these stylings on InputBase
+export function StyledInputBase({ styles = "", ...props }) {
+  return (
+    <InputBase
+      {...props}
+      styles={`${styles} peer border bg-layer_bg outline-hidden
+        placeholder-stone-500 dark:placeholder-zinc-400
+        transition-[border-color,box-shadow] ease-in-out duration-150
+        border-input_border_color focus:border-primary focus:ring-4
+        focus:ring-primary/30 disabled:text-text_color/70
+        disabled:border-input_border_color/60 disabled:bg-gray-200/60
+        disabled:dark:bg-gray-700/20 p-2`}
+    />
   );
 }

@@ -1,5 +1,6 @@
 import { useWindowSize } from "@reservations/lib";
-import { Drawer, DrawerContent, Modal } from ".";
+import { Drawer, DrawerContent } from "./Drawer.jsx";
+import Modal from "./Modal.jsx";
 
 export default function ResponsiveDialog({
   styles,

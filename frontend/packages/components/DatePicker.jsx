@@ -1,6 +1,6 @@
 import { Calendar04Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import SmallCalendar from "./SmallCalendar";
 

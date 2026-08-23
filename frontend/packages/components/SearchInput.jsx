@@ -1,6 +1,6 @@
 import { Search01Icon } from "@hugeicons/core-free-icons";
-import { Icon } from ".";
-import Input from "./Input";
+import Icon from "./Icon.jsx";
+import { StyledInputBase } from "./InputBase.jsx";
 
 export default function SearchInput({
   searchText,
@@ -16,7 +16,7 @@ export default function SearchInput({
       >
         <Icon icon={Search01Icon} styles="size-4" />
       </div>
-      <Input
+      <StyledInputBase
         styles={`ps-9 w-44 md:w-full text-sm ${styles}`}
         name="search"
         type="search"
@@ -24,9 +24,7 @@ export default function SearchInput({
         value={searchText}
         required={false}
         placeholder="Search"
-        inputData={(data) => {
-          onChange(data.value);
-        }}
+        onChange={(event) => onChange(event.target.value)}
         autoFocus={autoFocus}
       />
     </div>

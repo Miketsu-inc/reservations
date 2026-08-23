@@ -1,5 +1,5 @@
 import { Tick02Icon } from "@hugeicons/core-free-icons";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export default function CheckBox({ checked, styles, onChange, ...props }) {
   return (

@@ -1,5 +1,5 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 import Button from "./Button";
 import ResponsiveDialog from "./ResponsiveDialog";
 

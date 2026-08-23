@@ -1,6 +1,6 @@
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { Fragment } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
   return (

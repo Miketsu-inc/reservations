@@ -1,6 +1,6 @@
 import { ArrowLeft01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { memo, useEffect, useRef, useState } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 34;

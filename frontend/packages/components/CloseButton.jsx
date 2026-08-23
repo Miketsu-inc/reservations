@@ -1,5 +1,5 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 
 export default function CloseButton({ styles, onClick }) {
   return (

@@ -1,6 +1,8 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
-import { Avatar, CheckBox, Icon } from ".";
+import Avatar from "./Avatar.jsx";
+import CheckBox from "./CheckBox.jsx";
+import Icon from "./Icon.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 
 const itemHeight = 36;

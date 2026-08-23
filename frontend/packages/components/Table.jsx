@@ -11,7 +11,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useRef, useState } from "react";
-import { Icon } from ".";
+import Icon from "./Icon.jsx";
 import Button from "./Button";
 import SearchInput from "./SearchInput";
 
