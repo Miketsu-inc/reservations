@@ -1,4 +1,4 @@
-import { ToastContext } from "@reservations/components";
+import { ToastContext } from "@reservations/components/ToastProvider.jsx";
 import {
   useCallback,
   useContext,
