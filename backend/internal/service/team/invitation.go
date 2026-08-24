@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
@@ -319,7 +320,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, e
 		return "", err
 	}
 
-	return "http://app.localhost:3000/dashboard", nil
+	return fmt.Sprintf("%s/dashboard", config.LoadEnvVars().JABULANI_URL), nil
 }
 
 func (s *Service) DeclineInvitation(ctx context.Context, token string) error {
