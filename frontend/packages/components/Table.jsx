@@ -52,10 +52,10 @@ export default function Table({
   }, [exportName, columnsToExport]);
 
   return (
-    <div className="flex h-full w-full flex-1 flex-col">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
-        className="flex flex-col-reverse justify-between gap-2 pb-2 sm:flex-row
-          sm:gap-0"
+        className="flex shrink-0 flex-col-reverse justify-between gap-2 pb-2
+          sm:flex-row sm:gap-0"
       >
         <div className="flex items-center justify-center gap-3 pt-2 md:pt-0">
           <div className="w-full md:w-auto">
@@ -93,8 +93,8 @@ export default function Table({
         )}
       </div>
       <div
-        className={`${isLoading ? "invisible" : "visible"} h-full w-full
-          ${rowData?.length === 0 ? "ag-header-hidden" : ""} `}
+        className={`${isLoading ? "invisible" : "visible"} flex min-h-0 w-full
+          min-w-0 flex-1 ${rowData?.length === 0 ? "ag-header-hidden" : ""} `}
       >
         <AgGridReact
           ref={tableRef}

@@ -14,7 +14,7 @@ function RouteComponent() {
   const { merchantId } = useAuth();
 
   return (
-    <div className="flex h-full flex-col px-4 py-2 lg:px-0 lg:py-0">
+    <div className="flex h-full flex-col">
       <p className="pb-6 text-xl">Integrations</p>
       <p className="pb-6 text-lg">Calendar</p>
       <div className="flex flex-col gap-4">

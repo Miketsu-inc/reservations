@@ -116,10 +116,10 @@ function RouteComponent() {
   }
 
   return (
-    <div className="h-screen px-4 py-2 lg:px-0 lg:py-0">
-      <p className="pb-6 text-xl">Team members</p>
+    <div className="flex h-full min-h-0 flex-col">
+      <p className="shrink-0 pb-6 text-xl">Team members</p>
       <ServerError error={serverError} />
-      <div className="h-2/3">
+      <div className="flex min-h-0 flex-1">
         <EmployeeTable
           data={employees}
           onRowClick={handleRowClick}

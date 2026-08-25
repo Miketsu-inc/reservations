@@ -57,7 +57,7 @@ export default function EmployeePage({ employee, onSave }) {
   }
 
   return (
-    <form onSubmit={submitHandler} className="flex justify-center pt-4 md:p-0">
+    <form onSubmit={submitHandler} className="flex justify-center">
       <div
         className="flex w-full flex-col gap-4 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
       >

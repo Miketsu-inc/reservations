@@ -234,7 +234,7 @@ function SidePanelLayout() {
           </div>
         </header>
       )}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {isOpen && isWindowSmall && (
           <div
             onClick={closeSidePanelHandler}
@@ -385,8 +385,8 @@ function SidePanelLayout() {
             duration-300 md:pt-2 md:pr-2`}
         >
           <div
-            className={`${!isWindowSmall ? "md:px-4 md:pt-4" : ""} bg-bg_color
-              flex-1 overflow-y-auto md:rounded-t-xl`}
+            className="bg-bg_color flex min-h-0 flex-1 flex-col overflow-y-auto
+              px-4 pt-4 pb-2 md:rounded-t-xl"
           >
             <Outlet />
           </div>

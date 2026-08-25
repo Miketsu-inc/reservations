@@ -123,7 +123,7 @@ function BlacklistPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center">
+    <div className="flex h-full min-h-0 justify-center">
       <BlacklistModal
         key={blacklistModalData?.id || "new"}
         data={blacklistModalData}
@@ -133,9 +133,9 @@ function BlacklistPage() {
           blacklistHandler(customer.id);
         }}
       />
-      <div className="flex w-full gap-5">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
         <ServerError error={serverError} />
-        <div className="h-2/3 w-full">
+        <div className="flex min-h-0 w-full flex-1">
           <CustomersTable
             customersData={data}
             onBlackList={(customer) => {

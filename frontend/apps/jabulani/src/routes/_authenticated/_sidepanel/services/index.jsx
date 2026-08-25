@@ -227,7 +227,7 @@ function ServicesPage() {
   }
 
   return (
-    <div className="flex justify-center px-4 py-4 lg:px-0">
+    <div className="flex justify-center">
       <div className="w-full max-w-4xl">
         <DeleteModal
           itemName={selected.name}

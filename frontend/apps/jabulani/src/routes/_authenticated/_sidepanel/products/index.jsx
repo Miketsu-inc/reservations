@@ -151,7 +151,7 @@ function ProductsPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center px-4 py-2 lg:px-0 lg:py-0">
+    <div className="flex h-full min-h-0 justify-center">
       <ProductModal
         key={modalData?.id || "new"}
         data={modalData}
@@ -159,10 +159,10 @@ function ProductsPage() {
         onClose={() => setShowProductModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="flex w-full flex-col gap-5 pb-4">
-        <p className="text-xl">Products</p>
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+        <p className="shrink-0 text-xl">Products</p>
         <ServerError error={serverError} />
-        <div className="h-2/3 w-full">
+        <div className="flex min-h-0 w-full flex-1">
           <ProductsTable
             products={data}
             onNewItem={() => {

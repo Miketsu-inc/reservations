@@ -168,12 +168,12 @@ export default function GroupServicePage({
           itemName={service.name}
         />
       )}
-      <div className="flex h-screen px-4 py-2 lg:px-0 lg:py-0">
-        <div className="my-6 w-full">
+      <div className="flex h-screen">
+        <div className="w-full">
           <div className="flex flex-col gap-4">
             <form className="flex flex-col gap-4" onSubmit={submitHandler}>
               <Card
-                styles="sticky top-14 md:top-0 z-10 flex flex-row items-center
+                styles="sticky top-0 z-10 flex flex-row items-center
                   justify-between gap-2"
               >
                 <div className="flex items-center gap-2">

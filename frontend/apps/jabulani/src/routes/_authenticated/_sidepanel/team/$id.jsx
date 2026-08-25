@@ -99,7 +99,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex justify-center py-5">
+    <div className="flex justify-center">
       <ServerError error={serverError} />
       <DeleteModal
         itemName={`${employee.first_name} ${employee.last_name}`}

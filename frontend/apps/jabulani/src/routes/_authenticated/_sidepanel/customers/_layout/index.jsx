@@ -173,7 +173,7 @@ function CustomersPage() {
   }
 
   return (
-    <div className="flex h-screen justify-center">
+    <div className="flex h-full min-h-0 justify-center">
       <TransferAppsModal
         data={transferModalData}
         isOpen={showTransferModal}
@@ -194,9 +194,9 @@ function CustomersPage() {
           })
         }
       />
-      <div className="flex w-full flex-col gap-5">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
         <ServerError error={serverError} />
-        <div className="h-2/3 w-full">
+        <div className="flex min-h-0 w-full flex-1">
           <CustomersTable
             customersData={data}
             onTransfer={(index) => {
