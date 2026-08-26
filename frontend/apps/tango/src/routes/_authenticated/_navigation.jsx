@@ -21,7 +21,13 @@ import {
 } from "@reservations/components";
 import { meQueryOptions, useTheme, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useCanGoBack,
+  useRouter,
+} from "@tanstack/react-router";
 import { useCallback } from "react";
 
 export const Route = createFileRoute("/_authenticated/_navigation")({
@@ -37,11 +43,26 @@ export const Route = createFileRoute("/_authenticated/_navigation")({
 
 function NavLayout() {
   const navigate = Route.useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
   const { isWindowSmall } = useWindowSize();
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
 
   const { isDarkTheme, switchTheme } = useTheme();
+
+  const handleBack = useCallback(() => {
+    if (canGoBack) {
+      router.history.back();
+      return;
+    }
+
+    navigate({
+      from: Route.fullPath,
+      to: "/home",
+      replace: true,
+    });
+  }, [canGoBack, navigate, router]);
 
   const handleLogout = useCallback(async () => {
     const response = await fetch("/api/v1/auth/logout", {
@@ -97,9 +118,14 @@ function NavLayout() {
       {isWindowSmall ? (
         <div className="sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center px-4 py-4">
-            <Link to=".." className="cursor-pointer">
+            <button
+              type="button"
+              aria-label="Go back"
+              className="cursor-pointer"
+              onClick={handleBack}
+            >
               <Icon icon={ArrowLeft02Icon} styles="size-6" />
-            </Link>
+            </button>
           </div>
         </div>
       ) : (

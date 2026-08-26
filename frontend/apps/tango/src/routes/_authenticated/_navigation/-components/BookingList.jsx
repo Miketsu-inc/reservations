@@ -45,7 +45,7 @@ export default function BookingList({ statusFilter, searchText }) {
   } = useInfiniteQuery({
     queryKey: ["user-bookings", statusFilter],
     queryFn: ({ pageParam }) => fetchBookings(statusFilter, 10, pageParam),
-    initialPageParam: undefined,
+    initialPageParam: "",
     getNextPageParam: (lastPage) =>
       lastPage.has_next_page ? lastPage.next_cursor : undefined,
   });
