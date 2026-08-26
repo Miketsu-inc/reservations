@@ -230,6 +230,8 @@ func (s *Service) GetInvitation(ctx context.Context, token string) (GetInvitatio
 		if errors.Is(err, pgx.ErrNoRows) {
 			return GetInvitationResult{}, ErrInvitationNotFound
 		}
+
+		return GetInvitationResult{}, err
 	}
 
 	merchant, err := s.merchantRepo.GetMerchant(ctx, invitation.MerchantId)
@@ -270,6 +272,8 @@ func (s *Service) validateInvitation(ctx context.Context, userEmail string, toke
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrInvitationNotFound
 		}
+
+		return nil, err
 	}
 
 	if invitation.Email != userEmail {
@@ -280,7 +284,7 @@ func (s *Service) validateInvitation(ctx context.Context, userEmail string, toke
 		return nil, err
 	}
 
-	return nil, nil
+	return &invitation, nil
 }
 
 func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, error) {
