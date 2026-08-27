@@ -72,3 +72,10 @@ func RepeatEach[T any](s []T, times int) []T {
 
 	return result
 }
+
+func PtrEqual[T comparable](a, b *T) bool {
+	if a == nil || b == nil {
+		return a == b // true only if both nil
+	}
+	return *a == *b
+}

@@ -33,6 +33,7 @@ func mapToGetMemberResp(in domain.Employee) getMemberResp {
 	return getMemberResp{
 		Id:          in.Id,
 		Role:        in.Role,
+		IsUser:      in.UserId != nil,
 		FirstName:   in.FirstName,
 		LastName:    in.LastName,
 		Email:       in.Email,

@@ -78,8 +78,8 @@ func (h *Handler) NewMember(w http.ResponseWriter, r *http.Request) error {
 
 type updateMemberReq struct {
 	Role        types.EmployeeRole `json:"role" validate:"required"`
-	FirstName   string             `json:"first_name" validate:"required"`
-	LastName    string             `json:"last_name" validate:"required"`
+	FirstName   *string            `json:"first_name"`
+	LastName    *string            `json:"last_name"`
 	Email       *string            `json:"email"`
 	PhoneNumber *string            `json:"phone_number"`
 	IsActive    bool               `json:"is_active"`
@@ -122,6 +122,7 @@ func (h *Handler) DeleteMember(w http.ResponseWriter, r *http.Request) error {
 type getMemberResp struct {
 	Id          int                `json:"id"`
 	Role        types.EmployeeRole `json:"role"`
+	IsUser      bool               `json:"is_user"`
 	FirstName   *string            `json:"first_name"`
 	LastName    *string            `json:"last_name"`
 	Email       *string            `json:"email"`
