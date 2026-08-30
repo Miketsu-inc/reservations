@@ -52,51 +52,7 @@ func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domai
 				continue
 			}
 
-			available := true
-
-			phaseStart := bookingStart
-			for _, phase := range servicePhases {
-				phaseEnd := phaseStart.Add(phase.GetDuration())
-
-				if phase.PhaseType == types.ServicePhaseTypeActive {
-
-					for _, blocked := range blockedTimes {
-						if !blocked.AllDay {
-							blockedFrom := blocked.FromDate.In(merchantTz)
-							blockedTo := blocked.ToDate.In(merchantTz)
-
-							if phaseStart.Before(blockedTo) && phaseEnd.After(blockedFrom) {
-								bookingStart = bookingStart.Add(stepSize)
-
-								available = false
-								break
-							}
-						}
-					}
-
-					if !available {
-						break
-					}
-
-					for _, booking := range reserved {
-						reservedFromDate := booking.FromDate.In(merchantTz).Add(-bufferDuration)
-						reservedToDate := booking.ToDate.In(merchantTz).Add(bufferDuration)
-
-						if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
-							bookingStart = bookingStart.Add(stepSize)
-
-							available = false
-							break
-						}
-					}
-				}
-
-				if !available {
-					break
-				}
-
-				phaseStart = phaseEnd
-			}
+			available := isSlotAvailable(bookingStart, servicePhases, blockedTimes, reserved, bufferDuration, merchantTz)
 
 			if available {
 				formattedTime := fmt.Sprintf("%02d:%02d", bookingStart.Hour(), bookingStart.Minute())
@@ -106,9 +62,9 @@ func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domai
 				} else if bookingStart.Hour() >= 12 {
 					afternoon = append(afternoon, formattedTime)
 				}
-
-				bookingStart = bookingStart.Add(stepSize)
 			}
+
+			bookingStart = bookingStart.Add(stepSize)
 		}
 	}
 
@@ -174,6 +130,123 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, block
 			IsAvailable: isAvailable,
 			Morning:     dayResult.Morning,
 			Afternoon:   dayResult.Afternoon,
+		})
+	}
+
+	return results
+}
+
+// TODO: write test
+func isDayAvailable(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, totalDuration time.Duration, bufferDuration time.Duration, bookingDeadlineDuration time.Duration,
+	bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) bool {
+
+	year, month, day := bookingDay.Date()
+	stepSize := 15 * time.Minute
+	now := currentTime.In(merchantTz)
+
+	for _, blocked := range blockedTimes {
+		if blocked.AllDay {
+			return false
+		}
+	}
+
+	for _, slot := range businessHours {
+		businessStart := time.Date(year, month, day, slot.StartTime.Hour(), slot.StartTime.Minute(), 0, 0, merchantTz)
+		businessEnd := time.Date(year, month, day, slot.EndTime.Hour(), slot.EndTime.Minute(), 0, 0, merchantTz)
+
+		bookingStart := businessStart
+
+		for bookingStart.Add(totalDuration).Before(businessEnd) || bookingStart.Add(totalDuration).Equal(businessEnd) {
+			if bookingStart.Before(now.Add(bookingDeadlineDuration)) {
+				bookingStart = bookingStart.Add(stepSize)
+				continue
+			}
+
+			if isSlotAvailable(bookingStart, servicePhases, blockedTimes, reserved, bufferDuration, merchantTz) {
+				return true
+			}
+
+			bookingStart = bookingStart.Add(stepSize)
+		}
+	}
+
+	return false
+
+}
+
+func isSlotAvailable(bookingStart time.Time, servicePhases []domain.ServicePhase, blockedTimes []domain.BlockedTimes, reserved []domain.BookingSlot, bufferDuration time.Duration, merchantTz *time.Location) bool {
+	phaseStart := bookingStart
+	for _, phase := range servicePhases {
+		phaseEnd := phaseStart.Add(phase.GetDuration())
+
+		if phase.PhaseType == types.ServicePhaseTypeActive {
+			for _, blocked := range blockedTimes {
+				if !blocked.AllDay {
+					blockedFrom := blocked.FromDate.In(merchantTz)
+					blockedUntil := blocked.ToDate.In(merchantTz)
+
+					if phaseStart.Before(blockedUntil) && phaseEnd.After(blockedFrom) {
+						return false
+					}
+				}
+			}
+
+			for _, booking := range reserved {
+				reservedFromDate := booking.FromDate.In(merchantTz).Add(-bufferDuration)
+				reservedToDate := booking.ToDate.In(merchantTz).Add(bufferDuration)
+
+				if phaseStart.Before(reservedToDate) && phaseEnd.After(reservedFromDate) {
+					return false
+				}
+			}
+		}
+		phaseStart = phaseEnd
+	}
+	return true
+}
+
+type DayAvailability struct {
+	Date        string `json:"date"`
+	IsAvailable bool   `json:"is_available"`
+}
+
+// TODO: write test
+func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
+	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []DayAvailability {
+
+	results := []DayAvailability{}
+
+	totalDuration := time.Duration(serviceDuration) * time.Minute
+	bufferDuration := time.Duration(bufferTime) * time.Minute
+	bookingDeadlineDuration := time.Duration(bookingindowMin) * time.Minute
+
+	reservationsByDate := make(map[string][]domain.BookingSlot)
+	for _, booking := range reservedForPeriod {
+		date := booking.FromDate.In(merchantTz).Format("2006-01-02")
+		reservationsByDate[date] = append(reservationsByDate[date], booking)
+	}
+
+	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+		businessHoursForDay := businessHours[int(d.Weekday())]
+
+		day := d.Format("2006-01-02")
+
+		if len(businessHoursForDay) == 0 {
+			results = append(results, DayAvailability{
+				Date:        day,
+				IsAvailable: false,
+			})
+			continue
+		}
+
+		reservedForDay := reservationsByDate[day]
+		blockedForDay := filterBlockedTimesForDay(blockedTimes, d, merchantTz)
+
+		available := isDayAvailable(reservedForDay, blockedForDay, servicePhases, totalDuration, bufferDuration, bookingDeadlineDuration, d, businessHoursForDay, currentTime, merchantTz)
+
+		results = append(results, DayAvailability{
+			Date:        day,
+			IsAvailable: available,
 		})
 	}
 

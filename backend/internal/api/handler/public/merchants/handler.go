@@ -38,6 +38,7 @@ func (h *Handler) Routes() *httputil.Router {
 
 		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
 		r.Get("/locations/{locationId}/summary", h.GetSummary)
+		r.Get("/locations/{locationId}/services/{serviceId}/availability/day", h.GetDayAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability", h.GetAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/next", h.GetNextAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/disabled-days", h.GetDisabledDays)
@@ -284,11 +285,41 @@ func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type getDayAvailabilityResp struct {
+	Date        string `json:"date"`
+	IsAvailable bool   `json:"is_available"`
+}
+
+func (h *Handler) GetDayAvailability(w http.ResponseWriter, r *http.Request) error {
+	urlName := chi.URLParam(r, "merchantName")
+
+	if urlName == "" {
+		return validate.NewError("invalid merchant name")
+	}
+
+	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	availability, err := h.service.GetDayAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetDayAvailability")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetDayAvailabilityResp(availability))
+
+	return nil
+}
+
 type getAvailabilityResp struct {
-	Date        string   `json:"date"`
-	IsAvailable bool     `json:"is_available"`
-	Morning     []string `json:"morning"`
-	Afternoon   []string `json:"afternoon"`
+	Morning   []string `json:"morning"`
+	Afternoon []string `json:"afternoon"`
 }
 
 func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error {
@@ -308,17 +339,12 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 		return validate.NewError("invalid location id")
 	}
 
-	urlStartDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
+	urlBookingDay, err := time.Parse(time.DateOnly, r.URL.Query().Get("date"))
 	if err != nil {
-		return validate.NewError(fmt.Sprintf("invalid start date format: %s", err.Error()))
+		return validate.NewError(fmt.Sprintf("invalid date format: %s", err.Error()))
 	}
 
-	urlEndDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("end"))
-	if err != nil {
-		return validate.NewError(fmt.Sprintf("invalid end date format: %s", err.Error()))
-	}
-
-	availability, err := h.service.GetAvailability(r.Context(), urlName, urlServiceId, urlLocationId, urlStartDate, urlEndDate)
+	availability, err := h.service.GetAvailabilityForDay(r.Context(), urlName, urlServiceId, urlLocationId, urlBookingDay)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetAvailability")
 	}

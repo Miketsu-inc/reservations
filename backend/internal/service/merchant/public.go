@@ -409,3 +409,112 @@ func (s *Service) GetDisabledDays(ctx context.Context, merchantName string, serv
 		MaxDate:    maxDate,
 	}, nil
 }
+
+func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, serviceId int, locationId int) ([]DayAvailability, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []DayAvailability{}, err
+	}
+
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
+	if err != nil {
+		return []DayAvailability{}, err
+	}
+
+	if service.MerchantId != merchantId {
+		return []DayAvailability{}, fmt.Errorf("this service id does not belong to this merhcant")
+	}
+
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
+	if err != nil {
+		return []DayAvailability{}, err
+	}
+
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
+	if err != nil {
+		return []DayAvailability{}, err
+	}
+
+	now := time.Now().In(time.UTC)
+
+	startDate := now
+	endDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+
+	var dayAvailability []DayAvailability
+
+	if service.BookingType == types.BookingTypeAppointment {
+		reservedTimes, err := s.bookingRepo.GetReservedTimesForPeriod(ctx, merchantId, locationId, startDate, endDate)
+		if err != nil {
+			return []DayAvailability{}, err
+		}
+
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
+		if err != nil {
+			return []DayAvailability{}, err
+		}
+
+		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+		if err != nil {
+			return []DayAvailability{}, err
+		}
+
+		dayAvailability = CalculateAvailableDays(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+	} else {
+		return []DayAvailability{}, fmt.Errorf("this function only works with 1-on-1 bookings")
+	}
+
+	return dayAvailability, nil
+}
+
+func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string, serviceId int, locationId int, bookingDay time.Time) (FormattedAvailableTimes, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	if service.MerchantId != merchantId {
+		return FormattedAvailableTimes{}, fmt.Errorf("this service id does not belong to this merchant")
+	}
+
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	year, month, day := bookingDay.In(time.UTC).Date()
+	startDate := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(year, month, day, 23, 59, 59, 999999999, time.UTC)
+	now := time.Now()
+
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, bookingDay)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, startDate, endDate)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
+	dayOfWeek := int(bookingDay.In(merchantTz).Weekday())
+	bookingDayBusinessHours := businessHours[dayOfWeek]
+
+	availableTimes := CalculateAvailableTimes(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingDay, bookingDayBusinessHours, now, merchantTz)
+
+	return availableTimes, nil
+}

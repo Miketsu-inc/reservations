@@ -281,7 +281,7 @@ function BookingFLow() {
         <div
           className="flex w-full px-6 md:gap-10 md:px-8 lg:max-w-6xl lg:gap-12"
         >
-          <div className="flex-1 pb-24">
+          <div className="min-w-0 flex-1 pb-24">
             {currentStep === "service" && (
               <ServiceSelectionStep
                 merchantName={merchantName}

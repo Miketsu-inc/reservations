@@ -302,8 +302,8 @@ function DetailsContent({
           to="book"
           search={{
             locationId: locationId,
-            serviceId: service.id,
-            type: service.booking_type,
+            serviceId: service?.id,
+            type: service?.booking_type,
           }}
         >
           <Button

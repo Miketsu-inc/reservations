@@ -159,19 +159,24 @@ func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
 	return resp
 }
 
-func mapToGetAvailabilityResp(in []merchantServ.MultiDayAvailableTimes) []getAvailabilityResp {
-	availability := make([]getAvailabilityResp, len(in))
+func mapToGetDayAvailabilityResp(in []merchantServ.DayAvailability) []getDayAvailabilityResp {
+	availability := make([]getDayAvailabilityResp, len(in))
 
 	for i, a := range in {
-		availability[i] = getAvailabilityResp{
+		availability[i] = getDayAvailabilityResp{
 			Date:        a.Date,
 			IsAvailable: a.IsAvailable,
-			Morning:     a.Morning,
-			Afternoon:   a.Afternoon,
 		}
 	}
 
 	return availability
+}
+
+func mapToGetAvailabilityResp(in merchantServ.FormattedAvailableTimes) getAvailabilityResp {
+	return getAvailabilityResp{
+		Morning:   in.Morning,
+		Afternoon: in.Afternoon,
+	}
 }
 
 func mapToGetNextAvailabilityResp(in merchantServ.NextAvailable) getNextAvailabilityResp {

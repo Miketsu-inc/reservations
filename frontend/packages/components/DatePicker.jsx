@@ -17,6 +17,7 @@ export default function DatePicker({
   value,
   palaceHolderText,
   disabledBefore,
+  disabledAfter,
   labelText,
   required,
   disabled = false,
@@ -97,7 +98,7 @@ export default function DatePicker({
               }
             }}
             firstDayOfWeek={firstDayOfWeek}
-            disabled={{ before: disabledBefore }}
+            disabled={[{ before: disabledBefore }, { after: disabledAfter }]}
             disabledSelectedModifier={
               disabledBefore?.getTime() > value?.getTime() ? value : undefined
             }
