@@ -141,13 +141,13 @@ function RouteComponent() {
             variant="tertiary"
             type="button"
             buttonText="Decline"
-            onClick={acceptHandler}
+            onClick={declineHandler}
           />
           <Button
             styles="py-2 px-4"
             type="button"
             buttonText="Accept"
-            onClick={declineHandler}
+            onClick={acceptHandler}
           />
         </div>
       </div>
