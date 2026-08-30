@@ -43,11 +43,13 @@ export default function Select({
     if (dropDownSameWidth && containerRef.current) {
       setTriggerWidth(containerRef.current.offsetWidth);
     }
+    onOpenChange?.(true);
   }
 
   function handleClose() {
     setIsOpen(false);
     onClose?.();
+    onOpenChange?.(false);
   }
 
   function handleKeyDown(e) {
@@ -105,7 +107,6 @@ export default function Select({
       open={isOpen}
       onOpenChange={(open) => {
         open ? handleOpen() : handleClose();
-        onOpenChange?.(open);
       }}
     >
       <PopoverTrigger nativeButton={false} asChild>
