@@ -18,13 +18,18 @@ import {
   ServerError,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import {
+  employeeQueryOptions,
+  invalidateLocalStorageAuth,
+  useToast,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { employeeQueryOptions } from "./edit.$id";
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/team/$id")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/team/_topnav/members/$id"
+)({
   component: RouteComponent,
   loader: async ({
     context: {
@@ -170,7 +175,7 @@ function RouteComponent() {
                         onClick={() => {
                           router.navigate({
                             from: Route.fullPath,
-                            to: `/team/edit/${employee.id}`,
+                            to: `/team/members/edit/${employee.id}`,
                           });
                         }}
                       >

@@ -47,12 +47,15 @@ func mapToGetInvitationsResp(in []domain.EmployeeInvitation) []getInvitationsRes
 
 	for i, inv := range in {
 		invitations[i] = getInvitationsResp{
-			Id:        inv.Id,
-			Status:    inv.Status,
-			Email:     inv.Email,
-			Role:      inv.Role,
-			InvitedAt: inv.InvitedAt,
-			ExpiresAt: inv.ExpiresAt,
+			Id:         inv.Id,
+			Status:     inv.Status,
+			Email:      inv.Email,
+			Role:       inv.Role,
+			InvitedAt:  inv.InvitedAt,
+			ExpiresAt:  inv.ExpiresAt,
+			RevokedAt:  inv.RevokedAt,
+			AcceptedAt: inv.AcceptedAt,
+			DeclinedAt: inv.DeclinedAt,
 		}
 	}
 

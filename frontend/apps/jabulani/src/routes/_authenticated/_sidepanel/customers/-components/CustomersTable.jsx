@@ -113,7 +113,7 @@ export default function CustomersTable({
             className="flex h-full flex-row items-center justify-center"
           >
             <button
-              className="cursor-pointer"
+              className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
               onClick={() => onEdit(customersData[params.node.sourceRowIndex])}
             >
               <Icon icon={Edit03Icon} styles="size-5 mx-1" />
@@ -122,7 +122,7 @@ export default function CustomersTable({
               <>
                 {params.data.times_booked || params.data.times_cancelled ? (
                   <button
-                    className="cursor-pointer"
+                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
                     onClick={() => onTransfer(params.data.id)}
                   >
                     <Icon icon={UserSwitchIcon} styles="size-5 mx-1" />
@@ -131,7 +131,7 @@ export default function CustomersTable({
                   <></>
                 )}
                 <button
-                  className="cursor-pointer"
+                  className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
                   onClick={() => {
                     setSelected({
                       id: params.data.id,
@@ -152,14 +152,14 @@ export default function CustomersTable({
               <>
                 {params.data.is_blacklisted ? (
                   <button
-                    className="cursor-pointer"
+                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
                     onClick={() => onBlackList(params.data)}
                   >
                     <Icon icon={CheckmarkCircle02Icon} styles="size-5 mx-1" />
                   </button>
                 ) : (
                   <button
-                    className="cursor-pointer"
+                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
                     onClick={() => onBlackList(params.data)}
                   >
                     <Icon icon={UnavailableIcon} styles="size-5 mx-1" />
@@ -172,8 +172,8 @@ export default function CustomersTable({
       },
       resizable: false,
       sortable: false,
-      minWidth: 120,
-      maxWidth: 120,
+      minWidth: 180,
+      maxWidth: 180,
     },
   ];
 

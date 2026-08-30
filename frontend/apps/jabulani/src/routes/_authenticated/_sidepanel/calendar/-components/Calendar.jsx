@@ -248,7 +248,7 @@ export default function Calendar({ router, route, search }) {
   }
 
   return (
-    <div className="flex h-[85svh] flex-col md:h-fit md:max-h-[90svh]">
+    <div className="flex h-[85svh] flex-col px-4 pt-4 md:h-fit md:max-h-[90svh]">
       <CalendarSidePanel
         isOpen={sidePanelState.isOpen}
         type={sidePanelState.type}

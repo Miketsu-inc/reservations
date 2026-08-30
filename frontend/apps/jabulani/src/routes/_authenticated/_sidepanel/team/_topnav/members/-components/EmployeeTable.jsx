@@ -80,14 +80,14 @@ export default function EmployeeTable({
             className="flex h-full flex-row items-center justify-center"
           >
             <button
-              className="cursor-pointer"
+              className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
               onClick={() => onEdit(data[params.node.sourceRowIndex])}
             >
               <Icon icon={Edit03Icon} styles="size-5 mx-1" />
             </button>
             {params.data.role !== "owner" && (
               <button
-                className="cursor-pointer"
+                className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
                 onClick={() => {
                   setSelected({
                     id: params.data.id,
@@ -108,8 +108,8 @@ export default function EmployeeTable({
       },
       resizable: false,
       sortable: false,
-      minWidth: 120,
-      maxWidth: 120,
+      minWidth: 160,
+      maxWidth: 160,
     },
   ];
 

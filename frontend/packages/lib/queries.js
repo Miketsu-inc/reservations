@@ -203,3 +203,27 @@ export function merchantServicesQueryOptions(name) {
     queryFn: () => fetchMerchantServices(name),
   });
 }
+
+async function fetchEmployee(merchantId, id) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/team/${id}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function employeeQueryOptions(merchantId, id) {
+  return queryOptions({
+    queryKey: [merchantId, "employee", id],
+    queryFn: () => fetchEmployee(merchantId, id),
+  });
+}

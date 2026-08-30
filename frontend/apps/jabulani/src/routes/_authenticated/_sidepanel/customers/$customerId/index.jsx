@@ -258,7 +258,7 @@ function CustomerDetailsPage() {
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center pt-4">
       <TransferAppsModal
         data={{
           from: queryResults[0].data.id,

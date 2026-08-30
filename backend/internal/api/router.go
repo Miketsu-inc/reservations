@@ -158,9 +158,11 @@ func jabulaniRouter() chi.Router {
 		"/products",
 		"/dashboard",
 		"/team",
-		"/team/new",
-		"/team/{id}",
-		"/team/edit/{id}",
+		"/team/members",
+		"/team/members/new",
+		"/team/members/{id}",
+		"/team/members/edit/{id}",
+		"/team/invitations",
 	}
 
 	dist, assets := jabulani.StaticFilesPath()

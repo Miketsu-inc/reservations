@@ -83,7 +83,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex h-full flex-col lg:h-[90svh]">
+    <div className="flex h-full flex-col px-4 pt-4 lg:h-[90svh]">
       <div className="flex flex-row items-center justify-between pb-3">
         <p className="text-xl">Your dashboard</p>
         <Select

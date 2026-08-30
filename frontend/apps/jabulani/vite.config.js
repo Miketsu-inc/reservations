@@ -5,6 +5,7 @@ export default createBaseConfig({
   resolve: {
     alias: {
       "@reservations/jabulani/lib": "/src/lib",
+      "@reservations/jabulani/components": "/src/components",
     },
   },
 });

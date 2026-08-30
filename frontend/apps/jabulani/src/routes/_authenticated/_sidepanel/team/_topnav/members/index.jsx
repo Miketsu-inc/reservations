@@ -4,10 +4,10 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import EmployeePage from "./-components/EmployeePage";
+import EmployeeTable from "./-components/EmployeeTable";
 
-async function fetchEmployee(merchantId, id) {
-  const response = await fetch(`/api/v1/merchants/${merchantId}/team/${id}`, {
+async function fetchEmployees(merchantId) {
+  const response = await fetch(`/api/v1/merchants/${merchantId}/team`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -24,15 +24,15 @@ async function fetchEmployee(merchantId, id) {
   }
 }
 
-export function employeeQueryOptions(merchantId, id) {
+function employeesQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: [merchantId, "employee", id],
-    queryFn: () => fetchEmployee(merchantId, id),
+    queryKey: [merchantId, "employees"],
+    queryFn: () => fetchEmployees(merchantId),
   });
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/team/edit/$id"
+  "/_authenticated/_sidepanel/team/_topnav/members/"
 )({
   component: RouteComponent,
   loader: async ({
@@ -40,11 +40,8 @@ export const Route = createFileRoute(
       queryClient,
       authContext: { merchantId },
     },
-    params,
   }) => {
-    await queryClient.ensureQueryData(
-      employeeQueryOptions(merchantId, params.id)
-    );
+    await queryClient.ensureQueryData(employeesQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -52,51 +49,19 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { id } = Route.useParams({ from: Route.id });
   const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
+
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { merchantId } = useAuth();
 
   const {
-    data: employee,
+    data: employees,
     isLoading,
     isError,
     error,
-  } = useQuery(employeeQueryOptions(merchantId, id));
-
-  async function saveEmployee(employee) {
-    try {
-      const response = await fetch(
-        `/api/v1/merchants/${merchantId}/team/${employee.id}`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(employee),
-        }
-      );
-
-      if (!response.ok) {
-        invalidateLocalStorageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        showToast({
-          message: "Employee modified successfully",
-          variant: "success",
-        });
-        router.navigate({
-          from: Route.fullPath,
-          to: router.history.back(),
-        });
-      }
-    } catch (err) {
-      setServerError(err.message);
-    }
-  }
+  } = useQuery(employeesQueryOptions(merchantId));
 
   if (isLoading) {
     return <Loading />;
@@ -106,10 +71,72 @@ function RouteComponent() {
     return <ServerError error={error.message} />;
   }
 
+  function handleRowClick(e) {
+    const employeeId = e.data.id;
+    const target = e.event.target;
+    const colId = target.closest("[col-id]")?.getAttribute("col-id");
+
+    if (colId === "actions") {
+      return;
+    }
+
+    router.navigate({
+      from: Route.fullPath,
+      to: `${employeeId}`,
+    });
+  }
+
+  async function deleteHandler(employee) {
+    try {
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/team/${employee.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        invalidateLocalStorageAuth(response.status);
+        const result = await response.json();
+        setServerError(result.error.message);
+      } else {
+        showToast({
+          message: "Employee deleted successfully",
+          variant: "success",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [merchantId, "employees"],
+        });
+      }
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
+
   return (
     <>
+      <p className="shrink-0 pb-6 text-xl">Team members</p>
       <ServerError error={serverError} />
-      <EmployeePage employee={employee} onSave={saveEmployee} />
+      <div className="flex min-h-0 flex-1">
+        <EmployeeTable
+          data={employees}
+          onRowClick={handleRowClick}
+          oneNewItem={() =>
+            router.navigate({ from: Route.fullPath, to: "new" })
+          }
+          onDelete={deleteHandler}
+          onEdit={(employee) =>
+            router.navigate({
+              from: Route.fullPath,
+              to: `edit/${employee.id}`,
+            })
+          }
+        />
+      </div>
     </>
   );
 }

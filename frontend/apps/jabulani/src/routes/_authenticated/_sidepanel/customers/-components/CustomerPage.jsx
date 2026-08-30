@@ -90,7 +90,7 @@ export default function CustomerPage({ customer, onSave }) {
         return !canLeave;
       }}
     >
-      <form onSubmit={submitHandler} className="flex justify-center">
+      <form onSubmit={submitHandler} className="flex justify-center px-4 pt-4">
         <div
           className="flex w-full flex-col gap-4 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
         >

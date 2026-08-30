@@ -168,7 +168,7 @@ export default function GroupServicePage({
           itemName={service.name}
         />
       )}
-      <div className="flex h-screen">
+      <div className="flex h-screen px-4 pt-4">
         <div className="w-full">
           <div className="flex flex-col gap-4">
             <form className="flex flex-col gap-4" onSubmit={submitHandler}>

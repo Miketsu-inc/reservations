@@ -20,6 +20,7 @@ export default function EmployeePage({ employee, onSave }) {
       email: employee?.email || "",
       phone_number: employee?.phone_number || "",
       role: employee?.role || "",
+      is_user: employee?.is_user || false,
       is_active: employee?.is_active ?? true,
     };
   }, [employee]);
@@ -75,6 +76,7 @@ export default function EmployeePage({ employee, onSave }) {
               labelText="First Name"
               placeholder="Travis"
               value={employeeData.first_name}
+              disabled={employeeData.is_user}
               inputData={(data) =>
                 updateEmployeeData({ first_name: data.value })
               }
@@ -86,6 +88,7 @@ export default function EmployeePage({ employee, onSave }) {
               labelText="Last Name"
               placeholder="Scott"
               value={employeeData.last_name}
+              disabled={employeeData.is_user}
               inputData={(data) =>
                 updateEmployeeData({ last_name: data.value })
               }
@@ -98,6 +101,7 @@ export default function EmployeePage({ employee, onSave }) {
             labelText="Email"
             placeholder="example@gmail.com"
             required={false}
+            disabled={employeeData.is_user}
             value={employeeData.email}
             inputData={(data) => updateEmployeeData({ email: data.value })}
           />
@@ -108,6 +112,7 @@ export default function EmployeePage({ employee, onSave }) {
             labelText="Phone Number"
             placeholder="+36 20 678 2012"
             required={false}
+            disabled={employeeData.is_user}
             value={employeeData.phone_number}
             inputData={(data) =>
               updateEmployeeData({ phone_number: data.value })

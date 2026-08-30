@@ -4,7 +4,10 @@
       "@reservations/components": ["./packages/components/index.js"],
       "@reservations/assets": ["./packages/assets/index.js"],
       "@reservations/lib": ["./packages/lib/index.js"],
-      "@reservations/jabulani/lib": ["./apps/jabulani/src/lib/index.js"]
+      "@reservations/jabulani/lib": ["./apps/jabulani/src/lib/index.js"],
+      "@reservations/jabulani/components": [
+        "./apps/jabulani/src/components/index.js"
+      ]
     }
   },
   "include": ["apps/**/*", "packages/**/*"]

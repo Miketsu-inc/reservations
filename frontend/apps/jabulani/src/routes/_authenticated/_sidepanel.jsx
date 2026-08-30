@@ -386,7 +386,7 @@ function SidePanelLayout() {
         >
           <div
             className="bg-bg_color flex min-h-0 flex-1 flex-col overflow-y-auto
-              px-4 pt-4 pb-2 md:rounded-t-xl"
+              pb-2 md:rounded-t-xl"
           >
             <Outlet />
           </div>

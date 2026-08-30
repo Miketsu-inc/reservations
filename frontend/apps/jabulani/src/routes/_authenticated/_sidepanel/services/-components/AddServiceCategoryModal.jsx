@@ -54,7 +54,7 @@ export default function AddServiceCategoryModal({ isOpen, onClose, onAdded }) {
 
   return (
     <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
-      <form className="p-4 md:w-lg" onSubmit={submitHandler}>
+      <form className="md:w-lg md:p-4" onSubmit={submitHandler}>
         <p className="pb-8 text-xl font-semibold">Create a new category</p>
         <div className="flex flex-col gap-6">
           <p>

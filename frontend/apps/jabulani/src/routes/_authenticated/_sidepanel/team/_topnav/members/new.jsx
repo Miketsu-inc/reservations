@@ -5,7 +5,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import TeamMemberPage from "./-components/EmployeePage";
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/team/new")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/team/_topnav/members/new"
+)({
   component: RouteComponent,
 });
 

@@ -23,7 +23,7 @@ function CustomersLayout() {
   const pathName = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col gap-6 px-4 pt-4">
       <div className="flex w-full shrink-0 flex-col gap-4">
         <h1 className="text-text_color text-xl">Customers</h1>
         <div className="flex items-center justify-between">

@@ -77,6 +77,7 @@ function PhoneInput({
   required,
   inputData,
   onOpenChange,
+  disabled,
   ...props
 }) {
   const { inputValue, handlePhoneValueChange, country, setCountry } =
@@ -105,6 +106,7 @@ function PhoneInput({
           dropDownSameWidth={false}
           showOnlyIcon={true}
           onOpenChange={onOpenChange}
+          disabled={disabled}
         />
         <StyledInputBase
           styles="flex-1 rounded-l-none p-2"
@@ -115,6 +117,7 @@ function PhoneInput({
           onChange={handlePhoneValueChange}
           required={required === undefined ? true : required}
           onBlur={() => {}}
+          disabled={disabled}
           {...props}
         />
       </div>

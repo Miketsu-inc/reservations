@@ -163,12 +163,15 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getInvitationsResp struct {
-	Id        int                            `json:"id"`
-	Status    types.EmployeeInvitationStatus `json:"status"`
-	Email     string                         `json:"email"`
-	Role      types.EmployeeInvitationRole   `json:"role"`
-	InvitedAt time.Time                      `json:"invited_at"`
-	ExpiresAt time.Time                      `json:"expires_at"`
+	Id         int                            `json:"id"`
+	Status     types.EmployeeInvitationStatus `json:"status"`
+	Email      string                         `json:"email"`
+	Role       types.EmployeeInvitationRole   `json:"role"`
+	InvitedAt  time.Time                      `json:"invited_at"`
+	ExpiresAt  time.Time                      `json:"expires_at"`
+	RevokedAt  *time.Time                     `json:"revoked_at"`
+	AcceptedAt *time.Time                     `json:"accepted_at"`
+	DeclinedAt *time.Time                     `json:"declined_at"`
 }
 
 func (h *Handler) GetInvitations(w http.ResponseWriter, r *http.Request) error {
