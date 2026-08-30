@@ -24,8 +24,6 @@ function RouteComponent() {
       </TopNavBar>
       <div className="flex h-full min-h-0 flex-col px-4 pt-4">
         <Outlet />
-        {/* <div>
-        </div> */}
       </div>
     </div>
   );

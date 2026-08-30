@@ -1,19 +1,21 @@
-import { Loading, ServerError } from "@reservations/components";
+import { PlusSignIcon } from "@hugeicons/core-free-icons";
+import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   customersQueryOptions,
   invalidateLocalStorageAuth,
   useToast,
+  useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import BlacklistModal from "../-components/BlacklistModal";
-import CustomersTable from "../-components/CustomersTable";
-import TransferAppsModal from "../-components/TransferAppsModal";
+import BlacklistModal from "./-components/BlacklistModal";
+import CustomersTable from "./-components/CustomersTable";
+import TransferAppsModal from "./-components/TransferAppsModal";
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/_layout/"
+  "/_authenticated/_sidepanel/customers/_topnav/"
 )({
   component: CustomersPage,
   loader: async ({
@@ -38,6 +40,7 @@ function CustomersPage() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
+  const { windowSize } = useWindowSize();
 
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
@@ -173,52 +176,69 @@ function CustomersPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 justify-center">
-      <TransferAppsModal
-        data={transferModalData}
-        isOpen={showTransferModal}
-        onClose={() => setShowTransferModal(false)}
-        onSubmit={transferHandler}
-      />
-      <BlacklistModal
-        key={blacklistModalData?.id || "new"}
-        data={blacklistModalData}
-        isOpen={showBlacklistModal}
-        onClose={() => setShowBlacklistModal(false)}
-        // both adding to and removing from blacklist goes through the same modal and handler
-        // so the customer.is_blacklisted field determines the action
-        onSubmit={(customer) =>
-          blacklistHandler({
-            id: customer.id,
-            blacklist_reason: customer.blacklist_reason,
-          })
-        }
-      />
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
-        <ServerError error={serverError} />
-        <div className="flex min-h-0 w-full flex-1">
-          <CustomersTable
-            customersData={data}
-            onTransfer={(index) => {
-              setTransferModalData({
-                from: index,
-                customers: data,
-              });
-              setTimeout(() => setShowTransferModal(true), 0);
-            }}
-            onEdit={(customer) => {
-              navigate({
-                from: Route.fullPath,
-                to: `edit/${customer.id}`,
-              });
-            }}
-            onDelete={deleteHandler}
-            onBlackList={(customer) => {
-              setBlacklistModalData(customer);
-              setTimeout(() => setShowBlacklistModal(true), 0);
-            }}
-            onRowClick={handleRowClick}
-          />
+    <div className="h-full">
+      <div className="flex flex-row items-center justify-between">
+        <p className="pb-6 text-xl">Customers</p>
+        <Link from={Route.fullPath} to="new">
+          <Button
+            variant="primary"
+            styles="p-2 md:px-4 w-fit"
+            buttonText={windowSize !== "sm" ? "New Customer" : ""}
+          >
+            <Icon
+              icon={PlusSignIcon}
+              styles="size-6 md:size-5 md:mr-2 text-white"
+            />
+          </Button>
+        </Link>
+      </div>
+      <div className="flex h-full min-h-0 justify-center">
+        <TransferAppsModal
+          data={transferModalData}
+          isOpen={showTransferModal}
+          onClose={() => setShowTransferModal(false)}
+          onSubmit={transferHandler}
+        />
+        <BlacklistModal
+          key={blacklistModalData?.id || "new"}
+          data={blacklistModalData}
+          isOpen={showBlacklistModal}
+          onClose={() => setShowBlacklistModal(false)}
+          // both adding to and removing from blacklist goes through the same modal and handler
+          // so the customer.is_blacklisted field determines the action
+          onSubmit={(customer) =>
+            blacklistHandler({
+              id: customer.id,
+              blacklist_reason: customer.blacklist_reason,
+            })
+          }
+        />
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+          <ServerError error={serverError} />
+          <div className="flex min-h-0 w-full flex-1">
+            <CustomersTable
+              customersData={data}
+              onTransfer={(index) => {
+                setTransferModalData({
+                  from: index,
+                  customers: data,
+                });
+                setTimeout(() => setShowTransferModal(true), 0);
+              }}
+              onEdit={(customer) => {
+                navigate({
+                  from: Route.fullPath,
+                  to: `edit/${customer.id}`,
+                });
+              }}
+              onDelete={deleteHandler}
+              onBlackList={(customer) => {
+                setBlacklistModalData(customer);
+                setTimeout(() => setShowBlacklistModal(true), 0);
+              }}
+              onRowClick={handleRowClick}
+            />
+          </div>
         </div>
       </div>
     </div>

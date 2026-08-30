@@ -83,7 +83,7 @@ function formatBirthday(datestr) {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/$customerId/"
+  "/_authenticated/_sidepanel/customers/_topnav/$customerId/"
 )({
   component: CustomerDetailsPage,
   loader: async ({

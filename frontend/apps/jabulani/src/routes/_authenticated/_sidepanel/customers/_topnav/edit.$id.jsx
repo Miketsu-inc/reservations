@@ -35,7 +35,7 @@ function customerQueryOptions(merchantId, id) {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/edit/$id"
+  "/_authenticated/_sidepanel/customers/_topnav/edit/$id"
 )({
   component: RouteComponent,
   loader: ({

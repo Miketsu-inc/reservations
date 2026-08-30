@@ -6,7 +6,7 @@ import { useState } from "react";
 import CustomerPage from "./-components/CustomerPage";
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/new"
+  "/_authenticated/_sidepanel/customers/_topnav/new"
 )({
   component: RouteComponent,
 });

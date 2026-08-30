@@ -5,8 +5,8 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import BlacklistModal from "../-components/BlacklistModal";
-import CustomersTable from "../-components/CustomersTable";
+import BlacklistModal from "./-components/BlacklistModal";
+import CustomersTable from "./-components/CustomersTable";
 
 async function fetchCustomers(merchantId) {
   const response = await fetch(
@@ -37,7 +37,7 @@ function blacklistQueryOptions(merchantId) {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/customers/_layout/blacklist"
+  "/_authenticated/_sidepanel/customers/_topnav/blacklist"
 )({
   component: BlacklistPage,
   loader: async ({
