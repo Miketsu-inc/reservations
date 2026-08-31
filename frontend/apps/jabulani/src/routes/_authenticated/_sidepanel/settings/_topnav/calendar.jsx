@@ -7,8 +7,8 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import RadioInputGroup from "../-components/RadioInputGroup";
-import SectionHeader from "../-components/SectionHeader";
+import RadioInputGroup from "./-components/RadioInputGroup";
+import SectionHeader from "./-components/SectionHeader";
 
 const calendarViewOptions = [
   { value: "month", label: "Month View" },
@@ -68,7 +68,7 @@ const defaultPreferences = {
 };
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/settings/_pages/calendar"
+  "/_authenticated/_sidepanel/settings/_topnav/calendar"
 )({
   component: CalendarPage,
   loader: async ({

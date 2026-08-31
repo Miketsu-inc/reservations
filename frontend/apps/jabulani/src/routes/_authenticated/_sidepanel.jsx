@@ -133,7 +133,7 @@ function SidePanelLayout() {
       isPro: true,
     },
     {
-      href: "/settings/profile",
+      href: "/settings",
       label: "Settings",
       icon: <Icon icon={Settings02Icon} styles="size-5" />,
     },

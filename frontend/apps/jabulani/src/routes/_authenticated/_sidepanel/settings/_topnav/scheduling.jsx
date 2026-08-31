@@ -26,10 +26,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import BlockedTypesModal from "../-components/BlockedTypesModal";
+import BlockedTypesModal from "./-components/BlockedTypesModal";
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/settings/_pages/scheduling"
+  "/_authenticated/_sidepanel/settings/_topnav/scheduling"
 )({
   component: BlockedTimesManager,
   loader: async ({
@@ -110,7 +110,7 @@ function BlockedTimesManager() {
   }
 
   return (
-    <div className="flex flex-col gap-6 md:pl-10">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <div className="text-text_color text-xl font-semibold">

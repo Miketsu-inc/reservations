@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import SectionHeader from "../-components/SectionHeader";
+import SectionHeader from "./-components/SectionHeader";
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/settings/_pages/billing"
+  "/_authenticated/_sidepanel/settings/_topnav/billing"
 )({
   component: BillingPage,
 });

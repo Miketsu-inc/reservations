@@ -13,11 +13,11 @@ import {
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import BusinessHours from "../-components/BusinessHours";
-import DangerZone from "../-components/DangerZone";
-import ImageUploader from "../-components/ImageUploader";
-import SchedulingSettings from "../-components/SchedulingSettings";
-import SectionHeader from "../-components/SectionHeader";
+import BusinessHours from "./-components/BusinessHours";
+import DangerZone from "./-components/DangerZone";
+import ImageUploader from "./-components/ImageUploader";
+import SchedulingSettings from "./-components/SchedulingSettings";
+import SectionHeader from "./-components/SectionHeader";
 
 const daysOfWeek = {
   1: "Monday",
@@ -117,7 +117,7 @@ const defaultMerchantInfo = {
 };
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/settings/_pages/merchant"
+  "/_authenticated/_sidepanel/settings/_topnav/merchant"
 )({
   component: MerchantPage,
   loader: async ({

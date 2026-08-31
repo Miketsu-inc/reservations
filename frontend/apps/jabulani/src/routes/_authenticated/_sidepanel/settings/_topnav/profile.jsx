@@ -2,10 +2,10 @@ import { Button, ServerError } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import SectionHeader from "../-components/SectionHeader";
+import SectionHeader from "./-components/SectionHeader";
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/settings/_pages/profile"
+  "/_authenticated/_sidepanel/settings/_topnav/profile"
 )({
   component: ProfilePage,
 });
