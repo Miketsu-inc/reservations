@@ -1,0 +1,39 @@
+import { GoogleIcon } from "@reservations/assets";
+import { Button, Card } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
+import { JABULANI_URL } from "@reservations/lib";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/integrations/_topnav/calendar"
+)({
+  component: RouteComponent,
+});
+
+function RouteComponent() {
+  const { merchantId } = useAuth();
+
+  return (
+    <div className="flex h-full flex-col px-4 pt-4">
+      <p className="pb-6 text-xl">Calendar</p>
+      <div className="flex flex-col gap-4">
+        <Card styles="flex flex-row justify-between items-center gap-2">
+          <div className="flex flex-col gap-2">
+            <span className="text-lg">Two-way calendar sync</span>
+            <p className="text-sm">
+              Events will be automatically synced between your Google calendar
+              and our system
+            </p>
+          </div>
+          <a
+            href={`${JABULANI_URL}/api/v1/merchants/${merchantId}/integrations/google/calendar`}
+          >
+            <Button styles="py-2 px-4" buttonText="Sync" onClick={() => {}}>
+              <GoogleIcon styles="size-5 fill-text_color mr-3" />
+            </Button>
+          </a>
+        </Card>
+      </div>
+    </div>
+  );
+}

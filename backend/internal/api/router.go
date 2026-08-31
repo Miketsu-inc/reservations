@@ -195,6 +195,7 @@ func tangoRouter() chi.Router {
 		"/forgot-password",
 		"/reset-password",
 		"/invitations",
+		"/invitations/calendar",
 		"/home",
 		"/bookings",
 		"/settings",

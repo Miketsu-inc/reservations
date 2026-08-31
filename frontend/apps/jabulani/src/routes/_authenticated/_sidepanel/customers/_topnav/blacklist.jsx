@@ -123,7 +123,10 @@ function BlacklistPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 justify-center">
+    <div className="flex h-full min-h-0 flex-col justify-center">
+      <div className="flex flex-row items-center justify-between">
+        <p className="pb-6 text-xl">Blacklisted customers</p>
+      </div>
       <BlacklistModal
         key={blacklistModalData?.id || "new"}
         data={blacklistModalData}
