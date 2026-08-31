@@ -19,13 +19,20 @@ export default function MapboxMap({
 
     if (mapContainerRef.current) {
       mapboxgl.accessToken = accessToken;
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: coordinates,
-        zoom: zoom,
-        interactive: false, // Disable all interactions
-      });
+
+      let map = undefined;
+
+      try {
+        map = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: coordinates,
+          zoom: zoom,
+          interactive: false, // Disable all interactions
+        });
+      } catch (error) {
+        console.log(error);
+      }
 
       mapRef.current = map;
 
