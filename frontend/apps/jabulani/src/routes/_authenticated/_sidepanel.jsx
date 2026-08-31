@@ -381,12 +381,12 @@ function SidePanelLayout() {
           </div>
         </aside>
         <div
-          className={`flex min-h-0 flex-1 flex-col transition-[margin]
+          className={`flex min-h-0 min-w-0 flex-1 flex-col transition-[margin]
             duration-300 md:pt-2 md:pr-2`}
         >
           <div
-            className="bg-bg_color flex min-h-0 flex-1 flex-col overflow-y-auto
-              pb-2 md:rounded-t-xl"
+            className="bg-bg_color flex min-h-0 min-w-0 flex-1 flex-col
+              overflow-y-auto pb-2 md:rounded-t-xl"
           >
             <Outlet />
           </div>
