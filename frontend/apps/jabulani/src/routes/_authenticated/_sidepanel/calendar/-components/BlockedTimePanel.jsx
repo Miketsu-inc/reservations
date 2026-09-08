@@ -108,11 +108,9 @@ export default function BlockedTimePanel({
     return options;
   });
 
-  // when the incoming blockedtime has empty eId array it means all team members
-  const initialEmployees =
-    isEditing && blockedTime?.extendedProps?.employee_ids.length === 0
-      ? team?.map((member) => member.id)
-      : (blockedTime?.extendedProps?.employee_ids ?? [currentEmployee]);
+  const initialEmployees = isEditing
+    ? blockedTime?.extendedProps?.employee_ids || []
+    : [currentEmployee];
 
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -163,10 +161,6 @@ export default function BlockedTimePanel({
       return;
     }
 
-    // send back empty array meaning blocked time for all employees
-    const isAllEmployees = formData.employee_ids.length === team.length;
-    const payloadEmployeeIds = isAllEmployees ? [] : formData.employee_ids;
-
     let blockedTypeId =
       formData.blocked_type_id === "custom"
         ? undefined
@@ -177,7 +171,7 @@ export default function BlockedTimePanel({
       blocked_type_id: blockedTypeId,
       name: formData.name,
       all_day: formData.all_day,
-      employee_ids: payloadEmployeeIds,
+      employee_ids: formData.employee_ids,
     };
 
     if (formData.all_day) {
