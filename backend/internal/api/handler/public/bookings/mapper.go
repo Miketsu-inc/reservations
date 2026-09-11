@@ -20,6 +20,7 @@ func mapToCreateByCustomerInput(in createBookingByCustomerReq) (bookingServ.Crea
 		LocationId:   in.LocationId,
 		TimeStamp:    timeStamp,
 		CustomerNote: in.CustomerNote,
+		EmployeeId:   in.EmployeeId,
 		BookingId:    in.BookingId,
 	}, nil
 }

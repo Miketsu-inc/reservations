@@ -1,7 +1,6 @@
 package merchants
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -38,7 +37,7 @@ func (h *Handler) Routes() *httputil.Router {
 
 		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
 		r.Get("/locations/{locationId}/summary", h.GetSummary)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/day", h.GetDayAvailability)
+		r.Get("/locations/{locationId}/services/{serviceId}/availability/available-days", h.GetDayAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability", h.GetAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/next", h.GetNextAvailability)
 		r.Get("/locations/{locationId}/services/{serviceId}/availability/disabled-days", h.GetDisabledDays)
@@ -307,7 +306,17 @@ func (h *Handler) GetDayAvailability(w http.ResponseWriter, r *http.Request) err
 		return validate.NewError("invalid location id")
 	}
 
-	availability, err := h.service.GetDayAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
+	var employeeId *int
+
+	if empIdStr := r.URL.Query().Get("employee_id"); empIdStr != "" {
+		parsedID, err := strconv.Atoi(empIdStr)
+		if err != nil {
+			return validate.NewError("invalid employee id")
+		}
+		employeeId = &parsedID
+	}
+
+	availability, err := h.service.GetDayAvailability(r.Context(), urlName, urlServiceId, urlLocationId, employeeId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetDayAvailability")
 	}
@@ -341,10 +350,20 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 
 	urlBookingDay, err := time.Parse(time.DateOnly, r.URL.Query().Get("date"))
 	if err != nil {
-		return validate.NewError(fmt.Sprintf("invalid date format: %s", err.Error()))
+		return validate.NewError("invalid date format")
 	}
 
-	availability, err := h.service.GetAvailabilityForDay(r.Context(), urlName, urlServiceId, urlLocationId, urlBookingDay)
+	var employeeId *int
+
+	if empIdStr := r.URL.Query().Get("employee_id"); empIdStr != "" {
+		parsedID, err := strconv.Atoi(empIdStr)
+		if err != nil {
+			return validate.NewError("invalid employee id")
+		}
+		employeeId = &parsedID
+	}
+
+	availability, err := h.service.GetAvailabilityForDay(r.Context(), urlName, urlServiceId, urlLocationId, employeeId, urlBookingDay)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetAvailability")
 	}

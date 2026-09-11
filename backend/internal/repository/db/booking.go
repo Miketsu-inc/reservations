@@ -954,33 +954,30 @@ func (r *bookingRepository) GetBookingCancelDeadline(ctx context.Context, bookin
 	return cancelDeadline, nil
 }
 
-func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchant_id uuid.UUID, location_id int, day time.Time) ([]domain.BookingSlot, error) {
-	query := `
-    select bp.from_date, bp.to_date
-	from "BookingPhase" bp
-	join "Booking" b on bp.booking_id = b.id
-    where b.merchant_id = $1 and b.location_id = $2 and DATE(b.from_date) = $3 and b.status not in ('cancelled', 'completed') and bp.phase_type = 'active'
-    ORDER BY bp.from_date`
-
-	rows, _ := r.db.Query(ctx, query, merchant_id, location_id, day)
-	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
-	if err != nil {
-		return nil, fmt.Errorf("GetReservedTimes: %w", err)
-	}
-
-	return reservedTimes, nil
-}
-
-func (r *bookingRepository) GetReservedTimesForPeriod(ctx context.Context, merchantId uuid.UUID, locationId int, startDate time.Time, endDate time.Time) ([]domain.BookingSlot, error) {
+func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationId int, employeeId *int, startDate time.Time, endDate time.Time) ([]domain.BookingSlot, error) {
 	query := `
 	select bp.from_date, bp.to_date
 	from "BookingPhase" bp
 	join "Booking" b on bp.booking_id = b.id
-	where b.merchant_id = $1 and b.location_id = $2 and DATE(b.from_date) >= $3 and DATE(b.to_date) <= $4
+	where b.merchant_id = $1 and b.location_id = $2 and bp.from_date < $4 and bp.to_date > $3
 		and b.status not in ('cancelled', 'completed') and bp.phase_type = 'active'
 	order by bp.from_date`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, locationId, startDate, endDate)
+	args := []interface{}{merchantId, locationId, startDate, endDate}
+
+	if employeeId != nil {
+		query = `
+		select bp.from_date, bp.to_date 
+		from "BookingPhase" bp
+		join "Booking" b on bp.booking_id = b.id
+		where b.merchant_id = $1 and b.location_id = $2 and bp.from_date < $4 and bp.to_date > $3
+			and b.status not in ('cancelled', 'completed') and bp.phase_type = 'active' and b.employee_id = $5
+		order by bp.from_date`
+
+		args = append(args, employeeId)
+	}
+
+	rows, _ := r.db.Query(ctx, query, args...)
 	reservedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
 	if err != nil {
 		return nil, fmt.Errorf("GetReservedTimesForPeriod: %w", err)

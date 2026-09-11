@@ -210,6 +210,8 @@ function BookingFLow() {
           location_id: search.locationId,
           timeStamp: timeStamp,
           customer_note: selectedSummary.time.customer_note,
+          employee_id:
+            search.employeeId !== "no-pref" ? search.employeeId : undefined,
         }),
       });
 

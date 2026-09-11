@@ -59,8 +59,18 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{StartTime: ctBH("13:00"), EndTime: ctBH("16:15")},
 		}
 
-		expectedMorning := []string{"09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00"}
-		expectedAfternoon := []string{"13:00", "13:15", "13:30", "13:45", "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45"}
+		expected := []time.Time{
+			ct(year, month, day, "09:30", tz), ct(year, month, day, "09:45", tz),
+			ct(year, month, day, "10:00", tz), ct(year, month, day, "10:15", tz),
+			ct(year, month, day, "10:30", tz), ct(year, month, day, "10:45", tz),
+			ct(year, month, day, "11:00", tz),
+			ct(year, month, day, "13:00", tz), ct(year, month, day, "13:15", tz),
+			ct(year, month, day, "13:30", tz), ct(year, month, day, "13:45", tz),
+			ct(year, month, day, "14:00", tz), ct(year, month, day, "14:15", tz),
+			ct(year, month, day, "14:30", tz), ct(year, month, day, "14:45", tz),
+			ct(year, month, day, "15:00", tz), ct(year, month, day, "15:15", tz),
+			ct(year, month, day, "15:30", tz), ct(year, month, day, "15:45", tz),
+		}
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
@@ -68,8 +78,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
-		assert.ElementsMatch(t, expectedAfternoon, result.Afternoon, "Afternoon times do not match")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("One active phase", func(t *testing.T) {
@@ -91,17 +100,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
-		expectedMorning := []time.Time{
-			ct(year, month, day, "09:00", tz),
-			ct(year, month, day, "11:45", tz),
-		}
-		expectedAfternoon := []time.Time{
-			ct(year, month, day, "12:00", tz),
-			ct(year, month, day, "14:00", tz),
-			ct(year, month, day, "14:15", tz),
-			ct(year, month, day, "14:30", tz),
-			ct(year, month, day, "14:45", tz),
-			ct(year, month, day, "15:00", tz),
+		expected := []time.Time{
+			ct(year, month, day, "09:00", tz), ct(year, month, day, "11:45", tz),
+			ct(year, month, day, "12:00", tz), ct(year, month, day, "14:00", tz),
+			ct(year, month, day, "14:15", tz), ct(year, month, day, "14:30", tz),
+			ct(year, month, day, "14:45", tz), ct(year, month, day, "15:00", tz),
 		}
 
 		blocked := []domain.BlockedTimes{}
@@ -110,8 +113,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
-		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("Mutliple phases with wait at the start", func(t *testing.T) {
@@ -135,17 +137,11 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{StartTime: ctBH("13:00"), EndTime: ctBH("16:15")},
 		}
 
-		expectedMorning := []time.Time{
-			ct(year, month, day, "10:00", tz),
-			ct(year, month, day, "10:15", tz),
-			ct(year, month, day, "10:30", tz),
-		}
-		expectedAfternoon := []time.Time{
-			ct(year, month, day, "14:30", tz),
-			ct(year, month, day, "14:45", tz),
-			ct(year, month, day, "15:00", tz),
-			ct(year, month, day, "15:15", tz),
-			ct(year, month, day, "15:30", tz),
+		expected := []time.Time{
+			ct(year, month, day, "10:00", tz), ct(year, month, day, "10:15", tz),
+			ct(year, month, day, "10:30", tz), ct(year, month, day, "14:30", tz),
+			ct(year, month, day, "14:45", tz), ct(year, month, day, "15:00", tz),
+			ct(year, month, day, "15:15", tz), ct(year, month, day, "15:30", tz),
 		}
 
 		blocked := []domain.BlockedTimes{}
@@ -154,8 +150,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
-		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("Mutliple phases with wait in the middle", func(t *testing.T) {
@@ -179,13 +174,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
-		expectedMorning := []time.Time{
-			ct(year, month, day, "09:45", tz),
-			ct(year, month, day, "11:00", tz),
-		}
-		expectedAfternoon := []time.Time{
-			ct(year, month, day, "14:00", tz),
-			ct(year, month, day, "14:15", tz),
+		expected := []time.Time{
+			ct(year, month, day, "09:45", tz), ct(year, month, day, "11:00", tz),
+			ct(year, month, day, "14:00", tz), ct(year, month, day, "14:15", tz),
 			ct(year, month, day, "14:30", tz),
 		}
 
@@ -195,8 +186,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
-		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("Close current time", func(t *testing.T) {
@@ -220,8 +210,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
 		}
 
-		expectedMorning := []time.Time{}
-		expectedAfternoon := []time.Time{
+		expected := []time.Time{
 			ct(year, month, day, "14:30", tz),
 		}
 
@@ -231,8 +220,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, formatTimes(expectedMorning), result.Morning, "Morning times do not match")
-		assert.ElementsMatch(t, formatTimes(expectedAfternoon), result.Afternoon, "Afternoon times do not match")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("Buffer time between bookings", func(t *testing.T) {
@@ -254,13 +242,10 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		// With buffer=15min, the blocked period is 09:45–10:45.
 		// So "09:00" and "09:15" are fine, next available is "10:45".
-		expectedMorning := []string{
-			"09:00",
-			"09:15",
-			"10:45",
-			"11:00",
-			"11:15",
-			"11:30",
+		expected := []time.Time{
+			ct(year, month, day, "09:00", tz), ct(year, month, day, "09:15", tz),
+			ct(year, month, day, "10:45", tz), ct(year, month, day, "11:00", tz),
+			ct(year, month, day, "11:15", tz), ct(year, month, day, "11:30", tz),
 		}
 
 		blocked := []domain.BlockedTimes{}
@@ -271,8 +256,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz,
 		)
 
-		assert.ElementsMatch(t, expectedMorning, result.Morning, "Morning times do not match")
-		assert.Empty(t, result.Afternoon, "Afternoon should be empty")
+		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
 
 	t.Run("All day blocked time", func(t *testing.T) {
@@ -305,8 +289,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.Empty(t, result.Morning, "Expected no morning slots due to full block")
-		assert.Empty(t, result.Afternoon, "Expected no afternoon slots due to full block")
+		assert.Empty(t, result, "Expected no slots due to full block")
 	})
 
 	t.Run("Business hours blocked partially", func(t *testing.T) {
@@ -337,13 +320,15 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(year, month, day, "00:00", tz)
 
-		expected := []string{
-			"11:00", "11:15", "11:30",
+		expected := []time.Time{
+			ct(year, month, day, "11:00", tz),
+			ct(year, month, day, "11:15", tz),
+			ct(year, month, day, "11:30", tz),
 		}
 
 		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
-		assert.ElementsMatch(t, expected, result.Morning, "Unexpected available slots for partial block")
+		assert.ElementsMatch(t, expected, result, "Unexpected available slots for partial block")
 	})
 
 	t.Run("Blocked time overlaps only wait inside multi-phase service", func(t *testing.T) {
@@ -376,12 +361,10 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(year, month, day, "00:00", tz)
 
-		expected := []string{
-			"09:00", // allowed: active phases do NOT intersect block
-			"10:00",
-			"10:15",
-			"10:30",
-			"10:45",
+		expected := []time.Time{
+			ct(year, month, day, "09:00", tz), ct(year, month, day, "10:00", tz),
+			ct(year, month, day, "10:15", tz), ct(year, month, day, "10:30", tz),
+			ct(year, month, day, "10:45", tz),
 		}
 
 		result := merchant.CalculateAvailableTimes(
@@ -389,7 +372,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 			bookingDay, businessHours, currentTime, tz,
 		)
 
-		assert.ElementsMatch(t, expected, result.Morning, "Unexpected available slots for WAIT-overlap test")
+		assert.ElementsMatch(t, expected, result, "Unexpected available slots for WAIT-overlap test")
 	})
 }
 

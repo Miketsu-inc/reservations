@@ -15,6 +15,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
+	"github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
@@ -29,6 +30,7 @@ type Service struct {
 	bookingRepo     domain.BookingRepository
 	catalogRepo     domain.CatalogRepository
 	merchantRepo    domain.MerchantRepository
+	teamRepo        domain.TeamRepository
 	userRepo        domain.UserRepository
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
@@ -38,12 +40,13 @@ type Service struct {
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
-	user domain.UserRepository, customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
+	team domain.TeamRepository, user domain.UserRepository, customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
 	mailer *email.Service, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
 		merchantRepo:    merchant,
+		teamRepo:        team,
 		userRepo:        user,
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
@@ -125,12 +128,70 @@ func getNewBookingStatus(approvalPolicy types.ApprovalType, isNewCustomer bool) 
 	return status, nil
 }
 
+func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid.UUID, locationId int, employeeId *int, appointmentSlot domain.TimeSlot, service domain.Service, bookingSettings domain.MerchantBookingSettings, totalDuration time.Duration, merchantTz *time.Location) (int, error) {
+
+	var employeesToCheck []int
+	if employeeId != nil {
+		employeesToCheck = []int{*employeeId}
+	} else {
+		employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+		if err != nil {
+			return 0, err
+		}
+		for _, emp := range employees {
+			employeesToCheck = append(employeesToCheck, emp.Id)
+		}
+	}
+
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	if err != nil {
+		return 0, err
+	}
+
+	dayOfWeek := int(appointmentSlot.StartTime.In(merchantTz).Weekday())
+	bookingDayBusinessHours := businessHours[dayOfWeek]
+
+	year, month, day := appointmentSlot.EndTime.In(merchantTz).Date()
+	dayStart := time.Date(year, month, day, 0, 0, 0, 0, merchantTz).UTC()
+	dayEnd := time.Date(year, month, day, 23, 59, 59, 999999999, merchantTz).UTC()
+	now := time.Now().In(time.UTC)
+
+	var finalEmployeeId int
+	foundAvailableSlot := false
+
+	for _, empId := range employeesToCheck {
+		reserved, err := s.bookingRepo.WithTx(tx).GetReservedTimes(ctx, merchantId, locationId, &empId, dayStart, dayEnd)
+		if err != nil {
+			return 0, err
+		}
+
+		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId, dayStart, dayEnd)
+		if err != nil {
+			return 0, err
+		}
+
+		if merchant.IsValidBookingTime(appointmentSlot, reserved, blocked, service.Phases, bookingDayBusinessHours, totalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
+			finalEmployeeId = empId
+			foundAvailableSlot = true
+			break
+		}
+	}
+
+	if !foundAvailableSlot {
+		return 0, ErrTimeIsNotAvailable
+	}
+
+	return finalEmployeeId, nil
+}
+
 type CreateByCustomerInput struct {
 	MerchantName string
 	ServiceId    int
 	LocationId   int
 	TimeStamp    time.Time
 	CustomerNote string
+	// nil if no-preference is selected for 1-on-1 bookings
+	EmployeeId *int
 	// only present on group bookings
 	BookingId *int
 }
@@ -155,11 +216,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 
 	fromDate := input.TimeStamp.UTC()
 
-	err = enforceBookingWindow(fromDate, time.Now().In(merchantTz), bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax)
-	if err != nil {
-		return err
-	}
-
 	// TODO: we should probably just check by querying the user
 	customerId, err := uuid.NewV7()
 	if err != nil {
@@ -175,7 +231,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		}
 
 		if isBlacklisted {
-			return fmt.Errorf("you are blacklisted, please contact the merchant by email or phone to make a booking")
+			return ErrCustomerIsBlacklisted
 		}
 
 		bookingStatus, err := getNewBookingStatus(bookingSettings.ApprovalPolicy, isNewCustomer)
@@ -234,6 +290,12 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			duration := time.Duration(service.TotalDuration) * time.Minute
 			toDate := fromDate.Add(duration)
 
+			finalEmployeeId, err := s.assignEmplyoee(ctx, tx, merchantId, input.LocationId, input.EmployeeId, domain.TimeSlot{
+				StartTime: fromDate, EndTime: toDate}, service, bookingSettings, duration, merchantTz)
+			if err != nil {
+				return err
+			}
+
 			price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
 			if err != nil {
 				return err
@@ -248,7 +310,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				Status:              bookingStatus,
 				BookingType:         types.BookingTypeAppointment,
 				MerchantId:          merchantId,
-				EmployeeId:          nil,
+				EmployeeId:          &finalEmployeeId,
 				ServiceId:           &input.ServiceId,
 				LocationId:          input.LocationId,
 				FromDate:            fromDate,

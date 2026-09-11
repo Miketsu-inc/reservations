@@ -44,6 +44,8 @@ type createBookingByCustomerReq struct {
 	LocationId   int    `json:"location_id" validate:"required"`
 	TimeStamp    string `json:"timeStamp" validate:"required"`
 	CustomerNote string `json:"customer_note"`
+	// nil when no-preference is selected for 1-on-1 bookings
+	EmployeeId *int `json:"employee_id"`
 	// only present on group bookings
 	BookingId *int `json:"booking_id"`
 }

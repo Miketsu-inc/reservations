@@ -26,11 +26,10 @@ async function fetchAvailableDays(
   employeeId
 ) {
   const params = new URLSearchParams();
-  if (employeeId && employeeId !== "no-pref")
-    params.append("employee_id", employeeId);
+  if (employeeId !== "no-pref") params.append("employee_id", employeeId);
 
   const response = await fetch(
-    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/day`,
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/available-days?${params.toString()}`,
     {
       method: "GET",
       headers: {
@@ -76,8 +75,7 @@ async function fetchDayTimes(
 ) {
   const params = new URLSearchParams();
   params.append("date", date);
-  if (employeeId && employeeId !== "no-pref")
-    params.append("employee_id", employeeId);
+  if (employeeId !== "no-pref") params.append("employee_id", employeeId);
 
   const response = await fetch(
     `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability?${params.toString()}`,
@@ -224,10 +222,10 @@ export default function AppointmentTimeSelectionStep({
               <Avatar
                 styles="size-8! text-[10px]! shrink-0 rounded-full!"
                 img={employee?.avatar_url}
-                initials={`${employee.first_name[0]}${employee.last_name[0]}`}
+                initials={`${employee?.first_name[0]}${employee?.last_name[0]}`}
               />
               <span className="text-sm font-medium">
-                {employee.first_name} {employee.last_name}
+                {employee?.first_name} {employee?.last_name}
               </span>
             </>
           )}

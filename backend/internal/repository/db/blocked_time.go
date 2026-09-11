@@ -259,13 +259,25 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	return blockedTimes, nil
 }
 
-func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, start, end time.Time) ([]domain.BlockedTimes, error) {
+func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, start, end time.Time) ([]domain.BlockedTimes, error) {
 	query := `
 	select from_date, to_date, all_day from "BlockedTime"
 	where merchant_id = $1 and to_date > $2 and from_date < $3
 	order by from_date`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, start, end)
+	args := []interface{}{merchantId, start, end}
+
+	if employeeId != nil {
+		query = `
+		select bt.from_date, bt.to_date, bt.all_day from "BlockedTime" bt
+		join "EmployeeBlockedTime" ebt on bt.id = ebt.blocked_time_id
+		where bt.merchant_id = $1 and bt.from_date < $3 and bt.to_date > $2 and ebt.employee_id = $4
+		order by bt.from_date`
+
+		args = append(args, *employeeId)
+	}
+
+	rows, _ := r.db.Query(ctx, query, args...)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimes])
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockedTimes: %w", err)
