@@ -271,8 +271,8 @@ export function ScrollSpyNav() {
   return (
     <div
       className="border-border_color bg-bg_color sticky top-0 z-10 w-full
-        min-w-0 border-b py-2.5 md:top-4 md:self-start md:overflow-y-auto
-        md:border-0 md:py-0"
+        min-w-0 border-b py-2.5 md:self-start md:overflow-y-auto md:border-0
+        md:py-0"
     >
       <nav
         aria-label="Section navigation"

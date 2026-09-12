@@ -51,6 +51,7 @@ export default function ServicePage({
     [service]
   );
   const router = useRouter();
+  const serviceFormRef = useRef(null);
   const [serviceData, setServiceData] = useState(originalData);
   const lastSavedData = useRef(originalData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -92,7 +93,9 @@ export default function ServicePage({
     }
   }
 
-  async function saveService() {
+  async function saveService(event) {
+    event.preventDefault();
+
     const phases = normalizeServicePhases(serviceData.phases);
 
     if (phases.length === 0) {
@@ -144,11 +147,14 @@ export default function ServicePage({
         />
       )}
       <ScrollSpyProvider scrollOffset={80}>
-        <div className="w-full">
-          <div className="mx-auto grid w-full max-w-6xl">
+        <div
+          className="w-full md:flex md:h-full md:min-h-0 md:flex-col
+            md:overflow-hidden"
+        >
+          <div className="mx-auto w-full max-w-6xl md:shrink-0">
             <div
               className="flex flex-row items-center justify-between px-4 pt-6
-                pb-2 md:py-4"
+                pb-2 md:shrink-0 md:py-4"
             >
               <p className="text-2xl">
                 {serviceData.id ? "Edit service" : "New service"}
@@ -159,41 +165,52 @@ export default function ServicePage({
                   md:border-t-0 md:bg-transparent md:p-0"
               >
                 <Button
+                  type="button"
                   styles="py-2 px-6 w-full"
                   variant="primary"
                   buttonText="Save"
-                  onClick={saveService}
+                  onClick={() => serviceFormRef.current.requestSubmit()}
                 />
               </div>
             </div>
+          </div>
+          <div className="w-full md:min-h-0 md:flex-1 md:overflow-y-auto">
             <div
-              className="grid grid-cols-1 md:grid-cols-[13rem_minmax(0,1fr)]
-                md:gap-8 md:px-4"
+              className="mx-auto grid w-full max-w-6xl grid-cols-1
+                md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8 md:px-4"
             >
               <ScrollSpyNav />
               <div className="min-w-0 px-4 pt-4 pb-16 md:px-0 md:pt-0 md:pb-0">
                 <div className="flex flex-col gap-16">
-                  <ScrollSpySection id="basicDetails" label="Basic details">
-                    <p className="mb-8 text-xl font-semibold">Basic details</p>
-                    <ServiceBasicDetails
-                      service={serviceData}
-                      categories={categories}
-                      onUpdate={updateServiceData}
-                    />
-                  </ScrollSpySection>
-                  <ScrollSpySection
-                    id="pricingDuration"
-                    label="Pricing & duration"
+                  <form
+                    ref={serviceFormRef}
+                    className="flex flex-col gap-16"
+                    onSubmit={saveService}
                   >
-                    <p className="mb-8 text-xl font-semibold">
-                      Pricing & duration
-                    </p>
-                    <ServicePricingDuration
-                      service={serviceData}
-                      setService={setServiceData}
-                      onUpdate={updateServiceData}
-                    />
-                  </ScrollSpySection>
+                    <ScrollSpySection id="basicDetails" label="Basic details">
+                      <p className="mb-8 text-xl font-semibold">
+                        Basic details
+                      </p>
+                      <ServiceBasicDetails
+                        service={serviceData}
+                        categories={categories}
+                        onUpdate={updateServiceData}
+                      />
+                    </ScrollSpySection>
+                    <ScrollSpySection
+                      id="pricingDuration"
+                      label="Pricing & duration"
+                    >
+                      <p className="mb-8 text-xl font-semibold">
+                        Pricing & duration
+                      </p>
+                      <ServicePricingDuration
+                        service={serviceData}
+                        setService={setServiceData}
+                        onUpdate={updateServiceData}
+                      />
+                    </ScrollSpySection>
+                  </form>
                   <ScrollSpySection id="products" label="Products">
                     <p className="mb-8 text-xl font-semibold">Products</p>
                     <ProductAdder
