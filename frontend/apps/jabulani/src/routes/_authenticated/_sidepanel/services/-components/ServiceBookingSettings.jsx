@@ -1,5 +1,4 @@
-import { ArrowLeft01Icon, Calendar02Icon } from "@hugeicons/core-free-icons";
-import { Card, Icon, Select, Switch } from "@reservations/components";
+import { Select, Switch } from "@reservations/components";
 import {
   BOOKING_WINDOW_MAX_OPTIONS,
   BOOKING_WINDOW_MIN_OPTIONS,
@@ -9,16 +8,37 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-export default function ServiceSchedulingSettings({ onUpdate, settings }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const areSettingsNull = Object.values(settings).every(
+const approvalOptions = [
+  {
+    value: "auto",
+    name: "Automatic",
+    desc: "All bookings confirmed instantly, no action needed.",
+  },
+  {
+    value: "manual",
+    name: "Manual",
+    desc: "Every request waits for your approval before confirming.",
+  },
+  {
+    value: "manual_for_new",
+    name: "Manual for new customers",
+    desc: "Returning customers auto-approved, new ones need review.",
+  },
+];
+
+export default function ServiceBookingSettings({ onUpdate, settings }) {
+  const areSchedulingSettingsNull = Object.values(settings).every(
     (value) => value === null
   );
-  const [showCustomSettings, setShowCustomSettings] =
-    useState(!areSettingsNull);
+  const isApprovalPolicyNull = settings.approval_policy === null;
+  const [showScheduling, setShowScheduling] = useState(
+    !areSchedulingSettingsNull
+  );
+  const [showApprovalPolicy, setShowApprovalPolicy] =
+    useState(!isApprovalPolicyNull);
 
-  function handleSwitch() {
-    if (showCustomSettings) {
+  function handleSchedulingSwitch() {
+    if (showScheduling) {
       onUpdate({
         settings: {
           ...settings,
@@ -29,45 +49,33 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
         },
       });
     }
-    setShowCustomSettings(!showCustomSettings);
+    setShowScheduling(!showScheduling);
+  }
+
+  function handleApprovalPolicySwitch() {
+    if (showApprovalPolicy) {
+      onUpdate({
+        settings: {
+          ...settings,
+          approval_policy: null,
+        },
+      });
+    }
+    setShowApprovalPolicy(!showApprovalPolicy);
   }
 
   return (
-    <Card styles="p-0! flex flex-col">
-      <div
-        role="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`${isOpen ? "border-border_color border-b" : ""} flex
-          cursor-pointer items-center justify-between p-4`}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-text_color" />
-          <p className="text-lg">Scheduling</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
-        >
-          <Icon
-            icon={ArrowLeft01Icon}
-            styles={`size-6 text-text_color transition-transform
-              ${isOpen ? "rotate-90" : "-rotate-90"}`}
-          />
-        </button>
-      </div>
-      <div
-        className={`flex flex-col gap-6 px-4 transition-[max-height,opacity]
-          duration-200 ease-in-out ${
-            isOpen
-              ? "max-h-250 pb-4 opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }`}
-      >
-        <div className="flex flex-col gap-4 pt-4">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
-            <span className="font-medium">Use Custom Settings</span>
-            <Switch defaultValue={!areSettingsNull} onSwitch={handleSwitch} />
+            <Switch
+              defaultValue={!areSchedulingSettingsNull}
+              onSwitch={handleSchedulingSwitch}
+            />
+            <span className="font-medium">
+              Override booking scheduling settings
+            </span>
           </div>
           <div className="text-text_color/70 text-sm">
             Create custom scheduling rules for this service. These settings will
@@ -82,11 +90,10 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
             .
           </div>
         </div>
-
         <div
           className={`grid grid-cols-1 gap-6 transition-[max-height,opacity]
             ease-in-out lg:grid-cols-2 ${
-              showCustomSettings
+              showScheduling
                 ? "max-h-250 pb-4 opacity-100"
                 : "max-h-0 overflow-hidden opacity-0"
             }`}
@@ -168,6 +175,59 @@ export default function ServiceSchedulingSettings({ onUpdate, settings }) {
           </div>
         </div>
       </div>
-    </Card>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <Switch
+              defaultValue={!isApprovalPolicyNull}
+              onSwitch={handleApprovalPolicySwitch}
+            />
+            Override bookng approval policy
+          </div>
+        </div>
+        <div
+          className={`grid gap-6 transition-[max-height,opacity] ease-in-out ${
+            showApprovalPolicy
+              ? "max-h-250 pb-4 opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
+            }`}
+        >
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {approvalOptions.map((option) => {
+              const active = settings.approval_policy === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() =>
+                    onUpdate({
+                      settings: { ...settings, approval_policy: option.value },
+                    })
+                  }
+                  className={`flex flex-col gap-1 rounded-md border p-4
+                  text-left transition-colors duration-150 ${
+                    active
+                      ? "border-primary bg-primary/5"
+                      : `bg-layer_bg border-gray-300 hover:border-gray-300
+                        hover:bg-gray-100 dark:border-gray-500
+                        dark:hover:border-gray-400 dark:hover:bg-gray-600/5`
+                  }`}
+                >
+                  <span className={"text-text_color text-sm font-medium"}>
+                    {option.name}
+                  </span>
+                  <span
+                    className={
+                      "text-xs leading-relaxed text-gray-500 dark:text-gray-400"
+                    }
+                  >
+                    {option.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

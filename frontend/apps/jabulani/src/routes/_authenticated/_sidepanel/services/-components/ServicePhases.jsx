@@ -1,333 +1,284 @@
 import {
-  Clock01Icon,
+  AddCircleIcon,
+  ArrowLeft02Icon,
   Delete02Icon,
-  Edit03Icon,
-  HourglassIcon,
-  InformationCircleIcon,
-  Note01Icon,
-  PlusSignIcon,
+  MoreVerticalIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Button,
-  Card,
   Icon,
   Input,
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
   Select,
-  Switch,
-  TooltipContent,
-  TooltipTrigger,
-  Tootlip,
 } from "@reservations/components";
-import { formatDuration, useWindowSize } from "@reservations/lib";
-import { useMemo, useState } from "react";
+import { formatDuration } from "@reservations/lib";
+import { useMemo } from "react";
+import { useServicePhases } from "./servicehooks";
 
-export default function ServicePhases({
-  phases = [],
-  onAddPhase,
-  onUpdatePhase,
-  onRemovePhase,
-}) {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editPhase, setEditPhase] = useState(null);
-  const { isWindowSmall } = useWindowSize();
+const durationOptions = [
+  { value: "min", label: "minutes" },
+  { value: "hour", label: "hours" },
+];
 
-  // Sort phases by sequence to ensure proper display order
-  const sortedPhases = useMemo(() => {
-    return [...phases].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-  }, [phases]);
+const phaseTypeOptions = [
+  { value: "active", label: "active" },
+  { value: "wait", label: "wait" },
+];
+
+function toMinutes(duration, durationUnit) {
+  if (duration === "") return "";
+
+  const value = Number(duration);
+  return Math.round(durationUnit === "hour" ? value * 60 : value);
+}
+
+function fromMinutes(duration, durationUnit) {
+  if (duration === "") return "";
+
+  return durationUnit === "hour" ? duration / 60 : duration;
+}
+
+export default function ServicePhases({ service, setService }) {
+  const phases = service.phases;
+  const {
+    addPhase: appendPhase,
+    updatePhase,
+    removePhase,
+    reorderPhase,
+  } = useServicePhases(setService);
+
+  const isGroupService = service.booking_type !== "appointment";
 
   const durationSum = useMemo(() => {
     return phases.reduce((total, phase) => {
-      return total + phase.duration || 0;
+      return total + (Number(phase.duration) || 0);
     }, 0);
   }, [phases]);
 
-  return (
-    <>
-      <div className="flex flex-row items-center gap-1">
-        <p className="text-lg">Service phases</p>
-        <span className="hidden md:flex">
-          <Tootlip>
-            <TooltipTrigger>
-              <Icon
-                icon={InformationCircleIcon}
-                styles="size-4 text-gray-500 dark:text-gray-400"
-              />
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>
-                Services consist of phases letting you customize your
-                availability for other bookings during the service.
-                <br />
-                To learn more about service pahses visit the{" "}
-                <a className="text-blue-600 underline dark:text-blue-500">
-                  support
-                </a>{" "}
-                page.
-              </p>
-            </TooltipContent>
-          </Tootlip>
-        </span>
-      </div>
-      {!phases || phases.length === 0 ? (
-        <div className="bg-layer_bg border-border_color rounded-lg border p-4">
-          <PhaseForm
-            phase={{}}
-            showCancel={false}
-            onSubmit={(phase) => {
-              onAddPhase(phase);
-              setShowAddForm(false);
-            }}
-          />
-        </div>
-      ) : (
-        <Card styles="px-0 py-0">
-          <div
-            className="border-border_color flex flex-row items-center
-              justify-between border-b px-4 py-4"
-          >
-            <div className="flex flex-row items-center gap-3">
-              <div className="bg-primary/20 rounded-lg p-2">
-                <Icon icon={Clock01Icon} styles="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold">Total duration</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {sortedPhases.length} phases • {formatDuration(durationSum)}
-                </p>
-              </div>
-            </div>
-            {!showAddForm && (
-              <Button
-                styles="py-2 sm:px-4 px-2 text-sm"
-                variant="secondary"
-                buttonText={!isWindowSmall ? "Add phase" : ""}
-                onClick={() => setShowAddForm(true)}
-              >
-                <Icon icon={PlusSignIcon} styles="size-5 sm:mr-1" />
-              </Button>
-            )}
-          </div>
-          <div
-            className={`${showAddForm ? "max-h-90 opacity-100" : "max-h-0 opacity-0"}
-              overflow-hidden transition-[max-height,opacity] duration-300
-              ease-in-out`}
-          >
-            <div className="border-border_color border-b p-4">
-              <PhaseForm
-                phase={{}}
-                showCancel={true}
-                onSubmit={(phase) => {
-                  onAddPhase(phase);
-                  setShowAddForm(false);
-                }}
-                onCancel={() => setShowAddForm(false)}
-              />
-            </div>
-          </div>
-          <ul className="divide-border_color divide-y">
-            {sortedPhases.map((phase) => (
-              <li className="p-4" key={phase.sequence}>
-                {editPhase === phase.sequence ? (
-                  <PhaseForm
-                    phase={phase}
-                    isEdit={true}
-                    showCancel={true}
-                    onCancel={() => setEditPhase(null)}
-                    onSubmit={(phase) => {
-                      onUpdatePhase(phase);
-                      setEditPhase(null);
-                    }}
-                  />
-                ) : (
-                  <div className="flex flex-row items-center justify-between">
-                    <div className="flex flex-row items-center gap-3">
-                      <div
-                        className={`${phase.phase_type === "wait" ? "bg-accent/20" : "bg-secondary/20"}
-                          rounded-lg p-2`}
-                      >
-                        {phase.phase_type === "wait" ? (
-                          <Icon
-                            icon={HourglassIcon}
-                            styles="size-5 text-accent"
-                          />
-                        ) : (
-                          <Icon
-                            icon={Note01Icon}
-                            styles="size-5 text-secondary"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <p>{phase.name || `Phase ${phase.sequence}`}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {formatDuration(phase.duration)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-row items-center gap-4">
-                      <Icon
-                        icon={Edit03Icon}
-                        onClick={() => setEditPhase(phase.sequence)}
-                        styles="size-4 cursor-pointer"
-                      />
-                      <Icon
-                        icon={Delete02Icon}
-                        onClick={() => onRemovePhase(phase.sequence)}
-                        styles="size-5 cursor-pointer text-red-600
-                          dark:text-red-500"
-                      />
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-    </>
-  );
-}
+  const singlePhase = phases[0];
+  const singleDurationUnit =
+    singlePhase?.duration_unit || service.duration_unit || "min";
+  const singleDuration = singlePhase
+    ? fromMinutes(singlePhase.duration, singleDurationUnit)
+    : service.duration;
 
-function PhaseForm({ phase, showCancel, onSubmit, onCancel, isEdit }) {
-  const [phaseData, setPhaseData] = useState({
-    id: phase?.id || -1,
-    sequence: phase?.sequence || null,
-    name: phase?.name || "",
-    duration: phase?.duration || "",
-    duration_unit: phase?.duration_unit || "min",
-    phase_type: phase?.phase_type || "active",
-  });
+  function updateSinglePhase(updates) {
+    const phase = {
+      ...singlePhase,
+      id: singlePhase?.id ?? -1,
+      name: singlePhase?.name || "",
+      sequence: 1,
+      duration: singlePhase
+        ? singlePhase.duration
+        : toMinutes(service.duration, service.duration_unit || "min"),
+      duration_unit: singleDurationUnit,
+      phase_type: isGroupService
+        ? "active"
+        : singlePhase?.phase_type || "active",
+      ...updates,
+    };
 
-  function updatePhaseData(data) {
-    setPhaseData((prev) => ({ ...prev, ...data }));
+    singlePhase ? updatePhase(phase) : appendPhase(phase);
   }
 
-  function submitHandler(e) {
-    e.preventDefault();
-
-    if (!e.target.checkValidity()) {
-      return;
-    }
-
-    // shouldn't be a float but just in case
-    const duration =
-      phaseData.duration_unit === "hour"
-        ? Math.round(phaseData.duration * 60)
-        : phaseData.duration;
-
-    onSubmit({
-      id: phaseData.id,
-      sequence: phaseData.sequence,
-      name: phaseData.name,
-      duration: duration,
-      phase_type: phaseData.phase_type,
-    });
-
-    if (!isEdit) {
-      setPhaseData({
-        id: -1,
-        sequence: null,
+  function addPhase() {
+    if (phases.length === 0) {
+      appendPhase({
         name: "",
-        duration: "",
-        duration_unit: "min",
+        duration: toMinutes(service.duration, service.duration_unit || "min"),
+        duration_unit: service.duration_unit || "min",
         phase_type: "active",
       });
     }
+
+    appendPhase({
+      name: "",
+      duration: "",
+      duration_unit: "min",
+      phase_type: "active",
+    });
   }
 
   return (
-    <form onSubmit={submitHandler} className="flex flex-col gap-4">
-      <p className="pb-2 text-lg">{isEdit ? "Edit phase" : "Add new phase"}</p>
-      <Input
-        id="phase_name"
-        name="phase_name"
-        type="text"
-        labelText="Phase name (optional)"
-        placeholder="e.g. hair wash"
-        required={false}
-        value={phaseData.name}
-        inputData={(data) => updatePhaseData({ name: data.value })}
-      />
-      <div className="flex w-full flex-row items-end gap-2">
+    <div className="flex flex-col gap-4">
+      {!isGroupService && phases.length > 1 ? (
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1 text-sm">
+            Duration
+            <span className="text-base leading-none text-red-500">*</span>
+          </span>
+          <div className="flex flex-col gap-4">
+            {phases.map((phase, index) => (
+              <PhaseInput
+                key={phase.sequence}
+                phase={phase}
+                isFirst={index === 0}
+                isLast={index === phases.length - 1}
+                onDelete={removePhase}
+                onUpdate={updatePhase}
+                onMoveUp={() => reorderPhase(phase.sequence, -1)}
+                onMoveDown={() => reorderPhase(phase.sequence, 1)}
+              />
+            ))}
+          </div>
+          <p className="text-text_color/70 text-sm">
+            Total duration: {formatDuration(durationSum)}
+          </p>
+        </div>
+      ) : (
         <Input
           id="duration"
           name="duration"
           type="number"
           min={1}
-          max={phaseData.duration_unit === "hours" ? 24 : 1440}
+          max={singleDurationUnit === "hour" ? 24 : 1440}
           labelText="Duration"
           placeholder="30"
-          value={phaseData.duration}
+          value={singleDuration}
           inputData={(data) =>
-            updatePhaseData({ [data.name]: Number(data.value) })
+            updateSinglePhase({
+              duration: toMinutes(data.value, singleDurationUnit),
+            })
           }
         >
           <Select
-            styles="w-32! rounded-l-none"
-            value={phaseData.duration_unit || "min"}
-            options={[
-              { value: "min", label: "minutes" },
-              { value: "hour", label: "hour" },
-            ]}
+            styles="rounded-l-none w-32! xl:w-52!"
+            value={singleDurationUnit}
+            options={durationOptions}
             onSelect={(option) =>
-              updatePhaseData({ duration_unit: option.value })
+              updateSinglePhase({
+                duration: toMinutes(singleDuration, option.value),
+                duration_unit: option.value,
+              })
             }
           />
         </Input>
-      </div>
-      <div className="flex flex-row items-center gap-1">
-        <Switch
-          defaultValue={phaseData.phase_type === "wait"}
-          onSwitch={() =>
-            updatePhaseData({
-              phase_type: phaseData.phase_type === "active" ? "wait" : "active",
+      )}
+      {!isGroupService && (
+        <Button
+          variant="tertiary"
+          buttonText="Add extra time"
+          styles="w-fit px-4 py-2"
+          type="button"
+          onClick={addPhase}
+        >
+          <Icon icon={AddCircleIcon} styles="size-5 mr-2" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function PhaseInput({
+  phase,
+  isFirst,
+  isLast,
+  onDelete,
+  onUpdate,
+  onMoveUp,
+  onMoveDown,
+}) {
+  const durationUnit = phase.duration_unit || "min";
+
+  return (
+    <div className="flex flex-row items-center gap-2">
+      <Input
+        id={"phase-" + phase.sequence + "-duration"}
+        name={"phase-" + phase.sequence + "-duration"}
+        type="number"
+        min={1}
+        max={durationUnit === "hour" ? 24 : 1440}
+        placeholder="30"
+        value={fromMinutes(phase.duration, durationUnit)}
+        inputData={(data) =>
+          onUpdate({
+            ...phase,
+            duration: toMinutes(data.value, durationUnit),
+          })
+        }
+      >
+        <Select
+          styles="rounded-l-none max-w-52"
+          value={durationUnit}
+          options={durationOptions}
+          onSelect={(option) =>
+            onUpdate({
+              ...phase,
+              duration: toMinutes(
+                fromMinutes(phase.duration, durationUnit),
+                option.value
+              ),
+              duration_unit: option.value,
             })
           }
         />
-        <p className="pl-2">Waiting phase</p>
-        <span className="hidden md:flex">
-          <Tootlip>
-            <TooltipTrigger>
-              <Icon
-                icon={InformationCircleIcon}
-                styles="size-4 text-gray-500 dark:text-gray-400"
-              />
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Customers can make bookings during this phase</p>
-            </TooltipContent>
-          </Tootlip>
-        </span>
-      </div>
-      <div className="flex flex-row gap-2 pt-2">
-        {isEdit ? (
-          <Button
-            styles="py-2 px-4 text-sm"
-            variant="primary"
-            buttonText="Save"
-            type="submit"
-          />
-        ) : (
-          <Button
-            styles="py-2 px-4 text-sm"
-            variant="secondary"
-            buttonText="Add phase"
-            type="submit"
-          >
-            <Icon icon={PlusSignIcon} styles="size-5 mr-1" />
-          </Button>
-        )}
-        {showCancel && (
-          <Button
-            styles="py-2 px-4 text-sm"
-            variant="tertiary"
-            buttonText="Cancel"
+      </Input>
+      <Select
+        styles="max-w-28"
+        value={phase.phase_type || "active"}
+        options={phaseTypeOptions}
+        onSelect={(option) =>
+          onUpdate({
+            ...phase,
+            phase_type: option.value,
+          })
+        }
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
             type="button"
-            onClick={onCancel}
-          />
-        )}
-      </div>
-    </form>
+            className="hover:bg-hvr_gray cursor-pointer rounded-lg p-1"
+          >
+            <Icon icon={MoreVerticalIcon} styles="size-8 rotate-90" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent side="left">
+          <div
+            className="*:hover:bg-hvr_gray flex flex-col items-start *:flex
+              *:w-full *:cursor-pointer *:flex-row *:items-center *:gap-4
+              *:rounded-lg *:p-2"
+          >
+            <PopoverClose asChild>
+              <button
+                type="button"
+                disabled={isLast}
+                onClick={onMoveDown}
+                className={`${
+                  isLast ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"
+                }`}
+              >
+                <Icon icon={ArrowLeft02Icon} styles="size-6 -rotate-90" />
+                <p>Move down</p>
+              </button>
+            </PopoverClose>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                disabled={isFirst}
+                onClick={onMoveUp}
+                className={`${isFirst ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}`}
+              >
+                <Icon icon={ArrowLeft02Icon} styles="size-6 rotate-90" />
+                <p>Move up</p>
+              </button>
+            </PopoverClose>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                onClick={() => onDelete(phase.sequence)}
+                className="text-red-600 dark:text-red-500"
+              >
+                <Icon icon={Delete02Icon} styles="size-6" />
+                <p>Delete</p>
+              </button>
+            </PopoverClose>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }

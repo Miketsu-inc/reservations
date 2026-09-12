@@ -266,10 +266,7 @@ function ServicesPage() {
                       *:w-full *:rounded-lg *:p-2"
                   >
                     <Link from={Route.fullPath} to="/services/new">
-                      1-on-1 service
-                    </Link>
-                    <Link from={Route.fullPath} to="/services/group/new">
-                      Group service
+                      Service
                     </Link>
                     <PopoverClose asChild>
                       <button

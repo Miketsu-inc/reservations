@@ -251,8 +251,6 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 		servicesGroupByCategory = []domain.ServicesGroupedByCategory{}
 	}
 
-	fmt.Println(servicesGroupByCategory[0].Services[0].Price)
-
 	return servicesGroupByCategory, nil
 }
 

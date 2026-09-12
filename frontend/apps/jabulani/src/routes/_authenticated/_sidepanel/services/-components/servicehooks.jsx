@@ -1,22 +1,28 @@
 import { useCallback } from "react";
 
+export function normalizeServicePhases(phases) {
+  return [...phases]
+    .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+    .map((phase, index) => ({
+      ...phase,
+      sequence: index + 1,
+    }));
+}
+
 export function useServicePhases(setServiceData) {
   const addPhase = useCallback(
     (newPhase) => {
       setServiceData((prev) => {
-        const maxSequence =
-          prev.phases.length > 0
-            ? Math.max(...prev.phases.map((p) => p.sequence || 0))
-            : 0;
+        const phases = normalizeServicePhases(prev.phases);
 
         return {
           ...prev,
           phases: [
-            ...prev.phases,
+            ...phases,
             {
               ...newPhase,
               id: -1,
-              sequence: maxSequence + 1,
+              sequence: phases.length + 1,
             },
           ],
         };
@@ -42,18 +48,49 @@ export function useServicePhases(setServiceData) {
   const removePhase = useCallback(
     (sequence) => {
       setServiceData((prev) => {
-        const filteredPhases = prev.phases.filter(
+        const phases = prev.phases.filter(
           (phase) => phase.sequence !== sequence
         );
 
-        const reSequencedPhases = filteredPhases.map((phase, index) => ({
-          ...phase,
-          sequence: index + 1,
-        }));
+        return {
+          ...prev,
+          phases: normalizeServicePhases(phases),
+        };
+      });
+    },
+    [setServiceData]
+  );
+
+  const reorderPhase = useCallback(
+    (sequence, direction) => {
+      setServiceData((prev) => {
+        const phases = [...prev.phases].sort(
+          (a, b) => (a.sequence || 0) - (b.sequence || 0)
+        );
+        const currentIndex = phases.findIndex(
+          (phase) => phase.sequence === sequence
+        );
+        const targetIndex = currentIndex + direction;
+
+        if (
+          currentIndex === -1 ||
+          targetIndex < 0 ||
+          targetIndex >= phases.length
+        ) {
+          return prev;
+        }
+
+        [phases[currentIndex], phases[targetIndex]] = [
+          phases[targetIndex],
+          phases[currentIndex],
+        ];
 
         return {
           ...prev,
-          phases: reSequencedPhases,
+          phases: phases.map((phase, index) => ({
+            ...phase,
+            sequence: index + 1,
+          })),
         };
       });
     },
@@ -64,5 +101,6 @@ export function useServicePhases(setServiceData) {
     addPhase,
     updatePhase,
     removePhase,
+    reorderPhase,
   };
 }

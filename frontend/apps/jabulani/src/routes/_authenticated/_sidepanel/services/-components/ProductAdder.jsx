@@ -1,11 +1,10 @@
 import {
-  ArrowLeft01Icon,
   Delete02Icon,
   Edit03Icon,
   PlusSignIcon,
   ShoppingBag02Icon,
 } from "@hugeicons/core-free-icons";
-import { Button, Card, ComboBox, Icon, Input } from "@reservations/components";
+import { Button, ComboBox, Icon, Input } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { useMemo, useState } from "react";
 
@@ -14,7 +13,6 @@ export default function ProductAdder({
   usedProducts = [],
   onUpdate,
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
 
   const filteredAvailableProducts = availableProducts.filter(
@@ -51,120 +49,79 @@ export default function ProductAdder({
   }
 
   return (
-    <Card styles="p-0! flex flex-col">
-      <div
-        role="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`${isOpen ? "border-border_color border-b" : ""} flex
-          cursor-pointer items-center justify-between p-4`}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <Icon
-            icon={ShoppingBag02Icon}
-            styles="size-6 mb-0.5 text-text_color"
-          />
-          <p className="text-lg">Products</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
-        >
-          <Icon
-            icon={ArrowLeft01Icon}
-            styles={`size-6 text-text_color transition-transform duration-200
-              ${isOpen ? "rotate-90" : "-rotate-90"}`}
-          />
-        </button>
-      </div>
-      {/* TODO: same issue as with dropdowns in the recurSection */}
-      <div
-        className={`px-4 transition-[max-height,opacity] duration-200
-          ease-in-out ${
-            isOpen
-              ? "max-h-250 opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }`}
-      >
-        <div className="flex flex-col gap-5 py-4 xl:flex-row xl:gap-10">
-          <ProductForm
-            key={editProduct?.id || "new"}
-            product={editProduct || {}}
-            onSubmit={handleAddProduct}
-            availableProducts={filteredAvailableProducts}
-            usedProducts={usedProducts}
-            onSelectNewProduct={(p) => {
-              if (p.id !== editProduct?.id) {
-                setEditProduct(null);
-              }
-            }}
-          />
-          {usedProducts.length > 0 ? (
-            <div className="flex flex-col gap-2 xl:w-1/2">
-              <p className="font-medium">Connected Products</p>
-              <div
-                className="flex flex-col gap-2 overflow-y-auto xl:pr-2
-                  dark:scheme-dark"
-              >
-                {usedProducts.map((product) => {
-                  return (
-                    <div
-                      key={product.id}
-                      className="border-border_color flex flex-row items-center
-                        justify-center gap-4 rounded-md border px-4 py-2
-                        dark:border-gray-600"
-                    >
-                      <span className="text-text_color flex-1 font-medium">
-                        {product?.name}
-                      </span>
+    <div className="flex flex-col gap-5 xl:flex-row xl:gap-10">
+      <ProductForm
+        key={editProduct?.id || "new"}
+        product={editProduct || {}}
+        onSubmit={handleAddProduct}
+        availableProducts={filteredAvailableProducts}
+        usedProducts={usedProducts}
+        onSelectNewProduct={(p) => {
+          if (p.id !== editProduct?.id) {
+            setEditProduct(null);
+          }
+        }}
+      />
+      {usedProducts.length > 0 ? (
+        <div className="flex flex-col gap-2 xl:w-1/2">
+          <p className="font-medium">Connected Products</p>
+          <div
+            className="flex flex-col gap-2 overflow-y-auto xl:pr-2
+              dark:scheme-dark"
+          >
+            {usedProducts.map((product) => {
+              return (
+                <div
+                  key={product.id}
+                  className="border-border_color flex flex-row items-center
+                    justify-center gap-4 rounded-md border px-4 py-2
+                    dark:border-gray-600"
+                >
+                  <span className="text-text_color flex-1 font-medium">
+                    {product?.name}
+                  </span>
 
-                      <div className="mr-6 flex gap-3 text-gray-500">
-                        <span>{product.amount_used}</span>
-                        <span>{product?.unit}</span>
-                      </div>
-                      <Icon
-                        icon={Edit03Icon}
-                        onClick={() => {
-                          setEditProduct({
-                            id: product.id,
-                            unit: product.unit,
-                            amount_used: product.amount_used,
-                          });
-                        }}
-                        styles="size-4 cursor-pointer"
-                      />
-                      <Icon
-                        icon={Delete02Icon}
-                        onClick={() => handleRemove(product.id)}
-                        styles="size-5 cursor-pointer"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div
-              className="mb-4 flex flex-col items-center justify-center
-                xl:w-1/2"
-            >
-              <div
-                className="mb-4 flex w-min items-center justify-center
-                  rounded-full"
-              >
-                <Icon
-                  icon={ShoppingBag02Icon}
-                  styles="size-12 dark:text-gray-500 text-gray-400"
-                />
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                No products added yet
-              </p>
-            </div>
-          )}
+                  <div className="mr-6 flex gap-3 text-gray-500">
+                    <span>{product.amount_used}</span>
+                    <span>{product?.unit}</span>
+                  </div>
+                  <Icon
+                    icon={Edit03Icon}
+                    onClick={() => {
+                      setEditProduct({
+                        id: product.id,
+                        unit: product.unit,
+                        amount_used: product.amount_used,
+                      });
+                    }}
+                    styles="size-4 cursor-pointer"
+                  />
+                  <Icon
+                    icon={Delete02Icon}
+                    onClick={() => handleRemove(product.id)}
+                    styles="size-5 cursor-pointer"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </Card>
+      ) : (
+        <div className="mb-4 flex flex-col items-center justify-center xl:w-1/2">
+          <div
+            className="mb-4 flex w-min items-center justify-center rounded-full"
+          >
+            <Icon
+              icon={ShoppingBag02Icon}
+              styles="size-12 dark:text-gray-500 text-gray-400"
+            />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            No products added yet
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 

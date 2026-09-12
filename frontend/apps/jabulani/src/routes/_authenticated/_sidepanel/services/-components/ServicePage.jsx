@@ -1,31 +1,19 @@
-import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
-  Card,
   DeleteModal,
-  Icon,
-  Input,
-  Select,
-  Switch,
-  Textarea,
-  TooltipContent,
-  TooltipTrigger,
-  Tootlip,
+  ScrollSpyNav,
+  ScrollSpyProvider,
+  ScrollSpySection,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import BookingApprovalSetting from "./BookingApprovalSetting";
+import { useMemo, useRef, useState } from "react";
 import ProductAdder from "./ProductAdder";
-import { useServicePhases } from "./servicehooks";
-import ServicePhases from "./ServicePhases";
-import ServiceSchedulingSettings from "./ServiceSchedulingSettings";
-
-const priceTypeOptions = [
-  { label: "fixed", value: "fixed" },
-  { label: "from", value: "from" },
-  { label: "free", value: "free" },
-];
+import { ServiceBasicDetails } from "./ServiceBasicDetails";
+import ServiceBookingSettings from "./ServiceBookingSettings";
+import { ServicePricingDuration } from "./ServicePricingDuration";
+import { normalizeServicePhases } from "./servicehooks";
 
 export default function ServicePage({
   service,
@@ -37,7 +25,7 @@ export default function ServicePage({
   const originalData = useMemo(
     () => ({
       id: service?.id,
-      booking_type: "appointment",
+      booking_type: service?.booking_type ?? "appointment",
       name: service?.name || "",
       description: service?.description || "",
       color: service?.color || "#2334b8",
@@ -45,8 +33,10 @@ export default function ServicePage({
       price_type: service?.price_type || "fixed",
       category_id: service?.category_id || null,
       is_active: service?.is_active ?? true,
-      min_participants: service?.min_participants || 1,
-      max_participants: service?.max_participants || 1,
+      duration: service?.total_duration || "",
+      duration_unit: service?.duration_unit || "min",
+      min_participants: service?.min_participants || undefined,
+      max_participants: service?.max_participants || undefined,
       settings: {
         cancel_deadline: service?.settings?.cancel_deadline || null,
         booking_window_min: service?.settings?.booking_window_min || null,
@@ -62,41 +52,35 @@ export default function ServicePage({
   );
   const router = useRouter();
   const [serviceData, setServiceData] = useState(originalData);
-  const [lastSavedData, setLastSavedData] = useState(originalData);
+  const lastSavedData = useRef(originalData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
+  const { merchantId } = useAuth();
 
-  const phaseHandlers = useServicePhases(setServiceData);
-
-  const categoryOptions = useMemo(
-    () => [
-      { value: null, label: "No category" },
-      ...categories.map((category) => ({
-        value: category.id,
-        label: category.name,
-      })),
-    ],
-    [categories]
-  );
+  const isGroupService = serviceData.booking_type !== "appointment";
 
   function updateServiceData(data) {
     setServiceData((prev) => ({ ...prev, ...data }));
   }
 
   async function deleteHandler() {
-    const response = await fetch(`/api/v1/merchant/services/${service.id}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/services/${service.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       invalidateLocalStorageAuth(response.status);
       const result = await response.json();
       showToast({ message: result.error.message, variant: "error" });
     } else {
+      lastSavedData.current = serviceData;
       router.navigate({
         from: route.fullPath,
         to: "/services",
@@ -108,10 +92,41 @@ export default function ServicePage({
     }
   }
 
+  async function saveService() {
+    const phases = normalizeServicePhases(serviceData.phases);
+
+    if (phases.length === 0) {
+      showToast({
+        message: "Please set a duration",
+        variant: "error",
+      });
+      return;
+    }
+
+    const data = {
+      ...serviceData,
+      phases: isGroupService
+        ? [{ ...phases[0], sequence: 1, phase_type: "active" }]
+        : phases,
+    };
+
+    delete data.duration;
+    delete data.duration_unit;
+
+    const didSave = await onSave(data);
+
+    if (didSave) {
+      lastSavedData.current = serviceData;
+      router.navigate({ from: route.fullPath, to: "/services" });
+    }
+  }
+
   return (
     <Block
       shouldBlockFn={() => {
-        if (JSON.stringify(serviceData) === JSON.stringify(lastSavedData))
+        if (
+          JSON.stringify(serviceData) === JSON.stringify(lastSavedData.current)
+        )
           return false;
 
         const canLeave = confirm(
@@ -128,216 +143,89 @@ export default function ServicePage({
           itemName={service.name}
         />
       )}
-      <div className="flex h-screen px-4 pt-4">
+      <ScrollSpyProvider scrollOffset={80}>
         <div className="w-full">
-          <div className="flex flex-col gap-4">
-            <Card
-              styles="sticky top-0 z-10 flex flex-row items-center
-                justify-between gap-2"
+          <div className="mx-auto grid w-full max-w-6xl">
+            <div
+              className="flex flex-row items-center justify-between px-4 pt-6
+                pb-2 md:py-4"
             >
-              <p className="text-xl">{serviceData.name || "New service"}</p>
-              <Button
-                styles="py-2 px-6"
-                variant="primary"
-                buttonText="Save"
-                onClick={() => {
-                  if (serviceData.phases.length > 0) {
-                    setLastSavedData(serviceData);
-                    onSave(serviceData);
-                  } else {
-                    showToast({
-                      message: "Please add at least one service phase",
-                      variant: "error",
-                    });
-                  }
-                }}
-              />
-            </Card>
-            <div className="flex flex-col gap-4 md:flex-row">
-              <Card styles="flex flex-col gap-4 md:w-1/2 md:flex-row">
-                <div
-                  style={{ backgroundColor: serviceData.color }}
-                  className="size-28 shrink-0 overflow-hidden rounded-lg
-                    xl:size-30"
-                >
-                  <img
-                    className="size-full object-cover"
-                    src="https://dummyimage.com/120x120/d156c3/000000.jpg"
-                    alt="service photo"
-                  ></img>
-                </div>
-                <div className="flex w-full flex-col gap-6">
-                  <div className="flex w-full flex-row items-end gap-2">
-                    <Input
-                      id="ServiceName"
-                      name="ServiceName"
-                      type="text"
-                      labelText="Service name"
-                      placeholder="e.g. hair styling"
-                      childrenSide="left"
-                      value={serviceData.name}
-                      inputData={(data) =>
-                        updateServiceData({ name: data.value })
-                      }
-                    >
-                      <input
-                        id="color"
-                        className="border-input_border_color size-10.5
-                          cursor-pointer rounded-l-lg border bg-transparent"
-                        name="color"
-                        type="color"
-                        value={serviceData.color}
-                        onChange={(e) =>
-                          updateServiceData({ color: e.target.value })
-                        }
-                      />
-                    </Input>
-                  </div>
-                  <div className="flex w-full gap-4 sm:grid sm:grid-cols-2">
-                    <Input
-                      styles="peer flex-1 w-full"
-                      id="price"
-                      name="price"
-                      type="number"
-                      min={0}
-                      max={1000000}
-                      labelText="Price"
-                      placeholder={
-                        serviceData.price_type === "free" ? "0" : "1000"
-                      }
-                      required={false}
-                      value={serviceData.price?.number || ""}
-                      disabled={serviceData.price_type === "free"}
-                      inputData={(data) =>
-                        updateServiceData({
-                          price: {
-                            number: data.value,
-                            currency: serviceData.price?.currency || "HUF",
-                          },
-                        })
-                      }
-                    >
-                      <p
-                        className={`border-input_border_color
-                          peer-disabled:text-text_color/70
-                          peer-disabled:border-input_border_color/60
-                          rounded-r-lg border px-4 py-2
-                          peer-disabled:bg-gray-200/60
-                          peer-disabled:dark:bg-gray-700/20`}
-                      >
-                        {serviceData.price?.currency || "HUF"}
-                      </p>
-                    </Input>
-                    <label className="flex w-auto flex-col">
-                      <div className="flex items-center gap-2 pb-1">
-                        <span className="text-sm">Price Note</span>
-                        <Icon
-                          icon={InformationCircleIcon}
-                          styles="size-4 text-gray-500 dark:text-gray-400"
-                        />
-                      </div>
-                      <Select
-                        value={serviceData.price_type}
-                        styles="w-28! sm:w-full!"
-                        options={priceTypeOptions}
-                        onSelect={(option) => {
-                          updateServiceData({
-                            price: {
-                              number: 0,
-                              currency: serviceData.price?.currency || "HUF",
-                            },
-                          });
-                          updateServiceData({ price_type: option.value });
-                        }}
-                      />
-                    </label>
-                  </div>
-                  <Select
-                    value={serviceData.category_id}
-                    labelText="Service Category"
-                    required={false}
-                    options={categoryOptions}
-                    onSelect={(option) =>
-                      updateServiceData({ category_id: option.value })
-                    }
-                  />
-                  <div className="flex flex-row items-center gap-3">
-                    <Switch
-                      defaultValue={serviceData.is_active}
-                      onSwitch={() =>
-                        updateServiceData({ is_active: !serviceData.is_active })
-                      }
-                    />
-                    <div className="flex flex-row items-center gap-1">
-                      <p>Active service</p>
-                      <span className="hidden items-center md:flex">
-                        <Tootlip>
-                          <TooltipTrigger>
-                            <Icon
-                              icon={InformationCircleIcon}
-                              styles="size-4 text-gray-500 dark:text-gray-400"
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <p>
-                              Only active services will show up on your booking
-                              page
-                            </p>
-                          </TooltipContent>
-                        </Tootlip>
-                      </span>
-                    </div>
-                  </div>
-                  <Textarea
-                    styles="p-2 max-h-20 min-h-20 md:max-h-32 md:min-h-32"
-                    id="description"
-                    name="description"
-                    labelText="Description"
-                    required={false}
-                    placeholder="About this service..."
-                    value={serviceData.description}
-                    inputData={(data) =>
-                      updateServiceData({ description: data.value })
-                    }
-                  />
-                </div>
-              </Card>
-              <div className="flex h-fit flex-col gap-2 md:w-1/2">
-                <ServicePhases
-                  phases={serviceData.phases}
-                  onAddPhase={phaseHandlers.addPhase}
-                  onUpdatePhase={phaseHandlers.updatePhase}
-                  onRemovePhase={phaseHandlers.removePhase}
+              <p className="text-2xl">
+                {serviceData.id ? "Edit service" : "New service"}
+              </p>
+              <div
+                className="bg-layer_bg border-t-border_color fixed bottom-0
+                  left-0 z-30 w-full border-t p-4 md:static md:w-auto
+                  md:border-t-0 md:bg-transparent md:p-0"
+              >
+                <Button
+                  styles="py-2 px-6 w-full"
+                  variant="primary"
+                  buttonText="Save"
+                  onClick={saveService}
                 />
               </div>
             </div>
-            <ProductAdder
-              availableProducts={products}
-              usedProducts={serviceData.used_products}
-              onUpdate={(updated) =>
-                updateServiceData({ used_products: updated })
-              }
-            />
-            <ServiceSchedulingSettings
-              onUpdate={updateServiceData}
-              settings={serviceData.settings}
-            />
-            <BookingApprovalSetting
-              settings={serviceData.settings}
-              onUpdate={updateServiceData}
-            />
-            {service && (
-              <Button
-                type="button"
-                styles="py-4 mb-2 shadow-none bg-transparent
-                  hover:bg-transparent! text-red-500!"
-                buttonText="Delete service"
-                onClick={() => setShowDeleteModal(true)}
-              ></Button>
-            )}
+            <div
+              className="grid grid-cols-1 md:grid-cols-[13rem_minmax(0,1fr)]
+                md:gap-8 md:px-4"
+            >
+              <ScrollSpyNav />
+              <div className="min-w-0 px-4 pt-4 pb-16 md:px-0 md:pt-0 md:pb-0">
+                <div className="flex flex-col gap-16">
+                  <ScrollSpySection id="basicDetails" label="Basic details">
+                    <p className="mb-8 text-xl font-semibold">Basic details</p>
+                    <ServiceBasicDetails
+                      service={serviceData}
+                      categories={categories}
+                      onUpdate={updateServiceData}
+                    />
+                  </ScrollSpySection>
+                  <ScrollSpySection
+                    id="pricingDuration"
+                    label="Pricing & duration"
+                  >
+                    <p className="mb-8 text-xl font-semibold">
+                      Pricing & duration
+                    </p>
+                    <ServicePricingDuration
+                      service={serviceData}
+                      setService={setServiceData}
+                      onUpdate={updateServiceData}
+                    />
+                  </ScrollSpySection>
+                  <ScrollSpySection id="products" label="Products">
+                    <p className="mb-8 text-xl font-semibold">Products</p>
+                    <ProductAdder
+                      availableProducts={products}
+                      usedProducts={serviceData.used_products}
+                      onUpdate={(updated) =>
+                        updateServiceData({ used_products: updated })
+                      }
+                    />
+                  </ScrollSpySection>
+                  <ScrollSpySection id="bookings" label="Bookings">
+                    <p className="mb-8 text-xl font-semibold">Bookings</p>
+                    <ServiceBookingSettings
+                      onUpdate={updateServiceData}
+                      settings={serviceData.settings}
+                    />
+                  </ScrollSpySection>
+                  {service && (
+                    <Button
+                      type="button"
+                      styles="py-4 mb-2 shadow-none bg-transparent
+                        hover:bg-transparent! text-red-500!"
+                      buttonText="Delete service"
+                      onClick={() => setShowDeleteModal(true)}
+                    ></Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </ScrollSpyProvider>
     </Block>
   );
 }

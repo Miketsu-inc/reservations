@@ -6,7 +6,7 @@ import {
   useToast,
 } from "@reservations/lib";
 import { queryOptions, useQueries } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
@@ -31,7 +31,7 @@ async function fetchServiceData(merchantId, id) {
   }
 }
 
-export function serviceQueryOptions(merchantId, id) {
+function serviceQueryOptions(merchantId, id) {
   return queryOptions({
     queryKey: [merchantId, "service", id],
     queryFn: () => fetchServiceData(merchantId, id),
@@ -62,7 +62,6 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -97,12 +96,10 @@ function RouteComponent() {
         variant: "success",
       });
       setServerError();
-      router.navigate({
-        from: Route.fullPath,
-        to: "/services",
-      });
+      return true;
     } catch (err) {
       setServerError(err.message);
+      return false;
     }
   }
 

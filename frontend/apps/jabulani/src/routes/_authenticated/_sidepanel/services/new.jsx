@@ -6,7 +6,7 @@ import {
   useToast,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import ServicePage from "./-components/ServicePage";
 
@@ -30,7 +30,6 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
 );
 
 function RouteComponent() {
-  const router = useRouter();
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -65,19 +64,18 @@ function RouteComponent() {
         invalidateLocalStorageAuth(response.status);
         const result = await response.json();
         setServerError(result.error.message);
+        return false;
       } else {
         showToast({
           message: "Service added successfully",
           variant: "success",
         });
         setServerError();
-        router.navigate({
-          from: Route.fullPath,
-          to: "/services",
-        });
+        return true;
       }
     } catch (err) {
       setServerError(err.message);
+      return false;
     }
   }
 

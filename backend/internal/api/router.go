@@ -148,8 +148,6 @@ func jabulaniRouter() chi.Router {
 		"/services",
 		"/services/new",
 		"/services/edit/{id}",
-		"/services/group/new",
-		"/services/group/edit/{id}",
 		"/customers",
 		"/customers/blacklist",
 		"/customers/new",

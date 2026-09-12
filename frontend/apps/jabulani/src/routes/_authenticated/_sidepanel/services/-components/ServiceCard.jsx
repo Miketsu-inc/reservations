@@ -80,11 +80,7 @@ export default function ServiceCard({
       >
         <div className="relative z-5 flex flex-row items-center p-4">
           <Link
-            to={
-              service.booking_type === "appointment"
-                ? `/services/edit/${service.id}`
-                : `/services/group/edit/${service.id}`
-            }
+            to={`/services/edit/${service.id}`}
             className="flex flex-1 cursor-pointer lg:cursor-default"
             disabled={!isWindowSmall}
           >
@@ -115,11 +111,7 @@ export default function ServiceCard({
             <Link
               className="hover:bg-hvr_gray hidden cursor-pointer rounded-lg p-2
                 lg:block"
-              to={
-                service.booking_type === "appointment"
-                  ? `/services/edit/${service.id}`
-                  : `/services/group/edit/${service.id}`
-              }
+              to={`/services/edit/${service.id}`}
             >
               <Icon
                 icon={Edit03Icon}
@@ -132,7 +124,7 @@ export default function ServiceCard({
               onActiveSwitch={serviceStatusHandler}
               onMoveDown={() => onMove(service.id, "backward")}
               onMoveUp={() => onMove(service.id, "forward")}
-              onDelte={onDelete}
+              onDelete={onDelete}
             />
           </div>
         </div>
@@ -147,7 +139,7 @@ function ServiceOptions({
   onMoveDown,
   onMoveUp,
   onActiveSwitch,
-  onDelte,
+  onDelete,
 }) {
   return (
     <Popover>
@@ -200,7 +192,7 @@ function ServiceOptions({
           </PopoverClose>
           <PopoverClose asChild>
             <button
-              onClick={onDelte}
+              onClick={onDelete}
               className="hover:bg-hvr_gray cursor-pointer text-red-600
                 dark:text-red-500"
             >
