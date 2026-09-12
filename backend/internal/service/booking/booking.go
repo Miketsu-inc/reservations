@@ -95,18 +95,6 @@ func (s *Service) newBooking(ctx context.Context, tx pgx.Tx, booking domain.Book
 	return bookingId, nil
 }
 
-func enforceBookingWindow(fromDate time.Time, now time.Time, windowMin, windowMax int) error {
-	if fromDate.Before(now.Add(time.Duration(windowMin) * time.Minute)) {
-		return fmt.Errorf("appointment must be booked at least %d minutes in advance", windowMin)
-	}
-
-	if fromDate.After(now.AddDate(0, windowMax, 0)) {
-		return fmt.Errorf("appointment cannot be booked more than %d months in advance", windowMax)
-	}
-
-	return nil
-}
-
 func getNewBookingStatus(approvalPolicy types.ApprovalType, isNewCustomer bool) (types.BookingStatus, error) {
 	var status types.BookingStatus
 
