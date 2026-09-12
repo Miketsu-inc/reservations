@@ -45,6 +45,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/kv"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/miketsu-inc/reservations/frontend/apps/tango"
 	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
 )
@@ -106,12 +107,16 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	blockedTimeService.SetEnqueuer(enqueuer)
 
 	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
+	tangoDist, _ := tango.StaticFilesPath()
+	merchantPage, err := publicMerchants.NewPageHandler(merchantService, tangoDist, cfg.TANGO_URL)
+	assert.Nil(err, "Failed to create merchant page handler")
 
 	router := api.NewRouter(&api.Handlers{
 		Auth:              auth.NewHandler(authService, teamService, middlewareManager),
 		Bookings:          bookings.NewHandler(bookingService, middlewareManager),
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
 		PublicMerchants:   publicMerchants.NewHandler(merchantService, middlewareManager),
+		MerchantPage:      merchantPage,
 		Merchants:         merchants.NewHandler(merchantService, externalCalendarService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),

@@ -33,6 +33,7 @@ type Handlers struct {
 	Auth              *auth.Handler
 	Bookings          *bookings.Handler
 	PublicMerchants   *publicMerchants.Handler
+	MerchantPage      http.Handler
 	PublicBookings    *publicBookings.Handler
 	Merchants         *merchants.Handler
 	BlockedTimes      *blockedtimes.Handler
@@ -114,7 +115,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 	})
 
 	jabulani := jabulaniRouter()
-	tango := tangoRouter()
+	tango := tangoRouter(h.MerchantPage)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) error {
 		host := r.Host
@@ -183,7 +184,7 @@ func jabulaniRouter() chi.Router {
 	return r
 }
 
-func tangoRouter() chi.Router {
+func tangoRouter(merchantPage http.Handler) chi.Router {
 	r := chi.NewRouter()
 
 	tangoRoutes := []string{
@@ -200,7 +201,6 @@ func tangoRouter() chi.Router {
 		"/favorites",
 		"/profile",
 		"/profile/edit",
-		"/m/{merchant_url}",
 		"/m/{merchant_url}/book",
 		"/m/{merchant_url}/book/completed",
 		"/m/{merchant_url}/cancel/{bookingId}",
@@ -208,6 +208,8 @@ func tangoRouter() chi.Router {
 	}
 
 	dist, assets := tango.StaticFilesPath()
+
+	r.Get("/m/{merchantName}", merchantPage.ServeHTTP)
 
 	for _, route := range tangoRoutes {
 		r.Get(route, func(w http.ResponseWriter, r *http.Request) {
