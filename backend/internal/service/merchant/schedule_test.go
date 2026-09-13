@@ -1,4 +1,4 @@
-package merchant_test
+package merchant
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,6 +33,167 @@ func formatTimes(times []time.Time) []string {
 		formatted[i] = fmt.Sprintf("%02d:%02d", t.Hour(), t.Minute())
 	}
 	return formatted
+}
+
+func TestHasAllDayBlock(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Budapest")
+
+	year := 2025
+	month := time.July
+	day := 1
+
+	t.Run("No blocked times", func(t *testing.T) {
+		assert.False(t, hasAllDayBlock([]domain.BlockedTimes{}))
+	})
+
+	t.Run("Only partial day blocks", func(t *testing.T) {
+		blocked := []domain.BlockedTimes{
+			{
+				AllDay:   false,
+				FromDate: ct(year, month, day-1, "10:00", tz),
+				ToDate:   ct(year, month, day, "11:00", tz),
+			},
+			{
+				AllDay:   false,
+				FromDate: ct(year, month, day, "15:00", tz),
+				ToDate:   ct(year, month, day, "17:00", tz),
+			},
+		}
+		assert.False(t, hasAllDayBlock(blocked))
+	})
+
+	t.Run("Contains all day block", func(t *testing.T) {
+
+		blocked := []domain.BlockedTimes{
+			{
+				AllDay:   false,
+				FromDate: ct(year, month, day-1, "10:00", tz),
+				ToDate:   ct(year, month, day, "11:00", tz),
+			},
+			{
+				AllDay:   true,
+				FromDate: ct(year, month, day, "00:00", tz),
+				ToDate:   ct(year, month, day+1, "00:00", tz),
+			},
+		}
+		assert.True(t, hasAllDayBlock(blocked))
+	})
+}
+
+func TestHasNoPhaseConflict(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Budapest")
+	year := 2026
+	month := time.September
+	day := 12
+	bookingTime := ct(year, month, day, "10:00", tz)
+	bufferZero := time.Duration(0)
+
+	t.Run("1 active phase conflicts with reserved time", func(t *testing.T) {
+		phases := []domain.ServicePhase{
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
+		}
+
+		reserved := []domain.BookingSlot{
+			ctReserved(year, month, day, "10:15", "10:45", tz),
+		}
+
+		blocked := []domain.BlockedTimes{}
+
+		assert.False(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
+
+	t.Run("1 active phase conflict with blocked time", func(t *testing.T) {
+		phases := []domain.ServicePhase{{PhaseType: types.ServicePhaseTypeActive, Duration: 30}}
+
+		reserved := []domain.BookingSlot{}
+
+		blocked := []domain.BlockedTimes{{
+			AllDay:   false,
+			FromDate: ct(year, month, day, "06:45", tz),
+			ToDate:   ct(year, month, day, "10:20", tz),
+		}}
+
+		assert.False(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
+
+	t.Run("Multiple phases with wait in the start", func(t *testing.T) {
+		phases := []domain.ServicePhase{
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
+		}
+
+		reserved := []domain.BookingSlot{
+			ctReserved(year, month, day, "10:00", "10:30", tz),
+			ctReserved(year, month, day, "9:15", "10:00", tz),
+		}
+
+		blocked := []domain.BlockedTimes{}
+
+		assert.True(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
+
+	t.Run("Multiple phases with wait in the middle", func(t *testing.T) {
+		phases := []domain.ServicePhase{
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
+		}
+
+		reserved := []domain.BookingSlot{
+			ctReserved(year, month, day, "10:15", "10:45", tz),
+			ctReserved(year, month, day, "11:30", "12:00", tz),
+		}
+
+		blocked := []domain.BlockedTimes{}
+
+		assert.True(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
+
+	t.Run("Multiple phases with wait in middle conflict", func(t *testing.T) {
+		phases := []domain.ServicePhase{
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
+		}
+
+		reserved := []domain.BookingSlot{
+			ctReserved(year, month, day, "10:30", "11:00", tz),
+		}
+
+		blocked := []domain.BlockedTimes{}
+
+		assert.False(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
+
+	t.Run("Conflict with buffer time between bookings", func(t *testing.T) {
+		phases := []domain.ServicePhase{{PhaseType: types.ServicePhaseTypeActive, Duration: 30}}
+		buffer15 := 15 * time.Minute
+
+		// with 15 min buffer closed period is 10:15 - 11:15
+		reserved := []domain.BookingSlot{ctReserved(year, month, day, "10:30", "11:00", tz)}
+
+		blocked := []domain.BlockedTimes{}
+
+		assert.False(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, buffer15, tz))
+	})
+
+	t.Run("Blocked time overlaps only a wait phase", func(t *testing.T) {
+		phases := []domain.ServicePhase{
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
+			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
+		}
+
+		reserved := []domain.BookingSlot{}
+
+		blocked := []domain.BlockedTimes{{
+			AllDay:   false,
+			FromDate: ct(year, month, day, "10:30", tz),
+			ToDate:   ct(year, month, day, "10:45", tz),
+		}}
+
+		assert.True(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
+	})
 }
 
 func TestCalculateAvailableTimes(t *testing.T) {
@@ -76,115 +236,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		blocked := []domain.BlockedTimes{}
 
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
-
-		assert.ElementsMatch(t, expected, result, "Available times do not match")
-	})
-
-	t.Run("One active phase", func(t *testing.T) {
-		reserved := []domain.BookingSlot{
-			ctReserved(year, month, day, "10:00", "10:30", tz),
-			ctReserved(year, month, day, "11:00", "11:45", tz),
-			ctReserved(year, month, day, "13:00", "14:00", tz),
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 60},
-		}
-		serviceDuration := 60
-		bookingWindowMin, bufferTime := 0, 0
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
-		}
-
-		expected := []time.Time{
-			ct(year, month, day, "09:00", tz), ct(year, month, day, "11:45", tz),
-			ct(year, month, day, "12:00", tz), ct(year, month, day, "14:00", tz),
-			ct(year, month, day, "14:15", tz), ct(year, month, day, "14:30", tz),
-			ct(year, month, day, "14:45", tz), ct(year, month, day, "15:00", tz),
-		}
-
-		blocked := []domain.BlockedTimes{}
-
-		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
-
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
-
-		assert.ElementsMatch(t, expected, result, "Available times do not match")
-	})
-
-	t.Run("Mutliple phases with wait at the start", func(t *testing.T) {
-		reserved := []domain.BookingSlot{
-			ctReserved(year, month, day, "10:00", "10:30", tz),
-			ctReserved(year, month, day, "11:15", "11:30", tz),
-			ctReserved(year, month, day, "13:00", "15:00", tz),
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
-		}
-		serviceDuration := 45
-		bookingWindowMin, bufferTime := 0, 0
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:30"), EndTime: ctBH("11:30")},
-			{StartTime: ctBH("13:00"), EndTime: ctBH("16:15")},
-		}
-
-		expected := []time.Time{
-			ct(year, month, day, "10:00", tz), ct(year, month, day, "10:15", tz),
-			ct(year, month, day, "10:30", tz), ct(year, month, day, "14:30", tz),
-			ct(year, month, day, "14:45", tz), ct(year, month, day, "15:00", tz),
-			ct(year, month, day, "15:15", tz), ct(year, month, day, "15:30", tz),
-		}
-
-		blocked := []domain.BlockedTimes{}
-
-		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
-
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
-
-		assert.ElementsMatch(t, expected, result, "Available times do not match")
-	})
-
-	t.Run("Mutliple phases with wait in the middle", func(t *testing.T) {
-		reserved := []domain.BookingSlot{
-			ctReserved(year, month, day, "10:00", "10:30", tz),
-			ctReserved(year, month, day, "11:15", "11:45", tz),
-			ctReserved(year, month, day, "13:00", "14:00", tz),
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 15},
-			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 45},
-		}
-		serviceDuration := 90
-		bookingWindowMin, bufferTime := 0, 0
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:00"), EndTime: ctBH("16:00")},
-		}
-
-		expected := []time.Time{
-			ct(year, month, day, "09:45", tz), ct(year, month, day, "11:00", tz),
-			ct(year, month, day, "14:00", tz), ct(year, month, day, "14:15", tz),
-			ct(year, month, day, "14:30", tz),
-		}
-
-		blocked := []domain.BlockedTimes{}
-
-		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
-
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
@@ -218,161 +270,9 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.July, 1, "14:20", tz)
 
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expected, result, "Available times do not match")
-	})
-
-	t.Run("Buffer time between bookings", func(t *testing.T) {
-		reserved := []domain.BookingSlot{
-			ctReserved(year, month, day, "10:00", "10:30", tz),
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
-		}
-		serviceDuration := 30
-		bookingWindowMin, bufferTime := 0, 15
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:00"), EndTime: ctBH("12:00")},
-		}
-
-		// With buffer=15min, the blocked period is 09:45–10:45.
-		// So "09:00" and "09:15" are fine, next available is "10:45".
-		expected := []time.Time{
-			ct(year, month, day, "09:00", tz), ct(year, month, day, "09:15", tz),
-			ct(year, month, day, "10:45", tz), ct(year, month, day, "11:00", tz),
-			ct(year, month, day, "11:15", tz), ct(year, month, day, "11:30", tz),
-		}
-
-		blocked := []domain.BlockedTimes{}
-
-		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
-
-		result := merchant.CalculateAvailableTimes(
-			reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz,
-		)
-
-		assert.ElementsMatch(t, expected, result, "Available times do not match")
-	})
-
-	t.Run("All day blocked time", func(t *testing.T) {
-		tz, _ := time.LoadLocation("Europe/Budapest")
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		reserved := []domain.BookingSlot{}
-
-		blocked := []domain.BlockedTimes{
-			{
-				AllDay:   true,
-				FromDate: ct(year, month, day, "00:00", tz),
-				ToDate:   ct(year, month, day+1, "00:00", tz),
-			},
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
-		}
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")},
-		}
-
-		serviceDuration := 30
-		bookingWindowMin, bufferTime := 0, 0
-
-		currentTime := ct(year, time.June, 15, "00:00", tz)
-
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
-
-		assert.Empty(t, result, "Expected no slots due to full block")
-	})
-
-	t.Run("Business hours blocked partially", func(t *testing.T) {
-		tz, _ := time.LoadLocation("Europe/Budapest")
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		reserved := []domain.BookingSlot{}
-
-		blocked := []domain.BlockedTimes{
-			{
-				AllDay:   false,
-				FromDate: ct(year, month, day-1, "10:00", tz),
-				ToDate:   ct(year, month, day, "11:00", tz),
-			},
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 30},
-		}
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("08:00"), EndTime: ctBH("12:00")},
-		}
-
-		serviceDuration := 30
-		bookingWindowMin, bufferTime := 0, 0
-
-		currentTime := ct(year, month, day, "00:00", tz)
-
-		expected := []time.Time{
-			ct(year, month, day, "11:00", tz),
-			ct(year, month, day, "11:15", tz),
-			ct(year, month, day, "11:30", tz),
-		}
-
-		result := merchant.CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
-
-		assert.ElementsMatch(t, expected, result, "Unexpected available slots for partial block")
-	})
-
-	t.Run("Blocked time overlaps only wait inside multi-phase service", func(t *testing.T) {
-		tz, _ := time.LoadLocation("Europe/Budapest")
-
-		bookingDay := ct(year, month, day, "00:00", tz)
-
-		reserved := []domain.BookingSlot{}
-
-		blocked := []domain.BlockedTimes{
-			{
-				AllDay:   false,
-				FromDate: ct(year, month, day, "09:30", tz),
-				ToDate:   ct(year, month, day, "10:00", tz),
-			},
-		}
-
-		servicePhases := []domain.ServicePhase{
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 30}, // 1st active
-			{PhaseType: types.ServicePhaseTypeWait, Duration: 30},   // wait
-			{PhaseType: types.ServicePhaseTypeActive, Duration: 15}, // 2nd active
-		}
-
-		businessHours := []domain.TimeSlot{
-			{StartTime: ctBH("09:00"), EndTime: ctBH("12:00")},
-		}
-
-		serviceDuration := 75
-		bookingWindowMin, bufferTime := 0, 0
-
-		currentTime := ct(year, month, day, "00:00", tz)
-
-		expected := []time.Time{
-			ct(year, month, day, "09:00", tz), ct(year, month, day, "10:00", tz),
-			ct(year, month, day, "10:15", tz), ct(year, month, day, "10:30", tz),
-			ct(year, month, day, "10:45", tz),
-		}
-
-		result := merchant.CalculateAvailableTimes(
-			reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin,
-			bookingDay, businessHours, currentTime, tz,
-		)
-
-		assert.ElementsMatch(t, expected, result, "Unexpected available slots for WAIT-overlap test")
 	})
 }
 
@@ -402,7 +302,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", time.UTC)
 
-		results := merchant.CalculateAvailableTimesPeriod(
+		results := CalculateAvailableTimesPeriod(
 			reserved,
 			blocked,
 			servicePhases,
@@ -446,7 +346,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 
 		currentTime := ct(2025, time.June, 12, "00:00", tz)
 
-		results := merchant.CalculateAvailableTimesPeriod(
+		results := CalculateAvailableTimesPeriod(
 			reserved,
 			blocked,
 			servicePhases,
@@ -482,4 +382,94 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 		assert.ElementsMatch(t, expectedDay2, append(results[0].Morning, results[0].Afternoon...), "Day 2 times mismatch")
 		assert.ElementsMatch(t, expectedDay3, append(results[1].Morning, results[1].Afternoon...), "Day 3 times mismatch")
 	})
+}
+
+func TestCacluateAvailableDays(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Budapest")
+
+	year := 2025
+	month := time.July
+	day := 1
+
+	startDate := ct(year, month, day, "00:00", tz) // Tuesday
+	endDate := ct(year, month, day+2, "00:00", tz)
+
+	servicePhases := []domain.ServicePhase{{PhaseType: types.ServicePhaseTypeActive, Duration: 60}}
+
+	businessHours := domain.BusinessHours{
+		2: {},                                                   // Tuesday: closed
+		3: {{StartTime: ctBH("09:00"), EndTime: ctBH("10:00")}}, // Wednesday
+		4: {{StartTime: ctBH("09:00"), EndTime: ctBH("10:00")}}, // Thursday
+	}
+
+	reserved := []domain.BookingSlot{
+		ctReserved(2025, time.July, 2, "09:00", "10:00", tz),
+	}
+
+	blocked := []domain.BlockedTimes{}
+
+	currentTime := ct(2025, time.June, 1, "00:00", tz)
+
+	result := CalculateAvailableDays(reserved, blocked, servicePhases, 60, 0, 0, startDate, endDate, businessHours, currentTime, tz)
+
+	assert.Len(t, result, 3, "There should be only 3 day in the result")
+
+	assert.Equal(t, "2025-07-01", result[0].Date)
+	assert.False(t, result[0].IsAvailable, "Closed day should not be available")
+
+	assert.Equal(t, "2025-07-02", result[1].Date)
+	assert.False(t, result[1].IsAvailable, "Open day no empty slots should not be available")
+
+	assert.Equal(t, "2025-07-03", result[2].Date)
+	assert.True(t, result[2].IsAvailable, "Open day with open slots should be available")
+}
+
+func TestIsValidBookingSlot(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Budapest")
+
+	year := 2025
+	month := time.July
+	day := 1
+
+	businessHours := []domain.TimeSlot{
+		{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")},
+	}
+	servicePhases := []domain.ServicePhase{
+		{PhaseType: types.ServicePhaseTypeActive, Duration: 60},
+	}
+
+	reserved := []domain.BookingSlot{}
+
+	blocked := []domain.BlockedTimes{}
+
+	currentTime := ct(year, month, day, "00:00", tz)
+
+	bookingWindowMin, bufferTime, bookingWindowMax := 0, 0, 1
+
+	t.Run("Valid within business hours", func(t *testing.T) {
+		slot := domain.TimeSlot{
+			StartTime: ct(year, month, day, "10:00", tz),
+			EndTime:   ct(year, month, day, "11:00", tz),
+		}
+
+		assert.True(t, IsValidBookingSlot(slot, reserved, blocked, servicePhases, businessHours, bufferTime, bookingWindowMin, bookingWindowMax, currentTime, tz))
+	})
+
+	t.Run("Outside business hours", func(t *testing.T) {
+		slot := domain.TimeSlot{
+			StartTime: ct(year, month, day, "16:30", tz),
+			EndTime:   ct(year, month, day, "17:30", tz),
+		}
+		assert.False(t, IsValidBookingSlot(slot, reserved, blocked, servicePhases, businessHours, 0, 0, 1, currentTime, tz))
+	})
+
+	t.Run("Exceeds bookingWindow", func(t *testing.T) {
+		slot := domain.TimeSlot{
+			StartTime: ct(year+1, month, 1, "10:00", tz),
+			EndTime:   ct(year+1, month, 1, "11:00", tz),
+		}
+
+		assert.False(t, IsValidBookingSlot(slot, reserved, blocked, servicePhases, businessHours, 0, 0, 1, currentTime, tz))
+	})
+
 }
