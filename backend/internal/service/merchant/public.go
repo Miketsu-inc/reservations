@@ -11,11 +11,15 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
 func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.MerchantInfo, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.MerchantInfo{}, apperr.Wrap(ErrMerchantNotFound, err)
+		}
 		return domain.MerchantInfo{}, err
 	}
 

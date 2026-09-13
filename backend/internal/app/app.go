@@ -26,6 +26,7 @@ import (
 	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
 	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
+	"github.com/miketsu-inc/reservations/backend/internal/api/merchantpage"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/workers"
 	repos "github.com/miketsu-inc/reservations/backend/internal/repository/db"
@@ -112,6 +113,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Bookings:          bookings.NewHandler(bookingService, middlewareManager),
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
 		PublicMerchants:   publicMerchants.NewHandler(merchantService, middlewareManager),
+		MerchantPage:      merchantpage.NewHandler(merchantService),
 		Merchants:         merchants.NewHandler(merchantService, externalCalendarService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),

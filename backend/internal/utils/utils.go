@@ -2,7 +2,9 @@ package utils
 
 import (
 	"reflect"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func StructToMap(data any) map[string]any {
@@ -78,4 +80,13 @@ func PtrEqual[T comparable](a, b *T) bool {
 		return a == b // true only if both nil
 	}
 	return *a == *b
+}
+
+func TruncateUTF8(value string, maxRunes int) string {
+	if utf8.RuneCountInString(value) <= maxRunes {
+		return value
+	}
+
+	runes := []rune(value)
+	return strings.TrimSpace(string(runes[:maxRunes-1])) + "…"
 }
