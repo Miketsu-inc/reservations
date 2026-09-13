@@ -189,11 +189,14 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 
 	// TODO: optional resync here
 	if exists {
-		if token.RefreshToken != "" {
-			err = s.externalCalendarRepo.UpdateExternalCalendarAuthTokens(ctx, externalCalendar.Id, token.AccessToken, token.RefreshToken, token.Expiry)
-			if err != nil {
-				return err
-			}
+		refreshToken := token.RefreshToken
+		if refreshToken == "" {
+			refreshToken = externalCalendar.RefreshToken
+		}
+
+		err = s.externalCalendarRepo.UpdateExternalCalendarAuthTokens(ctx, externalCalendar.Id, token.AccessToken, refreshToken, token.Expiry)
+		if err != nil {
+			return err
 		}
 	} else {
 

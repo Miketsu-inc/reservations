@@ -20,7 +20,7 @@ func NewHandler(s *externalcalendarServ.Service) *Handler {
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Put("/google/calendar/callback", h.GoogleCalendarCallback)
+	r.Get("/google/calendar/callback", h.GoogleCalendarCallback)
 	r.Post("/google/calendar/watch", h.GoogleCalendarWatch)
 
 	return r

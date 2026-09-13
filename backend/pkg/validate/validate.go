@@ -154,7 +154,7 @@ func reduceHyphens(s string) string {
 func SanitizeStruct[T any](s any) (T, error) {
 	var data T
 
-	sanitizedInterface, err := sanitize(data)
+	sanitizedInterface, err := sanitize(s)
 	if err != nil {
 		return data, err
 	}

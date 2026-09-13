@@ -101,7 +101,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) error {
 
 type resetPasswordReq struct {
 	Token    string `json:"token" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required,ascii"`
 }
 
 func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) error {
@@ -247,7 +247,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) error {
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
-	http.Redirect(w, r, "http://localhost:8080/", http.StatusPermanentRedirect)
+	http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
 
 	return nil
 }
@@ -280,7 +280,7 @@ func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
-	http.Redirect(w, r, "http://localhost:8080/", http.StatusPermanentRedirect)
+	http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
 
 	return nil
 }

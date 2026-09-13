@@ -111,8 +111,8 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid limit query parameter")
 	}
 
-	if limit > 10 {
-		return validate.NewError("limit cannot be higher than 10")
+	if limit < 1 || limit > 10 {
+		return validate.NewError("limit must be between 1 and 10")
 	}
 
 	bookings, err := h.bookingServ.GetForUser(r.Context(), urlStatus, urlCursor, limit)
@@ -126,8 +126,8 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 }
 
 type updatePasswordReq struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	OldPassword string `json:"old_password" validate:"required,ascii"`
+	NewPassword string `json:"new_password" validate:"required,ascii"`
 }
 
 func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) error {

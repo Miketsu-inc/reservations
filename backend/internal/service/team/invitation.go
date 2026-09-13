@@ -109,6 +109,7 @@ func (s *Service) InviteMember(ctx context.Context, email string, role types.Emp
 			// as this is probably better than defaulting to english
 			Language:     lang,
 			InvitationId: invitationId,
+			Token:        token,
 		}, nil)
 		if err != nil {
 			return err
@@ -166,6 +167,7 @@ func (s *Service) ResendInvitation(ctx context.Context, invitationId int) error 
 			// as this is probably better than defaulting to english
 			Language:     lang,
 			InvitationId: invitation.Id,
+			Token:        token,
 		}, nil)
 		if err != nil {
 			return err
@@ -301,12 +303,12 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, e
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err = s.teamRepo.AcceptEmployeeInvitation(ctx, invitation.Id)
+		err = s.teamRepo.WithTx(tx).AcceptEmployeeInvitation(ctx, invitation.Id)
 		if err != nil {
 			return err
 		}
 
-		_, err = s.teamRepo.NewEmployee(ctx, domain.Employee{
+		employeeId, err := s.teamRepo.WithTx(tx).NewEmployee(ctx, domain.Employee{
 			UserId:     &user.Id,
 			MerchantId: invitation.MerchantId,
 			Role:       invitation.Role.ToEmployeeRole(),
@@ -315,6 +317,10 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, e
 			IsActive:   true,
 		})
 		if err != nil {
+			return err
+		}
+
+		if err = s.teamRepo.WithTx(tx).NewEmployeePreferences(ctx, employeeId); err != nil {
 			return err
 		}
 

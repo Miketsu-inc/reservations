@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -126,7 +125,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
 		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(b.id) as times_booked, count(distinct bp.status = 'cancelled') as times_cancelled
+		count(b.id) as times_booked, count(b.id) filter (where bp.status = 'cancelled') as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
 	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
@@ -176,23 +175,23 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 				jsonb_build_object(
 					'from_date', b.from_date,
 					'to_date', b.to_date,
-					'service_name', s.name,
+					'service_name', b.service_name,
 					'price', b.price_per_person,
-					'price_type', s.price_type,
+					'price_type', b.price_type,
 					'merchant_name', m.name,
-					'formatted_location', l.formatted_location,
+					'cancel_deadline', m.cancel_deadline,
+					'formatted_location', b.formatted_location,
 					'status', b.status
 				) order by b.from_date desc
 			) as bookings
 		from (
-			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id, b.location_id, b.service_id, b.price_per_person, bp.status
+			select coalesce(bp.transferred_to, bp.customer_id) as customer_id, b.id, b.from_date, b.to_date, b.merchant_id,
+				b.service_name, b.price_per_person, b.price_type, b.formatted_location, bp.status
 			from "Booking" b
-			left join "BookingParticipant" bp on bp.booking_id = b.id and (bp.customer_id = $2 or bp.transferred_to = $2)
+			join "BookingParticipant" bp on bp.booking_id = b.id and coalesce(bp.transferred_to, bp.customer_id) = $2
 			where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
 		) b
-		join "Service" s on s.id = b.service_id
 		join "Merchant" m on m.id = b.merchant_id
-		join "Location" l on l.id = b.location_id
 		group by b.customer_id
 	)
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
@@ -202,7 +201,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 		coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
-	left join "BookingParticipant" bp on bp.customer_id = c.id
+	left join "BookingParticipant" bp on coalesce(bp.transferred_to, bp.customer_id) = c.id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	left join bookings ca on c.id = ca.customer_id
 	where c.id = $2 and c.merchant_id = $1
@@ -237,7 +236,7 @@ func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, mercha
 		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "BookingParticipant" bp on bp.customer_id = c.id and bp.status = 'completed'
+	left join "BookingParticipant" bp on coalesce(bp.transferred_to, bp.customer_id) = c.id and bp.status = 'completed'
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1 and b.from_date < now()
 	where c.merchant_id = $1
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
@@ -270,14 +269,14 @@ func (r *customerRepository) GetCustomerEmailById(ctx context.Context, merchantI
 	query := `
 	select coalesce(c.email, u.email)
 	from "Customer" c
-	join "User" u on u.id = c.user_id
+	left join "User" u on u.id = c.user_id
 	where c.id = $1 and c.merchant_id = $2
 	`
 
 	var email *string
 	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return email, nil
 		}
 		return nil, fmt.Errorf("GetCustomerEmailById: %w", err)

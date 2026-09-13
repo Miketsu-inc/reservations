@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -22,7 +23,7 @@ import (
 var googleConf = &oauth2.Config{
 	ClientID:     config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_ID,
 	ClientSecret: config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_SECRET,
-	RedirectURL:  "http://localhost:8080/api/v1/auth/callback/google",
+	RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/google/callback",
 	Scopes:       []string{"email", "profile"},
 	Endpoint:     google.Endpoint,
 }
@@ -54,6 +55,9 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 	}
 	// nolint:errcheck
 	defer resp.Body.Close()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return jwt.TokenPair{}, fmt.Errorf("google user endpoint returned status %s", resp.Status)
+	}
 
 	type googleUser struct {
 		Id            string `json:"sub"`
@@ -72,6 +76,7 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 		return jwt.TokenPair{}, err
 	}
 
+	refreshVersion := 0
 	userId, err := s.userRepo.FindOauthUser(ctx, types.AuthProviderTypeGoogle, g.Id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -98,25 +103,20 @@ func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPai
 		if err != nil {
 			return jwt.TokenPair{}, err
 		}
+	} else {
+		refreshVersion, err = s.userRepo.GetUserJwtRefreshVersion(ctx, userId)
+		if err != nil {
+			return jwt.TokenPair{}, err
+		}
 	}
 
-	accessToken, err := jwt.NewAccessToken(userId)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	refreshToken, err := jwt.NewRefreshToken(userId, 0)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return newJwtTokens(userId, refreshVersion)
 }
 
 var facebookConf = &oauth2.Config{
 	ClientID:     config.LoadEnvVars().FACEBOOK_OAUTH_CLIENT_ID,
 	ClientSecret: config.LoadEnvVars().FACEBOOK_OAUTH_CLIENT_SECRET,
-	RedirectURL:  "http://localhost:8080/api/v1/auth/callback/facebook",
+	RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/facebook/callback",
 	Scopes:       []string{"email", "public_profile"},
 	Endpoint:     facebook.Endpoint,
 }
@@ -148,6 +148,9 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 	}
 	// nolint:errcheck
 	defer resp.Body.Close()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return jwt.TokenPair{}, fmt.Errorf("facebook user endpoint returned status %s", resp.Status)
+	}
 
 	type facebookUser struct {
 		Id        string `json:"id"`
@@ -169,6 +172,7 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 		return jwt.TokenPair{}, err
 	}
 
+	refreshVersion := 0
 	userId, err := s.userRepo.FindOauthUser(ctx, types.AuthProviderTypeFacebook, fb.Id)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -195,17 +199,12 @@ func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenP
 		if err != nil {
 			return jwt.TokenPair{}, err
 		}
+	} else {
+		refreshVersion, err = s.userRepo.GetUserJwtRefreshVersion(ctx, userId)
+		if err != nil {
+			return jwt.TokenPair{}, err
+		}
 	}
 
-	accessToken, err := jwt.NewAccessToken(userId)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	refreshToken, err := jwt.NewRefreshToken(userId, 0)
-	if err != nil {
-		return jwt.TokenPair{}, err
-	}
-
-	return jwt.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return newJwtTokens(userId, refreshVersion)
 }

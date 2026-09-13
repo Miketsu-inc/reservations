@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -51,7 +50,6 @@ func Health(db *pgxpool.Pool) map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf("%s", fmt.Sprintf("db down: %v", err)) // Log the error and terminate the program
 		return stats
 	}
 

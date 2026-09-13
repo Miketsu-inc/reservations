@@ -25,8 +25,8 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, userId uuid.UUID, passwordHash string) error
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
 
-	IsEmailUnique(ctx context.Context, email string) error
-	IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error
+	IsEmailUnique(ctx context.Context, email string) (bool, error)
+	IsPhoneNumberUnique(ctx context.Context, phoneNumber string) (bool, error)
 
 	// Increment User's refresh version, logging out the User.
 	IncrementUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)

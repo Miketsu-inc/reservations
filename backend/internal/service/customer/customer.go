@@ -98,22 +98,22 @@ func (s *Service) Delete(ctx context.Context, customerId uuid.UUID) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.bookingRepo.DeleteAppointmentsByCustomer(ctx, customerId, actor.MerchantId)
+		err := s.bookingRepo.WithTx(tx).DeleteAppointmentsByCustomer(ctx, customerId, actor.MerchantId)
 		if err != nil {
 			return err
 		}
 
-		err = s.bookingRepo.DecrementEveryParticipantCountForCustomer(ctx, customerId, actor.MerchantId)
+		err = s.bookingRepo.WithTx(tx).DecrementEveryParticipantCountForCustomer(ctx, customerId, actor.MerchantId)
 		if err != nil {
 			return err
 		}
 
-		err = s.bookingRepo.DeleteParticipantByCustomer(ctx, customerId, actor.MerchantId)
+		err = s.bookingRepo.WithTx(tx).DeleteParticipantByCustomer(ctx, customerId, actor.MerchantId)
 		if err != nil {
 			return err
 		}
 
-		err = s.customerRepo.DeleteCustomer(ctx, customerId, actor.MerchantId)
+		err = s.customerRepo.WithTx(tx).DeleteCustomer(ctx, customerId, actor.MerchantId)
 		if err != nil {
 			return err
 		}

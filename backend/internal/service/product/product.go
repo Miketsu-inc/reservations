@@ -77,7 +77,16 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.productRepo.UpdateProduct(ctx, domain.Product{
+	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	if input.Price != nil && input.Price.CurrencyCode() != curr {
+		return fmt.Errorf("product price's currency does not match merchant's currency")
+	}
+
+	err = s.productRepo.UpdateProduct(ctx, domain.Product{
 		Id:            input.Id,
 		MerchantId:    actor.MerchantId,
 		Name:          input.Name,

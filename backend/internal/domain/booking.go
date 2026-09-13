@@ -184,6 +184,10 @@ func (b Booking) CanCancelWithDeadline(deadline time.Time) error {
 }
 
 func (b Booking) CanTransition(status types.BookingStatus) error {
+	if b.IsCompleted() || b.IsNoShow() {
+		return fmt.Errorf("you cannot modify %s bookings", b.Status)
+	}
+
 	if !b.IsPast() && status == types.BookingStatusCompleted {
 		return fmt.Errorf("future bookings cannot be completed")
 	}
@@ -287,8 +291,8 @@ func (bp BookingParticipant) CanModify() error {
 }
 
 func (bp BookingParticipant) CanTransition(status types.BookingStatus) error {
-	if bp.IsCancelled() {
-		return fmt.Errorf("you cannot modify cancelled participant status")
+	if bp.IsCancelled() || bp.IsCompleted() || bp.IsNoShow() {
+		return fmt.Errorf("you cannot modify %s participant status", bp.Status)
 	}
 
 	if bp.Status != types.BookingStatusBooked && status == types.BookingStatusBooked {

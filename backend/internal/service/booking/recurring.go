@@ -130,7 +130,7 @@ func (s *Service) GenerateRecurringBookings(ctx context.Context, series domain.B
 					CustomerNote: nil,
 				})
 
-				if p.CustomerId != nil {
+				if p.CustomerId != nil && fromDate.Add(-24*time.Hour).After(time.Now().UTC()) {
 					reminderInsertParams = append(reminderInsertParams, river.InsertManyParams{
 						Args: args.BookingReminderEmail{
 							BookingId:        id,
@@ -453,7 +453,7 @@ func buildNewParticipantReminderEmailParams(participants []domain.BookingPartici
 			return nil
 		}
 
-		if fromDate, ok := fromDateByBooking[p.BookingId]; ok {
+		if fromDate, ok := fromDateByBooking[p.BookingId]; ok && fromDate.Add(-24*time.Hour).After(time.Now().UTC()) {
 			params = append(params, river.InsertManyParams{
 				Args: args.BookingReminderEmail{
 					BookingId:        p.BookingId,
@@ -475,6 +475,9 @@ func buildReminderEmailParams(bookingIds []int, fromDates []time.Time, customerI
 
 	for i, bookingId := range bookingIds {
 		fromDate := fromDates[i]
+		if !fromDate.Add(-24 * time.Hour).After(time.Now().UTC()) {
+			continue
+		}
 
 		for _, cid := range customerIdsByBooking[bookingId] {
 			params = append(params, river.InsertManyParams{

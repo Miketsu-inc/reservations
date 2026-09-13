@@ -26,8 +26,34 @@ type EditInput struct {
 
 func (s *Service) Edit(ctx context.Context, input EditInput) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
+	user, err := s.userRepo.GetUser(ctx, userId)
+	if err != nil {
+		return err
+	}
 
-	err := s.userRepo.UpdateUser(ctx, domain.UserCore{
+	if input.Email != user.Email {
+		unique, err := s.userRepo.IsEmailUnique(ctx, input.Email)
+		if err != nil {
+			return err
+		}
+
+		if !unique {
+			return domain.ErrEmailNotUnique
+		}
+	}
+
+	if user.PhoneNumber == nil || input.PhoneNumber != *user.PhoneNumber {
+		unique, err := s.userRepo.IsPhoneNumberUnique(ctx, input.PhoneNumber)
+		if err != nil {
+			return err
+		}
+
+		if !unique {
+			return domain.ErrPhoneNumberNotUnique
+		}
+	}
+
+	err = s.userRepo.UpdateUser(ctx, domain.UserCore{
 		Id:          userId,
 		FirstName:   input.FirstName,
 		LastName:    input.LastName,

@@ -189,7 +189,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error
 	return nil
 }
 
-func (r *userRepository) IsEmailUnique(ctx context.Context, email string) error {
+func (r *userRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
 	query := `
 	select 1 from "User"
 	where email = $1
@@ -197,17 +197,17 @@ func (r *userRepository) IsEmailUnique(ctx context.Context, email string) error 
 
 	var exists *int
 	err := r.db.QueryRow(ctx, query, email).Scan(&exists)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
-	}
 	if err != nil {
-		return fmt.Errorf("IsEmailUnique: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return true, nil
+		}
+		return false, fmt.Errorf("IsEmailUnique: %w", err)
 	}
 
-	return fmt.Errorf("this email is already used: %s", email)
+	return false, nil
 }
 
-func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) error {
+func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber string) (bool, error) {
 	query := `
 	select 1 from "User"
 	where phone_number = $1
@@ -215,14 +215,14 @@ func (r *userRepository) IsPhoneNumberUnique(ctx context.Context, phoneNumber st
 
 	var exists *int
 	err := r.db.QueryRow(ctx, query, phoneNumber).Scan(&exists)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
-	}
 	if err != nil {
-		return fmt.Errorf("IsPhoneNumberUnique: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return true, nil
+		}
+		return false, fmt.Errorf("IsPhoneNumberUnique: %w", err)
 	}
 
-	return fmt.Errorf("this phone number is already used: %s", phoneNumber)
+	return false, nil
 }
 
 func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, userID uuid.UUID) (int, error) {

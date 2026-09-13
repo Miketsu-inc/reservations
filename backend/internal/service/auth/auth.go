@@ -64,7 +64,7 @@ func hashCompare(password, hash string) error {
 
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return fmt.Errorf("incorrect email or password")
+			return ErrIncorrectEmailOrPassword
 		} else {
 			// for debug purposes
 			return err
@@ -96,7 +96,15 @@ type LoginInput struct {
 func (s *Service) Login(ctx context.Context, input LoginInput) (jwt.TokenPair, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, input.Email)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return jwt.TokenPair{}, ErrIncorrectEmailOrPassword
+		}
+
 		return jwt.TokenPair{}, err
+	}
+
+	if user.PasswordHash == nil {
+		return jwt.TokenPair{}, ErrIncorrectEmailOrPassword
 	}
 
 	err = hashCompare(input.Password, *user.PasswordHash)
@@ -121,14 +129,22 @@ type UserSignupInput struct {
 }
 
 func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.TokenPair, error) {
-	err := s.userRepo.IsEmailUnique(ctx, input.Email)
+	unique, err := s.userRepo.IsEmailUnique(ctx, input.Email)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	err = s.userRepo.IsPhoneNumberUnique(ctx, input.PhoneNumber)
+	if !unique {
+		return jwt.TokenPair{}, domain.ErrEmailNotUnique
+	}
+
+	unique, err = s.userRepo.IsPhoneNumberUnique(ctx, input.PhoneNumber)
 	if err != nil {
 		return jwt.TokenPair{}, err
+	}
+
+	if !unique {
+		return jwt.TokenPair{}, domain.ErrPhoneNumberNotUnique
 	}
 
 	hashedPassword, err := hashPassword(input.Password)

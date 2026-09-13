@@ -28,7 +28,12 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		return domain.MerchantInfo{}, err
 	}
 
-	now := time.Now().In(time.UTC)
+	merchantTz, err := time.LoadLocation(merchantInfo.Timezone)
+	if err != nil {
+		return domain.MerchantInfo{}, fmt.Errorf("invalid merchant timezone: %w", err)
+	}
+
+	now := time.Now().In(merchantTz)
 	merchantInfo.BusinessHoursStatus = CalculateBusinessStatus(merchantInfo.BusinessHours, now)
 
 	return merchantInfo, nil
@@ -38,14 +43,15 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 	year, month, day := now.Date()
 	today := int(now.Weekday())
 	shiftsToday := businessHours[today]
+	tz := now.Location()
 
 	status := domain.BusinessHoursStatus{
 		IsOpen: false,
 	}
 
 	for _, shift := range shiftsToday {
-		businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, time.UTC)
-		businessEnd := time.Date(year, month, day, shift.EndTime.Hour(), shift.EndTime.Minute(), 0, 0, time.UTC)
+		businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, tz)
+		businessEnd := time.Date(year, month, day, shift.EndTime.Hour(), shift.EndTime.Minute(), 0, 0, tz)
 
 		if (now.Equal(businessStart) || now.After(businessStart)) && now.Before(businessEnd) {
 			status.IsOpen = true
@@ -59,7 +65,7 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 		foundNextOpen := false
 
 		for _, shift := range shiftsToday {
-			businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, time.UTC)
+			businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, tz)
 			if now.Before(businessStart) {
 				val := today
 				status.NextOpenDay = &val
@@ -69,7 +75,7 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 		}
 
 		if !foundNextOpen {
-			for i := 0; i <= 6; i++ {
+			for i := 1; i <= 7; i++ {
 				nextDay := (today + i) % 7
 				if len(businessHours[nextDay]) > 0 {
 					val := nextDay

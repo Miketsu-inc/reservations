@@ -392,7 +392,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return err
 		}
 
-		existingEmployees, err := s.catalogRepo.GetEmployeeIdsForService(ctx, input.Id)
+		existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
 		if err != nil {
 			return err
 		}
@@ -498,10 +498,6 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 		return fmt.Errorf("invalid service id")
 	}
 
-	if len(input.UsedProducts) == 0 {
-		return nil
-	}
-
 	var products []domain.ConnectedProducts
 	for _, product := range input.UsedProducts {
 		products = append(products, domain.ConnectedProducts{
@@ -558,7 +554,7 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 func (s *Service) Activate(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.DeactivateService(ctx, actor.MerchantId, serviceId)
+	err := s.catalogRepo.ActivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return err
 	}
@@ -569,7 +565,7 @@ func (s *Service) Activate(ctx context.Context, serviceId int) error {
 func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.catalogRepo.ActivateService(ctx, actor.MerchantId, serviceId)
+	err := s.catalogRepo.DeactivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return err
 	}

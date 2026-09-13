@@ -456,7 +456,7 @@ func (r *bookingRepository) UpdateParticipantCountBatch(ctx context.Context, boo
 	set current_participants = b.current_participants + u.delta
 	from unnest($1::int[], $2::int[]) as u(id, delta)
 	where b.id = u.id and b.booking_type in ('event', 'class') and b.status not in ('cancelled', 'completed')
-		and b.current_participants + u.delta <= b.max_participants and b.current_participants + u.delta > 0
+		and b.current_participants + u.delta <= b.max_participants and b.current_participants + u.delta >= 0
 	returning b.id
 	`
 
@@ -489,9 +489,10 @@ func (r *bookingRepository) TransferDummyBookings(ctx context.Context, merchantI
 	query := `
 	update "BookingParticipant" bp
 	set transferred_to = $3
-	from "Booking" b
-	join "Customer" c on bp.customer_id = c.id
-	where b.merchant_id = $1 and bp.booking_id = b.id and bp.customer_id = $2 and c.user_id is null
+	from "Booking" b, "Customer" source_customer, "Customer" target_customer
+	where b.merchant_id = $1 and bp.booking_id = b.id and bp.customer_id = $2
+		and source_customer.id = bp.customer_id and source_customer.merchant_id = $1 and source_customer.user_id is null
+		and target_customer.id = $3 and target_customer.merchant_id = $1
 	`
 
 	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
@@ -621,7 +622,7 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int,
 	select b.from_date, b.to_date, b.price_per_person as price, m.name as merchant_name, b.service_name, m.cancel_deadline, b.price_type,
 		b.status, b.formatted_location
 	from "BookingParticipant" bp
-	join "Customer" c on c.id = bp.customer_id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
 	join "Booking" b on b.id = bp.booking_id
 	join "Merchant" m on m.id = b.merchant_id
 	where bp.booking_id = $1 and c.user_id = $2
@@ -774,7 +775,7 @@ func (r *bookingRepository) GetBookingParticipantByUser(ctx context.Context, boo
 	query := `
 	select bp.*
 	from "BookingParticipant" bp
-	join "Customer" c on c.id = bp.customer_id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
 	where bp.booking_id = $1 and c.user_id = $2
 	`
 
@@ -852,11 +853,12 @@ func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, user
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
-	where u.id = $1 and b.from_date > now() and b.status in ('booked', 'confirmed') and (b.from_date, b.id) > ($3, $4)
+	where u.id = $1 and b.from_date > now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
+		and (b.from_date, b.id) > ($3, $4)
 	order by b.from_date asc, b.id asc
 	limit $2
 	`
@@ -876,11 +878,12 @@ func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, use
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
-	where u.id = $1 and b.to_date < now() and b.status not in ('cancelled', 'no-show') and (b.from_date, b.id) > ($3, $4)
+	where u.id = $1 and b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
+		and (b.from_date, b.id) < ($3, $4)
 	order by b.from_date desc, b.id desc
 	limit $2
 	`
@@ -901,12 +904,12 @@ func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, use
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on bp.customer_id = c.id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
-	where u.id = $1 and b.status in ('cancelled') and b.cancelled_by_merchant_on is not null and (b.from_date, b.id) > ($3, $4)
-	order by b.id asc
+	where u.id = $1 and (b.status = 'cancelled' or bp.status = 'cancelled') and (b.from_date, b.id) < ($3, $4)
+	order by b.from_date desc, b.id desc
 	limit $2
 	`
 
@@ -967,7 +970,7 @@ func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchantId uui
 
 	if employeeId != nil {
 		query = `
-		select bp.from_date, bp.to_date 
+		select bp.from_date, bp.to_date
 		from "BookingPhase" bp
 		join "Booking" b on bp.booking_id = b.id
 		where b.merchant_id = $1 and b.location_id = $2 and bp.from_date < $4 and bp.to_date > $3
@@ -989,8 +992,8 @@ func (r *bookingRepository) GetReservedTimes(ctx context.Context, merchantId uui
 func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]domain.BookingSlot, error) {
 	query := `
 	select b.from_date, b.to_date from "Booking" b
-	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and DATE(b.from_date) >= $4 and DATE(b.to_date) <= $5
-		and b.status not in ('cancelled', 'completed') and b.current_participants < b.max_participants
+	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and b.from_date >= $4 and b.to_date <= $5
+		and b.status not in ('cancelled', 'completed', 'no-show') and b.current_participants < b.max_participants
 	order by b.from_date
 	`
 
@@ -1007,7 +1010,7 @@ func (r *bookingRepository) GetClosestAvailableGroupBooking(ctx context.Context,
 	query := `
 	select *
 	from "Booking"
-	where merchant_id = $1 and service_id = $2 and location_id = $3 and from_date >= $4 and to_date <= $5 and current_participants < max_participants and status not in ('cancelled', 'completed')
+	where merchant_id = $1 and service_id = $2 and location_id = $3 and from_date >= $4 and to_date <= $5 and current_participants < max_participants and status not in ('cancelled', 'completed', 'no-show')
 	order by from_date asc
 	limit 1`
 

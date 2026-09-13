@@ -153,11 +153,11 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) error {
 }
 
 type checkUrlReq struct {
-	Name string `json:"merchant_name"`
+	Name string `json:"merchant_name" validate:"required"`
 }
 
 type checkUrlResp struct {
-	Name string `json:"merchant_name"`
+	Name string `json:"merchant_url"`
 }
 
 func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
@@ -227,7 +227,7 @@ type updateSettingsReq struct {
 	BookingWindowMin int                    `json:"booking_window_min"`
 	BookingWindowMax int                    `json:"booking_window_max"`
 	BufferTime       int                    `json:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
+	ApprovalPolicy   types.ApprovalType     `json:"approval_policy" validate:"required"`
 	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
 }
 

@@ -97,7 +97,7 @@ func (r *catalogRepository) DeleteService(ctx context.Context, merchantId uuid.U
 func (r *catalogRepository) DeactivateService(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
 	query := `
 	update "Service"
-	set is_active = true
+	set is_active = false
 	where id = $1 and merchant_id = $2
 	`
 
@@ -112,7 +112,7 @@ func (r *catalogRepository) DeactivateService(ctx context.Context, merchantId uu
 func (r *catalogRepository) ActivateService(ctx context.Context, merchantId uuid.UUID, serviceId int) error {
 	query := `
 	update "Service"
-	set is_active = false
+	set is_active = true
 	where id = $1 and merchant_id = $2
 	`
 
@@ -629,7 +629,7 @@ func (r *catalogRepository) GetServiceWithPhasesForEmployee(ctx context.Context,
 	left join "ServicePhase" sp on s.id = sp.service_id
 	left join "EmployeeServicePhase" esp on esp.employee_id = $2 and esp.service_phase_id = sp.id
 	where s.id = $1
-	group by s.id, es.employee_id
+	group by s.id, es.employee_id, es.service_id
 	`
 
 	var s domain.Service
@@ -931,7 +931,7 @@ func (r *catalogRepository) GetServiceProducts(ctx context.Context, serviceId in
 func (r *catalogRepository) BulkInsertEmployeeService(ctx context.Context, employeeServices []domain.EmployeeService) error {
 	query := `
 	insert into "EmployeeService" (employee_id, service_id, total_duration, price_per_person, price_type, min_participants, max_participants, buffer_time)
-	select unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::price[]), unnest($5::tex[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[]),
+	select unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::price[]), unnest($5::text[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[])
 	`
 
 	employeeServiceCount := len(employeeServices)

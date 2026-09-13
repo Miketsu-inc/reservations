@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -31,20 +32,7 @@ func (m *Manager) JwtAuthentication(next http.Handler) httputil.HandlerFunc {
 		// try to verify request with access token
 		claims, err := verifyRequest(r, jwt.AccessToken, getTokenFromCookie)
 		if err != nil {
-			// if access token could not be found in cookies it means it's either expired or did not exist
-			// if it is found but invalid unauthorized status can be returned
-			if !errors.Is(err, ErrTokenMissing) {
-				if errors.Is(err, ErrInvalidAccessToken) {
-					return &apperr.APIError{
-						Status: http.StatusUnauthorized,
-						Err:    ErrInvalidAccessToken,
-						Cause:  err,
-					}
-				}
-
-				return err
-			}
-
+			// A valid refresh token can recover from either a missing or an expired/invalid access token.
 			// try to verify request with refresh token
 			claims, err = verifyRequest(r, jwt.RefreshToken, getTokenFromCookie)
 			if err != nil {
@@ -173,10 +161,16 @@ func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, bool) {
 
 	switch refreshVersion := val.(type) {
 	case float64:
+		if refreshVersion != math.Trunc(refreshVersion) || refreshVersion < 0 || refreshVersion > float64(math.MaxInt32) {
+			return 0, false
+		}
 		return int(refreshVersion), true
 
 	case json.Number:
-		val, _ := refreshVersion.Float64()
+		val, err := refreshVersion.Int64()
+		if err != nil || val < 0 || val > math.MaxInt32 {
+			return 0, false
+		}
 
 		return int(val), true
 	}
@@ -190,6 +184,10 @@ var ErrInvalidRefreshToken = &apperr.Error{Code: "invalid_refresh_token", Messag
 // parse and validate jwt, returning the claims if valid
 func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, error) {
 	token, err := jwtlib.ParseWithClaims(tokenString, jwtlib.MapClaims{}, func(token *jwtlib.Token) (any, error) {
+		if token.Method != jwtlib.SigningMethodHS256 {
+			return nil, fmt.Errorf("jwt: unexpected signing method: %s", token.Method.Alg())
+		}
+
 		switch tokenType {
 		case jwt.AccessToken:
 			return []byte(config.LoadEnvVars().JWT_ACCESS_SECRET), nil

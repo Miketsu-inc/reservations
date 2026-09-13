@@ -33,7 +33,7 @@ func (h *Handler) Routes() *httputil.Router {
 type newReq struct {
 	Name     string `json:"name" validate:"required,max=50"`
 	Duration int    `json:"duration" validate:"required,gte=1"`
-	Icon     string `json:"icon" validate:"max=20"`
+	Icon     string `json:"icon" validate:"max=10"`
 }
 
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
@@ -57,7 +57,7 @@ type updateReq struct {
 	Id       int    `json:"id" validate:"required"`
 	Name     string `json:"name" validate:"required,max=50"`
 	Duration int    `json:"duration" validate:"required,gte=1"`
-	Icon     string `json:"icon" validate:"max=20"`
+	Icon     string `json:"icon" validate:"max=10"`
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {

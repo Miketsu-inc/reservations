@@ -202,6 +202,15 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return err
 	}
 
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
+	if err != nil {
+		return err
+	}
+
+	if !service.IsActive {
+		return ErrBookingInactiveService
+	}
+
 	fromDate := input.TimeStamp.UTC()
 
 	// TODO: we should probably just check by querying the user
@@ -237,14 +246,23 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				return err
 			}
 
+			if !booking.IsGroupBooking() || booking.MerchantId != merchantId || booking.LocationId != input.LocationId ||
+				booking.ServiceId == nil || *booking.ServiceId != input.ServiceId || !booking.FromDate.Equal(fromDate) {
+				return fmt.Errorf("booking does not match the requested merchant, service, location, or time")
+			}
+
 			err = booking.CanBookGroup(bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax)
 			if err != nil {
 				return err
 			}
 
-			_, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{1})
+			updated, err := s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{1})
 			if err != nil {
 				return err
+			}
+
+			if len(updated) != 1 {
+				return ErrTimeIsNotAvailable
 			}
 
 			newTotalPrice, err := booking.TotalPrice.Add(booking.PricePerPerson.Amount)
@@ -270,11 +288,6 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 		} else {
-			service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, merchantId)
-			if err != nil {
-				return err
-			}
-
 			duration := time.Duration(service.TotalDuration) * time.Minute
 			toDate := fromDate.Add(duration)
 
@@ -391,9 +404,13 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 				return err
 			}
 
-			_, err = s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{-1})
+			updated, err := s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{-1})
 			if err != nil {
 				return err
+			}
+
+			if len(updated) != 1 {
+				return fmt.Errorf("participant count could not be updated")
 			}
 
 		} else {
@@ -511,7 +528,7 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 
 	var statusConfirmedParams []river.InsertManyParams
 	var confirmationParams []river.InsertManyParams
-	reminderParams := make([]river.InsertManyParams, len(customers))
+	var reminderParams []river.InsertManyParams
 
 	for i, customerId := range customers {
 		if statuses[i] == types.BookingStatusConfirmed {
@@ -530,14 +547,16 @@ func (s *Service) scheduleNewBookingEmails(ctx context.Context, tx pgx.Tx, custo
 			})
 		}
 
-		reminderParams[i] = river.InsertManyParams{
-			Args: args.BookingReminderEmail{
-				BookingId:        bookingId,
-				CustomerId:       customerId,
-				ExpectedFromDate: fromDate,
-			}, InsertOpts: &river.InsertOpts{
-				ScheduledAt: reminderDate,
-			},
+		if reminderDate.After(time.Now().UTC()) {
+			reminderParams = append(reminderParams, river.InsertManyParams{
+				Args: args.BookingReminderEmail{
+					BookingId:        bookingId,
+					CustomerId:       customerId,
+					ExpectedFromDate: fromDate,
+				}, InsertOpts: &river.InsertOpts{
+					ScheduledAt: reminderDate,
+				},
+			})
 		}
 	}
 
@@ -807,6 +826,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 // TODO: rename to something more expressive
 // also I do not like that there is uuid generation and db insert in the middle of this
 // also this should be in a transaction
+// also we should check if each customer belongs to the merchant
 func (s *Service) getParticipants(ctx context.Context, merchantId uuid.UUID, customers []CustomerInput) (map[uuid.UUID]struct{}, error) {
 	customerIds := make(map[uuid.UUID]struct{})
 
@@ -1065,9 +1085,9 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	}
 
 	timeStampChanged := !booking.FromDate.Equal(input.TimeStamp.UTC())
-	merchantNoteChanged := booking.MerchantNote != input.MerchantNote
+	merchantNoteChanged := !utils.PtrEqual(booking.MerchantNote, input.MerchantNote)
 	statusChanged := booking.Status != input.BookingStatus
-	employeeChanged := booking.EmployeeId != &input.EmployeeId
+	employeeChanged := booking.EmployeeId == nil || *booking.EmployeeId != input.EmployeeId
 
 	fromDate := booking.FromDate
 	toDate := booking.ToDate
@@ -1343,15 +1363,17 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 			}
 
 			if timeStampChanged {
-				_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
-					BookingId:        booking.Id,
-					CustomerId:       id,
-					ExpectedFromDate: fromDate,
-				}, &river.InsertOpts{
-					ScheduledAt: reminderDate,
-				})
-				if err != nil {
-					return fmt.Errorf("could not schedule booking reminder email job: %w", err)
+				if reminderDate.After(time.Now().UTC()) {
+					_, err = s.enqueuer.InsertTx(ctx, tx, args.BookingReminderEmail{
+						BookingId:        booking.Id,
+						CustomerId:       id,
+						ExpectedFromDate: fromDate,
+					}, &river.InsertOpts{
+						ScheduledAt: reminderDate,
+					})
+					if err != nil {
+						return fmt.Errorf("could not schedule booking reminder email job: %w", err)
+					}
 				}
 
 				// TODO: send a modification email for the entire series for series participants if recurring
@@ -1390,6 +1412,10 @@ func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input Can
 
 	if input.CancelFuture && !booking.IsRecurring {
 		return fmt.Errorf("cannot cancel future occurrences of non-recurring booking")
+	}
+
+	if !booking.IsOwnedByMerchant(actor.MerchantId) {
+		return fmt.Errorf("booking not found for this merchant")
 	}
 
 	err = booking.CanCancel()
@@ -1469,8 +1495,12 @@ func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, pa
 		return err
 	}
 
-	if booking.IsOwnedByMerchant(actor.MerchantId) {
+	if !booking.IsOwnedByMerchant(actor.MerchantId) {
 		return fmt.Errorf("booking could not be found for this merchant")
+	}
+
+	if !booking.IsGroupBooking() {
+		return fmt.Errorf("participant status can only be updated separately for group bookings")
 	}
 
 	err = booking.CanModify()
@@ -1483,15 +1513,46 @@ func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, pa
 		return err
 	}
 
+	if bookingParticipant.BookingId != bookingId {
+		return fmt.Errorf("participant could not be found for this booking")
+	}
+
 	err = bookingParticipant.CanTransition(input.Status)
 	if err != nil {
 		return err
 	}
 
-	err = s.bookingRepo.UpdateParticipantStatus(ctx, bookingId, participantId, input.Status)
-	if err != nil {
-		return err
+	if !booking.IsPast() && (input.Status == types.BookingStatusCompleted || input.Status == types.BookingStatusNoShow) {
+		return fmt.Errorf("future booking participants cannot be completed or no-show")
 	}
 
-	return nil
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		if err := s.bookingRepo.WithTx(tx).UpdateParticipantStatus(ctx, bookingId, participantId, input.Status); err != nil {
+			return err
+		}
+
+		if input.Status == types.BookingStatusCancelled || input.Status == types.BookingStatusNoShow {
+			newTotalPrice, err := booking.TotalPrice.Sub(booking.PricePerPerson.Amount)
+			if err != nil {
+				return fmt.Errorf("failed to calculate total price: %w", err)
+			}
+
+			if err = s.bookingRepo.WithTx(tx).UpdateBookingTotalPriceBatch(ctx, []int{booking.Id}, []currencyx.Price{{Amount: newTotalPrice}}); err != nil {
+				return err
+			}
+
+			if input.Status == types.BookingStatusCancelled {
+				updated, err := s.bookingRepo.WithTx(tx).UpdateParticipantCountBatch(ctx, []int{booking.Id}, []int{-1})
+				if err != nil {
+					return err
+				}
+
+				if len(updated) != 1 {
+					return fmt.Errorf("participant count could not be updated")
+				}
+			}
+		}
+
+		return nil
+	})
 }

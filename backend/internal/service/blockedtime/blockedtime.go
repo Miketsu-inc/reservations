@@ -156,7 +156,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			}
 		}
 
-		if !blockedTime.FromDate.Equal(input.FromDate) || blockedTime.ToDate.Equal(input.ToDate) {
+		if !blockedTime.FromDate.Equal(input.FromDate) || !blockedTime.ToDate.Equal(input.ToDate) {
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBlockedTimeDispatcher{
 				BlockedTimeId: input.BlockedTimeId,
 			}, nil)

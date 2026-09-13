@@ -202,12 +202,6 @@ func (w *BookingReminderEmail) Work(ctx context.Context, job *river.Job[args.Boo
 	fromDateMerchantTz := booking.FromDate.In(merchantTz)
 	toDateMerchantTz := booking.ToDate.In(merchantTz)
 
-	hoursUntilBooking := time.Until(fromDateMerchantTz).Hours()
-
-	if hoursUntilBooking < 24 {
-		return nil
-	}
-
 	lang := lang.GetDefaultLang()
 
 	if booking.UserLanguage != nil {

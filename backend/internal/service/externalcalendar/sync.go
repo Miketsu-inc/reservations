@@ -231,7 +231,7 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 	googleChannel, err := service.Events.Watch(extCalendar.CalendarId, &calendar.Channel{
 		Id:      channelId,
 		Type:    "web_hook",
-		Address: "http://localhost:8080/api/v1/integrations/calendar/google/watch",
+		Address: "http://localhost:8080/api/v1/integrations/google/calendar/watch",
 	}).Do()
 	if err != nil {
 		return err
@@ -1064,7 +1064,7 @@ func (s *Service) HandleChannelExpiration(ctx context.Context) error {
 		googleChannel, err := service.Events.Watch(extCal.CalendarId, &calendar.Channel{
 			Id:      channelId,
 			Type:    "web_hook",
-			Address: "http://localhost:8080/api/v1/integrations/calendar/google/watch",
+			Address: "http://localhost:8080/api/v1/integrations/google/calendar/watch",
 		}).Do()
 		if err != nil {
 			return err

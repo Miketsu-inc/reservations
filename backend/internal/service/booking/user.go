@@ -3,6 +3,7 @@ package booking
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
@@ -33,6 +34,15 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursorStr strin
 	decodedCursor, err := cursor.Decode[bookingCursor](cursorStr)
 	if err != nil {
 		return GetForUserResult{}, fmt.Errorf("error during cursor decoding: %s", err.Error())
+	}
+
+	// completed and cancelled bookings are queried in descending order so the first cursor
+	// must have max values
+	if cursorStr == "" && status != "upcoming" {
+		decodedCursor = bookingCursor{
+			Id:       math.MaxInt,
+			FromDate: time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC),
+		}
 	}
 
 	switch status {

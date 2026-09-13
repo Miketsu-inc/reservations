@@ -299,7 +299,7 @@ func (r *teamRepository) GetExpiredEmployeeInvitations(ctx context.Context, expi
 	query := `
 	select *
 	from "EmployeeInvitation"
-	where expires_at <= $1 and status not in ('expired')
+	where expires_at <= $1 and status = 'pending'
 	limit $2
 	`
 

@@ -94,7 +94,7 @@ type updateByMerchantReq struct {
 	TimeStamp       string              `json:"timestamp" validate:"required"`
 	MerchantNote    *string             `json:"merchant_note"`
 	EmployeeId      int                 `json:"employee_id" validate:"required"`
-	BookingStatus   types.BookingStatus `json:"booking_status"`
+	BookingStatus   types.BookingStatus `json:"booking_status" validate:"required"`
 	UpdateAllFuture bool                `json:"update_all_future"`
 }
 
@@ -149,7 +149,7 @@ func (h *Handler) CancelByMerchant(w http.ResponseWriter, r *http.Request) error
 }
 
 type updatePaticipantStatusReq struct {
-	Status types.BookingStatus `json:"status"`
+	Status types.BookingStatus `json:"status" validate:"required"`
 }
 
 func (h *Handler) UpdateParticipantStatus(w http.ResponseWriter, r *http.Request) error {

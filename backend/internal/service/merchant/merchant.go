@@ -57,21 +57,28 @@ type UpdateNameInput struct {
 }
 
 func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
+	actor := actor.MustGetFromContext(ctx)
+
 	urlName, err := validate.MerchantNameToUrlName(input.Name)
 	if err != nil {
 		return fmt.Errorf("unexpected error during merchant url name conversion: %s", err.Error())
 	}
 
-	unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
+	currentURL, err := s.merchantRepo.GetMerchantUrlName(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}
 
-	if !unique {
-		return apperr.Wrap(ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
-	}
+	if urlName != currentURL {
+		unique, err := s.merchantRepo.IsMerchantUrlUnique(ctx, urlName)
+		if err != nil {
+			return err
+		}
 
-	actor := actor.MustGetFromContext(ctx)
+		if !unique {
+			return apperr.Wrap(ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
+		}
+	}
 
 	err = s.merchantRepo.ChangeMerchantNameAndURL(ctx, actor.MerchantId, input.Name, urlName)
 	if err != nil {
@@ -110,7 +117,7 @@ func (s *Service) GetDashboard(ctx context.Context, date time.Time, period int) 
 
 	// -1 because the last is the current day
 	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
-	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -(period - 1)))
+	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -period))
 
 	dashboard.PeriodStart = currPeriodStart
 	dashboard.PeriodEnd = utils.TruncateToDay(utcDate)
@@ -147,7 +154,7 @@ func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (string, er
 		return "", apperr.Wrap(ErrMerchantUrlNotUnique, nil).With("merchant_url", urlName)
 	}
 
-	return "", nil
+	return urlName, nil
 }
 
 func (s *Service) GetSettings(ctx context.Context) (domain.MerchantSettingsInfo, error) {

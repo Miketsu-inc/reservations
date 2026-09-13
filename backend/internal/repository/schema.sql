@@ -304,6 +304,14 @@ create table if not exists "BusinessHours" (
     constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
 );
 
+create table if not exists "BlockedTimeType" (
+    ID                       serial          primary key unique not null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade,
+    name                     varchar(50)     not null,
+    duration                 integer         not null,
+    icon                     varchar(10)
+);
+
 create table if not exists "BlockedTime" (
     ID                       serial          primary key unique not null,
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
@@ -319,14 +327,6 @@ create table if not exists "EmployeeBlockedTime" (
     employee_id              integer         references "Employee" (ID) on delete cascade not null,
     blocked_time_id          integer         references "BlockedTime" (ID) on delete cascade not null,
     primary key (employee_id, blocked_time_id)
-);
-
-create table if not exists "BlockedTimeType" (
-    ID                       serial          primary key unique not null,
-    merchant_id              uuid            references "Merchant" (ID) on delete cascade,
-    name                     varchar(50)     not null,
-    duration                 integer         not null,
-    icon                     varchar(10)
 );
 
 create table if not exists "ExternalCalendar" (

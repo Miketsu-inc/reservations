@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -51,7 +50,7 @@ func (r *merchantRepository) DeleteMerchant(ctx context.Context, employeeId int,
 	query := `
 	delete from "Merchant" m
 	using "Employee" e
-	where e.user_id = $1 and e.role = 'owner' and m.id = $2
+	where e.id = $1 and e.role = 'owner' and e.merchant_id = m.id and m.id = $2
 	`
 
 	_, err := r.db.Exec(ctx, query, employeeId, merchantId)
@@ -370,7 +369,7 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 		curr                                 string
 	)
 
-	err := r.db.QueryRow(ctx, query, merchantId, startDate, endDate, prevStartDate, startDate.AddDate(0, 0, 1)).Scan(
+	err := r.db.QueryRow(ctx, query, merchantId, startDate, endDate, prevStartDate, startDate).Scan(
 		&currRevenue, &prevRevenue,
 		&currBookings, &prevBookings,
 		&currCancellations, &prevCancellations,
@@ -378,7 +377,7 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 		&curr,
 	)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+		if !errors.Is(err, pgx.ErrNoRows) {
 			return domain.DashboardStatistics{}, fmt.Errorf("GetDashboardStats: %w", err)
 		}
 	}
