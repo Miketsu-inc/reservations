@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
 const (
@@ -17,6 +16,12 @@ const (
 	seoEndMarker   = "<!--seo:end-->"
 )
 
+// Metadata references:
+//   - Title links: https://developers.google.com/search/docs/appearance/title-link
+//   - Meta descriptions: https://developers.google.com/search/docs/appearance/snippet
+//   - Canonical URLs: https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+//   - Open Graph protocol: https://ogp.me/
+//   - X Card markup: https://developer.x.com/en/docs/x-for-websites/cards/overview/markup
 var merchantHeadTemplate = template.Must(template.New("merchant-head").Parse(`<title>{{.Title}}</title>
 <meta name="description" content="{{.Description}}" />
 <link rel="canonical" href="{{.CanonicalURL}}" />
@@ -32,33 +37,38 @@ var merchantHeadTemplate = template.Must(template.New("merchant-head").Parse(`<t
 
 type pageRenderer struct {
 	indexHTML []byte
-	baseUrl   string
+	baseURL   string
 }
 
-func newRenderer(dist fs.FS, baseUrl string) *pageRenderer {
-	indexHTML, err := fs.ReadFile(dist, "index.html") // will this fail?
-	assert.Nil(err, "failed to read tango index html")
+func mustNewRenderer(dist fs.FS, baseURL string) *pageRenderer {
+	indexHTML, err := fs.ReadFile(dist, "index.html")
+	if err != nil {
+		panic(fmt.Errorf("read tango index HTML: %w", err))
+	}
 
-	err = validateIndexHTML(indexHTML)
-	assert.Nil(err, "error validating index html")
+	if err := validateIndexHTML(indexHTML); err != nil {
+		panic(err)
+	}
 
-	parsedBaseURL, err := url.Parse(baseUrl)
-	assert.Nil(err, "invalid tango base url", baseUrl)
-	assert.True(parsedBaseURL.Scheme != "", "invalid tango base url", baseUrl)
-	assert.True(parsedBaseURL.Host != "", "invalid tango base url", baseUrl)
-	assert.True(parsedBaseURL.Scheme == "http" || parsedBaseURL.Scheme == "https", "invalid tango base url scheme", baseUrl)
+	parsedBaseURL, err := url.Parse(baseURL)
+	if err != nil || parsedBaseURL.Scheme == "" || parsedBaseURL.Host == "" {
+		panic(fmt.Errorf("invalid tango base URL %q", baseURL))
+	}
+	if parsedBaseURL.Scheme != "http" && parsedBaseURL.Scheme != "https" {
+		panic(fmt.Errorf("invalid tango base URL scheme %q", parsedBaseURL.Scheme))
+	}
 
 	parsedBaseURL.RawQuery = ""
 	parsedBaseURL.Fragment = ""
 
 	return &pageRenderer{
 		indexHTML: indexHTML,
-		baseUrl:   strings.TrimRight(parsedBaseURL.String(), "/"),
+		baseURL:   strings.TrimRight(parsedBaseURL.String(), "/"),
 	}
 }
 
 func (r *pageRenderer) render(info domain.MerchantInfo) ([]byte, error) {
-	metadata, err := newMerchantPageMetadata(info, r.baseUrl)
+	metadata, err := newMerchantPageMetadata(info, r.baseURL)
 	if err != nil {
 		return nil, err
 	}

@@ -51,9 +51,8 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 	assert.Nil(err, "Could not be encoded to json", v, err)
 }
 
-func WriteHTML(w http.ResponseWriter, status int, document []byte) error {
+func WriteHTML(w http.ResponseWriter, status int, document []byte) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	_, err := w.Write(document)
-	return err
+	_, _ = w.Write(document)
 }

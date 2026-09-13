@@ -22,57 +22,40 @@ func NewHandler(service *merchantServ.Service) *Handler {
 
 	return &Handler{
 		service:  service,
-		renderer: newRenderer(tangoDist, config.LoadEnvVars().TANGO_URL),
+		renderer: mustNewRenderer(tangoDist, config.LoadEnvVars().TANGO_URL),
 	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	merchantName := chi.URLParam(r, "merchantName")
 	if merchantName == "" {
-		err := h.writeNotFound(w)
-		if err != nil {
-			slog.ErrorContext(r.Context(), "render merchant page metadata", "merchant", merchantName, "error", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
+		h.writeNotFound(w)
 		return
 	}
 
-	info, err := h.service.GetInfo(r.Context(), merchantName)
+	merchantInfo, err := h.service.GetInfo(r.Context(), merchantName)
 	if err != nil {
 		if errors.Is(err, merchantServ.ErrMerchantNotFound) {
-			err := h.writeNotFound(w)
-			if err != nil {
-				slog.ErrorContext(r.Context(), "render merchant page metadata", "merchant", merchantName, "error", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
+			h.writeNotFound(w)
 			return
 		}
 
+		slog.ErrorContext(r.Context(), "get merchant page data", "merchant", merchantName, "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	pageHTML, err := h.renderer.render(merchantInfo)
+	if err != nil {
 		slog.ErrorContext(r.Context(), "render merchant page", "merchant", merchantName, "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	document, err := h.renderer.render(info)
-	if err != nil {
-		slog.ErrorContext(r.Context(), "render merchant page metadata", "merchant", merchantName, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	err = httputil.WriteHTML(w, http.StatusOK, document)
-	if err != nil {
-		slog.ErrorContext(r.Context(), "render merchant page metadata", "merchant", merchantName, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	httputil.WriteHTML(w, http.StatusOK, pageHTML)
 }
 
-func (h *Handler) writeNotFound(w http.ResponseWriter) error {
+func (h *Handler) writeNotFound(w http.ResponseWriter) {
 	w.Header().Set("X-Robots-Tag", "noindex, nofollow")
-	return httputil.WriteHTML(w, http.StatusNotFound, h.renderer.indexHTML)
+	httputil.WriteHTML(w, http.StatusNotFound, h.renderer.indexHTML)
 }

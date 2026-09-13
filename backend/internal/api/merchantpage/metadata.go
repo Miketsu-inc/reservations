@@ -18,6 +18,13 @@ type pageMetadata struct {
 	StructuredData template.JS
 }
 
+// Structured data references:
+//   - Google's supported LocalBusiness fields and eligibility requirements:
+//     https://developers.google.com/search/docs/appearance/structured-data/local-business
+//   - Full vocabulary: https://schema.org/LocalBusiness
+//   - Postal addresses: https://schema.org/PostalAddress
+//   - Geographic coordinates: https://schema.org/GeoCoordinates
+//   - Opening hours: https://schema.org/OpeningHoursSpecification
 type localBusinessSchema struct {
 	Context      string                      `json:"@context"`
 	Type         string                      `json:"@type"`
@@ -51,15 +58,15 @@ type openingHoursSpecification struct {
 	Closes    string `json:"closes"`
 }
 
-func newMerchantPageMetadata(info domain.MerchantInfo, baseUrl string) (pageMetadata, error) {
-	merchantPageUrl, err := url.JoinPath(baseUrl, "m", info.UrlName)
+func newMerchantPageMetadata(info domain.MerchantInfo, baseURL string) (pageMetadata, error) {
+	merchantPageURL, err := url.JoinPath(baseURL, "m", info.UrlName)
 	if err != nil {
 		return pageMetadata{}, fmt.Errorf("build merchant page URL: %w", err)
 	}
 
 	description := formatMerchantDescription(info)
 
-	structuredData, err := json.Marshal(buildLocalBusinessSchema(info, merchantPageUrl, description))
+	structuredData, err := json.Marshal(buildLocalBusinessSchema(info, merchantPageURL, description))
 	if err != nil {
 		return pageMetadata{}, fmt.Errorf("marshal merchant structured data: %w", err)
 	}
@@ -67,7 +74,7 @@ func newMerchantPageMetadata(info domain.MerchantInfo, baseUrl string) (pageMeta
 	return pageMetadata{
 		Title:        fmt.Sprintf("%s | Book online | Reservations", info.Name),
 		Description:  description,
-		CanonicalURL: template.URL(merchantPageUrl),
+		CanonicalURL: template.URL(merchantPageURL),
 		// json.Marshal escapes HTML-significant characters before this value is
 		// embedded as JSON in a script element.
 		StructuredData: template.JS(structuredData),
@@ -95,13 +102,13 @@ func normalizeWhitespace(value string) string {
 	return strings.Join(strings.Fields(value), " ")
 }
 
-func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageUrl, description string) localBusinessSchema {
+func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageURL, description string) localBusinessSchema {
 	schema := localBusinessSchema{
 		Context:      "https://schema.org",
 		Type:         "LocalBusiness",
 		Name:         info.Name,
 		Description:  description,
-		URL:          merchantPageUrl,
+		URL:          merchantPageURL,
 		Email:        info.ContactEmail,
 		Address:      buildAddress(info),
 		Geo:          buildGeo(info),
