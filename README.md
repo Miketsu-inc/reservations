@@ -70,6 +70,12 @@ Use the make run command to run the application in development mode.
 make run
 ```
 
+To have https use the following caddy command.
+
+```
+caddy trust
+```
+
 ## Building from source
 
 After setting up the development environment you can build the application using the make build command.

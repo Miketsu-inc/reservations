@@ -130,7 +130,7 @@ func SetJwtCookie(w http.ResponseWriter, name JwtType, token string) {
 		MaxAge:   expMin * 60,
 		// Expires:  time.Now().UTC().Add(expMinDuration),
 		Path:     "/",
-		Secure:   cfg.IsProd(),
+		Secure:   true,
 		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -147,7 +147,7 @@ func DeleteJwts(w http.ResponseWriter) {
 		HttpOnly: true,
 		MaxAge:   -1,
 		Expires:  time.Now().UTC(),
-		Secure:   cfg.IsProd(),
+		Secure:   true,
 		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -159,7 +159,7 @@ func DeleteJwts(w http.ResponseWriter) {
 		HttpOnly: true,
 		MaxAge:   -1,
 		Expires:  time.Now().UTC(),
-		Secure:   cfg.IsProd(),
+		Secure:   true,
 		Domain:   fmt.Sprintf(".%s", cfg.DOMAIN),
 		SameSite: http.SameSiteLaxMode,
 	})

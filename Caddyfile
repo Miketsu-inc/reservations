@@ -1,11 +1,27 @@
 {
-    auto_https off
+	auto_https disable_redirects
 }
 
-http://app.reservations.local:3000 {
-    reverse_proxy localhost:5173
+https://reservations.local:3000 {
+	tls internal
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:5174
+	}
 }
 
-http://reservations.local:3000 {
-    reverse_proxy localhost:5174
+https://app.reservations.local:3000 {
+	tls internal
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:5173
+	}
 }
