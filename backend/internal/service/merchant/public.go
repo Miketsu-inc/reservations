@@ -89,49 +89,6 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 	return status
 }
 
-func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
-	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
-	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, err
-	}
-
-	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
-	if err != nil {
-		return []domain.MerchantPageServicesGroupedByCategory{}, err
-	}
-
-	return services, nil
-
-}
-
-func (s *Service) GetTeam(ctx context.Context, merchantName string) ([]domain.Employee, error) {
-	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
-	if err != nil {
-		return []domain.Employee{}, err
-	}
-
-	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
-	if err != nil {
-		return []domain.Employee{}, err
-	}
-
-	return employees, nil
-}
-
-func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, serviceId, locationId int) (domain.PublicServiceDetails, error) {
-	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
-	if err != nil {
-		return domain.PublicServiceDetails{}, err
-	}
-
-	serviceDetails, err := s.catalogRepo.GetServiceDetailsForMerchantPage(ctx, merchantId, serviceId, locationId)
-	if err != nil {
-		return domain.PublicServiceDetails{}, err
-	}
-
-	return serviceDetails, nil
-}
-
 type BookingSummary struct {
 	MerchantName string
 	Location     string

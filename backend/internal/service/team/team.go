@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
@@ -196,4 +197,18 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 	}
 
 	return teamMembers, nil
+}
+
+func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string) ([]domain.Employee, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []domain.Employee{}, err
+	}
+
+	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+	if err != nil {
+		return []domain.Employee{}, err
+	}
+
+	return employees, nil
 }

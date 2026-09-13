@@ -112,7 +112,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Auth:              auth.NewHandler(authService, teamService, middlewareManager),
 		Bookings:          bookings.NewHandler(bookingService, middlewareManager),
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
-		PublicMerchants:   publicMerchants.NewHandler(merchantService, middlewareManager),
+		PublicMerchants:   publicMerchants.NewHandler(merchantService, catalogService, teamService, middlewareManager),
 		MerchantPage:      merchantpage.NewHandler(merchantService),
 		Merchants:         merchants.NewHandler(merchantService, externalCalendarService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),

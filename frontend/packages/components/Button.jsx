@@ -46,7 +46,7 @@ const Button = forwardRef(function Button(
       ) : children ? (
         <div
           className={`flex ${childSide == "right" ? "flex-row-reverse" : ""}
-            items-center justify-center`}
+            items-center justify-center gap-2`}
         >
           <span>{children}</span>
           <span>{buttonText}</span>

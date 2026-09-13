@@ -396,6 +396,7 @@ function BookingFLow() {
             onClick={handleContinue}
             disabled={!canContinue}
             isLoading={isSubmitting}
+            childSide="right"
           >
             <Icon icon={ArrowRight02Icon} styles="size-5" />
           </Button>

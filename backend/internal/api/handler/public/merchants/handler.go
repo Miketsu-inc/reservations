@@ -7,7 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -15,12 +17,24 @@ import (
 )
 
 type Handler struct {
-	service    *merchantServ.Service
-	middleware *middleware.Manager
+	merchantServ *merchantServ.Service
+	catalogServ  *catalogServ.Service
+	teamServ     *teamServ.Service
+	middleware   *middleware.Manager
 }
 
-func NewHandler(s *merchantServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, middleware: m}
+func NewHandler(
+	merchant *merchantServ.Service,
+	catalog *catalogServ.Service,
+	team *teamServ.Service,
+	m *middleware.Manager,
+) *Handler {
+	return &Handler{
+		merchantServ: merchant,
+		catalogServ:  catalog,
+		teamServ:     team,
+		middleware:   m,
+	}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -87,7 +101,7 @@ func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	info, err := h.service.GetInfo(r.Context(), urlName)
+	info, err := h.merchantServ.GetInfo(r.Context(), urlName)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetInfo")
 	}
@@ -123,8 +137,7 @@ func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	// TODO: this should probably be in the catalog service
-	services, err := h.service.GetServicesGroupedByCategories(r.Context(), urlName)
+	services, err := h.catalogServ.GetServicesGroupedByCategories(r.Context(), urlName)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetServicesGroupedByCategories")
 	}
@@ -149,8 +162,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	// TODO: this should probably be in the team service
-	team, err := h.service.GetTeam(r.Context(), urlName)
+	team, err := h.teamServ.GetTeamByMerchantName(r.Context(), urlName)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetTeam")
 	}
@@ -172,7 +184,7 @@ func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Requ
 		return validate.NewError("invalid location id")
 	}
 
-	businessHours, err := h.service.GetNormalizedBusinessHoursPublic(r.Context(), merchantServ.GetNormalizedBusinessHoursPublicInput{
+	businessHours, err := h.merchantServ.GetNormalizedBusinessHoursPublic(r.Context(), merchantServ.GetNormalizedBusinessHoursPublicInput{
 		MerchantUrl: urlName,
 		LocationId:  urlLocationId,
 	})
@@ -224,7 +236,7 @@ func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	// TODO: this should probably be in the catalog service
-	serviceDetails, err := h.service.GetServiceDetails(r.Context(), urlName, urlServiceId, urlLocationId)
+	serviceDetails, err := h.catalogServ.GetServiceDetails(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetServiceDetails")
 	}
@@ -274,7 +286,7 @@ func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) error {
 		urlEmployeeId = &parsedId
 	}
 
-	summaryInfo, err := h.service.GetSummary(r.Context(), urlName, urlLocationId, urlServiceId, urlEmployeeId)
+	summaryInfo, err := h.merchantServ.GetSummary(r.Context(), urlName, urlLocationId, urlServiceId, urlEmployeeId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetSummary")
 	}
@@ -316,7 +328,7 @@ func (h *Handler) GetDayAvailability(w http.ResponseWriter, r *http.Request) err
 		employeeId = &parsedID
 	}
 
-	availability, err := h.service.GetDayAvailability(r.Context(), urlName, urlServiceId, urlLocationId, employeeId)
+	availability, err := h.merchantServ.GetDayAvailability(r.Context(), urlName, urlServiceId, urlLocationId, employeeId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetDayAvailability")
 	}
@@ -363,7 +375,7 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 		employeeId = &parsedID
 	}
 
-	availability, err := h.service.GetAvailabilityForDay(r.Context(), urlName, urlServiceId, urlLocationId, employeeId, urlBookingDay)
+	availability, err := h.merchantServ.GetAvailabilityForDay(r.Context(), urlName, urlServiceId, urlLocationId, employeeId, urlBookingDay)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetAvailability")
 	}
@@ -397,7 +409,7 @@ func (h *Handler) GetNextAvailability(w http.ResponseWriter, r *http.Request) er
 		return validate.NewError("invalid location id")
 	}
 
-	nextAvailability, err := h.service.GetNextAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
+	nextAvailability, err := h.merchantServ.GetNextAvailability(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetNextAvailability")
 	}
@@ -430,7 +442,7 @@ func (h *Handler) GetDisabledDays(w http.ResponseWriter, r *http.Request) error 
 		return validate.NewError("invalid location id")
 	}
 
-	disabledDays, err := h.service.GetDisabledDays(r.Context(), urlName, urlServiceId, urlLocationId)
+	disabledDays, err := h.merchantServ.GetDisabledDays(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetDisabledDays")
 	}

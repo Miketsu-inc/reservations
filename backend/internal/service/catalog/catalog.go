@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
@@ -618,4 +619,32 @@ func (s *Service) GetFormOptions(ctx context.Context) (domain.ServicePageFormOpt
 	}
 
 	return formOptions, nil
+}
+
+func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, err
+	}
+
+	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
+	if err != nil {
+		return []domain.MerchantPageServicesGroupedByCategory{}, err
+	}
+
+	return services, nil
+}
+
+func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, serviceId, locationId int) (domain.PublicServiceDetails, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return domain.PublicServiceDetails{}, err
+	}
+
+	serviceDetails, err := s.catalogRepo.GetServiceDetailsForMerchantPage(ctx, merchantId, serviceId, locationId)
+	if err != nil {
+		return domain.PublicServiceDetails{}, err
+	}
+
+	return serviceDetails, nil
 }

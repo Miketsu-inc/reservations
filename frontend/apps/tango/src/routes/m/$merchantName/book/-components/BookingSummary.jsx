@@ -189,6 +189,7 @@ export default function BookingSummary({
         disabled={!canContinue}
         onClick={onContinue}
         isLoading={isSubmitting}
+        childSide="right"
       >
         <Icon icon={ArrowRight02Icon} styles="size-5" />
       </Button>
