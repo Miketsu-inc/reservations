@@ -18,64 +18,6 @@ func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 	return false
 }
 
-type FormattedAvailableTimes struct {
-	Morning   []string `json:"morning"`
-	Afternoon []string `json:"afternoon"`
-}
-
-func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, BufferTime int,
-	bookingWindowMin int, bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) []time.Time {
-
-	year, month, day := bookingDay.Date()
-	totalDuration := time.Duration(serviceDuration) * time.Minute
-	bufferDuration := time.Duration(BufferTime) * time.Minute
-	bookingDeadlineDuration := time.Duration(bookingWindowMin) * time.Minute
-
-	availableTimes := []time.Time{}
-
-	if hasAllDayBlock(blockedTimes) {
-		return availableTimes
-	}
-
-	now := currentTime.In(merchantTz)
-
-	stepSize := 15 * time.Minute
-
-	for _, slot := range businessHours {
-		// buisness hours are NOT an absolute point in time,
-		// their timezone should be in the same timzone as the merchant is in
-		// for golang before/after to work correctly
-		businessStart := time.Date(year, month, day, slot.StartTime.Hour(), slot.StartTime.Minute(), 0, 0, merchantTz)
-		businessEnd := time.Date(year, month, day, slot.EndTime.Hour(), slot.EndTime.Minute(), 0, 0, merchantTz)
-
-		bookingStart := businessStart
-
-		for !bookingStart.Add(totalDuration).After(businessEnd) {
-			if bookingStart.Before(now.Add(bookingDeadlineDuration)) {
-				bookingStart = bookingStart.Add(stepSize)
-				continue
-			}
-
-			available := hasNoPhaseConflict(bookingStart, servicePhases, blockedTimes, reserved, bufferDuration, merchantTz)
-
-			if available {
-				availableTimes = append(availableTimes, bookingStart)
-			}
-
-			bookingStart = bookingStart.Add(stepSize)
-		}
-	}
-
-	return availableTimes
-}
-
-type MultiDayAvailableTimes struct {
-	Date        string   `json:"date"`
-	IsAvailable bool     `json:"is_available"`
-	Morning     []string `json:"morning"`
-	Afternoon   []string `json:"afternoon"`
-}
-
 func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time, tz *time.Location) []domain.BlockedTimes {
 	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, tz)
 	dayEnd := dayStart.AddDate(0, 0, 1)
@@ -90,55 +32,6 @@ func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time,
 	}
 
 	return filtered
-}
-
-func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
-	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
-
-	results := []MultiDayAvailableTimes{}
-
-	reservationsByDate := make(map[string][]domain.BookingSlot)
-	for _, booking := range reservedForPeriod {
-		date := booking.FromDate.In(merchantTz).Format("2006-01-02")
-		reservationsByDate[date] = append(reservationsByDate[date], booking)
-	}
-
-	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
-		businessHoursForDay := businessHours[int(d.Weekday())]
-		if len(businessHoursForDay) == 0 {
-			continue
-		}
-
-		day := d.Format("2006-01-02")
-		reservedForDay := reservationsByDate[day]
-
-		blockedForDay := filterBlockedTimesForDay(blockedTimes, d, merchantTz)
-
-		dayResult := CalculateAvailableTimes(reservedForDay, blockedForDay, servicePhases, serviceDuration, bufferTime, bookingindowMin, d, businessHoursForDay, currentTime, merchantTz)
-
-		morning := []string{}
-		afternoon := []string{}
-
-		for _, slot := range dayResult {
-			formattedTime := fmt.Sprintf("%02d:%02d", slot.Hour(), slot.Minute())
-			if slot.Hour() < 12 {
-				morning = append(morning, formattedTime)
-			} else {
-				afternoon = append(afternoon, formattedTime)
-			}
-		}
-
-		isAvailable := len(morning) > 0 || len(afternoon) > 0
-
-		results = append(results, MultiDayAvailableTimes{
-			Date:        d.Format("2006-01-02"),
-			IsAvailable: isAvailable,
-			Morning:     morning,
-			Afternoon:   afternoon,
-		})
-	}
-
-	return results
 }
 
 func hasNoPhaseConflict(bookingStart time.Time, servicePhases []domain.ServicePhase, blockedTimes []domain.BlockedTimes, reserved []domain.BookingSlot, bufferDuration time.Duration, merchantTz *time.Location) bool {
@@ -172,19 +65,24 @@ func hasNoPhaseConflict(bookingStart time.Time, servicePhases []domain.ServicePh
 	return true
 }
 
-// TODO: write test
-func isDayAvailable(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, totalDuration time.Duration, bufferDuration time.Duration, bookingDeadlineDuration time.Duration,
-	bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) bool {
+func iterateAvailableSlots(blocked []domain.BlockedTimes, reserved []domain.BookingSlot, businessHours []domain.TimeSlot, bookingDay time.Time, servicePhases []domain.ServicePhase,
+	serviceDuration, bookingWindowMin, bufferTime int, currentTime time.Time, merchantTz *time.Location, onAvailableSlot func(bookingStart time.Time) bool) bool {
+	if hasAllDayBlock(blocked) {
+		return true
+	}
+
+	totalDuration := time.Duration(serviceDuration) * time.Minute
+	bufferDuration := time.Duration(bufferTime) * time.Minute
+	bookingDeadlineDuration := time.Duration(bookingWindowMin) * time.Minute
 
 	year, month, day := bookingDay.Date()
 	stepSize := 15 * time.Minute
 	now := currentTime.In(merchantTz)
 
-	if hasAllDayBlock(blockedTimes) {
-		return false
-	}
-
 	for _, slot := range businessHours {
+		// buisness hours are NOT an absolute point in time,
+		// their timezone should be in the same timzone as the merchant is in
+		// for golang before/after to work correctly
 		businessStart := time.Date(year, month, day, slot.StartTime.Hour(), slot.StartTime.Minute(), 0, 0, merchantTz)
 		businessEnd := time.Date(year, month, day, slot.EndTime.Hour(), slot.EndTime.Minute(), 0, 0, merchantTz)
 
@@ -196,16 +94,36 @@ func isDayAvailable(reserved []domain.BookingSlot, blockedTimes []domain.Blocked
 				continue
 			}
 
-			if hasNoPhaseConflict(bookingStart, servicePhases, blockedTimes, reserved, bufferDuration, merchantTz) {
-				return true
+			if hasNoPhaseConflict(bookingStart, servicePhases, blocked, reserved, bufferDuration, merchantTz) {
+				if !onAvailableSlot(bookingStart) {
+					return false
+				}
 			}
 
 			bookingStart = bookingStart.Add(stepSize)
 		}
 	}
 
-	return false
+	return true
+}
 
+type FormattedAvailableTimes struct {
+	Morning   []string `json:"morning"`
+	Afternoon []string `json:"afternoon"`
+}
+
+func CalculateAvailableTimes(reserved []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int,
+	bookingWindowMin int, bookingDay time.Time, businessHours []domain.TimeSlot, currentTime time.Time, merchantTz *time.Location) []time.Time {
+
+	availableTimes := []time.Time{}
+
+	iterateAvailableSlots(blockedTimes, reserved, businessHours, bookingDay, servicePhases, serviceDuration, bookingWindowMin, bufferTime, currentTime, merchantTz,
+		func(bookingStart time.Time) bool {
+			availableTimes = append(availableTimes, bookingStart)
+			return true
+		})
+
+	return availableTimes
 }
 
 type DayAvailability struct {
@@ -213,15 +131,10 @@ type DayAvailability struct {
 	IsAvailable bool   `json:"is_available"`
 }
 
-// TODO: write test
-func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int, bookingindowMin int,
-	startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []DayAvailability {
+func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int,
+	bookingWindowMin int, startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []DayAvailability {
 
 	results := []DayAvailability{}
-
-	totalDuration := time.Duration(serviceDuration) * time.Minute
-	bufferDuration := time.Duration(bufferTime) * time.Minute
-	bookingDeadlineDuration := time.Duration(bookingindowMin) * time.Minute
 
 	reservationsByDate := make(map[string][]domain.BookingSlot)
 	for _, booking := range reservedForPeriod {
@@ -245,7 +158,14 @@ func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes
 		reservedForDay := reservationsByDate[day]
 		blockedForDay := filterBlockedTimesForDay(blockedTimes, d, merchantTz)
 
-		available := isDayAvailable(reservedForDay, blockedForDay, servicePhases, totalDuration, bufferDuration, bookingDeadlineDuration, d, businessHoursForDay, currentTime, merchantTz)
+		available := false
+
+		iterateAvailableSlots(blockedForDay, reservedForDay, businessHoursForDay, d, servicePhases, serviceDuration, bookingWindowMin, bufferTime, currentTime, merchantTz,
+			func(bookingStart time.Time) bool {
+				available = true
+
+				return false
+			})
 
 		results = append(results, DayAvailability{
 			Date:        day,
@@ -256,9 +176,64 @@ func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes
 	return results
 }
 
-// TODO: tests
-func IsValidBookingTime(appointmentSlot domain.TimeSlot, reservedTimes []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, businessHours []domain.TimeSlot,
-	totalDuration time.Duration, bufferTime, bookingWindowMin, bookingWindowMax int, currentTime time.Time, merchantTz *time.Location) bool {
+type MultiDayAvailableTimes struct {
+	Date        string   `json:"date"`
+	IsAvailable bool     `json:"is_available"`
+	Morning     []string `json:"morning"`
+	Afternoon   []string `json:"afternoon"`
+}
+
+func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase, serviceDuration int, bufferTime int,
+	bookingWindowMin int, startDate time.Time, endDate time.Time, businessHours domain.BusinessHours, currentTime time.Time, merchantTz *time.Location) []MultiDayAvailableTimes {
+
+	results := []MultiDayAvailableTimes{}
+
+	reservationsByDate := make(map[string][]domain.BookingSlot)
+	for _, booking := range reservedForPeriod {
+		date := booking.FromDate.In(merchantTz).Format("2006-01-02")
+		reservationsByDate[date] = append(reservationsByDate[date], booking)
+	}
+
+	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+		businessHoursForDay := businessHours[int(d.Weekday())]
+		if len(businessHoursForDay) == 0 {
+			continue
+		}
+
+		day := d.Format("2006-01-02")
+		reservedForDay := reservationsByDate[day]
+
+		blockedForDay := filterBlockedTimesForDay(blockedTimes, d, merchantTz)
+
+		dayResult := CalculateAvailableTimes(reservedForDay, blockedForDay, servicePhases, serviceDuration, bufferTime, bookingWindowMin, d, businessHoursForDay, currentTime, merchantTz)
+
+		morning := []string{}
+		afternoon := []string{}
+
+		for _, slot := range dayResult {
+			formattedTime := fmt.Sprintf("%02d:%02d", slot.Hour(), slot.Minute())
+			if slot.Hour() < 12 {
+				morning = append(morning, formattedTime)
+			} else {
+				afternoon = append(afternoon, formattedTime)
+			}
+		}
+
+		isAvailable := len(morning) > 0 || len(afternoon) > 0
+
+		results = append(results, MultiDayAvailableTimes{
+			Date:        d.Format("2006-01-02"),
+			IsAvailable: isAvailable,
+			Morning:     morning,
+			Afternoon:   afternoon,
+		})
+	}
+
+	return results
+}
+
+func IsValidBookingSlot(appointmentSlot domain.TimeSlot, reservedTimes []domain.BookingSlot, blockedTimes []domain.BlockedTimes, servicePhases []domain.ServicePhase,
+	businessHours []domain.TimeSlot, bufferTime, bookingWindowMin, bookingWindowMax int, currentTime time.Time, merchantTz *time.Location) bool {
 
 	bufferDuration := time.Duration(bufferTime) * time.Minute
 	bookingDeadlineDuration := time.Duration(bookingWindowMin) * time.Minute

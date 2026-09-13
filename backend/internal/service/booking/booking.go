@@ -116,7 +116,7 @@ func getNewBookingStatus(approvalPolicy types.ApprovalType, isNewCustomer bool) 
 	return status, nil
 }
 
-func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid.UUID, locationId int, employeeId *int, appointmentSlot domain.TimeSlot, service domain.Service, bookingSettings domain.MerchantBookingSettings, totalDuration time.Duration, merchantTz *time.Location) (int, error) {
+func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid.UUID, locationId int, employeeId *int, appointmentSlot domain.TimeSlot, service domain.Service, bookingSettings domain.MerchantBookingSettings, merchantTz *time.Location) (int, error) {
 
 	var employeesToCheck []int
 	if employeeId != nil {
@@ -158,7 +158,7 @@ func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid
 			return 0, err
 		}
 
-		if merchant.IsValidBookingTime(appointmentSlot, reserved, blocked, service.Phases, bookingDayBusinessHours, totalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
+		if merchant.IsValidBookingSlot(appointmentSlot, reserved, blocked, service.Phases, bookingDayBusinessHours, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
 			finalEmployeeId = empId
 			foundAvailableSlot = true
 			break
@@ -279,7 +279,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			toDate := fromDate.Add(duration)
 
 			finalEmployeeId, err := s.assignEmplyoee(ctx, tx, merchantId, input.LocationId, input.EmployeeId, domain.TimeSlot{
-				StartTime: fromDate, EndTime: toDate}, service, bookingSettings, duration, merchantTz)
+				StartTime: fromDate, EndTime: toDate}, service, bookingSettings, merchantTz)
 			if err != nil {
 				return err
 			}
