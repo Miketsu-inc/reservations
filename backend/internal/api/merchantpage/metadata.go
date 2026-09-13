@@ -1,4 +1,4 @@
-package merchants
+package merchantpage
 
 import (
 	"encoding/json"
@@ -6,9 +6,9 @@ import (
 	"html/template"
 	"net/url"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/utils"
 )
 
 type pageMetadata struct {
@@ -51,14 +51,15 @@ type openingHoursSpecification struct {
 	Closes    string `json:"closes"`
 }
 
-func newMerchantPageMetadata(info domain.MerchantInfo, publicBaseURL string) (pageMetadata, error) {
-	canonicalURL, err := url.JoinPath(publicBaseURL, "m", info.UrlName)
+func newMerchantPageMetadata(info domain.MerchantInfo, baseUrl string) (pageMetadata, error) {
+	merchantPageUrl, err := url.JoinPath(baseUrl, "m", info.UrlName)
 	if err != nil {
-		return pageMetadata{}, fmt.Errorf("build canonical URL: %w", err)
+		return pageMetadata{}, fmt.Errorf("build merchant page URL: %w", err)
 	}
 
-	description := merchantDescription(info)
-	structuredData, err := json.Marshal(buildLocalBusinessSchema(info, canonicalURL, description))
+	description := formatMerchantDescription(info)
+
+	structuredData, err := json.Marshal(buildLocalBusinessSchema(info, merchantPageUrl, description))
 	if err != nil {
 		return pageMetadata{}, fmt.Errorf("marshal merchant structured data: %w", err)
 	}
@@ -66,75 +67,89 @@ func newMerchantPageMetadata(info domain.MerchantInfo, publicBaseURL string) (pa
 	return pageMetadata{
 		Title:        fmt.Sprintf("%s | Book online | Reservations", info.Name),
 		Description:  description,
-		CanonicalURL: template.URL(canonicalURL),
+		CanonicalURL: template.URL(merchantPageUrl),
 		// json.Marshal escapes HTML-significant characters before this value is
 		// embedded as JSON in a script element.
 		StructuredData: template.JS(structuredData),
 	}, nil
 }
 
-func merchantDescription(info domain.MerchantInfo) string {
+func formatMerchantDescription(info domain.MerchantInfo) string {
 	description := normalizeWhitespace(info.Introduction)
 	if description == "" {
 		description = normalizeWhitespace(info.AboutUs)
 	}
+
 	if description == "" && info.FormattedLocation != "" {
 		description = fmt.Sprintf("Book an appointment with %s at %s.", info.Name, info.FormattedLocation)
 	}
+
 	if description == "" {
 		description = fmt.Sprintf("Book an appointment with %s online.", info.Name)
 	}
 
-	return truncateUTF8(description, 160)
+	return utils.TruncateUTF8(description, 160)
 }
 
 func normalizeWhitespace(value string) string {
 	return strings.Join(strings.Fields(value), " ")
 }
 
-func truncateUTF8(value string, maxRunes int) string {
-	if utf8.RuneCountInString(value) <= maxRunes {
-		return value
+func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageUrl, description string) localBusinessSchema {
+	schema := localBusinessSchema{
+		Context:      "https://schema.org",
+		Type:         "LocalBusiness",
+		Name:         info.Name,
+		Description:  description,
+		URL:          merchantPageUrl,
+		Email:        info.ContactEmail,
+		Address:      buildAddress(info),
+		Geo:          buildGeo(info),
+		OpeningHours: buildOpeningHours(info),
 	}
 
-	runes := []rune(value)
-	return strings.TrimSpace(string(runes[:maxRunes-1])) + "…"
+	return schema
 }
 
-func buildLocalBusinessSchema(info domain.MerchantInfo, canonicalURL, description string) localBusinessSchema {
-	schema := localBusinessSchema{
-		Context:     "https://schema.org",
-		Type:        "LocalBusiness",
-		Name:        info.Name,
-		Description: description,
-		URL:         canonicalURL,
-		Email:       info.ContactEmail,
-	}
-
+func buildAddress(info domain.MerchantInfo) *postalAddressSchema {
 	address := postalAddressSchema{Type: "PostalAddress"}
 	if info.Address != nil {
 		address.StreetAddress = *info.Address
 	}
+
 	if info.City != nil {
 		address.AddressLocality = *info.City
 	}
+
 	if info.PostalCode != nil {
 		address.PostalCode = *info.PostalCode
 	}
+
 	if info.Country != nil {
 		address.AddressCountry = *info.Country
 	}
+
 	if address.StreetAddress != "" || address.AddressLocality != "" || address.PostalCode != "" || address.AddressCountry != "" {
-		schema.Address = &address
+		return &address
 	}
 
+	return nil
+}
+
+func buildGeo(info domain.MerchantInfo) *geoCoordinatesSchema {
 	if info.GeoPoint.Lat != 0 || info.GeoPoint.Lon != 0 {
-		schema.Geo = &geoCoordinatesSchema{
+		return &geoCoordinatesSchema{
 			Type:      "GeoCoordinates",
 			Latitude:  info.GeoPoint.Lat,
 			Longitude: info.GeoPoint.Lon,
 		}
 	}
+
+	return nil
+}
+
+func buildOpeningHours(info domain.MerchantInfo) []openingHoursSpecification {
+	var openingHours []openingHoursSpecification
 
 	dayNames := [...]string{
 		"https://schema.org/Sunday",
@@ -150,7 +165,7 @@ func buildLocalBusinessSchema(info domain.MerchantInfo, canonicalURL, descriptio
 			continue
 		}
 		for _, slot := range slots {
-			schema.OpeningHours = append(schema.OpeningHours, openingHoursSpecification{
+			openingHours = append(openingHours, openingHoursSpecification{
 				Type:      "OpeningHoursSpecification",
 				DayOfWeek: dayNames[day],
 				Opens:     slot.StartTime.Format("15:04"),
@@ -159,5 +174,5 @@ func buildLocalBusinessSchema(info domain.MerchantInfo, canonicalURL, descriptio
 		}
 	}
 
-	return schema
+	return openingHours
 }
