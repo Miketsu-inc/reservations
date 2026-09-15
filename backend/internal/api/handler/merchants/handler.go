@@ -1,9 +1,7 @@
 package merchants
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -68,86 +66,6 @@ func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "UpdateName")
 	}
-
-	return nil
-}
-
-type getDashboardResp struct {
-	PeriodStart      time.Time               `json:"period_start"`
-	PeriodEnd        time.Time               `json:"period_end"`
-	UpcomingBookings []bookingDetailsResp    `json:"upcoming_bookings"`
-	LatestBookings   []bookingDetailsResp    `json:"latest_bookings"`
-	LowStockProducts []lowStockProductResp   `json:"low_stock_products"`
-	Statistics       dashboardStatisticsResp `json:"statistics"`
-}
-
-type bookingDetailsResp struct {
-	ID                  int                      `json:"id"`
-	BookingType         types.BookingType        `json:"booking_type"`
-	BookingStatus       types.BookingStatus      `json:"booking_status"`
-	ParticipantStatus   *types.BookingStatus     `json:"participant_status"`
-	IsRecurring         bool                     `json:"is_recurring"`
-	FromDate            time.Time                `json:"from_date"`
-	ToDate              time.Time                `json:"to_date"`
-	CustomerNote        *string                  `json:"customer_note"`
-	MerchantNote        *string                  `json:"merchant_note"`
-	ServiceName         string                   `json:"service_name"`
-	ServiceColor        *string                  `json:"service_color"`
-	Price               currencyx.FormattedPrice `json:"price"`
-	PriceType           types.PriceType          `json:"price_type"`
-	CurrentParticipants int                      `json:"current_participants"`
-	MaxParticipants     int                      `json:"max_participants"`
-	CustomerFirstName   *string                  `json:"customer_first_name"`
-	CustomerLastName    *string                  `json:"customer_last_name"`
-	EmployeeFirstName   *string                  `json:"employee_first_name"`
-	EmployeeLastName    *string                  `json:"employee_last_name"`
-}
-
-type lowStockProductResp struct {
-	Id            int     `json:"id"`
-	Name          string  `json:"name"`
-	MaxAmount     int     `json:"max_amount"`
-	CurrentAmount int     `json:"current_amount"`
-	Unit          string  `json:"unit"`
-	FillRatio     float64 `json:"fill_ratio"`
-}
-
-type dashboardStatisticsResp struct {
-	Revenue               []revenueStatResp `json:"revenue"`
-	RevenueSum            string            `json:"revenue_sum"`
-	RevenueChange         int               `json:"revenue_change"`
-	Bookings              int               `json:"bookings"`
-	BookingsChange        int               `json:"bookings_change"`
-	Cancellations         int               `json:"cancellations"`
-	CancellationsChange   int               `json:"cancellations_change"`
-	AverageDuration       int               `json:"average_duration"`
-	AverageDurationChange int               `json:"average_duration_change"`
-}
-
-// TODO: value is of numeric type so float might not be the best
-// type to return here
-type revenueStatResp struct {
-	Value float64   `json:"value"`
-	Day   time.Time `json:"day"`
-}
-
-func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) error {
-	urlDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("date"))
-	if err != nil {
-		return validate.NewError(fmt.Sprintf("invalid date: %s", err.Error()))
-	}
-
-	urlPeriod, err := strconv.Atoi(r.URL.Query().Get("period"))
-	if err != nil {
-		return validate.NewError("invalid period")
-	}
-
-	dashboard, err := h.service.GetDashboard(r.Context(), urlDate, urlPeriod)
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetDashboard")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToGetDashboardResp(dashboard))
 
 	return nil
 }

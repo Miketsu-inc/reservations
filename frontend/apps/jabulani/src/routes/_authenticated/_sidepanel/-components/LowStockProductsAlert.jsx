@@ -4,11 +4,61 @@ import {
   ShoppingBag02Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
-import { Card, Icon } from "@reservations/components";
-import { getDisplayUnit } from "@reservations/lib";
+import { Card, Icon, Loading, ServerError } from "@reservations/components";
+import { getDisplayUnit, invalidateLocalStorageAuth } from "@reservations/lib";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-export default function LowStockProductsAlert({ products, route }) {
+async function fetchLowStockProducts(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/products/low-stock`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+function lowStockProductsQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "low-stock-products"],
+    queryFn: () => fetchLowStockProducts(merchantId),
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export default function LowStockProductsAlert({ merchantId, route }) {
+  const {
+    data: products,
+    isLoading,
+    isError,
+    error,
+  } = useQuery(lowStockProductsQueryOptions(merchantId));
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <Loading />
+      </Card>
+    );
+  }
+
   const totalLowStock = products.length;
   const hasLowStock = totalLowStock > 0;
 

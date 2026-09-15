@@ -56,3 +56,20 @@ func mapToGetAllResp(in []domain.ProductInfo) []getAllResp {
 
 	return out
 }
+
+func mapToGetLowStockResp(in []domain.LowStockProduct) []lowStockProductResp {
+	out := make([]lowStockProductResp, len(in))
+
+	for i, product := range in {
+		out[i] = lowStockProductResp{
+			Id:            product.Id,
+			Name:          product.Name,
+			MaxAmount:     product.MaxAmount,
+			CurrentAmount: product.CurrentAmount,
+			Unit:          product.Unit,
+			FillRatio:     product.FillRatio,
+		}
+	}
+
+	return out
+}

@@ -31,104 +31,38 @@ func mapToCheckUrlInput(in checkUrlReq) merchantServ.CheckUrlInput {
 	}
 }
 
-func mapToGetDashboardResp(in domain.DashboardData) getDashboardResp {
-	upcomingBookings := make([]bookingDetailsResp, len(in.UpcomingBookings))
-
-	for i, b := range in.UpcomingBookings {
-		upcomingBookings[i] = bookingDetailsResp{
-			ID:                  b.ID,
-			BookingType:         b.BookingType,
-			BookingStatus:       b.BookingStatus,
-			ParticipantStatus:   b.ParticipantStatus,
-			IsRecurring:         b.IsRecurring,
-			FromDate:            b.FromDate,
-			ToDate:              b.ToDate,
-			CustomerNote:        b.CustomerNote,
-			MerchantNote:        b.MerchantNote,
-			ServiceName:         b.ServiceName,
-			ServiceColor:        b.ServiceColor,
-			Price:               b.Price.ToFormatted(),
-			PriceType:           b.PriceType,
-			CurrentParticipants: b.CurrentParticipants,
-			MaxParticipants:     b.MaxParticipants,
-			CustomerFirstName:   b.CustomerFirstName,
-			CustomerLastName:    b.CustomerLastName,
-			EmployeeFirstName:   b.EmployeeFirstName,
-			EmployeeLastName:    b.EmployeeLastName,
-		}
-	}
-
-	latestBookings := make([]bookingDetailsResp, len(in.LatestBookings))
-
-	for i, b := range in.LatestBookings {
-		latestBookings[i] = bookingDetailsResp{
-			ID:                  b.ID,
-			BookingType:         b.BookingType,
-			BookingStatus:       b.BookingStatus,
-			ParticipantStatus:   b.ParticipantStatus,
-			IsRecurring:         b.IsRecurring,
-			FromDate:            b.FromDate,
-			ToDate:              b.ToDate,
-			CustomerNote:        b.CustomerNote,
-			MerchantNote:        b.MerchantNote,
-			ServiceName:         b.ServiceName,
-			ServiceColor:        b.ServiceColor,
-			Price:               b.Price.ToFormatted(),
-			PriceType:           b.PriceType,
-			CurrentParticipants: b.CurrentParticipants,
-			MaxParticipants:     b.MaxParticipants,
-			CustomerFirstName:   b.CustomerFirstName,
-			CustomerLastName:    b.CustomerLastName,
-			EmployeeFirstName:   b.EmployeeFirstName,
-			EmployeeLastName:    b.EmployeeLastName,
-		}
-	}
-
-	lowStockProducts := make([]lowStockProductResp, len(in.LowStockProducts))
-
-	for i, p := range in.LowStockProducts {
-		lowStockProducts[i] = lowStockProductResp{
-			Id:            p.Id,
-			Name:          p.Name,
-			MaxAmount:     p.MaxAmount,
-			CurrentAmount: p.CurrentAmount,
-			Unit:          p.Unit,
-			FillRatio:     p.FillRatio,
-		}
-	}
-
-	revenueStats := make([]revenueStatResp, len(in.Statistics.Revenue))
-
-	for i, r := range in.Statistics.Revenue {
-		revenueStats[i] = revenueStatResp{
-			Value: r.Value,
-			Day:   r.Day,
-		}
-	}
-
-	return getDashboardResp{
-		PeriodStart:      in.PeriodStart,
-		PeriodEnd:        in.PeriodEnd,
-		UpcomingBookings: upcomingBookings,
-		LatestBookings:   latestBookings,
-		LowStockProducts: lowStockProducts,
-		Statistics: dashboardStatisticsResp{
-			Revenue:               revenueStats,
-			RevenueSum:            in.Statistics.RevenueSum,
-			RevenueChange:         in.Statistics.RevenueChange,
-			Bookings:              in.Statistics.Bookings,
-			BookingsChange:        in.Statistics.BookingsChange,
-			Cancellations:         in.Statistics.Cancellations,
-			CancellationsChange:   in.Statistics.CancellationsChange,
-			AverageDuration:       in.Statistics.AverageDuration,
-			AverageDurationChange: in.Statistics.AverageDurationChange,
-		},
-	}
-}
-
 func mapToCheckUrlResp(in string) checkUrlResp {
 	return checkUrlResp{
 		Name: in,
+	}
+}
+
+func mapToDashboardStatisticsResp(in domain.DashboardStatistics) dashboardStatisticsResp {
+	return dashboardStatisticsResp{
+		RevenueSum:            in.RevenueSum,
+		RevenueChange:         in.RevenueChange,
+		Bookings:              in.Bookings,
+		BookingsChange:        in.BookingsChange,
+		Cancellations:         in.Cancellations,
+		CancellationsChange:   in.CancellationsChange,
+		AverageDuration:       in.AverageDuration,
+		AverageDurationChange: in.AverageDurationChange,
+	}
+}
+
+func mapToDashboardRevenueResp(in domain.DashboardRevenue) dashboardRevenueResp {
+	revenue := make([]revenueStatResp, len(in.Revenue))
+	for i, stat := range in.Revenue {
+		revenue[i] = revenueStatResp{
+			Value: stat.Value,
+			Day:   stat.Day,
+		}
+	}
+
+	return dashboardRevenueResp{
+		PeriodStart: in.PeriodStart,
+		PeriodEnd:   in.PeriodEnd,
+		Revenue:     revenue,
 	}
 }
 

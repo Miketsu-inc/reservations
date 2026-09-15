@@ -27,6 +27,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Delete("/{id}", h.Delete)
 
 	r.Get("/", h.GetAll)
+	r.Get("/low-stock", h.GetLowStock)
 
 	return r
 }
