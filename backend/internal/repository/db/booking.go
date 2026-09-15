@@ -922,6 +922,37 @@ func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, use
 	return bookings, nil
 }
 
+func (r *bookingRepository) GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (domain.BookingCountsForUser, error) {
+	query := `
+	select
+		count(distinct b.id) filter (
+			where b.from_date > now()
+				and b.status in ('booked', 'confirmed')
+				and bp.status in ('booked', 'confirmed')
+		) as upcoming,
+		count(distinct b.id) filter (
+			where b.to_date < now()
+				and b.status not in ('cancelled', 'no-show')
+				and bp.status not in ('cancelled', 'no-show')
+		) as completed,
+		count(distinct b.id) filter (
+			where b.status = 'cancelled' or bp.status = 'cancelled'
+		) as cancelled
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id
+	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	where c.user_id = $1
+	`
+
+	var counts domain.BookingCountsForUser
+	err := r.db.QueryRow(ctx, query, userId).Scan(&counts.Upcoming, &counts.Completed, &counts.Cancelled)
+	if err != nil {
+		return domain.BookingCountsForUser{}, fmt.Errorf("GetBookingCountsForUser: %w", err)
+	}
+
+	return counts, nil
+}
+
 func (r *bookingRepository) GetBookingPhases(ctx context.Context, bookingId int) ([]domain.BookingPhase, error) {
 	query := `
 	select *

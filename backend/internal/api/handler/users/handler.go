@@ -37,6 +37,7 @@ func (h *Handler) Routes() *httputil.Router {
 		r.Delete("/", h.Delete)
 
 		r.Get("/bookings", h.GetBookings)
+		r.Get("/bookings/counts", h.GetBookingCounts)
 		r.Put("/password", h.UpdatePassword)
 	})
 
@@ -121,6 +122,27 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetBookingsResp(bookings))
+
+	return nil
+}
+
+type getBookingCountsResp struct {
+	Upcoming  int `json:"upcoming"`
+	Completed int `json:"completed"`
+	Cancelled int `json:"cancelled"`
+}
+
+func (h *Handler) GetBookingCounts(w http.ResponseWriter, r *http.Request) error {
+	counts, err := h.bookingServ.GetCountsForUser(r.Context())
+	if err != nil {
+		return bookingServ.ErrStatus.Resolve(err, "GetCountsForUser")
+	}
+
+	httputil.Success(w, http.StatusOK, getBookingCountsResp{
+		Upcoming:  counts.Upcoming,
+		Completed: counts.Completed,
+		Cancelled: counts.Cancelled,
+	})
 
 	return nil
 }
