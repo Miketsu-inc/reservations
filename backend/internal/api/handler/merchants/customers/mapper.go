@@ -30,50 +30,55 @@ func mapToUpdateInput(in updateReq) customerServ.UpdateInput {
 
 func mapToGetResp(in domain.CustomerInfo) getResp {
 	return getResp{
-		Id:          in.Id,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
-		Email:       in.Email,
-		PhoneNumber: in.PhoneNumber,
-		Birthday:    in.Birthday,
-		Note:        in.Note,
-		IsDummy:     in.IsDummy,
+		Id:              in.Id,
+		FirstName:       in.FirstName,
+		LastName:        in.LastName,
+		Email:           in.Email,
+		PhoneNumber:     in.PhoneNumber,
+		Birthday:        in.Birthday,
+		Note:            in.Note,
+		IsDummy:         in.IsDummy,
+		IsBlacklisted:   in.IsBlacklisted,
+		BlacklistReason: in.BlacklistReason,
 	}
 }
 
 func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
-	bookings := make([]customerBookingsResp, len(in.Bookings))
+	return getStatsResp{
+		TimesBooked:          in.TimesBooked,
+		TimesCancelledByUser: in.TimesCancelledByUser,
+		TimesNoShow:          in.TimesNoShow,
+		TimesUpcoming:        in.TimesUpcoming,
+		TimesCompleted:       in.TimesCompleted,
+		FirstBooking:         in.FirstBooking,
+		LastVisited:          in.LastVisited,
+	}
+}
 
+func mapToGetBookingsResp(in customerServ.GetBookingsResult) getBookingsResp {
+	bookings := make([]customerBookingsResp, len(in.Bookings))
 	for i, b := range in.Bookings {
 		bookings[i] = customerBookingsResp{
+			Id:                b.Id,
+			BookingType:       b.BookingType,
+			IsRecurring:       b.IsRecurring,
 			FromDate:          b.FromDate,
 			ToDate:            b.ToDate,
 			ServiceName:       b.ServiceName,
-			CancelDeadline:    b.CancelDeadline,
+			ServiceColor:      b.ServiceColor,
 			FormattedLocation: b.FormattedLocation,
 			Price:             b.Price.ToFormatted(),
 			PriceType:         b.PriceType,
-			MerchantName:      b.MerchantName,
 			Status:            b.Status,
+			EmployeeFirstName: b.EmployeeFirstName,
+			EmployeeLastName:  b.EmployeeLastName,
 		}
 	}
 
-	return getStatsResp{
-		Id:                   in.Id,
-		FirstName:            in.FirstName,
-		LastName:             in.LastName,
-		Email:                in.Email,
-		PhoneNumber:          in.PhoneNumber,
-		Birthday:             in.Birthday,
-		Note:                 in.Note,
-		IsDummy:              in.IsDummy,
-		IsBlacklisted:        in.IsBlacklisted,
-		BlacklistReason:      in.BlacklistReason,
-		TimesBooked:          in.TimesBooked,
-		TimesCancelledByUser: in.TimesCancelledByUser,
-		TimesUpcoming:        in.TimesUpcoming,
-		TimesCompleted:       in.TimesCompleted,
-		Bookings:             bookings,
+	return getBookingsResp{
+		Bookings:    bookings,
+		HasNextPage: in.HasNextPage,
+		NextCursor:  in.NextCursor,
 	}
 }
 

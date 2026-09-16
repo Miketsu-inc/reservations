@@ -2,6 +2,7 @@ package customers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,6 +31,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Get("/{id}", h.Get)
 
 	r.Get("/{id}/stats", h.GetStats)
+	r.Get("/{id}/bookings", h.GetBookings)
 	r.Put("/{id}/blacklist", h.Blacklist)
 	r.Delete("/{id}/blacklist", h.UnBlacklist)
 
@@ -111,14 +113,16 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getResp struct {
-	Id          uuid.UUID  `json:"id"`
-	FirstName   *string    `json:"first_name"`
-	LastName    *string    `json:"last_name"`
-	Email       *string    `json:"email"`
-	PhoneNumber *string    `json:"phone_number"`
-	Birthday    *time.Time `json:"birthday"`
-	Note        *string    `json:"note"`
-	IsDummy     bool       `json:"is_dummy"`
+	Id              uuid.UUID  `json:"id"`
+	FirstName       *string    `json:"first_name"`
+	LastName        *string    `json:"last_name"`
+	Email           *string    `json:"email"`
+	PhoneNumber     *string    `json:"phone_number"`
+	Birthday        *time.Time `json:"birthday"`
+	Note            *string    `json:"note"`
+	IsDummy         bool       `json:"is_dummy"`
+	IsBlacklisted   bool       `json:"is_blacklisted"`
+	BlacklistReason *string    `json:"blacklist_reason"`
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
@@ -138,33 +142,35 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getStatsResp struct {
-	Id                   uuid.UUID              `json:"id"`
-	FirstName            *string                `json:"first_name"`
-	LastName             *string                `json:"last_name"`
-	Email                *string                `json:"email"`
-	PhoneNumber          *string                `json:"phone_number"`
-	Birthday             *time.Time             `json:"birthday"`
-	Note                 *string                `json:"note"`
-	IsDummy              bool                   `json:"is_dummy"`
-	IsBlacklisted        bool                   `json:"is_blacklisted"`
-	BlacklistReason      *string                `json:"blacklist_reason"`
-	TimesBooked          int                    `json:"times_booked"`
-	TimesCancelledByUser int                    `json:"times_cancelled_by_user"`
-	TimesUpcoming        int                    `json:"times_upcoming"`
-	TimesCompleted       int                    `json:"times_completed"`
-	Bookings             []customerBookingsResp `json:"bookings"`
+	TimesBooked          int        `json:"times_booked"`
+	TimesCancelledByUser int        `json:"times_cancelled_by_user"`
+	TimesNoShow          int        `json:"times_no_show"`
+	TimesUpcoming        int        `json:"times_upcoming"`
+	TimesCompleted       int        `json:"times_completed"`
+	FirstBooking         *time.Time `json:"first_booking"`
+	LastVisited          *time.Time `json:"last_visited"`
 }
 
 type customerBookingsResp struct {
+	Id                int                      `json:"id"`
+	BookingType       types.BookingType        `json:"booking_type"`
+	IsRecurring       bool                     `json:"is_recurring"`
 	FromDate          time.Time                `json:"from_date"`
 	ToDate            time.Time                `json:"to_date"`
 	ServiceName       string                   `json:"service_name"`
-	CancelDeadline    int                      `json:"cancel_deadline"`
+	ServiceColor      *string                  `json:"service_color"`
 	FormattedLocation string                   `json:"formatted_location"`
 	Price             currencyx.FormattedPrice `json:"price"`
 	PriceType         types.PriceType          `json:"price_type"`
-	MerchantName      string                   `json:"merchant_name"`
 	Status            types.BookingStatus      `json:"status"`
+	EmployeeFirstName *string                  `json:"employee_first_name"`
+	EmployeeLastName  *string                  `json:"employee_last_name"`
+}
+
+type getBookingsResp struct {
+	Bookings    []customerBookingsResp `json:"bookings"`
+	HasNextPage bool                   `json:"has_next_page"`
+	NextCursor  *string                `json:"next_cursor"`
 }
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
@@ -179,6 +185,35 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetStatsResp(customerStats))
+
+	return nil
+}
+
+func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
+	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid customer id")
+	}
+
+	status := r.URL.Query().Get("status")
+	if status != "upcoming" && status != "completed" && status != "cancelled" {
+		return validate.NewError("invalid status query parameter")
+	}
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		return validate.NewError("invalid limit query parameter")
+	}
+	if limit < 1 || limit > 20 {
+		return validate.NewError("limit must be between 1 and 20")
+	}
+
+	bookings, err := h.service.GetBookings(r.Context(), urlCustomerId, status, r.URL.Query().Get("cursor"), limit)
+	if err != nil {
+		return customerServ.ErrStatus.Resolve(err, "GetBookings")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetBookingsResp(bookings))
 
 	return nil
 }

@@ -2,74 +2,126 @@ import {
   Calendar02Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
+  User03Icon,
 } from "@hugeicons/core-free-icons";
-import { Icon } from "@reservations/components";
-import BookingDonutChart from "./BookingDonutChart";
+import { Card, Icon, ServerError } from "@reservations/components";
 
-export default function CustomerStats({ customer }) {
+export default function CustomerStats({ stats, isLoading, error }) {
+  if (error) return <ServerError error={error.message} />;
+
+  if (isLoading || !stats) {
+    return (
+      <Card styles="animate-pulse">
+        <div className="bg-hvr_gray mb-4 h-6 w-40 rounded" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="bg-hvr_gray h-24 rounded-lg" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  const resolvedBookings =
+    stats.times_completed + stats.times_cancelled_by_user;
+  const attendanceRate =
+    resolvedBookings > 0
+      ? Math.round((stats.times_completed / resolvedBookings) * 100)
+      : null;
+
   return (
-    <div
-      className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start
-        sm:gap-0"
-    >
-      {customer.times_booked !== 0 && (
-        <div className="flex h-45 w-full justify-center sm:ml-10 sm:w-1/3">
-          <BookingDonutChart
-            cancelled={customer.times_cancelled_by_user}
-            upcoming={customer.times_upcoming}
-            completed={customer.times_completed}
+    <Card styles="p-0! overflow-hidden">
+      <div className="border-border_color border-b px-4 py-4 sm:px-6">
+        <h2 className="text-text_color text-lg font-semibold">
+          Customer insights
+        </h2>
+        <p className="text-text_color/55 mt-0.5 text-sm">
+          Booking activity and attendance at a glance
+        </p>
+      </div>
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard
+            icon={User03Icon}
+            label="Total bookings"
+            value={stats.times_booked}
+          />
+          <StatCard
+            icon={CheckmarkCircle02Icon}
+            label="Completed"
+            styles="text-green-600"
+            value={stats.times_completed}
+          />
+          <StatCard
+            icon={Calendar02Icon}
+            label="Upcoming"
+            styles="text-primary"
+            value={stats.times_upcoming}
+          />
+          <StatCard
+            icon={Cancel01Icon}
+            label="Cancelled / no-show"
+            styles="text-red-600"
+            value={stats.times_cancelled_by_user}
           />
         </div>
-      )}
-      <div
-        className={`flex w-full flex-col justify-center gap-2
-          ${customer.times_booked !== 0 ? "sm:w-2/3" : "mt-2"}`}
-      >
-        <div className="text-text_color flex items-center justify-center gap-4">
-          <span className="text-lg font-bold">Total Bookings:</span>
-          <span className="text-xl font-bold">{customer.times_booked}</span>
-        </div>
-        <div className="grid w-full grid-cols-3 gap-4 rounded-lg p-4">
-          <StatElement
-            value={customer.times_completed}
-            color="green-600"
-            label="Completed"
-          >
-            <Icon icon={CheckmarkCircle02Icon} styles="size-7 text-green-600" />
-          </StatElement>
-          <StatElement
-            value={customer.times_cancelled_by_user}
-            color="red-600"
-            label="Cancelled/No-show"
-          >
-            <div className="w-min rounded-full border-2 border-red-600">
-              <Icon icon={Cancel01Icon} styles="size-5 text-red-600" />
-            </div>
-          </StatElement>
-          <StatElement
-            value={customer.times_upcoming}
-            color="primary"
-            label="Upcoming"
-          >
-            <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-primary" />
-          </StatElement>
+
+        <div
+          className="border-border_color mt-5 grid gap-4 border-t pt-5
+            sm:grid-cols-3"
+        >
+          <Insight
+            label="Attendance rate"
+            value={attendanceRate === null ? "—" : `${attendanceRate}%`}
+          />
+          <Insight label="No-shows" value={stats.times_no_show} />
+          <Insight
+            label="First booking"
+            value={formatMonthYear(stats.first_booking)}
+          />
         </div>
       </div>
+    </Card>
+  );
+}
+
+function StatCard({ icon, label, styles = "text-text_color", value }) {
+  return (
+    <div
+      className="bg-bg_color border-border_color rounded-lg border p-3 sm:p-4"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={`${styles} text-2xl font-bold sm:text-3xl`}>
+          {value}
+        </span>
+        <span className="bg-layer_bg rounded-lg p-2">
+          <Icon icon={icon} styles={`size-5 ${styles}`} />
+        </span>
+      </div>
+      <p className="text-text_color/60 mt-2 text-xs sm:text-sm">{label}</p>
     </div>
   );
 }
 
-function StatElement({ children, value, color, label }) {
+function Insight({ label, value }) {
   return (
-    <div className="text-center">
-      <div
-        className={`flex items-center justify-center gap-2 text-2xl font-bold
-          text-${color}`}
+    <div>
+      <p
+        className="text-text_color/50 text-xs font-medium tracking-wide
+          uppercase"
       >
-        {children}
-        {value}
-      </div>
-      <p className="text-text_color/70 mt-1 text-xs">{label}</p>
+        {label}
+      </p>
+      <p className="text-text_color mt-1 font-semibold">{value}</p>
     </div>
   );
+}
+
+function formatMonthYear(dateString) {
+  if (!dateString) return "—";
+
+  return new Date(dateString).toLocaleDateString([], {
+    month: "short",
+    year: "numeric",
+  });
 }
