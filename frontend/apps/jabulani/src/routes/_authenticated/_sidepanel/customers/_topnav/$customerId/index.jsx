@@ -279,7 +279,7 @@ function CustomerDetailsPage() {
   }
 
   return (
-    <main className="flex justify-center px-3 py-4 sm:px-5 sm:py-6">
+    <main className="flex justify-center">
       <TransferAppsModal
         data={{
           from: customer.id,
@@ -309,50 +309,42 @@ function CustomerDetailsPage() {
         onDelete={() => deleteHandler(customer.id)}
       />
 
-      <div className="flex w-full max-w-5xl flex-col gap-5">
+      <div className="flex w-full max-w-xl flex-col gap-8 px-3 py-4 sm:px-0">
         <ServerError error={serverError} />
 
-        <Card styles="p-0! overflow-hidden">
-          <div
-            className="from-primary/10 border-border_color flex items-start
-              justify-between gap-4 border-b bg-linear-to-r to-transparent p-4
-              sm:p-6"
-          >
-            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <Avatar
-                styles="size-12! text-base! sm:size-14!"
-                initials={initials}
-              />
-              <div className="min-w-0">
+        <Card styles="flex flex-col items-start gap-4">
+          <div className="flex w-full justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar initials={initials} />
+              <div className="flex min-w-0 flex-col gap-1">
+                <h1 className="text-text_color truncate text-lg font-bold">
+                  {fullName}
+                </h1>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1
-                    className="text-text_color truncate text-xl font-bold
-                      sm:text-2xl"
-                  >
-                    {fullName}
-                  </h1>
                   {customer.is_blacklisted && (
-                    <StatusBadge
-                      icon={UnavailableIcon}
-                      styles="bg-red-600/15 text-red-600"
+                    <span
+                      className="rounded-lg bg-red-400/30 p-1 text-sm
+                        text-red-700 dark:bg-red-700/30 dark:text-red-400"
                     >
                       Blacklisted
-                    </StatusBadge>
+                    </span>
                   )}
                   {customer.is_dummy && (
-                    <StatusBadge styles="bg-hvr_gray text-text_color/75">
+                    <span
+                      className="bg-hvr_gray text-text_color/70 rounded-lg p-1
+                        text-sm"
+                    >
                       Added manually
-                    </StatusBadge>
+                    </span>
                   )}
                 </div>
-                <p className="text-text_color/60 mt-1 text-sm">
+                <p className="text-text_color/60 text-sm">
                   {lastVisited
-                    ? `Last visit ${lastVisited}`
+                    ? `Last visited: ${lastVisited}`
                     : "No completed visits yet"}
                 </p>
               </div>
             </div>
-
             <CustomerActions
               customer={customer}
               hasBookings={(stats?.times_booked ?? 0) > 0}
@@ -368,34 +360,36 @@ function CustomerDetailsPage() {
             />
           </div>
 
-          <div className="space-y-4 p-4 sm:p-6">
-            <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              {customer.email && (
-                <ContactItem
-                  href={`mailto:${customer.email}`}
-                  icon={Mail01Icon}
-                  label="Email"
-                  value={customer.email}
-                />
-              )}
-              {customer.phone_number && (
-                <ContactItem
-                  href={`tel:${customer.phone_number}`}
-                  icon={Call02Icon}
-                  label="Phone"
-                  value={customer.phone_number}
-                />
-              )}
-              {customer.birthday && (
-                <ContactItem
-                  icon={BirthdayCakeIcon}
-                  label="Birthday"
-                  value={formatBirthday(customer.birthday)}
-                />
-              )}
-            </div>
-            <ExpandableNote text={customer.note} />
+          <div
+            className="text-text_color/70 flex w-full flex-col items-start gap-3
+              text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-6"
+          >
+            {customer.email && (
+              <a
+                className="flex min-w-0 items-center gap-2 hover:underline"
+                href={`mailto:${customer.email}`}
+              >
+                <Icon icon={Mail01Icon} styles="size-5 shrink-0" />
+                <span className="truncate">{customer.email}</span>
+              </a>
+            )}
+            {customer.phone_number && (
+              <a
+                className="flex items-center gap-2 hover:underline"
+                href={`tel:${customer.phone_number}`}
+              >
+                <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+                {customer.phone_number}
+              </a>
+            )}
+            {customer.birthday && (
+              <div className="flex items-center gap-2">
+                <Icon icon={BirthdayCakeIcon} styles="size-5 shrink-0" />
+                {formatBirthday(customer.birthday)}
+              </div>
+            )}
           </div>
+          <ExpandableNote text={customer.note} />
         </Card>
 
         <CustomerStats
@@ -410,47 +404,10 @@ function CustomerDetailsPage() {
           status={status}
           counts={stats}
           onStatusChange={statusChangeHandler}
+          route={Route}
         />
       </div>
     </main>
-  );
-}
-
-function StatusBadge({ children, icon, styles }) {
-  return (
-    <span
-      className={`${styles} inline-flex w-fit items-center gap-1 rounded-full
-        px-2.5 py-1 text-xs font-medium`}
-    >
-      {icon && <Icon icon={icon} styles="size-3.5" />}
-      {children}
-    </span>
-  );
-}
-
-function ContactItem({ href, icon, label, value }) {
-  const content = (
-    <>
-      <span className="bg-hvr_gray rounded-lg p-2">
-        <Icon icon={icon} styles="size-4 text-text_color/70" />
-      </span>
-      <span className="min-w-0">
-        <span className="text-text_color/50 block text-xs">{label}</span>
-        <span className="text-text_color block truncate">{value}</span>
-      </span>
-    </>
-  );
-
-  return href ? (
-    <a
-      className="hover:bg-hvr_gray flex min-w-0 items-center gap-3 rounded-lg
-        p-1"
-      href={href}
-    >
-      {content}
-    </a>
-  ) : (
-    <div className="flex min-w-0 items-center gap-3 p-1">{content}</div>
   );
 }
 

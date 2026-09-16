@@ -1,8 +1,5 @@
-import { Calendar02Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
-  Card,
-  Icon,
   Loading,
   ServerError,
   Toggle,
@@ -10,7 +7,7 @@ import {
 } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import BookingItem from "./BookingItem";
+import BookingsList from "../../../../-components/BookingsList";
 
 const PAGE_SIZE = 8;
 
@@ -45,6 +42,7 @@ export default function BookingHistory({
   status,
   counts,
   onStatusChange,
+  route,
 }) {
   const {
     data,
@@ -66,86 +64,53 @@ export default function BookingHistory({
   const bookings = data?.pages.flatMap((page) => page.bookings) ?? [];
 
   return (
-    <Card styles="p-0! overflow-hidden">
-      <div className="border-border_color border-b px-4 py-4 sm:px-6">
-        <div
-          className="flex flex-col gap-4 sm:flex-row sm:items-center
-            sm:justify-between"
+    <div>
+      <p className="text-2xl">Booking history</p>
+      <div className="py-8 text-sm">
+        <ToggleGroup
+          multiple={false}
+          value={status}
+          onValueChange={onStatusChange}
         >
-          <div>
-            <h2 className="text-text_color text-lg font-semibold">
-              Booking history
-            </h2>
-            <p className="text-text_color/55 mt-0.5 text-sm">
-              Browse this customer&apos;s visits by status
-            </p>
-          </div>
-          <ToggleGroup
-            styles="max-w-full text-sm"
-            multiple={false}
-            value={status}
-            onValueChange={onStatusChange}
-          >
-            <Toggle value="upcoming" badgeText={counts?.times_upcoming ?? 0}>
-              Upcoming
-            </Toggle>
-            <Toggle value="completed" badgeText={counts?.times_completed ?? 0}>
-              Completed
-            </Toggle>
-            <Toggle
-              value="cancelled"
-              badgeText={counts?.times_cancelled_by_user ?? 0}
-            >
-              Cancelled
-            </Toggle>
-          </ToggleGroup>
-        </div>
+          <Toggle value="upcoming" badgeText={counts?.times_upcoming}>
+            Upcoming
+          </Toggle>
+          <Toggle value="completed" badgeText={counts?.times_completed}>
+            Completed
+          </Toggle>
+          <Toggle value="cancelled" badgeText={counts?.times_cancelled_by_user}>
+            Cancelled
+          </Toggle>
+        </ToggleGroup>
       </div>
 
-      <div className="p-3 sm:p-5">
-        {isError ? (
-          <ServerError error={error?.message} />
-        ) : isLoading ? (
-          <Loading />
-        ) : bookings.length === 0 ? (
-          <EmptyState status={status} />
-        ) : (
-          <div className="space-y-3">
-            {bookings.map((booking) => (
-              <BookingItem key={booking.id} booking={booking} />
-            ))}
-          </div>
-        )}
+      {isError ? (
+        <ServerError error={error?.message} />
+      ) : isLoading ? (
+        <Loading />
+      ) : (
+        <BookingsList
+          bookings={bookings}
+          route={route}
+          showCustomer={false}
+          emptyTitle={`No ${status} bookings`}
+          emptyMessage={
+            status === "upcoming"
+              ? "New bookings for this customer will appear here."
+              : `This customer does not have any ${status} bookings yet.`
+          }
+        />
+      )}
 
-        {hasNextPage && (
-          <Button
-            styles="mt-4 w-full px-4 py-2.5"
-            buttonText="Load more bookings"
-            isLoading={isFetchingNextPage}
-            onClick={() => fetchNextPage()}
-            type="button"
-          />
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function EmptyState({ status }) {
-  return (
-    <div
-      className="flex flex-col items-center justify-center px-4 py-10
-        text-center"
-    >
-      <span className="bg-hvr_gray mb-3 rounded-full p-3">
-        <Icon icon={Calendar02Icon} styles="size-7 text-text_color/45" />
-      </span>
-      <p className="text-text_color font-medium">No {status} bookings</p>
-      <p className="text-text_color/55 mt-1 max-w-sm text-sm">
-        {status === "upcoming"
-          ? "New bookings for this customer will appear here."
-          : `This customer does not have any ${status} bookings yet.`}
-      </p>
+      {hasNextPage && (
+        <Button
+          styles="mt-4 w-full px-4 py-2"
+          buttonText="Load more"
+          isLoading={isFetchingNextPage}
+          onClick={() => fetchNextPage()}
+          type="button"
+        />
+      )}
     </div>
   );
 }
