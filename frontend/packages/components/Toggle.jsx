@@ -98,28 +98,51 @@ export function ToggleGroup({
   useLayoutEffect(() => {
     if (multiple || !currentValue || !groupRef.current) return;
 
-    const activeElement = itemRefs.current[currentValue];
-    if (!activeElement) return;
+    function updatePillPosition() {
+      const activeElement = itemRefs.current[currentValue];
+      if (!activeElement) return;
 
-    setPillStyle({
-      width: `${activeElement.offsetWidth}px`,
-      transform: `translateX(${activeElement.offsetLeft}px)`,
-      opacity: 1,
-      // Suppress transition on the very first render
-      transition: isReady.current ? "" : "none",
+      setPillStyle({
+        width: `${activeElement.offsetWidth}px`,
+        transform: `translateX(${activeElement.offsetLeft}px)`,
+        opacity: 1,
+        // Suppress transition on the very first render
+        transition: isReady.current ? "" : "none",
+      });
+    }
+
+    updatePillPosition();
+
+    // Badge text and other asynchronous content can resize the active toggle
+    // or a preceding toggle, which also changes the active toggle's offset.
+    const resizeObserver = new ResizeObserver(updatePillPosition);
+    Object.values(itemRefs.current).forEach((element) => {
+      resizeObserver.observe(element);
     });
 
     // Re-enable transitions after the first paint
+    let animationFrame;
     if (!isReady.current) {
-      requestAnimationFrame(() => {
+      animationFrame = requestAnimationFrame(() => {
         isReady.current = true;
         setPillStyle((prev) => ({ ...prev, transition: "" }));
       });
     }
-  }, [currentValue, multiple]);
+
+    return () => {
+      resizeObserver.disconnect();
+      if (animationFrame !== undefined) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [children, currentValue, multiple]);
 
   function registerRef(itemValue, element) {
-    if (element) itemRefs.current[itemValue] = element;
+    if (element) {
+      itemRefs.current[itemValue] = element;
+    } else {
+      delete itemRefs.current[itemValue];
+    }
   }
 
   function onToggle(itemValue) {
