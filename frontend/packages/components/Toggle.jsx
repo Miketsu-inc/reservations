@@ -42,9 +42,11 @@ export function Toggle({
             : ""
           : "relative z-10 transition-colors duration-150"
         } ${
-        isPressed ? "text-white delay-150 dark:text-black" : "text-text_color"
-      }
-        shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
+        isPressed
+          ? "text-white [transition-delay:150ms] dark:text-black"
+          : "text-text_color [transition-delay:0ms]"
+        } shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold
+        text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -59,12 +61,11 @@ export function Toggle({
       {badgeText !== null && (
         <span
           className={`ml-2 inline-flex items-center justify-center rounded-full
-          px-2 py-1 text-sm leading-none font-bold transition-colors
+          px-2 py-1 text-sm leading-none font-bold transition-[background-color]
           duration-150 ${
             isPressed
-              ? "bg-white/20 text-white dark:bg-black/15 dark:text-black"
-              : `text-text_color dark:text-text_color bg-black/10
-                dark:bg-white/10`
+              ? "bg-white/20 [transition-delay:150ms] dark:bg-black/15"
+              : "bg-black/10 [transition-delay:0ms] dark:bg-white/10"
           }`}
         >
           {badgeText}
