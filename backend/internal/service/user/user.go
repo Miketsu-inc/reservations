@@ -5,6 +5,8 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/repository"
+	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
 type Service struct {
@@ -61,6 +63,10 @@ func (s *Service) Edit(ctx context.Context, input EditInput) error {
 		Email:       input.Email,
 	})
 	if err != nil {
+		if db.IsUniqueConstraintViolation(err, repository.UserEmailLowerUniqueConstraint) {
+			return domain.ErrEmailNotUnique
+		}
+
 		return err
 	}
 

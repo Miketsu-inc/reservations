@@ -14,6 +14,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/keys"
+	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
@@ -168,6 +169,10 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		Language:          lang.LangFromContext(ctx).String(),
 	})
 	if err != nil {
+		if db.IsUniqueConstraintViolation(err, repository.UserEmailLowerUniqueConstraint) {
+			return jwt.TokenPair{}, domain.ErrEmailNotUnique
+		}
+
 		return jwt.TokenPair{}, err
 	}
 

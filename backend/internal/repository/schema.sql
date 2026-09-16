@@ -20,8 +20,13 @@ create table if not exists "User" (
     jwt_refresh_version      integer,
     language                 varchar(10)     not null,
     auth_provider            text            check (auth_provider in ('facebook', 'google')),
-    provider_id              text
+    provider_id              text,
+    constraint user_auth_provider_complete check ((auth_provider is null) = (provider_id is null))
 );
+
+create unique index if not exists user_email_lower_unique on "User" (lower(email));
+create unique index if not exists user_oauth_identity_unique on "User" (auth_provider, provider_id)
+where auth_provider is not null and provider_id is not null;
 
 create table if not exists "Merchant" (
     ID                       uuid            primary key unique not null,

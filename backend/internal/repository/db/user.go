@@ -62,7 +62,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (doma
 	query := `
 	select *
 	from "User"
-	where email = $1
+	where lower(email) = lower($1)
 	`
 
 	rows, _ := r.db.Query(ctx, query, email)
@@ -192,7 +192,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error
 func (r *userRepository) IsEmailUnique(ctx context.Context, email string) (bool, error) {
 	query := `
 	select 1 from "User"
-	where email = $1
+	where lower(email) = lower($1)
 	`
 
 	var exists *int
@@ -243,16 +243,16 @@ func (r *userRepository) IncrementUserJwtRefreshVersion(ctx context.Context, use
 	return refreshVersion, nil
 }
 
-func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthProviderType, provider_id string) (uuid.UUID, error) {
+func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthProviderType, providerId string) (uuid.UUID, error) {
 	query := `
 	select id from "User"
 	where auth_provider = $1 and provider_id = $2
 	`
 
 	var id uuid.UUID
-	err := r.db.QueryRow(ctx, query, provider, provider_id).Scan(&id)
+	err := r.db.QueryRow(ctx, query, provider, providerId).Scan(&id)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("FindOauthUser: %w", err)
+		return uuid.Nil, fmt.Errorf("FindOauthUser: %w", err)
 	}
 
 	return id, nil
