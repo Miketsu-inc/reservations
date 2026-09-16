@@ -40,7 +40,7 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursorStr strin
 	// must have max values
 	if cursorStr == "" && status != "upcoming" {
 		decodedCursor = bookingCursor{
-			Id:       math.MaxInt,
+			Id:       math.MaxInt32,
 			FromDate: time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC),
 		}
 	}
