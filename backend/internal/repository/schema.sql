@@ -269,6 +269,9 @@ create table if not exists "BookingParticipant" (
     constraint unique_booking_participant unique (booking_id, customer_id)
 );
 
+create unique index if not exists unique_booking_effective_participant on "BookingParticipant" (booking_id, coalesce(transferred_to, customer_id))
+where coalesce(transferred_to, customer_id) is not null;
+
 create table if not exists "EmployeePreferences" (
     employee_id              integer          primary key unique references "Employee" (ID) on delete cascade not null,
     first_day_of_week        varchar(10)      default 'Monday' check (first_day_of_week in ('Monday', 'Sunday')) not null,

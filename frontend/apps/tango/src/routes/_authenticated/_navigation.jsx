@@ -261,8 +261,8 @@ function NavLayout() {
         >
           <div
             id="page-scroll-container"
-            className="bg-bg_color flex-1 overflow-y-auto rounded-t-xl px-4 pt-4
-              pb-32 md:pb-12"
+            className="bg-bg_color flex-1 scrollbar-gutter-stable
+              overflow-y-auto rounded-t-xl px-4 pt-4 pb-32 lg:pb-12"
           >
             <Outlet />
           </div>

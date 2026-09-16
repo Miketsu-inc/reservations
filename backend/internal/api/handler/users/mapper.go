@@ -1,6 +1,7 @@
 package users
 
 import (
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
@@ -40,6 +41,14 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 		Bookings:    bookings,
 		HasNextpage: in.HasNextPage,
 		NextCursor:  in.NextCursor,
+	}
+}
+
+func mapToGetBookingCountsResp(in domain.BookingCountsForUser) getBookingCountsResp {
+	return getBookingCountsResp{
+		Upcoming:  in.Upcoming,
+		Completed: in.Completed,
+		Cancelled: in.Cancelled,
 	}
 }
 

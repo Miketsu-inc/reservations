@@ -1,7 +1,38 @@
-import { SearchInput, Toggle, ToggleGroup } from "@reservations/components";
+import {
+  Loading,
+  SearchInput,
+  ServerError,
+  Toggle,
+  ToggleGroup,
+} from "@reservations/components";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BookingList from "./-components/BookingList";
+
+async function fetchBookingCounts() {
+  const response = await fetch("/api/v1/users/bookings/counts", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  }
+
+  return result.data;
+}
+
+function bookingCountsQueryOptions() {
+  return queryOptions({
+    queryKey: ["user-booking-counts"],
+    queryFn: fetchBookingCounts,
+  });
+}
 
 export const Route = createFileRoute("/_authenticated/_navigation/bookings")({
   validateSearch: (search) => {
@@ -21,6 +52,11 @@ export const Route = createFileRoute("/_authenticated/_navigation/bookings")({
       status,
     };
   },
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(bookingCountsQueryOptions());
+  },
+  pendingComponent: Loading,
+  errorComponent: ({ error }) => <ServerError error={error.message} />,
   component: RouteComponent,
 });
 
@@ -28,6 +64,7 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { status } = Route.useSearch();
   const [searchText, setSearchText] = useState("");
+  const { data: bookingCounts } = useQuery(bookingCountsQueryOptions());
 
   function statusChangeHandler(s) {
     navigate({
@@ -54,9 +91,15 @@ function RouteComponent() {
             value={status}
             onValueChange={statusChangeHandler}
           >
-            <Toggle value="upcoming">Upcoming</Toggle>
-            <Toggle value="completed">Completed</Toggle>
-            <Toggle value="cancelled">Cancelled</Toggle>
+            <Toggle value="upcoming" badgeText={bookingCounts?.upcoming}>
+              Upcoming
+            </Toggle>
+            <Toggle value="completed" badgeText={bookingCounts?.completed}>
+              Completed
+            </Toggle>
+            <Toggle value="cancelled" badgeText={bookingCounts?.cancelled}>
+              Cancelled
+            </Toggle>
           </ToggleGroup>
         </div>
         <BookingList statusFilter={status} searchText={searchText} />

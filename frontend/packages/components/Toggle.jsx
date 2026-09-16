@@ -40,10 +40,9 @@ export function Toggle({
           ? isPressed
             ? "bg-black dark:bg-white"
             : ""
-          : "relative z-10 transition-colors duration-150"
-        } ${
-        isPressed ? "text-white delay-150 dark:text-black" : "text-text_color"
-      }
+          : "relative z-10"
+        }
+        ${isPressed ? "text-white delay-25 dark:text-black" : "text-text_color"}
         shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
       onClick={() => {
         if (group) {
@@ -59,10 +58,10 @@ export function Toggle({
       {badgeText !== null && (
         <span
           className={`ml-2 inline-flex items-center justify-center rounded-full
-          px-2 py-1 text-sm leading-none font-bold transition-colors
-          duration-150 ${
+          px-2 py-1 text-sm leading-none font-bold ${
             isPressed
-              ? "bg-white/20 text-white dark:bg-black/15 dark:text-black"
+              ? `bg-white/20 text-white delay-25 dark:bg-black/15
+                dark:text-black`
               : `text-text_color dark:text-text_color bg-black/10
                 dark:bg-white/10`
           }`}
@@ -98,28 +97,51 @@ export function ToggleGroup({
   useLayoutEffect(() => {
     if (multiple || !currentValue || !groupRef.current) return;
 
-    const activeElement = itemRefs.current[currentValue];
-    if (!activeElement) return;
+    function updatePillPosition() {
+      const activeElement = itemRefs.current[currentValue];
+      if (!activeElement) return;
 
-    setPillStyle({
-      width: `${activeElement.offsetWidth}px`,
-      transform: `translateX(${activeElement.offsetLeft}px)`,
-      opacity: 1,
-      // Suppress transition on the very first render
-      transition: isReady.current ? "" : "none",
+      setPillStyle({
+        width: `${activeElement.offsetWidth}px`,
+        transform: `translateX(${activeElement.offsetLeft}px)`,
+        opacity: 1,
+        // Suppress transition on the very first render
+        transition: isReady.current ? "" : "none",
+      });
+    }
+
+    updatePillPosition();
+
+    // Badge text and other asynchronous content can resize the active toggle
+    // or a preceding toggle, which also changes the active toggle's offset.
+    const resizeObserver = new ResizeObserver(updatePillPosition);
+    Object.values(itemRefs.current).forEach((element) => {
+      resizeObserver.observe(element);
     });
 
     // Re-enable transitions after the first paint
+    let animationFrame;
     if (!isReady.current) {
-      requestAnimationFrame(() => {
+      animationFrame = requestAnimationFrame(() => {
         isReady.current = true;
         setPillStyle((prev) => ({ ...prev, transition: "" }));
       });
     }
-  }, [currentValue, multiple]);
+
+    return () => {
+      resizeObserver.disconnect();
+      if (animationFrame !== undefined) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [children, currentValue, multiple]);
 
   function registerRef(itemValue, element) {
-    if (element) itemRefs.current[itemValue] = element;
+    if (element) {
+      itemRefs.current[itemValue] = element;
+    } else {
+      delete itemRefs.current[itemValue];
+    }
   }
 
   function onToggle(itemValue) {
@@ -165,7 +187,7 @@ export function ToggleGroup({
             aria-hidden="true"
             style={pillStyle}
             className={`pointer-events-none absolute inset-y-0 rounded-3xl
-            bg-black transition-[transform,width,opacity] duration-300
+            bg-black transition-[transform,width,opacity] duration-150
             dark:bg-white`}
           ></div>
         )}

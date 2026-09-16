@@ -58,6 +58,7 @@ type BookingRepository interface {
 	GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
+	GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (BookingCountsForUser, error)
 	GetBookingPhases(ctx context.Context, bookingId int) ([]BookingPhase, error)
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
 
@@ -462,4 +463,10 @@ type BookingForUser struct {
 	ServiceName       string              `db:"service_name"`
 	EmployeeFirstName *string             `db:"employee_first_name"`
 	EmployeeLastName  *string             `db:"employee_last_name"`
+}
+
+type BookingCountsForUser struct {
+	Upcoming  int `db:"upcoming"`
+	Completed int `db:"completed"`
+	Cancelled int `db:"cancelled"`
 }
