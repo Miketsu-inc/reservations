@@ -88,12 +88,6 @@ type BookingRepository interface {
 	GetBookingSeriesPhases(ctx context.Context, seriesId int) ([]BookingSeriesPhase, error)
 }
 
-type BookingCountsForUser struct {
-	Upcoming  int `db:"upcoming"`
-	Completed int `db:"completed"`
-	Cancelled int `db:"cancelled"`
-}
-
 type Booking struct {
 	Id                    int                 `db:"id"`
 	Status                types.BookingStatus `db:"status"`
@@ -469,4 +463,10 @@ type BookingForUser struct {
 	ServiceName       string              `db:"service_name"`
 	EmployeeFirstName *string             `db:"employee_first_name"`
 	EmployeeLastName  *string             `db:"employee_last_name"`
+}
+
+type BookingCountsForUser struct {
+	Upcoming  int `db:"upcoming"`
+	Completed int `db:"completed"`
+	Cancelled int `db:"cancelled"`
 }

@@ -22,12 +22,6 @@ type GetForUserResult struct {
 	HasNextPage bool
 }
 
-func (s *Service) GetCountsForUser(ctx context.Context) (domain.BookingCountsForUser, error) {
-	userId := jwt.MustGetUserIDFromContext(ctx)
-
-	return s.bookingRepo.GetBookingCountsForUser(ctx, userId)
-}
-
 func (s *Service) GetForUser(ctx context.Context, status string, cursorStr string, pageSize int) (GetForUserResult, error) {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
@@ -87,4 +81,10 @@ func (s *Service) GetForUser(ctx context.Context, status string, cursorStr strin
 		NextCursor:  nextCursor,
 		HasNextPage: hasNextPage,
 	}, nil
+}
+
+func (s *Service) GetCountsForUser(ctx context.Context) (domain.BookingCountsForUser, error) {
+	userId := jwt.MustGetUserIDFromContext(ctx)
+
+	return s.bookingRepo.GetBookingCountsForUser(ctx, userId)
 }

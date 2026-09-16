@@ -138,11 +138,7 @@ func (h *Handler) GetBookingCounts(w http.ResponseWriter, r *http.Request) error
 		return bookingServ.ErrStatus.Resolve(err, "GetCountsForUser")
 	}
 
-	httputil.Success(w, http.StatusOK, getBookingCountsResp{
-		Upcoming:  counts.Upcoming,
-		Completed: counts.Completed,
-		Cancelled: counts.Cancelled,
-	})
+	httputil.Success(w, http.StatusOK, mapToGetBookingCountsResp(counts))
 
 	return nil
 }

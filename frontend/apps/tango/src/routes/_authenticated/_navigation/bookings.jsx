@@ -91,13 +91,13 @@ function RouteComponent() {
             value={status}
             onValueChange={statusChangeHandler}
           >
-            <Toggle value="upcoming" badgeText={bookingCounts.upcoming}>
+            <Toggle value="upcoming" badgeText={bookingCounts?.upcoming}>
               Upcoming
             </Toggle>
-            <Toggle value="completed" badgeText={bookingCounts.completed}>
+            <Toggle value="completed" badgeText={bookingCounts?.completed}>
               Completed
             </Toggle>
-            <Toggle value="cancelled" badgeText={bookingCounts.cancelled}>
+            <Toggle value="cancelled" badgeText={bookingCounts?.cancelled}>
               Cancelled
             </Toggle>
           </ToggleGroup>
