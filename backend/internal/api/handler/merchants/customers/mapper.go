@@ -49,9 +49,14 @@ func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 		TimesCancelledByUser: in.TimesCancelledByUser,
 		TimesNoShow:          in.TimesNoShow,
 		TimesUpcoming:        in.TimesUpcoming,
+		TimesBookedStatus:    in.TimesBookedStatus,
+		TimesConfirmed:       in.TimesConfirmed,
 		TimesCompleted:       in.TimesCompleted,
 		FirstBooking:         in.FirstBooking,
 		LastVisited:          in.LastVisited,
+		TotalSpent:           in.TotalSpent.ToFormatted(),
+		FavoriteService:      in.FavoriteService,
+		NextBooking:          in.NextBooking,
 	}
 }
 

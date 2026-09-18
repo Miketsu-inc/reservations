@@ -3,6 +3,7 @@ package customers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -142,13 +143,18 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getStatsResp struct {
-	TimesBooked          int        `json:"times_booked"`
-	TimesCancelledByUser int        `json:"times_cancelled_by_user"`
-	TimesNoShow          int        `json:"times_no_show"`
-	TimesUpcoming        int        `json:"times_upcoming"`
-	TimesCompleted       int        `json:"times_completed"`
-	FirstBooking         *time.Time `json:"first_booking"`
-	LastVisited          *time.Time `json:"last_visited"`
+	TimesBooked          int                      `json:"times_booked"`
+	TimesCancelledByUser int                      `json:"times_cancelled_by_user"`
+	TimesNoShow          int                      `json:"times_no_show"`
+	TimesUpcoming        int                      `json:"times_upcoming"`
+	TimesBookedStatus    int                      `json:"times_booked_status"`
+	TimesConfirmed       int                      `json:"times_confirmed"`
+	TimesCompleted       int                      `json:"times_completed"`
+	FirstBooking         *time.Time               `json:"first_booking"`
+	LastVisited          *time.Time               `json:"last_visited"`
+	TotalSpent           currencyx.FormattedPrice `json:"total_spent"`
+	FavoriteService      *string                  `json:"favorite_service"`
+	NextBooking          *time.Time               `json:"next_booking"`
 }
 
 type customerBookingsResp struct {
@@ -195,9 +201,17 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid customer id")
 	}
 
-	status := r.URL.Query().Get("status")
-	if status != "upcoming" && status != "completed" && status != "cancelled" {
-		return validate.NewError("invalid status query parameter")
+	statuses := strings.Split(r.URL.Query().Get("status"), ",")
+	if len(statuses) == 1 && statuses[0] == "all" {
+		statuses = []string{"booked", "confirmed", "completed", "cancelled", "no-show"}
+	}
+
+	seenStatuses := make(map[string]bool, len(statuses))
+	for _, status := range statuses {
+		if seenStatuses[status] || (status != "booked" && status != "confirmed" && status != "completed" && status != "cancelled" && status != "no-show") {
+			return validate.NewError("invalid status query parameter")
+		}
+		seenStatuses[status] = true
 	}
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -208,7 +222,16 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("limit must be between 1 and 20")
 	}
 
-	bookings, err := h.service.GetBookings(r.Context(), urlCustomerId, status, r.URL.Query().Get("cursor"), limit)
+	var before *time.Time
+	if beforeValue := r.URL.Query().Get("before"); beforeValue != "" {
+		parsedBefore, err := time.Parse(time.RFC3339, beforeValue)
+		if err != nil {
+			return validate.NewError("invalid before query parameter")
+		}
+		before = &parsedBefore
+	}
+
+	bookings, err := h.service.GetBookings(r.Context(), urlCustomerId, statuses, before, r.URL.Query().Get("cursor"), limit)
 	if err != nil {
 		return customerServ.ErrStatus.Resolve(err, "GetBookings")
 	}

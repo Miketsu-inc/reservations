@@ -173,28 +173,59 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	query := `
 	select count(distinct b.id) as times_booked,
 		count(distinct b.id) filter (where b.status in ('cancelled', 'no-show') or bp.status in ('cancelled', 'no-show')) as times_cancelled_by_user,
-		count(distinct b.id) filter (where b.status = 'no-show' or bp.status = 'no-show') as times_no_show,
 		count(distinct b.id) filter (
-			where b.from_date > now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
+			where b.status = 'no-show'
+				or (b.status not in ('cancelled', 'no-show') and bp.status = 'no-show')
+		) as times_no_show,
+		count(distinct b.id) filter (
+			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
 		) as times_upcoming,
+		count(distinct b.id) filter (
+			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'booked'
+		) as times_booked_status,
+		count(distinct b.id) filter (
+			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'confirmed'
+		) as times_confirmed,
 		count(distinct b.id) filter (
 			where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
 		) as times_completed,
 		min(b.from_date) as first_booking,
 		max(b.to_date) filter (
 			where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-		) as last_visited
+		) as last_visited,
+		row(
+			coalesce(sum((b.price_per_person).number) filter (
+				where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
+			), 0),
+			m.currency_code
+		)::price as total_spent,
+		(
+			select b2.service_name
+			from "Booking" b2
+			join "BookingParticipant" bp2 on bp2.booking_id = b2.id and bp2.customer_id = $2
+			where b2.merchant_id = $1 and b2.to_date < now()
+				and b2.status not in ('cancelled', 'no-show') and bp2.status not in ('cancelled', 'no-show')
+			group by b2.service_name
+			order by count(*) desc, max(b2.from_date) desc
+			limit 1
+		) as favorite_service,
+		min(b.from_date) filter (
+			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
+		) as next_booking
 	from "Customer" c
-	left join "BookingParticipant" bp on coalesce(bp.transferred_to, bp.customer_id) = c.id
+	join "Merchant" m on m.id = c.merchant_id
+	left join "BookingParticipant" bp on bp.customer_id = c.id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	where c.id = $2 and c.merchant_id = $1
-	group by c.id
+	group by c.id, m.currency_code
 	`
 
 	var customer domain.CustomerStatistics
 	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(
 		&customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesNoShow,
-		&customer.TimesUpcoming, &customer.TimesCompleted, &customer.FirstBooking, &customer.LastVisited,
+		&customer.TimesUpcoming, &customer.TimesBookedStatus, &customer.TimesConfirmed,
+		&customer.TimesCompleted, &customer.FirstBooking, &customer.LastVisited,
+		&customer.TotalSpent, &customer.FavoriteService, &customer.NextBooking,
 	)
 	if err != nil {
 		return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)
@@ -203,26 +234,47 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	return customer, nil
 }
 
-func (r *customerRepository) GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, status string, limit int, cursorStart time.Time, cursorId int) ([]domain.CustomerBooking, error) {
-	var statusClause string
-	var orderClause string
-
-	switch status {
-	case "upcoming":
-		statusClause = `b.from_date > now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
-			and (b.from_date, b.id) > ($4, $5)`
-		orderClause = "b.from_date asc, b.id asc"
-	case "completed":
-		statusClause = `b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-			and (b.from_date, b.id) < ($4, $5)`
-		orderClause = "b.from_date desc, b.id desc"
-	case "cancelled":
-		statusClause = `(b.status in ('cancelled', 'no-show') or bp.status in ('cancelled', 'no-show'))
-			and (b.from_date, b.id) < ($4, $5)`
-		orderClause = "b.from_date desc, b.id desc"
-	default:
-		return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: invalid status")
+func (r *customerRepository) GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, statuses []string, limit int, cursorStart time.Time, cursorId int) ([]domain.CustomerBooking, error) {
+	statusConditions := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		switch status {
+		case "booked":
+			statusConditions = append(statusConditions, `(
+				b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'booked'
+			)`)
+		case "confirmed":
+			statusConditions = append(statusConditions, `(
+				b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'confirmed'
+			)`)
+		case "completed":
+			statusConditions = append(statusConditions, `(
+				b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
+			)`)
+		case "cancelled":
+			statusConditions = append(statusConditions, `(
+				b.status = 'cancelled'
+				or (b.status not in ('cancelled', 'no-show') and bp.status = 'cancelled')
+			)`)
+		case "no-show":
+			statusConditions = append(statusConditions, `(
+				b.status = 'no-show'
+				or (b.status not in ('cancelled', 'no-show') and bp.status = 'no-show')
+			)`)
+		default:
+			return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: invalid status")
+		}
 	}
+
+	if len(statusConditions) == 0 {
+		return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: no statuses provided")
+	}
+
+	orderClause := "b.from_date desc, b.id desc"
+
+	statusClause := fmt.Sprintf(
+		"(%s) and (b.from_date, b.id) < ($4, $5)",
+		strings.Join(statusConditions, " or "),
+	)
 
 	query := fmt.Sprintf(`
 	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
@@ -235,7 +287,7 @@ func (r *customerRepository) GetCustomerBookings(ctx context.Context, merchantId
 		end as status,
 		e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
-	join "BookingParticipant" bp on bp.booking_id = b.id and coalesce(bp.transferred_to, bp.customer_id) = $2
+	join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
 	left join "Service" s on s.id = b.service_id
 	left join "Employee" e on e.id = b.employee_id
 	where b.merchant_id = $1 and %s

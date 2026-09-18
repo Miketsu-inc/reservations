@@ -1,93 +1,110 @@
-import { Card, ServerError } from "@reservations/components";
+import { ServerError } from "@reservations/components";
+import BookingDonutChart from "./BookingDonutChart";
 
 export default function CustomerStats({ stats, isLoading, error }) {
   if (error) return <ServerError error={error.message} />;
 
-  const values = stats
-    ? [
-        attendanceRate(stats),
-        visitFrequency(stats),
-        noShowRate(stats),
-        formatMonthYear(stats.first_booking),
-      ]
-    : [];
+  if (isLoading || !stats) {
+    return (
+      <div className="flex flex-col gap-5 md:flex-row md:items-center">
+        <div
+          className="bg-hvr_gray size-40 animate-pulse self-center rounded-full"
+        />
+        <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="bg-hvr_gray h-14 animate-pulse rounded"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <p className="mb-3 text-lg">Customer insights</p>
-      <Card styles="h-auto!">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
+      <p className="mb-4 text-lg">Customer overview</p>
+      <div className="flex flex-col gap-6 md:flex-row md:items-center">
+        <div
+          className="flex flex-col items-center justify-center gap-4 sm:flex-row
+            md:justify-start"
+        >
+          <div className="h-40 w-40 shrink-0">
+            <BookingDonutChart
+              upcoming={stats.times_upcoming}
+              completed={stats.times_completed}
+              cancelled={stats.times_cancelled_by_user}
+              total={stats.times_booked}
+            />
+          </div>
+          <div className="w-40 space-y-2 text-sm">
+            <Legend
+              color="bg-primary"
+              label="Upcoming"
+              value={stats.times_upcoming}
+            />
+            <Legend
+              color="bg-green-600"
+              label="Completed"
+              value={stats.times_completed}
+            />
+            <Legend
+              color="bg-red-600"
+              label="Cancelled"
+              value={stats.times_cancelled_by_user}
+            />
+          </div>
+        </div>
+
+        <div
+          className="border-border_color grid flex-1 grid-cols-1 gap-5
+            sm:grid-cols-3 md:border-l md:pl-6"
+        >
+          <Insight label="Completed value" value={stats.total_spent} />
           <Insight
-            label="Attendance rate"
-            loading={isLoading}
-            value={values[0]}
+            label="Favorite service"
+            value={stats.favorite_service ?? "—"}
           />
           <Insight
-            label="Visit frequency"
-            loading={isLoading}
-            value={values[1]}
-          />
-          <Insight label="No-show rate" loading={isLoading} value={values[2]} />
-          <Insight
-            label="First booking"
-            loading={isLoading}
-            value={values[3]}
+            label="Next booking"
+            value={formatBookingDate(stats.next_booking)}
           />
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
 
-function Insight({ label, loading, value }) {
+function Insight({ label, value }) {
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <span className="text-text_color/60 text-sm">{label}</span>
-      {loading ? (
-        <span className="bg-hvr_gray h-6 w-16 animate-pulse rounded" />
-      ) : (
-        <span className="truncate text-lg font-medium">{value ?? "—"}</span>
-      )}
+    <div className="min-w-0">
+      <p className="text-text_color/60 text-sm">{label}</p>
+      <p className="mt-1 truncate font-medium" title={value}>
+        {value}
+      </p>
     </div>
   );
 }
 
-function attendanceRate(stats) {
-  const resolved = resolvedBookings(stats);
-  return resolved === 0
-    ? "—"
-    : `${Math.round((stats.times_completed / resolved) * 100)}%`;
-}
-
-function noShowRate(stats) {
-  const resolved = resolvedBookings(stats);
-  return resolved === 0
-    ? "—"
-    : `${Math.round((stats.times_no_show / resolved) * 100)}%`;
-}
-
-function visitFrequency(stats) {
-  if (!stats.first_booking || stats.times_completed === 0) return "—";
-
-  const firstBooking = new Date(stats.first_booking);
-  const elapsedMonths = Math.max(
-    1,
-    (Date.now() - firstBooking.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+function Legend({ color, label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className={`${color} size-2.5 shrink-0 rounded-xs`} />
+        <span className="text-text_color/70 truncate">{label}</span>
+      </div>
+      <span className="font-medium">{value}</span>
+    </div>
   );
-  const visitsPerMonth = stats.times_completed / elapsedMonths;
-
-  return `${visitsPerMonth.toFixed(visitsPerMonth >= 10 ? 0 : 1)} / month`;
 }
 
-function resolvedBookings(stats) {
-  return stats.times_completed + stats.times_cancelled_by_user;
-}
-
-function formatMonthYear(dateString) {
-  if (!dateString) return "—";
+function formatBookingDate(dateString) {
+  if (!dateString) return "None scheduled";
 
   return new Date(dateString).toLocaleDateString([], {
+    weekday: "short",
     month: "short",
-    year: "numeric",
+    day: "numeric",
   });
 }

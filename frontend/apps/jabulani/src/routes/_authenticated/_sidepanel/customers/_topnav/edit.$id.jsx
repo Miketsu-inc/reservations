@@ -92,7 +92,7 @@ function RouteComponent() {
           queryKey: [merchantId, "customer", id],
         });
         await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-info", id],
+          queryKey: [merchantId, "customer-profile", id],
         });
         await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         showToast({

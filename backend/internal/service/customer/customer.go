@@ -158,7 +158,7 @@ func (s *Service) GetStats(ctx context.Context, customerId uuid.UUID) (domain.Cu
 	return customerStats, nil
 }
 
-func (s *Service) GetBookings(ctx context.Context, customerId uuid.UUID, status, cursorStr string, pageSize int) (GetBookingsResult, error) {
+func (s *Service) GetBookings(ctx context.Context, customerId uuid.UUID, statuses []string, before *time.Time, cursorStr string, pageSize int) (GetBookingsResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	decodedCursor, err := cursor.Decode[bookingCursor](cursorStr)
@@ -166,10 +166,13 @@ func (s *Service) GetBookings(ctx context.Context, customerId uuid.UUID, status,
 		return GetBookingsResult{}, fmt.Errorf("error during cursor decoding: %s", err.Error())
 	}
 
-	if cursorStr == "" && status != "upcoming" {
+	if cursorStr == "" {
 		decodedCursor = bookingCursor{
 			Id:       math.MaxInt32,
 			FromDate: time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC),
+		}
+		if before != nil {
+			decodedCursor.FromDate = *before
 		}
 	}
 
@@ -177,7 +180,7 @@ func (s *Service) GetBookings(ctx context.Context, customerId uuid.UUID, status,
 		ctx,
 		actor.MerchantId,
 		customerId,
-		status,
+		statuses,
 		pageSize+1,
 		decodedCursor.FromDate,
 		decodedCursor.Id,

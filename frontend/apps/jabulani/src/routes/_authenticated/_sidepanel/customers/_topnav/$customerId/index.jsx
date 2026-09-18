@@ -22,11 +22,7 @@ import {
   ServerError,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  customersQueryOptions,
-  invalidateLocalStorageAuth,
-  useToast,
-} from "@reservations/lib";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -91,11 +87,6 @@ function formatVisitDate(dateString) {
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_topnav/$customerId/"
 )({
-  validateSearch: (search) => ({
-    status: ["upcoming", "completed", "cancelled"].includes(search.status)
-      ? search.status
-      : "upcoming",
-  }),
   component: CustomerDetailsPage,
   loader: async ({
     params,
@@ -114,7 +105,6 @@ export const Route = createFileRoute(
 
 function CustomerDetailsPage() {
   const navigate = Route.useNavigate();
-  const { status } = Route.useSearch();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -130,11 +120,6 @@ function CustomerDetailsPage() {
   const statsQuery = useQuery(
     customerStatsQueryOptions(merchantId, customerId)
   );
-  const customersQuery = useQuery({
-    ...customersQueryOptions(merchantId),
-    enabled: showTransferModal,
-  });
-
   if (profileQuery.isLoading) return <Loading />;
   if (profileQuery.isError) {
     return <ServerError error={profileQuery.error?.message} />;
@@ -225,69 +210,12 @@ function CustomerDetailsPage() {
     }
   }
 
-  async function transferHandler(data) {
-    try {
-      const response = await fetch(
-        `/api/v1/merchants/${merchantId}/customers/transfer`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            from_customer_id: data.from,
-            to_customer_id: data.to,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        invalidateLocalStorageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-        return;
-      }
-
-      showToast({
-        message: "Bookings transferred successfully",
-        variant: "success",
-      });
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-stats", customerId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-bookings", customerId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: [merchantId, "customers"],
-        }),
-      ]);
-      setServerError();
-    } catch (error) {
-      setServerError(error.message);
-    }
-  }
-
-  function statusChangeHandler(nextStatus) {
-    navigate({
-      from: Route.fullPath,
-      search: (previous) => ({ ...previous, status: nextStatus }),
-      replace: true,
-    });
-  }
-
   return (
     <main className="flex justify-center">
       <TransferAppsModal
-        data={{
-          from: customer.id,
-          customers: customersQuery.data ?? [customer],
-        }}
+        fromCustomerId={customer.id}
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        onSubmit={transferHandler}
       />
       <BlacklistModal
         key={customer.id}
@@ -309,15 +237,15 @@ function CustomerDetailsPage() {
         onDelete={() => deleteHandler(customer.id)}
       />
 
-      <div className="flex w-full max-w-xl flex-col gap-8 px-3 py-4 sm:px-0">
+      <div className="w-full max-w-4xl px-3 py-4 sm:px-5 sm:py-6">
         <ServerError error={serverError} />
 
-        <Card styles="flex flex-col items-start gap-4">
+        <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
           <div className="flex w-full justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
-              <Avatar initials={initials} />
+              <Avatar styles="size-14! text-lg!" initials={initials} />
               <div className="flex min-w-0 flex-col gap-1">
-                <h1 className="text-text_color truncate text-lg font-bold">
+                <h1 className="text-text_color truncate text-2xl font-bold">
                   {fullName}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2">
@@ -392,20 +320,21 @@ function CustomerDetailsPage() {
           <ExpandableNote text={customer.note} />
         </Card>
 
-        <CustomerStats
-          stats={stats}
-          isLoading={statsQuery.isLoading}
-          error={statsQuery.error}
-        />
-
-        <BookingHistory
-          customerId={customerId}
-          merchantId={merchantId}
-          status={status}
-          counts={stats}
-          onStatusChange={statusChangeHandler}
-          route={Route}
-        />
+        <div className="py-6">
+          <CustomerStats
+            stats={stats}
+            isLoading={statsQuery.isLoading}
+            error={statsQuery.error}
+          />
+        </div>
+        <div className="pt-8">
+          <BookingHistory
+            customerId={customerId}
+            merchantId={merchantId}
+            counts={stats}
+            route={Route}
+          />
+        </div>
       </div>
     </main>
   );

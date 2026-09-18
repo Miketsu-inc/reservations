@@ -21,7 +21,7 @@ type CustomerRepository interface {
 	GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error)
 	GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error)
 	GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error)
-	GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, status string, limit int, cursorStart time.Time, cursorId int) ([]CustomerBooking, error)
+	GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, statuses []string, limit int, cursorStart time.Time, cursorId int) ([]CustomerBooking, error)
 	GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]CustomerForCalendar, error)
 
 	SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error
@@ -60,9 +60,14 @@ type CustomerStatistics struct {
 	TimesCancelledByUser int        `json:"times_cancelled_by_user" db:"times_cancelled_by_user"`
 	TimesNoShow          int        `json:"times_no_show" db:"times_no_show"`
 	TimesUpcoming        int        `json:"times_upcoming" db:"times_upcoming"`
+	TimesBookedStatus    int        `json:"times_booked_status" db:"times_booked_status"`
+	TimesConfirmed       int        `json:"times_confirmed" db:"times_confirmed"`
 	TimesCompleted       int        `json:"times_completed" db:"times_completed"`
 	FirstBooking         *time.Time `json:"first_booking" db:"first_booking"`
 	LastVisited          *time.Time `json:"last_visited" db:"last_visited"`
+	TotalSpent           currencyx.Price
+	FavoriteService      *string
+	NextBooking          *time.Time
 }
 
 type CustomerBooking struct {
