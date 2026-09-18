@@ -264,13 +264,8 @@ create table if not exists "BookingParticipant" (
     customer_note            text,
     cancelled_on             timestamptz,
     cancellation_reason      text,
-    transferred_to           uuid,
-
     constraint unique_booking_participant unique (booking_id, customer_id)
 );
-
-create unique index if not exists unique_booking_effective_participant on "BookingParticipant" (booking_id, coalesce(transferred_to, customer_id))
-where coalesce(transferred_to, customer_id) is not null;
 
 create table if not exists "EmployeePreferences" (
     employee_id              integer          primary key unique references "Employee" (ID) on delete cascade not null,

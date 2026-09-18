@@ -128,7 +128,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 		count(b.id) as times_booked, count(b.id) filter (where bp.status = 'cancelled') as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "BookingParticipant" bp on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	left join "BookingParticipant" bp on c.id = bp.customer_id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	where c.merchant_id = $1 and c.is_blacklisted = $2
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
@@ -185,10 +185,10 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 				) order by b.from_date desc
 			) as bookings
 		from (
-			select coalesce(bp.transferred_to, bp.customer_id) as customer_id, b.id, b.from_date, b.to_date, b.merchant_id,
+			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id,
 				b.service_name, b.price_per_person, b.price_type, b.formatted_location, bp.status
 			from "Booking" b
-			join "BookingParticipant" bp on bp.booking_id = b.id and coalesce(bp.transferred_to, bp.customer_id) = $2
+			join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
 			where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
 		) b
 		join "Merchant" m on m.id = b.merchant_id
@@ -201,7 +201,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 		coalesce(ca.bookings, '[]'::jsonb) as bookings
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
-	left join "BookingParticipant" bp on coalesce(bp.transferred_to, bp.customer_id) = c.id
+	left join "BookingParticipant" bp on bp.customer_id = c.id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 	left join bookings ca on c.id = ca.customer_id
 	where c.id = $2 and c.merchant_id = $1
@@ -236,7 +236,7 @@ func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, mercha
 		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
-	left join "BookingParticipant" bp on coalesce(bp.transferred_to, bp.customer_id) = c.id and bp.status = 'completed'
+	left join "BookingParticipant" bp on bp.customer_id = c.id and bp.status = 'completed'
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1 and b.from_date < now()
 	where c.merchant_id = $1
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number

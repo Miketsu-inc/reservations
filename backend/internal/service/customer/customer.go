@@ -194,12 +194,23 @@ type TransferBookingsInput struct {
 func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.bookingRepo.TransferDummyBookings(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
-	if err != nil {
-		return err
-	}
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		bookingRepo := s.bookingRepo.WithTx(tx)
 
-	return nil
+		if err := bookingRepo.MergeDuplicateBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+			return err
+		}
+
+		if err := bookingRepo.TransferBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+			return err
+		}
+
+		if err := bookingRepo.MergeDuplicateBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+			return err
+		}
+
+		return bookingRepo.TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+	})
 }
 
 func (s *Service) GetAllBlacklisted(ctx context.Context) ([]domain.PublicCustomer, error) {

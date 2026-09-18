@@ -36,7 +36,10 @@ type BookingRepository interface {
 	UpdateParticipantCountBatch(ctx context.Context, bookingIds []int, participantDelta []int) ([]int, error)
 	// decrements the participant count on every booking related to the customer
 	DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
-	TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
+	MergeDuplicateBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
+	TransferBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
+	MergeDuplicateBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
+	TransferBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 	UpdateBookingPhasesBatch(ctx context.Context, bookingPhases []BookingPhase) error
 
 	CancelBookingByMerchant(ctx context.Context, merchantId uuid.UUID, bookingId int, cancellationReason string) error
@@ -264,7 +267,6 @@ type BookingParticipant struct {
 	CustomerNote       *string
 	CancelledOn        *time.Time
 	CancellationReason *string
-	TransferredTo      *uuid.UUID
 }
 
 func (bp BookingParticipant) IsCancelled() bool {
