@@ -158,11 +158,9 @@ type dashboardRevenueResp struct {
 	Revenue     []revenueStatResp `json:"revenue"`
 }
 
-// TODO: value is of numeric type so float might not be the best
-// type to return here
 type revenueStatResp struct {
-	Value float64   `json:"value"`
-	Day   time.Time `json:"day"`
+	Value currencyx.Price `json:"value"`
+	Day   time.Time       `json:"day"`
 }
 
 func (h *Handler) GetDashboardRevenue(w http.ResponseWriter, r *http.Request) error {

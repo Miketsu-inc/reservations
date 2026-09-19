@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -140,11 +141,9 @@ type MerchantSettingFields struct {
 	ApprovalPolicy   types.ApprovalType `json:"approval_policy"`
 }
 
-// TODO: value is of numeric type so float might not be the best
-// type to return here
 type RevenueStat struct {
-	Value float64   `json:"value" db:"value"`
-	Day   time.Time `json:"day" db:"day"`
+	Value currencyx.Price `json:"value" db:"value"`
+	Day   time.Time       `json:"day" db:"day"`
 }
 
 type DashboardStatistics struct {

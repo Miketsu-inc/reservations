@@ -235,7 +235,6 @@ func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) erro
 		return validate.NewError("invalid location id")
 	}
 
-	// TODO: this should probably be in the catalog service
 	serviceDetails, err := h.catalogServ.GetServiceDetails(r.Context(), urlName, urlServiceId, urlLocationId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetServiceDetails")

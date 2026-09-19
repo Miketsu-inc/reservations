@@ -61,8 +61,13 @@ export default function RevenueChart({ merchantId, period }) {
     return <Loading />;
   }
 
+  const numericRevenue = data.revenue.map(({ day, value }) => ({
+    day,
+    value: Number(value.number),
+  }));
+
   const revenue = fillStatisticsWithDate(
-    data.revenue,
+    numericRevenue,
     data.period_start,
     data.period_end
   );

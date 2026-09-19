@@ -412,15 +412,17 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate, endDate time.Time) ([]domain.RevenueStat, error) {
 	query := `
 	SELECT
-		DATE(bookings.from_date) AS day,
-		COALESCE(SUM(bookings.price), 0) AS value
-	FROM (
-		select b.from_date, (b.total_price).number as price
-		from "Booking" b
-		where b.merchant_id = $1 AND b.from_date >= $2 AND b.from_date < $3 and b.status not in ('cancelled')
-		order by b.id
-	) as bookings
-	GROUP BY day
+		DATE(b.from_date) AS day,
+		ROW(
+			SUM((b.total_price).number),
+			(b.total_price).currency
+		)::price AS value
+	FROM "Booking" b
+	WHERE b.merchant_id = $1
+		AND b.from_date >= $2
+		AND b.from_date < $3
+		AND b.status NOT IN ('cancelled')
+	GROUP BY day, (b.total_price).currency
 	ORDER BY day
 	`
 
