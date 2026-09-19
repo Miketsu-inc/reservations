@@ -4,7 +4,7 @@ import { meQueryOptions } from "@reservations/lib";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context: { queryClient } }) => {
+  beforeLoad: async ({ context: { queryClient }, location }) => {
     try {
       const me = await queryClient.ensureQueryData(meQueryOptions());
 
@@ -24,6 +24,10 @@ export const Route = createFileRoute("/_authenticated")({
           employeeId: membership?.employee_id,
           role: membership?.role,
         };
+
+        localStorage.setItem("activeMerchantId", membership.merchant_id);
+      } else if (location.pathname !== "/signup") {
+        throw redirect({ to: "/signup" });
       }
 
       return {
@@ -36,6 +40,8 @@ export const Route = createFileRoute("/_authenticated")({
           search: { redirect: location.href },
         });
       }
+
+      throw error;
     }
   },
   pendingComponent: Loading,

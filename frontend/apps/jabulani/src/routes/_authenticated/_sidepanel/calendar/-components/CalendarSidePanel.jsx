@@ -85,7 +85,9 @@ export default function CalendarSidePanel({
     return (
       <ServerError
         error={
-          customersError.message || servicesError.message || teamError.message
+          customersError?.message ||
+          servicesError?.message ||
+          teamError?.message
         }
       />
     );

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
@@ -289,20 +288,20 @@ func (s *Service) validateInvitation(ctx context.Context, userEmail string, toke
 	return &invitation, nil
 }
 
-func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, error) {
+func (s *Service) AcceptInvitation(ctx context.Context, token string) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	user, err := s.userRepo.GetUser(ctx, userId)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	invitation, err := s.validateInvitation(ctx, user.Email, token)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = s.teamRepo.WithTx(tx).AcceptEmployeeInvitation(ctx, invitation.Id)
 		if err != nil {
 			return err
@@ -326,11 +325,6 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) (string, e
 
 		return nil
 	})
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s/dashboard", config.LoadEnvVars().JABULANI_URL), nil
 }
 
 func (s *Service) DeclineInvitation(ctx context.Context, token string) error {

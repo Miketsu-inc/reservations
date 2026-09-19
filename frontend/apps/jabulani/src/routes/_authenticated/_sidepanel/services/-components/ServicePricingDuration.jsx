@@ -58,12 +58,14 @@ export function ServicePricingDuration({ service, setService, onUpdate }) {
             styles="w-28! sm:w-full!"
             options={priceTypeOptions}
             onSelect={(option) => {
-              onUpdate({
-                price: {
-                  number: 0,
-                  currency: service.price?.currency || "HUF",
-                },
-              });
+              if (option.value === "free") {
+                onUpdate({
+                  price: {
+                    number: 0,
+                    currency: service.price?.currency || "HUF",
+                  },
+                });
+              }
               onUpdate({
                 price_type: option.value,
               });

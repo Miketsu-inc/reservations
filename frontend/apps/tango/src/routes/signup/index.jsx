@@ -1,5 +1,5 @@
 import { ProgressBar, ServerError } from "@reservations/components";
-import { useMultiStepForm } from "@reservations/lib";
+import { getSafeRedirectUrl, useMultiStepForm } from "@reservations/lib";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import EmailForm from "./-components/EmailForm";
@@ -76,8 +76,9 @@ function SingUpPage() {
         setServerError();
         setIsSubmitDone(true);
 
-        if (search.redirect) {
-          router.history.push(search.redirect);
+        const redirectUrl = getSafeRedirectUrl(search.redirect);
+        if (redirectUrl) {
+          window.location.assign(redirectUrl);
         } else {
           router.navigate({ from: Route.fullPath, to: "/" });
         }

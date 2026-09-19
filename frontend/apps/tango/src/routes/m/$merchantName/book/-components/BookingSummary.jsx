@@ -7,13 +7,15 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button, Card, Icon } from "@reservations/components";
 import {
+  dateStringToLocalDate,
   formatDuration,
   formatTimeRange,
   getDisplayPrice,
 } from "@reservations/lib";
 
 const formatDate = (dateString) => {
-  const date = new Date(`${dateString}`);
+  const date = dateStringToLocalDate(dateString);
+  if (!date) return dateString;
 
   const formattedDate = new Intl.DateTimeFormat("en-US", {
     month: "long",

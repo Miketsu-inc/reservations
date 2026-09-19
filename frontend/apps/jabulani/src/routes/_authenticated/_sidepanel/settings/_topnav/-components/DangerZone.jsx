@@ -1,6 +1,11 @@
 import { DeleteModal } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import {
+  invalidateLocalStorageAuth,
+  meQueryOptions,
+  useToast,
+} from "@reservations/lib";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import DangerZoneItem from "./DangerZoneItem";
@@ -9,50 +14,63 @@ import SectionHeader from "./SectionHeader";
 
 export default function DangerZone() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMerchantNameModalOpen, setisMerchantNameModalOpen] = useState(false);
   const { showToast } = useToast();
   const { merchantId } = useAuth();
 
   async function deletehandler() {
-    const response = await fetch(`/api/v1/merchants/${merchantId}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      invalidateLocalStorageAuth(response.status);
-      const result = await response.json();
-      showToast({ message: result.error.message, variant: "error" });
-    } else {
-      router.navigate({
-        from: "/settings/merchant",
-        to: "/login",
+    try {
+      const response = await fetch(`/api/v1/merchants/${merchantId}`, {
+        method: "DELETE",
       });
+      if (!response.ok) {
+        invalidateLocalStorageAuth(response.status);
+        const result = await response.json();
+        showToast({ message: result.error.message, variant: "error" });
+        return;
+      }
+
+      localStorage.removeItem("activeMerchantId");
+      await queryClient.invalidateQueries(meQueryOptions());
       showToast({
         message: "Merchant deleted successfully",
         variant: "success",
       });
+      router.navigate({ to: "/" });
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
     }
   }
 
   async function handleNameChange(newName) {
-    const response = await fetch(`/api/v1/merchants/${merchantId}/name`, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ name: newName }),
-    });
+    try {
+      const response = await fetch(`/api/v1/merchants/${merchantId}/name`, {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ name: newName }),
+      });
 
-    if (!response.ok) {
-      invalidateLocalStorageAuth(response.status);
-      const result = await response.json();
-      showToast({ message: result.error.message, variant: "error" });
-    } else {
+      if (!response.ok) {
+        invalidateLocalStorageAuth(response.status);
+        const result = await response.json();
+        showToast({ message: result.error.message, variant: "error" });
+        return false;
+      }
+
+      await queryClient.invalidateQueries(meQueryOptions());
       showToast({
         message: "Name changed successfully",
         variant: "success",
       });
+      return true;
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
+      return false;
     }
   }
 

@@ -99,7 +99,7 @@ export const Route = createFileRoute(
     await queryClient.ensureQueryData(customersQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
-    return <ServerError error={error.mesage} />;
+    return <ServerError error={error.message} />;
   },
 });
 
@@ -128,8 +128,8 @@ function CustomerDetailsPage() {
   }
 
   if (queryResults.some((r) => r.isError)) {
-    const error = queryResults.find((r) => r.error);
-    return <ServerError error={error.message} />;
+    const query = queryResults.find((result) => result.error);
+    return <ServerError error={query.error.message} />;
   }
 
   const completedBookings = queryResults[0].data.bookings.filter(
@@ -162,6 +162,7 @@ function CustomerDetailsPage() {
           message: "Customer deleted successfully",
           variant: "success",
         });
+        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         navigate({
           from: Route.fullPath,
           to: "/customers",
@@ -185,7 +186,7 @@ function CustomerDetailsPage() {
     if (data.method === "PUT") {
       options.body = JSON.stringify({
         id: data.id,
-        reason: data.reason,
+        blacklist_reason: data.blacklist_reason,
       });
     }
 
@@ -275,9 +276,9 @@ function CustomerDetailsPage() {
         onClose={() => setShowBlacklistModal(false)}
         onSubmit={(customer) =>
           blacklistHandler({
-            method: customer.is_blacklisted ? "DELETE" : "POST",
+            method: customer.is_blacklisted ? "DELETE" : "PUT",
             id: customer.id,
-            reason: customer.reason,
+            blacklist_reason: customer.blacklist_reason,
           })
         }
       />

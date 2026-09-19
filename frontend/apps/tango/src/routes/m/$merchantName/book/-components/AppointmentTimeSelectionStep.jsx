@@ -7,7 +7,10 @@ import {
   ServerError,
   Textarea,
 } from "@reservations/components";
-import { invalidateLocalStorageAuth } from "@reservations/lib";
+import {
+  dateStringToLocalDate,
+  invalidateLocalStorageAuth,
+} from "@reservations/lib";
 import {
   keepPreviousData,
   queryOptions,
@@ -189,7 +192,7 @@ export default function AppointmentTimeSelectionStep({
     });
   }
 
-  if (daysIsError) return <ServerError error={daysError} />;
+  if (daysIsError) return <ServerError error={daysError.message} />;
   if (daysIsLoading) return <StepContentSkeleton />;
 
   const hasNoOpenings =
@@ -235,16 +238,20 @@ export default function AppointmentTimeSelectionStep({
             styles="w-min"
             hideText={true}
             value={
-              selectedDay ? new Date(selectedDay + "T00:00:00") : undefined
+              selectedDay
+                ? (dateStringToLocalDate(selectedDay) ?? undefined)
+                : undefined
             }
             firstDayOfWeek={"Monday"}
             clearAfterClose={true}
             onSelect={handleDatePickerSelect}
-            disabledBefore={new Date(availableDays[0].date + "T00:00:00")}
+            disabledBefore={
+              dateStringToLocalDate(availableDays[0].date) ?? undefined
+            }
             disabledAfter={
-              new Date(
-                availableDays[availableDays.length - 1].date + "T00:00:00"
-              )
+              dateStringToLocalDate(
+                availableDays[availableDays.length - 1].date
+              ) ?? undefined
             }
           />
         </div>
@@ -262,7 +269,7 @@ export default function AppointmentTimeSelectionStep({
 
       <div className="mt-8 flex w-full flex-1 flex-col gap-6">
         {timesIsError ? (
-          <ServerError error={timesError} />
+          <ServerError error={timesError.message} />
         ) : timesIsLoading ? (
           <Loading />
         ) : hasNoOpenings ? (

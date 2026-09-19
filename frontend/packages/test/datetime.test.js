@@ -1,9 +1,52 @@
 import {
+  dateAndTimeStringsToLocalDate,
+  dateStringToLocalDate,
   formatToDateString,
   getMonthFromCalendarStart,
   isDurationValid,
 } from "@reservations/lib/datetime";
 import { describe, expect, it } from "vitest";
+
+describe("dateStringToLocalDate", () => {
+  it("parses a date as local calendar components", () => {
+    const date = dateStringToLocalDate("2026-09-19");
+
+    expect(date).not.toBeNull();
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getMonth()).toBe(8);
+    expect(date.getDate()).toBe(19);
+    expect(date.getHours()).toBe(0);
+  });
+
+  it.each(["2026-02-29", "2026-13-01", "2026-01-32", "19-09-2026", ""])(
+    "rejects invalid date %s",
+    (value) => {
+      expect(dateStringToLocalDate(value)).toBeNull();
+    }
+  );
+});
+
+describe("dateAndTimeStringsToLocalDate", () => {
+  it("combines local calendar date and time components", () => {
+    const date = dateAndTimeStringsToLocalDate("2026-09-19", "14:30");
+
+    expect(date).not.toBeNull();
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getMonth()).toBe(8);
+    expect(date.getDate()).toBe(19);
+    expect(date.getHours()).toBe(14);
+    expect(date.getMinutes()).toBe(30);
+  });
+
+  it.each([
+    ["2026-02-29", "14:30"],
+    ["2026-09-19", "24:00"],
+    ["2026-09-19", "14:60"],
+    ["2026-09-19", "2:30"],
+  ])("rejects invalid date/time values %s %s", (date, time) => {
+    expect(dateAndTimeStringsToLocalDate(date, time)).toBeNull();
+  });
+});
 
 describe("isDurationValid", () => {
   it("invalid dates", () => {

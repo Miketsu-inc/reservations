@@ -1,6 +1,10 @@
 import { Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import {
+  customersQueryOptions,
+  invalidateLocalStorageAuth,
+  useToast,
+} from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -56,6 +60,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const router = useRouter();
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { id } = Route.useParams();
@@ -83,14 +88,19 @@ function RouteComponent() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        await queryClient.invalidateQueries({
+          queryKey: [merchantId, "customer", id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [merchantId, "customer-info", id],
+        });
+        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         showToast({
           message: "Customer modified successfully",
           variant: "success",
         });
-        router.navigate({
-          from: Route.fullPath,
-          to: router.history.back(),
-        });
+
+        router.history.back();
       }
     } catch (err) {
       setServerError(err.message);

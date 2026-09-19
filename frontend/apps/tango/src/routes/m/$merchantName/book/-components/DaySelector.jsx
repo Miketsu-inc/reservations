@@ -1,5 +1,6 @@
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
+import { dateStringToLocalDate } from "@reservations/lib";
 import { useCallback, useEffect, useRef } from "react";
 
 export default function DaySelector({ days, selectedDate, onSelect }) {
@@ -93,7 +94,9 @@ export default function DaySelector({ days, selectedDate, onSelect }) {
 }
 
 function DayButton({ day, isSelected, isUnavailable, onClick, registerRef }) {
-  const date = new Date(day.date);
+  const date = dateStringToLocalDate(day.date);
+  if (!date) return null;
+
   const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
   const dayNumber = date.getDate();
   const month = date.toLocaleDateString("en-US", { month: "short" });
@@ -102,6 +105,7 @@ function DayButton({ day, isSelected, isUnavailable, onClick, registerRef }) {
     <button
       ref={(el) => registerRef(day.date, el)}
       type="button"
+      disabled={isUnavailable}
       onClick={() => onClick(day.date)}
       aria-pressed={isSelected}
       aria-label={

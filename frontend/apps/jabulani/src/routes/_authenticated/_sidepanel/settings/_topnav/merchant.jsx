@@ -135,6 +135,7 @@ export const Route = createFileRoute(
 
 function MerchantPage() {
   const { merchantId, employeeId } = useAuth();
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
 
   const {
     data: merchantData,
@@ -204,6 +205,7 @@ function MerchantPage() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        queryClient.setQueryData([merchantId, "merchant-data"], merchantInfo);
         setServerError("");
         showToast({
           message: "Merchant updated successfully!",

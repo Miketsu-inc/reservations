@@ -112,7 +112,7 @@ function BookingCard({ booking, route, onAccept }) {
             lg:cursor-default"
           from={route.fullPath}
           to="/calendar"
-          params={{
+          search={{
             start: formatToDateString(fromDate),
           }}
           disabled={!isWindowSmall}
@@ -167,7 +167,7 @@ function BookingCard({ booking, route, onAccept }) {
               rounded-lg px-2.5 lg:flex lg:h-fit lg:py-2.5"
             from={route.fullPath}
             to="/calendar"
-            params={{
+            search={{
               start: formatToDateString(fromDate),
             }}
           >

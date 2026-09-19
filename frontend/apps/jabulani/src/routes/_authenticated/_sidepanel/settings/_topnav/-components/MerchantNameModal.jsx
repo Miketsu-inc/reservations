@@ -5,16 +5,23 @@ import {
   ServerError,
 } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
   const [newName, setNewName] = useState("");
   const [merchantUrl, setMerchantUrl] = useState({ valid: false, url: "" });
   const [serverError, setServerError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const keyUpTimer = useRef(null);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    return () => clearTimeout(keyUpTimer.current);
+  }, []);
 
   const checkMerchantUrl = useCallback(async (name) => {
+    const currentRequestId = ++requestId.current;
     if (name !== "") {
       try {
         const response = await fetch("/api/v1/merchants/check-url", {
@@ -27,6 +34,8 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
         });
 
         const result = await response.json();
+        if (currentRequestId !== requestId.current) return;
+
         if (response.ok) {
           setMerchantUrl({ valid: true, url: result.data.merchant_url });
         } else {
@@ -34,7 +43,9 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
           setMerchantUrl({ valid: false, url: result.error.meta.merchant_url });
         }
       } catch (err) {
-        setServerError(err.message);
+        if (currentRequestId === requestId.current) {
+          setServerError(err.message);
+        }
       }
     } else {
       setMerchantUrl({ valid: false, url: "" });
@@ -58,8 +69,12 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
     if (!form.checkValidity()) {
       return;
     }
-    await onSubmit(newName);
-    onClose();
+    if (!merchantUrl.valid || isSubmitting) return;
+
+    setIsSubmitting(true);
+    const didSave = await onSubmit(newName);
+    setIsSubmitting(false);
+    if (didSave) onClose();
   }
 
   return (
@@ -111,6 +126,8 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
             type="submit"
             buttonText="Change Name"
             styles="p-2 w-full lg:w-auto"
+            disabled={!merchantUrl.valid || isSubmitting}
+            isLoading={isSubmitting}
           />
         </div>
       </form>

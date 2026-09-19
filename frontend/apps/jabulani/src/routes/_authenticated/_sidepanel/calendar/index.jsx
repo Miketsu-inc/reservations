@@ -2,6 +2,7 @@ import { Loading, ServerError } from "@reservations/components";
 import {
   businessHoursQueryOptions,
   calculateStartEndTime,
+  dateStringToLocalDate,
   invalidateLocalStorageAuth,
   isDurationValid,
   preferencesQueryOptions,
@@ -13,32 +14,20 @@ import { lazy, Suspense } from "react";
 
 const Calendar = lazy(() => import("./-components/Calendar"));
 
-function normalizeDateString(dateStr) {
-  if (!dateStr) return undefined;
-
-  try {
-    // Parse the date string (handles various formats)
-    const date = new Date(dateStr);
-
-    // Check if valid date
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-
-    // Return in YYYY-MM-DD format
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  } catch (_) {
-    return undefined;
-  }
+function validateDateString(dateStr) {
+  return dateStringToLocalDate(dateStr) ? dateStr : undefined;
 }
 
 async function fetchBookings(merchantId, start, end) {
-  start = new Date(start).toJSON();
-  end = new Date(end).toJSON();
+  const startDate = dateStringToLocalDate(start);
+  const endDate = dateStringToLocalDate(end);
+
+  if (!startDate || !endDate) {
+    throw new Error("Invalid calendar date range");
+  }
+
+  start = startDate.toISOString();
+  end = endDate.toISOString();
 
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/calendar/events?start=${start}&end=${end}`,
@@ -110,8 +99,8 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar/")({
       ? search.view
       : defaultView;
 
-    let start = normalizeDateString(search.start);
-    let end = normalizeDateString(search.end);
+    let start = validateDateString(search.start);
+    let end = validateDateString(search.end);
 
     if (!start || !end || !isDurationValid(view, start, end)) {
       const calculated = calculateStartEndTime(

@@ -32,6 +32,7 @@ export default function MapboxMap({
         });
       } catch (error) {
         console.log(error);
+        return;
       }
 
       mapRef.current = map;

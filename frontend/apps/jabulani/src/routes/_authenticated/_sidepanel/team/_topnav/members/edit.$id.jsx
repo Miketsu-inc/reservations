@@ -33,6 +33,7 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { id } = Route.useParams({ from: Route.id });
   const router = useRouter();
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -63,14 +64,15 @@ function RouteComponent() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        await queryClient.invalidateQueries({
+          queryKey: [merchantId, "employee", id],
+        });
         showToast({
           message: "Employee modified successfully",
           variant: "success",
         });
-        router.navigate({
-          from: Route.fullPath,
-          to: router.history.back(),
-        });
+
+        router.history.back();
       }
     } catch (err) {
       setServerError(err.message);

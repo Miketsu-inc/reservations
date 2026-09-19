@@ -126,8 +126,8 @@ function CalendarPage() {
       const newPreferences = { ...(data || defaultPreferences), ...newChanges };
 
       if (key === "start_hour" || key === "end_hour") {
-        const startHour = key === "start_hour" ? value : prev.start_hour;
-        const endHour = key === "end_hour" ? value : prev.end_hour;
+        const startHour = newPreferences.start_hour;
+        const endHour = newPreferences.end_hour;
 
         if (!validateTimeRange(startHour, endHour)) {
           const errorMsg =
@@ -141,7 +141,7 @@ function CalendarPage() {
       }
 
       setErrorMessage("");
-      return newPreferences;
+      return newChanges;
     });
   }
 
@@ -263,6 +263,10 @@ function CalendarPage() {
           buttonText="Update fields"
           type="button"
           onClick={handleUpdate}
+          disabled={
+            Object.keys(unsavedChanges).length === 0 || updateMutation.isPending
+          }
+          isLoading={updateMutation.isPending}
         />
         <ServerError error={serverError} styles="mt-2" />
       </div>

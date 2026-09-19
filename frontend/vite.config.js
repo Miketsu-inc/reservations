@@ -23,12 +23,6 @@ const createBaseConfig = (additionalConfig) =>
         //   },
         // }),
       ],
-      esbuild:
-        mode === "production"
-          ? {
-              pure: ["console.log", "console.warn"],
-            }
-          : {},
       server:
         mode === "production"
           ? {}

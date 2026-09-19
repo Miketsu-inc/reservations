@@ -1,6 +1,7 @@
 import { ArrowLeft01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Button, Icon, ServerError } from "@reservations/components";
 import {
+  dateAndTimeStringsToLocalDate,
   formatDuration,
   formatTimeRange,
   getDisplayPrice,
@@ -76,6 +77,7 @@ function bookingSummaryQueryOptions(
     ],
     queryFn: () =>
       fetchSummaryInfo(merchantName, locationId, serviceId, employeeId),
+    enabled: Boolean(merchantName && locationId),
   });
 }
 
@@ -190,10 +192,18 @@ function BookingFLow() {
       return;
     }
 
-    const date = new Date(selectedSummary.time.date);
+    const date = dateAndTimeStringsToLocalDate(
+      selectedSummary.time.date,
+      selectedSummary.time.time
+    );
+    if (!date) {
+      showToast({
+        message: "Please select a valid date and time",
+        variant: "error",
+      });
+      return;
+    }
 
-    const [hours, minutes] = selectedSummary.time.time.split(":").map(Number);
-    date.setHours(hours, minutes, 0, 0);
     const timeStamp = date.toISOString();
 
     setIsSubmitting(true);
@@ -226,6 +236,7 @@ function BookingFLow() {
               redirect: router.history.location.href,
             },
           });
+          return;
         }
 
         const result = await response.json();

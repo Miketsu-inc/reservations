@@ -18,7 +18,7 @@ const defaultErrorMeassage = {
   lastname: "Please enter your last name",
 };
 
-export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
+export default function NameForm({ isLoading, SubmitForm }) {
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const [nameData, setNameData] = useState(defaultNameData);
@@ -78,7 +78,6 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
 
     if (!hasError) {
       SubmitForm(nameData.firstName.value, nameData.lastName.value);
-      isCompleted(true);
     }
   }
 
@@ -90,7 +89,7 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
         type="text"
         name="firstName"
         id="firstNameInput"
-        autoComplete="family-name"
+        autoComplete="given-name"
         labelText="First Name"
         errorText={errorMessage.firstname}
         inputValidation={firstNameValidation}
@@ -102,7 +101,7 @@ export default function NameForm({ isCompleted, isLoading, SubmitForm }) {
         type="text"
         name="lastName"
         id="lastNameInput"
-        autoComplete="given-name"
+        autoComplete="family-name"
         labelText="Last Name"
         errorText={errorMessage.lastname}
         inputValidation={lastNameValidation}

@@ -1,4 +1,4 @@
-import { useMultiStepForm } from "@reservations/lib";
+import { meQueryOptions, useMultiStepForm } from "@reservations/lib";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import LocationPicker from "./-components/LocationPicker";
@@ -10,8 +10,9 @@ export const Route = createFileRoute("/_authenticated/signup/")({
 
 function MerchantSignup() {
   const navigate = useNavigate({ from: Route.fullPath });
+  const { queryClient } = Route.useRouteContext();
   const [isSubmitDone, setIsSubmitDone] = useState(false);
-  const { step, _, nextStep } = useMultiStepForm([
+  const { step, stepIndex, nextStep } = useMultiStepForm([
     <MerchantInfoForm key="companyInfoForm" isCompleted={isCompletedHandler} />,
     <LocationPicker
       key="locationForm"
@@ -21,8 +22,11 @@ function MerchantSignup() {
     />,
   ]);
 
-  function isCompletedHandler(isCompleted) {
+  async function isCompletedHandler(isCompleted) {
     if (isCompleted) {
+      if (stepIndex === 0) {
+        await queryClient.invalidateQueries(meQueryOptions());
+      }
       nextStep();
     }
   }

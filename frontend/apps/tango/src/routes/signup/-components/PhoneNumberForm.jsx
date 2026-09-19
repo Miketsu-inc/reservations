@@ -16,8 +16,8 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
   );
 
   function PhoneNumValidation(phone_number) {
-    if (phone_number.length > 12) {
-      setErrorMessage("Inputs must be 12 characters or less!");
+    if (phone_number.length > 16) {
+      setErrorMessage("Phone numbers must be 16 characters or less!");
       return false;
     }
 
@@ -26,7 +26,12 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
       return false;
     }
 
-    return phone_number;
+    if (!/^\+[1-9]\d{6,14}$/.test(phone_number)) {
+      setErrorMessage("Please enter a valid international phone number.");
+      return false;
+    }
+
+    return true;
   }
 
   function handleInputData(data) {

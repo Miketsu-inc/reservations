@@ -161,6 +161,14 @@ export default function BlockedTimePanel({
       return;
     }
 
+    if (!formData.all_day && formData.from_time >= formData.to_time) {
+      showToast({
+        message: "The end time must be after the start time",
+        variant: "error",
+      });
+      return;
+    }
+
     let blockedTypeId =
       formData.blocked_type_id === "custom"
         ? undefined
@@ -307,7 +315,7 @@ export default function BlockedTimePanel({
     <form
       className={`no-scrollbar relative h-full w-full justify-between
         overflow-y-auto ${isWindowSmall ? "pt-0" : "pt-10"} lg:w-110`}
-      d="BlockedTimeForm"
+      id="BlockedTimeForm"
       onSubmit={handleSubmit}
     >
       {isWindowSmall && (
@@ -372,7 +380,7 @@ export default function BlockedTimePanel({
             <Select
               allOptions={timeOptions}
               options={originalTimeOptions.filter(
-                (option) => option.value !== "23:30:00"
+                (option) => option.value !== "23:30"
               )}
               value={formData.from_time}
               labelText="From"

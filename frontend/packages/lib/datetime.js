@@ -12,6 +12,48 @@ export function isoToDateString(dateStr) {
   return dateStr.split("T")[0];
 }
 
+export function dateStringToLocalDate(dateStr) {
+  if (typeof dateStr !== "string") return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  // The Date constructor normalizes invalid values, such as February 31st,
+  // into another month. Verify the components so callers can reject them.
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+export function dateAndTimeStringsToLocalDate(dateStr, timeStr) {
+  const date = dateStringToLocalDate(dateStr);
+  const timeMatch =
+    typeof timeStr === "string"
+      ? /^([01]\d|2[0-3]):([0-5]\d)$/.exec(timeStr)
+      : null;
+
+  if (!date || !timeMatch) return null;
+
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    Number(timeMatch[1]),
+    Number(timeMatch[2])
+  );
+}
+
 export function calculateStartEndTime(view, firstDayOfWeek) {
   if (!firstDayOfWeek) {
     firstDayOfWeek = "Monday";
@@ -123,7 +165,9 @@ export function isDurationValid(view, startStr, endStr) {
 }
 
 export function getMonthFromCalendarStart(dateStr) {
-  const date = new Date(dateStr);
+  const date = dateStringToLocalDate(dateStr);
+
+  if (!date) return undefined;
 
   if (date.getDate() <= 7) {
     return formatToDateString(date);
@@ -254,4 +298,17 @@ export function formatTimeRange(timeString, durationMinutes) {
   const formattedStartTime = timeString.substring(0, 5);
 
   return `${formattedStartTime} - ${formattedEndTime}`;
+}
+
+export function formatTimeInputValue(dateValue) {
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
 }

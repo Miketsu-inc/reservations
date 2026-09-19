@@ -5,6 +5,7 @@ import {
   ServerError,
 } from "@reservations/components";
 import {
+  getSafeRedirectUrl,
   invalidateLocalStorageAuth,
   MAX_INPUT_LENGTH,
   MIN_PASSWORD_LENGTH,
@@ -121,8 +122,9 @@ function LoginPage() {
       } else {
         setServerError();
 
-        if (search.redirect) {
-          router.history.push(search.redirect);
+        const redirectUrl = getSafeRedirectUrl(search.redirect);
+        if (redirectUrl) {
+          window.location.assign(redirectUrl);
         } else {
           router.navigate({ from: Route.fullPath, to: "/" });
         }
@@ -150,7 +152,7 @@ function LoginPage() {
             focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
             items-center justify-center border bg-transparent py-2 font-normal!
             hover:bg-transparent focus:outline-hidden"
-          href="http://localhost:8080/api/v1/auth/oauth/google"
+          href="/api/v1/auth/oauth/google"
         >
           <GoogleIcon
             styles="group-hover:fill-hvr_secondary fill-secondary mr-3"
@@ -163,7 +165,7 @@ function LoginPage() {
             focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
             items-center justify-center border bg-transparent py-2 font-normal!
             hover:bg-transparent focus:outline-hidden"
-          href={"http://localhost:8080/api/v1/auth/oauth/facebook"}
+          href="/api/v1/auth/oauth/facebook"
         >
           <FacebookIcon
             styles="group-hover:fill-hvr_secondary fill-secondary mr-1"

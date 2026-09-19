@@ -1,6 +1,6 @@
 import { Button, Input, ServerError } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const defaultFormData = {
   name: "",
@@ -19,6 +19,11 @@ export default function MerchantInfoForm({ isCompleted }) {
   const [merchantUrl, setMerchantUrl] = useState(defaultMerchantUrl);
 
   const keyUpTimer = useRef(null);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    return () => clearTimeout(keyUpTimer.current);
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -59,9 +64,10 @@ export default function MerchantInfoForm({ isCompleted }) {
   }
 
   const checkMerchantUrl = useCallback(async (merchantName) => {
+    const currentRequestId = ++requestId.current;
     if (merchantName !== "") {
       try {
-        const response = await fetch("/api/v1/merchant/check-url", {
+        const response = await fetch("/api/v1/merchants/check-url", {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -73,6 +79,8 @@ export default function MerchantInfoForm({ isCompleted }) {
         });
 
         const result = await response.json();
+        if (currentRequestId !== requestId.current) return;
+
         if (response.ok) {
           setMerchantUrl({
             valid: true,
@@ -86,7 +94,9 @@ export default function MerchantInfoForm({ isCompleted }) {
           });
         }
       } catch (err) {
-        setServerError(err.message);
+        if (currentRequestId === requestId.current) {
+          setServerError(err.message);
+        }
       }
     } else {
       setMerchantUrl({

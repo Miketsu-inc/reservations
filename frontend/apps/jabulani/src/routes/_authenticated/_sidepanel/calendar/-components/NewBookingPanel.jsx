@@ -10,7 +10,7 @@ import { useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
   combineDateTimeLocal,
-  timeStringFromDate,
+  formatTimeInputValue,
   useToast,
   useWindowSize,
 } from "@reservations/lib";
@@ -43,6 +43,7 @@ export default function NewBookingPanel({
   });
   const { showToast } = useToast();
   const { merchantId } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const currentDate = new Date();
   const [recurData, setRecurData] = useState({
     isRecurring: false,
@@ -54,7 +55,7 @@ export default function NewBookingPanel({
   });
   const [bookingData, setBookingData] = useState({
     date: new Date(),
-    time: timeStringFromDate(new Date()).split(" ")[0],
+    time: formatTimeInputValue(new Date()),
     serviceId: null,
     customers: [],
     employee_id: currentEmployee,
@@ -135,6 +136,8 @@ export default function NewBookingPanel({
   }
 
   async function submitHandler() {
+    if (isSubmitting) return;
+
     if (
       !isGroupBooking &&
       recurData.isRecurring &&
@@ -182,6 +185,7 @@ export default function NewBookingPanel({
       return payload;
     });
 
+    setIsSubmitting(true);
     try {
       const response = await fetch(`/api/v1/merchants/${merchantId}/bookings`, {
         method: "POST",
@@ -217,6 +221,8 @@ export default function NewBookingPanel({
       }
     } catch (err) {
       showToast({ message: err.message, variant: "error" });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -457,6 +463,8 @@ export default function NewBookingPanel({
                   name="createButton"
                   buttonText="Create"
                   onClick={submitHandler}
+                  isLoading={isSubmitting}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>

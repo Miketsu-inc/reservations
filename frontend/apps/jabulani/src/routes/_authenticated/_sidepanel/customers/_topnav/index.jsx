@@ -92,9 +92,7 @@ function CustomersPage() {
           message: "Customer deleted successfully",
           variant: "success",
         });
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customers"],
-        });
+        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         setServerError();
       }
     } catch (err) {
@@ -128,9 +126,7 @@ function CustomersPage() {
           message: "Bookings transferred successfully",
           variant: "success",
         });
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customers"],
-        });
+        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         setServerError();
         setTransferModalData();
       }
@@ -165,9 +161,7 @@ function CustomersPage() {
           message: "Customer blacklisted successfully",
           variant: "success",
         });
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customers"],
-        });
+        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         setServerError();
       }
     } catch (err) {

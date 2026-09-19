@@ -1,5 +1,5 @@
 import { Avatar, Button, Loading, ServerError } from "@reservations/components";
-import { meQueryOptions, useToast } from "@reservations/lib";
+import { JABULANI_URL, meQueryOptions, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 
@@ -24,6 +24,7 @@ function invitationQueryOptions(token) {
   return queryOptions({
     queryKey: [token, "get-invitation"],
     queryFn: () => fetchInvitation(token),
+    enabled: Boolean(token),
   });
 }
 
@@ -46,7 +47,9 @@ export const Route = createFileRoute("/invitations")({
     }
   },
   loader: async ({ context: { queryClient }, deps: search }) => {
-    await queryClient.ensureQueryData(invitationQueryOptions(search.token));
+    if (search.token) {
+      await queryClient.ensureQueryData(invitationQueryOptions(search.token));
+    }
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -67,17 +70,24 @@ function RouteComponent() {
   }
 
   async function acceptHandler() {
-    const response = await fetch(`/api/v1/invitations/${token}/accept`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    });
+    try {
+      const response = await fetch(`/api/v1/invitations/${token}/accept`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      const result = await response.json();
-      showToast({ message: result.error.message, variant: "error" });
+      if (!response.ok) {
+        const result = await response.json();
+        showToast({ message: result.error.message, variant: "error" });
+        return;
+      }
+
+      window.location.assign(JABULANI_URL);
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
     }
   }
 

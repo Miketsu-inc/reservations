@@ -15,24 +15,29 @@ function ProfilePage() {
   const [serverError, setServerError] = useState();
 
   const logOutOnAllDevices = useCallback(async () => {
-    const response = await fetch("/api/v1/auth/logout/all", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    });
+    try {
+      const response = await fetch("/api/v1/auth/logout/all", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      const result = await response.json();
-      setServerError(result.error.message);
+      if (!response.ok) {
+        const result = await response.json();
+        setServerError(result.error.message);
+        return;
+      }
+
+      invalidateLocalStorageAuth(401);
+      navigate({
+        from: Route.fullPath,
+        to: "/",
+      });
+    } catch (error) {
+      setServerError(error.message);
     }
-
-    invalidateLocalStorageAuth(401);
-    navigate({
-      from: Route.fullPath,
-      to: "/",
-    });
   }, [navigate]);
 
   return (

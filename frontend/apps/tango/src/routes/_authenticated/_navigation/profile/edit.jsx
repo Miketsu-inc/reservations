@@ -31,33 +31,31 @@ function RouteComponent() {
   const { queryClient } = useRouteContext({ from: Route.id });
   const { isWindowSmall } = useWindowSize();
 
-  async function invalidateMeQuery() {
-    await queryClient.invalidateQueries({
-      queryKey: ["me"],
-    });
-  }
-
   async function submitHandler(e) {
     e.preventDefault();
 
-    const response = await fetch("/api/v1/users", {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      const result = await response.json();
-      showToast({ message: result.error.message, variant: "error" });
-    } else {
-      invalidateMeQuery();
-      navigate({
-        from: Route.fullPath,
-        to: "/profile",
+    try {
+      const response = await fetch("/api/v1/users", {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(userData),
       });
+
+      if (!response.ok) {
+        const result = await response.json();
+        showToast({ message: result.error.message, variant: "error" });
+      } else {
+        await queryClient.invalidateQueries(meQueryOptions());
+        navigate({
+          from: Route.fullPath,
+          to: "/profile",
+        });
+      }
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
     }
   }
 

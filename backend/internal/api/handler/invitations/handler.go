@@ -68,12 +68,12 @@ func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) error
 		return validate.NewError("invalid invitation token")
 	}
 
-	redirectUrl, err := h.service.AcceptInvitation(r.Context(), urlToken)
+	err := h.service.AcceptInvitation(r.Context(), urlToken)
 	if err != nil {
 		return teamServ.ErrStatus.Resolve(err, "AcceptInvitation")
 	}
 
-	http.Redirect(w, r, redirectUrl, http.StatusPermanentRedirect)
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

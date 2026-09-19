@@ -23,6 +23,7 @@ import { useAuth } from "@reservations/jabulani/lib";
 import {
   combineDateTimeLocal,
   DEFAULT_SERVICE_COLOR,
+  formatTimeInputValue,
   timeStringFromDate,
   useToast,
   useWindowSize,
@@ -50,13 +51,13 @@ function monthDateFormat(date) {
 
 function resolveServiceData(service, booking) {
   return {
-    booking_type: service.booking_type ?? booking.booking_type,
-    color: service.color ?? DEFAULT_SERVICE_COLOR,
-    name: service.name ?? booking.service_name,
-    duration: service.duration ?? booking.duration,
-    max_participants: service.max_participants ?? booking.max_participants,
-    price: service.price ?? booking.price,
-    price_type: service.price_type ?? booking.price_type,
+    booking_type: service?.booking_type ?? booking.booking_type,
+    color: service?.color ?? booking.color ?? DEFAULT_SERVICE_COLOR,
+    name: service?.name ?? booking.service_name,
+    duration: service?.duration ?? booking.duration,
+    max_participants: service?.max_participants ?? booking.max_participants,
+    price: service?.price ?? booking.price,
+    price_type: service?.price_type ?? booking.price_type,
   };
 }
 
@@ -85,6 +86,7 @@ export default function EditBookingPanel({
   });
   const [isRecurModalOpen, setIsRecurModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { isWindowSmall } = useWindowSize();
 
@@ -112,7 +114,7 @@ export default function EditBookingPanel({
 
   const [bookingData, setBookingData] = useState({
     date: originalBookingData.start,
-    time: timeStringFromDate(originalBookingData.start).split(" ")[0],
+    time: formatTimeInputValue(originalBookingData.start),
     serviceId: originalBookingData.extendedProps.service_id,
     employeeId: originalBookingData.extendedProps.employee_id,
     bookingStatus: originalBookingData.extendedProps.booking_status,
@@ -170,6 +172,8 @@ export default function EditBookingPanel({
   async function handleSave(option = "this") {
     setIsRecurModalOpen(false);
 
+    if (isSaving) return;
+
     if (isBookingCompleted) {
       showToast({
         message: "You cant update a completed booking",
@@ -210,6 +214,7 @@ export default function EditBookingPanel({
       return payload;
     });
 
+    setIsSaving(true);
     try {
       const response = await fetch(
         `/api/v1/merchants/${merchantId}/bookings/${originalBookingData.extendedProps.id}`,
@@ -242,6 +247,8 @@ export default function EditBookingPanel({
       }
     } catch (err) {
       showToast({ message: err.message, variant: "error" });
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -273,11 +280,12 @@ export default function EditBookingPanel({
       );
 
       if (!response.ok) {
+        updateParticipantStatus(participantId, oldStatus);
         const result = await response.json();
         showToast({ message: result.error.message, variant: "error" });
       } else {
         showToast({
-          message: "Successfully created the booking",
+          message: "Participant status updated successfully",
           variant: "success",
         });
         onSoftUpdate();
@@ -532,6 +540,8 @@ export default function EditBookingPanel({
                   handleSave();
                 }
               }}
+              isLoading={isSaving}
+              disabled={isSaving}
             />
           </div>
         )}
