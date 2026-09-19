@@ -7,8 +7,6 @@ import {
 } from "@tanstack/react-query";
 import StatisticsCard from "./StatisticsCard";
 
-const DASHBOARD_CACHE_TIME = 5 * 60 * 1000;
-
 async function fetchDashboardStatistics(merchantId, period) {
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/dashboard/statistics?period=${period}`,
@@ -36,7 +34,7 @@ function dashboardStatisticsQueryOptions(merchantId, period) {
     queryFn: () => fetchDashboardStatistics(merchantId, period),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
-    gcTime: DASHBOARD_CACHE_TIME,
+    gcTime: 5 * 60 * 1000,
   });
 }
 

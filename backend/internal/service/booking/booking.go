@@ -22,6 +22,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"github.com/riverqueue/river"
 	"github.com/teambition/rrule-go"
 )
@@ -1555,4 +1556,26 @@ func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, pa
 
 		return nil
 	})
+}
+
+func (s *Service) GetDashboardBookings(ctx context.Context, view string) ([]domain.PublicBookingDetails, error) {
+	actor := actor.MustGetFromContext(ctx)
+	afterDate := time.Now().UTC()
+
+	var bookings []domain.PublicBookingDetails
+	var err error
+
+	switch view {
+	case "latest":
+		bookings, err = s.bookingRepo.GetLatestBookings(ctx, actor.MerchantId, afterDate, 3)
+	case "upcoming":
+		bookings, err = s.bookingRepo.GetUpcomingBookings(ctx, actor.MerchantId, afterDate, 1)
+	default:
+		return []domain.PublicBookingDetails{}, validate.NewError("invalid booking view")
+	}
+	if err != nil {
+		return []domain.PublicBookingDetails{}, err
+	}
+
+	return bookings, nil
 }

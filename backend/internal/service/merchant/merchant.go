@@ -86,11 +86,7 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 	return nil
 }
 
-func dashboardPeriod(utcDate time.Time, period int) (time.Time, time.Time, time.Time, error) {
-	if period != 7 && period != 30 {
-		return time.Time{}, time.Time{}, time.Time{}, fmt.Errorf("invalid period: %d", period)
-	}
-
+func getPeriodDates(utcDate time.Time, period int) (time.Time, time.Time, time.Time, error) {
 	// -1 because the last is the current day
 	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
 	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -period))
@@ -100,7 +96,8 @@ func dashboardPeriod(utcDate time.Time, period int) (time.Time, time.Time, time.
 
 func (s *Service) GetDashboardStatistics(ctx context.Context, period int) (domain.DashboardStatistics, error) {
 	utcDate := time.Now().UTC()
-	currPeriodStart, _, prevPeriodStart, err := dashboardPeriod(utcDate, period)
+
+	currPeriodStart, _, prevPeriodStart, err := getPeriodDates(utcDate, period)
 	if err != nil {
 		return domain.DashboardStatistics{}, err
 	}
@@ -117,12 +114,14 @@ func (s *Service) GetDashboardStatistics(ctx context.Context, period int) (domai
 
 func (s *Service) GetDashboardRevenue(ctx context.Context, period int) (domain.DashboardRevenue, error) {
 	utcDate := time.Now().UTC()
-	currPeriodStart, periodEnd, _, err := dashboardPeriod(utcDate, period)
+
+	currPeriodStart, periodEnd, _, err := getPeriodDates(utcDate, period)
 	if err != nil {
 		return domain.DashboardRevenue{}, err
 	}
 
 	actor := actor.MustGetFromContext(ctx)
+
 	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart, utcDate)
 	if err != nil {
 		return domain.DashboardRevenue{}, err

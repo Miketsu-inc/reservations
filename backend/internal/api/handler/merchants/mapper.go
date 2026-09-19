@@ -25,15 +25,35 @@ func mapToUpdateNameInput(in updateNameReq) merchantServ.UpdateNameInput {
 	}
 }
 
-func mapToCheckUrlInput(in checkUrlReq) merchantServ.CheckUrlInput {
-	return merchantServ.CheckUrlInput{
-		Name: in.Name,
-	}
-}
+func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboardBookingsResp {
+	bookings := make([]dashboardBookingResp, len(in))
 
-func mapToCheckUrlResp(in string) checkUrlResp {
-	return checkUrlResp{
-		Name: in,
+	for i, booking := range in {
+		bookings[i] = dashboardBookingResp{
+			ID:                  booking.ID,
+			BookingType:         booking.BookingType,
+			BookingStatus:       booking.BookingStatus,
+			ParticipantStatus:   booking.ParticipantStatus,
+			IsRecurring:         booking.IsRecurring,
+			FromDate:            booking.FromDate,
+			ToDate:              booking.ToDate,
+			CustomerNote:        booking.CustomerNote,
+			MerchantNote:        booking.MerchantNote,
+			ServiceName:         booking.ServiceName,
+			ServiceColor:        booking.ServiceColor,
+			Price:               booking.Price.ToFormatted(),
+			PriceType:           booking.PriceType,
+			CurrentParticipants: booking.CurrentParticipants,
+			MaxParticipants:     booking.MaxParticipants,
+			CustomerFirstName:   booking.CustomerFirstName,
+			CustomerLastName:    booking.CustomerLastName,
+			EmployeeFirstName:   booking.EmployeeFirstName,
+			EmployeeLastName:    booking.EmployeeLastName,
+		}
+	}
+
+	return getDashboardBookingsResp{
+		Bookings: bookings,
 	}
 }
 
@@ -63,6 +83,18 @@ func mapToDashboardRevenueResp(in domain.DashboardRevenue) dashboardRevenueResp 
 		PeriodStart: in.PeriodStart,
 		PeriodEnd:   in.PeriodEnd,
 		Revenue:     revenue,
+	}
+}
+
+func mapToCheckUrlInput(in checkUrlReq) merchantServ.CheckUrlInput {
+	return merchantServ.CheckUrlInput{
+		Name: in.Name,
+	}
+}
+
+func mapToCheckUrlResp(in string) checkUrlResp {
+	return checkUrlResp{
+		Name: in,
 	}
 }
 

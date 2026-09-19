@@ -91,7 +91,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 				r.Get("/dashboard/statistics", h.Merchants.GetDashboardStatistics)
 				r.Get("/dashboard/revenue", h.Merchants.GetDashboardRevenue)
-				r.Get("/dashboard/bookings/{view}", h.Bookings.GetDashboardBookings)
+				r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
 
 				r.Get("/settings", h.Merchants.GetSettings)
 				r.Patch("/settings", h.Merchants.UpdateSettings)

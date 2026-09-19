@@ -2,10 +2,13 @@ package merchants
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
+	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -19,11 +22,12 @@ import (
 // but not being grouped under a subroute
 type Handler struct {
 	service         *merchantServ.Service
+	bookingServ     *bookingServ.Service
 	extcalendarServ *externalcalendarServ.Service
 }
 
-func NewHandler(s *merchantServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
-	return &Handler{service: s, extcalendarServ: extcalendarServ}
+func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	return &Handler{service: s, bookingServ: bookingServ, extcalendarServ: extcalendarServ}
 }
 
 type meResp struct {
@@ -66,6 +70,113 @@ func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "UpdateName")
 	}
+
+	return nil
+}
+
+type getDashboardBookingsResp struct {
+	Bookings []dashboardBookingResp `json:"bookings"`
+}
+
+type dashboardBookingResp struct {
+	ID                  int                      `json:"id"`
+	BookingType         types.BookingType        `json:"booking_type"`
+	BookingStatus       types.BookingStatus      `json:"booking_status"`
+	ParticipantStatus   *types.BookingStatus     `json:"participant_status"`
+	IsRecurring         bool                     `json:"is_recurring"`
+	FromDate            time.Time                `json:"from_date"`
+	ToDate              time.Time                `json:"to_date"`
+	CustomerNote        *string                  `json:"customer_note"`
+	MerchantNote        *string                  `json:"merchant_note"`
+	ServiceName         string                   `json:"service_name"`
+	ServiceColor        *string                  `json:"service_color"`
+	Price               currencyx.FormattedPrice `json:"price"`
+	PriceType           types.PriceType          `json:"price_type"`
+	CurrentParticipants int                      `json:"current_participants"`
+	MaxParticipants     int                      `json:"max_participants"`
+	CustomerFirstName   *string                  `json:"customer_first_name"`
+	CustomerLastName    *string                  `json:"customer_last_name"`
+	EmployeeFirstName   *string                  `json:"employee_first_name"`
+	EmployeeLastName    *string                  `json:"employee_last_name"`
+}
+
+func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) error {
+	view := chi.URLParam(r, "view")
+	if view != "latest" && view != "upcoming" {
+		return validate.NewError("view must be either latest or upcoming")
+	}
+
+	result, err := h.bookingServ.GetDashboardBookings(r.Context(), view)
+	if err != nil {
+		return bookingServ.ErrStatus.Resolve(err, "GetDashboardBookings")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetDashboardBookingsResp(result))
+
+	return nil
+}
+
+type dashboardStatisticsResp struct {
+	RevenueSum            string `json:"revenue_sum"`
+	RevenueChange         int    `json:"revenue_change"`
+	Bookings              int    `json:"bookings"`
+	BookingsChange        int    `json:"bookings_change"`
+	Cancellations         int    `json:"cancellations"`
+	CancellationsChange   int    `json:"cancellations_change"`
+	AverageDuration       int    `json:"average_duration"`
+	AverageDurationChange int    `json:"average_duration_change"`
+}
+
+func dashboardPeriodFromRequest(r *http.Request) (int, error) {
+	period, err := strconv.Atoi(r.URL.Query().Get("period"))
+	if err != nil || (period != 7 && period != 30) {
+		return 0, validate.NewError("period must be either 7 or 30")
+	}
+
+	return period, nil
+}
+
+func (h *Handler) GetDashboardStatistics(w http.ResponseWriter, r *http.Request) error {
+	period, err := dashboardPeriodFromRequest(r)
+	if err != nil {
+		return err
+	}
+
+	statistics, err := h.service.GetDashboardStatistics(r.Context(), period)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetDashboardStatistics")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToDashboardStatisticsResp(statistics))
+
+	return nil
+}
+
+type dashboardRevenueResp struct {
+	PeriodStart time.Time         `json:"period_start"`
+	PeriodEnd   time.Time         `json:"period_end"`
+	Revenue     []revenueStatResp `json:"revenue"`
+}
+
+// TODO: value is of numeric type so float might not be the best
+// type to return here
+type revenueStatResp struct {
+	Value float64   `json:"value"`
+	Day   time.Time `json:"day"`
+}
+
+func (h *Handler) GetDashboardRevenue(w http.ResponseWriter, r *http.Request) error {
+	period, err := dashboardPeriodFromRequest(r)
+	if err != nil {
+		return err
+	}
+
+	revenue, err := h.service.GetDashboardRevenue(r.Context(), period)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetDashboardRevenue")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToDashboardRevenueResp(revenue))
 
 	return nil
 }
