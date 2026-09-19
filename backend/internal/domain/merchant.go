@@ -148,15 +148,14 @@ type RevenueStat struct {
 }
 
 type DashboardStatistics struct {
-	Revenue               []RevenueStat `json:"revenue"`
-	RevenueSum            string        `json:"revenue_sum"`
-	RevenueChange         int           `json:"revenue_change"`
-	Bookings              int           `json:"bookings"`
-	BookingsChange        int           `json:"bookings_change"`
-	Cancellations         int           `json:"cancellations"`
-	CancellationsChange   int           `json:"cancellations_change"`
-	AverageDuration       int           `json:"average_duration"`
-	AverageDurationChange int           `json:"average_duration_change"`
+	RevenueSum            string `json:"revenue_sum"`
+	RevenueChange         int    `json:"revenue_change"`
+	Bookings              int    `json:"bookings"`
+	BookingsChange        int    `json:"bookings_change"`
+	Cancellations         int    `json:"cancellations"`
+	CancellationsChange   int    `json:"cancellations_change"`
+	AverageDuration       int    `json:"average_duration"`
+	AverageDurationChange int    `json:"average_duration_change"`
 }
 
 type LowStockProduct struct {
@@ -168,13 +167,10 @@ type LowStockProduct struct {
 	FillRatio     float64 `json:"fill_ratio" db:"fill_ratio"`
 }
 
-type DashboardData struct {
-	PeriodStart      time.Time              `json:"period_start"`
-	PeriodEnd        time.Time              `json:"period_end"`
-	UpcomingBookings []PublicBookingDetails `json:"upcoming_bookings"`
-	LatestBookings   []PublicBookingDetails `json:"latest_bookings"`
-	LowStockProducts []LowStockProduct      `json:"low_stock_products"`
-	Statistics       DashboardStatistics    `json:"statistics"`
+type DashboardRevenue struct {
+	PeriodStart time.Time     `json:"period_start"`
+	PeriodEnd   time.Time     `json:"period_end"`
+	Revenue     []RevenueStat `json:"revenue"`
 }
 
 type Location struct {

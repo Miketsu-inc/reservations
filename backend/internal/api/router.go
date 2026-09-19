@@ -89,7 +89,9 @@ func NewRouter(h *Handlers) *httputil.Router {
 			r.Group(func(r *httputil.Router) {
 				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
 
-				r.Get("/dashboard", h.Merchants.GetDashboard)
+				r.Get("/dashboard/statistics", h.Merchants.GetDashboardStatistics)
+				r.Get("/dashboard/revenue", h.Merchants.GetDashboardRevenue)
+				r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
 
 				r.Get("/settings", h.Merchants.GetSettings)
 				r.Patch("/settings", h.Merchants.UpdateSettings)

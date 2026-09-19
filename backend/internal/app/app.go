@@ -82,7 +82,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
-	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, productRepo, transactionManager)
+	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
 
@@ -114,7 +114,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
 		PublicMerchants:   publicMerchants.NewHandler(merchantService, catalogService, teamService, middlewareManager),
 		MerchantPage:      merchantpage.NewHandler(merchantService),
-		Merchants:         merchants.NewHandler(merchantService, externalCalendarService),
+		Merchants:         merchants.NewHandler(merchantService, bookingService, externalCalendarService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),
 		BlockedTimeTypes:  blockedtimetypes.NewHandler(blockedTimeService),
 		Customers:         customers.NewHandler(customerService),

@@ -1,3 +1,13 @@
+import { Loading, ServerError } from "@reservations/components";
+import {
+  fillStatisticsWithDate,
+  invalidateLocalStorageAuth,
+} from "@reservations/lib";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
 import {
   Area,
   AreaChart,
@@ -7,7 +17,56 @@ import {
   XAxis,
 } from "recharts";
 
-export default function RevenueChart({ data }) {
+async function fetchDashboardRevenue(merchantId, period) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/dashboard/revenue?period=${period}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+function dashboardRevenueQueryOptions(merchantId, period) {
+  return queryOptions({
+    queryKey: [merchantId, "dashboard-revenue", period],
+    queryFn: () => fetchDashboardRevenue(merchantId, period),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export default function RevenueChart({ merchantId, period }) {
+  const { data, isLoading, isError, error } = useQuery(
+    dashboardRevenueQueryOptions(merchantId, period)
+  );
+
+  if (isError) {
+    return <ServerError error={error.message} />;
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const revenue = fillStatisticsWithDate(
+    data.revenue,
+    data.period_start,
+    data.period_end
+  );
+
   return (
     <div className="flex h-full w-full flex-col gap-8">
       <p>Revenue</p>
@@ -19,7 +78,7 @@ export default function RevenueChart({ data }) {
         >
           <AreaChart
             accessibilityLayer
-            data={data}
+            data={revenue}
             margin={{ left: 4, right: 4, top: 4, bottom: 4 }}
           >
             <defs>
@@ -45,7 +104,7 @@ export default function RevenueChart({ data }) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tick={<CustomTick dataLength={data.length} />}
+              tick={<CustomTick dataLength={revenue.length} />}
             />
             <Tooltip
               cursor={false}

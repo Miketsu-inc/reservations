@@ -17,25 +17,16 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-export default function BookingsList({
-  bookings,
-  visibleCount,
-  onCancel,
-  onAccept,
-  route,
-}) {
-  const visibleBookings = bookings.slice(0, visibleCount);
-
+export default function BookingsList({ bookings, onAccept, route }) {
   return (
     <div className="h-full">
-      {visibleBookings.length > 0 ? (
+      {bookings.length > 0 ? (
         <div className="space-y-4">
-          {visibleBookings.map((booking) => (
+          {bookings.map((booking, index) => (
             <BookingCard
-              key={booking.id}
+              key={`${booking.id}-${index}`}
               booking={booking}
-              onCancel={(book) => onCancel(book)}
-              onAccept={(book) => onAccept(book)}
+              onAccept={onAccept}
               route={route}
             />
           ))}
@@ -153,7 +144,7 @@ function BookingCard({ booking, route, onAccept }) {
           </div>
         </Link>
         <div className="flex flex-row items-center">
-          {isNotConfirmed && (
+          {isNotConfirmed && onAccept && (
             <button
               className="lg:hover:bg-hvr_gray h-full cursor-pointer rounded-lg
                 px-2 lg:h-fit lg:py-2"

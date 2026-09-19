@@ -1,13 +1,14 @@
 package merchants
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
+	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -21,11 +22,12 @@ import (
 // but not being grouped under a subroute
 type Handler struct {
 	service         *merchantServ.Service
+	bookingServ     *bookingServ.Service
 	extcalendarServ *externalcalendarServ.Service
 }
 
-func NewHandler(s *merchantServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
-	return &Handler{service: s, extcalendarServ: extcalendarServ}
+func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	return &Handler{service: s, bookingServ: bookingServ, extcalendarServ: extcalendarServ}
 }
 
 type meResp struct {
@@ -72,16 +74,11 @@ func (h *Handler) UpdateName(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type getDashboardResp struct {
-	PeriodStart      time.Time               `json:"period_start"`
-	PeriodEnd        time.Time               `json:"period_end"`
-	UpcomingBookings []bookingDetailsResp    `json:"upcoming_bookings"`
-	LatestBookings   []bookingDetailsResp    `json:"latest_bookings"`
-	LowStockProducts []lowStockProductResp   `json:"low_stock_products"`
-	Statistics       dashboardStatisticsResp `json:"statistics"`
+type getDashboardBookingsResp struct {
+	Bookings []dashboardBookingResp `json:"bookings"`
 }
 
-type bookingDetailsResp struct {
+type dashboardBookingResp struct {
 	ID                  int                      `json:"id"`
 	BookingType         types.BookingType        `json:"booking_type"`
 	BookingStatus       types.BookingStatus      `json:"booking_status"`
@@ -103,25 +100,62 @@ type bookingDetailsResp struct {
 	EmployeeLastName    *string                  `json:"employee_last_name"`
 }
 
-type lowStockProductResp struct {
-	Id            int     `json:"id"`
-	Name          string  `json:"name"`
-	MaxAmount     int     `json:"max_amount"`
-	CurrentAmount int     `json:"current_amount"`
-	Unit          string  `json:"unit"`
-	FillRatio     float64 `json:"fill_ratio"`
+func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) error {
+	view := chi.URLParam(r, "view")
+	if view != "latest" && view != "upcoming" {
+		return validate.NewError("view must be either latest or upcoming")
+	}
+
+	result, err := h.bookingServ.GetDashboardBookings(r.Context(), view)
+	if err != nil {
+		return bookingServ.ErrStatus.Resolve(err, "GetDashboardBookings")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetDashboardBookingsResp(result))
+
+	return nil
 }
 
 type dashboardStatisticsResp struct {
-	Revenue               []revenueStatResp `json:"revenue"`
-	RevenueSum            string            `json:"revenue_sum"`
-	RevenueChange         int               `json:"revenue_change"`
-	Bookings              int               `json:"bookings"`
-	BookingsChange        int               `json:"bookings_change"`
-	Cancellations         int               `json:"cancellations"`
-	CancellationsChange   int               `json:"cancellations_change"`
-	AverageDuration       int               `json:"average_duration"`
-	AverageDurationChange int               `json:"average_duration_change"`
+	RevenueSum            string `json:"revenue_sum"`
+	RevenueChange         int    `json:"revenue_change"`
+	Bookings              int    `json:"bookings"`
+	BookingsChange        int    `json:"bookings_change"`
+	Cancellations         int    `json:"cancellations"`
+	CancellationsChange   int    `json:"cancellations_change"`
+	AverageDuration       int    `json:"average_duration"`
+	AverageDurationChange int    `json:"average_duration_change"`
+}
+
+func dashboardPeriodFromRequest(r *http.Request) (int, error) {
+	period, err := strconv.Atoi(r.URL.Query().Get("period"))
+	if err != nil || (period != 7 && period != 30) {
+		return 0, validate.NewError("period must be either 7 or 30")
+	}
+
+	return period, nil
+}
+
+func (h *Handler) GetDashboardStatistics(w http.ResponseWriter, r *http.Request) error {
+	period, err := dashboardPeriodFromRequest(r)
+	if err != nil {
+		return err
+	}
+
+	statistics, err := h.service.GetDashboardStatistics(r.Context(), period)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetDashboardStatistics")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToDashboardStatisticsResp(statistics))
+
+	return nil
+}
+
+type dashboardRevenueResp struct {
+	PeriodStart time.Time         `json:"period_start"`
+	PeriodEnd   time.Time         `json:"period_end"`
+	Revenue     []revenueStatResp `json:"revenue"`
 }
 
 // TODO: value is of numeric type so float might not be the best
@@ -131,23 +165,18 @@ type revenueStatResp struct {
 	Day   time.Time `json:"day"`
 }
 
-func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) error {
-	urlDate, err := time.Parse(time.RFC3339, r.URL.Query().Get("date"))
+func (h *Handler) GetDashboardRevenue(w http.ResponseWriter, r *http.Request) error {
+	period, err := dashboardPeriodFromRequest(r)
 	if err != nil {
-		return validate.NewError(fmt.Sprintf("invalid date: %s", err.Error()))
+		return err
 	}
 
-	urlPeriod, err := strconv.Atoi(r.URL.Query().Get("period"))
+	revenue, err := h.service.GetDashboardRevenue(r.Context(), period)
 	if err != nil {
-		return validate.NewError("invalid period")
+		return merchantServ.ErrStatus.Resolve(err, "GetDashboardRevenue")
 	}
 
-	dashboard, err := h.service.GetDashboard(r.Context(), urlDate, urlPeriod)
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetDashboard")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToGetDashboardResp(dashboard))
+	httputil.Success(w, http.StatusOK, mapToDashboardRevenueResp(revenue))
 
 	return nil
 }

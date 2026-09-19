@@ -22,13 +22,12 @@ type Service struct {
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
 	teamRepo        domain.TeamRepository
-	productRepo     domain.ProductRepository
 	txManager       db.TransactionManager
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
 	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository, team domain.TeamRepository,
-	product domain.ProductRepository, txManager db.TransactionManager) *Service {
+	txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
@@ -36,7 +35,6 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
 		teamRepo:        team,
-		productRepo:     product,
 		txManager:       txManager,
 	}
 }
@@ -88,51 +86,52 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 	return nil
 }
 
-func (s *Service) GetDashboard(ctx context.Context, date time.Time, period int) (domain.DashboardData, error) {
-	if period != 7 && period != 30 {
-		return domain.DashboardData{}, fmt.Errorf("invalid period: %d", period)
-	}
-
-	actor := actor.MustGetFromContext(ctx)
-
-	utcDate := date.UTC()
-
-	var dashboard domain.DashboardData
-	var err error
-
-	dashboard.LatestBookings, err = s.bookingRepo.GetLatestBookings(ctx, actor.MerchantId, utcDate, 5)
-	if err != nil {
-		return domain.DashboardData{}, err
-	}
-
-	dashboard.UpcomingBookings, err = s.bookingRepo.GetUpcomingBookings(ctx, actor.MerchantId, utcDate, 5)
-	if err != nil {
-		return domain.DashboardData{}, err
-	}
-
-	dashboard.LowStockProducts, err = s.productRepo.GetLowStockProducts(ctx, actor.MerchantId)
-	if err != nil {
-		return domain.DashboardData{}, err
-	}
-
+func getPeriodDates(utcDate time.Time, period int) (time.Time, time.Time, time.Time, error) {
 	// -1 because the last is the current day
 	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
 	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -period))
 
-	dashboard.PeriodStart = currPeriodStart
-	dashboard.PeriodEnd = utils.TruncateToDay(utcDate)
+	return currPeriodStart, utils.TruncateToDay(utcDate), prevPeriodStart, nil
+}
 
-	dashboard.Statistics, err = s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart, utcDate, prevPeriodStart)
+func (s *Service) GetDashboardStatistics(ctx context.Context, period int) (domain.DashboardStatistics, error) {
+	utcDate := time.Now().UTC()
+
+	currPeriodStart, _, prevPeriodStart, err := getPeriodDates(utcDate, period)
 	if err != nil {
-		return domain.DashboardData{}, err
+		return domain.DashboardStatistics{}, err
 	}
 
-	dashboard.Statistics.Revenue, err = s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart, utcDate)
+	actor := actor.MustGetFromContext(ctx)
+
+	statistics, err := s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart, utcDate, prevPeriodStart)
 	if err != nil {
-		return domain.DashboardData{}, err
+		return domain.DashboardStatistics{}, err
 	}
 
-	return dashboard, nil
+	return statistics, nil
+}
+
+func (s *Service) GetDashboardRevenue(ctx context.Context, period int) (domain.DashboardRevenue, error) {
+	utcDate := time.Now().UTC()
+
+	currPeriodStart, periodEnd, _, err := getPeriodDates(utcDate, period)
+	if err != nil {
+		return domain.DashboardRevenue{}, err
+	}
+
+	actor := actor.MustGetFromContext(ctx)
+
+	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart, utcDate)
+	if err != nil {
+		return domain.DashboardRevenue{}, err
+	}
+
+	return domain.DashboardRevenue{
+		PeriodStart: currPeriodStart,
+		PeriodEnd:   periodEnd,
+		Revenue:     revenue,
+	}, nil
 }
 
 type CheckUrlInput struct {

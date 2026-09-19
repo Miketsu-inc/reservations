@@ -1,93 +1,29 @@
-import { Card, Loading, Select, ServerError } from "@reservations/components";
+import { Card, Select, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  fillStatisticsWithDate,
-  invalidateLocalStorageAuth,
-  useWindowSize,
-} from "@reservations/lib";
-import {
-  keepPreviousData,
-  queryOptions,
-  useQuery,
-} from "@tanstack/react-query";
-import { createFileRoute, useRouteContext } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import BookingsList from "./-components/BookingsList";
+import DashboardBookingsList from "./-components/DashboardBookingsList";
+import DashboardStatistics from "./-components/DashboardStatistics";
 import LowStockProductsAlert from "./-components/LowStockProductsAlert";
 import RevenueChart from "./-components/RevenueChart";
-import StatisticsCard from "./-components/StatisticsCard";
-
-async function fetchDashboardData(merchantId, period) {
-  const date = new Date().toJSON();
-
-  const response = await fetch(
-    `/api/v1/merchants/${merchantId}/dashboard?date=${date}&period=${period}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    if (result.data !== null) {
-      return result.data;
-    }
-  }
-}
-
-function dashboardQueryOptions(merchantId, period) {
-  return queryOptions({
-    queryKey: [merchantId, "dashboard", period],
-    queryFn: () => fetchDashboardData(merchantId, period),
-  });
-}
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
   component: DashboardPage,
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
   },
-  pendingComponent: Loading,
 });
 
 function DashboardPage() {
-  const { isWindowSmall, windowSize } = useWindowSize();
   const [period, setPeriod] = useState(7);
-  const { queryClient } = useRouteContext({ from: Route.id });
   const { merchantId } = useAuth();
-  const { data, isLoading, isError, error, isFetching } = useQuery({
-    ...dashboardQueryOptions(merchantId, period),
-    placeholderData: keepPreviousData,
-  });
-
-  async function invalidateDashBoardData() {
-    await queryClient.invalidateQueries({
-      queryKey: [merchantId, "dashboard"],
-    });
-  }
-
-  if (isError) {
-    return <ServerError error={error.message} />;
-  }
-
-  if (isLoading) {
-    return <Loading />;
-  }
 
   return (
     <div className="flex h-full flex-col px-4 pt-4 lg:h-[90svh]">
       <div className="flex flex-row items-center justify-between pb-3">
         <p className="text-xl">Your dashboard</p>
         <Select
-          styles="w-36!"
+          styles="w-38!"
           options={[
             { value: 7, label: "Last 7 days" },
             { value: 30, label: "Last 30 days" },
@@ -98,87 +34,34 @@ function DashboardPage() {
               setPeriod(option.value);
             }
           }}
-          disabled={isFetching}
         />
       </div>
       <div className="flex h-full w-full flex-col gap-4 lg:flex-row lg:gap-6">
         <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">
           <div className="flex h-fit flex-col gap-4">
-            <div
-              className="flex h-fit flex-row items-center justify-between gap-4"
-            >
-              <StatisticsCard
-                title="Revenue"
-                text={`${data.statistics.revenue_sum}`}
-                percent={data.statistics.revenue_change}
-                tooltip={!isWindowSmall}
-                tooltipText="Calculated by adding up all your completed bookings for this period"
-              />
-              <StatisticsCard
-                title="Bookings"
-                text={data.statistics.bookings}
-                percent={data.statistics.bookings_change}
-                tooltip={!isWindowSmall}
-                tooltipText="The amount of completed bookings in this period"
-              />
-              {windowSize === "lg" || windowSize === "2xl" ? (
-                <StatisticsCard
-                  title="Cancellations"
-                  text={data.statistics.cancellations}
-                  percent={data.statistics.cancellations_change}
-                  tooltip={!isWindowSmall}
-                  tooltipText="The amount of cancelled bookings (by customers) in this period"
-                />
-              ) : (
-                <></>
-              )}
-              {windowSize === "2xl" ? (
-                <StatisticsCard
-                  title="Average duration"
-                  text={data.statistics.average_duration}
-                  percent={data.statistics.average_duration_change}
-                  tooltip={!isWindowSmall}
-                  tooltipText="The average duration of services from your completed bookings in this period"
-                />
-              ) : (
-                <></>
-              )}
-            </div>
+            <DashboardStatistics merchantId={merchantId} period={period} />
             <Card styles="flex h-80 flex-col gap-2">
-              <RevenueChart
-                data={fillStatisticsWithDate(
-                  data.statistics.revenue,
-                  data.period_start,
-                  data.period_end
-                )}
-              />
+              <RevenueChart merchantId={merchantId} period={period} />
             </Card>
           </div>
           <div className="flex flex-1 flex-col gap-2">
-            <LowStockProductsAlert
-              products={data.low_stock_products}
-              route={Route}
-            />
+            <LowStockProductsAlert merchantId={merchantId} route={Route} />
           </div>
         </div>
         <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">
           <p className="text-lg">Upcoming bookings</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
-            <BookingsList
-              bookings={data.upcoming_bookings}
-              visibleCount={1}
-              onAccept={() => {}}
-              onCancel={invalidateDashBoardData}
+            <DashboardBookingsList
+              merchantId={merchantId}
+              view="upcoming"
               route={Route}
             />
           </div>
           <p className="text-lg">Latest bookings</p>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
-            <BookingsList
-              bookings={data.latest_bookings}
-              visibleCount={3}
-              onAccept={() => {}}
-              onCancel={invalidateDashBoardData}
+            <DashboardBookingsList
+              merchantId={merchantId}
+              view="latest"
               route={Route}
             />
           </div>

@@ -124,3 +124,14 @@ func (s *Service) GetAll(ctx context.Context) ([]domain.ProductInfo, error) {
 
 	return products, nil
 }
+
+func (s *Service) GetLowStock(ctx context.Context) ([]domain.LowStockProduct, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	products, err := s.productRepo.GetLowStockProducts(ctx, actor.MerchantId)
+	if err != nil {
+		return []domain.LowStockProduct{}, err
+	}
+
+	return products, nil
+}
