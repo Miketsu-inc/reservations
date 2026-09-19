@@ -31,7 +31,7 @@ function invitationQueryOptions(token) {
 export const Route = createFileRoute("/invitations")({
   component: RouteComponent,
   loaderDeps: ({ search }) => search,
-  beforeLoad: async ({ context: { queryClient } }) => {
+  beforeLoad: async ({ context: { queryClient }, location }) => {
     try {
       await queryClient.ensureQueryData(meQueryOptions());
     } catch (error) {

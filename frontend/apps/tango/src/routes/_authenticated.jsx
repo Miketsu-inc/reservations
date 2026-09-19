@@ -3,7 +3,7 @@ import { meQueryOptions } from "@reservations/lib";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context: { queryClient } }) => {
+  beforeLoad: async ({ context: { queryClient }, location }) => {
     try {
       await queryClient.ensureQueryData(meQueryOptions());
     } catch (error) {
