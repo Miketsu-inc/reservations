@@ -417,6 +417,22 @@ func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
+func (h *Handler) GetBookingForCalendar(w http.ResponseWriter, r *http.Request) error {
+	bookingId, err := strconv.Atoi(chi.URLParam(r, "bookingId"))
+	if err != nil {
+		return validate.NewError("invalid booking id")
+	}
+
+	booking, err := h.service.GetBookingForCalendar(r.Context(), bookingId)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetBookingForCalendar")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToBookingForCalendarResp(booking))
+
+	return nil
+}
+
 func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) error {
 	url, err := h.extcalendarServ.GoogleCalendar(r.Context())
 	if err != nil {

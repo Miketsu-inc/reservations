@@ -127,6 +127,19 @@ describe("isDurationValid", () => {
 });
 
 describe("calculateStartEndTime", () => {
+  it("calculates a week containing a supplied date", () => {
+    expect(
+      calculateStartEndTime(
+        "timeGridWeek",
+        "Monday",
+        new Date(2026, 8, 24)
+      )
+    ).toEqual({
+      start: "2026-09-21",
+      end: "2026-09-28",
+    });
+  });
+
   it("handles a month that starts on Sunday when weeks start on Monday", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 1, 15));
