@@ -258,37 +258,7 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 	bookings := make([]bookingForCalendar, len(in.Bookings))
 
 	for i, b := range in.Bookings {
-		bookings[i] = bookingForCalendar{
-			ID:              b.ID,
-			BookingType:     b.BookingType,
-			BookingStatus:   b.BookingStatus,
-			FromDate:        b.FromDate,
-			ToDate:          b.ToDate,
-			IsRecurring:     b.IsRecurring,
-			Duration:        int(b.ToDate.Sub(b.FromDate).Minutes()),
-			MerchantNote:    b.MerchantNote,
-			EmployeeId:      b.EmployeeId,
-			ServiceId:       b.ServiceId,
-			ServiceName:     b.ServiceName,
-			ServiceColor:    b.ServiceColor,
-			MaxParticipants: b.MaxParticipants,
-			Price:           b.Price.ToFormatted(),
-			PriceType:       b.PriceType,
-		}
-
-		participants := make([]bookingParticipantForCalendar, len(b.Participants))
-		for j, p := range b.Participants {
-			participants[j] = bookingParticipantForCalendar{
-				Id:           p.Id,
-				CustomerId:   p.CustomerId,
-				FirstName:    p.FirstName,
-				LastName:     p.LastName,
-				CustomerNote: p.CustomerNote,
-				Status:       p.Status,
-			}
-		}
-
-		bookings[i].Participants = participants
+		bookings[i] = mapToBookingForCalendarResp(b)
 	}
 
 	blockedTimes := make([]blockedTime, len(in.BlockedTimes))
@@ -309,5 +279,38 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 	return getCalendarEventsResp{
 		Bookings:     bookings,
 		BlockedTimes: blockedTimes,
+	}
+}
+
+func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalendar {
+	participants := make([]bookingParticipantForCalendar, len(in.Participants))
+	for i, p := range in.Participants {
+		participants[i] = bookingParticipantForCalendar{
+			Id:           p.Id,
+			CustomerId:   p.CustomerId,
+			FirstName:    p.FirstName,
+			LastName:     p.LastName,
+			CustomerNote: p.CustomerNote,
+			Status:       p.Status,
+		}
+	}
+
+	return bookingForCalendar{
+		ID:              in.ID,
+		BookingType:     in.BookingType,
+		BookingStatus:   in.BookingStatus,
+		FromDate:        in.FromDate,
+		ToDate:          in.ToDate,
+		IsRecurring:     in.IsRecurring,
+		Duration:        int(in.ToDate.Sub(in.FromDate).Minutes()),
+		MerchantNote:    in.MerchantNote,
+		EmployeeId:      in.EmployeeId,
+		ServiceId:       in.ServiceId,
+		ServiceName:     in.ServiceName,
+		ServiceColor:    in.ServiceColor,
+		MaxParticipants: in.MaxParticipants,
+		Price:           in.Price.ToFormatted(),
+		PriceType:       in.PriceType,
+		Participants:    participants,
 	}
 }

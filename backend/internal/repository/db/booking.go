@@ -748,6 +748,49 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 	return bookings, nil
 }
 
+func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, bookingId int) (domain.BookingForCalendar, error) {
+	query := `
+	with participants as (
+		select
+			bp.booking_id,
+			jsonb_agg(
+				jsonb_build_object(
+					'id', bp.id,
+					'customer_id', c.id,
+					'first_name', coalesce(c.first_name, u.first_name),
+					'last_name', coalesce(c.last_name, u.last_name),
+					'customer_note', bp.customer_note,
+					'participant_status', bp.status
+				)
+			) as participants
+		from "BookingParticipant" bp
+		left join "Customer" c on bp.customer_id = c.id
+		left join "User" u on c.user_id = u.id
+		where bp.status not in ('cancelled') and bp.booking_id = $2
+		group by bp.booking_id
+	)
+	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
+		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
+		coalesce(p.participants, '[]'::jsonb) as participants
+	from "Booking" b
+	left join "Service" s on b.service_id = s.id
+	left join participants p on p.booking_id = b.id
+	where b.merchant_id = $1 and b.id = $2 and b.status not in ('cancelled')
+	`
+
+	rows, err := r.db.Query(ctx, query, merchantId, bookingId)
+	if err != nil {
+		return domain.BookingForCalendar{}, fmt.Errorf("GetBookingForCalendar: %w", err)
+	}
+
+	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForCalendar])
+	if err != nil {
+		return domain.BookingForCalendar{}, fmt.Errorf("GetBookingForCalendar: %w", err)
+	}
+
+	return booking, nil
+}
+
 func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, bookingId int) (domain.BookingForExternalCalendar, error) {
 	query := `
 	select b.id, b.status, b.booking_type, b.employee_id, b.service_name, s.description as service_description, b.price_type,

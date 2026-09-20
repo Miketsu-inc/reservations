@@ -2,6 +2,7 @@ package merchant
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -300,6 +301,17 @@ func (s *Service) GetCalendarEvents(ctx context.Context, start string, end strin
 	}
 
 	return events, nil
+}
+
+func (s *Service) GetBookingForCalendar(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, bookingId)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.BookingForCalendar{}, ErrBookingNotFound
+	}
+
+	return booking, err
 }
 
 type NewLocationInput struct {
