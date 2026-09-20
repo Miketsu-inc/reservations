@@ -307,11 +307,15 @@ func (s *Service) GetBookingForCalendar(ctx context.Context, bookingId int) (dom
 	actor := actor.MustGetFromContext(ctx)
 
 	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, bookingId)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.BookingForCalendar{}, ErrBookingNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BookingForCalendar{}, domain.ErrBookingNotFound
+		}
+
+		return domain.BookingForCalendar{}, err
 	}
 
-	return booking, err
+	return booking, nil
 }
 
 type NewLocationInput struct {

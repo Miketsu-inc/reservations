@@ -4,19 +4,6 @@ import {
 } from "@reservations/lib";
 import { queryOptions } from "@tanstack/react-query";
 
-function responseError(response, result, fallbackMessage) {
-  const error = new Error(
-    result?.error?.message ?? result?.error ?? fallbackMessage
-  );
-  error.status = response.status;
-
-  return error;
-}
-
-function retryTransientError(failureCount, error) {
-  return (error.status === undefined || error.status >= 500) && failureCount < 3;
-}
-
 async function fetchBookings(merchantId, start, end) {
   const startDate = dateStringToLocalDate(start);
   const endDate = dateStringToLocalDate(end);
@@ -33,12 +20,19 @@ async function fetchBookings(merchantId, start, end) {
 
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
-    throw responseError(response, result, "Could not load calendar events");
+    throw result.error;
   }
 
   if (result.data !== null) {
     return result.data;
   }
+}
+
+export function calendarBookingsQueryOptions(merchantId, start, end) {
+  return queryOptions({
+    queryKey: [merchantId, "events", start, end],
+    queryFn: () => fetchBookings(merchantId, start, end),
+  });
 }
 
 async function fetchBooking(merchantId, bookingId) {
@@ -50,24 +44,15 @@ async function fetchBooking(merchantId, bookingId) {
 
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
-    throw responseError(response, result, "Could not load booking");
+    throw result.error;
   }
 
   return result.data;
 }
 
-export function bookingsQueryOptions(merchantId, start, end) {
-  return queryOptions({
-    queryKey: [merchantId, "events", start, end],
-    queryFn: () => fetchBookings(merchantId, start, end),
-    retry: retryTransientError,
-  });
-}
-
-export function bookingQueryOptions(merchantId, bookingId) {
+export function calendarBookingQueryOptions(merchantId, bookingId) {
   return queryOptions({
     queryKey: [merchantId, "calendar-booking", bookingId],
     queryFn: () => fetchBooking(merchantId, bookingId),
-    retry: retryTransientError,
   });
 }

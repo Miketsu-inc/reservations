@@ -11,11 +11,10 @@ import {
   createFileRoute,
   Outlet,
   redirect,
-  useParams,
   useRouter,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { bookingsQueryOptions } from "./calendar/-queries";
+import { calendarBookingsQueryOptions } from "./calendar/-components/calendarQueries";
 
 const Calendar = lazy(() => import("./calendar/-components/Calendar"));
 
@@ -89,7 +88,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar")({
     }
 
     await queryClient.ensureQueryData(
-      bookingsQueryOptions(merchantId, start, end)
+      calendarBookingsQueryOptions(merchantId, start, end)
     );
     await queryClient.ensureQueryData(businessHoursQueryOptions(merchantId));
   },
@@ -99,16 +98,10 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/calendar")({
 function CalendarLayout() {
   const search = Route.useSearch();
   const router = useRouter();
-  const { bookingId } = useParams({ strict: false });
 
   return (
     <Suspense fallback={<Loading />}>
-      <Calendar
-        bookingId={bookingId}
-        router={router}
-        route={Route}
-        search={search}
-      />
+      <Calendar router={router} route={Route} search={search} />
       <Outlet />
     </Suspense>
   );

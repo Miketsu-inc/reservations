@@ -26,8 +26,12 @@ import {
   useQuery,
   useSuspenseQueries,
 } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { bookingQueryOptions, bookingsQueryOptions } from "../-queries";
+import { useParams } from "@tanstack/react-router";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  calendarBookingQueryOptions,
+  calendarBookingsQueryOptions,
+} from "./calendarQueries";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu from "./CreateMenu";
 
@@ -133,16 +137,32 @@ function formatBlockedTimes(data) {
   }));
 }
 
-export default function Calendar({ bookingId, router, route, search }) {
-  const [sidePanelState, setSidePanelState] = useState({
-    isOpen: false,
-    type: null,
-    data: null,
-    revert: null,
-    panelKey: null,
+const defaultSidePanelState = {
+  isOpen: false,
+  type: null,
+  data: null,
+  panelKey: null,
+};
+
+const defaultBookingPanel = {
+  id: null,
+  event: null,
+};
+
+export default function Calendar({ router, route, search }) {
+  const { bookingId } = useParams({ strict: false });
+  const [localPanel, setLocalPanel] = useState(defaultSidePanelState);
+  const [bookingPanel, setBookingPanel] = useState({
+    id: bookingId,
+    event: null,
   });
-  const [isBookingPanelClosing, setIsBookingPanelClosing] = useState(false);
   const [calendarTitle, setCalendarTitle] = useState("");
+
+  // Keep the old booking only when the route disappears, so its panel can
+  // animate out before the transition callback clears it.
+  if (bookingId && bookingPanel.id !== bookingId) {
+    setBookingPanel({ id: bookingId, event: null });
+  }
 
   const { merchantId, employeeId } = useAuth();
   const { queryClient } = route.useRouteContext({ from: route.id });
@@ -151,12 +171,12 @@ export default function Calendar({ bookingId, router, route, search }) {
     isError,
     error,
   } = useQuery({
-    ...bookingsQueryOptions(merchantId, search.start, search.end),
+    ...calendarBookingsQueryOptions(merchantId, search.start, search.end),
     placeholderData: keepPreviousData,
   });
   const { data: selectedBooking } = useQuery({
-    ...bookingQueryOptions(merchantId, bookingId),
-    enabled: Boolean(bookingId),
+    ...calendarBookingQueryOptions(merchantId, bookingPanel.id),
+    enabled: Boolean(bookingPanel.id),
   });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
     queries: [
@@ -168,9 +188,7 @@ export default function Calendar({ bookingId, router, route, search }) {
 
   const { isWindowSmall } = useWindowSize();
   const calendarRef = useRef();
-  const bookingRevertRef = useRef(null);
-  const lastBookingPanelDataRef = useRef(null);
-  const previousBookingIdRef = useRef(bookingId);
+  const dragRevertRef = useRef(null);
 
   const calendarEvents = useMemo(() => {
     return [
@@ -190,140 +208,84 @@ export default function Calendar({ bookingId, router, route, search }) {
     };
   }, [selectedBooking]);
 
-  const pendingBookingEvent =
-    sidePanelState.type === "edit-booking" &&
-    String(sidePanelState.data?.extendedProps.id) === bookingId
-      ? sidePanelState.data
-      : null;
-  const bookingPanelData = pendingBookingEvent ?? selectedBookingEvent;
-
-  useEffect(() => {
-    if (bookingPanelData) {
-      lastBookingPanelDataRef.current = bookingPanelData;
-    }
-  }, [bookingPanelData]);
+  const bookingEvent = bookingPanel.event ?? selectedBookingEvent;
 
   const invalidateBookingsQuery = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [merchantId, "events", search.start, search.end],
-    });
+    await queryClient.invalidateQueries(
+      calendarBookingsQueryOptions(merchantId, search.start, search.end)
+    );
   }, [merchantId, queryClient, search]);
 
   const invalidateSelectedBookingQuery = useCallback(async () => {
-    if (!bookingId) return;
+    if (!bookingPanel.id) return;
 
-    await queryClient.invalidateQueries({
-      queryKey: [merchantId, "calendar-booking", bookingId],
+    await queryClient.invalidateQueries(
+      calendarBookingQueryOptions(merchantId, bookingPanel.id)
+    );
+  }, [bookingPanel.id, merchantId, queryClient]);
+
+  function openLocalPanel(type, data, id, revert = null) {
+    dragRevertRef.current = revert;
+
+    setLocalPanel({
+      isOpen: true,
+      type,
+      data,
+      panelKey: `${type}:${id}`,
     });
-  }, [bookingId, merchantId, queryClient]);
+  }
 
   function openBookingPanel(event, revert = null) {
-    const id = String(event.extendedProps.id);
-    const booking = events.bookings.find(
-      (candidate) => String(candidate.id) === id
-    );
+    dragRevertRef.current = revert;
+    setBookingPanel({ id: event.id, event });
 
-    if (booking) {
-      queryClient.setQueryData(
-        [merchantId, "calendar-booking", id],
-        booking
-      );
-    }
-
-    bookingRevertRef.current = revert;
-    setIsBookingPanelClosing(false);
-    setSidePanelState({
-      isOpen: true,
-      type: "edit-booking",
-      data: event,
-      revert,
-      panelKey: event.extendedProps.id,
-    });
     router.navigate({
       to: "/calendar/bookings/$bookingId",
-      params: { bookingId: id },
+      params: { bookingId: event.id },
       search,
     });
   }
 
   function closeSidePanel() {
-    if (bookingId) {
-      bookingRevertRef.current?.();
-      bookingRevertRef.current = null;
-      setIsBookingPanelClosing(true);
-      setSidePanelState({
-        isOpen: false,
-        type: "edit-booking",
-        data: bookingPanelData,
-        revert: null,
-        panelKey: bookingId,
-      });
+    dragRevertRef.current?.();
+    dragRevertRef.current = null;
+
+    if (bookingPanel.id) {
+      router.navigate({ to: "/calendar", search });
       return;
     }
 
-    sidePanelState.revert?.();
-    setSidePanelState((prev) => ({
+    setLocalPanel((prev) => ({
       ...prev,
       isOpen: false,
-      revert: null,
     }));
   }
 
   function saveSidePanel() {
+    dragRevertRef.current = null;
     invalidateBookingsQuery();
 
-    if (bookingId) {
-      bookingRevertRef.current = null;
+    if (bookingPanel.id) {
       invalidateSelectedBookingQuery();
-      setIsBookingPanelClosing(true);
-      setSidePanelState({
-        isOpen: false,
-        type: "edit-booking",
-        data: bookingPanelData,
-        revert: null,
-        panelKey: bookingId,
-      });
+      router.navigate({ to: "/calendar", search });
       return;
     }
 
-    setSidePanelState((prev) => ({
+    setLocalPanel((prev) => ({
       ...prev,
       isOpen: false,
-      revert: null,
     }));
   }
 
-  useEffect(() => {
-    if (
-      bookingId &&
-      previousBookingIdRef.current !== bookingId &&
-      isBookingPanelClosing
-    ) {
-      setIsBookingPanelClosing(false);
+  function finishSidePanelClose() {
+    if (bookingPanel.id) {
+      dragRevertRef.current?.();
+      dragRevertRef.current = null;
+      setBookingPanel(defaultBookingPanel);
+      return;
     }
 
-    if (previousBookingIdRef.current && !bookingId) {
-      const previousBookingId = previousBookingIdRef.current;
-      const previousBookingData = lastBookingPanelDataRef.current;
-      bookingRevertRef.current?.();
-      bookingRevertRef.current = null;
-      setSidePanelState({
-        isOpen: false,
-        type: previousBookingData ? "edit-booking" : null,
-        data: previousBookingData,
-        revert: null,
-        panelKey: previousBookingId,
-      });
-      setIsBookingPanelClosing(false);
-    }
-
-    previousBookingIdRef.current = bookingId;
-  }, [bookingId, isBookingPanelClosing]);
-
-  function finishBookingPanelClose() {
-    if (bookingId && isBookingPanelClosing) {
-      router.navigate({ to: "/calendar", search });
-    }
+    setLocalPanel(defaultSidePanelState);
   }
 
   const datesChanged = useCallback(
@@ -336,9 +298,8 @@ export default function Calendar({ bookingId, router, route, search }) {
         search: () => ({ view: api.view.type, start: start, end: end }),
         replace: true,
       });
-      setCalendarTitle(api.view.title);
     },
-    [router, setCalendarTitle]
+    [router]
   );
 
   function navButtonHandler(dir) {
@@ -387,11 +348,6 @@ export default function Calendar({ bookingId, router, route, search }) {
     datesChanged(api);
   }
 
-  useEffect(() => {
-    const api = calendarRef.current.getApi();
-    setCalendarTitle(api.view.title);
-  }, []);
-
   if (isError) {
     return <ServerError error={error.message} />;
   }
@@ -400,21 +356,25 @@ export default function Calendar({ bookingId, router, route, search }) {
     <div className="flex h-[85svh] flex-col px-4 pt-4 md:h-fit md:max-h-[90svh]">
       <CalendarSidePanel
         isOpen={
-          bookingId
-            ? !isBookingPanelClosing && Boolean(bookingPanelData)
-            : sidePanelState.isOpen
+          bookingPanel.id
+            ? Boolean(bookingId && bookingEvent)
+            : localPanel.isOpen
         }
         type={
-          bookingId
-            ? bookingPanelData
+          bookingPanel.id
+            ? bookingEvent
               ? "edit-booking"
               : null
-            : sidePanelState.type
+            : localPanel.type
         }
-        data={bookingId ? bookingPanelData : sidePanelState.data}
-        panelKey={bookingId ?? sidePanelState.panelKey}
+        data={bookingPanel.id ? bookingEvent : localPanel.data}
+        panelKey={
+          bookingPanel.id
+            ? `edit-booking:${bookingPanel.id}`
+            : localPanel.panelKey
+        }
         onClose={closeSidePanel}
-        onTransitionEnd={finishBookingPanelClose}
+        onTransitionEnd={finishSidePanelClose}
         onSave={saveSidePanel}
         onSoftUpdate={() => {
           invalidateBookingsQuery();
@@ -435,20 +395,10 @@ export default function Calendar({ bookingId, router, route, search }) {
               <CreateMenu
                 isFloating={isWindowSmall}
                 onCreateBlockedTime={() =>
-                  setSidePanelState({
-                    isOpen: true,
-                    type: "blocked-time",
-                    data: null,
-                    panelKey: Date.now(),
-                  })
+                  openLocalPanel("blocked-time", null, "new")
                 }
                 onCreateBooking={() =>
-                  setSidePanelState({
-                    isOpen: true,
-                    type: "new-booking",
-                    data: null,
-                    panelKey: Date.now(),
-                  })
+                  openLocalPanel("new-booking", null, "new")
                 }
               />
               <DatePicker
@@ -514,19 +464,15 @@ export default function Calendar({ bookingId, router, route, search }) {
           height="auto"
           headerToolbar={false}
           events={calendarEvents}
+          datesSet={({ view }) => setCalendarTitle(view.title)}
           eventClick={(e) => {
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
-              setSidePanelState({
-                isOpen: true,
-                type: "blocked-time",
-                data: e.event,
-                revert: null,
-                panelKey: Date.now(),
-              });
+              openLocalPanel("blocked-time", e.event, e.event.id);
               return;
             }
+
             openBookingPanel(e.event);
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
@@ -553,13 +499,7 @@ export default function Calendar({ bookingId, router, route, search }) {
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
-              setSidePanelState({
-                isOpen: true,
-                type: "blocked-time",
-                data: e.event,
-                revert: e.revert,
-                panelKey: Date.now(),
-              });
+              openLocalPanel("blocked-time", e.event, e.event.id, e.revert);
               return;
             }
 

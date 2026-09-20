@@ -778,11 +778,7 @@ func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantI
 	where b.merchant_id = $1 and b.id = $2 and b.status not in ('cancelled')
 	`
 
-	rows, err := r.db.Query(ctx, query, merchantId, bookingId)
-	if err != nil {
-		return domain.BookingForCalendar{}, fmt.Errorf("GetBookingForCalendar: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId, bookingId)
 	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForCalendar])
 	if err != nil {
 		return domain.BookingForCalendar{}, fmt.Errorf("GetBookingForCalendar: %w", err)
