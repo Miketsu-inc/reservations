@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -194,12 +195,27 @@ type TransferBookingsInput struct {
 func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.bookingRepo.TransferDummyBookings(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
-	if err != nil {
-		return err
-	}
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		err := s.bookingRepo.WithTx(tx).TransferBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+		if err != nil {
+			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingParticipantConstraint) {
+				return ErrCustomerTransferConflict
+			}
 
-	return nil
+			return err
+		}
+
+		err = s.bookingRepo.WithTx(tx).TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+		if err != nil {
+			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingSeriesParticipantConstraint) {
+				return ErrCustomerTransferConflict
+			}
+
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) GetAllBlacklisted(ctx context.Context) ([]domain.PublicCustomer, error) {

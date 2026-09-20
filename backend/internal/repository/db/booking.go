@@ -485,10 +485,10 @@ func (r *bookingRepository) DecrementEveryParticipantCountForCustomer(ctx contex
 	return nil
 }
 
-func (r *bookingRepository) TransferDummyBookings(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
+func (r *bookingRepository) TransferBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
 	query := `
 	update "BookingParticipant" bp
-	set transferred_to = $3
+	set customer_id = $3
 	from "Booking" b, "Customer" source_customer, "Customer" target_customer
 	where b.merchant_id = $1 and bp.booking_id = b.id and bp.customer_id = $2
 		and source_customer.id = bp.customer_id and source_customer.merchant_id = $1 and source_customer.user_id is null
@@ -497,7 +497,25 @@ func (r *bookingRepository) TransferDummyBookings(ctx context.Context, merchantI
 
 	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
 	if err != nil {
-		return fmt.Errorf("TransferDummyBookings: %w", err)
+		return fmt.Errorf("TransferBookingParticipants: %w", err)
+	}
+
+	return nil
+}
+
+func (r *bookingRepository) TransferBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
+	query := `
+	update "BookingSeriesParticipant" bsp
+	set customer_id = $3
+	from "BookingSeries" bs, "Customer" source_customer, "Customer" target_customer
+	where bs.merchant_id = $1 and bsp.booking_series_id = bs.id and bsp.customer_id = $2
+		and source_customer.id = bsp.customer_id and source_customer.merchant_id = $1 and source_customer.user_id is null
+		and target_customer.id = $3 and target_customer.merchant_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
+	if err != nil {
+		return fmt.Errorf("TransferBookingSeriesParticipants: %w", err)
 	}
 
 	return nil
@@ -622,7 +640,7 @@ func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int,
 	select b.from_date, b.to_date, b.price_per_person as price, m.name as merchant_name, b.service_name, m.cancel_deadline, b.price_type,
 		b.status, b.formatted_location
 	from "BookingParticipant" bp
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	join "Booking" b on b.id = bp.booking_id
 	join "Merchant" m on m.id = b.merchant_id
 	where bp.booking_id = $1 and c.user_id = $2
@@ -775,7 +793,7 @@ func (r *bookingRepository) GetBookingParticipantByUser(ctx context.Context, boo
 	query := `
 	select bp.*
 	from "BookingParticipant" bp
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	where bp.booking_id = $1 and c.user_id = $2
 	`
 
@@ -853,7 +871,7 @@ func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, user
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
@@ -878,7 +896,7 @@ func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, use
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
@@ -904,7 +922,7 @@ func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, use
 		m.url_name as merchant_url, b.formatted_location, b.service_name, e.first_name as employee_first_name, e.last_name as employee_last_name
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	join "User" u on c.user_id = u.id
 	join "Merchant" m on b.merchant_id = m.id
 	left join "Employee" e on b.employee_id = e.id
@@ -940,7 +958,7 @@ func (r *bookingRepository) GetBookingCountsForUser(ctx context.Context, userId 
 		) as cancelled
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
-	join "Customer" c on c.id = coalesce(bp.transferred_to, bp.customer_id)
+	join "Customer" c on c.id = bp.customer_id
 	where c.user_id = $1
 	`
 
