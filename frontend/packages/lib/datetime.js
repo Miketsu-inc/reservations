@@ -54,12 +54,19 @@ export function dateAndTimeStringsToLocalDate(dateStr, timeStr) {
   );
 }
 
-export function calculateStartEndTime(view, firstDayOfWeek) {
+export function calculateStartEndTime(
+  view,
+  firstDayOfWeek,
+  referenceDate = new Date()
+) {
   const weekStartsOn = firstDayOfWeek === "Sunday" ? 0 : 1;
 
-  const d = new Date();
   // avoid DST problems
-  const now = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const now = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
   let start, end;
 
   switch (view) {
