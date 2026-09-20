@@ -4,7 +4,7 @@ import {
   Icon,
   TooltipContent,
   TooltipTrigger,
-  Tootlip,
+  Tooltip,
 } from "@reservations/components";
 import StatisticsChangeIndicator from "./StatisticsChangeIndicator";
 
@@ -21,7 +21,7 @@ export default function StatisticsCard({
         <div className="flex flex-row items-center gap-1">
           <span className="text-sm whitespace-nowrap">{title}</span>
           {tooltip && (
-            <Tootlip>
+            <Tooltip>
               <TooltipTrigger>
                 <Icon
                   icon={InformationCircleIcon}
@@ -31,7 +31,7 @@ export default function StatisticsCard({
               <TooltipContent>
                 <p>{tooltipText}</p>
               </TooltipContent>
-            </Tootlip>
+            </Tooltip>
           )}
         </div>
         <div className="flex flex-col">

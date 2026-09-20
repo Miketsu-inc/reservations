@@ -1,6 +1,6 @@
 import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { Icon, Select, Switch } from "@reservations/components";
-import { GenerateTimeOptions } from "@reservations/lib";
+import { generateTimeOptions } from "@reservations/lib";
 
 const days = {
   1: "Monday",
@@ -13,7 +13,7 @@ const days = {
 };
 
 export default function BusinessHours({ data, setBusinessHours, preferences }) {
-  const timeOptions = GenerateTimeOptions(preferences?.time_format);
+  const timeOptions = generateTimeOptions(preferences?.time_format);
   const dayOrder =
     preferences?.first_day_of_week === "Sunday"
       ? [0, 1, 2, 3, 4, 5, 6]

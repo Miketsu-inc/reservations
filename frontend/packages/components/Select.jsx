@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 const itemHeight = 34;
 
 export default function Select({
-  options,
+  options = [],
   allOptions,
   value,
   onSelect,
@@ -32,9 +32,9 @@ export default function Select({
   const dropDownListRef = useRef(null);
 
   const fullOptions = allOptions || options;
-  const selectedOption = fullOptions?.find((option) => option.value === value);
+  const selectedOption = fullOptions.find((option) => option.value === value);
   //index should be from the actually rendered options
-  const selectedIndex = options?.findIndex((option) => option.value === value);
+  const selectedIndex = options.findIndex((option) => option.value === value);
 
   function handleOpen() {
     setIsOpen(true);
@@ -58,7 +58,7 @@ export default function Select({
       e.preventDefault();
       if (!isOpen) {
         handleOpen();
-      } else if (isOpen && highlightedIndex !== null) {
+      } else if (isOpen && options[highlightedIndex]) {
         onSelect(options[highlightedIndex]);
         handleClose();
       }
@@ -109,16 +109,21 @@ export default function Select({
         open ? handleOpen() : handleClose();
       }}
     >
-      <PopoverTrigger nativeButton={false} asChild>
-        <label className={`w-full ${styles}`}>
-          {labelText && (
-            <span className="flex items-center gap-1 pb-1 text-sm">
-              {labelText}
-              {required !== false && (
-                <span className="text-base leading-none text-red-500">*</span>
-              )}
-            </span>
-          )}
+      <div className={`w-full ${styles}`}>
+        {labelText && (
+          <span className="flex items-center gap-1 pb-1 text-sm">
+            {labelText}
+            {required !== false && (
+              <span
+                aria-hidden="true"
+                className="text-base leading-none text-red-500"
+              >
+                *
+              </span>
+            )}
+          </span>
+        )}
+        <PopoverTrigger asChild>
           <button
             className={`${styles} border-input_border_color
               disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
@@ -153,8 +158,8 @@ export default function Select({
               />
             </div>
           </button>
-        </label>
-      </PopoverTrigger>
+        </PopoverTrigger>
+      </div>
       <PopoverContent
         styles={`p-0! ${labelText && "data-[side=top]:translate-y-6"}`}
         align={dropDownSameWidth ? "center" : "start"}
@@ -165,6 +170,7 @@ export default function Select({
       >
         {extraContent && <div className="p-2">{extraContent}</div>}
         <ul
+          role="listbox"
           ref={dropDownListRef}
           style={{
             maxHeight: itemHeight
@@ -178,7 +184,7 @@ export default function Select({
             setHighlightedIndex(null);
           }}
         >
-          {options?.length === 0 ? (
+          {options.length === 0 ? (
             <li
               className="px-4 py-6 text-center text-gray-500 select-none
                 dark:text-gray-400"
@@ -186,9 +192,9 @@ export default function Select({
               {emptyText || "No results found"}
             </li>
           ) : (
-            options?.map((option, index) => (
+            options.map((option, index) => (
               <SelectItem
-                key={index}
+                key={option.value}
                 option={option}
                 isSelected={value === option.value}
                 isHighlighted={index === highlightedIndex}

@@ -22,7 +22,7 @@ export const unitConversionMap = {
 
 export const convertToBaseUnit = (value, unit) => {
   const { factor } = unitConversionMap[unit];
-  return parseInt(value) * factor;
+  return Number(value) * factor;
 };
 
 export const convertFromBaseUnit = (baseValue, baseUnit) => {
@@ -47,7 +47,8 @@ export const convertFromBaseUnit = (baseValue, baseUnit) => {
 };
 
 export function getDisplayUnit(current, max, baseUnit) {
-  const unitType = unitConversionMap[baseUnit].type;
+  const unitType = unitConversionMap[baseUnit]?.type;
+  if (!unitType) return { current, max, unit: baseUnit };
 
   const units = Object.entries(unitConversionMap)
     .filter(([_, val]) => val.type === unitType)

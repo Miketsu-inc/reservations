@@ -14,7 +14,11 @@ export default function CheckBox({ checked, styles, onChange, ...props }) {
         {...props}
       />
       {checked && (
-        <Icon icon={Tick02Icon} styles="absolute size-5 text-white" />
+        <Icon
+          aria-hidden="true"
+          icon={Tick02Icon}
+          styles="pointer-events-none absolute size-5 text-white"
+        />
       )}
     </div>
   );

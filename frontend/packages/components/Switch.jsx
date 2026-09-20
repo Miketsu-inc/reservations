@@ -6,6 +6,8 @@ export default function Switch({
   variant = "default",
   disabled = false,
   onSwitch,
+  styles = "",
+  ...props
 }) {
   const [isOn, setIsOn] = useState(defaultValue);
 
@@ -14,6 +16,7 @@ export default function Switch({
       aria-checked={isOn}
       role="switch"
       type="button"
+      disabled={disabled}
       onClick={() => {
         if (!disabled) {
           setIsOn(!isOn);
@@ -26,9 +29,10 @@ export default function Switch({
           : "bg-gray-300 dark:bg-gray-800"
         }
         ${size === "small" ? "pr-4" : size === "medium" ? "pr-5" : size === "large" ? "pr-6" : ""}
-        w-fit cursor-pointer rounded-full py-1 pl-1 outline-gray-400
+        ${styles} w-fit cursor-pointer rounded-full py-1 pl-1 outline-gray-400
         transition-colors duration-100 focus-visible:outline-2
-        dark:outline-white`}
+        disabled:cursor-not-allowed disabled:opacity-50 dark:outline-white`}
+      {...props}
     >
       <div
         className={`${isOn ? `${size === "small" ? "translate-x-3" : size === "medium" ? "translate-x-4" : size === "large" ? "translate-x-5" : ""}` : "translate-x-0"}

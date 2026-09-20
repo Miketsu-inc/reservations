@@ -1,8 +1,12 @@
-export default function Avatar({ styles, img, initials }) {
+export default function Avatar({ styles = "", img, initials, alt = "" }) {
   return (
     <>
-      {img !== undefined ? (
-        <img className="size-16" src={img}></img>
+      {img ? (
+        <img
+          className={`${styles} size-16 rounded-md object-cover`}
+          src={img}
+          alt={alt}
+        />
       ) : (
         <div
           className={`${styles} from-secondary to-primary bg-primary flex

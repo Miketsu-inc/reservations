@@ -7,6 +7,8 @@ export default function SearchInput({
   onChange,
   styles,
   autoFocus,
+  placeholder = "Search",
+  ...props
 }) {
   return (
     <div className="relative">
@@ -21,11 +23,14 @@ export default function SearchInput({
         name="search"
         type="search"
         pattern=".{0,255}"
+        maxLength={255}
         value={searchText}
         required={false}
-        placeholder="Search"
+        placeholder={placeholder}
+        aria-label={props["aria-label"] || placeholder}
         onChange={(event) => onChange(event.target.value)}
         autoFocus={autoFocus}
+        {...props}
       />
     </div>
   );

@@ -4,7 +4,14 @@ import {
   InformationCircleIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
-import { createContext, useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import Icon from "./Icon.jsx";
 
@@ -12,19 +19,22 @@ export const ToastContext = createContext();
 
 export default function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const nextId = useRef(0);
 
-  const showToast = ({ message, variant, duration }) => {
-    const id = Date.now();
+  const showToast = useCallback(({ message, variant = "info", duration }) => {
+    const id = nextId.current++;
     setToasts((prev) => [...prev, { id, message, variant, duration }]);
-  };
+  }, []);
 
-  function removeToast(id) {
+  const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }
+  }, []);
+
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
 
   return (
     // sharing the showToast function globally
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       {createPortal(
         <div
@@ -38,7 +48,8 @@ export default function ToastProvider({ children }) {
               variant={toast.variant}
               message={toast.message}
               duration={toast.duration}
-              onClose={() => removeToast(toast.id)}
+              onClose={removeToast}
+              toastId={toast.id}
             />
           ))}
         </div>,
@@ -85,21 +96,25 @@ const typeStyles = {
   info: "border border-blue-500 bg-blue-50",
 };
 
-function ToastElement({ variant, message, onClose, duration = 5000 }) {
+function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
   const [fadingOut, setFadingOut] = useState(false);
 
-  const startFadeOut = useCallback(() => {
-    setFadingOut(true);
-    setTimeout(onClose, 600); // Call onClose after the animation completes (600ms)
-  }, [onClose]);
-
   useEffect(() => {
-    const timer = setTimeout(startFadeOut, duration - 600); // Start fading out 600ms before the toast is removed
-    return () => clearTimeout(timer);
-  }, [duration, startFadeOut]);
+    let closeTimer;
+    const fadeTimer = setTimeout(() => {
+      setFadingOut(true);
+      closeTimer = setTimeout(() => onClose(toastId), 600);
+    }, duration - 600);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(closeTimer);
+    };
+  }, [duration, onClose, toastId]);
 
   return (
     <div
+      role={variant === "error" ? "alert" : "status"}
       className={`${typeStyles[variant]} flex w-full items-center
         justify-between rounded-md p-4 shadow-lg transition-all sm:max-w-md
         dark:bg-gray-900 dark:shadow-none
@@ -111,16 +126,18 @@ function ToastElement({ variant, message, onClose, duration = 5000 }) {
           {message}
         </span>
       </div>
-      <div
+      <button
+        type="button"
+        aria-label="Dismiss notification"
+        onClick={() => onClose(toastId)}
         className="group dark:hover:bg-hvr_gray rounded-lg hover:bg-gray-200/25"
       >
         <Icon
           icon={Cancel01Icon}
-          onClick={onClose}
           styles="size-6 dark:text-gray-400 m-1 text-gray-500
             group-hover:text-current cursor-pointer"
         />
-      </div>
+      </button>
     </div>
   );
 }

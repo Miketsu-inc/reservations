@@ -7,7 +7,7 @@ import {
   Textarea,
   TooltipContent,
   TooltipTrigger,
-  Tootlip,
+  Tooltip,
 } from "@reservations/components";
 import { useMemo } from "react";
 
@@ -126,7 +126,7 @@ export function ServiceBasicDetails({ service, categories, onUpdate }) {
         <div className="flex flex-row items-center gap-1">
           <p>Active service</p>
           <span className="hidden items-center md:flex">
-            <Tootlip>
+            <Tooltip>
               <TooltipTrigger>
                 <Icon
                   icon={InformationCircleIcon}
@@ -136,7 +136,7 @@ export function ServiceBasicDetails({ service, categories, onUpdate }) {
               <TooltipContent side="right">
                 <p>Only active services will show up on your booking page</p>
               </TooltipContent>
-            </Tootlip>
+            </Tooltip>
           </span>
         </div>
       </div>

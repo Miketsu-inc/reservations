@@ -33,7 +33,7 @@ function StandardInput({
   ...props
 }) {
   function handleChange(e) {
-    inputData({
+    inputData?.({
       name: name,
       value: e.target.value,
     });
@@ -86,7 +86,7 @@ function PhoneInput({
       defaultCountry: "hu", // TODO: this should be based on the language maybe
       value: value ?? "",
       onChange: (data) => {
-        inputData({
+        inputData?.({
           name,
           value: data.phone, // E.164 format: +36301234567
         });
@@ -127,16 +127,21 @@ function PhoneInput({
 
 function LabelWrapper({ id, labelText, required, children }) {
   return (
-    <label htmlFor={id} className="flex w-full flex-col">
+    <div className="flex w-full flex-col">
       {labelText && (
-        <span className="flex items-center gap-1 pb-1 text-sm">
+        <label htmlFor={id} className="flex items-center gap-1 pb-1 text-sm">
           {labelText}
           {required !== false && (
-            <span className="text-base leading-none text-red-500">*</span>
+            <span
+              aria-hidden="true"
+              className="text-base leading-none text-red-500"
+            >
+              *
+            </span>
           )}
-        </span>
+        </label>
       )}
       {children}
-    </label>
+    </div>
   );
 }

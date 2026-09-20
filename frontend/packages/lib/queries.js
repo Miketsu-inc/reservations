@@ -36,7 +36,7 @@ async function fetchBusinessHours(merchantId) {
       method: "GET",
       headers: {
         Accept: "application/json",
-        "constent-type": "application/json",
+        "content-type": "application/json",
       },
     }
   );
@@ -132,7 +132,7 @@ async function fetchServiceFormOptions(merchantId) {
 
 export function serviceFormOptionsQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: [merchantId, "service-from-options"],
+    queryKey: [merchantId, "service-form-options"],
     queryFn: () => fetchServiceFormOptions(merchantId),
   });
 }

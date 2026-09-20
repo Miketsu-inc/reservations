@@ -18,7 +18,7 @@ import {
   blockedTimeTypesQueryOptions,
   combineDateTimeLocal,
   formatDuration,
-  GenerateTimeOptions,
+  generateTimeOptions,
   invalidateLocalStorageAuth,
   timeStringFromDate,
   useToast,
@@ -77,7 +77,7 @@ export default function BlockedTimePanel({
   const { isWindowSmall } = useWindowSize();
 
   const isEditing = blockedTime !== null;
-  const originalTimeOptions = GenerateTimeOptions(preferences?.time_format);
+  const originalTimeOptions = generateTimeOptions(preferences?.time_format);
 
   const initialFromTime =
     !blockedTime?.extendedProps?.allDay && blockedTime?.start

@@ -15,7 +15,7 @@ function formatDate(date) {
 export default function DatePicker({
   styles,
   value,
-  palaceHolderText,
+  placeholderText,
   disabledBefore,
   disabledAfter,
   labelText,
@@ -32,43 +32,46 @@ export default function DatePicker({
 }) {
   const [showCalendar, setShowCalendar] = useState(false);
   const [internalDate, setInternalDate] = useState();
-  const selectedDate = value || internalDate;
+  const isControlled = value !== undefined;
+  const selectedDate = isControlled ? value : internalDate;
+
+  function handleOpenChange(open) {
+    setShowCalendar(open);
+    if (!open && clearAfterClose && !isControlled) setInternalDate(undefined);
+    onOpenChange?.(open);
+  }
 
   return (
     <>
-      <Popover
-        open={showCalendar}
-        onOpenChange={(open) => {
-          open ? setShowCalendar(true) : setShowCalendar(false);
-          onOpenChange?.(open);
-        }}
-      >
-        <PopoverTrigger nativeButton={false} disabled={disabled} asChild>
-          <label className="w-full">
-            {labelText && (
-              <span className="flex items-center gap-1 pb-1 text-sm">
-                {labelText}
-                {required !== false && (
-                  <span className="text-base leading-none text-red-500">*</span>
-                )}
-              </span>
-            )}
+      <Popover open={showCalendar} onOpenChange={handleOpenChange}>
+        <div className="w-full">
+          {labelText && (
+            <span className="flex items-center gap-1 pb-1 text-sm">
+              {labelText}
+              {required !== false && (
+                <span
+                  aria-hidden="true"
+                  className="text-base leading-none text-red-500"
+                >
+                  *
+                </span>
+              )}
+            </span>
+          )}
+          <PopoverTrigger disabled={disabled} asChild>
             <button
               className={`${styles} ${disabled ? "outline-none" : ""}
                 border-input_border_color w-full rounded-lg border px-3 py-2
                 text-left`}
               type="button"
-              onClick={() => {
-                setShowCalendar(!showCalendar);
-                if (clearAfterClose) setInternalDate();
-              }}
+              disabled={disabled}
             >
               <div className="flex items-center justify-between">
                 {!hideText && (
                   <span className="text-text_color h-5 flex-1">
                     {selectedDate
                       ? formatDate(selectedDate)
-                      : palaceHolderText || "Pick a date"}
+                      : placeholderText || "Pick a date"}
                   </span>
                 )}
                 <Icon
@@ -77,8 +80,8 @@ export default function DatePicker({
                 />
               </div>
             </button>
-          </label>
-        </PopoverTrigger>
+          </PopoverTrigger>
+        </div>
         <PopoverContent styles="w-fit p-0!">
           <SmallCalendar
             value={selectedDate}
@@ -88,13 +91,13 @@ export default function DatePicker({
                 if (resetOnUnselect) date = value;
               }
 
-              if (!value) {
+              if (!isControlled) {
                 setInternalDate(date);
               }
-              onSelect(date);
+              onSelect?.(date);
 
               if (closeOnSelect) {
-                setShowCalendar(!showCalendar);
+                handleOpenChange(false);
               }
             }}
             firstDayOfWeek={firstDayOfWeek}

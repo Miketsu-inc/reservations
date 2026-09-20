@@ -1,4 +1,9 @@
 import { JABULANI_URL, TANGO_URL } from "./constants";
+import {
+  dateStringToLocalDate,
+  formatToDateString,
+  isoToDateString,
+} from "./datetime";
 
 export function invalidateLocalStorageAuth(responseCode) {
   if (responseCode === 401) {
@@ -7,21 +12,26 @@ export function invalidateLocalStorageAuth(responseCode) {
 }
 
 export function fillStatisticsWithDate(data, fromDateStr, toDateStr) {
-  let filledStats = [];
+  const filledStats = [];
 
-  const fromDate = new Date(fromDateStr);
-  const toDate = new Date(toDateStr);
+  const fromDate = dateStringToLocalDate(isoToDateString(fromDateStr));
+  const toDate = dateStringToLocalDate(isoToDateString(toDateStr));
+  if (!fromDate || !toDate || fromDate > toDate) return filledStats;
 
   const convertedMap = new Map(
-    data.map(({ day, value }) => [new Date(day).toDateString(), value])
+    data.map(({ day, value }) => [isoToDateString(day), value])
   );
 
-  for (let d = fromDate; d <= toDate; d.setDate(d.getDate() + 1)) {
-    const value = convertedMap.get(d.toDateString()) || 0;
+  for (
+    const date = new Date(fromDate);
+    date <= toDate;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const value = convertedMap.get(formatToDateString(date)) ?? 0;
 
     filledStats.push({
       value,
-      day: d.toLocaleDateString([], {
+      day: date.toLocaleDateString([], {
         month: "2-digit",
         day: "2-digit",
       }),

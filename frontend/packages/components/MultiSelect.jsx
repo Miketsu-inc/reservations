@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 const itemHeight = 36;
 
 export default function MultiSelect({
-  options,
+  options = [],
   values = [],
   onSelect,
   placeholder,
@@ -29,7 +29,10 @@ export default function MultiSelect({
   const containerRef = useRef(null);
   const dropDownListRef = useRef(null);
 
-  const allSelected = options.length > 0 && values.length === options.length;
+  const selectedValues = new Set(values);
+  const allSelected =
+    options.length > 0 &&
+    options.every((option) => selectedValues.has(option.value));
 
   function handleOpen() {
     if (disabled) return;
@@ -54,7 +57,7 @@ export default function MultiSelect({
   }
 
   function handleToggleOption(optionValue) {
-    if (values.includes(optionValue)) {
+    if (selectedValues.has(optionValue)) {
       onSelect(values.filter((id) => id !== optionValue));
     } else {
       onSelect([...values, optionValue]);
@@ -108,16 +111,21 @@ export default function MultiSelect({
         onOpenChange?.(open);
       }}
     >
-      <PopoverTrigger nativeButton={false} asChild>
-        <label className={`w-full ${styles}`}>
-          {labelText && (
-            <span className="flex items-center gap-1 pb-1 text-sm">
-              {labelText}
-              {required !== false && (
-                <span className="text-base leading-none text-red-500">*</span>
-              )}
-            </span>
-          )}
+      <div className={`w-full ${styles}`}>
+        {labelText && (
+          <span className="flex items-center gap-1 pb-1 text-sm">
+            {labelText}
+            {required !== false && (
+              <span
+                aria-hidden="true"
+                className="text-base leading-none text-red-500"
+              >
+                *
+              </span>
+            )}
+          </span>
+        )}
+        <PopoverTrigger asChild>
           <button
             className={`${styles} border-input_border_color
               disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
@@ -130,7 +138,7 @@ export default function MultiSelect({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TriggerContent
-                  values={values}
+                  selectedValues={selectedValues}
                   options={options}
                   placeholder={placeholder}
                   displayText={displayText}
@@ -144,8 +152,8 @@ export default function MultiSelect({
               />
             </div>
           </button>
-        </label>
-      </PopoverTrigger>
+        </PopoverTrigger>
+      </div>
       <PopoverContent
         styles="p-0! data-[side=top]:translate-y-6"
         onKeyDown={handleKeyDown}
@@ -154,6 +162,8 @@ export default function MultiSelect({
         }}
       >
         <ul
+          role="listbox"
+          aria-multiselectable="true"
           ref={dropDownListRef}
           style={{
             maxHeight: itemHeight
@@ -198,12 +208,12 @@ export default function MultiSelect({
 
               {options.map((option, index) => {
                 const listIndex = index + 1;
-                const isSelected = values.includes(option.value);
+                const isSelected = selectedValues.has(option.value);
                 const isHighlighted = highlightedIndex === listIndex;
 
                 return (
                   <li
-                    key={index}
+                    key={option.value}
                     onClick={() => handleToggleOption(option.value)}
                     className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
                       dark:text-text_color cursor-pointer rounded-sm py-2 pr-0.5
@@ -245,12 +255,16 @@ export default function MultiSelect({
 
 function TriggerContent({
   options,
-  values,
+  selectedValues,
   placeholder,
   displayText,
   disabled,
 }) {
-  if (!values || values.length === 0) {
+  const selectedOptions = options.filter((option) =>
+    selectedValues.has(option.value)
+  );
+
+  if (selectedOptions.length === 0) {
     return (
       <span
         className={`${disabled ? "text-gray-500/70" : "text-gray-500"} min-h-6
@@ -261,17 +275,13 @@ function TriggerContent({
     );
   }
 
-  const selectedOptions = values
-    .map((val) => options.find((o) => o.value === val))
-    .filter(Boolean);
-
   const displayedOptions = selectedOptions.slice(0, 2);
   const remainingCount = selectedOptions.length - 2;
 
-  let text = `${values.length} ${displayText} selected`;
-  if (values.length === options.length) {
+  let text = `${selectedOptions.length} ${displayText} selected`;
+  if (options.length > 0 && selectedOptions.length === options.length) {
     text = `All ${displayText}`;
-  } else if (values.length === 1 && selectedOptions[0]) {
+  } else if (selectedOptions.length === 1) {
     text = selectedOptions[0].label;
   }
 

@@ -1,7 +1,9 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -31,7 +33,9 @@ export function Toggle({
 
   return (
     <button
-      ref={(element) => (group ? group.registerRef(value, element) : {})}
+      ref={(element) => {
+        group?.registerRef(value, element);
+      }}
       aria-pressed={isPressed}
       type="button"
       disabled={disabled}
@@ -95,7 +99,10 @@ export function ToggleGroup({
   const [pillStyle, setPillStyle] = useState({ opacity: 0 });
 
   useLayoutEffect(() => {
-    if (multiple || !currentValue || !groupRef.current) return;
+    if (multiple || !currentValue || !groupRef.current) {
+      setPillStyle({ opacity: 0 });
+      return;
+    }
 
     function updatePillPosition() {
       const activeElement = itemRefs.current[currentValue];
@@ -136,46 +143,57 @@ export function ToggleGroup({
     };
   }, [children, currentValue, multiple]);
 
-  function registerRef(itemValue, element) {
+  const registerRef = useCallback((itemValue, element) => {
     if (element) {
       itemRefs.current[itemValue] = element;
     } else {
       delete itemRefs.current[itemValue];
     }
-  }
+  }, []);
 
-  function onToggle(itemValue) {
-    itemRefs.current[itemValue]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      container: "nearest",
-      inline: "center",
-    });
+  const onToggle = useCallback(
+    (itemValue) => {
+      itemRefs.current[itemValue]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        container: "nearest",
+        inline: "center",
+      });
 
-    let val;
+      let val;
 
-    if (multiple) {
-      const arr = currentValue;
+      if (multiple) {
+        const arr = currentValue;
 
-      if (disableDeselect && arr.includes(itemValue)) return;
+        if (disableDeselect && arr.includes(itemValue)) return;
 
-      val = arr.includes(itemValue)
-        ? arr.filter((v) => v !== itemValue)
-        : [...arr, itemValue];
-    } else {
-      if (disableDeselect && currentValue === itemValue) return;
+        val = arr.includes(itemValue)
+          ? arr.filter((v) => v !== itemValue)
+          : [...arr, itemValue];
+      } else {
+        if (disableDeselect && currentValue === itemValue) return;
 
-      val = currentValue === itemValue ? null : itemValue;
-    }
+        val = currentValue === itemValue ? null : itemValue;
+      }
 
-    if (!isControlled) setInternalValue(val);
-    onValueChange?.(val);
-  }
+      if (!isControlled) setInternalValue(val);
+      onValueChange?.(val);
+    },
+    [currentValue, disableDeselect, isControlled, multiple, onValueChange]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      multiple,
+      value: currentValue,
+      registerRef,
+      onToggle,
+    }),
+    [currentValue, multiple, onToggle, registerRef]
+  );
 
   return (
-    <ToggleGroupContext.Provider
-      value={{ multiple, value: currentValue, registerRef, onToggle }}
-    >
+    <ToggleGroupContext.Provider value={contextValue}>
       <div
         ref={groupRef}
         role="group"

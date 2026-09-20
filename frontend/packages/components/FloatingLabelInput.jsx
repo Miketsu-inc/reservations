@@ -33,7 +33,7 @@ export default forwardRef(function FloatingLabelInput(
     }
     let valid = isValid;
 
-    if (inputValidation(e.target.value)) {
+    if (inputValidation?.(e.target.value)) {
       valid = true;
       setErrorTriggered(false);
     } else {
@@ -42,7 +42,7 @@ export default forwardRef(function FloatingLabelInput(
 
     setIsValid(valid);
 
-    inputData({
+    inputData?.({
       name: name,
       value: e.target.value,
       isValid: valid,

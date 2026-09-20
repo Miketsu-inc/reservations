@@ -46,12 +46,14 @@ export default function InputBase({
       {isTypePassword ? (
         <button
           type="button"
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
           className="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer"
-          onClick={() => setVisible(!visible)}
+          onClick={() => setVisible((current) => !current)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              setVisible(!visible);
+              setVisible((current) => !current);
             }
           }}
         >

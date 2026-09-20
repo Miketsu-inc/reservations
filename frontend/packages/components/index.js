@@ -38,8 +38,11 @@ export { default as Select } from "./Select.jsx";
 export { default as ServerError } from "./ServerError.jsx";
 export { default as SmallCalendar } from "./SmallCalendar.jsx";
 export { default as Switch } from "./Switch.jsx";
-export { default as Table } from "./Table.jsx";
 export { default as Textarea } from "./Textarea.jsx";
 export { ToastContext, default as ToastProvider } from "./ToastProvider.jsx";
 export { Toggle, ToggleGroup } from "./Toggle.jsx";
-export { TooltipContent, TooltipTrigger, Tootlip } from "./Tooltip.jsx";
+export {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./Tooltip.jsx";

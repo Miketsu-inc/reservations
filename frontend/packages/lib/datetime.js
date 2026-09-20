@@ -55,47 +55,46 @@ export function dateAndTimeStringsToLocalDate(dateStr, timeStr) {
 }
 
 export function calculateStartEndTime(view, firstDayOfWeek) {
-  if (!firstDayOfWeek) {
-    firstDayOfWeek = "Monday";
-  }
+  const weekStartsOn = firstDayOfWeek === "Sunday" ? 0 : 1;
 
   const d = new Date();
   // avoid DST problems
   const now = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const offset = firstDayOfWeek === "Monday" ? 1 : 0;
   let start, end;
 
   switch (view) {
     case "dayGridMonth": {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOffset = (monthStart.getDay() - weekStartsOn + 7) % 7;
       start = new Date(
         monthStart.getFullYear(),
         monthStart.getMonth(),
-        offset - (monthStart.getDay() - 1)
+        monthStart.getDate() - startOffset
       );
       const monthEnd = new Date(
         monthStart.getFullYear(),
         monthStart.getMonth() + 1,
         0
       );
+      const endOffset = (weekStartsOn + 6 - monthEnd.getDay() + 7) % 7;
       end = new Date(
         monthEnd.getFullYear(),
         monthEnd.getMonth(),
-        monthEnd.getDate() + (7 - monthEnd.getDay() + offset)
+        monthEnd.getDate() + endOffset + 1
       );
       break;
     }
     case "timeGridWeek":
     case "listWeek":
       if (now.getDay() === 0) {
-        if (firstDayOfWeek === "Monday") {
+        if (weekStartsOn === 1) {
           end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
           start = new Date(
             end.getFullYear(),
             end.getMonth(),
             end.getDate() - 7
           );
-        } else if (firstDayOfWeek === "Sunday") {
+        } else {
           start = now;
           end = new Date(
             start.getFullYear(),
@@ -107,7 +106,7 @@ export function calculateStartEndTime(view, firstDayOfWeek) {
         start = new Date(
           now.getFullYear(),
           now.getMonth(),
-          now.getDate() + offset - now.getDay()
+          now.getDate() + weekStartsOn - now.getDay()
         );
         end = new Date(
           start.getFullYear(),
@@ -126,6 +125,8 @@ export function calculateStartEndTime(view, firstDayOfWeek) {
       break;
   }
 
+  if (!start || !end) return null;
+
   return {
     start: formatToDateString(start),
     end: formatToDateString(end),
@@ -133,19 +134,14 @@ export function calculateStartEndTime(view, firstDayOfWeek) {
 }
 
 export function isDurationValid(view, startStr, endStr) {
-  const parseDate = (dateStr) => {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(Date.UTC(year, month - 1, day));
-  };
+  const start = dateStringToLocalDate(startStr);
+  const end = dateStringToLocalDate(endStr);
 
-  if (startStr === undefined || endStr === undefined) return false;
+  if (!start || !end) return false;
 
-  const start = parseDate(startStr);
-  const end = parseDate(endStr);
-
-  if (isNaN(start) || isNaN(end)) return false;
-
-  const diff = end.getTime() - start.getTime();
+  const toUtcTime = (date) =>
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const diff = toUtcTime(end) - toUtcTime(start);
   if (diff < 0) return false;
 
   const days = diff / (1000 * 60 * 60 * 24);
@@ -239,10 +235,14 @@ export function formatDuration(duration) {
     hours = Math.floor(duration / 60);
   }
 
-  return `${hours > 0 ? `${hours}h ` : ""}${minutes > 0 ? `${minutes}m` : ""}`;
+  const parts = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+
+  return parts.join(" ");
 }
 
-export function GetDayPickerWindow(month, firstDayOfWeek = "Monday") {
+export function getDayPickerWindow(month, firstDayOfWeek = "Monday") {
   const weekStartsOn = firstDayOfWeek === "Monday" ? 1 : 0;
 
   const year = month.getFullYear();
@@ -263,7 +263,7 @@ export function GetDayPickerWindow(month, firstDayOfWeek = "Monday") {
   };
 }
 
-export function GenerateTimeOptions(time_format) {
+export function generateTimeOptions(time_format) {
   const options = [];
 
   for (let hour = 0; hour < 24; hour++) {

@@ -4,7 +4,7 @@ function TooltipProvider({ delayDuration = 0, ...props }) {
   return <TooltipPrimitive.Provider delayDuration={delayDuration} {...props} />;
 }
 
-export function Tootlip({ ...props }) {
+export function Tooltip({ ...props }) {
   return (
     <TooltipProvider>
       <TooltipPrimitive.Root {...props} />

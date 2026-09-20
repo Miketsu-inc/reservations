@@ -22,10 +22,10 @@ export default function Breadcrumbs() {
         {items.map((item, index) => (
           <li
             className="hover:text-text_color inline-flex items-center gap-2"
-            key={index}
+            key={item.href}
           >
             {lastMatch?.pathname === item.href ? (
-              <span className="cursor-pointer">{item.label}</span>
+              <span aria-current="page">{item.label}</span>
             ) : (
               <Link to={item.href}>{item.label}</Link>
             )}

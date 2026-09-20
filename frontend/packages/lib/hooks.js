@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -58,22 +59,34 @@ export function useWindowSize() {
   };
 }
 
-export function useClickOutside(ref, callback) {
+export function useClickOutside(ref, callback, enabled = true) {
+  const callbackRef = useRef(callback);
+
   useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+
     function clickOutsideHandler(e) {
-      if (ref.current) {
-        if (!ref.current.contains(e.target) || e.target === ref.current) {
-          callback();
-        }
+      if (ref.current && !ref.current.contains(e.target)) {
+        callbackRef.current?.(e);
       }
     }
 
     document.addEventListener("mousedown", clickOutsideHandler);
     return () => document.removeEventListener("mousedown", clickOutsideHandler);
-  });
+  }, [enabled, ref]);
 }
 
 export function useAutofill(ref, callback) {
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     const input = ref.current;
     if (!input) return;
@@ -89,12 +102,12 @@ export function useAutofill(ref, callback) {
         },
       });
 
-      callback(event);
+      callbackRef.current?.(event);
     }
 
     input.addEventListener("onautocomplete", onAutofill);
     return () => input.removeEventListener("onautocomplete", onAutofill);
-  }, [ref, callback]);
+  }, [ref]);
 }
 
 export function useToast() {
@@ -137,6 +150,8 @@ export function useActiveSection(sectionIds) {
   const [activeSection, setActiveSection] = useState(sectionIds[0]);
 
   useEffect(() => {
+    if (sectionIds.length === 0) return undefined;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -156,5 +171,5 @@ export function useActiveSection(sectionIds) {
     return () => observer.disconnect();
   }, [sectionIds]);
 
-  return activeSection;
+  return sectionIds.includes(activeSection) ? activeSection : sectionIds[0];
 }

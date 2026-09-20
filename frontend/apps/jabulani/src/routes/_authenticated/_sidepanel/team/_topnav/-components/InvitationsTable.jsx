@@ -1,6 +1,9 @@
 import { MailRemoveIcon, RecoveryMailIcon } from "@hugeicons/core-free-icons";
-import { Icon, Table } from "@reservations/components";
+import { Icon, Loading } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
+import { lazy, Suspense } from "react";
+
+const Table = lazy(() => import("@reservations/components/Table"));
 
 const GRAY_STYLES =
   "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400";
@@ -145,14 +148,16 @@ export default function InvitationsTable({
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
-      <Table
-        rowData={data}
-        columnDef={columnDef}
-        itemName="invitation"
-        onNewItem={onNewItem}
-        exportName="invitations"
-        rowHeight={70}
-      />
+      <Suspense fallback={<Loading />}>
+        <Table
+          rowData={data}
+          columnDef={columnDef}
+          itemName="invitation"
+          onNewItem={onNewItem}
+          exportName="invitations"
+          rowHeight={70}
+        />
+      </Suspense>
     </div>
   );
 }

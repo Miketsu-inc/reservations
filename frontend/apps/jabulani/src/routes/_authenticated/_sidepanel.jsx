@@ -26,7 +26,7 @@ import {
   ServerError,
   TooltipContent,
   TooltipTrigger,
-  Tootlip,
+  Tooltip,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
@@ -143,12 +143,12 @@ function SidePanelLayout() {
     if (!condition) return children;
 
     return (
-      <Tootlip>
+      <Tooltip>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent side="right" sideOffset={4}>
           <p>{content}</p>
         </TooltipContent>
-      </Tootlip>
+      </Tooltip>
     );
   }
 

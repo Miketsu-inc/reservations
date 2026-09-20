@@ -9,7 +9,7 @@ export default function Textarea({
   ...props
 }) {
   function handleChange(e) {
-    inputData({
+    inputData?.({
       name: name,
       value: e.target.value,
     });

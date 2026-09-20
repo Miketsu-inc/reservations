@@ -53,7 +53,7 @@ export default function SmallCalendar({
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
         today: !disabledTodayStyling ? "bg-hvr_gray" : "",
-        outside: "text-white",
+        outside: "text-gray-400 dark:text-gray-600",
         disabled: "hover:bg-transparent text-gray-300! dark:text-gray-800!",
         hidden: "invisible",
         chevron:

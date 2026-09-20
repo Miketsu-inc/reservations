@@ -10,28 +10,49 @@ export default function Modal({
   isOpen,
   onClose,
   children,
+  ...props
 }) {
   const modalRef = useRef();
-  useClickOutside(modalRef, suspendCloseOnClickOutside ? () => {} : onClose);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useClickOutside(modalRef, onClose, isOpen && !suspendCloseOnClickOutside);
 
   useEffect(() => {
     if (isOpen) {
       const modal = modalRef.current;
+      const previouslyFocused = document.activeElement;
 
-      modal.focus();
+      modal?.focus();
+
+      const keyDownHandler = (event) => {
+        if (event.key === "Escape") onCloseRef.current?.();
+      };
+      document.addEventListener("keydown", keyDownHandler);
+
+      let removeFocusTrap = () => {};
 
       if (!disableFocusTrap) {
         const focusOutHandler = (event) => {
           if (!modal?.contains(event.relatedTarget)) modal?.focus();
         };
 
-        modal.addEventListener("focusout", focusOutHandler);
-
-        return () => {
-          modal.removeEventListener("focusout", focusOutHandler);
-        };
+        modal?.addEventListener("focusout", focusOutHandler);
+        removeFocusTrap = () =>
+          modal?.removeEventListener("focusout", focusOutHandler);
       }
+
+      return () => {
+        document.removeEventListener("keydown", keyDownHandler);
+        removeFocusTrap();
+        previouslyFocused?.focus?.();
+      };
     }
+
+    return;
   }, [disableFocusTrap, isOpen]);
 
   return (
@@ -53,6 +74,7 @@ export default function Modal({
                 role="dialog"
                 aria-modal="true"
                 tabIndex={-1}
+                {...props}
                 className={`${styles} bg-layer_bg text-text_color
                 dark:border-border_color w-full rounded-lg shadow-lg
                 shadow-gray-500 transition-all focus:outline-none sm:w-fit

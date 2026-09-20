@@ -27,6 +27,17 @@ const theme = themeQuartz.withParams({
   accentColor: "rgb(var(--primary))",
 });
 
+const modules = [
+  ClientSideRowModelModule,
+  QuickFilterModule,
+  CellStyleModule,
+  ColumnApiModule,
+  ColumnAutoSizeModule,
+  CsvExportModule,
+];
+
+const defaultColDef = { sortable: true, suppressMovable: true };
+
 export default function Table({
   rowData,
   columnDef,
@@ -45,7 +56,7 @@ export default function Table({
   const { windowSize } = useWindowSize();
 
   const onBtnExport = useCallback(() => {
-    tableRef.current.api.exportDataAsCsv({
+    tableRef.current?.api?.exportDataAsCsv({
       fileName: `${exportName}.csv`,
       columnKeys: columnsToExport,
     });
@@ -67,7 +78,7 @@ export default function Table({
           <Button
             variant="tertiary"
             styles="p-2 text-sm w-fit text-nowrap"
-            buttonText={windowSize != "sm" ? "Export" : ""}
+            buttonText={windowSize !== "sm" ? "Export" : ""}
             onClick={onBtnExport}
           >
             <Icon
@@ -100,17 +111,10 @@ export default function Table({
           ref={tableRef}
           theme={theme}
           quickFilterText={searchText}
-          modules={[
-            ClientSideRowModelModule,
-            QuickFilterModule,
-            CellStyleModule,
-            ColumnApiModule,
-            ColumnAutoSizeModule,
-            CsvExportModule,
-          ]}
+          modules={modules}
           rowData={rowData}
           columnDefs={columnDef}
-          defaultColDef={{ sortable: true, suppressMovable: true }}
+          defaultColDef={defaultColDef}
           getRowId={(params) => String(params.data.id)}
           onFirstDataRendered={(params) => {
             params.api.autoSizeColumns(columnsToAutoSize || []);

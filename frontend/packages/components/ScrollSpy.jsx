@@ -237,7 +237,14 @@ function useScrollSpyActiveId() {
   return useContext(ActiveSectionContext);
 }
 
-export function ScrollSpySection({ id, label, styles, children, ...props }) {
+export function ScrollSpySection({
+  id,
+  label,
+  styles,
+  style,
+  children,
+  ...props
+}) {
   const { registerSection, scrollOffset, unregisterSection } = useScrollSpy();
   const ref = useRef(null);
 
@@ -254,7 +261,7 @@ export function ScrollSpySection({ id, label, styles, children, ...props }) {
       id={id}
       ref={ref}
       className={styles}
-      style={{ scrollMarginTop: scrollOffset + "px" }}
+      style={{ ...style, scrollMarginTop: scrollOffset + "px" }}
       {...props}
     >
       {children}
@@ -291,7 +298,7 @@ export function ScrollSpyNav() {
               aria-current={active ? "location" : undefined}
               className={
                 active
-                  ? `bg-primary/10 text-primary 2 shrink-0 rounded-lg px-3 py-2
+                  ? `bg-primary/10 text-primary shrink-0 rounded-lg px-3 py-2
                     text-sm whitespace-nowrap md:w-full md:py-2.5`
                   : `text-text_color/70 hover:bg-primary/10 shrink-0 rounded-lg
                     px-3 py-2 text-sm whitespace-nowrap md:w-full md:py-2.5`

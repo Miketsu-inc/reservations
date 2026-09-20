@@ -15,7 +15,7 @@ export function PopoverClose({
     <PopoverPrimitive.Close
       render={
         asChild &&
-        (React.isValidElement(children) || typeof children == "function")
+        (React.isValidElement(children) || typeof children === "function")
           ? children
           : undefined
       }
@@ -38,7 +38,7 @@ export function PopoverTrigger({
       data-slot="popover-trigger"
       render={
         asChild &&
-        (React.isValidElement(children) || typeof children == "function")
+        (React.isValidElement(children) || typeof children === "function")
           ? children
           : undefined
       }
