@@ -196,9 +196,8 @@ func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsIn
 	actor := actor.MustGetFromContext(ctx)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bookingRepo := s.bookingRepo.WithTx(tx)
-
-		if err := bookingRepo.TransferBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+		err := s.bookingRepo.WithTx(tx).TransferBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+		if err != nil {
 			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingParticipantConstraint) {
 				return ErrCustomerTransferConflict
 			}
@@ -206,7 +205,8 @@ func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsIn
 			return err
 		}
 
-		if err := bookingRepo.TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+		err = s.bookingRepo.WithTx(tx).TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+		if err != nil {
 			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingSeriesParticipantConstraint) {
 				return ErrCustomerTransferConflict
 			}
