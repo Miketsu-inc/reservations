@@ -141,6 +141,7 @@ export default function Calendar({ bookingId, router, route, search }) {
     revert: null,
     panelKey: null,
   });
+  const [isBookingPanelClosing, setIsBookingPanelClosing] = useState(false);
   const [calendarTitle, setCalendarTitle] = useState("");
 
   const { merchantId, employeeId } = useAuth();
@@ -217,9 +218,22 @@ export default function Calendar({ bookingId, router, route, search }) {
   }, [bookingId, merchantId, queryClient]);
 
   function openBookingPanel(event, revert = null) {
+    const id = String(event.extendedProps.id);
+    const booking = events.bookings.find(
+      (candidate) => String(candidate.id) === id
+    );
+
+    if (booking) {
+      queryClient.setQueryData(
+        [merchantId, "calendar-booking", id],
+        booking
+      );
+    }
+
     bookingRevertRef.current = revert;
+    setIsBookingPanelClosing(false);
     setSidePanelState({
-      isOpen: false,
+      isOpen: true,
       type: "edit-booking",
       data: event,
       revert,
@@ -227,7 +241,7 @@ export default function Calendar({ bookingId, router, route, search }) {
     });
     router.navigate({
       to: "/calendar/bookings/$bookingId",
-      params: { bookingId: String(event.extendedProps.id) },
+      params: { bookingId: id },
       search,
     });
   }
@@ -236,6 +250,7 @@ export default function Calendar({ bookingId, router, route, search }) {
     if (bookingId) {
       bookingRevertRef.current?.();
       bookingRevertRef.current = null;
+      setIsBookingPanelClosing(true);
       setSidePanelState({
         isOpen: false,
         type: "edit-booking",
@@ -243,7 +258,6 @@ export default function Calendar({ bookingId, router, route, search }) {
         revert: null,
         panelKey: bookingId,
       });
-      router.navigate({ to: "/calendar", search });
       return;
     }
 
@@ -261,6 +275,7 @@ export default function Calendar({ bookingId, router, route, search }) {
     if (bookingId) {
       bookingRevertRef.current = null;
       invalidateSelectedBookingQuery();
+      setIsBookingPanelClosing(true);
       setSidePanelState({
         isOpen: false,
         type: "edit-booking",
@@ -268,7 +283,6 @@ export default function Calendar({ bookingId, router, route, search }) {
         revert: null,
         panelKey: bookingId,
       });
-      router.navigate({ to: "/calendar", search });
       return;
     }
 
@@ -280,6 +294,14 @@ export default function Calendar({ bookingId, router, route, search }) {
   }
 
   useEffect(() => {
+    if (
+      bookingId &&
+      previousBookingIdRef.current !== bookingId &&
+      isBookingPanelClosing
+    ) {
+      setIsBookingPanelClosing(false);
+    }
+
     if (previousBookingIdRef.current && !bookingId) {
       const previousBookingId = previousBookingIdRef.current;
       const previousBookingData = lastBookingPanelDataRef.current;
@@ -292,10 +314,17 @@ export default function Calendar({ bookingId, router, route, search }) {
         revert: null,
         panelKey: previousBookingId,
       });
+      setIsBookingPanelClosing(false);
     }
 
     previousBookingIdRef.current = bookingId;
-  }, [bookingId]);
+  }, [bookingId, isBookingPanelClosing]);
+
+  function finishBookingPanelClose() {
+    if (bookingId && isBookingPanelClosing) {
+      router.navigate({ to: "/calendar", search });
+    }
+  }
 
   const datesChanged = useCallback(
     (api) => {
@@ -370,7 +399,11 @@ export default function Calendar({ bookingId, router, route, search }) {
   return (
     <div className="flex h-[85svh] flex-col px-4 pt-4 md:h-fit md:max-h-[90svh]">
       <CalendarSidePanel
-        isOpen={bookingId ? Boolean(bookingPanelData) : sidePanelState.isOpen}
+        isOpen={
+          bookingId
+            ? !isBookingPanelClosing && Boolean(bookingPanelData)
+            : sidePanelState.isOpen
+        }
         type={
           bookingId
             ? bookingPanelData
@@ -381,6 +414,7 @@ export default function Calendar({ bookingId, router, route, search }) {
         data={bookingId ? bookingPanelData : sidePanelState.data}
         panelKey={bookingId ?? sidePanelState.panelKey}
         onClose={closeSidePanel}
+        onTransitionEnd={finishBookingPanelClose}
         onSave={saveSidePanel}
         onSoftUpdate={() => {
           invalidateBookingsQuery();

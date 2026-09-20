@@ -52,6 +52,7 @@ function servicesForCalendarQueryOptions(merchantId) {
 export default function CalendarSidePanel({
   isOpen,
   onClose,
+  onTransitionEnd,
   type,
   data,
   panelKey,
@@ -107,6 +108,11 @@ export default function CalendarSidePanel({
           h-full shadow-2xl transition-all duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
           ${isWindowSmall ? "w-full" : "w-fit border-l-2"}`}
+        onTransitionEnd={(event) => {
+          if (event.target === event.currentTarget && !isOpen) {
+            onTransitionEnd?.();
+          }
+        }}
       >
         {isOpen && !isWindowSmall && (
           <button
