@@ -9,7 +9,6 @@ import { Avatar, Icon } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
-  formatToDateString,
   preferencesQueryOptions,
   timeStringFromDate,
   useWindowSize,
@@ -102,10 +101,8 @@ function BookingCard({ booking, route, onAccept }) {
           className="flex flex-1 cursor-pointer flex-row gap-4
             lg:cursor-default"
           from={route.fullPath}
-          to="/calendar"
-          search={{
-            start: formatToDateString(fromDate),
-          }}
+          to="/calendar/bookings/$bookingId"
+          params={{ bookingId: String(booking.id) }}
           disabled={!isWindowSmall}
         >
           <div className="flex flex-col items-center justify-center">
@@ -157,10 +154,8 @@ function BookingCard({ booking, route, onAccept }) {
             className="lg:hover:bg-hvr_gray hidden h-full items-center
               rounded-lg px-2.5 lg:flex lg:h-fit lg:py-2.5"
             from={route.fullPath}
-            to="/calendar"
-            search={{
-              start: formatToDateString(fromDate),
-            }}
+            to="/calendar/bookings/$bookingId"
+            params={{ bookingId: String(booking.id) }}
           >
             <Icon icon={Calendar02Icon} styles="size-5 text-text_color" />
           </Link>
