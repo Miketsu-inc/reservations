@@ -36,9 +36,7 @@ type BookingRepository interface {
 	UpdateParticipantCountBatch(ctx context.Context, bookingIds []int, participantDelta []int) ([]int, error)
 	// decrements the participant count on every booking related to the customer
 	DecrementEveryParticipantCountForCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
-	MergeDuplicateBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 	TransferBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
-	MergeDuplicateBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 	TransferBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomerId uuid.UUID, toCustomerId uuid.UUID) error
 	UpdateBookingPhasesBatch(ctx context.Context, bookingPhases []BookingPhase) error
 

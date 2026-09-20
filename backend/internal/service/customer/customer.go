@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -197,19 +198,23 @@ func (s *Service) TransferBookings(ctx context.Context, input TransferBookingsIn
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bookingRepo := s.bookingRepo.WithTx(tx)
 
-		if err := bookingRepo.MergeDuplicateBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
-			return err
-		}
-
 		if err := bookingRepo.TransferBookingParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingParticipantConstraint) {
+				return ErrCustomerTransferConflict
+			}
+
 			return err
 		}
 
-		if err := bookingRepo.MergeDuplicateBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+		if err := bookingRepo.TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId); err != nil {
+			if db.IsUniqueConstraintViolation(err, repository.UniqueBookingSeriesParticipantConstraint) {
+				return ErrCustomerTransferConflict
+			}
+
 			return err
 		}
 
-		return bookingRepo.TransferBookingSeriesParticipants(ctx, actor.MerchantId, input.FromCustomerId, input.ToCustomerId)
+		return nil
 	})
 }
 

@@ -485,61 +485,6 @@ func (r *bookingRepository) DecrementEveryParticipantCountForCustomer(ctx contex
 	return nil
 }
 
-func (r *bookingRepository) MergeDuplicateBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
-	query := `
-	with duplicate_participants as (
-		select source.id as source_id, target.id as target_id, source.booking_id,
-			source.status as source_status, target.status as target_status
-		from "BookingParticipant" source
-		join "Booking" b on b.id = source.booking_id and b.merchant_id = $1
-		join "Customer" source_customer on source_customer.id = source.customer_id
-			and source_customer.merchant_id = $1 and source_customer.user_id is null
-		join "Customer" target_customer on target_customer.id = $3 and target_customer.merchant_id = $1
-		join "BookingParticipant" target on target.booking_id = source.booking_id
-			and target.customer_id = $3 and target.id <> source.id
-		where source.customer_id = $2
-	), adjusted_bookings as (
-		update "Booking" b
-		set current_participants = greatest(b.current_participants - 1, 0),
-			total_price = (
-				greatest((b.total_price).number - (b.price_per_person).number, 0),
-				(b.total_price).currency
-			)::price
-		from duplicate_participants duplicate
-		where b.id = duplicate.booking_id and b.booking_type in ('event', 'class')
-			and duplicate.source_status <> 'cancelled' and duplicate.target_status <> 'cancelled'
-	), merged_targets as (
-		update "BookingParticipant" target
-		set status = case
-				when target.status = 'cancelled' and source.status <> 'cancelled' then source.status
-				else target.status
-			end,
-			cancelled_on = case
-				when target.status = 'cancelled' and source.status <> 'cancelled' then null
-				else target.cancelled_on
-			end,
-			cancellation_reason = case
-				when target.status = 'cancelled' and source.status <> 'cancelled' then null
-				else target.cancellation_reason
-			end,
-			customer_note = coalesce(target.customer_note, source.customer_note)
-		from duplicate_participants duplicate
-		join "BookingParticipant" source on source.id = duplicate.source_id
-		where target.id = duplicate.target_id
-	)
-	delete from "BookingParticipant" source
-	using duplicate_participants duplicate
-	where source.id = duplicate.source_id
-	`
-
-	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
-	if err != nil {
-		return fmt.Errorf("MergeDuplicateBookingParticipants: %w", err)
-	}
-
-	return nil
-}
-
 func (r *bookingRepository) TransferBookingParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
 	query := `
 	update "BookingParticipant" bp
@@ -553,53 +498,6 @@ func (r *bookingRepository) TransferBookingParticipants(ctx context.Context, mer
 	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
 	if err != nil {
 		return fmt.Errorf("TransferBookingParticipants: %w", err)
-	}
-
-	return nil
-}
-
-func (r *bookingRepository) MergeDuplicateBookingSeriesParticipants(ctx context.Context, merchantId uuid.UUID, fromCustomer uuid.UUID, toCustomer uuid.UUID) error {
-	query := `
-	with duplicate_participants as (
-		select source.id as source_id, target.id as target_id, source.booking_series_id,
-			source.is_active as source_is_active, target.is_active as target_is_active
-		from "BookingSeriesParticipant" source
-		join "BookingSeries" bs on bs.id = source.booking_series_id and bs.merchant_id = $1
-		join "Customer" source_customer on source_customer.id = source.customer_id
-			and source_customer.merchant_id = $1 and source_customer.user_id is null
-		join "Customer" target_customer on target_customer.id = $3 and target_customer.merchant_id = $1
-		join "BookingSeriesParticipant" target on target.booking_series_id = source.booking_series_id
-			and target.customer_id = $3 and target.id <> source.id
-		where source.customer_id = $2
-	), adjusted_series as (
-		update "BookingSeries" bs
-		set current_participants = greatest(bs.current_participants - 1, 0),
-			total_price = (
-				greatest((bs.total_price).number - (bs.price_per_person).number, 0),
-				(bs.total_price).currency
-			)::price
-		from duplicate_participants duplicate
-		where bs.id = duplicate.booking_series_id
-			and duplicate.source_is_active and duplicate.target_is_active
-	), merged_targets as (
-		update "BookingSeriesParticipant" target
-		set is_active = target.is_active or source.is_active,
-			dropped_out_on = case
-				when source.is_active then null
-				else target.dropped_out_on
-			end
-		from duplicate_participants duplicate
-		join "BookingSeriesParticipant" source on source.id = duplicate.source_id
-		where target.id = duplicate.target_id
-	)
-	delete from "BookingSeriesParticipant" source
-	using duplicate_participants duplicate
-	where source.id = duplicate.source_id
-	`
-
-	_, err := r.db.Exec(ctx, query, merchantId, fromCustomer, toCustomer)
-	if err != nil {
-		return fmt.Errorf("MergeDuplicateBookingSeriesParticipants: %w", err)
 	}
 
 	return nil
