@@ -28,7 +28,7 @@ import {
   useToast,
   useWindowSize,
 } from "@reservations/lib";
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
@@ -96,7 +96,6 @@ export const Route = createFileRoute(
     await queryClient.ensureQueryData(
       customerInfoQueryOptions(merchantId, params.customerId)
     );
-    await queryClient.ensureQueryData(customersQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;
@@ -116,23 +115,19 @@ function CustomerDetailsPage() {
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { customerId } = Route.useParams();
 
-  const queryResults = useQueries({
-    queries: [
-      customerInfoQueryOptions(merchantId, customerId),
-      customersQueryOptions(merchantId),
-    ],
-  });
+  const { data, isLoading, isError, error } = useQuery(
+    customerInfoQueryOptions(merchantId, customerId)
+  );
 
-  if (queryResults.some((r) => r.isLoading)) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  if (queryResults.some((r) => r.isError)) {
-    const query = queryResults.find((result) => result.error);
-    return <ServerError error={query.error.message} />;
+  if (isError) {
+    return <ServerError error={error.message} />;
   }
 
-  const completedBookings = queryResults[0].data.bookings.filter(
+  const completedBookings = data.bookings.filter(
     (booking) => booking.status === "completed"
   );
 
@@ -222,56 +217,16 @@ function CustomerDetailsPage() {
     }
   }
 
-  async function transferHandler(data) {
-    try {
-      const response = await fetch(
-        `/api/v1/merchants/${merchantId}/customers/transfer`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            from_customer_id: data.from,
-            to_customer_id: data.to,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        invalidateLocalStorageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        showToast({
-          message: "Bookings transferred successfully",
-          variant: "success",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-info", customerId],
-        });
-        setServerError();
-      }
-    } catch (err) {
-      setServerError(err.message);
-    }
-  }
-
   return (
     <div className="flex justify-center pt-4">
       <TransferAppsModal
-        data={{
-          from: queryResults[0].data.id,
-          customers: queryResults[1].data,
-        }}
+        fromCustomerId={data.id}
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        onSubmit={transferHandler}
       />
       <BlacklistModal
-        key={queryResults[0].data?.id || "new"}
-        data={queryResults[0].data}
+        key={data?.id || "new"}
+        data={data}
         isOpen={showBlacklistModal}
         onClose={() => setShowBlacklistModal(false)}
         onSubmit={(customer) =>
@@ -283,10 +238,10 @@ function CustomerDetailsPage() {
         }
       />
       <DeleteModal
-        itemName={`${queryResults[0].data.first_name} ${queryResults[0].data.last_name}`}
+        itemName={`${data.first_name} ${data.last_name}`}
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onDelete={() => deleteHandler(queryResults[0].data.id)}
+        onDelete={() => deleteHandler(data.id)}
       />
       <div
         className="flex w-full flex-col gap-5 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
@@ -296,7 +251,7 @@ function CustomerDetailsPage() {
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
               <Avatar
-                initials={`${queryResults[0].data.first_name.charAt(0)}${queryResults[0].data.last_name.charAt(0)}`}
+                initials={`${data.first_name.charAt(0)}${data.last_name.charAt(0)}`}
               />
 
               <div
@@ -307,10 +262,9 @@ function CustomerDetailsPage() {
                     ${lastVisited && windowSize !== "sm" ? "sm:flex-row sm:gap-4" : ""}`}
                 >
                   <h2 className="text-text_color text-lg font-bold">
-                    {queryResults[0].data.first_name}{" "}
-                    {queryResults[0].data.last_name}
+                    {data.first_name} {data.last_name}
                   </h2>
-                  {queryResults[0].data.is_blacklisted && (
+                  {data.is_blacklisted && (
                     <span
                       className="inline-flex w-fit items-center gap-1
                         rounded-full bg-red-700/20 px-2 py-0.5 text-xs
@@ -321,7 +275,7 @@ function CustomerDetailsPage() {
                     </span>
                   )}
 
-                  {queryResults[0].data.is_dummy && (
+                  {data.is_dummy && (
                     <span
                       className="bg-hvr_gray text-text_color/90 w-fit
                         rounded-full px-2 py-0.5 text-xs font-medium"
@@ -333,8 +287,7 @@ function CustomerDetailsPage() {
 
                 {lastVisited &&
                   (windowSize !== "sm" ||
-                    (!queryResults[0].data.is_blacklisted &&
-                      !queryResults[0].data.is_dummy)) && (
+                    (!data.is_blacklisted && !data.is_dummy)) && (
                     <p className="text-text_color/70 text-sm">
                       Last visited: {lastVisited}
                     </p>
@@ -359,14 +312,14 @@ function CustomerDetailsPage() {
                     className="itmes-start flex w-auto flex-col *:flex *:w-full
                       *:flex-row *:items-center *:rounded-lg *:p-2"
                   >
-                    {!queryResults[0].data.is_dummy && (
+                    {!data.is_dummy && (
                       <PopoverClose asChild>
                         <button
                           onClick={() => setShowBlacklistModal(true)}
                           className="hover:bg-hvr_gray text-text_color
                             cursor-pointer gap-3"
                         >
-                          {!queryResults[0].data.is_blacklisted ? (
+                          {!data.is_blacklisted ? (
                             <Icon
                               icon={UnavailableIcon}
                               styles="size-6 shrink-0"
@@ -378,7 +331,7 @@ function CustomerDetailsPage() {
                             />
                           )}
                           <p className="text-nowrap">
-                            {!queryResults[0].data.is_blacklisted
+                            {!data.is_blacklisted
                               ? "Blacklist Customer"
                               : "Unban customer"}
                           </p>
@@ -391,7 +344,7 @@ function CustomerDetailsPage() {
                         onClick={() => {
                           navigate({
                             from: Route.fullPath,
-                            to: `/customers/edit/${queryResults[0].data.id}`,
+                            to: `/customers/edit/${data.id}`,
                           });
                         }}
                       >
@@ -399,9 +352,9 @@ function CustomerDetailsPage() {
                         <p>Edit customer</p>
                       </button>
                     </PopoverClose>
-                    {queryResults[0].data.is_dummy && (
+                    {data.is_dummy && (
                       <>
-                        {queryResults[0].data.bookings.length !== 0 ? (
+                        {data.bookings.length !== 0 ? (
                           <PopoverClose asChild>
                             <button
                               className="hover:bg-hvr_gray cursor-pointer gap-3"
@@ -441,47 +394,44 @@ function CustomerDetailsPage() {
             className="text-text_color/70 flex flex-col items-start gap-3
               text-sm sm:flex-row sm:items-center sm:gap-6"
           >
-            {queryResults[0].data.email && (
+            {data.email && (
               <div className="flex items-center gap-2">
                 <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
-                {queryResults[0].data.email}
+                {data.email}
               </div>
             )}
             <div className="flex items-center gap-6 sm:justify-start">
-              {queryResults[0].data.phone_number && (
+              {data.phone_number && (
                 <div className="flex items-center gap-2">
                   <Icon
                     icon={Call02Icon}
                     styles="size-4 mb-0.5 text-text_color/70"
                   />
-                  {queryResults[0].data.phone_number}
+                  {data.phone_number}
                 </div>
               )}
-              {queryResults[0].data.birthday && (
+              {data.birthday && (
                 <div className="flex items-center gap-2">
                   <Icon
                     icon={BirthdayCakeIcon}
                     styles="size-5 mb-0.5 text-text_color/70"
                   />
-                  {formatBirthday(queryResults[0].data.birthday)}
+                  {formatBirthday(data.birthday)}
                 </div>
               )}
             </div>
           </div>
-          <ExpandableNote text={queryResults[0].data.note} />
-          <CustomerStats customer={queryResults[0].data} />
+          <ExpandableNote text={data.note} />
+          <CustomerStats customer={data} />
         </Card>
 
         <PaginatedList
-          data={queryResults[0].data.bookings}
+          data={data.bookings}
           itemsPerPage={8}
           title="Booking History"
           emptyMessage="No bookings found for this customer"
           renderItem={(booking) => (
-            <BookingItem
-              booking={booking}
-              customerName={queryResults[0].data.first_name}
-            />
+            <BookingItem booking={booking} customerName={data.first_name} />
           )}
         />
       </div>

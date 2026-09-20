@@ -31,26 +31,24 @@ const Button = forwardRef(function Button(
     <button
       ref={ref}
       onClick={onClick}
-      className={`${styles} ${variants[variant]} rounded-lg
-        focus-visible:outline-1
+      className={`${styles} ${variants[variant]} flex items-center
+        justify-center rounded-lg focus-visible:outline-1
+        ${childSide == "right" ? "flex-row-reverse" : ""}
         ${isLoading || disabled ? "opacity-50 transition-opacity duration-300" : "cursor-pointer"}`}
       name={name}
       type={type}
       disabled={isLoading || disabled}
     >
       {isLoading ? (
-        <div className="flex items-center justify-center">
+        <>
           <span className="pr-4 pl-5">{buttonText}</span>
           <LoaderIcon styles="-ml-1 mr-3 h-5 w-5" />
-        </div>
+        </>
       ) : children ? (
-        <div
-          className={`flex ${childSide == "right" ? "flex-row-reverse" : ""}
-            items-center justify-center gap-2`}
-        >
+        <>
           <span>{children}</span>
           <span>{buttonText}</span>
-        </div>
+        </>
       ) : (
         buttonText
       )}

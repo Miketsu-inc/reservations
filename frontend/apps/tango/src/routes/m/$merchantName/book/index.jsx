@@ -401,7 +401,7 @@ function BookingFLow() {
             )}
           </div>
           <Button
-            styles="w-fit px-4 py-2"
+            styles="w-fit px-4 py-2 gap-2"
             buttonText={currentStep === "time" ? "Book" : "Continue"}
             variant="primary"
             onClick={handleContinue}

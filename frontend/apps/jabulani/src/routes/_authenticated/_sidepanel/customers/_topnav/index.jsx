@@ -34,7 +34,7 @@ export const Route = createFileRoute(
 function CustomersPage() {
   const navigate = Route.useNavigate();
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferModalData, setTransferModalData] = useState();
+  const [transferCustomerId, setTransferCustomerId] = useState();
   const [showBlacklistModal, setShowBlacklistModal] = useState(false);
   const [blacklistModalData, setBlacklistModalData] = useState();
   const [serverError, setServerError] = useState();
@@ -100,41 +100,6 @@ function CustomersPage() {
     }
   }
 
-  async function transferHandler(data) {
-    try {
-      const response = await fetch(
-        `/api/v1/merchants/${merchantId}/customers/transfer`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            from_customer_id: data.from,
-            to_customer_id: data.to,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        invalidateLocalStorageAuth(response.status);
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        showToast({
-          message: "Bookings transferred successfully",
-          variant: "success",
-        });
-        await queryClient.invalidateQueries(customersQueryOptions(merchantId));
-        setServerError();
-        setTransferModalData();
-      }
-    } catch (err) {
-      setServerError(err.message);
-    }
-  }
-
   async function blacklistHandler(data) {
     try {
       const response = await fetch(
@@ -188,10 +153,12 @@ function CustomersPage() {
       </div>
       <div className="flex h-full min-h-0 justify-center">
         <TransferAppsModal
-          data={transferModalData}
+          fromCustomerId={transferCustomerId}
           isOpen={showTransferModal}
-          onClose={() => setShowTransferModal(false)}
-          onSubmit={transferHandler}
+          onClose={() => {
+            setShowTransferModal(false);
+            setTransferCustomerId();
+          }}
         />
         <BlacklistModal
           key={blacklistModalData?.id || "new"}
@@ -212,11 +179,8 @@ function CustomersPage() {
           <div className="flex min-h-0 w-full flex-1">
             <CustomersTable
               customersData={data}
-              onTransfer={(index) => {
-                setTransferModalData({
-                  from: index,
-                  customers: data,
-                });
+              onTransfer={(customerId) => {
+                setTransferCustomerId(customerId);
                 setTimeout(() => setShowTransferModal(true), 0);
               }}
               onEdit={(customer) => {

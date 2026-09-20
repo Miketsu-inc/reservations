@@ -4,76 +4,153 @@ import {
   ComboBox,
   Icon,
   ResponsiveDialog,
+  ServerError,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
+import {
+  customersQueryOptions,
+  invalidateLocalStorageAuth,
+  useToast,
+} from "@reservations/lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
-  const [showError, setShowError] = useState(false);
-  const [isCOmboBoxOpen, setIsComboBoxOpen] = useState(false);
-  const [toCustomer, setToCustomer] = useState("");
-  const fromCustomer = data?.customers.find((c) => c.id === data.from);
-
-  // filter out dummy customers and the one being transferred from
-  const filteredCustomers = data?.customers.filter(
-    (customer) => customer.id !== data.from && customer.is_dummy === false
+async function transferBookings(merchantId, fromCustomerId, toCustomerId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/customers/transfer`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from_customer_id: fromCustomerId,
+        to_customer_id: toCustomerId,
+      }),
+    }
   );
 
-  const options = filteredCustomers?.map((customer) => ({
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json().catch(() => null);
+    throw new Error(result?.error?.message || "Could not transfer bookings");
+  }
+}
+
+export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
+  const [showValidationError, setShowValidationError] = useState(false);
+  const [isComboBoxOpen, setIsComboBoxOpen] = useState(false);
+  const [toCustomerId, setToCustomerId] = useState("");
+  const { merchantId } = useAuth();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+
+  const customersQuery = useQuery({
+    ...customersQueryOptions(merchantId),
+    enabled: isOpen && Boolean(merchantId),
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: () =>
+      transferBookings(merchantId, fromCustomerId, toCustomerId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries(customersQueryOptions(merchantId)),
+        queryClient.invalidateQueries({
+          queryKey: [merchantId, "customer-info"],
+        }),
+      ]);
+      showToast({
+        message: "Bookings transferred successfully",
+        variant: "success",
+      });
+      handleClose();
+    },
+  });
+
+  const customers = customersQuery.data || [];
+  const fromCustomer = customers.find(
+    (customer) => customer.id === fromCustomerId
+  );
+
+  // Dummy customers cannot receive transferred bookings.
+  const filteredCustomers = customers.filter(
+    (customer) => customer.id !== fromCustomerId && !customer.is_dummy
+  );
+
+  const options = filteredCustomers.map((customer) => ({
     value: customer.id,
     label: `${customer.first_name} ${customer.last_name}`,
   }));
 
+  function handleClose() {
+    setShowValidationError(false);
+    setToCustomerId("");
+    transferMutation.reset();
+    onClose();
+  }
+
   function submitHandler(e) {
     e.preventDefault();
 
-    if (!toCustomer) {
-      setShowError("Please select a customer!");
+    if (!toCustomerId) {
+      setShowValidationError(true);
       return;
     }
 
-    setShowError("");
-    onSubmit({
-      from: data.from,
-      to: toCustomer,
-    });
-    onClose();
+    setShowValidationError(false);
+    transferMutation.mutate();
   }
 
   return (
     <ResponsiveDialog
       isOpen={isOpen}
-      onClose={() => {
-        setShowError("");
-        onClose();
-      }}
+      onClose={handleClose}
       disableFocusTrap={true}
-      suspendCloseOnClickOutside={isCOmboBoxOpen}
+      suspendCloseOnClickOutside={isComboBoxOpen || transferMutation.isPending}
     >
       <form onSubmit={submitHandler} className="m-3 sm:w-md">
         <p className="pb-6 text-xl">Transfer bookings</p>
+        <ServerError
+          styles="mb-4"
+          error={
+            customersQuery.error?.message || transferMutation.error?.message
+          }
+        />
         <div className="flex items-center justify-center gap-6 py-2 sm:px-4">
           <p className="w-fit text-lg font-semibold sm:text-nowrap">
-            {fromCustomer?.first_name + " " + fromCustomer?.last_name}
+            {fromCustomer
+              ? `${fromCustomer.first_name} ${fromCustomer.last_name}`
+              : customersQuery.isError
+                ? "Customer unavailable"
+                : "Loading customer..."}
           </p>
           <Icon icon={UserSwitchIcon} styles="size-7" />
           <ComboBox
             options={options}
-            value={toCustomer}
+            value={toCustomerId}
             placeholder="Search customers"
             emptyText={
-              filteredCustomers?.length === 0
-                ? "You have no customer to transfer to"
-                : ""
+              customersQuery.isLoading
+                ? "Loading customers..."
+                : filteredCustomers.length === 0
+                  ? "You have no customer to transfer to"
+                  : ""
             }
-            onSelect={(option) => setToCustomer(option.value)}
+            onSelect={(option) => {
+              setToCustomerId(option.value);
+              setShowValidationError(false);
+            }}
             styles="w-fit"
             maxVisibleItems={5}
-            onOpenChange={(open) => setIsComboBoxOpen(open)}
+            onOpenChange={setIsComboBoxOpen}
+            disabled={customersQuery.isLoading || customersQuery.isError}
           />
         </div>
         <p
-          className={`${showError ? "visible" : "invisible"} text-center
-            text-red-500`}
+          className={`${showValidationError ? "visible" : "invisible"}
+            text-center text-red-500`}
         >
           Please select a customer!
         </p>
@@ -94,11 +171,8 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
             styles="py-2 px-3 hidden lg:block"
             buttonText="Cancel"
             type="button"
-            onClick={() => {
-              setShowError("");
-              setToCustomer("");
-              onClose();
-            }}
+            onClick={handleClose}
+            disabled={transferMutation.isPending}
           />
           <Button
             variant="danger"
@@ -106,6 +180,12 @@ export default function TransferAppsModal({ data, isOpen, onClose, onSubmit }) {
             styles="py-2 px-3 w-full lg:w-auto"
             buttonText="Transfer"
             type="submit"
+            isLoading={transferMutation.isPending}
+            disabled={
+              customersQuery.isLoading ||
+              customersQuery.isError ||
+              filteredCustomers.length === 0
+            }
           />
         </div>
       </form>

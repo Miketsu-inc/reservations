@@ -185,7 +185,7 @@ export default function BookingSummary({
       </div>
 
       <Button
-        styles="w-full py-2"
+        styles="w-full py-2 gap-2"
         buttonText={currentStep === "time" ? "Book" : "Continue"}
         variant="primary"
         disabled={!canContinue}
