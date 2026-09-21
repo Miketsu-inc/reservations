@@ -9,8 +9,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
+	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -23,11 +26,16 @@ import (
 type Handler struct {
 	service         *merchantServ.Service
 	bookingServ     *bookingServ.Service
+	teamServ        *teamServ.Service
+	catalogServ     *catalogServ.Service
+	customerServ    *customerServ.Service
 	extcalendarServ *externalcalendarServ.Service
 }
 
-func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
-	return &Handler{service: s, bookingServ: bookingServ, extcalendarServ: extcalendarServ}
+func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamServ *teamServ.Service,
+	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	return &Handler{service: s, bookingServ: bookingServ, teamServ: teamServ, catalogServ: catalogServ, customerServ: customerServ,
+		extcalendarServ: extcalendarServ}
 }
 
 type meResp struct {
@@ -296,10 +304,9 @@ type getTeamMembersForCalendarResp struct {
 }
 
 func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) error {
-	// TODO: should be in team service
-	teamMembers, err := h.service.GetTeamForCalendar(r.Context())
+	teamMembers, err := h.teamServ.GetActiveMembers(r.Context())
 	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetTeamForCalendar")
+		return teamServ.ErrStatus.Resolve(err, "GetTeamForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetTeamMembersForCalendarResp(teamMembers))
@@ -325,10 +332,9 @@ type calendarServiceResp struct {
 }
 
 func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) error {
-	// TODO: should be in catalog service
-	services, err := h.service.GetServicesForCalendar(r.Context())
+	services, err := h.catalogServ.GetServicesForCalendar(r.Context())
 	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetServicesForCalendar")
+		return catalogServ.ErrStatus.Resolve(err, "GetServicesForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetServicesForCalendarResp(services))
@@ -348,10 +354,9 @@ type getCustomersForCalendarResp struct {
 }
 
 func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) error {
-	// TODO: should be in customer service
-	customers, err := h.service.GetCustomersForCalendar(r.Context())
+	customers, err := h.customerServ.GetCustomersForCalendar(r.Context())
 	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetCustomersForCalendar")
+		return customerServ.ErrStatus.Resolve(err, "GetCustomersForCalendar")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetCustomersForCalendarResp(customers))

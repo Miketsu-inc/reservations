@@ -199,6 +199,17 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 	return teamMembers, nil
 }
 
+func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	teamMembers, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
+	if err != nil {
+		return []domain.Employee{}, err
+	}
+
+	return teamMembers, nil
+}
+
 func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string) ([]domain.Employee, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {

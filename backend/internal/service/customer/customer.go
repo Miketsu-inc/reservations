@@ -228,3 +228,14 @@ func (s *Service) GetAllBlacklisted(ctx context.Context) ([]domain.PublicCustome
 
 	return blacklistedCustomers, nil
 }
+
+func (s *Service) GetCustomersForCalendar(ctx context.Context) ([]domain.CustomerForCalendar, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	customers, err := s.customerRepo.GetCustomersForCalendar(ctx, actor.MerchantId)
+	if err != nil {
+		return []domain.CustomerForCalendar{}, err
+	}
+
+	return customers, nil
+}

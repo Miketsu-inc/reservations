@@ -205,7 +205,6 @@ func (r *merchantRepository) GetMerchantSubscriptionTier(ctx context.Context, me
 	return tier, nil
 }
 
-// TODO: this should be refactored ideally to one query
 func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantInfo, error) {
 	query := `
 	select m.name, m.url_name, m.contact_email, m.introduction, m.announcement, m.about_us, m.parking_info, m.payment_info, m.timezone,

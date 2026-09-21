@@ -251,39 +251,6 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 	return businessHours, nil
 }
 
-func (s *Service) GetTeamForCalendar(ctx context.Context) ([]domain.Employee, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	team, err := s.teamRepo.GetEmployees(ctx, actor.MerchantId)
-	if err != nil {
-		return []domain.Employee{}, err
-	}
-
-	return team, nil
-}
-
-func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId)
-	if err != nil {
-		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
-	}
-
-	return services, nil
-}
-
-func (s *Service) GetCustomersForCalendar(ctx context.Context) ([]domain.CustomerForCalendar, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	customers, err := s.customerRepo.GetCustomersForCalendar(ctx, actor.MerchantId)
-	if err != nil {
-		return []domain.CustomerForCalendar{}, err
-	}
-
-	return customers, nil
-}
-
 func (s *Service) GetCalendarEvents(ctx context.Context, start string, end string) (domain.CalendarEvents, error) {
 	actor := actor.MustGetFromContext(ctx)
 

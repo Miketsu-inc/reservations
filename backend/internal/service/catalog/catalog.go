@@ -648,3 +648,14 @@ func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, se
 
 	return serviceDetails, nil
 }
+
+func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId)
+	if err != nil {
+		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
+	}
+
+	return services, nil
+}
