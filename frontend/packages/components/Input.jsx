@@ -12,6 +12,28 @@ const countryOptions = defaultCountries.map(([name, iso2, dialCode]) => ({
   icon: <FlagImage iso2={iso2} size="24px" />,
 }));
 
+const supportedCountries = new Set(defaultCountries.map(([, iso2]) => iso2));
+
+function getBrowserCountry(fallback = "hu") {
+  const locales = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language];
+
+  for (const locale of locales) {
+    try {
+      const country = new Intl.Locale(locale).maximize().region?.toLowerCase();
+
+      if (country && supportedCountries.has(country)) {
+        return country;
+      }
+    } catch {
+      // Ignore invalid or unsupported locale values.
+    }
+  }
+
+  return fallback;
+}
+
 export default function Input({ type, ...props }) {
   if (type === "tel") {
     return <PhoneInput {...props} />;
@@ -83,7 +105,7 @@ function PhoneInput({
   const { inputValue, handlePhoneValueChange, country, setCountry } =
     usePhoneInput({
       disableDialCodePrefill: true,
-      defaultCountry: "hu", // TODO: this should be based on the language maybe
+      defaultCountry: getBrowserCountry(),
       value: value ?? "",
       onChange: (data) => {
         inputData?.({
