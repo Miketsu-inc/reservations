@@ -9,10 +9,12 @@ import {
   DatePicker,
   Icon,
   Input,
-  MultiSelect,
+  Loading,
   Select,
+  ServerError,
   Switch,
 } from "@reservations/components";
+import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   blockedTimeTypesQueryOptions,
@@ -71,10 +73,10 @@ export default function BlockedTimePanel({
   preferences,
   onDeleted,
   onSubmitted,
-  team,
-  currentEmployee,
 }) {
   const { isWindowSmall } = useWindowSize();
+  const { showToast } = useToast();
+  const { merchantId, employeeId } = useAuth();
 
   const isEditing = blockedTime !== null;
   const originalTimeOptions = generateTimeOptions(preferences?.time_format);
@@ -110,10 +112,7 @@ export default function BlockedTimePanel({
 
   const initialEmployees = isEditing
     ? blockedTime?.extendedProps?.employee_ids || []
-    : [currentEmployee];
-
-  const { showToast } = useToast();
-  const { merchantId } = useAuth();
+    : [employeeId];
 
   const [formData, setFormData] = useState({
     id: blockedTime?.extendedProps?.id || null,
@@ -127,16 +126,6 @@ export default function BlockedTimePanel({
   });
 
   const [activeType, setActiveType] = useState(formData.blocked_type_id);
-
-  const { data: blockedTypes = [] } = useQuery(
-    blockedTimeTypesQueryOptions(merchantId)
-  );
-
-  const teamOptions = team?.map((member) => ({
-    value: member.id,
-    label: member.first_name + " " + member.last_name,
-    initials: `${member.first_name[0]}${member.last_name[0]}`,
-  }));
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -337,7 +326,6 @@ export default function BlockedTimePanel({
         </p>
         <BlockedTypeSection
           onSelect={handleTypeSelect}
-          blockedTypes={blockedTypes}
           activeType={activeType}
         />
         {activeType === "custom" && (
@@ -408,18 +396,11 @@ export default function BlockedTimePanel({
             />
           </div>
         )}
-        {team.length > 1 && (
-          <MultiSelect
-            options={teamOptions}
-            values={formData.employee_ids ? formData.employee_ids : []}
-            onSelect={(values) =>
-              updateBlockedTimeData({ employee_ids: values })
-            }
-            labelText="Team members"
-            displayText="member"
-            placeholder="Select team members"
-          />
-        )}
+        <TeamMemberMultiSelect
+          values={formData.employee_ids}
+          onSelect={(values) => updateBlockedTimeData({ employee_ids: values })}
+          hideWhenSingle
+        />
       </div>
 
       <div
@@ -452,7 +433,16 @@ export default function BlockedTimePanel({
   );
 }
 
-function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
+function BlockedTypeSection({ onSelect, activeType }) {
+  const { merchantId } = useAuth();
+
+  const {
+    data: blockedTypes = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery(blockedTimeTypesQueryOptions(merchantId));
+
   const scrollRef = useRef(null);
   const hasTypes = blockedTypes && blockedTypes.length > 0;
 
@@ -482,6 +472,14 @@ function BlockedTypeSection({ onSelect, blockedTypes, activeType }) {
     }, 0);
     return () => clearTimeout(timeout);
   }, [activeType, selectedIndex]);
+
+  if (isError) {
+    return <ServerError error={error.message || error} />;
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="text-text_color flex w-full flex-col gap-3">

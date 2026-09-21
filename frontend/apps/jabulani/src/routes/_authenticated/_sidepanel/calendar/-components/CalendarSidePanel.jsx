@@ -28,13 +28,6 @@ async function fetchSidePanelResource(merchantId, resource) {
   }
 }
 
-function teamMembersQueryOptions(merchantId) {
-  return queryOptions({
-    queryKey: [merchantId, "calendar-team"],
-    queryFn: () => fetchSidePanelResource(merchantId, "team"),
-  });
-}
-
 function customersForCalendarQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "customers-calendar"],
@@ -61,36 +54,31 @@ export default function CalendarSidePanel({
   preferences,
 }) {
   const { isWindowSmall } = useWindowSize();
-
-  const { merchantId, employeeId } = useAuth();
+  const { merchantId } = useAuth();
+  const shouldLoadBookingResources =
+    isOpen && (type === "new-booking" || type === "edit-booking");
 
   const {
     data: customers = [],
     isError: customersIsError,
     error: customersError,
-  } = useQuery(customersForCalendarQueryOptions(merchantId));
+  } = useQuery({
+    ...customersForCalendarQueryOptions(merchantId),
+    enabled: shouldLoadBookingResources,
+  });
 
   const {
     data: services = [],
     isError: servicesIsError,
     error: servicesError,
-  } = useQuery(servicesForCalendarQueryOptions(merchantId));
+  } = useQuery({
+    ...servicesForCalendarQueryOptions(merchantId),
+    enabled: shouldLoadBookingResources,
+  });
 
-  const {
-    data: team = [],
-    isError: teamIsError,
-    error: teamError,
-  } = useQuery(teamMembersQueryOptions(merchantId));
-
-  if (customersIsError || servicesIsError || teamIsError) {
+  if (customersIsError || servicesIsError) {
     return (
-      <ServerError
-        error={
-          customersError?.message ||
-          servicesError?.message ||
-          teamError?.message
-        }
-      />
+      <ServerError error={customersError?.message || servicesError?.message} />
     );
   }
 
@@ -132,8 +120,6 @@ export default function CalendarSidePanel({
               onClose={onClose}
               categories={services}
               customers={customers}
-              team={team}
-              currentEmployee={employeeId}
             />
           )}
           {type === "blocked-time" && (
@@ -143,8 +129,6 @@ export default function CalendarSidePanel({
               onClose={onClose}
               onSubmitted={onSave}
               onDeleted={onSave}
-              team={team}
-              currentEmployee={employeeId}
             />
           )}
           {type === "edit-booking" && (
@@ -156,7 +140,6 @@ export default function CalendarSidePanel({
               customers={customers}
               categories={services}
               preferences={preferences}
-              team={team}
             />
           )}
         </div>

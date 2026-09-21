@@ -7,7 +7,6 @@ import {
   UnavailableIcon,
 } from "@hugeicons/core-free-icons";
 import {
-  Avatar,
   Button,
   CloseButton,
   DatePicker,
@@ -16,9 +15,9 @@ import {
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
-  Select,
   Textarea,
 } from "@reservations/components";
+import { TeamMemberSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   combineDateTimeLocal,
@@ -69,7 +68,6 @@ export default function EditBookingPanel({
   onSave,
   onSoftUpdate,
   preferences,
-  team,
 }) {
   const { showToast } = useToast();
   const { merchantId } = useAuth();
@@ -131,17 +129,6 @@ export default function EditBookingPanel({
   const isGroupBooking =
     (selectedService?.booking_type ??
       originalBookingData.extendedProps.booking_type) !== "appointment";
-
-  const teamOptions = team?.map((member) => ({
-    value: member.id,
-    label: member.first_name + " " + member.last_name,
-    icon: (
-      <Avatar
-        styles="size-6! rounded-full! text-[10px]!"
-        initials={`${member.first_name[0]}${member.last_name[0]}`}
-      />
-    ),
-  }));
 
   function updateBookingData(newData) {
     if (isBookingCompleted) return;
@@ -479,17 +466,13 @@ export default function EditBookingPanel({
               </div>
             )}
 
-            {teamOptions.length > 1 && (
-              <Select
-                options={teamOptions}
-                value={bookingData.employeeId}
-                labelText="Employee"
-                onSelect={(option) =>
-                  updateBookingData({ employeeId: option.value })
-                }
-                disabled={isPastBooking || isBookingCompleted}
-              />
-            )}
+            <TeamMemberSelect
+              value={bookingData.employeeId}
+              onSelect={(option) =>
+                updateBookingData({ employeeId: option.value })
+              }
+              disabled={isPastBooking || isBookingCompleted}
+            />
             {isRecurring && (
               <div
                 className="border-input_border_color flex items-center gap-2

@@ -1,11 +1,10 @@
 import {
-  Avatar,
   Button,
   CloseButton,
   DatePicker,
-  Select,
   Textarea,
 } from "@reservations/components";
+import { TeamMemberSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
@@ -32,8 +31,6 @@ export default function NewBookingPanel({
   onClose,
   categories,
   customers,
-  team,
-  currentEmployee,
 }) {
   const [isCustomerSectionExpanded, setIsCustomerSectionExpanded] =
     useState(false);
@@ -42,7 +39,7 @@ export default function NewBookingPanel({
     active: "service-selector",
   });
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, employeeId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const currentDate = new Date();
   const [recurData, setRecurData] = useState({
@@ -58,7 +55,7 @@ export default function NewBookingPanel({
     time: formatTimeInputValue(new Date()),
     serviceId: null,
     customers: [],
-    employee_id: currentEmployee,
+    employee_id: employeeId,
     merchantNote: "",
   });
 
@@ -77,17 +74,6 @@ export default function NewBookingPanel({
 
   const isNestedPanelOpen =
     nestedPageState.isOpen && (isWindowSmall || !isMobilePanelActive);
-
-  const teamOptions = team?.map((member) => ({
-    value: member.id,
-    label: member.first_name + " " + member.last_name,
-    icon: (
-      <Avatar
-        styles="size-6! rounded-full! text-[10px]!"
-        initials={`${member.first_name[0]}${member.last_name[0]}`}
-      />
-    ),
-  }));
 
   function updateBookingData(data) {
     setBookingData((prev) => ({ ...prev, ...data }));
@@ -416,16 +402,12 @@ export default function NewBookingPanel({
                       }}
                     />
                   </div>
-                  {teamOptions.length > 1 && (
-                    <Select
-                      options={teamOptions}
-                      value={bookingData.employee_id}
-                      labelText="Employee"
-                      onSelect={(option) =>
-                        updateBookingData({ employee_id: option.value })
-                      }
-                    />
-                  )}
+                  <TeamMemberSelect
+                    value={bookingData.employee_id}
+                    onSelect={(option) =>
+                      updateBookingData({ employee_id: option.value })
+                    }
+                  />
                   <RecurSummaryCard
                     recurData={recurData}
                     booking={{

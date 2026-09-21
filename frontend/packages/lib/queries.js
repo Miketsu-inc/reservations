@@ -109,6 +109,34 @@ export function blockedTimeTypesQueryOptions(merchantId) {
   });
 }
 
+async function fetchCalendarTeam(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/calendar/team`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function calendarTeamMembersQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "calendar-team"],
+    queryFn: () => fetchCalendarTeam(merchantId),
+  });
+}
+
 async function fetchServiceFormOptions(merchantId) {
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/services/form-options`,

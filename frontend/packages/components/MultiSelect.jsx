@@ -202,7 +202,9 @@ export default function MultiSelect({
                     readOnly
                     styles="outline-none"
                   />
-                  <span className="text-sm font-medium">All {displayText}</span>
+                  <span className="text-sm font-medium">
+                    All {displayText}s
+                  </span>
                 </div>
               </li>
 
