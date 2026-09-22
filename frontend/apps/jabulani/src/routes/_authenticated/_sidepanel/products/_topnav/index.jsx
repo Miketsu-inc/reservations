@@ -4,8 +4,8 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
-import ProductModal from "./-components/ProductModal";
-import ProductsTable from "./-components/ProductsTable";
+import ProductModal from "../-components/ProductModal";
+import ProductsTable from "../-components/ProductsTable";
 
 async function fetchProducts(merchantId) {
   const response = await fetch(`/api/v1/merchants/${merchantId}/products`, {
@@ -32,7 +32,9 @@ function productsQueryOptions(merchantId) {
   });
 }
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/products/")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/products/_topnav/"
+)({
   component: ProductsPage,
   loader: async ({
     context: {

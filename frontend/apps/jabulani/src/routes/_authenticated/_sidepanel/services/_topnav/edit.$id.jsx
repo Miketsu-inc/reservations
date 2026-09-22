@@ -8,7 +8,7 @@ import {
 import { queryOptions, useQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import ServicePage from "./-components/ServicePage";
+import ServicePage from "../-components/ServicePage";
 
 async function fetchServiceData(merchantId, id) {
   const response = await fetch(
@@ -39,7 +39,7 @@ function serviceQueryOptions(merchantId, id) {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/services/edit/$id"
+  "/_authenticated/_sidepanel/services/_topnav/edit/$id"
 )({
   component: RouteComponent,
   loader: async ({

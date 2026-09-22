@@ -5,7 +5,7 @@ import {
   preferencesQueryOptions,
 } from "@reservations/lib";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { calendarBookingQueryOptions } from "./-components/calendarQueries";
+import { calendarBookingQueryOptions } from "../../-components/calendarQueries";
 
 function isDateInRange(date, start, end) {
   const startDate = dateStringToLocalDate(start);
@@ -15,7 +15,7 @@ function isDateInRange(date, start, end) {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/calendar/bookings/$bookingId"
+  "/_authenticated/_sidepanel/calendar/_topnav/_calendar/bookings/$bookingId"
 )({
   loaderDeps: ({ search }) => search,
   loader: async ({

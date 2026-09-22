@@ -8,26 +8,26 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import ServicePage from "./-components/ServicePage";
+import ServicePage from "../-components/ServicePage";
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/services/new")(
-  {
-    component: RouteComponent,
-    loader: async ({
-      context: {
-        queryClient,
-        authContext: { merchantId },
-      },
-    }) => {
-      await queryClient.ensureQueryData(
-        serviceFormOptionsQueryOptions(merchantId)
-      );
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/services/_topnav/new"
+)({
+  component: RouteComponent,
+  loader: async ({
+    context: {
+      queryClient,
+      authContext: { merchantId },
     },
-    errorComponent: ({ error }) => {
-      return <ServerError error={error.message} />;
-    },
-  }
-);
+  }) => {
+    await queryClient.ensureQueryData(
+      serviceFormOptionsQueryOptions(merchantId)
+    );
+  },
+  errorComponent: ({ error }) => {
+    return <ServerError error={error.message} />;
+  },
+});
 
 function RouteComponent() {
   const [serverError, setServerError] = useState();

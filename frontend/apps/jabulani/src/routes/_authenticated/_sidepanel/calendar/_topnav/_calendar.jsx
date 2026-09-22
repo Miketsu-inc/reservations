@@ -14,9 +14,9 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { calendarBookingsQueryOptions } from "./calendar/-components/calendarQueries";
+import { calendarBookingsQueryOptions } from "../-components/calendarQueries";
 
-const Calendar = lazy(() => import("./calendar/-components/Calendar"));
+const Calendar = lazy(() => import("../-components/Calendar"));
 
 function validateDateString(dateStr) {
   return dateStringToLocalDate(dateStr) ? dateStr : undefined;
@@ -35,7 +35,9 @@ function mapCalendarView(view, mobileView) {
   return viewMapping[preferredView] ?? "timeGridWeek";
 }
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/calendar")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/calendar/_topnav/_calendar"
+)({
   component: CalendarLayout,
   loaderDeps: ({ search }) => search,
   loader: async ({

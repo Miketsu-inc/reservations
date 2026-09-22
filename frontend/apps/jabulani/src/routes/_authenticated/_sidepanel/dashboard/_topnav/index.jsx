@@ -2,12 +2,14 @@ import { Card, Select, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import DashboardBookingsList from "./-components/DashboardBookingsList";
-import DashboardStatistics from "./-components/DashboardStatistics";
-import LowStockProductsAlert from "./-components/LowStockProductsAlert";
-import RevenueChart from "./-components/RevenueChart";
+import DashboardBookingsList from "../../-components/DashboardBookingsList";
+import DashboardStatistics from "../../-components/DashboardStatistics";
+import LowStockProductsAlert from "../../-components/LowStockProductsAlert";
+import RevenueChart from "../../-components/RevenueChart";
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/dashboard")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/dashboard/_topnav/"
+)({
   component: DashboardPage,
   errorComponent: ({ error }) => {
     return <ServerError error={error.message} />;

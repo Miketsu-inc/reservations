@@ -16,9 +16,9 @@ import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import AddServiceCategoryModal from "./-components/AddServiceCategoryModal";
-import ServiceCard from "./-components/ServiceCard";
-import ServiceCategorySection from "./-components/ServiceCategorySection";
+import AddServiceCategoryModal from "../-components/AddServiceCategoryModal";
+import ServiceCard from "../-components/ServiceCard";
+import ServiceCategorySection from "../-components/ServiceCategorySection";
 
 async function fetchServices(merchantId) {
   const response = await fetch(`/api/v1/merchants/${merchantId}/services`, {
@@ -68,7 +68,9 @@ function reorderArray(items, itemId, direction) {
   return itemIds;
 }
 
-export const Route = createFileRoute("/_authenticated/_sidepanel/services/")({
+export const Route = createFileRoute(
+  "/_authenticated/_sidepanel/services/_topnav/"
+)({
   component: ServicesPage,
   loader: async ({
     context: {
