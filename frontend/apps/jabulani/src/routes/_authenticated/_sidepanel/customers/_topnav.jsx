@@ -21,7 +21,7 @@ function CustomersLayout() {
       !pathName.startsWith("/customers/blacklist"));
 
   return (
-    <div className="flex h-full min-h-0 flex-col pt-2">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem
           styles={isCustomersActive ? "after:opacity-100" : ""}
@@ -41,7 +41,7 @@ function CustomersLayout() {
           <span>Blacklisted</span>
         </TopNavBarItem>
       </TopNavBar>
-      <div className="flex h-full min-h-0 flex-col px-4 pt-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4">
         <Outlet />
       </div>
     </div>

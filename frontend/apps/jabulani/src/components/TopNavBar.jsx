@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 export function TopNavBar({ children }) {
   return (
-    <nav className="border-border_color h-fit w-full min-w-0 border-b">
+    <nav className="border-border_color h-fit w-full min-w-0 shrink-0 border-b">
       <div
         className="w-full min-w-0 scrollbar-thin overflow-x-auto
           overflow-y-hidden"

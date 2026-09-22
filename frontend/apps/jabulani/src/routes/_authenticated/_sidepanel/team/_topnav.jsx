@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/_sidepanel/team/_topnav")(
 
 function RouteComponent() {
   return (
-    <div className="flex h-full min-h-0 flex-col pt-2">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/team/members">
           <Icon icon={HierarchyIcon} styles="size-5" />
@@ -22,7 +22,7 @@ function RouteComponent() {
           <span>Invitations</span>
         </TopNavBarItem>
       </TopNavBar>
-      <div className="flex h-full min-h-0 flex-col px-4 pt-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4">
         <Outlet />
       </div>
     </div>
