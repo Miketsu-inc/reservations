@@ -193,6 +193,7 @@ type ServicePageData struct {
 	MaxParticipants int                           `db:"max_participants"`
 	Settings        ServiceSettings               `db:"settings"`
 	Phases          []ServicePhase                `db:"phases"`
+	EmployeeIds     []int                         `db:"employee_ids"`
 	Products        []MinimalProductInfoWithUsage `db:"used_products"`
 }
 

@@ -77,13 +77,13 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			if err != nil {
 				return err
 			}
+		}
 
-			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBlockedTimeDispatcher{
-				BlockedTimeId: ids[0],
-			}, nil)
-			if err != nil {
-				return err
-			}
+		_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBlockedTimeDispatcher{
+			BlockedTimeId: ids[0],
+		}, nil)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -143,7 +143,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
 			if err != nil {
 				return err
 			}

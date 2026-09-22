@@ -142,14 +142,6 @@ export default function BlockedTimePanel({
       return;
     }
 
-    if (formData.employee_ids.length === 0) {
-      showToast({
-        message: "Please select a team member",
-        variant: "error",
-      });
-      return;
-    }
-
     if (!formData.all_day && formData.from_time >= formData.to_time) {
       showToast({
         message: "The end time must be after the start time",
@@ -400,6 +392,7 @@ export default function BlockedTimePanel({
           values={formData.employee_ids}
           onSelect={(values) => updateBlockedTimeData({ employee_ids: values })}
           hideWhenSingle
+          emptyMeansAll
         />
       </div>
 

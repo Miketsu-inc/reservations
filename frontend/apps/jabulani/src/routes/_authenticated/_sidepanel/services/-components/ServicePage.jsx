@@ -5,6 +5,7 @@ import {
   ScrollSpyProvider,
   ScrollSpySection,
 } from "@reservations/components";
+import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, useRouter } from "@tanstack/react-router";
@@ -45,7 +46,7 @@ export default function ServicePage({
         approval_policy: service?.settings?.approval_policy ?? null,
       },
       phases: service?.phases || [],
-      employee_ids: [],
+      employee_ids: service?.employee_ids || [],
       used_products: service?.used_products || [],
     }),
     [service]
@@ -208,6 +209,18 @@ export default function ServicePage({
                         service={serviceData}
                         setService={setServiceData}
                         onUpdate={updateServiceData}
+                      />
+                    </ScrollSpySection>
+                    <ScrollSpySection id="teamMembers" label="Team members">
+                      <p className="mb-8 text-xl font-semibold">
+                        Team members
+                      </p>
+                      <TeamMemberMultiSelect
+                        values={serviceData.employee_ids}
+                        onSelect={(employeeIds) =>
+                          updateServiceData({ employee_ids: employeeIds })
+                        }
+                        emptyMeansAll
                       />
                     </ScrollSpySection>
                   </form>

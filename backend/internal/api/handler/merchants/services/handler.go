@@ -174,6 +174,7 @@ type getResp struct {
 	MaxParticipants int                `json:"max_participants"`
 	Settings        serviceSettingsReq `json:"settings"`
 	Phases          []phaseReq         `json:"phases"`
+	EmployeeIds     []int              `json:"employee_ids"`
 	UsedProducts    []productResp      `json:"used_products"`
 }
 

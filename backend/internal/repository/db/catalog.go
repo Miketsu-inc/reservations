@@ -500,6 +500,11 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 			'approval_policy', s.approval_policy
 		) as settings,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
+		coalesce((
+			select array_agg(es.employee_id order by es.employee_id)
+			from "EmployeeService" es
+			where es.service_id = s.id
+		), '{}'::int[]) as employee_ids,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s
 	left join phases on s.id = phases.service_id
@@ -514,7 +519,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 
 	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&spd.Id, &spd.Name, &spd.BookingType, &spd.CategoryId, &spd.Description,
 		&spd.Color, &spd.TotalDuration, &spd.Price, &spd.PriceType, &spd.IsActive, &spd.Sequence, &spd.MinParicipants, &spd.MaxParticipants,
-		&settingsJson, &phaseJson, &productJson)
+		&settingsJson, &phaseJson, &spd.EmployeeIds, &productJson)
 	if err != nil {
 		return domain.ServicePageData{}, fmt.Errorf("GetAllServicePageData: %w", err)
 	}

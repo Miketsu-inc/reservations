@@ -413,13 +413,13 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
 			if err != nil {
 				return err
 			}
 
-			employeeServices := make([]domain.EmployeeService, len(input.EmployeeIds))
-			for i, e := range input.EmployeeIds {
+			employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
+			for i, e := range employeeChanges.ToInsert {
 				employeeServices[i] = domain.EmployeeService{
 					EmployeeId: e,
 					ServiceId:  input.Id,

@@ -134,6 +134,7 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 			ApprovalPolicy:   in.Settings.ApprovalPolicy,
 		},
 		Phases:       phases,
+		EmployeeIds:  in.EmployeeIds,
 		UsedProducts: products,
 	}
 }
