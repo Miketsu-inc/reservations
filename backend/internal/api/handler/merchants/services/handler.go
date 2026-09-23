@@ -28,6 +28,8 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
 	r.Get("/{id}", h.Get)
+	r.Get("/{id}/pricing-duration", h.GetEmployeePricing)
+	r.Put("/{id}/pricing-duration", h.UpdateEmployeePricing)
 
 	r.Put("/{id}/products", h.UpdateServiceProduct)
 	// TODO: maybe replace these by a unified status route?
@@ -197,6 +199,71 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetResp(service))
+
+	return nil
+}
+
+type employeePricingResp struct {
+	EmployeeId int                `json:"employee_id"`
+	FirstName  *string            `json:"first_name"`
+	LastName   *string            `json:"last_name"`
+	Role       types.EmployeeRole `json:"role"`
+	Duration   *int               `json:"duration"`
+	Price      *currencyx.Price   `json:"price"`
+	PriceType  *types.PriceType   `json:"price_type"`
+}
+
+type getEmployeePricingResp struct {
+	ServiceId        int                   `json:"service_id"`
+	ServiceName      string                `json:"service_name"`
+	DefaultDuration  int                   `json:"default_duration"`
+	DefaultPrice     *currencyx.Price      `json:"default_price"`
+	DefaultPriceType types.PriceType       `json:"default_price_type"`
+	Employees        []employeePricingResp `json:"employees"`
+}
+
+func (h *Handler) GetEmployeePricing(w http.ResponseWriter, r *http.Request) error {
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	pricing, err := h.service.GetEmployeeServicePricing(r.Context(), serviceId)
+	if err != nil {
+		return catalogServ.ErrStatus.Resolve(err, "GetEmployeePricing")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetEmployeePricingResp(pricing))
+
+	return nil
+}
+
+type updateEmployeePricingReq struct {
+	Employees []employeePricingReq `json:"employees" validate:"required"`
+}
+
+type employeePricingReq struct {
+	EmployeeId int              `json:"employee_id" validate:"required"`
+	Duration   *int             `json:"duration"`
+	Price      *currencyx.Price `json:"price"`
+	PriceType  *types.PriceType `json:"price_type"`
+}
+
+func (h *Handler) UpdateEmployeePricing(w http.ResponseWriter, r *http.Request) error {
+	var req updateEmployeePricingReq
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	err = h.service.UpdateEmployeeServicePricing(r.Context(), serviceId, mapToEmployeePricingInput(req.Employees))
+	if err != nil {
+		return catalogServ.ErrStatus.Resolve(err, "UpdateEmployeePricing")
+	}
 
 	return nil
 }

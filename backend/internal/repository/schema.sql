@@ -118,7 +118,8 @@ create table if not exists "Service" (
     booking_window_min       integer,
     booking_window_max       integer,
     buffer_time              integer,
-    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new'))
+    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new')),
+    all_employees            boolean         not null default true
 );
 
 create table if not exists "EmployeeService" (
@@ -133,6 +134,17 @@ create table if not exists "EmployeeService" (
 
     primary key (employee_id, service_id)
 );
+
+-- Backfill databases created before all-employees assignment was stored
+-- explicitly. An empty EmployeeService set has always meant all employees.
+alter table "Service" add column if not exists all_employees boolean;
+update "Service" s
+set all_employees = not exists (
+    select 1 from "EmployeeService" es where es.service_id = s.id
+)
+where s.all_employees is null;
+alter table "Service" alter column all_employees set default true;
+alter table "Service" alter column all_employees set not null;
 
 create table if not exists "ServicePhase" (
     ID                       serial                 primary key unique not null,

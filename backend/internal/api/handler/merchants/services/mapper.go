@@ -139,6 +139,44 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 	}
 }
 
+func mapToGetEmployeePricingResp(in domain.EmployeeServicePricingPage) getEmployeePricingResp {
+	employees := make([]employeePricingResp, len(in.EmployeePricing))
+	for i, employee := range in.EmployeePricing {
+		employees[i] = employeePricingResp{
+			EmployeeId: employee.EmployeeId,
+			FirstName:  employee.FirstName,
+			LastName:   employee.LastName,
+			Role:       employee.Role,
+			Duration:   employee.TotalDuration,
+			Price:      employee.PricePerPerson,
+			PriceType:  employee.PriceType,
+		}
+	}
+
+	return getEmployeePricingResp{
+		ServiceId:        in.ServiceId,
+		ServiceName:      in.ServiceName,
+		DefaultDuration:  in.TotalDuration,
+		DefaultPrice:     in.PricePerPerson,
+		DefaultPriceType: in.PriceType,
+		Employees:        employees,
+	}
+}
+
+func mapToEmployeePricingInput(in []employeePricingReq) []catalogServ.EmployeeServicePricingInput {
+	employees := make([]catalogServ.EmployeeServicePricingInput, len(in))
+	for i, employee := range in {
+		employees[i] = catalogServ.EmployeeServicePricingInput{
+			EmployeeId:     employee.EmployeeId,
+			TotalDuration:  employee.Duration,
+			PricePerPerson: employee.Price,
+			PriceType:      employee.PriceType,
+		}
+	}
+
+	return employees
+}
+
 func mapToUpdateServiceProductInput(in updateServiceProductReq) catalogServ.UpdateServiceProductInput {
 	products := make([]catalogServ.ConnectedProductsInput, len(in.UsedProducts))
 

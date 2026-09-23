@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bojanz/currency"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
@@ -160,6 +161,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			BookingWindowMax: input.Settings.BookingWindowMax,
 			BufferTime:       input.Settings.BufferTime,
 			ApprovalPolicy:   input.Settings.ApprovalPolicy,
+			AllEmployees:     len(input.EmployeeIds) == 0,
 		})
 		if err != nil {
 			return err
@@ -388,47 +390,50 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			BookingWindowMax: input.Settings.BookingWindowMax,
 			BufferTime:       input.Settings.BufferTime,
 			ApprovalPolicy:   input.Settings.ApprovalPolicy,
+			AllEmployees:     len(input.EmployeeIds) == 0,
 		})
 		if err != nil {
 			return err
 		}
 
-		existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
-		if err != nil {
-			return err
-		}
-
-		employeeChanges, err := s.teamService.DetectEmployeeChanges(existingEmployees, input.EmployeeIds)
-		if err != nil {
-			return err
-		}
-
-		if len(employeeChanges.ToDelete) > 0 {
-			serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
-
-			err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
-			if err != nil {
-				return err
-			}
-		}
-
-		if len(employeeChanges.ToInsert) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
+		if len(input.EmployeeIds) > 0 {
+			existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
 			if err != nil {
 				return err
 			}
 
-			employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
-			for i, e := range employeeChanges.ToInsert {
-				employeeServices[i] = domain.EmployeeService{
-					EmployeeId: e,
-					ServiceId:  input.Id,
+			employeeChanges, err := s.teamService.DetectEmployeeChanges(existingEmployees, input.EmployeeIds)
+			if err != nil {
+				return err
+			}
+
+			if len(employeeChanges.ToDelete) > 0 {
+				serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
+
+				err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
+				if err != nil {
+					return err
 				}
 			}
 
-			err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
-			if err != nil {
-				return err
+			if len(employeeChanges.ToInsert) > 0 {
+				err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
+				if err != nil {
+					return err
+				}
+
+				employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
+				for i, e := range employeeChanges.ToInsert {
+					employeeServices[i] = domain.EmployeeService{
+						EmployeeId: e,
+						ServiceId:  input.Id,
+					}
+				}
+
+				err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -486,6 +491,108 @@ func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageDat
 	}
 
 	return service, nil
+}
+
+func (s *Service) GetEmployeeServicePricing(ctx context.Context, serviceId int) (domain.EmployeeServicePricingPage, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	pricing, err := s.catalogRepo.GetEmployeeServicePricing(ctx, actor.MerchantId, serviceId)
+	if err != nil {
+		return domain.EmployeeServicePricingPage{}, err
+	}
+
+	return pricing, nil
+}
+
+type EmployeeServicePricingInput struct {
+	EmployeeId     int
+	TotalDuration  *int
+	PricePerPerson *currencyx.Price
+	PriceType      *types.PriceType
+}
+
+func (s *Service) UpdateEmployeeServicePricing(ctx context.Context, serviceId int, inputs []EmployeeServicePricingInput) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	currencyCode, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
+	if err != nil {
+		return err
+	}
+	maxPrice, err := currency.NewAmount("1000000", currencyCode)
+	if err != nil {
+		return err
+	}
+
+	seenEmployeeIds := make(map[int]struct{}, len(inputs))
+	for _, input := range inputs {
+		if _, exists := seenEmployeeIds[input.EmployeeId]; exists {
+			return fmt.Errorf("duplicate employee id: %d", input.EmployeeId)
+		}
+		seenEmployeeIds[input.EmployeeId] = struct{}{}
+
+		if input.TotalDuration != nil && (*input.TotalDuration < 1 || *input.TotalDuration > 1440) {
+			return fmt.Errorf("employee service duration must be between 1 and 1440 minutes")
+		}
+		if input.PricePerPerson != nil && input.PricePerPerson.CurrencyCode() != currencyCode {
+			return fmt.Errorf("employee service price's currency does not match merchant's currency")
+		}
+		if input.PricePerPerson != nil {
+			priceComparison, err := input.PricePerPerson.Cmp(maxPrice)
+			if err != nil {
+				return err
+			}
+			if input.PricePerPerson.IsNegative() || priceComparison > 0 {
+				return fmt.Errorf("employee service price must be between 0 and 1000000")
+			}
+		}
+	}
+
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		pricing, err := s.catalogRepo.WithTx(tx).GetEmployeeServicePricing(ctx, actor.MerchantId, serviceId)
+		if err != nil {
+			return err
+		}
+
+		assignedEmployeeIds := make(map[int]struct{}, len(pricing.EmployeePricing))
+		for _, employee := range pricing.EmployeePricing {
+			assignedEmployeeIds[employee.EmployeeId] = struct{}{}
+		}
+
+		employeeServices := make([]domain.EmployeeService, 0, len(inputs))
+		employeeIdsToDelete := make([]int, 0, len(inputs))
+		for _, input := range inputs {
+			if _, assigned := assignedEmployeeIds[input.EmployeeId]; !assigned {
+				return fmt.Errorf("employee %d is not assigned to this service", input.EmployeeId)
+			}
+
+			if pricing.AllEmployees && input.TotalDuration == nil && input.PricePerPerson == nil && input.PriceType == nil {
+				employeeIdsToDelete = append(employeeIdsToDelete, input.EmployeeId)
+				continue
+			}
+
+			employeeServices = append(employeeServices, domain.EmployeeService{
+				EmployeeId:     input.EmployeeId,
+				ServiceId:      serviceId,
+				TotalDuration:  input.TotalDuration,
+				PricePerPerson: input.PricePerPerson,
+				PriceType:      input.PriceType,
+			})
+		}
+
+		if len(employeeIdsToDelete) > 0 {
+			serviceIds := utils.RepeatSlice([]int{serviceId}, len(employeeIdsToDelete))
+			if err := s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeIdsToDelete); err != nil {
+				return err
+			}
+		}
+
+		return s.catalogRepo.WithTx(tx).BulkUpsertEmployeeServicePricing(ctx, employeeServices)
+	})
+	if err != nil {
+		return fmt.Errorf("error while updating employee service pricing: %w", err)
+	}
+
+	return nil
 }
 
 type UpdateServiceProductInput struct {

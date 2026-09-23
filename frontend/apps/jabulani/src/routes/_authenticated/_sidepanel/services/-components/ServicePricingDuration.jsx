@@ -1,5 +1,6 @@
 import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { Icon, Input, Select } from "@reservations/components";
+import { Link } from "@tanstack/react-router";
 import ServicePhases from "./ServicePhases";
 
 const priceTypeOptions = [
@@ -74,6 +75,27 @@ export function ServicePricingDuration({ service, setService, onUpdate }) {
         </label>
       </div>
       <ServicePhases service={service} setService={setService} />
+      {service.id && (
+        <div
+          className="border-border_color bg-bg_color flex flex-col gap-2
+            rounded-lg border p-4 sm:flex-row sm:items-center
+            sm:justify-between"
+        >
+          <div>
+            <p className="font-medium">Team member pricing and duration</p>
+            <p className="text-text_color/70 text-sm">
+              Override the defaults for individual team members.
+            </p>
+          </div>
+          <Link
+            to={`/services/advanced-pricing/${service.id}`}
+            className="border-primary text-primary hover:bg-primary/10 shrink-0
+              rounded-lg border-2 px-4 py-2 text-center font-medium"
+          >
+            Manage overrides
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
