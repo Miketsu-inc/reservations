@@ -1,9 +1,26 @@
-import { invalidateLocalStorageAuth } from "@reservations/lib";
+import {
+  dateStringToLocalDate,
+  invalidateLocalStorageAuth,
+} from "@reservations/lib";
 import { queryOptions } from "@tanstack/react-query";
 
 async function fetchBookings(merchantId, start, end) {
+  const startTime = dateStringToLocalDate(start);
+  const endTime = dateStringToLocalDate(end);
+
+  if (!startTime || !endTime) {
+    throw new Error("Invalid calendar date range");
+  }
+
+  const params = new URLSearchParams({
+    start: startTime.toISOString(),
+    end: endTime.toISOString(),
+    start_date: start,
+    end_date: end,
+  });
+
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/events?start=${start}&end=${end}`,
+    `/api/v1/merchants/${merchantId}/calendar/events?${params}`,
     { method: "GET" }
   );
   const result = await response.json();

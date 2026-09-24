@@ -16,22 +16,6 @@ type blockedTimeRepository struct {
 	db db.DBTX
 }
 
-func nullableTimestamptz(value *time.Time) pgtype.Timestamptz {
-	if value == nil {
-		return pgtype.Timestamptz{}
-	}
-
-	return pgtype.Timestamptz{Time: *value, Valid: true}
-}
-
-func nullableDate(value *time.Time) pgtype.Date {
-	if value == nil {
-		return pgtype.Date{}
-	}
-
-	return pgtype.Date{Time: *value, Valid: true}
-}
-
 func NewBlockedTimeRepository(db db.DBTX) domain.BlockedTimeRepository {
 	return &blockedTimeRepository{db: db}
 }
@@ -67,9 +51,21 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 			blockedTimeTypeIds[i] = pgtype.Int4{Int32: int32(*blockedTime.BlockedTypeId), Valid: true}
 		}
 		names[i] = blockedTime.Name
-		fromDates[i] = nullableTimestamptz(blockedTime.FromDate)
-		toDates[i] = nullableTimestamptz(blockedTime.ToDate)
-		dates[i] = nullableDate(blockedTime.BlockedDay)
+		if blockedTime.FromDate != nil {
+			fromDates[i] = pgtype.Timestamptz{Time: *blockedTime.FromDate, Valid: true}
+		} else {
+			fromDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.ToDate != nil {
+			toDates[i] = pgtype.Timestamptz{Time: *blockedTime.ToDate, Valid: true}
+		} else {
+			toDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.BlockedDay != nil {
+			dates[i] = pgtype.Date{Time: *blockedTime.BlockedDay, Valid: true}
+		} else {
+			dates[i] = pgtype.Date{Valid: false}
+		}
 		isAllDay[i] = blockedTime.IsAllDay
 	}
 
@@ -131,9 +127,21 @@ func (r *blockedTimeRepository) BulkUpdateBlockedTime(ctx context.Context, bt []
 	for i, blockedTime := range bt {
 		ids[i] = blockedTime.Id
 		names[i] = blockedTime.Name
-		fromDates[i] = nullableTimestamptz(blockedTime.FromDate)
-		toDates[i] = nullableTimestamptz(blockedTime.ToDate)
-		dates[i] = nullableDate(blockedTime.BlockedDay)
+		if blockedTime.FromDate != nil {
+			fromDates[i] = pgtype.Timestamptz{Time: *blockedTime.FromDate, Valid: true}
+		} else {
+			fromDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.ToDate != nil {
+			toDates[i] = pgtype.Timestamptz{Time: *blockedTime.ToDate, Valid: true}
+		} else {
+			toDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.BlockedDay != nil {
+			dates[i] = pgtype.Date{Time: *blockedTime.BlockedDay, Valid: true}
+		} else {
+			dates[i] = pgtype.Date{Valid: false}
+		}
 		isAllDay[i] = blockedTime.IsAllDay
 	}
 

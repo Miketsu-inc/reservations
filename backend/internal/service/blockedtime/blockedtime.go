@@ -2,7 +2,7 @@ package blockedtime
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -51,18 +51,18 @@ type NewInput struct {
 func validateDateShape(isAllDay bool, blockedDay, fromDate, toDate *time.Time) error {
 	if isAllDay {
 		if blockedDay == nil || fromDate != nil || toDate != nil {
-			return fmt.Errorf("all-day blocked time requires date only")
+			return ErrAllDayBlockedTimeDateRequired
 		}
 
 		return nil
 	}
 
 	if blockedDay != nil || fromDate == nil || toDate == nil {
-		return fmt.Errorf("timed blocked time requires fromDate and toDate only")
+		return ErrTimedBlockedTimeDatesRequired
 	}
 
 	if !toDate.After(*fromDate) {
-		return fmt.Errorf("toDate must be after fromDate")
+		return ErrInvalidBlockedTimeDateRange
 	}
 
 	return nil
@@ -136,11 +136,15 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, input.BlockedTimeId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrBlockedTimeNotFound
+		}
+
 		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
-		return fmt.Errorf("blocked time with id %d not found for merchant", blockedTime.Id)
+		return ErrBlockedTimeNotFound
 	}
 
 	if err := validateDateShape(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
@@ -210,11 +214,15 @@ func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	// TODO: if the actor is not on the block time this will give an error
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrBlockedTimeNotFound
+		}
+
 		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
-		return fmt.Errorf("blocked time with id %d not found for merchant", blockedTime.Id)
+		return ErrBlockedTimeNotFound
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {

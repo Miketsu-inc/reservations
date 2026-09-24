@@ -410,10 +410,12 @@ type blockedTime struct {
 }
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
-	start := r.URL.Query().Get("start")
-	end := r.URL.Query().Get("end")
+	startTime := r.URL.Query().Get("start")
+	endTime := r.URL.Query().Get("end")
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
 
-	bookings, err := h.service.GetCalendarEvents(r.Context(), start, end)
+	bookings, err := h.service.GetCalendarEvents(r.Context(), startDate, endDate, startTime, endTime)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetCalendarEvents")
 	}

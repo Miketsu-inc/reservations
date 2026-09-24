@@ -29,13 +29,13 @@ func (h *Handler) Routes() *httputil.Router {
 }
 
 type newReq struct {
-	Name          string `json:"name" validate:"required"`
-	EmployeeIds   []int  `json:"employee_ids"`
-	BlockedTypeId *int   `json:"blocked_type_id"`
-	FromDate      string `json:"from_date"`
-	ToDate        string `json:"to_date"`
-	BlockedDay    string `json:"blocked_day"`
-	IsAllDay      bool   `json:"is_all_day"`
+	Name          string  `json:"name" validate:"required"`
+	EmployeeIds   []int   `json:"employee_ids"`
+	BlockedTypeId *int    `json:"blocked_type_id"`
+	FromDate      *string `json:"from_date"`
+	ToDate        *string `json:"to_date"`
+	BlockedDay    *string `json:"blocked_day"`
+	IsAllDay      bool    `json:"is_all_day"`
 }
 
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
@@ -61,14 +61,14 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 }
 
 type updateReq struct {
-	Id            int    `json:"id" validate:"required"`
-	Name          string `json:"name" validate:"required"`
-	EmployeeIds   []int  `json:"employee_ids"`
-	BlockedTypeId *int   `json:"blocked_type_id"`
-	FromDate      string `json:"from_date"`
-	ToDate        string `json:"to_date"`
-	BlockedDay    string `json:"blocked_day"`
-	IsAllDay      bool   `json:"is_all_day"`
+	Id            int     `json:"id" validate:"required"`
+	Name          string  `json:"name" validate:"required"`
+	EmployeeIds   []int   `json:"employee_ids"`
+	BlockedTypeId *int    `json:"blocked_type_id"`
+	FromDate      *string `json:"from_date"`
+	ToDate        *string `json:"to_date"`
+	BlockedDay    *string `json:"blocked_day"`
+	IsAllDay      bool    `json:"is_all_day"`
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
@@ -89,7 +89,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 
 	input, err := mapToUpdateInput(req)
 	if err != nil {
-		return err
+		return validate.NewError(err.Error())
 	}
 
 	err = h.service.Update(r.Context(), input)
