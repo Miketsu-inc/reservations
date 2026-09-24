@@ -116,25 +116,35 @@ function formatBookings(data) {
 function formatBlockedTimes(data) {
   if (data === undefined) return;
 
-  return data.map((blockedTime) => ({
-    id: blockedTime.id,
-    title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
-    start: blockedTime.from_date,
-    end: blockedTime.to_date,
-    color: "rgba(0, 0, 0, 0.6)",
-    textColor: getContrastColor("#333333"),
-    durationEditable: true,
-    allDay: blockedTime.all_day,
-    startEditable: new Date(blockedTime.to_date) > new Date() ? true : false,
-    extendedProps: {
+  return data.map((blockedTime) => {
+    const start = blockedTime.is_all_day
+      ? blockedTime.blocked_day
+      : blockedTime.from_date;
+    const end = blockedTime.is_all_day ? undefined : blockedTime.to_date;
+    const editableUntil = blockedTime.is_all_day
+      ? new Date(`${blockedTime.blocked_day}T23:59:59`)
+      : new Date(blockedTime.to_date);
+
+    return {
       id: blockedTime.id,
-      type: "blocked",
-      name: blockedTime.name,
-      blocked_type_id: blockedTime.blocked_type_id,
-      employee_ids: blockedTime.employee_ids,
-      allDay: blockedTime.all_day,
-    },
-  }));
+      title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
+      start: start,
+      end: end,
+      color: "rgba(0, 0, 0, 0.6)",
+      textColor: getContrastColor("#333333"),
+      durationEditable: !blockedTime.is_all_day,
+      allDay: blockedTime.is_all_day,
+      startEditable: editableUntil > new Date(),
+      extendedProps: {
+        id: blockedTime.id,
+        type: "blocked",
+        name: blockedTime.name,
+        blocked_type_id: blockedTime.blocked_type_id,
+        employee_ids: blockedTime.employee_ids,
+        allDay: blockedTime.is_all_day,
+      },
+    };
+  });
 }
 
 const defaultSidePanelState = {

@@ -169,7 +169,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 			return []MultiDayAvailableTimes{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, merchantTz.String())
 		if err != nil {
 			return []MultiDayAvailableTimes{}, err
 		}
@@ -271,7 +271,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, merchantTz.String())
 		if err != nil {
 			return NextAvailable{}, err
 		}
@@ -439,7 +439,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 			return []DayAvailability{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, merchantTz.String())
 		if err != nil {
 			return []DayAvailability{}, err
 		}
@@ -502,12 +502,14 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 		return FormattedAvailableTimes{}, err
 	}
 
-	dayOfWeek := int(bookingDay.In(merchantTz).Weekday())
+	year, month, day := bookingDay.Date()
+	bookingDay = time.Date(year, month, day, 0, 0, 0, 0, merchantTz)
+
+	dayOfWeek := int(bookingDay.Weekday())
 	bookingDayBusinessHours := businessHours[dayOfWeek]
 
-	year, month, day := bookingDay.In(merchantTz).Date()
-	startDate := time.Date(year, month, day, 0, 0, 0, 0, merchantTz).UTC()
-	endDate := time.Date(year, month, day, 23, 59, 59, 999999999, merchantTz).UTC()
+	startDate := bookingDay.UTC()
+	endDate := bookingDay.AddDate(0, 0, 1).Add(-time.Nanosecond).UTC()
 	now := time.Now()
 
 	var employeeIds []int
@@ -534,7 +536,7 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 			return FormattedAvailableTimes{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, merchantTz.String())
 		if err != nil {
 			return FormattedAvailableTimes{}, err
 		}

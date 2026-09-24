@@ -24,6 +24,31 @@ import (
 )
 
 func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, calendarTz *time.Location) (domain.BlockedTime, error) {
+	if event.Start.Date != "" {
+		date, err := time.Parse(time.DateOnly, event.Start.Date)
+		if err != nil {
+			return domain.BlockedTime{}, err
+		}
+
+		endDate, err := time.Parse(time.DateOnly, event.End.Date)
+		if err != nil {
+			return domain.BlockedTime{}, err
+		}
+
+		if !endDate.Equal(date.AddDate(0, 0, 1)) {
+			return domain.BlockedTime{}, fmt.Errorf("multi-day Google event %q cannot be stored as a blocked time", event.Id)
+		}
+
+		return domain.BlockedTime{
+			MerchantId:    merchantId,
+			BlockedTypeId: nil,
+			Name:          event.Summary,
+			BlockedDay:    &date,
+			IsAllDay:      true,
+			Source:        &types.EventSourceGoogle,
+		}, nil
+	}
+
 	fromDate, toDate, isAllDay, err := parseEventDates(event, calendarTz)
 	if err != nil {
 		return domain.BlockedTime{}, err
@@ -33,9 +58,9 @@ func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, calendarTz 
 		MerchantId:    merchantId,
 		BlockedTypeId: nil,
 		Name:          event.Summary,
-		FromDate:      fromDate,
-		ToDate:        toDate,
-		AllDay:        isAllDay,
+		FromDate:      &fromDate,
+		ToDate:        &toDate,
+		IsAllDay:      isAllDay,
 		Source:        &types.EventSourceGoogle,
 	}, nil
 }
@@ -581,13 +606,13 @@ func blockedTimeToGoogleEvent(blockedTime domain.BlockedTime, tz string) *calend
 	var startDate *calendar.EventDateTime
 	var endDate *calendar.EventDateTime
 
-	if blockedTime.AllDay {
+	if blockedTime.IsAllDay {
 		startDate = &calendar.EventDateTime{
-			Date: blockedTime.FromDate.Format("2006-01-02"),
+			Date: blockedTime.BlockedDay.Format(time.DateOnly),
 		}
 
 		endDate = &calendar.EventDateTime{
-			Date: blockedTime.ToDate.Format("2006-01-02"),
+			Date: blockedTime.BlockedDay.AddDate(0, 0, 1).Format(time.DateOnly),
 		}
 	} else {
 		startDate = &calendar.EventDateTime{
@@ -640,9 +665,18 @@ type syncType struct {
 	Action          string
 	FromDate        *time.Time
 	ToDate          *time.Time
+	BlockedDay      *time.Time
 	IsAllDay        bool
 	IsBlocking      bool
 	GoogleEvent     *calendar.Event
+}
+
+func syncTypeDates(sync syncType) (time.Time, time.Time) {
+	if sync.IsAllDay {
+		return *sync.BlockedDay, sync.BlockedDay.AddDate(0, 0, 1)
+	}
+
+	return *sync.FromDate, *sync.ToDate
 }
 
 func (s *Service) syncGoogleEvent(ctx context.Context, extCalendar domain.ExternalCalendar, sync syncType) error {
@@ -655,6 +689,11 @@ func (s *Service) syncGoogleEvent(ctx context.Context, extCalendar domain.Extern
 	service, err := calendar.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
 		return err
+	}
+
+	var fromDate, toDate time.Time
+	if strings.ToUpper(sync.Action) != "DELETE" {
+		fromDate, toDate = syncTypeDates(sync)
 	}
 
 	switch strings.ToUpper(sync.Action) {
@@ -671,8 +710,8 @@ func (s *Service) syncGoogleEvent(ctx context.Context, extCalendar domain.Extern
 			Status:             googleEvent.Status,
 			Title:              googleEvent.Summary,
 			Description:        googleEvent.Description,
-			FromDate:           *sync.FromDate,
-			ToDate:             *sync.ToDate,
+			FromDate:           fromDate,
+			ToDate:             toDate,
 			IsAllDay:           sync.IsAllDay,
 			InternalId:         &sync.InternalId,
 			InternalType:       &sync.InternalType,
@@ -695,8 +734,8 @@ func (s *Service) syncGoogleEvent(ctx context.Context, extCalendar domain.Extern
 			Status:             googleEvent.Status,
 			Title:              googleEvent.Summary,
 			Description:        googleEvent.Description,
-			FromDate:           *sync.FromDate,
-			ToDate:             *sync.ToDate,
+			FromDate:           fromDate,
+			ToDate:             toDate,
 			IsAllDay:           sync.IsAllDay,
 			InternalId:         &sync.InternalId,
 			InternalType:       &sync.InternalType,
@@ -905,9 +944,10 @@ func (s *Service) SyncNewBlockedTime(ctx context.Context, blockedTimeId int, emp
 		InternalType:    types.EventInternalTypeBlockedTime,
 		InternalId:      blockedTimeId,
 		Action:          "INSERT",
-		FromDate:        &blockedTime.FromDate,
-		ToDate:          &blockedTime.ToDate,
-		IsAllDay:        blockedTime.AllDay,
+		FromDate:        blockedTime.FromDate,
+		ToDate:          blockedTime.ToDate,
+		BlockedDay:      blockedTime.BlockedDay,
+		IsAllDay:        blockedTime.IsAllDay,
 		IsBlocking:      true,
 		// TODO: merchant timezone is likely equal to extCalendar timezone but not guaranteed
 		GoogleEvent: blockedTimeToGoogleEvent(blockedTime, extCalendar.Timezone),
@@ -970,9 +1010,10 @@ func (s *Service) SyncUpdateBlockedTime(ctx context.Context, blockedTimeId int, 
 		InternalType:    types.EventInternalTypeBlockedTime,
 		InternalId:      blockedTimeId,
 		Action:          "UPDATE",
-		FromDate:        &blockedTime.FromDate,
-		ToDate:          &blockedTime.ToDate,
-		IsAllDay:        blockedTime.AllDay,
+		FromDate:        blockedTime.FromDate,
+		ToDate:          blockedTime.ToDate,
+		BlockedDay:      blockedTime.BlockedDay,
+		IsAllDay:        blockedTime.IsAllDay,
 		IsBlocking:      true,
 		// TODO: merchant timezone is likely equal to extCalendar timezone but not guaranteed
 		GoogleEvent: blockedTimeToGoogleEvent(blockedTime, extCalendar.Timezone),

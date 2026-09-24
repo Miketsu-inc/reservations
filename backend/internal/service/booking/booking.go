@@ -154,7 +154,7 @@ func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid
 			return 0, err
 		}
 
-		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId, dayStart, dayEnd)
+		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId, dayStart, dayEnd, merchantTz.String())
 		if err != nil {
 			return 0, err
 		}

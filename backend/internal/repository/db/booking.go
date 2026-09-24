@@ -708,7 +708,7 @@ func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId 
 	return bookings, nil
 }
 
-func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]domain.BookingForCalendar, error) {
+func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime time.Time) ([]domain.BookingForCalendar, error) {
 	query := `
 	with participants as (
 		select

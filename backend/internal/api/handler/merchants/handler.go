@@ -398,14 +398,15 @@ type bookingParticipantForCalendar struct {
 }
 
 type blockedTime struct {
-	ID            int       `json:"id"`
-	EmployeeIds   []int     `json:"employee_ids"`
-	Name          string    `json:"name"`
-	FromDate      time.Time `json:"from_date"`
-	ToDate        time.Time `json:"to_date"`
-	AllDay        bool      `json:"all_day"`
-	Icon          *string   `json:"icon"`
-	BlockedTypeId *int      `json:"blocked_type_id"`
+	ID            int        `json:"id"`
+	EmployeeIds   []int      `json:"employee_ids"`
+	Name          string     `json:"name"`
+	FromDate      *time.Time `json:"from_date"`
+	ToDate        *time.Time `json:"to_date"`
+	BlockedDay    *string    `json:"blocked_day"`
+	IsAllDay      bool       `json:"is_all_day"`
+	Icon          *string    `json:"icon"`
+	BlockedTypeId *int       `json:"blocked_type_id"`
 }
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {

@@ -23,8 +23,8 @@ type BlockedTimeRepository interface {
 	GetBlockedTime(ctx context.Context, blockedTimeId int) (BlockedTime, error)
 	GetBlockedTimeForEmployee(ctx context.Context, blockedTime int, employeeId int) (BlockedTime, error)
 	GetBlockedTimeEmployees(ctx context.Context, blockedTimeId int) (BlockedTimeEmployees, error)
-	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime string, endTime string) ([]BlockedTimeEvent, error)
-	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, start time.Time, end time.Time) ([]BlockedTimes, error)
+	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startDate, endDate, startTime, endTime time.Time) ([]BlockedTimeEvent, error)
+	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, start, end time.Time, timezone string) ([]BlockedTimes, error)
 
 	NewBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error
 	UpdateBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error
@@ -38,9 +38,10 @@ type BlockedTime struct {
 	MerchantId    uuid.UUID          `json:"merchant_id" db:"merchant_id"`
 	BlockedTypeId *int               `json:"blocked_type_id" db:"blocked_type_id"`
 	Name          string             `json:"name" db:"name"`
-	FromDate      time.Time          `json:"from_date" db:"from_date"`
-	ToDate        time.Time          `json:"to_date" db:"to_date"`
-	AllDay        bool               `json:"all_day" db:"all_day"`
+	FromDate      *time.Time         `json:"from_date" db:"from_date"`
+	ToDate        *time.Time         `json:"to_date" db:"to_date"`
+	BlockedDay    *time.Time         `json:"blocked_day" db:"blocked_day"`
+	IsAllDay      bool               `json:"is_all_day" db:"is_all_day"`
 	Source        *types.EventSource `json:"source" db:"source"`
 }
 
@@ -50,9 +51,10 @@ type BlockedTimeEmployees struct {
 }
 
 type BlockedTimes struct {
-	FromDate time.Time `db:"from_date"`
-	ToDate   time.Time `db:"to_date"`
-	AllDay   bool      `db:"all_day"`
+	FromDate   *time.Time `db:"from_date"`
+	ToDate     *time.Time `db:"to_date"`
+	BlockedDay *time.Time `db:"blocked_day"`
+	IsAllDay   bool       `db:"is_all_day"`
 }
 
 type BlockedTimeType struct {
@@ -63,12 +65,13 @@ type BlockedTimeType struct {
 }
 
 type BlockedTimeEvent struct {
-	ID            int       `json:"id" db:"id"`
-	EmployeeIds   []int     `json:"employee_ids" db:"employee_ids"`
-	Name          string    `json:"name" db:"name"`
-	FromDate      time.Time `json:"from_date" db:"from_date"`
-	ToDate        time.Time `json:"to_date" db:"to_date"`
-	AllDay        bool      `json:"all_day" db:"all_day"`
-	Icon          *string   `json:"icon" db:"icon"`
-	BlockedTypeId *int      `json:"blocked_type_id" db:"blocked_type_id"`
+	ID            int        `json:"id" db:"id"`
+	EmployeeIds   []int      `json:"employee_ids" db:"employee_ids"`
+	Name          string     `json:"name" db:"name"`
+	FromDate      *time.Time `json:"from_date" db:"from_date"`
+	ToDate        *time.Time `json:"to_date" db:"to_date"`
+	BlockedDay    *time.Time `json:"blocked_day" db:"blocked_day"`
+	IsAllDay      bool       `json:"is_all_day" db:"is_all_day"`
+	Icon          *string    `json:"icon" db:"icon"`
+	BlockedTypeId *int       `json:"blocked_type_id" db:"blocked_type_id"`
 }

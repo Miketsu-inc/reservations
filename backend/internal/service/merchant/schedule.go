@@ -10,7 +10,7 @@ import (
 
 func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 	for _, b := range blockedTimes {
-		if b.AllDay {
+		if b.IsAllDay {
 			return true
 		}
 	}
@@ -21,9 +21,27 @@ func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time, tz *time.Location) []domain.BlockedTimes {
 	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, tz)
 	dayEnd := dayStart.AddDate(0, 0, 1)
+	dayYear, dayMonth, dayOfMonth := dayStart.Date()
 
 	filtered := []domain.BlockedTimes{}
 	for _, blocked := range blockedTimes {
+		if blocked.IsAllDay {
+			if blocked.BlockedDay == nil {
+				continue
+			}
+
+			blockedYear, blockedMonth, blockedDay := blocked.BlockedDay.Date()
+			if blockedYear == dayYear && blockedMonth == dayMonth && blockedDay == dayOfMonth {
+				filtered = append(filtered, blocked)
+			}
+
+			continue
+		}
+
+		if blocked.FromDate == nil || blocked.ToDate == nil {
+			continue
+		}
+
 		blockedFrom := blocked.FromDate.In(tz)
 		blockedTo := blocked.ToDate.In(tz)
 		if blockedFrom.Before(dayEnd) && blockedTo.After(dayStart) {
@@ -41,7 +59,7 @@ func hasNoPhaseConflict(bookingStart time.Time, servicePhases []domain.ServicePh
 
 		if phase.PhaseType == types.ServicePhaseTypeActive {
 			for _, blocked := range blockedTimes {
-				if !blocked.AllDay {
+				if !blocked.IsAllDay && blocked.FromDate != nil && blocked.ToDate != nil {
 					blockedFrom := blocked.FromDate.In(merchantTz)
 					blockedUntil := blocked.ToDate.In(merchantTz)
 

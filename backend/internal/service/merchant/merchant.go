@@ -253,16 +253,38 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 
 func (s *Service) GetCalendarEvents(ctx context.Context, start string, end string) (domain.CalendarEvents, error) {
 	actor := actor.MustGetFromContext(ctx)
-
-	var events domain.CalendarEvents
-	var err error
-
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, start, end)
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, start, end)
+	startDate, err := time.Parse(time.DateOnly, start)
+	if err != nil {
+		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar start date: %w", err)
+	}
+
+	endDate, err := time.Parse(time.DateOnly, end)
+	if err != nil {
+		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar end date: %w", err)
+	}
+
+	if !endDate.After(startDate) {
+		return domain.CalendarEvents{}, fmt.Errorf("calendar end date must be after start date")
+	}
+
+	startYear, startMonth, startDay := startDate.Date()
+	endYear, endMonth, endDay := endDate.Date()
+	startTime := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, merchantTz).UTC()
+	endTime := time.Date(endYear, endMonth, endDay, 0, 0, 0, 0, merchantTz).UTC()
+
+	var events domain.CalendarEvents
+
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, startTime, endTime)
+	if err != nil {
+		return domain.CalendarEvents{}, err
+	}
+
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, startDate, endDate, startTime, endTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}

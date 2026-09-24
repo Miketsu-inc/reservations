@@ -32,9 +32,10 @@ type newReq struct {
 	Name          string `json:"name" validate:"required"`
 	EmployeeIds   []int  `json:"employee_ids"`
 	BlockedTypeId *int   `json:"blocked_type_id"`
-	FromDate      string `json:"from_date" validate:"required"`
-	ToDate        string `json:"to_date" validate:"required"`
-	AllDay        bool   `json:"all_day"`
+	FromDate      string `json:"from_date"`
+	ToDate        string `json:"to_date"`
+	BlockedDay    string `json:"blocked_day"`
+	IsAllDay      bool   `json:"is_all_day"`
 }
 
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
@@ -64,9 +65,10 @@ type updateReq struct {
 	Name          string `json:"name" validate:"required"`
 	EmployeeIds   []int  `json:"employee_ids"`
 	BlockedTypeId *int   `json:"blocked_type_id"`
-	FromDate      string `json:"from_date" validate:"required"`
-	ToDate        string `json:"to_date" validate:"required"`
-	AllDay        bool   `json:"all_day"`
+	FromDate      string `json:"from_date"`
+	ToDate        string `json:"to_date"`
+	BlockedDay    string `json:"blocked_day"`
+	IsAllDay      bool   `json:"is_all_day"`
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
