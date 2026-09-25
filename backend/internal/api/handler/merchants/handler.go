@@ -410,12 +410,26 @@ type blockedTime struct {
 }
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
-	startTime := r.URL.Query().Get("start")
-	endTime := r.URL.Query().Get("end")
-	startDate := r.URL.Query().Get("start_date")
-	endDate := r.URL.Query().Get("end_date")
+	startDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("start"))
+	if err != nil {
+		return validate.NewError("invalid calendar start date")
+	}
 
-	bookings, err := h.service.GetCalendarEvents(r.Context(), startDate, endDate, startTime, endTime)
+	endDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("end"))
+	if err != nil {
+		return validate.NewError("invalid calendar end date")
+	}
+
+	if !endDate.After(startDate) {
+		return validate.NewError("calendar end date must be after start date")
+	}
+
+	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))
+	if err != nil {
+		return validate.NewError("invalid calendar time zone")
+	}
+
+	bookings, err := h.service.GetCalendarEvents(r.Context(), startDate, endDate, timezone)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetCalendarEvents")
 	}

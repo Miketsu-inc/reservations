@@ -735,7 +735,7 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 	from "Booking" b
 	left join "Service" s on b.service_id = s.id
 	left join participants p on p.booking_id = b.id
-	where b.merchant_id = $1 and b.from_date >= $2 AND b.to_date <= $3 AND b.status not in ('cancelled')
+	where b.merchant_id = $1 and b.from_date < $3 and b.to_date > $2 and b.status not in ('cancelled')
 	order by b.id
 	`
 

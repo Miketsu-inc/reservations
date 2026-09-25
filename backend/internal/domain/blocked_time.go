@@ -23,8 +23,8 @@ type BlockedTimeRepository interface {
 	GetBlockedTime(ctx context.Context, blockedTimeId int) (BlockedTime, error)
 	GetBlockedTimeForEmployee(ctx context.Context, blockedTime int, employeeId int) (BlockedTime, error)
 	GetBlockedTimeEmployees(ctx context.Context, blockedTimeId int) (BlockedTimeEmployees, error)
-	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startDate, endDate, startTime, endTime time.Time) ([]BlockedTimeEvent, error)
-	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, start, end time.Time, timezone string) ([]BlockedTimes, error)
+	GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime, startDay, endDay time.Time) ([]BlockedTimeEvent, error)
+	GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, startTime, endTime, startDay, endDay time.Time) ([]BlockedTimes, error)
 
 	NewBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error
 	UpdateBlockedTimeType(ctx context.Context, merchantId uuid.UUID, blockedTimeType BlockedTimeType) error

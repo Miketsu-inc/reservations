@@ -22,6 +22,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
+	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 	"github.com/riverqueue/river"
 	"github.com/teambition/rrule-go"
@@ -140,21 +141,21 @@ func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid
 	dayOfWeek := int(appointmentSlot.StartTime.In(merchantTz).Weekday())
 	bookingDayBusinessHours := businessHours[dayOfWeek]
 
-	year, month, day := appointmentSlot.EndTime.In(merchantTz).Date()
-	dayStart := time.Date(year, month, day, 0, 0, 0, 0, merchantTz).UTC()
-	dayEnd := time.Date(year, month, day, 23, 59, 59, 999999999, merchantTz).UTC()
+	bookingDay := appointmentSlot.EndTime.In(merchantTz)
+	dateRange := timeutil.NewDateRange(bookingDay, bookingDay.AddDate(0, 0, 1), merchantTz)
 	now := time.Now().In(time.UTC)
 
 	var finalEmployeeId int
 	foundAvailableSlot := false
 
 	for _, empId := range employeesToCheck {
-		reserved, err := s.bookingRepo.WithTx(tx).GetReservedTimes(ctx, merchantId, locationId, &empId, dayStart, dayEnd)
+		reserved, err := s.bookingRepo.WithTx(tx).GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return 0, err
 		}
 
-		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId, dayStart, dayEnd, merchantTz.String())
+		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId,
+			dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return 0, err
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
+	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 )
 
 func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.MerchantInfo, error) {
@@ -154,6 +155,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 
 	var availableSlots []MultiDayAvailableTimes
 
+	dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 	startDate = startDate.UTC()
 	endDate = endDate.UTC()
 
@@ -169,7 +171,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 			return []MultiDayAvailableTimes{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, merchantTz.String())
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return []MultiDayAvailableTimes{}, err
 		}
@@ -264,6 +266,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 
 		startDate := now
 		endDate := startDate.AddDate(0, 3, 0)
+		dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 
 		// TODO: should be rewritten to ensure maximal availability
 		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, startDate, endDate)
@@ -271,7 +274,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, merchantTz.String())
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return NextAvailable{}, err
 		}
@@ -416,6 +419,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 	now := time.Now().In(time.UTC)
 	startDate := now
 	endDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+	dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 
 	var employeeIds []int
 	if employeeId != nil {
@@ -439,7 +443,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 			return []DayAvailability{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, merchantTz.String())
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return []DayAvailability{}, err
 		}
@@ -508,8 +512,7 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 	dayOfWeek := int(bookingDay.Weekday())
 	bookingDayBusinessHours := businessHours[dayOfWeek]
 
-	startDate := bookingDay.UTC()
-	endDate := bookingDay.AddDate(0, 0, 1).Add(-time.Nanosecond).UTC()
+	dateRange := timeutil.NewDateRange(bookingDay, bookingDay.AddDate(0, 0, 1), merchantTz)
 	now := time.Now()
 
 	var employeeIds []int
@@ -531,12 +534,12 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 	uniqueAvailableTimesMap := make(map[string]time.Time)
 
 	for _, empId := range employeeIds {
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, startDate, endDate)
+		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return FormattedAvailableTimes{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, merchantTz.String())
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return FormattedAvailableTimes{}, err
 		}

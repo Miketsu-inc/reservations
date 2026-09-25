@@ -19,9 +19,9 @@ func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 }
 
 func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time, tz *time.Location) []domain.BlockedTimes {
-	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, tz)
+	dayYear, dayMonth, dayOfMonth := day.Date()
+	dayStart := time.Date(dayYear, dayMonth, dayOfMonth, 0, 0, 0, 0, tz)
 	dayEnd := dayStart.AddDate(0, 0, 1)
-	dayYear, dayMonth, dayOfMonth := dayStart.Date()
 
 	filtered := []domain.BlockedTimes{}
 	for _, blocked := range blockedTimes {

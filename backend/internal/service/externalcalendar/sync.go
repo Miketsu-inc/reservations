@@ -35,6 +35,7 @@ func eventToBlockedTime(event *calendar.Event, merchantId uuid.UUID, calendarTz 
 		blockedDay := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, time.UTC)
 		blockedEndDay := time.Date(endYear, endMonth, endDay, 0, 0, 0, 0, time.UTC)
 
+		// TODO: eliminate this error
 		if !blockedEndDay.Equal(blockedDay.AddDate(0, 0, 1)) {
 			return domain.BlockedTime{}, fmt.Errorf("multi-day Google event %q cannot be stored as a blocked time", event.Id)
 		}

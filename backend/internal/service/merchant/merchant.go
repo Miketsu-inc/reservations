@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -251,45 +252,21 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 	return businessHours, nil
 }
 
-func (s *Service) GetCalendarEvents(ctx context.Context, startDateValue, endDateValue, startTimeValue, endTimeValue string) (domain.CalendarEvents, error) {
+func (s *Service) GetCalendarEvents(ctx context.Context, startDate, endDate time.Time, timezone *time.Location) (domain.CalendarEvents, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	startDate, err := time.Parse(time.DateOnly, startDateValue)
-	if err != nil {
-		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar start date: %w", err)
-	}
-
-	endDate, err := time.Parse(time.DateOnly, endDateValue)
-	if err != nil {
-		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar end date: %w", err)
-	}
-
-	if !endDate.After(startDate) {
-		return domain.CalendarEvents{}, fmt.Errorf("calendar end date must be after start date")
-	}
-
-	startTime, err := time.Parse(time.RFC3339, startTimeValue)
-	if err != nil {
-		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar start time: %w", err)
-	}
-
-	endTime, err := time.Parse(time.RFC3339, endTimeValue)
-	if err != nil {
-		return domain.CalendarEvents{}, fmt.Errorf("invalid calendar end time: %w", err)
-	}
-
-	if !endTime.After(startTime) {
-		return domain.CalendarEvents{}, fmt.Errorf("calendar end time must be after start time")
-	}
+	dateRange := timeutil.NewDateRange(startDate, endDate, timezone)
 
 	var events domain.CalendarEvents
+	var err error
 
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, startTime, endTime)
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, startDate, endDate, startTime, endTime)
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId,
+		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}

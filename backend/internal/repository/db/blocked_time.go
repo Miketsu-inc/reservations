@@ -265,7 +265,7 @@ func (r *blockedTimeRepository) GetBlockedTimeEmployees(ctx context.Context, blo
 }
 
 func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID,
-	startDate, endDate, startTime, endTime time.Time) ([]domain.BlockedTimeEvent, error) {
+	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimeEvent, error) {
 	query := `
 	select bt.id, bt.name, bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day, btt.icon, btt.id as blocked_type_id,
 		coalesce(
@@ -277,15 +277,15 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	left join "BlockedTimeType" btt on btt.id = bt.blocked_type_id
 	where bt.merchant_id = $1
 		and (
-			(bt.is_all_day and bt.blocked_day >= $2::date and bt.blocked_day < $3::date)
+			(bt.is_all_day and bt.blocked_day >= $4::date and bt.blocked_day < $5::date)
 			or
-			(not bt.is_all_day and bt.from_date < $5 and bt.to_date > $4)
+			(not bt.is_all_day and bt.from_date < $3 and bt.to_date > $2)
 		)
 	group by bt.id, btt.id, btt.icon
 	order by bt.id
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startDate, endDate, startTime, endTime)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, startDay, endDay)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimeEvent])
 	if err != nil {
 		return []domain.BlockedTimeEvent{}, fmt.Errorf("GetBlockedTimesForCalendar: %w", err)
@@ -295,13 +295,13 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 }
 
 func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int,
-	start, end time.Time, timezone string) ([]domain.BlockedTimes, error) {
+	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimes, error) {
 	query := `
 	select bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day
 	from "BlockedTime" bt
 	where bt.merchant_id = $1
 		and (
-			(bt.is_all_day and bt.blocked_day between ($2::timestamptz at time zone $5)::date and ($3::timestamptz at time zone $5)::date)
+			(bt.is_all_day and bt.blocked_day >= $5::date and bt.blocked_day < $6::date)
 			or
 			(not bt.is_all_day and bt.to_date > $2 and bt.from_date < $3)
 		)
@@ -321,7 +321,7 @@ func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId 
 		)
 	order by coalesce(bt.from_date, bt.blocked_day::timestamp)`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, start, end, employeeId, timezone)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, employeeId, startDay, endDay)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimes])
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockedTimes: %w", err)
