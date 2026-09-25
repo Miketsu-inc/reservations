@@ -8,6 +8,7 @@ const createBaseConfig = (additionalConfig) =>
   defineConfig(({ mode }) => {
     return {
       envDir: path.resolve(__dirname, ".."),
+      publicDir: path.resolve(__dirname, "public"),
       plugins: [
         tanstackRouter({
           target: "react",
