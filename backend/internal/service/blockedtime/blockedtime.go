@@ -2,7 +2,7 @@ package blockedtime
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -42,16 +42,50 @@ type NewInput struct {
 	Name          string
 	EmployeeIds   []int
 	BlockedTypeId *int
-	FromDate      time.Time
-	ToDate        time.Time
-	AllDay        bool
+	FromDate      *time.Time
+	ToDate        *time.Time
+	BlockedDay    *time.Time
+	IsAllDay      bool
+}
+
+// TODO: validate that blocked_type_id belongs to the actor's merchant.
+func validateBlockedTime(isAllDay bool, blockedDay, fromDate, toDate *time.Time) error {
+	if isAllDay {
+		if blockedDay == nil || fromDate != nil || toDate != nil {
+			return ErrAllDayBlockedTimeDateRequired
+		}
+
+		return nil
+	}
+
+	if blockedDay != nil || fromDate == nil || toDate == nil {
+		return ErrTimedBlockedTimeDatesRequired
+	}
+
+	if !toDate.After(*fromDate) {
+		return ErrInvalidBlockedTimeDateRange
+	}
+
+	if toDate.Sub(*fromDate) > 24*time.Hour {
+		return ErrBlockedTimeDurationTooLong
+	}
+
+	return nil
+}
+
+func optionalTimesEqual(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	return a.Equal(*b)
 }
 
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	if !input.ToDate.After(input.FromDate) {
-		return fmt.Errorf("toDate must be after fromDate")
+	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
+		return err
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -61,12 +95,14 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			Name:          input.Name,
 			FromDate:      input.FromDate,
 			ToDate:        input.ToDate,
-			AllDay:        input.AllDay,
+			BlockedDay:    input.BlockedDay,
+			IsAllDay:      input.IsAllDay,
 		}})
 		if err != nil {
 			return err
 		}
 
+		// TODO: reject duplicate employee_ids with a validation error.
 		if len(input.EmployeeIds) > 0 {
 			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
 			if err != nil {
@@ -94,9 +130,10 @@ type UpdateInput struct {
 	BlockedTimeId int
 	Name          string
 	BlockedTypeId *int
-	FromDate      time.Time
-	ToDate        time.Time
-	AllDay        bool
+	FromDate      *time.Time
+	ToDate        *time.Time
+	BlockedDay    *time.Time
+	IsAllDay      bool
 	EmployeeIds   []int
 }
 
@@ -105,15 +142,19 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, input.BlockedTimeId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrBlockedTimeNotFound
+		}
+
 		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
-		return fmt.Errorf("blocked time with id %d not found for merchant", blockedTime.Id)
+		return ErrBlockedTimeNotFound
 	}
 
-	if !input.ToDate.After(input.FromDate) {
-		return fmt.Errorf("toDate must be after fromDate")
+	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
+		return err
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -124,12 +165,14 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			Name:          input.Name,
 			FromDate:      input.FromDate,
 			ToDate:        input.ToDate,
-			AllDay:        input.AllDay,
+			BlockedDay:    input.BlockedDay,
+			IsAllDay:      input.IsAllDay,
 		})
 		if err != nil {
 			return err
 		}
 
+		// TODO: reject duplicate employee_ids with a validation error.
 		employeeChanges, err := s.teamService.DetectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
 		if err != nil {
 			return err
@@ -156,7 +199,13 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			}
 		}
 
-		if !blockedTime.FromDate.Equal(input.FromDate) || !blockedTime.ToDate.Equal(input.ToDate) {
+		if blockedTime.Name != input.Name ||
+			len(employeeChanges.ToDelete) > 0 ||
+			len(employeeChanges.ToInsert) > 0 ||
+			blockedTime.IsAllDay != input.IsAllDay ||
+			!optionalTimesEqual(blockedTime.BlockedDay, input.BlockedDay) ||
+			!optionalTimesEqual(blockedTime.FromDate, input.FromDate) ||
+			!optionalTimesEqual(blockedTime.ToDate, input.ToDate) {
 			_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncUpdateBlockedTimeDispatcher{
 				BlockedTimeId: input.BlockedTimeId,
 			}, nil)
@@ -175,11 +224,15 @@ func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	// TODO: if the actor is not on the block time this will give an error
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrBlockedTimeNotFound
+		}
+
 		return err
 	}
 
 	if blockedTime.MerchantId != actor.MerchantId {
-		return fmt.Errorf("blocked time with id %d not found for merchant", blockedTime.Id)
+		return ErrBlockedTimeNotFound
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {

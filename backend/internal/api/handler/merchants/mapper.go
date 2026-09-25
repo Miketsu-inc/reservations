@@ -264,13 +264,20 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 	blockedTimes := make([]blockedTime, len(in.BlockedTimes))
 
 	for i, b := range in.BlockedTimes {
+		var blockedDay *string
+		if b.BlockedDay != nil {
+			formatted := b.BlockedDay.Format(time.DateOnly)
+			blockedDay = &formatted
+		}
+
 		blockedTimes[i] = blockedTime{
 			ID:            b.ID,
 			EmployeeIds:   b.EmployeeIds,
 			Name:          b.Name,
 			FromDate:      b.FromDate,
 			ToDate:        b.ToDate,
-			AllDay:        b.AllDay,
+			BlockedDay:    blockedDay,
+			IsAllDay:      b.IsAllDay,
 			Icon:          b.Icon,
 			BlockedTypeId: b.BlockedTypeId,
 		}

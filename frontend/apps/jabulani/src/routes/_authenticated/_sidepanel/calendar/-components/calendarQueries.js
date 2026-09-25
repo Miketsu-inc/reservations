@@ -1,19 +1,15 @@
-import {
-  dateStringToLocalDate,
-  invalidateLocalStorageAuth,
-} from "@reservations/lib";
+import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { queryOptions } from "@tanstack/react-query";
 
-async function fetchBookings(merchantId, start, end) {
-  const startDate = dateStringToLocalDate(start);
-  const endDate = dateStringToLocalDate(end);
-
-  if (!startDate || !endDate) {
-    throw new Error("Invalid calendar date range");
-  }
+async function fetchBookings(merchantId, start, end, timeZone) {
+  const params = new URLSearchParams({
+    start,
+    end,
+    time_zone: timeZone,
+  });
 
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`,
+    `/api/v1/merchants/${merchantId}/calendar/events?${params}`,
     { method: "GET" }
   );
   const result = await response.json();
@@ -29,9 +25,11 @@ async function fetchBookings(merchantId, start, end) {
 }
 
 export function calendarBookingsQueryOptions(merchantId, start, end) {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   return queryOptions({
-    queryKey: [merchantId, "events", start, end],
-    queryFn: () => fetchBookings(merchantId, start, end),
+    queryKey: [merchantId, "events", start, end, timeZone],
+    queryFn: () => fetchBookings(merchantId, start, end, timeZone),
   });
 }
 

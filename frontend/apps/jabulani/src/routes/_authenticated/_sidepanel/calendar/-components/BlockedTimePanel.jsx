@@ -20,6 +20,7 @@ import {
   blockedTimeTypesQueryOptions,
   combineDateTimeLocal,
   formatDuration,
+  formatToDateString,
   generateTimeOptions,
   invalidateLocalStorageAuth,
   timeStringFromDate,
@@ -43,19 +44,6 @@ function getFormattedLabel(timeValue, timeFormat) {
   return `${hours}:${minutes.toString().padStart(2, "0")}`;
 }
 
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 1);
-  return d;
-}
-
 const defaultFormData = {
   id: null,
   blocked_type_id: null,
@@ -64,7 +52,7 @@ const defaultFormData = {
   date: new Date(),
   from_time: "09:00",
   to_time: "17:00",
-  all_day: false,
+  is_all_day: false,
 };
 
 export default function BlockedTimePanel({
@@ -122,7 +110,7 @@ export default function BlockedTimePanel({
     date: blockedTime?.start || new Date(),
     from_time: initialFromTime,
     to_time: initialToTime,
-    all_day: blockedTime?.extendedProps?.allDay ?? false,
+    is_all_day: blockedTime?.extendedProps?.allDay ?? false,
   });
 
   const [activeType, setActiveType] = useState(formData.blocked_type_id);
@@ -142,7 +130,7 @@ export default function BlockedTimePanel({
       return;
     }
 
-    if (!formData.all_day && formData.from_time >= formData.to_time) {
+    if (!formData.is_all_day && formData.from_time >= formData.to_time) {
       showToast({
         message: "The end time must be after the start time",
         variant: "error",
@@ -159,13 +147,12 @@ export default function BlockedTimePanel({
       id: blockedTime?.extendedProps?.id ?? undefined,
       blocked_type_id: blockedTypeId,
       name: formData.name,
-      all_day: formData.all_day,
+      is_all_day: formData.is_all_day,
       employee_ids: formData.employee_ids,
     };
 
-    if (formData.all_day) {
-      body.from_date = startOfDay(formData.date).toISOString();
-      body.to_date = endOfDay(formData.date).toISOString();
+    if (formData.is_all_day) {
+      body.blocked_day = formatToDateString(formData.date);
     } else {
       body.from_date = combineDateTimeLocal(
         formData.date,
@@ -349,13 +336,13 @@ export default function BlockedTimePanel({
         <div className="my-1 flex items-center gap-4">
           <span className="text-sm">All day</span>
           <Switch
-            defaultValue={formData.all_day}
+            defaultValue={formData.is_all_day}
             onSwitch={() =>
-              updateBlockedTimeData({ all_day: !formData.all_day })
+              updateBlockedTimeData({ is_all_day: !formData.is_all_day })
             }
           />
         </div>
-        {!formData?.all_day && (
+        {!formData?.is_all_day && (
           <div className="text-text_color grid grid-cols-2 gap-4">
             <Select
               allOptions={timeOptions}

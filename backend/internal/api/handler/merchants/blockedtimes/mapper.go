@@ -8,44 +8,86 @@ import (
 )
 
 func mapToNewInput(in newReq) (blockedtimeServ.NewInput, error) {
-	fromDate, err := time.Parse(time.RFC3339, in.FromDate)
+	input := blockedtimeServ.NewInput{
+		Name:          in.Name,
+		EmployeeIds:   in.EmployeeIds,
+		BlockedTypeId: in.BlockedTypeId,
+		IsAllDay:      in.IsAllDay,
+	}
+
+	if in.IsAllDay {
+		if in.BlockedDay == nil || in.FromDate != nil || in.ToDate != nil {
+			return blockedtimeServ.NewInput{}, fmt.Errorf("an all-day blocked time requires blocked_day only")
+		}
+
+		blockedDay, err := time.Parse(time.DateOnly, *in.BlockedDay)
+		if err != nil {
+			return blockedtimeServ.NewInput{}, fmt.Errorf("invalid blocked_day: %s", err.Error())
+		}
+
+		input.BlockedDay = &blockedDay
+		return input, nil
+	}
+
+	if in.FromDate == nil || in.ToDate == nil || in.BlockedDay != nil {
+		return blockedtimeServ.NewInput{}, fmt.Errorf("a timed blocked time requires from_date and to_date only")
+	}
+
+	fromDate, err := time.Parse(time.RFC3339, *in.FromDate)
 	if err != nil {
 		return blockedtimeServ.NewInput{}, fmt.Errorf("invalid from date: %s", err.Error())
 	}
 
-	toDate, err := time.Parse(time.RFC3339, in.ToDate)
+	toDate, err := time.Parse(time.RFC3339, *in.ToDate)
 	if err != nil {
 		return blockedtimeServ.NewInput{}, fmt.Errorf("invalid to date: %s", err.Error())
 	}
 
-	return blockedtimeServ.NewInput{
-		Name:          in.Name,
-		EmployeeIds:   in.EmployeeIds,
-		BlockedTypeId: in.BlockedTypeId,
-		FromDate:      fromDate,
-		ToDate:        toDate,
-		AllDay:        in.AllDay,
-	}, nil
+	input.FromDate = &fromDate
+	input.ToDate = &toDate
+
+	return input, nil
 }
 
 func mapToUpdateInput(in updateReq) (blockedtimeServ.UpdateInput, error) {
-	fromDate, err := time.Parse(time.RFC3339, in.FromDate)
+	input := blockedtimeServ.UpdateInput{
+		BlockedTimeId: in.Id,
+		Name:          in.Name,
+		BlockedTypeId: in.BlockedTypeId,
+		EmployeeIds:   in.EmployeeIds,
+		IsAllDay:      in.IsAllDay,
+	}
+
+	if in.IsAllDay {
+		if in.BlockedDay == nil || in.FromDate != nil || in.ToDate != nil {
+			return blockedtimeServ.UpdateInput{}, fmt.Errorf("an all-day blocked time requires blocked_day only")
+		}
+
+		blockedDay, err := time.Parse(time.DateOnly, *in.BlockedDay)
+		if err != nil {
+			return blockedtimeServ.UpdateInput{}, fmt.Errorf("invalid blocked_day: %s", err.Error())
+		}
+
+		input.BlockedDay = &blockedDay
+		return input, nil
+	}
+
+	if in.FromDate == nil || in.ToDate == nil || in.BlockedDay != nil {
+		return blockedtimeServ.UpdateInput{}, fmt.Errorf("a timed blocked time requires from_date and to_date only")
+	}
+
+	fromDate, err := time.Parse(time.RFC3339, *in.FromDate)
 	if err != nil {
 		return blockedtimeServ.UpdateInput{}, fmt.Errorf("invalid from date: %s", err.Error())
 	}
 
-	toDate, err := time.Parse(time.RFC3339, in.ToDate)
+	toDate, err := time.Parse(time.RFC3339, *in.ToDate)
 	if err != nil {
 		return blockedtimeServ.UpdateInput{}, fmt.Errorf("invalid to date: %s", err.Error())
 	}
 
-	return blockedtimeServ.UpdateInput{
-		BlockedTimeId: in.Id,
-		Name:          in.Name,
-		BlockedTypeId: in.BlockedTypeId,
-		FromDate:      fromDate,
-		ToDate:        toDate,
-		AllDay:        in.AllDay,
-		EmployeeIds:   in.EmployeeIds,
-	}, nil
+	input.FromDate = &fromDate
+	input.ToDate = &toDate
+
+	return input, nil
 }

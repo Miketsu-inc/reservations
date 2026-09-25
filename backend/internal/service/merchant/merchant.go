@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -251,18 +252,21 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 	return businessHours, nil
 }
 
-func (s *Service) GetCalendarEvents(ctx context.Context, start string, end string) (domain.CalendarEvents, error) {
+func (s *Service) GetCalendarEvents(ctx context.Context, startDate, endDate time.Time, timezone *time.Location) (domain.CalendarEvents, error) {
 	actor := actor.MustGetFromContext(ctx)
+
+	dateRange := timeutil.NewDateRange(startDate, endDate, timezone)
 
 	var events domain.CalendarEvents
 	var err error
 
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, start, end)
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, start, end)
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId,
+		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}

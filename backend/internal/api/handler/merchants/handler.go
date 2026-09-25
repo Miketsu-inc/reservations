@@ -398,21 +398,38 @@ type bookingParticipantForCalendar struct {
 }
 
 type blockedTime struct {
-	ID            int       `json:"id"`
-	EmployeeIds   []int     `json:"employee_ids"`
-	Name          string    `json:"name"`
-	FromDate      time.Time `json:"from_date"`
-	ToDate        time.Time `json:"to_date"`
-	AllDay        bool      `json:"all_day"`
-	Icon          *string   `json:"icon"`
-	BlockedTypeId *int      `json:"blocked_type_id"`
+	ID            int        `json:"id"`
+	EmployeeIds   []int      `json:"employee_ids"`
+	Name          string     `json:"name"`
+	FromDate      *time.Time `json:"from_date"`
+	ToDate        *time.Time `json:"to_date"`
+	BlockedDay    *string    `json:"blocked_day"`
+	IsAllDay      bool       `json:"is_all_day"`
+	Icon          *string    `json:"icon"`
+	BlockedTypeId *int       `json:"blocked_type_id"`
 }
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
-	start := r.URL.Query().Get("start")
-	end := r.URL.Query().Get("end")
+	startDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("start"))
+	if err != nil {
+		return validate.NewError("invalid calendar start date")
+	}
 
-	bookings, err := h.service.GetCalendarEvents(r.Context(), start, end)
+	endDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("end"))
+	if err != nil {
+		return validate.NewError("invalid calendar end date")
+	}
+
+	if !endDate.After(startDate) {
+		return validate.NewError("calendar end date must be after start date")
+	}
+
+	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))
+	if err != nil {
+		return validate.NewError("invalid calendar time zone")
+	}
+
+	bookings, err := h.service.GetCalendarEvents(r.Context(), startDate, endDate, timezone)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetCalendarEvents")
 	}

@@ -10,7 +10,7 @@ import (
 
 func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 	for _, b := range blockedTimes {
-		if b.AllDay {
+		if b.IsAllDay {
 			return true
 		}
 	}
@@ -19,11 +19,29 @@ func hasAllDayBlock(blockedTimes []domain.BlockedTimes) bool {
 }
 
 func filterBlockedTimesForDay(blockedTimes []domain.BlockedTimes, day time.Time, tz *time.Location) []domain.BlockedTimes {
-	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, tz)
+	dayYear, dayMonth, dayOfMonth := day.Date()
+	dayStart := time.Date(dayYear, dayMonth, dayOfMonth, 0, 0, 0, 0, tz)
 	dayEnd := dayStart.AddDate(0, 0, 1)
 
 	filtered := []domain.BlockedTimes{}
 	for _, blocked := range blockedTimes {
+		if blocked.IsAllDay {
+			if blocked.BlockedDay == nil {
+				continue
+			}
+
+			blockedYear, blockedMonth, blockedDay := blocked.BlockedDay.Date()
+			if blockedYear == dayYear && blockedMonth == dayMonth && blockedDay == dayOfMonth {
+				filtered = append(filtered, blocked)
+			}
+
+			continue
+		}
+
+		if blocked.FromDate == nil || blocked.ToDate == nil {
+			continue
+		}
+
 		blockedFrom := blocked.FromDate.In(tz)
 		blockedTo := blocked.ToDate.In(tz)
 		if blockedFrom.Before(dayEnd) && blockedTo.After(dayStart) {
@@ -41,7 +59,7 @@ func hasNoPhaseConflict(bookingStart time.Time, servicePhases []domain.ServicePh
 
 		if phase.PhaseType == types.ServicePhaseTypeActive {
 			for _, blocked := range blockedTimes {
-				if !blocked.AllDay {
+				if !blocked.IsAllDay && blocked.FromDate != nil && blocked.ToDate != nil {
 					blockedFrom := blocked.FromDate.In(merchantTz)
 					blockedUntil := blocked.ToDate.In(merchantTz)
 
@@ -142,7 +160,7 @@ func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
-	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+	for d := startDate.In(merchantTz); d.Before(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 
 		day := d.Format("2006-01-02")
@@ -194,7 +212,7 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, block
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
-	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+	for d := startDate.In(merchantTz); d.Before(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 		if len(businessHoursForDay) == 0 {
 			continue

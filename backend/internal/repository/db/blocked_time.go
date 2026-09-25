@@ -26,8 +26,9 @@ func (r *blockedTimeRepository) WithTx(tx db.DBTX) domain.BlockedTimeRepository 
 
 func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []domain.BlockedTime) ([]int, error) {
 	query := `
-	insert into "BlockedTime" (merchant_id, blocked_type_id, name, from_date, to_date, all_day, source)
-	select $1, unnest($2::int[]), unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]), unnest($6::boolean[]), $7
+	insert into "BlockedTime" (merchant_id, blocked_type_id, name, from_date, to_date, blocked_day, is_all_day, source)
+	select $1, unnest($2::int[]), unnest($3::text[]), unnest($4::timestamptz[]), unnest($5::timestamptz[]),
+		unnest($6::date[]), unnest($7::boolean[]), $8
 	returning id
 	`
 
@@ -38,8 +39,9 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 
 	blockedTimeTypeIds := make([]pgtype.Int4, btCount)
 	names := make([]string, btCount)
-	fromDates := make([]time.Time, btCount)
-	toDates := make([]time.Time, btCount)
+	fromDates := make([]pgtype.Timestamptz, btCount)
+	toDates := make([]pgtype.Timestamptz, btCount)
+	dates := make([]pgtype.Date, btCount)
 	isAllDay := make([]bool, btCount)
 
 	for i, blockedTime := range bt {
@@ -49,14 +51,27 @@ func (r *blockedTimeRepository) BulkInsertBlockedTime(ctx context.Context, bt []
 			blockedTimeTypeIds[i] = pgtype.Int4{Int32: int32(*blockedTime.BlockedTypeId), Valid: true}
 		}
 		names[i] = blockedTime.Name
-		fromDates[i] = blockedTime.FromDate
-		toDates[i] = blockedTime.ToDate
-		isAllDay[i] = blockedTime.AllDay
+		if blockedTime.FromDate != nil {
+			fromDates[i] = pgtype.Timestamptz{Time: *blockedTime.FromDate, Valid: true}
+		} else {
+			fromDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.ToDate != nil {
+			toDates[i] = pgtype.Timestamptz{Time: *blockedTime.ToDate, Valid: true}
+		} else {
+			toDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.BlockedDay != nil {
+			dates[i] = pgtype.Date{Time: *blockedTime.BlockedDay, Valid: true}
+		} else {
+			dates[i] = pgtype.Date{Valid: false}
+		}
+		isAllDay[i] = blockedTime.IsAllDay
 	}
 
 	var btIds []int
 
-	rows, _ := r.db.Query(ctx, query, merchantId, blockedTimeTypeIds, names, fromDates, toDates, isAllDay, source)
+	rows, _ := r.db.Query(ctx, query, merchantId, blockedTimeTypeIds, names, fromDates, toDates, dates, isAllDay, source)
 	btIds, err := pgx.CollectRows(rows, pgx.RowTo[int])
 	if err != nil {
 		return []int{}, fmt.Errorf("BulkInsertBlockedTime: %w", err)
@@ -82,10 +97,10 @@ func (r *blockedTimeRepository) BulkInsertEmployeeBlockedTime(ctx context.Contex
 func (r *blockedTimeRepository) UpdateBlockedTime(ctx context.Context, bt domain.BlockedTime) error {
 	query := `
 	update "BlockedTime"
-	set blocked_type_id = $3, name = $4, from_date = $5, to_date = $6, all_day = $7
+	set blocked_type_id = $3, name = $4, from_date = $5, to_date = $6, blocked_day = $7, is_all_day = $8
 	where merchant_id = $1 and ID = $2`
 
-	_, err := r.db.Exec(ctx, query, bt.MerchantId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.AllDay)
+	_, err := r.db.Exec(ctx, query, bt.MerchantId, bt.Id, bt.BlockedTypeId, bt.Name, bt.FromDate, bt.ToDate, bt.BlockedDay, bt.IsAllDay)
 	if err != nil {
 		return fmt.Errorf("BulkInsertEmployeeBlockedTime: %w", err)
 	}
@@ -96,27 +111,41 @@ func (r *blockedTimeRepository) UpdateBlockedTime(ctx context.Context, bt domain
 func (r *blockedTimeRepository) BulkUpdateBlockedTime(ctx context.Context, bt []domain.BlockedTime) error {
 	query := `
 	update "BlockedTime" b
-	set name = u.name, from_date = u.from_date, to_date = u.to_date, all_day = u.all_day
-	from unnest($1::int[], $2::text[], $3::timestamptz[], $4::timestamptz[], $5::boolean[])
-	as u(id, name, from_date, to_date, all_day)
+	set name = u.name, from_date = u.from_date, to_date = u.to_date, blocked_day = u.blocked_day, is_all_day = u.is_all_day
+	from unnest($1::int[], $2::text[], $3::timestamptz[], $4::timestamptz[], $5::date[], $6::boolean[])
+	as u(id, name, from_date, to_date, blocked_day, is_all_day)
 	where b.id = u.id
 	`
 
 	ids := make([]int, len(bt))
 	names := make([]string, len(bt))
-	fromDates := make([]time.Time, len(bt))
-	toDates := make([]time.Time, len(bt))
+	fromDates := make([]pgtype.Timestamptz, len(bt))
+	toDates := make([]pgtype.Timestamptz, len(bt))
+	dates := make([]pgtype.Date, len(bt))
 	isAllDay := make([]bool, len(bt))
 
 	for i, blockedTime := range bt {
 		ids[i] = blockedTime.Id
 		names[i] = blockedTime.Name
-		fromDates[i] = blockedTime.FromDate
-		toDates[i] = blockedTime.ToDate
-		isAllDay[i] = blockedTime.AllDay
+		if blockedTime.FromDate != nil {
+			fromDates[i] = pgtype.Timestamptz{Time: *blockedTime.FromDate, Valid: true}
+		} else {
+			fromDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.ToDate != nil {
+			toDates[i] = pgtype.Timestamptz{Time: *blockedTime.ToDate, Valid: true}
+		} else {
+			toDates[i] = pgtype.Timestamptz{Valid: false}
+		}
+		if blockedTime.BlockedDay != nil {
+			dates[i] = pgtype.Date{Time: *blockedTime.BlockedDay, Valid: true}
+		} else {
+			dates[i] = pgtype.Date{Valid: false}
+		}
+		isAllDay[i] = blockedTime.IsAllDay
 	}
 
-	_, err := r.db.Exec(ctx, query, ids, names, fromDates, toDates, isAllDay)
+	_, err := r.db.Exec(ctx, query, ids, names, fromDates, toDates, dates, isAllDay)
 	if err != nil {
 		return fmt.Errorf("BulkUpdateBlockedTime: %w", err)
 	}
@@ -235,9 +264,10 @@ func (r *blockedTimeRepository) GetBlockedTimeEmployees(ctx context.Context, blo
 	return blockedTime, nil
 }
 
-func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime string) ([]domain.BlockedTimeEvent, error) {
+func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID,
+	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimeEvent, error) {
 	query := `
-	select bt.id, bt.name, bt.from_date, bt.to_date, bt.all_day, btt.icon, btt.id as blocked_type_id,
+	select bt.id, bt.name, bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day, btt.icon, btt.id as blocked_type_id,
 		coalesce(
 			array_agg(ebt.employee_id order by ebt.employee_id) filter (where ebt.employee_id is not null),
 			'{}'::int[]
@@ -245,12 +275,17 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	from "BlockedTime" bt
 	left join "EmployeeBlockedTime" ebt on ebt.blocked_time_id = bt.id
 	left join "BlockedTimeType" btt on btt.id = bt.blocked_type_id
-	where bt.merchant_id = $1 and bt.from_date <= $3 and bt.to_date >= $2
+	where bt.merchant_id = $1
+		and (
+			(bt.is_all_day and bt.blocked_day >= $4::date and bt.blocked_day < $5::date)
+			or
+			(not bt.is_all_day and bt.from_date < $3 and bt.to_date > $2)
+		)
 	group by bt.id, btt.id, btt.icon
 	order by bt.id
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, startDay, endDay)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimeEvent])
 	if err != nil {
 		return []domain.BlockedTimeEvent{}, fmt.Errorf("GetBlockedTimesForCalendar: %w", err)
@@ -259,13 +294,17 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	return blockedTimes, nil
 }
 
-func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int, start, end time.Time) ([]domain.BlockedTimes, error) {
+func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int,
+	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimes, error) {
 	query := `
-	select bt.from_date, bt.to_date, bt.all_day
+	select bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day
 	from "BlockedTime" bt
 	where bt.merchant_id = $1
-		and bt.to_date > $2
-		and bt.from_date < $3
+		and (
+			(bt.is_all_day and bt.blocked_day >= $5::date and bt.blocked_day < $6::date)
+			or
+			(not bt.is_all_day and bt.to_date > $2 and bt.from_date < $3)
+		)
 		and (
 			$4::int is null
 			or not exists (
@@ -280,9 +319,9 @@ func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId 
 					and ebt.employee_id = $4
 			)
 		)
-	order by bt.from_date`
+	order by coalesce(bt.from_date, bt.blocked_day::timestamp)`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, start, end, employeeId)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, employeeId, startDay, endDay)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimes])
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockedTimes: %w", err)

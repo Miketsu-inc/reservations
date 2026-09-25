@@ -320,10 +320,18 @@ create table if not exists "BlockedTime" (
     merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
     blocked_type_id          integer         references "BlockedTimeType" (ID) on delete set null,
     name                     varchar(50)     not null,
-    from_date                timestamptz     not null,
-    to_date                  timestamptz     not null,
-    all_day                  boolean         not null,
-    source                   text            check (source in ('internal', 'google'))
+    from_date                timestamptz,
+    to_date                  timestamptz,
+    blocked_day              date,
+    is_all_day               boolean         not null,
+    source                   text            check (source in ('internal', 'google')),
+
+    constraint blocked_time_value_shape check (
+        (is_all_day and blocked_day is not null and from_date is null and to_date is null)
+        or
+        (not is_all_day and blocked_day is null and from_date is not null and to_date is not null
+            and from_date < to_date and to_date - from_date <= interval '24 hours')
+    )
 );
 
 create table if not exists "EmployeeBlockedTime" (

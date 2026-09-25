@@ -15,6 +15,10 @@ func ct(year int, month time.Month, day int, timeStr string, loc *time.Location)
 	return time.Date(year, month, day, t.Hour(), t.Minute(), 0, 0, loc)
 }
 
+func timePtr(value time.Time) *time.Time {
+	return &value
+}
+
 func ctReserved(year int, month time.Month, day int, start, end string, loc *time.Location) domain.BookingSlot {
 	return domain.BookingSlot{
 		FromDate: ct(year, month, day, start, loc).UTC(),
@@ -49,14 +53,14 @@ func TestHasAllDayBlock(t *testing.T) {
 	t.Run("Only partial day blocks", func(t *testing.T) {
 		blocked := []domain.BlockedTimes{
 			{
-				AllDay:   false,
-				FromDate: ct(year, month, day-1, "10:00", tz),
-				ToDate:   ct(year, month, day, "11:00", tz),
+				IsAllDay: false,
+				FromDate: timePtr(ct(year, month, day-1, "10:00", tz)),
+				ToDate:   timePtr(ct(year, month, day, "11:00", tz)),
 			},
 			{
-				AllDay:   false,
-				FromDate: ct(year, month, day, "15:00", tz),
-				ToDate:   ct(year, month, day, "17:00", tz),
+				IsAllDay: false,
+				FromDate: timePtr(ct(year, month, day, "15:00", tz)),
+				ToDate:   timePtr(ct(year, month, day, "17:00", tz)),
 			},
 		}
 		assert.False(t, hasAllDayBlock(blocked))
@@ -66,14 +70,13 @@ func TestHasAllDayBlock(t *testing.T) {
 
 		blocked := []domain.BlockedTimes{
 			{
-				AllDay:   false,
-				FromDate: ct(year, month, day-1, "10:00", tz),
-				ToDate:   ct(year, month, day, "11:00", tz),
+				IsAllDay: false,
+				FromDate: timePtr(ct(year, month, day-1, "10:00", tz)),
+				ToDate:   timePtr(ct(year, month, day, "11:00", tz)),
 			},
 			{
-				AllDay:   true,
-				FromDate: ct(year, month, day, "00:00", tz),
-				ToDate:   ct(year, month, day+1, "00:00", tz),
+				IsAllDay:   true,
+				BlockedDay: timePtr(time.Date(year, month, day, 0, 0, 0, 0, time.UTC)),
 			},
 		}
 		assert.True(t, hasAllDayBlock(blocked))
@@ -108,9 +111,9 @@ func TestHasNoPhaseConflict(t *testing.T) {
 		reserved := []domain.BookingSlot{}
 
 		blocked := []domain.BlockedTimes{{
-			AllDay:   false,
-			FromDate: ct(year, month, day, "06:45", tz),
-			ToDate:   ct(year, month, day, "10:20", tz),
+			IsAllDay: false,
+			FromDate: timePtr(ct(year, month, day, "06:45", tz)),
+			ToDate:   timePtr(ct(year, month, day, "10:20", tz)),
 		}}
 
 		assert.False(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
@@ -187,9 +190,9 @@ func TestHasNoPhaseConflict(t *testing.T) {
 		reserved := []domain.BookingSlot{}
 
 		blocked := []domain.BlockedTimes{{
-			AllDay:   false,
-			FromDate: ct(year, month, day, "10:30", tz),
-			ToDate:   ct(year, month, day, "10:45", tz),
+			IsAllDay: false,
+			FromDate: timePtr(ct(year, month, day, "10:30", tz)),
+			ToDate:   timePtr(ct(year, month, day, "10:45", tz)),
 		}}
 
 		assert.True(t, hasNoPhaseConflict(bookingTime, phases, blocked, reserved, bufferZero, tz))
@@ -392,7 +395,7 @@ func TestCacluateAvailableDays(t *testing.T) {
 	day := 1
 
 	startDate := ct(year, month, day, "00:00", tz) // Tuesday
-	endDate := ct(year, month, day+2, "00:00", tz)
+	endDate := ct(year, month, day+3, "00:00", tz)
 
 	servicePhases := []domain.ServicePhase{{PhaseType: types.ServicePhaseTypeActive, Duration: 60}}
 
