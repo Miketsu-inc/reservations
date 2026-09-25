@@ -160,7 +160,7 @@ func CalculateAvailableDays(reservedForPeriod []domain.BookingSlot, blockedTimes
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
-	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+	for d := startDate.In(merchantTz); d.Before(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 
 		day := d.Format("2006-01-02")
@@ -212,7 +212,7 @@ func CalculateAvailableTimesPeriod(reservedForPeriod []domain.BookingSlot, block
 		reservationsByDate[date] = append(reservationsByDate[date], booking)
 	}
 
-	for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+	for d := startDate.In(merchantTz); d.Before(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 		businessHoursForDay := businessHours[int(d.Weekday())]
 		if len(businessHoursForDay) == 0 {
 			continue

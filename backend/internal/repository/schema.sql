@@ -329,7 +329,8 @@ create table if not exists "BlockedTime" (
     constraint blocked_time_value_shape check (
         (is_all_day and blocked_day is not null and from_date is null and to_date is null)
         or
-        (not is_all_day and blocked_day is null and from_date is not null and to_date is not null and from_date < to_date)
+        (not is_all_day and blocked_day is null and from_date is not null and to_date is not null
+            and from_date < to_date and to_date - from_date <= interval '24 hours')
     )
 );
 

@@ -48,7 +48,8 @@ type NewInput struct {
 	IsAllDay      bool
 }
 
-func validateDateShape(isAllDay bool, blockedDay, fromDate, toDate *time.Time) error {
+// TODO: validate that blocked_type_id belongs to the actor's merchant.
+func validateBlockedTime(isAllDay bool, blockedDay, fromDate, toDate *time.Time) error {
 	if isAllDay {
 		if blockedDay == nil || fromDate != nil || toDate != nil {
 			return ErrAllDayBlockedTimeDateRequired
@@ -65,6 +66,10 @@ func validateDateShape(isAllDay bool, blockedDay, fromDate, toDate *time.Time) e
 		return ErrInvalidBlockedTimeDateRange
 	}
 
+	if toDate.Sub(*fromDate) > 24*time.Hour {
+		return ErrBlockedTimeDurationTooLong
+	}
+
 	return nil
 }
 
@@ -79,7 +84,7 @@ func optionalTimesEqual(a, b *time.Time) bool {
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	if err := validateDateShape(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
+	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
 		return err
 	}
 
@@ -97,6 +102,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
+		// TODO: reject duplicate employee_ids with a validation error.
 		if len(input.EmployeeIds) > 0 {
 			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
 			if err != nil {
@@ -147,7 +153,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return ErrBlockedTimeNotFound
 	}
 
-	if err := validateDateShape(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
+	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
 		return err
 	}
 
@@ -166,6 +172,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return err
 		}
 
+		// TODO: reject duplicate employee_ids with a validation error.
 		employeeChanges, err := s.teamService.DetectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
 		if err != nil {
 			return err
@@ -192,7 +199,10 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			}
 		}
 
-		if blockedTime.IsAllDay != input.IsAllDay ||
+		if blockedTime.Name != input.Name ||
+			len(employeeChanges.ToDelete) > 0 ||
+			len(employeeChanges.ToInsert) > 0 ||
+			blockedTime.IsAllDay != input.IsAllDay ||
 			!optionalTimesEqual(blockedTime.BlockedDay, input.BlockedDay) ||
 			!optionalTimesEqual(blockedTime.FromDate, input.FromDate) ||
 			!optionalTimesEqual(blockedTime.ToDate, input.ToDate) {

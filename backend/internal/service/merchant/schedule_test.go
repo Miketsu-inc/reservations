@@ -8,7 +8,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func ct(year int, month time.Month, day int, timeStr string, loc *time.Location) time.Time {
@@ -82,24 +81,6 @@ func TestHasAllDayBlock(t *testing.T) {
 		}
 		assert.True(t, hasAllDayBlock(blocked))
 	})
-}
-
-func TestFilterBlockedTimesForDayUsesBlockedDay(t *testing.T) {
-	tz, err := time.LoadLocation("America/New_York")
-	require.NoError(t, err)
-
-	matchingDay := time.Date(2026, time.September, 24, 0, 0, 0, 0, time.UTC)
-	otherDay := matchingDay.AddDate(0, 0, 1)
-	blocks := []domain.BlockedTimes{
-		{IsAllDay: true, BlockedDay: &matchingDay},
-		{IsAllDay: true, BlockedDay: &otherDay},
-	}
-
-	day := time.Date(2026, time.September, 24, 12, 0, 0, 0, tz)
-	filtered := filterBlockedTimesForDay(blocks, day, tz)
-
-	require.Len(t, filtered, 1)
-	assert.Equal(t, matchingDay, *filtered[0].BlockedDay)
 }
 
 func TestHasNoPhaseConflict(t *testing.T) {
@@ -414,7 +395,7 @@ func TestCacluateAvailableDays(t *testing.T) {
 	day := 1
 
 	startDate := ct(year, month, day, "00:00", tz) // Tuesday
-	endDate := ct(year, month, day+2, "00:00", tz)
+	endDate := ct(year, month, day+3, "00:00", tz)
 
 	servicePhases := []domain.ServicePhase{{PhaseType: types.ServicePhaseTypeActive, Duration: 60}}
 

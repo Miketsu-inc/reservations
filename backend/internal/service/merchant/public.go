@@ -156,8 +156,6 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 	var availableSlots []MultiDayAvailableTimes
 
 	dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
-	startDate = startDate.UTC()
-	endDate = endDate.UTC()
 
 	if service.BookingType == types.BookingTypeAppointment {
 
@@ -166,12 +164,12 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 			return []MultiDayAvailableTimes{}, err
 		}
 
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, startDate, endDate)
+		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return []MultiDayAvailableTimes{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return []MultiDayAvailableTimes{}, err
 		}
@@ -182,11 +180,11 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 		}
 
 		now := time.Now()
-		availableSlots = CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+		availableSlots = CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 	} else {
 
-		groupBookings, err := s.bookingRepo.GetAvailableGroupBookingsForPeriod(ctx, merchantId, serviceId, locationId, startDate, endDate)
+		groupBookings, err := s.bookingRepo.GetAvailableGroupBookingsForPeriod(ctx, merchantId, serviceId, locationId, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return []MultiDayAvailableTimes{}, err
 		}
@@ -199,7 +197,7 @@ func (s *Service) GetAvailability(ctx context.Context, merchantName string, serv
 			bookingsByDate[date] = append(bookingsByDate[date], fromDate)
 		}
 
-		for d := startDate.In(merchantTz); !d.After(endDate.In(merchantTz)); d = d.AddDate(0, 0, 1) {
+		for d := dateRange.StartTime.In(merchantTz); d.Before(dateRange.EndTime.In(merchantTz)); d = d.AddDate(0, 0, 1) {
 			date := d.Format("2006-01-02")
 
 			var morning []string
@@ -269,12 +267,12 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 
 		// TODO: should be rewritten to ensure maximal availability
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, startDate, endDate)
+		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return NextAvailable{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return NextAvailable{}, err
 		}
@@ -284,7 +282,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+		availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 		var na NextAvailable
 		var dateStr, timeStr string
@@ -438,17 +436,17 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 	dayAvailabilityMap := make(map[string]bool)
 
 	for _, empId := range employeeIds {
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, startDate, endDate)
+		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
 		if err != nil {
 			return []DayAvailability{}, err
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, startDate, endDate, dateRange.StartDay, dateRange.EndDay)
+		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 		if err != nil {
 			return []DayAvailability{}, err
 		}
 
-		empDayAvailability := CalculateAvailableDays(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, startDate, endDate, businessHours, now, merchantTz)
+		empDayAvailability := CalculateAvailableDays(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 		for _, day := range empDayAvailability {
 			dayAvailabilityMap[day.Date] = dayAvailabilityMap[day.Date] || day.IsAvailable
