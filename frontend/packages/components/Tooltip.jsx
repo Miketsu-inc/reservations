@@ -26,7 +26,7 @@ export function TooltipContent({ styles, sideOffset = 4, children, ...props }) {
           data-[side=bottom]:slide-in-from-top-2
           data-[side=left]:slide-in-from-right-2
           data-[side=right]:slide-in-from-left-2
-          data-[side=top]:slide-in-from-bottom-2 border-border_color z-50 w-fit
+          data-[side=top]:slide-in-from-bottom-2 border-border_color z-70 w-fit
           origin-(--radix-tooltip-content-transform-origin) rounded-lg border
           p-2 text-xs text-balance shadow-md dark:shadow-gray-950`}
         sideOffset={sideOffset}

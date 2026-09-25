@@ -2,6 +2,8 @@ import {
   Button,
   CloseButton,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   Textarea,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -72,72 +74,83 @@ export default function CancelBookingModal({
   }
 
   return (
-    <ResponsiveDialog styles="w-full" isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={deleteBookingHandler} className="h-auto p-6 sm:w-130">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-medium">Cancel booking</p>
-              <CloseButton styles="hidden lg:block" onClick={onClose} />
-            </div>
-            {isRecurring && (
-              <div className="flex flex-col gap-3 sm:flex-row">
-                {options.map((opt) => {
-                  const active = selected === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setSelected(opt.id)}
-                      className={`flex flex-1 cursor-pointer flex-col gap-2
-                      rounded-lg border px-4 py-4 text-left transition-all ${
-                        active
-                          ? "border-primary bg-primary/5 "
-                          : `border-input_border_color hover:bg-gray-50
-                            dark:hover:bg-gray-700/10`
-                      }`}
-                    >
-                      <span className="flex flex-col gap-1">
-                        <span
-                          className={"text-text_color/90 text-sm font-semibold"}
-                        >
-                          {opt.label}
-                        </span>
-                        <span
-                          className="text-xs leading-relaxed text-gray-500
-                            dark:text-gray-400"
-                        >
-                          {opt.description}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
+    <ResponsiveDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ResponsiveDialogContent styles="w-full">
+        <form onSubmit={deleteBookingHandler} className="h-auto p-6 sm:w-130">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <p className="text-lg font-medium">Cancel booking</p>
+                <ResponsiveDialogClose asChild>
+                  <CloseButton styles="hidden lg:block" />
+                </ResponsiveDialogClose>
               </div>
-            )}
-            <p className="py-2 text-sm">
-              You can give a cancellation reason here, which will be included in
-              the cancellation email sent to the customer.
-            </p>
+              {isRecurring && (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  {options.map((opt) => {
+                    const active = selected === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setSelected(opt.id)}
+                        className={`flex flex-1 cursor-pointer flex-col gap-2
+                        rounded-lg border px-4 py-4 text-left transition-all ${
+                          active
+                            ? "border-primary bg-primary/5 "
+                            : `border-input_border_color hover:bg-gray-50
+                              dark:hover:bg-gray-700/10`
+                        }`}
+                      >
+                        <span className="flex flex-col gap-1">
+                          <span
+                            className={
+                              "text-text_color/90 text-sm font-semibold"
+                            }
+                          >
+                            {opt.label}
+                          </span>
+                          <span
+                            className="text-xs leading-relaxed text-gray-500
+                              dark:text-gray-400"
+                          >
+                            {opt.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="py-2 text-sm">
+                You can give a cancellation reason here, which will be included
+                in the cancellation email sent to the customer.
+              </p>
+            </div>
+            <Textarea
+              styles="p-2 max-h-24 min-h-24 text-sm"
+              id="deletion_reason"
+              name="deletion reason"
+              labelText="Deletion reason"
+              required={false}
+              placeholder="About this cutomer..."
+            />
           </div>
-          <Textarea
-            styles="p-2 max-h-24 min-h-24 text-sm"
-            id="deletion_reason"
-            name="deletion reason"
-            labelText="Deletion reason"
-            required={false}
-            placeholder="About this cutomer..."
-          />
-        </div>
-        <div className="flex justify-end pt-4">
-          <Button
-            styles="px-4 py-2 w-full lg:w-auto"
-            buttonText="Cancel"
-            variant="danger"
-            type="submit"
-          />
-        </div>
-      </form>
+          <div className="flex justify-end pt-4">
+            <Button
+              styles="px-4 py-2 w-full lg:w-auto"
+              buttonText="Cancel"
+              variant="danger"
+              type="submit"
+            />
+          </div>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

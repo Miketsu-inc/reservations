@@ -239,8 +239,8 @@ function CustomerDetailsPage() {
       />
       <DeleteModal
         itemName={`${data.first_name} ${data.last_name}`}
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
         onDelete={() => deleteHandler(data.id)}
       />
       <div

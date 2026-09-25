@@ -123,8 +123,8 @@ export default function ProductsTable({
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <DeleteModal
         itemName={selected.name}
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
         onDelete={() => onDelete(selected)}
       ></DeleteModal>
       <Suspense fallback={<Loading />}>

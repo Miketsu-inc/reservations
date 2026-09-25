@@ -34,8 +34,8 @@ function lowStockProductsQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "low-stock-products"],
     queryFn: () => fetchLowStockProducts(merchantId),
-    staleTime: 30_000,
-    gcTime: 5 * 60 * 1000,
+    // staleTime: 30_000,
+    // gcTime: 5 * 60 * 1000,
   });
 }
 

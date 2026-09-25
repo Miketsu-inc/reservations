@@ -2,12 +2,15 @@ import {
   Button,
   Input,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogTrigger,
   ServerError,
 } from "@reservations/components";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
+export default function MerchantNameModal({ trigger, onSubmit }) {
   const [newName, setNewName] = useState("");
   const [merchantUrl, setMerchantUrl] = useState({ valid: false, url: "" });
   const [serverError, setServerError] = useState("");
@@ -15,6 +18,7 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
 
   const keyUpTimer = useRef(null);
   const requestId = useRef(0);
+  const dialogActionsRef = useRef(null);
 
   useEffect(() => {
     return () => clearTimeout(keyUpTimer.current);
@@ -74,63 +78,77 @@ export default function MerchantNameModal({ isOpen, onClose, onSubmit }) {
     setIsSubmitting(true);
     const didSave = await onSubmit(newName);
     setIsSubmitting(false);
-    if (didSave) onClose();
+    if (didSave) dialogActionsRef.current?.close();
+  }
+
+  function resetForm() {
+    clearTimeout(keyUpTimer.current);
+    requestId.current += 1;
+    setNewName("");
+    setMerchantUrl({ valid: false, url: "" });
+    setServerError("");
   }
 
   return (
-    <ResponsiveDialog styles="lg:max-w-xl" isOpen={isOpen} onClose={onClose}>
-      <form className="m-4 flex flex-col gap-4" onSubmit={handleSubmit}>
-        <h2 className="text-xl font-semibold">Change Merchant Name</h2>
-        <p className="text-gray-700 dark:text-gray-300">
-          Changing your merchant name will also change your booking page URL.
-          Any customers with the old URL will no longer be able to access it.
-        </p>
+    <ResponsiveDialog
+      actionsRef={dialogActionsRef}
+      onOpenChange={(open) => {
+        if (!open) resetForm();
+      }}
+    >
+      <ResponsiveDialogTrigger asChild>{trigger}</ResponsiveDialogTrigger>
+      <ResponsiveDialogContent styles="lg:max-w-xl">
+        <form className="m-4 flex flex-col gap-4" onSubmit={handleSubmit}>
+          <h2 className="text-xl font-semibold">Change Merchant Name</h2>
+          <p className="text-gray-700 dark:text-gray-300">
+            Changing your merchant name will also change your booking page URL.
+            Any customers with the old URL will no longer be able to access it.
+          </p>
 
-        <ServerError styles="mt-4 mb-2" error={serverError} />
+          <ServerError styles="mt-4 mb-2" error={serverError} />
 
-        <Input
-          type="text"
-          labelText="New Merchant Name"
-          name="merchant_name"
-          value={newName}
-          inputData={handleInputData}
-          placeholder="My Company Ltd."
-        />
+          <Input
+            type="text"
+            labelText="New Merchant Name"
+            name="merchant_name"
+            value={newName}
+            inputData={handleInputData}
+            placeholder="My Company Ltd."
+          />
 
-        <p
-          className={`${merchantUrl.url ? "" : "invisible"} text-sm
-            dark:text-gray-400`}
-        >
-          <span
-            className={`${merchantUrl.valid ? "text-text_color" : "text-red-600"}`}
+          <p
+            className={`${merchantUrl.url ? "" : "invisible"} text-sm
+              dark:text-gray-400`}
           >
-            {merchantUrl.valid
-              ? `Your URL will be: https://miketsu.com/m/${merchantUrl.url}`
-              : `The name '${merchantUrl.url}' is already taken.`}
-          </span>
-        </p>
+            <span
+              className={`${merchantUrl.valid ? "text-text_color" : "text-red-600"}`}
+            >
+              {merchantUrl.valid
+                ? `Your URL will be: https://miketsu.com/m/${merchantUrl.url}`
+                : `The name '${merchantUrl.url}' is already taken.`}
+            </span>
+          </p>
 
-        <div className="mt-1 flex justify-end gap-3">
-          <Button
-            variant="tertiary"
-            styles="p-2 hidden lg:block"
-            buttonText="Cancel"
-            onClick={() => {
-              setNewName("");
-              setMerchantUrl({ valid: false, url: "" });
-              onClose();
-            }}
-          />
-          <Button
-            variant="primary"
-            type="submit"
-            buttonText="Change Name"
-            styles="p-2 w-full lg:w-auto"
-            disabled={!merchantUrl.valid || isSubmitting}
-            isLoading={isSubmitting}
-          />
-        </div>
-      </form>
+          <div className="mt-1 flex justify-end gap-3">
+            <ResponsiveDialogClose asChild>
+              <Button
+                variant="tertiary"
+                styles="p-2 hidden lg:block"
+                buttonText="Cancel"
+                type="button"
+              />
+            </ResponsiveDialogClose>
+            <Button
+              variant="primary"
+              type="submit"
+              buttonText="Change Name"
+              styles="p-2 w-full lg:w-auto"
+              disabled={!merchantUrl.valid || isSubmitting}
+              isLoading={isSubmitting}
+            />
+          </div>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

@@ -60,7 +60,6 @@ export default function ParticipantManager({
   });
 
   const [activeProfile, setActiveProfile] = useState(null);
-  const [isAddNewOpen, setIsAddNewOpen] = useState(false);
 
   const { isWindowSmall } = useWindowSize();
 
@@ -75,7 +74,6 @@ export default function ParticipantManager({
 
   const handleSaveNewCustomer = (newCustomer) => {
     onAdd([...participants, newCustomer]);
-    setIsAddNewOpen(false);
   };
 
   const ActiveNestedContent = (
@@ -109,11 +107,6 @@ export default function ParticipantManager({
 
   return (
     <div className="bg-layer_bg relative flex h-full w-full flex-col">
-      <NewCustomerOverlay
-        onSave={handleSaveNewCustomer}
-        onClose={() => setIsAddNewOpen(false)}
-        isOpen={isAddNewOpen}
-      />
       {isWindowSmall ? (
         <Drawer
           open={nestedPageState.isOpen}
@@ -158,24 +151,28 @@ export default function ParticipantManager({
           </div>
           {!disabled ? (
             <div className="flex flex-col gap-2">
-              <button
-                className="flex w-full cursor-pointer items-center gap-4
-                  rounded-lg px-3 py-2 hover:bg-gray-200/40
-                  dark:hover:bg-gray-700/20"
-                onClick={() => setIsAddNewOpen(true)}
-              >
-                <div
-                  className="bg-primary/20 text-primary flex size-14 shrink-0
-                    items-center justify-center rounded-full"
-                >
-                  <Icon icon={PlusSignIcon} styles="size-6" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-text_color font-medium">
-                    Add New Customer
-                  </span>
-                </div>
-              </button>
+              <NewCustomerOverlay
+                onSave={handleSaveNewCustomer}
+                trigger={
+                  <button
+                    className="flex w-full cursor-pointer items-center gap-4
+                      rounded-lg px-3 py-2 hover:bg-gray-200/40
+                      dark:hover:bg-gray-700/20"
+                  >
+                    <div
+                      className="bg-primary/20 text-primary flex size-14
+                        shrink-0 items-center justify-center rounded-full"
+                    >
+                      <Icon icon={PlusSignIcon} styles="size-6" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-text_color font-medium">
+                        Add New Customer
+                      </span>
+                    </div>
+                  </button>
+                }
+              />
               <button
                 className="flex w-full cursor-pointer items-center gap-4
                   rounded-lg px-3 py-2 hover:bg-gray-200/40

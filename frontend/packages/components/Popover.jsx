@@ -63,7 +63,7 @@ export function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Backdrop />
       <PopoverPrimitive.Positioner
-        className="z-50"
+        className="z-70"
         align={align}
         side={side}
         sideOffset={sideOffset}

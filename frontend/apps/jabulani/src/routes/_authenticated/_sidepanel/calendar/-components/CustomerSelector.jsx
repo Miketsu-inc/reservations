@@ -19,7 +19,6 @@ export default function CustomerSelector({
 }) {
   const [searchText, setSearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState(selected);
-  const [isAddNewOpen, setIsAddNewOpen] = useState(false);
 
   const { isWindowSmall: isInDrawer } = useWindowSize();
 
@@ -50,7 +49,6 @@ export default function CustomerSelector({
 
   function handleNewCustomer(customer) {
     onSave([customer]);
-    setIsAddNewOpen(false);
   }
 
   return (
@@ -75,22 +73,21 @@ export default function CustomerSelector({
 
       {!isGroupMode && (
         <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
-          <CustomerRow
-            variant="action"
-            label="Add new client"
-            icon={<Icon icon={PlusSignIcon} styles="size-6" />}
-            onClick={() => setIsAddNewOpen(true)}
-          />
           <NewCustomerOverlay
-            onClose={() => setIsAddNewOpen(false)}
             onSave={handleNewCustomer}
-            isOpen={isAddNewOpen}
+            trigger={
+              <CustomerRow
+                variant="action"
+                label="Add new client"
+                icon={<Icon icon={PlusSignIcon} styles="size-6" />}
+              />
+            }
           />
           <CustomerRow
             variant="action"
             label="Walk-In"
             icon={<Icon icon={WalkingIcon} styles="size-6" />}
-            onClick={() => onSave([])}
+            onSelect={() => onSave([])}
           />
         </ul>
       )}
@@ -109,7 +106,7 @@ export default function CustomerSelector({
                   customer={customer}
                   variant="customer"
                   isSelected={isSelected}
-                  onClick={handleCustomerClick}
+                  onSelect={handleCustomerClick}
                   isGroupMode={isGroupMode}
                 />
               </li>
@@ -135,22 +132,24 @@ export default function CustomerSelector({
 }
 
 function CustomerRow({
-  onClick,
+  onSelect,
   customer,
   icon,
   label,
   variant = "customer",
   isSelected = false,
   isGroupMode,
+  ...props
 }) {
   const isAction = variant === "action";
 
   return (
     <button
-      onClick={() => onClick(customer)}
+      onClick={onSelect ? () => onSelect(customer) : undefined}
       className="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3
         py-2 text-left transition-all hover:bg-gray-200/40
         dark:hover:bg-gray-700/10"
+      {...props}
     >
       {isAction ? (
         <div

@@ -233,8 +233,8 @@ function ServicesPage() {
       <div className="w-full max-w-4xl">
         <DeleteModal
           itemName={selected.name}
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
           onDelete={() => deleteHandler(selected)}
         />
         <AddServiceCategoryModal

@@ -5,6 +5,7 @@ export default function DangerZoneItem({
   description,
   buttonText,
   onClick,
+  action,
 }) {
   return (
     <div
@@ -15,12 +16,14 @@ export default function DangerZoneItem({
         <span className="font-semibold">{title}</span>
         <span className="text-text_color/70">{description}</span>
       </div>
-      <Button
-        onClick={onClick}
-        variant="danger"
-        styles="py-1 px-2 w-fit"
-        buttonText={buttonText}
-      />
+      {action ?? (
+        <Button
+          onClick={onClick}
+          variant="danger"
+          styles="py-1 px-2 w-fit"
+          buttonText={buttonText}
+        />
+      )}
     </div>
   );
 }

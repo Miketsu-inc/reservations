@@ -1,8 +1,15 @@
-import { Button, Input, ResponsiveDialog } from "@reservations/components";
+import {
+  Button,
+  Input,
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogTrigger,
+} from "@reservations/components";
 import { useToast } from "@reservations/lib";
 import { useState } from "react";
 
-export default function ChangePasswordModal({ isOpen, onClose }) {
+export default function ChangePasswordModal({ trigger }) {
   const [passwords, setPasswords] = useState({
     oldPassword: "",
     newPassword: "",
@@ -49,49 +56,54 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   }
 
   return (
-    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={submitHandler} className="w-full p-4">
-        <p className="mb-6 text-xl">Change password</p>
-        <div className="flex flex-col gap-4">
-          <Input
-            name="OldPassword"
-            type="password"
-            labelText="Old password"
-            inputData={(data) => updatePasswords({ oldPassword: data.value })}
-            value={passwords.oldPassword}
-          />
-          <Input
-            name="NewPassword"
-            type="password"
-            labelText="New password"
-            inputData={(data) => updatePasswords({ newPassword: data.value })}
-            value={passwords.newPassword}
-          />
-          <Input
-            name="ConfirmNewPassword"
-            type="password"
-            labelText="Confirm new password"
-            inputData={(data) =>
-              updatePasswords({ confirmNewPassword: data.value })
-            }
-            value={passwords.confirmNewPassword}
-          />
-          <div className="flex flex-row items-center justify-end gap-2 pt-4">
-            <Button
-              variant="tertiary"
-              styles="px-4 py-2 hidden lg:block"
-              buttonText="Close"
-              onClick={onClose}
+    <ResponsiveDialog>
+      <ResponsiveDialogTrigger asChild>{trigger}</ResponsiveDialogTrigger>
+      <ResponsiveDialogContent>
+        <form onSubmit={submitHandler} className="w-full p-4">
+          <p className="mb-6 text-xl">Change password</p>
+          <div className="flex flex-col gap-4">
+            <Input
+              name="OldPassword"
+              type="password"
+              labelText="Old password"
+              inputData={(data) => updatePasswords({ oldPassword: data.value })}
+              value={passwords.oldPassword}
             />
-            <Button
-              type="submit"
-              styles="px-4 py-2 w-full lg:w-auto"
-              buttonText="Update"
-              disabled={!doNewPasswordsMatch}
+            <Input
+              name="NewPassword"
+              type="password"
+              labelText="New password"
+              inputData={(data) => updatePasswords({ newPassword: data.value })}
+              value={passwords.newPassword}
             />
+            <Input
+              name="ConfirmNewPassword"
+              type="password"
+              labelText="Confirm new password"
+              inputData={(data) =>
+                updatePasswords({ confirmNewPassword: data.value })
+              }
+              value={passwords.confirmNewPassword}
+            />
+            <div className="flex flex-row items-center justify-end gap-2 pt-4">
+              <ResponsiveDialogClose asChild>
+                <Button
+                  variant="tertiary"
+                  styles="px-4 py-2 hidden lg:block"
+                  buttonText="Close"
+                  type="button"
+                />
+              </ResponsiveDialogClose>
+              <Button
+                type="submit"
+                styles="px-4 py-2 w-full lg:w-auto"
+                buttonText="Update"
+                disabled={!doNewPasswordsMatch}
+              />
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

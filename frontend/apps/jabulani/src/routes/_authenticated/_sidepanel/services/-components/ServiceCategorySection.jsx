@@ -62,8 +62,8 @@ export default function ServiceCategorySection({
     <div className="border-border_color overflow-hidden rounded-lg">
       <DeleteModal
         itemName={category.name}
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
         onDelete={deleteHandler}
       />
       <EditServiceCategoryModal

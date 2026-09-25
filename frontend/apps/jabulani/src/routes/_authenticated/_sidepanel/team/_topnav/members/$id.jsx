@@ -108,8 +108,8 @@ function RouteComponent() {
       <ServerError error={serverError} />
       <DeleteModal
         itemName={`${employee.first_name} ${employee.last_name}`}
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
         onDelete={deleteHandler}
       />
       <div

@@ -1,4 +1,10 @@
-import { Button, Input, ResponsiveDialog } from "@reservations/components";
+import {
+  Button,
+  Input,
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+} from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useState } from "react";
@@ -57,36 +63,44 @@ export default function EditServiceCategoryModal({
   }
 
   return (
-    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
-      <form className="w-full p-4 md:w-lg" onSubmit={submitHandler}>
-        <p className="pb-8 text-xl font-semibold">Edit category</p>
-        <div className="flex flex-col gap-6">
-          <Input
-            id="CategoryName"
-            name="CategoryName"
-            type="text"
-            labelText="Category name"
-            placeholder="e.g. hair"
-            value={categoryData.name}
-            inputData={(data) => updateCategoryData({ name: data.value })}
-          />
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              styles="py-2 px-4 hidden lg:block"
-              buttonText="Cancel"
-              variant="tertiary"
-              type="button"
-              onClick={onClose}
+    <ResponsiveDialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ResponsiveDialogContent>
+        <form className="w-full p-4 md:w-lg" onSubmit={submitHandler}>
+          <p className="pb-8 text-xl font-semibold">Edit category</p>
+          <div className="flex flex-col gap-6">
+            <Input
+              id="CategoryName"
+              name="CategoryName"
+              type="text"
+              labelText="Category name"
+              placeholder="e.g. hair"
+              value={categoryData.name}
+              inputData={(data) => updateCategoryData({ name: data.value })}
             />
-            <Button
-              styles="py-2 px-4 w-full lg:w-auto"
-              buttonText="Save"
-              variant="primary"
-              type="submit"
-            />
+            <div className="flex items-center justify-end gap-2">
+              <ResponsiveDialogClose asChild>
+                <Button
+                  styles="py-2 px-4 hidden lg:block"
+                  buttonText="Cancel"
+                  variant="tertiary"
+                  type="button"
+                />
+              </ResponsiveDialogClose>
+              <Button
+                styles="py-2 px-4 w-full lg:w-auto"
+                buttonText="Save"
+                variant="primary"
+                type="submit"
+              />
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

@@ -141,8 +141,8 @@ export default function ServicePage({
     >
       {service && (
         <DeleteModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
           onDelete={deleteHandler}
           itemName={service.name}
         />
@@ -212,9 +212,7 @@ export default function ServicePage({
                       />
                     </ScrollSpySection>
                     <ScrollSpySection id="teamMembers" label="Team members">
-                      <p className="mb-8 text-xl font-semibold">
-                        Team members
-                      </p>
+                      <p className="mb-8 text-xl font-semibold">Team members</p>
                       <TeamMemberMultiSelect
                         values={serviceData.employee_ids}
                         onSelect={(employeeIds) =>

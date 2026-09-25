@@ -1,98 +1,58 @@
-import { useClickOutside } from "@reservations/lib";
-import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { Dialog as DialogPrimitive } from "@base-ui/react";
+import React from "react";
 
-export default function Modal({
-  styles,
-  zindex = 40,
-  suspendCloseOnClickOutside = false,
-  disableFocusTrap = false,
-  isOpen,
-  onClose,
-  children,
-  ...props
-}) {
-  const modalRef = useRef();
-  const onCloseRef = useRef(onClose);
+export function Modal({ ...props }) {
+  return <DialogPrimitive.Root {...props} />;
+}
 
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useClickOutside(modalRef, onClose, isOpen && !suspendCloseOnClickOutside);
-
-  useEffect(() => {
-    if (isOpen) {
-      const modal = modalRef.current;
-      const previouslyFocused = document.activeElement;
-
-      modal?.focus();
-
-      const keyDownHandler = (event) => {
-        if (event.key === "Escape") onCloseRef.current?.();
-      };
-      document.addEventListener("keydown", keyDownHandler);
-
-      let removeFocusTrap = () => {};
-
-      if (!disableFocusTrap) {
-        const focusOutHandler = (event) => {
-          if (!modal?.contains(event.relatedTarget)) modal?.focus();
-        };
-
-        modal?.addEventListener("focusout", focusOutHandler);
-        removeFocusTrap = () =>
-          modal?.removeEventListener("focusout", focusOutHandler);
-      }
-
-      return () => {
-        document.removeEventListener("keydown", keyDownHandler);
-        removeFocusTrap();
-        previouslyFocused?.focus?.();
-      };
-    }
-
-    return;
-  }, [disableFocusTrap, isOpen]);
-
+export function ModalTrigger({ asChild = false, children, ...props }) {
   return (
-    <>
-      {isOpen &&
-        createPortal(
-          <>
-            <div
-              aria-hidden="true"
-              className={"fixed inset-0 bg-black/45"}
-              style={{ zIndex: zindex }}
-            ></div>
-            <div
-              className="fixed inset-0 flex w-full items-center justify-center
-                p-4"
-              style={{ zIndex: zindex }}
-            >
-              <div
-                role="dialog"
-                aria-modal="true"
-                tabIndex={-1}
-                {...props}
-                className={`${styles} bg-layer_bg text-text_color
-                dark:border-border_color w-full rounded-lg shadow-lg
-                shadow-gray-500 transition-all focus:outline-none sm:w-fit
-                dark:border dark:shadow-md dark:shadow-gray-950`}
-                ref={modalRef}
-              >
-                {children}
-              </div>
-            </div>
-            {/* This is needed to trap focus and make tabbing loop */}
-            <span
-              aria-hidden="true"
-              tabIndex={0}
-              className="pointer-events-none fixed opacity-0 outline-none"
-            ></span>
-          </>,
-          document.body
-        )}
-    </>
+    <DialogPrimitive.Trigger
+      render={
+        asChild &&
+        (React.isValidElement(children) || typeof children === "function")
+          ? children
+          : undefined
+      }
+      {...props}
+    >
+      {asChild ? undefined : children}
+    </DialogPrimitive.Trigger>
+  );
+}
+
+export function ModalContent({ styles = "", ...props }) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Backdrop className="fixed inset-0 bg-black/45" />
+      <DialogPrimitive.Viewport
+        className="fixed inset-0 z-60 flex w-full items-center justify-center
+          p-4"
+      >
+        <DialogPrimitive.Popup
+          className={`${styles} bg-layer_bg text-text_color
+            dark:border-border_color w-full rounded-lg shadow-lg shadow-gray-500
+            transition-all focus:outline-none sm:w-fit dark:border
+            dark:shadow-md dark:shadow-gray-950`}
+          {...props}
+        />
+      </DialogPrimitive.Viewport>
+    </DialogPrimitive.Portal>
+  );
+}
+
+export function ModalClose({ asChild = false, children, ...props }) {
+  return (
+    <DialogPrimitive.Close
+      render={
+        asChild &&
+        (React.isValidElement(children) || typeof children === "function")
+          ? children
+          : undefined
+      }
+      {...props}
+    >
+      {asChild ? undefined : children}
+    </DialogPrimitive.Close>
   );
 }

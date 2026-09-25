@@ -3,26 +3,27 @@ import {
   CloseButton,
   Input,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogTrigger,
 } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-export default function NewCustomerOverlay({ onSave, onClose, isOpen }) {
-  const [isPhoneCountrySelectOpen, setIsPhoneCountrySelectOpen] =
-    useState(false);
+export default function NewCustomerOverlay({ onSave, trigger }) {
+  const dialogActionsRef = useRef(null);
+
+  function handleSave(customer) {
+    onSave(customer);
+    dialogActionsRef.current?.close();
+  }
 
   return (
-    <ResponsiveDialog
-      isOpen={isOpen}
-      onClose={onClose}
-      disableFocusTrap={true}
-      suspendCloseOnClickOutside={isPhoneCountrySelectOpen}
-    >
-      <NewCustomerForm
-        onSave={onSave}
-        onClose={onClose}
-        setSelectOpen={setIsPhoneCountrySelectOpen}
-      />
+    <ResponsiveDialog actionsRef={dialogActionsRef}>
+      <ResponsiveDialogTrigger asChild>{trigger}</ResponsiveDialogTrigger>
+      <ResponsiveDialogContent>
+        <NewCustomerForm onSave={handleSave} />
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }
@@ -34,7 +35,7 @@ const defaultCustomerData = {
   phone_number: "",
 };
 
-function NewCustomerForm({ onSave, onClose, setSelectOpen }) {
+function NewCustomerForm({ onSave }) {
   const { isWindowSmall } = useWindowSize();
   const [customerData, setCustomerData] = useState(defaultCustomerData);
 
@@ -68,7 +69,11 @@ function NewCustomerForm({ onSave, onClose, setSelectOpen }) {
     >
       <div className="flex justify-between">
         <p className="text-lg font-medium">Create Customer</p>{" "}
-        {!isWindowSmall && <CloseButton onClick={onClose} />}
+        {!isWindowSmall && (
+          <ResponsiveDialogClose asChild>
+            <CloseButton />
+          </ResponsiveDialogClose>
+        )}
       </div>
       <div className="flex w-full flex-col gap-3">
         <Input
@@ -108,7 +113,6 @@ function NewCustomerForm({ onSave, onClose, setSelectOpen }) {
           required={false}
           value={customerData.phone_number}
           inputData={(data) => updateCustomerData({ phone_number: data.value })}
-          onOpenChange={(open) => setSelectOpen(open)}
         />
       </div>
       <Button

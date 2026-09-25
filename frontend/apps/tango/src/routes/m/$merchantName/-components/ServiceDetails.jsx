@@ -12,6 +12,7 @@ import {
   DrawerContent,
   Icon,
   Modal,
+  ModalContent,
   ServerError,
 } from "@reservations/components";
 import {
@@ -103,17 +104,24 @@ export default function ServiceDetails({
       </DrawerContent>
     </Drawer>
   ) : (
-    <Modal isOpen={isOpen} onClose={onClose} styles="px-6 pb-4 pt-1">
-      <DetailsContent
-        nextAvailable={nextAvailable}
-        service={service}
-        onClose={onClose}
-        hasAvailable={hasAvailableSlot}
-        category={category}
-        isLoading={isLoading}
-        router={router}
-        locationId={locationId}
-      />
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent styles="px-6 pb-4 pt-1">
+        <DetailsContent
+          nextAvailable={nextAvailable}
+          service={service}
+          onClose={onClose}
+          hasAvailable={hasAvailableSlot}
+          category={category}
+          isLoading={isLoading}
+          router={router}
+          locationId={locationId}
+        />
+      </ModalContent>
     </Modal>
   );
 }

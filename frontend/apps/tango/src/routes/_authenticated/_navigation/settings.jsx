@@ -12,7 +12,6 @@ import {
 } from "@reservations/components";
 import { useTheme, useToast, useWindowSize } from "@reservations/lib";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import ChangePasswordModal from "./-components/ChangePasswordModal";
 
 export const Route = createFileRoute("/_authenticated/_navigation/settings")({
@@ -23,9 +22,6 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { isWindowSmall } = useWindowSize();
   const { showToast } = useToast();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
-    useState(false);
 
   const { isDarkTheme, switchTheme } = useTheme();
 
@@ -73,20 +69,28 @@ function RouteComponent() {
         <div className="flex flex-col gap-4">
           <Card>
             <p className="mb-4 text-lg">Change password</p>
-            <Button
-              styles="px-4 py-2"
-              variant="danger"
-              buttonText="Update password"
-              onClick={() => setIsChangePasswordModalOpen(true)}
+            <ChangePasswordModal
+              trigger={
+                <Button
+                  styles="px-4 py-2"
+                  variant="danger"
+                  buttonText="Update password"
+                />
+              }
             />
           </Card>
           <Card>
             <p className="mb-4 text-lg">Delete account</p>
-            <Button
-              styles="px-4 py-2"
-              variant="danger"
-              buttonText="Delete account"
-              onClick={() => setIsDeleteModalOpen(true)}
+            <DeleteModal
+              onDelete={deleteHandler}
+              itemName="your user account"
+              trigger={
+                <Button
+                  styles="px-4 py-2"
+                  variant="danger"
+                  buttonText="Delete account"
+                />
+              }
             />
           </Card>
           {isWindowSmall && (
@@ -125,16 +129,6 @@ function RouteComponent() {
             </>
           )}
         </div>
-        <DeleteModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onDelete={deleteHandler}
-          itemName="your user account"
-        />
-        <ChangePasswordModal
-          isOpen={isChangePasswordModalOpen}
-          onClose={() => setIsChangePasswordModalOpen(false)}
-        />
       </div>
     </div>
   );

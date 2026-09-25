@@ -3,6 +3,8 @@ import {
   CloseButton,
   Input,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   Select,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -40,7 +42,6 @@ export default function BlockedTypesModal({
 }) {
   const { showToast } = useToast();
   const { merchantId } = useAuth();
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [formData, setFormData] = useState({
     id: editData?.id || null,
     icon: editData?.icon || "⏰",
@@ -51,6 +52,11 @@ export default function BlockedTypesModal({
 
   function updateFormData(data) {
     setFormData((prev) => ({ ...prev, ...data }));
+  }
+
+  function handleClose() {
+    setFormData(defaultFormData);
+    onClose();
   }
 
   async function handleSubmit(e) {
@@ -108,8 +114,7 @@ export default function BlockedTypesModal({
           variant: "success",
         });
         onSubmit();
-        setFormData(defaultFormData);
-        onClose();
+        handleClose();
       }
     } catch (err) {
       showToast({ message: err.message, variant: "error" });
@@ -118,114 +123,105 @@ export default function BlockedTypesModal({
 
   return (
     <ResponsiveDialog
-      styles="max-w-md"
-      isOpen={isOpen}
-      onClose={() => {
-        onClose();
-        setFormData(defaultFormData);
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
       }}
-      disableFocusTrap={true}
-      suspendCloseOnClickOutside={isSelectOpen}
     >
-      <form
-        className="flex flex-col gap-4 p-6"
-        id="BlockedTimeTypeForm"
-        onSubmit={handleSubmit}
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-text_color text-lg font-semibold">
-            {editData ? "Edit Blocked Time Type" : "New Blocked Time Type"}
+      <ResponsiveDialogContent styles="max-w-md">
+        <form
+          className="flex flex-col gap-4 p-6"
+          id="BlockedTimeTypeForm"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-text_color text-lg font-semibold">
+              {editData ? "Edit Blocked Time Type" : "New Blocked Time Type"}
+            </div>
+            <ResponsiveDialogClose asChild>
+              <CloseButton styles="hidden lg:block" />
+            </ResponsiveDialogClose>
           </div>
-          <CloseButton
-            styles="hidden lg:block"
-            onClick={() => {
-              onClose();
-              setFormData(defaultFormData);
-            }}
-          />
-        </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-text_color font-medium">Icon</label>
-            <div className="flex flex-wrap justify-center gap-2">
-              {commonEmojis.map((icon) => (
-                <button
-                  key={icon}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-text_color font-medium">Icon</label>
+              <div className="flex flex-wrap justify-center gap-2">
+                {commonEmojis.map((icon) => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => updateFormData({ icon: icon })}
+                    className={`size-13 rounded-md border-2 text-xl
+                    transition-all ${
+                      formData.icon === icon
+                        ? "border-primary"
+                        : "border-border_color hover:border-gray-400"
+                    }`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              labelText="Name"
+              placeholder="e.g., Coffee Break"
+              value={formData.name}
+              inputData={(data) => updateFormData({ name: data.value })}
+            />
+
+            <div className="flex w-full flex-row items-end gap-2">
+              <Input
+                id="duration"
+                name="duration"
+                type="number"
+                min={1}
+                max={formData.duration_unit === "hour" ? 24 : 1440}
+                labelText="Duration"
+                placeholder="30"
+                value={formData.duration}
+                inputData={(data) =>
+                  updateFormData({ duration: Number(data.value) })
+                }
+              >
+                <Select
+                  styles="w-32! rounded-l-none"
+                  value={formData.duration_unit || "min"}
+                  options={[
+                    { value: "min", label: "minutes" },
+                    { value: "hour", label: "hours" },
+                  ]}
+                  onSelect={(option) =>
+                    updateFormData({ duration_unit: option.value })
+                  }
+                />
+              </Input>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <ResponsiveDialogClose asChild>
+                <Button
+                  styles="px-4 py-2 flex-1 hidden lg:block"
+                  buttonText="Cancel"
+                  variant="tertiary"
                   type="button"
-                  onClick={() => updateFormData({ icon: icon })}
-                  className={`size-13 rounded-md border-2 text-xl transition-all
-                  ${
-                    formData.icon === icon
-                      ? "border-primary"
-                      : "border-border_color hover:border-gray-400"
-                  }`}
-                >
-                  {icon}
-                </button>
-              ))}
+                />
+              </ResponsiveDialogClose>
+              <Button
+                type="submit"
+                variant="primary"
+                styles="px-4 py-2 flex-1 w-full lg:w-auto"
+                buttonText={editData ? "Save " : "Add Type"}
+              />
             </div>
           </div>
-
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            labelText="Name"
-            placeholder="e.g., Coffee Break"
-            value={formData.name}
-            inputData={(data) => updateFormData({ name: data.value })}
-          />
-
-          <div className="flex w-full flex-row items-end gap-2">
-            <Input
-              id="duration"
-              name="duration"
-              type="number"
-              min={1}
-              max={formData.duration_unit === "hour" ? 24 : 1440}
-              labelText="Duration"
-              placeholder="30"
-              value={formData.duration}
-              inputData={(data) =>
-                updateFormData({ duration: Number(data.value) })
-              }
-            >
-              <Select
-                styles="w-32! rounded-l-none"
-                value={formData.duration_unit || "min"}
-                options={[
-                  { value: "min", label: "minutes" },
-                  { value: "hour", label: "hours" },
-                ]}
-                onSelect={(option) =>
-                  updateFormData({ duration_unit: option.value })
-                }
-                onOpenChange={(open) => setIsSelectOpen(open)}
-              />
-            </Input>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              styles="px-4 py-2 flex-1 hidden lg:block"
-              buttonText="Cancel"
-              variant="tertiary"
-              type="button"
-              onClick={() => {
-                onClose();
-                setFormData(defaultFormData);
-              }}
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              styles="px-4 py-2 flex-1 w-full lg:w-auto"
-              buttonText={editData ? "Save " : "Add Type"}
-            />
-          </div>
-        </div>
-      </form>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

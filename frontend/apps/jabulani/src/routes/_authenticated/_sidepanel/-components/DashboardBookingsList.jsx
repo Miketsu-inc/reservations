@@ -28,8 +28,8 @@ function dashboardBookingsQueryOptions(merchantId, view) {
   return queryOptions({
     queryKey: [merchantId, "dashboard-bookings", view],
     queryFn: () => fetchDashboardBookings(merchantId, view),
-    staleTime: 15_000,
-    gcTime: 5 * 60 * 1000,
+    // staleTime: 15_000,
+    // gcTime: 5 * 60 * 1000,
   });
 }
 

@@ -1,54 +1,71 @@
 import { Alert02Icon } from "@hugeicons/core-free-icons";
 import Icon from "./Icon.jsx";
 import Button from "./Button";
-import ResponsiveDialog from "./ResponsiveDialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogTrigger,
+} from "./ResponsiveDialog";
 
-export default function DeleteModal({ isOpen, onClose, onDelete, itemName }) {
+export default function DeleteModal({
+  trigger,
+  onDelete,
+  itemName,
+  ...dialogProps
+}) {
   return (
-    <ResponsiveDialog isOpen={isOpen} onClose={onClose}>
-      <div className="m-2 md:m-4">
-        <div className="flex justify-center py-2">
-          <div className="flex rounded-full bg-red-200 p-3 dark:bg-red-600">
-            <Icon
-              icon={Alert02Icon}
-              styles="size-8 text-red-600 dark:text-red-200
-                translate-y-[-0.15rem]"
-            />
+    <ResponsiveDialog {...dialogProps}>
+      {trigger && (
+        <ResponsiveDialogTrigger asChild>{trigger}</ResponsiveDialogTrigger>
+      )}
+      <ResponsiveDialogContent>
+        <div className="m-2 md:m-4">
+          <div className="flex justify-center py-2">
+            <div className="flex rounded-full bg-red-200 p-3 dark:bg-red-600">
+              <Icon
+                icon={Alert02Icon}
+                styles="size-8 text-red-600 dark:text-red-200
+                  translate-y-[-0.15rem]"
+              />
+            </div>
+          </div>
+          <div className="my-1 flex justify-center">
+            <p className="text-lg font-semibold md:text-xl">Are you sure?</p>
+          </div>
+          <div className="flex justify-center py-3">
+            <div className="w-4/5 py-4 text-center">
+              <p className="text-gray-700 dark:text-gray-300">
+                You are about to delete
+                <span className="text-text_color font-bold"> {itemName}</span>.
+                <br />
+                This is a permanent action which cannot be reverted!
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-row items-center justify-end gap-4">
+            <ResponsiveDialogClose asChild>
+              <Button
+                variant="tertiary"
+                name="cancel"
+                styles="py-2 px-3 hidden lg:block"
+                buttonText="Cancel"
+                type="button"
+              />
+            </ResponsiveDialogClose>
+            <ResponsiveDialogClose asChild>
+              <Button
+                variant="danger"
+                name="delete"
+                styles="py-2 px-3 w-full lg:w-auto"
+                buttonText="Delete"
+                type="button"
+                onClick={onDelete}
+              />
+            </ResponsiveDialogClose>
           </div>
         </div>
-        <div className="my-1 flex justify-center">
-          <p className="text-lg font-semibold md:text-xl">Are you sure?</p>
-        </div>
-        <div className="flex justify-center py-3">
-          <div className="w-4/5 py-4 text-center">
-            <p className="text-gray-700 dark:text-gray-300">
-              You are about to delete
-              <span className="text-text_color font-bold"> {itemName}</span>.
-              <br />
-              This is a permanent action which cannot be reverted!
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-row items-center justify-end gap-4">
-          <Button
-            variant="tertiary"
-            name="cancel"
-            styles="py-2 px-3 hidden lg:block"
-            buttonText="Cancel"
-            onClick={onClose}
-          />
-          <Button
-            variant="danger"
-            name="delete"
-            styles="py-2 px-3 w-full lg:w-auto"
-            buttonText="Delete"
-            onClick={(e) => {
-              onDelete(e);
-              onClose();
-            }}
-          />
-        </div>
-      </div>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

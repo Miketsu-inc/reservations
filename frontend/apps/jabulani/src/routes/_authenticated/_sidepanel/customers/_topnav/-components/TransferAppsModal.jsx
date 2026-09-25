@@ -4,6 +4,8 @@ import {
   ComboBox,
   Icon,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -40,7 +42,6 @@ async function transferBookings(merchantId, fromCustomerId, toCustomerId) {
 
 export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
   const [showValidationError, setShowValidationError] = useState(false);
-  const [isComboBoxOpen, setIsComboBoxOpen] = useState(false);
   const [toCustomerId, setToCustomerId] = useState("");
   const { merchantId } = useAuth();
   const { showToast } = useToast();
@@ -105,90 +106,92 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
 
   return (
     <ResponsiveDialog
-      isOpen={isOpen}
-      onClose={handleClose}
-      disableFocusTrap={true}
-      suspendCloseOnClickOutside={isComboBoxOpen || transferMutation.isPending}
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
     >
-      <form onSubmit={submitHandler} className="m-3 sm:w-md">
-        <p className="pb-6 text-xl">Transfer bookings</p>
-        <ServerError
-          styles="mb-4"
-          error={
-            customersQuery.error?.message || transferMutation.error?.message
-          }
-        />
-        <div className="flex items-center justify-center gap-6 py-2 sm:px-4">
-          <p className="w-fit text-lg font-semibold sm:text-nowrap">
-            {fromCustomer
-              ? `${fromCustomer.first_name} ${fromCustomer.last_name}`
-              : customersQuery.isError
-                ? "Customer unavailable"
-                : "Loading customer..."}
-          </p>
-          <Icon icon={UserSwitchIcon} styles="size-7" />
-          <ComboBox
-            options={options}
-            value={toCustomerId}
-            placeholder="Search customers"
-            emptyText={
-              customersQuery.isLoading
-                ? "Loading customers..."
-                : filteredCustomers.length === 0
-                  ? "You have no customer to transfer to"
-                  : ""
+      <ResponsiveDialogContent>
+        <form onSubmit={submitHandler} className="m-3 sm:w-md">
+          <p className="pb-6 text-xl">Transfer bookings</p>
+          <ServerError
+            styles="mb-4"
+            error={
+              customersQuery.error?.message || transferMutation.error?.message
             }
-            onSelect={(option) => {
-              setToCustomerId(option.value);
-              setShowValidationError(false);
-            }}
-            styles="w-fit"
-            maxVisibleItems={5}
-            onOpenChange={setIsComboBoxOpen}
-            disabled={customersQuery.isLoading || customersQuery.isError}
           />
-        </div>
-        <p
-          className={`${showValidationError ? "visible" : "invisible"}
-            text-center text-red-500`}
-        >
-          Please select a customer!
-        </p>
-        <div className="flex justify-center py-3">
-          <div className="py-4 text-center">
-            <p className="text-gray-700 dark:text-gray-300">
-              You are about to transfer all past and future bookings (booked
-              until now) to another customer.
-              <br />
-              This is a permanent action which cannot be reverted!
+          <div className="flex items-center justify-center gap-6 py-2 sm:px-4">
+            <p className="w-fit text-lg font-semibold sm:text-nowrap">
+              {fromCustomer
+                ? `${fromCustomer.first_name} ${fromCustomer.last_name}`
+                : customersQuery.isError
+                  ? "Customer unavailable"
+                  : "Loading customer..."}
             </p>
+            <Icon icon={UserSwitchIcon} styles="size-7" />
+            <ComboBox
+              options={options}
+              value={toCustomerId}
+              placeholder="Search customers"
+              emptyText={
+                customersQuery.isLoading
+                  ? "Loading customers..."
+                  : filteredCustomers.length === 0
+                    ? "You have no customer to transfer to"
+                    : ""
+              }
+              onSelect={(option) => {
+                setToCustomerId(option.value);
+                setShowValidationError(false);
+              }}
+              styles="w-fit"
+              maxVisibleItems={5}
+              disabled={customersQuery.isLoading || customersQuery.isError}
+            />
           </div>
-        </div>
-        <div className="flex flex-row items-center justify-end gap-4">
-          <Button
-            variant="tertiary"
-            name="cancel"
-            styles="py-2 px-3 hidden lg:block"
-            buttonText="Cancel"
-            type="button"
-            onClick={handleClose}
-            disabled={transferMutation.isPending}
-          />
-          <Button
-            variant="danger"
-            name="transfer"
-            styles="py-2 px-3 w-full lg:w-auto"
-            buttonText="Transfer"
-            type="submit"
-            isLoading={transferMutation.isPending}
-            disabled={
-              customersQuery.isLoading ||
-              customersQuery.isError ||
-              filteredCustomers.length === 0
-            }
-          />
-        </div>
-      </form>
+          <p
+            className={`${showValidationError ? "visible" : "invisible"}
+              text-center text-red-500`}
+          >
+            Please select a customer!
+          </p>
+          <div className="flex justify-center py-3">
+            <div className="py-4 text-center">
+              <p className="text-gray-700 dark:text-gray-300">
+                You are about to transfer all past and future bookings (booked
+                until now) to another customer.
+                <br />
+                This is a permanent action which cannot be reverted!
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-row items-center justify-end gap-4">
+            <ResponsiveDialogClose asChild>
+              <Button
+                variant="tertiary"
+                name="cancel"
+                styles="py-2 px-3 hidden lg:block"
+                buttonText="Cancel"
+                type="button"
+                disabled={transferMutation.isPending}
+              />
+            </ResponsiveDialogClose>
+            <Button
+              variant="danger"
+              name="transfer"
+              styles="py-2 px-3 w-full lg:w-auto"
+              buttonText="Transfer"
+              type="submit"
+              isLoading={transferMutation.isPending}
+              disabled={
+                customersQuery.isLoading ||
+                customersQuery.isError ||
+                filteredCustomers.length === 0
+              }
+            />
+          </div>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

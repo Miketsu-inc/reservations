@@ -18,7 +18,7 @@ export { default as Icon } from "./Icon.jsx";
 export { default as Input } from "./Input.jsx";
 export { default as InputBase } from "./InputBase.jsx";
 export { default as Loading } from "./Loading.jsx";
-export { default as Modal } from "./Modal.jsx";
+export { Modal, ModalClose, ModalContent, ModalTrigger } from "./Modal.jsx";
 export { default as MultiSelect } from "./MultiSelect.jsx";
 export {
   Popover,
@@ -27,7 +27,12 @@ export {
   PopoverTrigger,
 } from "./Popover.jsx";
 export { default as ProgressBar } from "./ProgressBar.jsx";
-export { default as ResponsiveDialog } from "./ResponsiveDialog.jsx";
+export {
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogTrigger,
+} from "./ResponsiveDialog.jsx";
 export {
   ScrollSpyNav,
   ScrollSpyProvider,
@@ -41,8 +46,4 @@ export { default as Switch } from "./Switch.jsx";
 export { default as Textarea } from "./Textarea.jsx";
 export { ToastContext, default as ToastProvider } from "./ToastProvider.jsx";
 export { Toggle, ToggleGroup } from "./Toggle.jsx";
-export {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "./Tooltip.jsx";
+export { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip.jsx";

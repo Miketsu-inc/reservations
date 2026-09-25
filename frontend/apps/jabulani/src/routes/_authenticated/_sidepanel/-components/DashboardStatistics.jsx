@@ -33,8 +33,8 @@ function dashboardStatisticsQueryOptions(merchantId, period) {
     queryKey: [merchantId, "dashboard-statistics", period],
     queryFn: () => fetchDashboardStatistics(merchantId, period),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
-    gcTime: 5 * 60 * 1000,
+    // staleTime: 30_000,
+    // gcTime: 5 * 60 * 1000,
   });
 }
 

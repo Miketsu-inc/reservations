@@ -43,8 +43,8 @@ function dashboardRevenueQueryOptions(merchantId, period) {
     queryKey: [merchantId, "dashboard-revenue", period],
     queryFn: () => fetchDashboardRevenue(merchantId, period),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
-    gcTime: 5 * 60 * 1000,
+    // staleTime: 30_000,
+    // gcTime: 5 * 60 * 1000,
   });
 }
 

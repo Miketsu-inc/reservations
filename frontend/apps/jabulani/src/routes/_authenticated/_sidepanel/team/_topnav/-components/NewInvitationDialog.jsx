@@ -2,6 +2,8 @@ import {
   Button,
   Input,
   ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   Select,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
@@ -13,7 +15,6 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { merchantId } = useAuth();
   const [invitation, setInvitation] = useState({ email: "", role: "staff" });
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   function updateInvitation(data) {
     setInvitation((prev) => ({ ...prev, ...data }));
@@ -60,63 +61,65 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
 
   return (
     <ResponsiveDialog
-      isOpen={isOpen}
-      onClose={onClose}
-      disableFocusTrap={true}
-      suspendCloseOnClickOutside={isSelectOpen}
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <form
-        onSubmit={inviteMember}
-        className="flex h-full w-full flex-col gap-6 md:w-lg md:p-4"
-      >
-        <div>
-          <p className="text-lg font-semibold">New Invitation</p>
-          <p className="text-text_color/80">
-            Invite a person to your team. They will get an email asking them to
-            join.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4">
-          <Input
-            id="Email"
-            name="Email"
-            type="email"
-            labelText="Email"
-            placeholder="example@gmail.com"
-            required={true}
-            value={invitation.email}
-            inputData={(data) => updateInvitation({ email: data.value })}
-          />
-          <Select
-            required={true}
-            labelText="Role"
-            styles="w-full"
-            value={invitation.role}
-            options={[
-              { value: "staff", label: "Staff" },
-              { value: "admin", label: "Admin" },
-            ]}
-            onSelect={(option) => updateInvitation({ role: option.value })}
-            onOpenChange={setIsSelectOpen}
-            placeholder="Pick a role"
-          />
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            styles="py-2 px-4 hidden lg:block"
-            buttonText="Cancel"
-            variant="tertiary"
-            type="button"
-            onClick={onClose}
-          />
-          <Button
-            styles="py-2 px-4 w-full lg:w-auto"
-            buttonText="Invite"
-            variant="primary"
-            type="submit"
-          />
-        </div>
-      </form>
+      <ResponsiveDialogContent>
+        <form
+          onSubmit={inviteMember}
+          className="flex h-full w-full flex-col gap-6 md:w-lg md:p-4"
+        >
+          <div>
+            <p className="text-lg font-semibold">New Invitation</p>
+            <p className="text-text_color/80">
+              Invite a person to your team. They will get an email asking them
+              to join.
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <Input
+              id="Email"
+              name="Email"
+              type="email"
+              labelText="Email"
+              placeholder="example@gmail.com"
+              required={true}
+              value={invitation.email}
+              inputData={(data) => updateInvitation({ email: data.value })}
+            />
+            <Select
+              required={true}
+              labelText="Role"
+              styles="w-full"
+              value={invitation.role}
+              options={[
+                { value: "staff", label: "Staff" },
+                { value: "admin", label: "Admin" },
+              ]}
+              onSelect={(option) => updateInvitation({ role: option.value })}
+              placeholder="Pick a role"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <ResponsiveDialogClose asChild>
+              <Button
+                styles="py-2 px-4 hidden lg:block"
+                buttonText="Cancel"
+                variant="tertiary"
+                type="button"
+              />
+            </ResponsiveDialogClose>
+            <Button
+              styles="py-2 px-4 w-full lg:w-auto"
+              buttonText="Invite"
+              variant="primary"
+              type="submit"
+            />
+          </div>
+        </form>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

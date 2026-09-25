@@ -117,8 +117,8 @@ export default function EmployeeTable({
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <DeleteModal
         itemName={`${selected.first_name} ${selected.last_name}`}
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
         onDelete={() => onDelete(selected)}
       />
       <Suspense fallback={<Loading />}>
