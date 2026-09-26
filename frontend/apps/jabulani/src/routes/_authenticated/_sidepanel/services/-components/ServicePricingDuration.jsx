@@ -88,7 +88,7 @@ export function ServicePricingDuration({ service, setService, onUpdate }) {
             </p>
           </div>
           <Link
-            to={`/services/advanced-pricing/${service.id}`}
+            to={`/services/advanced-pricing-duration/${service.id}`}
             className="border-primary text-primary hover:bg-primary/10 shrink-0
               rounded-lg border-2 px-4 py-2 text-center font-medium"
           >

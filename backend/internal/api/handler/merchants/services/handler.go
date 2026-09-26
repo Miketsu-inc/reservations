@@ -28,8 +28,8 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
 	r.Get("/{id}", h.Get)
-	r.Get("/{id}/pricing-duration", h.GetEmployeePricing)
-	r.Put("/{id}/pricing-duration", h.UpdateEmployeePricing)
+	r.Get("/{id}/advanced-pricing-duration", h.GetEmployeePricingDuration)
+	r.Put("/{id}/advanced-pricing-duration", h.UpdateEmployeePricingDuration)
 
 	r.Put("/{id}/products", h.UpdateServiceProduct)
 	// TODO: maybe replace these by a unified status route?
@@ -203,54 +203,56 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type employeePricingResp struct {
+type employeePricingDurationResp struct {
 	EmployeeId int                `json:"employee_id"`
 	FirstName  *string            `json:"first_name"`
 	LastName   *string            `json:"last_name"`
 	Role       types.EmployeeRole `json:"role"`
+	IsAssigned bool               `json:"is_assigned"`
 	Duration   *int               `json:"duration"`
 	Price      *currencyx.Price   `json:"price"`
 	PriceType  *types.PriceType   `json:"price_type"`
 }
 
-type getEmployeePricingResp struct {
-	ServiceId        int                   `json:"service_id"`
-	ServiceName      string                `json:"service_name"`
-	DefaultDuration  int                   `json:"default_duration"`
-	DefaultPrice     *currencyx.Price      `json:"default_price"`
-	DefaultPriceType types.PriceType       `json:"default_price_type"`
-	Employees        []employeePricingResp `json:"employees"`
+type getEmployeePricingDurationResp struct {
+	ServiceId        int                           `json:"service_id"`
+	ServiceName      string                        `json:"service_name"`
+	DefaultDuration  int                           `json:"default_duration"`
+	DefaultPrice     *currencyx.Price              `json:"default_price"`
+	DefaultPriceType types.PriceType               `json:"default_price_type"`
+	Employees        []employeePricingDurationResp `json:"employees"`
 }
 
-func (h *Handler) GetEmployeePricing(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetEmployeePricingDuration(w http.ResponseWriter, r *http.Request) error {
 	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		return validate.NewError("invalid service id")
 	}
 
-	pricing, err := h.service.GetEmployeeServicePricing(r.Context(), serviceId)
+	pricing, err := h.service.GetEmployeePricingDuration(r.Context(), serviceId)
 	if err != nil {
-		return catalogServ.ErrStatus.Resolve(err, "GetEmployeePricing")
+		return catalogServ.ErrStatus.Resolve(err, "GetEmployeePricingDuration")
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetEmployeePricingResp(pricing))
+	httputil.Success(w, http.StatusOK, mapToGetEmployeePricingDurationResp(pricing))
 
 	return nil
 }
 
-type updateEmployeePricingReq struct {
-	Employees []employeePricingReq `json:"employees" validate:"required"`
+type updateEmployeePricingDurationReq struct {
+	Employees []employeePricingDurationReq `json:"employees" validate:"required"`
 }
 
-type employeePricingReq struct {
+type employeePricingDurationReq struct {
 	EmployeeId int              `json:"employee_id" validate:"required"`
+	IsAssigned bool             `json:"is_assigned"`
 	Duration   *int             `json:"duration"`
 	Price      *currencyx.Price `json:"price"`
 	PriceType  *types.PriceType `json:"price_type"`
 }
 
-func (h *Handler) UpdateEmployeePricing(w http.ResponseWriter, r *http.Request) error {
-	var req updateEmployeePricingReq
+func (h *Handler) UpdateEmployeePricingDuration(w http.ResponseWriter, r *http.Request) error {
+	var req updateEmployeePricingDurationReq
 	if err := validate.ParseStruct(r, &req); err != nil {
 		return err
 	}
@@ -260,9 +262,9 @@ func (h *Handler) UpdateEmployeePricing(w http.ResponseWriter, r *http.Request) 
 		return validate.NewError("invalid service id")
 	}
 
-	err = h.service.UpdateEmployeeServicePricing(r.Context(), serviceId, mapToEmployeePricingInput(req.Employees))
+	err = h.service.UpdateEmployeePricingDuration(r.Context(), serviceId, mapToUpdateEmployeePricingDurationInput(req.Employees))
 	if err != nil {
-		return catalogServ.ErrStatus.Resolve(err, "UpdateEmployeePricing")
+		return catalogServ.ErrStatus.Resolve(err, "UpdateEmployeePricingDuration")
 	}
 
 	return nil

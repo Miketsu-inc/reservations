@@ -139,21 +139,23 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 	}
 }
 
-func mapToGetEmployeePricingResp(in domain.EmployeeServicePricingPage) getEmployeePricingResp {
-	employees := make([]employeePricingResp, len(in.EmployeePricing))
+func mapToGetEmployeePricingDurationResp(in catalogServ.GetEmployeePricingDurationResult) getEmployeePricingDurationResp {
+	employees := make([]employeePricingDurationResp, len(in.EmployeePricing))
+
 	for i, employee := range in.EmployeePricing {
-		employees[i] = employeePricingResp{
+		employees[i] = employeePricingDurationResp{
 			EmployeeId: employee.EmployeeId,
 			FirstName:  employee.FirstName,
 			LastName:   employee.LastName,
 			Role:       employee.Role,
+			IsAssigned: employee.IsAssigned,
 			Duration:   employee.TotalDuration,
 			Price:      employee.PricePerPerson,
 			PriceType:  employee.PriceType,
 		}
 	}
 
-	return getEmployeePricingResp{
+	return getEmployeePricingDurationResp{
 		ServiceId:        in.ServiceId,
 		ServiceName:      in.ServiceName,
 		DefaultDuration:  in.TotalDuration,
@@ -163,11 +165,13 @@ func mapToGetEmployeePricingResp(in domain.EmployeeServicePricingPage) getEmploy
 	}
 }
 
-func mapToEmployeePricingInput(in []employeePricingReq) []catalogServ.EmployeeServicePricingInput {
-	employees := make([]catalogServ.EmployeeServicePricingInput, len(in))
+func mapToUpdateEmployeePricingDurationInput(in []employeePricingDurationReq) []catalogServ.UpdateEmployeePricingDurationInput {
+	employees := make([]catalogServ.UpdateEmployeePricingDurationInput, len(in))
+
 	for i, employee := range in {
-		employees[i] = catalogServ.EmployeeServicePricingInput{
+		employees[i] = catalogServ.UpdateEmployeePricingDurationInput{
 			EmployeeId:     employee.EmployeeId,
+			IsAssigned:     employee.IsAssigned,
 			TotalDuration:  employee.Duration,
 			PricePerPerson: employee.Price,
 			PriceType:      employee.PriceType,

@@ -107,6 +107,14 @@ export default function ServicePage({
       return;
     }
 
+    if (serviceData.employee_ids.length === 0) {
+      showToast({
+        message: "Select at least one team member",
+        variant: "error",
+      });
+      return;
+    }
+
     const data = {
       ...serviceData,
       phases: isGroupService
@@ -218,7 +226,6 @@ export default function ServicePage({
                         onSelect={(employeeIds) =>
                           updateServiceData({ employee_ids: employeeIds })
                         }
-                        emptyMeansAll
                       />
                     </ScrollSpySection>
                   </form>

@@ -118,8 +118,7 @@ create table if not exists "Service" (
     booking_window_min       integer,
     booking_window_max       integer,
     buffer_time              integer,
-    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new')),
-    all_employees            boolean         not null default true
+    approval_policy          text            check (approval_policy in ('auto', 'manual', 'manual_for_new'))
 );
 
 create table if not exists "EmployeeService" (
@@ -127,24 +126,13 @@ create table if not exists "EmployeeService" (
     service_id               integer         references "Service" (ID) on delete cascade not null,
     total_duration           integer,
     price_per_person         price,
-    price_type               text,
+    price_type               text            check (price_type in ('fixed', 'free', 'from')),
     min_participants         integer,
     max_participants         integer,
     buffer_time              integer,
 
     primary key (employee_id, service_id)
 );
-
--- Backfill databases created before all-employees assignment was stored
--- explicitly. An empty EmployeeService set has always meant all employees.
-alter table "Service" add column if not exists all_employees boolean;
-update "Service" s
-set all_employees = not exists (
-    select 1 from "EmployeeService" es where es.service_id = s.id
-)
-where s.all_employees is null;
-alter table "Service" alter column all_employees set default true;
-alter table "Service" alter column all_employees set not null;
 
 create table if not exists "ServicePhase" (
     ID                       serial                 primary key unique not null,
@@ -164,7 +152,8 @@ create table if not exists "EmployeeServicePhase" (
     service_phase_id         integer                 not null,
     duration                 integer,
 
-    foreign key (employee_id, service_id) references "EmployeeService" (employee_id, service_id) on delete cascade,
+    constraint employee_service_phase_assignment_fkey
+        foreign key (employee_id, service_id) references "EmployeeService" (employee_id, service_id) on delete cascade,
     foreign key (service_phase_id, service_id) references "ServicePhase" (ID, service_id) on delete cascade,
     primary key (employee_id, service_phase_id)
 );

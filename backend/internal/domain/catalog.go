@@ -33,7 +33,7 @@ type CatalogRepository interface {
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
 	GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (Service, error)
 	GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error)
-	GetEmployeeServicePricing(ctx context.Context, merchantId uuid.UUID, serviceId int) (EmployeeServicePricingPage, error)
+	GetEmployeeServicePricingDuration(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServicePricingDuration, error)
 
 	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
 	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error
@@ -77,7 +77,6 @@ type Service struct {
 	BookingWindowMax *int                `db:"booking_window_max" json:"booking_window_max"`
 	BufferTime       *int                `db:"buffer_time" json:"buffer_time"`
 	ApprovalPolicy   *types.ApprovalType `db:"approval_policy" json:"approval_policy"`
-	AllEmployees     bool                `db:"all_employees" json:"all_employees"`
 	// for convenience we do not really query the service without the phases anyway
 	Phases []ServicePhase
 }
@@ -265,21 +264,12 @@ type EmployeeService struct {
 	BufferTime      *int
 }
 
-type EmployeeServicePricingPage struct {
-	ServiceId       int
-	ServiceName     string
-	TotalDuration   int
-	PricePerPerson  *currencyx.Price
-	PriceType       types.PriceType
-	AllEmployees    bool
-	EmployeePricing []EmployeeServicePricing
-}
-
-type EmployeeServicePricing struct {
+type EmployeeServicePricingDuration struct {
 	EmployeeId     int                `db:"id"`
 	FirstName      *string            `db:"first_name"`
 	LastName       *string            `db:"last_name"`
 	Role           types.EmployeeRole `db:"role"`
+	IsAssigned     bool               `db:"is_assigned"`
 	TotalDuration  *int               `db:"total_duration"`
 	PricePerPerson *currencyx.Price   `db:"price_per_person"`
 	PriceType      *types.PriceType   `db:"price_type"`

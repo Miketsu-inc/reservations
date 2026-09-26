@@ -2,6 +2,7 @@ import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
   Button,
+  CheckBox,
   Icon,
   Input,
   Loading,
@@ -17,7 +18,7 @@ import {
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Block, createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const DEFAULT_VALUE = "default";
 
@@ -63,7 +64,7 @@ function getInitialEmployees(data) {
 
 async function fetchEmployeePricing(merchantId, serviceId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/services/${serviceId}/pricing-duration`,
+    `/api/v1/merchants/${merchantId}/services/${serviceId}/advanced-pricing-duration`,
     {
       headers: {
         Accept: "application/json",
@@ -83,13 +84,13 @@ async function fetchEmployeePricing(merchantId, serviceId) {
 
 function employeePricingQueryOptions(merchantId, serviceId) {
   return queryOptions({
-    queryKey: [merchantId, "service", serviceId, "pricing-duration"],
+    queryKey: [merchantId, "service", serviceId, "advanced-pricing-duration"],
     queryFn: () => fetchEmployeePricing(merchantId, serviceId),
   });
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/_sidepanel/services/_topnav/advanced-pricing/$id"
+  "/_authenticated/_sidepanel/services/_topnav/advanced-pricing-duration/$id"
 )({
   component: AdvancedPricingDurationPage,
   loader: async ({
@@ -110,25 +111,39 @@ function AdvancedPricingDurationPage() {
   const { id } = Route.useParams({ from: Route.id });
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { merchantId } = useAuth();
-  const { showToast } = useToast();
-  const [searchText, setSearchText] = useState("");
-  const [serverError, setServerError] = useState();
-  const [isSaving, setIsSaving] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery(
     employeePricingQueryOptions(merchantId, id)
   );
 
-  const initialEmployees = useMemo(
-    () => (data ? getInitialEmployees(data) : []),
-    [data]
-  );
-  const [employees, setEmployees] = useState(initialEmployees);
-  const [lastSavedEmployees, setLastSavedEmployees] =
-    useState(initialEmployees);
-
   if (isLoading) return <Loading />;
   if (isError) return <ServerError error={error.message || error} />;
+
+  return (
+    <AdvancedPricingDurationForm
+      key={id}
+      data={data}
+      merchantId={merchantId}
+      serviceId={id}
+      queryClient={queryClient}
+    />
+  );
+}
+
+function AdvancedPricingDurationForm({
+  data,
+  merchantId,
+  serviceId,
+  queryClient,
+}) {
+  const { showToast } = useToast();
+  const [searchText, setSearchText] = useState("");
+  const [serverError, setServerError] = useState();
+  const [isSaving, setIsSaving] = useState(false);
+  const [employees, setEmployees] = useState(() => getInitialEmployees(data));
+  const [lastSavedEmployees, setLastSavedEmployees] = useState(() =>
+    getInitialEmployees(data)
+  );
 
   const durationOptions = buildDurationOptions(
     data.default_duration,
@@ -145,9 +160,10 @@ function AdvancedPricingDurationPage() {
     JSON.stringify(employees) !== JSON.stringify(lastSavedEmployees);
   const hasOverrides = employees.some(
     (employee) =>
-      employee.duration !== null ||
-      employee.price !== null ||
-      employee.price_type !== null
+      employee.is_assigned &&
+      (employee.duration !== null ||
+        employee.price !== null ||
+        employee.price_type !== null)
   );
   const filteredEmployees = employees.filter((employee) =>
     `${employee.first_name || ""} ${employee.last_name || ""}`
@@ -177,9 +193,9 @@ function AdvancedPricingDurationPage() {
     setEmployees((current) =>
       current.map((employee) => ({
         ...employee,
-        duration: null,
-        price: null,
-        price_type: null,
+        ...(employee.is_assigned
+          ? { duration: null, price: null, price_type: null }
+          : {}),
       }))
     );
   }
@@ -190,7 +206,7 @@ function AdvancedPricingDurationPage() {
 
     try {
       const response = await fetch(
-        `/api/v1/merchants/${merchantId}/services/${id}/pricing-duration`,
+        `/api/v1/merchants/${merchantId}/services/${serviceId}/advanced-pricing-duration`,
         {
           method: "PUT",
           headers: {
@@ -200,6 +216,7 @@ function AdvancedPricingDurationPage() {
           body: JSON.stringify({
             employees: employees.map((employee) => ({
               employee_id: employee.employee_id,
+              is_assigned: employee.is_assigned,
               duration: employee.duration,
               price: employee.price,
               price_type: employee.price_type,
@@ -215,8 +232,18 @@ function AdvancedPricingDurationPage() {
       }
 
       queryClient.setQueryData(
-        [merchantId, "service", id, "pricing-duration"],
+        [merchantId, "service", serviceId, "advanced-pricing-duration"],
         (current) => ({ ...current, employees })
+      );
+      queryClient.setQueryData([merchantId, "service", serviceId], (current) =>
+        current
+          ? {
+              ...current,
+              employee_ids: employees
+                .filter((employee) => employee.is_assigned)
+                .map((employee) => employee.employee_id),
+            }
+          : current
       );
       setLastSavedEmployees(employees);
       showToast({
@@ -246,7 +273,7 @@ function AdvancedPricingDurationPage() {
         >
           <div>
             <Link
-              to={`/services/edit/${id}`}
+              to={`/services/edit/${serviceId}`}
               className="text-text_color/70 hover:text-text_color mb-4 flex
                 w-fit items-center gap-2 text-sm"
             >
@@ -257,7 +284,7 @@ function AdvancedPricingDurationPage() {
               Advanced pricing and duration
             </h1>
             <p className="text-text_color/70 mt-2">
-              Set specific pricing and duration for each assigned team member.
+              Assign team members and set their specific pricing and duration.
             </p>
           </div>
           <Button
@@ -326,7 +353,7 @@ function AdvancedPricingDurationPage() {
           {filteredEmployees.length === 0 ? (
             <div className="text-text_color/60 px-6 py-14 text-center">
               {employees.length === 0
-                ? "No team members are assigned to this service."
+                ? "No active team members are available."
                 : "No team members match your search."}
             </div>
           ) : (
@@ -372,31 +399,57 @@ function EmployeePricingRow({
 
   return (
     <li
-      className="grid grid-cols-1 gap-4 p-5
+      className={`grid grid-cols-1 gap-4 p-5 transition-colors
+        ${employee.is_assigned ? "" : "bg-bg_color/60"}
         lg:grid-cols-[minmax(15rem,1.35fr)_minmax(10rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_4.5rem]
-        lg:items-center"
+        lg:items-center`}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <Avatar styles="size-11! shrink-0 text-sm" initials={initials || "?"} />
-        <div className="min-w-0">
+        <CheckBox
+          checked={employee.is_assigned}
+          onChange={(event) =>
+            onUpdate({
+              is_assigned: event.target.checked,
+              ...(!event.target.checked
+                ? { duration: null, price: null, price_type: null }
+                : {}),
+            })
+          }
+          aria-label={`${employee.is_assigned ? "Remove" : "Assign"} ${
+            [employee.first_name, employee.last_name]
+              .filter(Boolean)
+              .join(" ") || "team member"
+          }`}
+          styles="shrink-0"
+        />
+        <Avatar
+          styles={`size-11! shrink-0 text-sm ${
+            employee.is_assigned ? "" : "opacity-50"
+          }`}
+          initials={initials || "?"}
+        />
+        <div className={`min-w-0 ${employee.is_assigned ? "" : "opacity-50"}`}>
           <p className="truncate font-medium">
             {[employee.first_name, employee.last_name]
               .filter(Boolean)
               .join(" ") || "Unnamed team member"}
           </p>
           <p className="text-text_color/60 text-sm">
-            {capitalize(employee.role)}
+            {employee.is_assigned
+              ? capitalize(employee.role)
+              : `${capitalize(employee.role)} · Not assigned`}
           </p>
         </div>
       </div>
 
-      <div>
+      <div className={employee.is_assigned ? "" : "opacity-50"}>
         <span className="text-text_color/60 mb-1 block text-xs lg:hidden">
           Duration
         </span>
         <Select
           options={durationOptions}
           value={employee.duration ?? DEFAULT_VALUE}
+          disabled={!employee.is_assigned}
           onSelect={(option) =>
             onUpdate({
               duration: option.value === DEFAULT_VALUE ? null : option.value,
@@ -405,13 +458,14 @@ function EmployeePricingRow({
         />
       </div>
 
-      <div>
+      <div className={employee.is_assigned ? "" : "opacity-50"}>
         <span className="text-text_color/60 mb-1 block text-xs lg:hidden">
           Price type
         </span>
         <Select
           options={priceTypeOptions}
           value={employee.price_type ?? DEFAULT_VALUE}
+          disabled={!employee.is_assigned}
           onSelect={(option) => {
             const priceType =
               option.value === DEFAULT_VALUE ? null : option.value;
@@ -425,7 +479,7 @@ function EmployeePricingRow({
         />
       </div>
 
-      <div>
+      <div className={employee.is_assigned ? "" : "opacity-50"}>
         <span className="text-text_color/60 mb-1 block text-xs lg:hidden">
           Price
         </span>
@@ -438,7 +492,7 @@ function EmployeePricingRow({
           max={1000000}
           required={false}
           value={employee.price?.number ?? defaultPrice?.number ?? ""}
-          disabled={effectivePriceType === "free"}
+          disabled={!employee.is_assigned || effectivePriceType === "free"}
           inputData={({ value }) =>
             onUpdate({
               price: value === "" ? null : { number: value, currency },
@@ -457,7 +511,7 @@ function EmployeePricingRow({
       <button
         type="button"
         onClick={onReset}
-        disabled={!hasOverride}
+        disabled={!employee.is_assigned || !hasOverride}
         className="text-primary hover:bg-hvr_gray w-fit cursor-pointer
           rounded-lg px-2 py-2 text-sm font-medium disabled:cursor-default
           disabled:opacity-30 lg:justify-self-end"

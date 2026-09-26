@@ -2,7 +2,6 @@ package catalog
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
@@ -65,7 +64,7 @@ func (s *Service) ReorderCategories(ctx context.Context, input ReorderCategories
 	idSet := make(map[int]struct{}, len(input.Categories))
 	for _, id := range input.Categories {
 		if _, ok := idSet[id]; ok {
-			return fmt.Errorf("duplicate category id: %d", id)
+			return ErrDuplicateServiceCategoryId
 		}
 
 		idSet[id] = struct{}{}

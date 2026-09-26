@@ -34,17 +34,33 @@ func NewService(catalog domain.CatalogRepository, merchant domain.MerchantReposi
 
 func validateService(phaseCount int, bookingType types.BookingType, maxParticipants *int) error {
 	if phaseCount == 0 {
-		return fmt.Errorf("service phases can not be empty")
+		return ErrServicePhasesRequired
 	}
 
 	if bookingType == types.BookingTypeClass || bookingType == types.BookingTypeEvent {
 		if phaseCount != 1 {
-			return fmt.Errorf("group service shall have one phase")
+			return ErrGroupServiceRequiresSinglePhase
 		}
 
 		if maxParticipants == nil {
-			return fmt.Errorf("service must have max participants")
+			return ErrGroupServiceRequiresMaxParticipants
 		}
+	}
+
+	return nil
+}
+
+func validateServiceEmployees(employeeIds []int) error {
+	if len(employeeIds) == 0 {
+		return ErrServiceRequiresEmployee
+	}
+
+	seen := make(map[int]struct{}, len(employeeIds))
+	for _, employeeId := range employeeIds {
+		if _, exists := seen[employeeId]; exists {
+			return ErrDuplicateServiceEmployee
+		}
+		seen[employeeId] = struct{}{}
 	}
 
 	return nil
@@ -93,6 +109,9 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
 		return err
 	}
+	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
+		return err
+	}
 
 	minParticipants := 1
 	if input.MinParticipants != nil {
@@ -135,7 +154,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	if input.Price != nil {
 		if input.Price.CurrencyCode() != curr {
-			return fmt.Errorf("new service price's currency does not match merchant's currency")
+			return ErrServicePriceCurrencyMismatch
 		}
 	}
 
@@ -161,7 +180,6 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			BookingWindowMax: input.Settings.BookingWindowMax,
 			BufferTime:       input.Settings.BufferTime,
 			ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			AllEmployees:     len(input.EmployeeIds) == 0,
 		})
 		if err != nil {
 			return err
@@ -202,7 +220,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("unexpected error inserting service: %s", err.Error())
+		return fmt.Errorf("unexpected error inserting service: %w", err)
 	}
 
 	return nil
@@ -303,6 +321,9 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
 		return err
 	}
+	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
+		return err
+	}
 
 	minParticipants := 1
 	if input.MinParticipants != nil {
@@ -337,7 +358,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 	if input.Price != nil {
 		if input.Price.CurrencyCode() != curr {
-			return fmt.Errorf("service price's currency does not match merchant's currency")
+			return ErrServicePriceCurrencyMismatch
 		}
 	}
 
@@ -390,50 +411,47 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			BookingWindowMax: input.Settings.BookingWindowMax,
 			BufferTime:       input.Settings.BufferTime,
 			ApprovalPolicy:   input.Settings.ApprovalPolicy,
-			AllEmployees:     len(input.EmployeeIds) == 0,
 		})
 		if err != nil {
 			return err
 		}
 
-		if len(input.EmployeeIds) > 0 {
-			existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
+		existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
+		if err != nil {
+			return err
+		}
+
+		employeeChanges, err := s.teamService.DetectEmployeeChanges(existingEmployees, input.EmployeeIds)
+		if err != nil {
+			return err
+		}
+
+		if len(employeeChanges.ToDelete) > 0 {
+			serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
+
+			err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(employeeChanges.ToInsert) > 0 {
+			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
 			if err != nil {
 				return err
 			}
 
-			employeeChanges, err := s.teamService.DetectEmployeeChanges(existingEmployees, input.EmployeeIds)
+			employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
+			for i, e := range employeeChanges.ToInsert {
+				employeeServices[i] = domain.EmployeeService{
+					EmployeeId: e,
+					ServiceId:  input.Id,
+				}
+			}
+
+			err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
 			if err != nil {
 				return err
-			}
-
-			if len(employeeChanges.ToDelete) > 0 {
-				serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
-
-				err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
-				if err != nil {
-					return err
-				}
-			}
-
-			if len(employeeChanges.ToInsert) > 0 {
-				err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
-				if err != nil {
-					return err
-				}
-
-				employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
-				for i, e := range employeeChanges.ToInsert {
-					employeeServices[i] = domain.EmployeeService{
-						EmployeeId: e,
-						ServiceId:  input.Id,
-					}
-				}
-
-				err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
-				if err != nil {
-					return err
-				}
 			}
 		}
 
@@ -476,7 +494,7 @@ func (s *Service) Delete(ctx context.Context, serviceId int) error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while deleting service for merchant: %s", err.Error())
+		return fmt.Errorf("error while deleting service for merchant: %w", err)
 	}
 
 	return nil
@@ -493,25 +511,47 @@ func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageDat
 	return service, nil
 }
 
-func (s *Service) GetEmployeeServicePricing(ctx context.Context, serviceId int) (domain.EmployeeServicePricingPage, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	pricing, err := s.catalogRepo.GetEmployeeServicePricing(ctx, actor.MerchantId, serviceId)
-	if err != nil {
-		return domain.EmployeeServicePricingPage{}, err
-	}
-
-	return pricing, nil
+type GetEmployeePricingDurationResult struct {
+	ServiceId       int
+	ServiceName     string
+	TotalDuration   int
+	PricePerPerson  *currencyx.Price
+	PriceType       types.PriceType
+	EmployeePricing []domain.EmployeeServicePricingDuration
 }
 
-type EmployeeServicePricingInput struct {
+func (s *Service) GetEmployeePricingDuration(ctx context.Context, serviceId int) (GetEmployeePricingDurationResult, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
+	if err != nil {
+		return GetEmployeePricingDurationResult{}, err
+	}
+
+	pricing, err := s.catalogRepo.GetEmployeeServicePricingDuration(ctx, actor.MerchantId, serviceId)
+	if err != nil {
+		return GetEmployeePricingDurationResult{}, err
+	}
+
+	return GetEmployeePricingDurationResult{
+		ServiceId:       service.Id,
+		ServiceName:     service.Name,
+		TotalDuration:   service.TotalDuration,
+		PricePerPerson:  service.Price,
+		PriceType:       service.PriceType,
+		EmployeePricing: pricing,
+	}, nil
+}
+
+type UpdateEmployeePricingDurationInput struct {
 	EmployeeId     int
+	IsAssigned     bool
 	TotalDuration  *int
 	PricePerPerson *currencyx.Price
 	PriceType      *types.PriceType
 }
 
-func (s *Service) UpdateEmployeeServicePricing(ctx context.Context, serviceId int, inputs []EmployeeServicePricingInput) error {
+func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId int, inputs []UpdateEmployeePricingDurationInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	currencyCode, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
@@ -526,15 +566,19 @@ func (s *Service) UpdateEmployeeServicePricing(ctx context.Context, serviceId in
 	seenEmployeeIds := make(map[int]struct{}, len(inputs))
 	for _, input := range inputs {
 		if _, exists := seenEmployeeIds[input.EmployeeId]; exists {
-			return fmt.Errorf("duplicate employee id: %d", input.EmployeeId)
+			return ErrDuplicateServiceEmployee
 		}
 		seenEmployeeIds[input.EmployeeId] = struct{}{}
 
+		if !input.IsAssigned {
+			continue
+		}
+
 		if input.TotalDuration != nil && (*input.TotalDuration < 1 || *input.TotalDuration > 1440) {
-			return fmt.Errorf("employee service duration must be between 1 and 1440 minutes")
+			return ErrEmployeeServiceDurationOutOfRange
 		}
 		if input.PricePerPerson != nil && input.PricePerPerson.CurrencyCode() != currencyCode {
-			return fmt.Errorf("employee service price's currency does not match merchant's currency")
+			return ErrEmployeeServicePriceCurrencyMismatch
 		}
 		if input.PricePerPerson != nil {
 			priceComparison, err := input.PricePerPerson.Cmp(maxPrice)
@@ -542,30 +586,33 @@ func (s *Service) UpdateEmployeeServicePricing(ctx context.Context, serviceId in
 				return err
 			}
 			if input.PricePerPerson.IsNegative() || priceComparison > 0 {
-				return fmt.Errorf("employee service price must be between 0 and 1000000")
+				return ErrEmployeeServicePriceOutOfRange
 			}
 		}
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		pricing, err := s.catalogRepo.WithTx(tx).GetEmployeeServicePricing(ctx, actor.MerchantId, serviceId)
+		pricingDuration, err := s.catalogRepo.WithTx(tx).GetEmployeeServicePricingDuration(ctx, actor.MerchantId, serviceId)
 		if err != nil {
 			return err
 		}
 
-		assignedEmployeeIds := make(map[int]struct{}, len(pricing.EmployeePricing))
-		for _, employee := range pricing.EmployeePricing {
-			assignedEmployeeIds[employee.EmployeeId] = struct{}{}
+		activeEmployeeIds := make(map[int]struct{}, len(pricingDuration))
+		assignedEmployeeIds := make(map[int]bool, len(pricingDuration))
+		for _, employee := range pricingDuration {
+			activeEmployeeIds[employee.EmployeeId] = struct{}{}
+			assignedEmployeeIds[employee.EmployeeId] = employee.IsAssigned
 		}
 
 		employeeServices := make([]domain.EmployeeService, 0, len(inputs))
 		employeeIdsToDelete := make([]int, 0, len(inputs))
 		for _, input := range inputs {
-			if _, assigned := assignedEmployeeIds[input.EmployeeId]; !assigned {
-				return fmt.Errorf("employee %d is not assigned to this service", input.EmployeeId)
+			if _, active := activeEmployeeIds[input.EmployeeId]; !active {
+				return ErrEmployeeNotActiveForMerchant
 			}
+			assignedEmployeeIds[input.EmployeeId] = input.IsAssigned
 
-			if pricing.AllEmployees && input.TotalDuration == nil && input.PricePerPerson == nil && input.PriceType == nil {
+			if !input.IsAssigned {
 				employeeIdsToDelete = append(employeeIdsToDelete, input.EmployeeId)
 				continue
 			}
@@ -579,14 +626,32 @@ func (s *Service) UpdateEmployeeServicePricing(ctx context.Context, serviceId in
 			})
 		}
 
+		hasAssignedEmployee := false
+		for _, isAssigned := range assignedEmployeeIds {
+			if isAssigned {
+				hasAssignedEmployee = true
+				break
+			}
+		}
+		if !hasAssignedEmployee {
+			return ErrServiceRequiresEmployee
+		}
+
+		txCatalogRepo := s.catalogRepo.WithTx(tx)
 		if len(employeeIdsToDelete) > 0 {
 			serviceIds := utils.RepeatSlice([]int{serviceId}, len(employeeIdsToDelete))
-			if err := s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeIdsToDelete); err != nil {
+			if err := txCatalogRepo.BulkDeleteEmployeeService(ctx, serviceIds, employeeIdsToDelete); err != nil {
 				return err
 			}
 		}
 
-		return s.catalogRepo.WithTx(tx).BulkUpsertEmployeeServicePricing(ctx, employeeServices)
+		if len(employeeServices) > 0 {
+			if err := txCatalogRepo.BulkUpsertEmployeeServicePricing(ctx, employeeServices); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("error while updating employee service pricing: %w", err)
@@ -602,10 +667,6 @@ type UpdateServiceProductInput struct {
 
 // TODO: this does not check wether the service and product belong to the merchant updating it
 func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input UpdateServiceProductInput) error {
-	if serviceId != input.ServiceId {
-		return fmt.Errorf("invalid service id")
-	}
-
 	var products []domain.ConnectedProducts
 	for _, product := range input.UsedProducts {
 		products = append(products, domain.ConnectedProducts{
@@ -653,7 +714,7 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating products connected to service for merchant: %s", err.Error())
+		return fmt.Errorf("error while updating products connected to service for merchant: %w", err)
 	}
 
 	return nil
@@ -703,7 +764,7 @@ func (s *Service) Reorder(ctx context.Context, input ReorderInput) error {
 	idSet := make(map[int]struct{}, len(input.Services))
 	for _, id := range input.Services {
 		if _, ok := idSet[id]; ok {
-			return fmt.Errorf("duplicate service id: %d", id)
+			return ErrDuplicateServiceId
 		}
 
 		idSet[id] = struct{}{}

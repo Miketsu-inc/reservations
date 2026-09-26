@@ -28,18 +28,17 @@ func (r *catalogRepository) WithTx(tx db.DBTX) domain.CatalogRepository {
 func (r *catalogRepository) NewService(ctx context.Context, serv domain.Service) (int, error) {
 	query := `
 	insert into "Service" (merchant_id, category_id, booking_type, name, description, color, total_duration, price_per_person,
-		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy,
-		all_employees)
+		price_type, is_active, sequence, min_participants, max_participants, cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, coalesce((
 		select max(sequence) + 1 from "Service" where category_id is not distinct from $2 and merchant_id = $1
-		), 1), $11, $12, $13, $14, $15, $16, $17, $18)
+		), 1), $11, $12, $13, $14, $15, $16, $17)
 	returning id
 	`
 
 	var serviceId int
 	err := r.db.QueryRow(ctx, query, serv.MerchantId, serv.CategoryId, serv.BookingType, serv.Name, serv.Description, serv.Color,
 		serv.TotalDuration, serv.Price, serv.PriceType, serv.IsActive, serv.MinParticipants, serv.MaxParticipants,
-		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime, serv.ApprovalPolicy, serv.AllEmployees).Scan(&serviceId)
+		serv.CancelDeadline, serv.BookingWindowMin, serv.BookingWindowMax, serv.BufferTime, serv.ApprovalPolicy).Scan(&serviceId)
 	if err != nil {
 		return 0, fmt.Errorf("NewService: %w", err)
 	}
@@ -56,7 +55,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 	update "Service"
 	set category_id = $3, name = $4, description = $5, color = $6, total_duration = $7, price_per_person = $8,
 		price_type = $9, is_active = $10, cancel_deadline = $11, booking_window_min = $12, booking_window_max = $13, buffer_time = $14,
-		approval_policy = $15, min_participants = $16, max_participants = $17, all_employees = $18,
+		approval_policy = $15, min_participants = $16, max_participants = $17,
 		sequence = case
 			when old.category_id is distinct from $3 then (
 				coalesce((
@@ -73,7 +72,7 @@ func (r *catalogRepository) UpdateService(ctx context.Context, s domain.Service)
 	var oldCategoryId *int
 	err := r.db.QueryRow(ctx, query, s.Id, s.MerchantId, s.CategoryId, s.Name, s.Description, s.Color, s.TotalDuration,
 		s.Price, s.PriceType, s.IsActive, s.CancelDeadline, s.BookingWindowMin, s.BookingWindowMax, s.BufferTime,
-		s.ApprovalPolicy, s.MinParticipants, s.MaxParticipants, s.AllEmployees).Scan(&oldCategoryId)
+		s.ApprovalPolicy, s.MinParticipants, s.MaxParticipants).Scan(&oldCategoryId)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateService: %w", err)
 	}
@@ -501,14 +500,12 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 			'approval_policy', s.approval_policy
 		) as settings,
 		coalesce(phases.phases, '[]'::jsonb) as phases,
-		case
-			when s.all_employees then '{}'::int[]
-			else coalesce((
-				select array_agg(es.employee_id order by es.employee_id)
-				from "EmployeeService" es
-				where es.service_id = s.id
-			), '{}'::int[])
-		end as employee_ids,
+		coalesce((
+			select array_agg(es.employee_id order by es.employee_id)
+			from "EmployeeService" es
+			join "Employee" e on e.id = es.employee_id and e.is_active
+			where es.service_id = s.id
+		), '{}'::int[]) as employee_ids,
 		coalesce(products.products, '[]'::jsonb) as products
 	from "Service" s
 	left join phases on s.id = phases.service_id
@@ -682,52 +679,30 @@ func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, servic
 	return employeeIds, nil
 }
 
-func (r *catalogRepository) GetEmployeeServicePricing(ctx context.Context, merchantId uuid.UUID, serviceId int) (domain.EmployeeServicePricingPage, error) {
-	serviceQuery := `
-	select id, name, total_duration, price_per_person, price_type, all_employees
-	from "Service"
-	where id = $1 and merchant_id = $2
-	`
-
-	var pricing domain.EmployeeServicePricingPage
-	err := r.db.QueryRow(ctx, serviceQuery, serviceId, merchantId).Scan(
-		&pricing.ServiceId,
-		&pricing.ServiceName,
-		&pricing.TotalDuration,
-		&pricing.PricePerPerson,
-		&pricing.PriceType,
-		&pricing.AllEmployees,
-	)
-	if err != nil {
-		return domain.EmployeeServicePricingPage{}, fmt.Errorf("GetEmployeeServicePricing: %w", err)
-	}
-
-	employeeQuery := `
+func (r *catalogRepository) GetEmployeeServicePricingDuration(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]domain.EmployeeServicePricingDuration, error) {
+	query := `
 	select e.id,
 		coalesce(e.first_name, u.first_name) as first_name,
 		coalesce(e.last_name, u.last_name) as last_name,
 		e.role,
+		(es.employee_id is not null) as is_assigned,
 		es.total_duration,
 		es.price_per_person,
 		es.price_type
 	from "Employee" e
-	left join "User" u on u.id = e.user_id
 	left join "EmployeeService" es on es.employee_id = e.id and es.service_id = $1
+	left join "User" u on u.id = e.user_id
 	where e.merchant_id = $2 and e.is_active is true
-		and ($3 or es.employee_id is not null)
 	order by coalesce(e.first_name, u.first_name), coalesce(e.last_name, u.last_name), e.id
 	`
 
-	rows, err := r.db.Query(ctx, employeeQuery, serviceId, merchantId, pricing.AllEmployees)
+	rows, _ := r.db.Query(ctx, query, serviceId, merchantId)
+	pricingDuration, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeServicePricingDuration])
 	if err != nil {
-		return domain.EmployeeServicePricingPage{}, fmt.Errorf("GetEmployeeServicePricing: %w", err)
-	}
-	pricing.EmployeePricing, err = pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeServicePricing])
-	if err != nil {
-		return domain.EmployeeServicePricingPage{}, fmt.Errorf("GetEmployeeServicePricing: %w", err)
+		return []domain.EmployeeServicePricingDuration{}, fmt.Errorf("GetEmployeeServicePricingDuration: %w", err)
 	}
 
-	return pricing, nil
+	return pricingDuration, nil
 }
 
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
