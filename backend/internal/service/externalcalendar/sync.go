@@ -905,23 +905,9 @@ func (s *Service) SyncNewBlockedTimeDispatcher(ctx context.Context, blockedTimeI
 		return err
 	}
 
-	var employeeIds []int
-
-	if len(blockedTime.EmployeeIds) == 0 {
-		employees, err := s.teamRepo.GetActiveEmployees(ctx, blockedTime.MerchantId)
-		if err != nil {
-			return err
-		}
-
-		if len(employees) == 0 {
-			return nil
-		}
-
-		for _, e := range employees {
-			employeeIds = append(employeeIds, e.Id)
-		}
-	} else {
-		employeeIds = blockedTime.EmployeeIds
+	employeeIds := blockedTime.EmployeeIds
+	if len(employeeIds) == 0 {
+		return nil
 	}
 
 	insertParams := make([]river.InsertManyParams, len(employeeIds))
@@ -988,17 +974,6 @@ func (s *Service) SyncUpdateBlockedTimeDispatcher(ctx context.Context, blockedTi
 	}
 
 	employeeIds := blockedTime.EmployeeIds
-	if len(employeeIds) == 0 {
-		employees, err := s.teamRepo.GetActiveEmployees(ctx, blockedTime.MerchantId)
-		if err != nil {
-			return err
-		}
-
-		employeeIds = make([]int, len(employees))
-		for i, employee := range employees {
-			employeeIds[i] = employee.Id
-		}
-	}
 
 	targetEmployees := make(map[int]struct{}, len(employeeIds))
 	for _, employeeId := range employeeIds {

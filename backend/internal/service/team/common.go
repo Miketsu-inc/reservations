@@ -2,14 +2,22 @@ package team
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 )
 
 func (s *Service) IsInActiveEmployees(ctx context.Context, merchantId uuid.UUID, employeeIds []int) error {
 	if len(employeeIds) == 0 {
-		return nil
+		return domain.ErrEmployeesRequired
+	}
+
+	seen := make(map[int]struct{}, len(employeeIds))
+	for _, employeeId := range employeeIds {
+		if _, exists := seen[employeeId]; exists {
+			return domain.ErrDuplicateEmployee
+		}
+		seen[employeeId] = struct{}{}
 	}
 
 	activeEmployees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
@@ -24,7 +32,7 @@ func (s *Service) IsInActiveEmployees(ctx context.Context, merchantId uuid.UUID,
 
 	for _, id := range employeeIds {
 		if _, ok := activeIdsMap[id]; !ok {
-			return fmt.Errorf("active employee with this id does not exist")
+			return domain.ErrEmployeeNotActive
 		}
 	}
 

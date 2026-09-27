@@ -32,6 +32,7 @@ export default function MultiSelect({
   const selectedValues = new Set(values);
   const allSelected =
     options.length > 0 &&
+    selectedValues.size === options.length &&
     options.every((option) => selectedValues.has(option.value));
 
   function handleOpen() {
@@ -143,6 +144,7 @@ export default function MultiSelect({
                   placeholder={placeholder}
                   displayText={displayText}
                   disabled={disabled}
+                  allSelected={allSelected}
                 />
               </div>
               <Icon
@@ -261,6 +263,7 @@ function TriggerContent({
   placeholder,
   displayText,
   disabled,
+  allSelected,
 }) {
   const selectedOptions = options.filter((option) =>
     selectedValues.has(option.value)
@@ -281,7 +284,7 @@ function TriggerContent({
   const remainingCount = selectedOptions.length - 2;
 
   let text = `${selectedOptions.length} ${displayText} selected`;
-  if (options.length > 0 && selectedOptions.length === options.length) {
+  if (allSelected) {
     text = `All ${displayText}`;
   } else if (selectedOptions.length === 1) {
     text = selectedOptions[0].label;

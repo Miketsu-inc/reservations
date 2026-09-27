@@ -88,6 +88,10 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return err
 	}
 
+	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
+		return err
+	}
+
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		ids, err := s.blockedTimeRepo.WithTx(tx).BulkInsertBlockedTime(ctx, []domain.BlockedTime{{
 			MerchantId:    actor.MerchantId,
@@ -102,17 +106,9 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
-		// TODO: reject duplicate employee_ids with a validation error.
-		if len(input.EmployeeIds) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
-			if err != nil {
-				return err
-			}
-
-			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, utils.RepeatEach(ids, len(input.EmployeeIds)), input.EmployeeIds)
-			if err != nil {
-				return err
-			}
+		err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, utils.RepeatEach(ids, len(input.EmployeeIds)), input.EmployeeIds)
+		if err != nil {
+			return err
 		}
 
 		_, err = s.enqueuer.InsertTx(ctx, tx, args.SyncNewBlockedTimeDispatcher{
@@ -157,6 +153,10 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
+	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
+		return err
+	}
+
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.blockedTimeRepo.WithTx(tx).UpdateBlockedTime(ctx, domain.BlockedTime{
 			Id:            input.BlockedTimeId,
@@ -172,7 +172,6 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return err
 		}
 
-		// TODO: reject duplicate employee_ids with a validation error.
 		employeeChanges, err := s.teamService.DetectEmployeeChanges(blockedTime.EmployeeIds, input.EmployeeIds)
 		if err != nil {
 			return err
@@ -186,11 +185,6 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
-			if err != nil {
-				return err
-			}
-
 			btIds := utils.RepeatSlice([]int{input.BlockedTimeId}, len(employeeChanges.ToInsert))
 
 			err = s.blockedTimeRepo.WithTx(tx).BulkInsertEmployeeBlockedTime(ctx, btIds, employeeChanges.ToInsert)

@@ -12,7 +12,6 @@ export default function TeamMemberMultiSelect({
   placeholder = "Select team members",
   disabled,
   emptyText,
-  emptyMeansAll = false,
   ...props
 }) {
   const { merchantId } = useAuth();
@@ -37,26 +36,12 @@ export default function TeamMemberMultiSelect({
     initials: `${member.first_name[0]}${member.last_name[0]}`,
   }));
 
-  const selectedValues =
-    emptyMeansAll && values.length === 0
-      ? options.map((option) => option.value)
-      : values;
-
-  function handleSelect(selected) {
-    if (emptyMeansAll && selected.length === options.length) {
-      onSelect([]);
-      return;
-    }
-
-    onSelect(selected);
-  }
-
   return (
     <MultiSelect
       {...props}
       options={options}
-      values={selectedValues}
-      onSelect={handleSelect}
+      values={values}
+      onSelect={onSelect}
       labelText={labelText}
       displayText={displayText}
       placeholder={isLoading ? "Loading team members..." : placeholder}

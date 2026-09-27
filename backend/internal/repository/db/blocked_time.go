@@ -219,17 +219,10 @@ func (r *blockedTimeRepository) GetBlockedTimeForEmployee(ctx context.Context, b
 	query := `
 	select bt.*
 	from "BlockedTime" bt
-	where id = $1 and (
-		not exists (
-			select 1
-			from "EmployeeBlockedTime" ebt
-			where ebt.blocked_time_id = bt.id
-		)
-		or exists (
-			select 1
-			from "EmployeeBlockedTime" ebt
-			where ebt.blocked_time_id = bt.id and ebt.employee_id = $2
-		)
+	where id = $1 and exists (
+		select 1
+		from "EmployeeBlockedTime" ebt
+		where ebt.blocked_time_id = bt.id and ebt.employee_id = $2
 	)
 	`
 
@@ -305,19 +298,11 @@ func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId 
 			or
 			(not bt.is_all_day and bt.to_date > $2 and bt.from_date < $3)
 		)
-		and (
-			$4::int is null
-			or not exists (
-				select 1
-				from "EmployeeBlockedTime" ebt
-				where ebt.blocked_time_id = bt.id
-			)
-			or exists (
-				select 1
-				from "EmployeeBlockedTime" ebt
-				where ebt.blocked_time_id = bt.id
-					and ebt.employee_id = $4
-			)
+		and exists (
+			select 1
+			from "EmployeeBlockedTime" ebt
+			where ebt.blocked_time_id = bt.id
+				and ($4::int is null or ebt.employee_id = $4)
 		)
 	order by coalesce(bt.from_date, bt.blocked_day::timestamp)`
 

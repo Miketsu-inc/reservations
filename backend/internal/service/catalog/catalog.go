@@ -49,22 +49,6 @@ func validateService(phaseCount int, bookingType types.BookingType, maxParticipa
 	return nil
 }
 
-func validateServiceEmployees(employeeIds []int) error {
-	if len(employeeIds) == 0 {
-		return ErrServiceRequiresEmployee
-	}
-
-	seen := make(map[int]struct{}, len(employeeIds))
-	for _, employeeId := range employeeIds {
-		if _, exists := seen[employeeId]; exists {
-			return ErrDuplicateServiceEmployee
-		}
-		seen[employeeId] = struct{}{}
-	}
-
-	return nil
-}
-
 type NewInput struct {
 	BookingType     types.BookingType
 	Name            string
@@ -109,7 +93,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return err
 	}
 
-	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
+	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
 		return err
 	}
 
@@ -190,24 +174,17 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
-		if len(input.EmployeeIds) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds)
-			if err != nil {
-				return err
+		employeeServices := make([]domain.EmployeeService, len(input.EmployeeIds))
+		for i, e := range input.EmployeeIds {
+			employeeServices[i] = domain.EmployeeService{
+				EmployeeId: e,
+				ServiceId:  serviceId,
 			}
+		}
 
-			employeeServices := make([]domain.EmployeeService, len(input.EmployeeIds))
-			for i, e := range input.EmployeeIds {
-				employeeServices[i] = domain.EmployeeService{
-					EmployeeId: e,
-					ServiceId:  serviceId,
-				}
-			}
-
-			err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
-			if err != nil {
-				return err
-			}
+		err = s.catalogRepo.WithTx(tx).BulkInsertEmployeeService(ctx, employeeServices)
+		if err != nil {
+			return err
 		}
 
 		if len(connectedProducts) != 0 {
@@ -368,7 +345,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
-	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
+	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
 		return err
 	}
 
@@ -494,11 +471,6 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToInsert) > 0 {
-			err = s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, employeeChanges.ToInsert)
-			if err != nil {
-				return err
-			}
-
 			employeeServices := make([]domain.EmployeeService, len(employeeChanges.ToInsert))
 			for i, e := range employeeChanges.ToInsert {
 				employeeServices[i] = domain.EmployeeService{
@@ -668,7 +640,7 @@ func validateTeamMemberSettingsInputs(inputs []UpdateTeamMemberSettingsInput, cu
 
 	for _, input := range inputs {
 		if _, exists := seenEmployeeIds[input.EmployeeId]; exists {
-			return ErrDuplicateServiceEmployee
+			return domain.ErrDuplicateEmployee
 		}
 
 		seenEmployeeIds[input.EmployeeId] = struct{}{}
@@ -742,7 +714,7 @@ func buildTeamMemberSettingsChanges(service domain.Service, settings []domain.Em
 		// therefore if not in it, it is inactive
 		wasAssigned, isActiveEmployee := assignmentByEmployeeId[input.EmployeeId]
 		if !isActiveEmployee {
-			return teamMemberSettingsChanges{}, ErrEmployeeNotActiveForMerchant
+			return teamMemberSettingsChanges{}, domain.ErrEmployeeNotActive
 		}
 
 		if input.IsAssigned && !wasAssigned {
@@ -816,7 +788,7 @@ func buildTeamMemberSettingsChanges(service domain.Service, settings []domain.Em
 	}
 
 	if assignedEmployeeCount == 0 {
-		return teamMemberSettingsChanges{}, ErrServiceRequiresEmployee
+		return teamMemberSettingsChanges{}, domain.ErrEmployeesRequired
 	}
 
 	return changes, nil

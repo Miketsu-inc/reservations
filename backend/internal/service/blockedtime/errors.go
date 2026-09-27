@@ -3,6 +3,7 @@ package blockedtime
 import (
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
@@ -12,6 +13,9 @@ var ErrStatus = apperr.StatusMap{
 	ErrTimedBlockedTimeDatesRequired: http.StatusBadRequest,
 	ErrInvalidBlockedTimeDateRange:   http.StatusBadRequest,
 	ErrBlockedTimeDurationTooLong:    http.StatusBadRequest,
+	domain.ErrEmployeesRequired:      http.StatusBadRequest,
+	domain.ErrDuplicateEmployee:      http.StatusBadRequest,
+	domain.ErrEmployeeNotActive:      http.StatusBadRequest,
 }
 
 var ErrBlockedTimeNotFound = &apperr.Error{Code: "blocked_time_not_found", Message: "blocked time not found"}
