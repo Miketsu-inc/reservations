@@ -161,7 +161,7 @@ export default function Select({
         </PopoverTrigger>
       </div>
       <PopoverContent
-        styles={`p-0! ${labelText && "data-[side=top]:translate-y-6"}`}
+        styles="p-0!"
         align={dropDownSameWidth ? "center" : "start"}
         onKeyDown={handleKeyDown}
         style={{

@@ -8,7 +8,7 @@ import {
 import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
-import { Block, useRouter } from "@tanstack/react-router";
+import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import ProductAdder from "./ProductAdder";
 import { ServiceBasicDetails } from "./ServiceBasicDetails";
@@ -107,6 +107,14 @@ export default function ServicePage({
       return;
     }
 
+    if (serviceData.employee_ids.length === 0) {
+      showToast({
+        message: "Select at least one team member",
+        variant: "error",
+      });
+      return;
+    }
+
     const data = {
       ...serviceData,
       phases: isGroupService
@@ -127,17 +135,10 @@ export default function ServicePage({
 
   return (
     <Block
-      shouldBlockFn={() => {
-        if (
-          JSON.stringify(serviceData) === JSON.stringify(lastSavedData.current)
-        )
-          return false;
-
-        const canLeave = confirm(
-          "You have unsaved changes, are you sure you want to leave?"
-        );
-        return !canLeave;
-      }}
+      shouldBlockFn={() =>
+        JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current) &&
+        !confirm("You have unsaved changes, are you sure you want to leave?")
+      }
     >
       {service && (
         <DeleteModal
@@ -218,8 +219,24 @@ export default function ServicePage({
                         onSelect={(employeeIds) =>
                           updateServiceData({ employee_ids: employeeIds })
                         }
-                        emptyMeansAll
                       />
+                      {service?.id && (
+                        <div className="pt-8">
+                          <p className="font-medium">
+                            Advanced team member settings
+                          </p>
+                          <p className="text-text_color/70 text-sm">
+                            Manage assignments and override service defaults.
+                          </p>
+                          <Link
+                            to={`/services/team-member-settings/${service.id}`}
+                            className="text-primary inline-block py-2 text-sm
+                              hover:underline"
+                          >
+                            Advanced settings
+                          </Link>
+                        </div>
+                      )}
                     </ScrollSpySection>
                   </form>
                   <ScrollSpySection id="products" label="Products">

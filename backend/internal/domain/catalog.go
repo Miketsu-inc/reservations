@@ -33,6 +33,8 @@ type CatalogRepository interface {
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
 	GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (Service, error)
 	GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error)
+	GetEmployeeServiceSettings(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServiceSettings, error)
+	GetEmployeeServicePhaseOverrides(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServicePhase, error)
 
 	NewServicePhases(ctx context.Context, serviceId int, servicePhases []ServicePhase) error
 	UpdateServicePhases(ctx context.Context, servicePhases []ServicePhase) error
@@ -52,7 +54,11 @@ type CatalogRepository interface {
 	GetServiceProducts(ctx context.Context, serviceId int) ([]ConnectedProducts, error)
 
 	BulkInsertEmployeeService(ctx context.Context, employeeServices []EmployeeService) error
-	BulkDeleteEmployeeService(ctx context.Context, serviceIds []int, employeeIds []int) error
+	BulkDeleteEmployeeService(ctx context.Context, serviceId int, employeeIds []int) error
+	BulkUpsertEmployeeServiceSettings(ctx context.Context, employeeServices []EmployeeService) error
+	BulkUpdateEmployeeServiceDurations(ctx context.Context, employeeServices []EmployeeService) error
+	BulkDeleteEmployeeServicePhases(ctx context.Context, serviceId int, employeeIds []int) error
+	BulkInsertEmployeeServicePhases(ctx context.Context, phases []EmployeeServicePhase) error
 }
 
 type Service struct {
@@ -262,9 +268,24 @@ type EmployeeService struct {
 	BufferTime      *int
 }
 
+type EmployeeServiceSettings struct {
+	EmployeeId      int                    `db:"id"`
+	FirstName       *string                `db:"first_name"`
+	LastName        *string                `db:"last_name"`
+	Role            types.EmployeeRole     `db:"role"`
+	IsAssigned      bool                   `db:"is_assigned"`
+	TotalDuration   *int                   `db:"total_duration"`
+	PricePerPerson  *currencyx.Price       `db:"price_per_person"`
+	PriceType       *types.PriceType       `db:"price_type"`
+	MinParticipants *int                   `db:"min_participants"`
+	MaxParticipants *int                   `db:"max_participants"`
+	BufferTime      *int                   `db:"buffer_time"`
+	PhaseOverrides  []EmployeeServicePhase `db:"-"`
+}
+
 type EmployeeServicePhase struct {
 	EmployeeId     int
 	ServiceId      int
 	ServicePhaseId int
-	Duration       *int
+	Duration       int
 }

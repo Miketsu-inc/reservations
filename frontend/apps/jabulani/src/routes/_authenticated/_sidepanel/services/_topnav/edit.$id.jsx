@@ -133,7 +133,6 @@ function RouteComponent() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          service_id: serviceId,
           used_products: usedProducts,
         }),
       }

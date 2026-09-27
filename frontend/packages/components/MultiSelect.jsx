@@ -155,7 +155,7 @@ export default function MultiSelect({
         </PopoverTrigger>
       </div>
       <PopoverContent
-        styles="p-0! data-[side=top]:translate-y-6"
+        styles="p-0!"
         onKeyDown={handleKeyDown}
         style={{
           width: triggerWidth || "auto",

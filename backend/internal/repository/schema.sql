@@ -126,7 +126,7 @@ create table if not exists "EmployeeService" (
     service_id               integer         references "Service" (ID) on delete cascade not null,
     total_duration           integer,
     price_per_person         price,
-    price_type               text,
+    price_type               text            check (price_type in ('fixed', 'free', 'from')),
     min_participants         integer,
     max_participants         integer,
     buffer_time              integer,

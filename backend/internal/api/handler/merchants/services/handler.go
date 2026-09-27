@@ -28,6 +28,8 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
 	r.Get("/{id}", h.Get)
+	r.Get("/{id}/team-member-settings", h.GetTeamMemberSettings)
+	r.Put("/{id}/team-member-settings", h.UpdateTeamMemberSettings)
 
 	r.Put("/{id}/products", h.UpdateServiceProduct)
 	// TODO: maybe replace these by a unified status route?
@@ -201,8 +203,96 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type employeePhaseOverrideResp struct {
+	ServicePhaseId int `json:"service_phase_id"`
+	Duration       int `json:"duration"`
+}
+
+type employeeSettingsResp struct {
+	EmployeeId      int                         `json:"employee_id"`
+	FirstName       *string                     `json:"first_name"`
+	LastName        *string                     `json:"last_name"`
+	Role            types.EmployeeRole          `json:"role"`
+	IsAssigned      bool                        `json:"is_assigned"`
+	Price           *currencyx.Price            `json:"price"`
+	PriceType       *types.PriceType            `json:"price_type"`
+	MinParticipants *int                        `json:"min_participants"`
+	MaxParticipants *int                        `json:"max_participants"`
+	BufferTime      *int                        `json:"buffer_time"`
+	PhaseOverrides  []employeePhaseOverrideResp `json:"phase_overrides"`
+}
+
+type getTeamMemberSettingsResp struct {
+	ServiceId              int                    `json:"service_id"`
+	ServiceName            string                 `json:"service_name"`
+	CurrencyCode           string                 `json:"currency_code"`
+	BookingType            types.BookingType      `json:"booking_type"`
+	DefaultDuration        int                    `json:"default_duration"`
+	DefaultPrice           *currencyx.Price       `json:"default_price"`
+	DefaultPriceType       types.PriceType        `json:"default_price_type"`
+	DefaultMinParticipants int                    `json:"default_min_participants"`
+	DefaultMaxParticipants int                    `json:"default_max_participants"`
+	DefaultBufferTime      *int                   `json:"default_buffer_time"`
+	Phases                 []phaseReq             `json:"phases"`
+	Employees              []employeeSettingsResp `json:"employees"`
+}
+
+func (h *Handler) GetTeamMemberSettings(w http.ResponseWriter, r *http.Request) error {
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	settings, err := h.service.GetTeamMemberSettings(r.Context(), serviceId)
+	if err != nil {
+		return catalogServ.ErrStatus.Resolve(err, "GetTeamMemberSettings")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetTeamMemberSettingsResp(settings))
+
+	return nil
+}
+
+type updateTeamMemberSettingsReq struct {
+	Employees []employeeSettingsReq `json:"employees" validate:"required"`
+}
+
+type employeePhaseOverrideReq struct {
+	ServicePhaseId int `json:"service_phase_id" validate:"required"`
+	Duration       int `json:"duration" validate:"required,min=1,max=1440"`
+}
+
+type employeeSettingsReq struct {
+	EmployeeId      int                        `json:"employee_id" validate:"required"`
+	IsAssigned      bool                       `json:"is_assigned"`
+	Price           *currencyx.Price           `json:"price"`
+	PriceType       *types.PriceType           `json:"price_type"`
+	MinParticipants *int                       `json:"min_participants"`
+	MaxParticipants *int                       `json:"max_participants"`
+	BufferTime      *int                       `json:"buffer_time"`
+	PhaseOverrides  []employeePhaseOverrideReq `json:"phase_overrides"`
+}
+
+func (h *Handler) UpdateTeamMemberSettings(w http.ResponseWriter, r *http.Request) error {
+	var req updateTeamMemberSettingsReq
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	err = h.service.UpdateTeamMemberSettings(r.Context(), serviceId, mapToUpdateTeamMemberSettingsInput(req.Employees))
+	if err != nil {
+		return catalogServ.ErrStatus.Resolve(err, "UpdateTeamMemberSettings")
+	}
+
+	return nil
+}
+
 type updateServiceProductReq struct {
-	ServiceId    int                    `json:"service_id" validate:"required"`
 	UsedProducts []connectedProductsReq `json:"used_products" validate:"required"`
 }
 
