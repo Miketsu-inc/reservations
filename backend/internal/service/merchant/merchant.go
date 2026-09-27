@@ -158,57 +158,69 @@ func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (string, er
 	return urlName, nil
 }
 
-func (s *Service) GetSettings(ctx context.Context) (domain.MerchantSettingsInfo, error) {
+func (s *Service) GetBusinessProfileSettings(ctx context.Context) (domain.BusinessProfileSettings, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	settings, err := s.merchantRepo.GetMerchantSettingsInfo(ctx, actor.MerchantId)
+	settings, err := s.merchantRepo.GetBusinessProfileSettings(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, err
+		return domain.BusinessProfileSettings{}, err
 	}
 
 	return settings, nil
 }
 
-type UpdateSettingsInput struct {
-	Introduction     string
-	Announcement     string
-	AboutUs          string
-	ParkingInfo      string
-	PaymentInfo      string
-	CancelDeadline   int
-	BookingWindowMin int
-	BookingWindowMax int
-	BufferTime       int
-	ApprovalPolicy   types.ApprovalType
-	BusinessHours    domain.BusinessHours
+func (s *Service) UpdateBusinessProfileSettings(ctx context.Context, settings domain.BusinessProfileSettings) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.merchantRepo.UpdateBusinessProfileSettings(ctx, actor.MerchantId, settings); err != nil {
+		return fmt.Errorf("error while updating business profile settings: %w", err)
+	}
+
+	return nil
 }
 
-func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput) error {
+func (s *Service) GetSchedulingSettings(ctx context.Context) (domain.SchedulingSettings, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	settings, err := s.merchantRepo.GetSchedulingSettings(ctx, actor.MerchantId)
+	if err != nil {
+		return domain.SchedulingSettings{}, err
+	}
+
+	return settings, nil
+}
+
+func (s *Service) UpdateSchedulingSettings(ctx context.Context, settings domain.SchedulingSettings) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.merchantRepo.UpdateSchedulingSettings(ctx, actor.MerchantId, settings); err != nil {
+		return fmt.Errorf("error while updating scheduling settings: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.BusinessHours, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, actor.MerchantId)
+	if err != nil {
+		return nil, err
+	}
+
+	return businessHours, nil
+}
+
+func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours domain.BusinessHours) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.merchantRepo.WithTx(tx).UpdateMerchantFields(ctx, actor.MerchantId, domain.MerchantSettingFields{
-			Introduction:     input.Introduction,
-			Announcement:     input.Announcement,
-			AboutUs:          input.AboutUs,
-			ParkingInfo:      input.ParkingInfo,
-			PaymentInfo:      input.PaymentInfo,
-			CancelDeadline:   input.CancelDeadline,
-			BookingWindowMin: input.BookingWindowMin,
-			BookingWindowMax: input.BookingWindowMax,
-			BufferTime:       input.BufferTime,
-			ApprovalPolicy:   input.ApprovalPolicy,
-		})
+		err := s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, actor.MerchantId, businessHours)
 		if err != nil {
 			return err
 		}
 
-		err = s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, actor.MerchantId, input.BusinessHours)
-		if err != nil {
-			return err
-		}
-
-		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, actor.MerchantId, input.BusinessHours)
+		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, actor.MerchantId, businessHours)
 		if err != nil {
 			return err
 		}
@@ -216,10 +228,21 @@ func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput)
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error())
+		return fmt.Errorf("error while updating business hours: %w", err)
 	}
 
 	return nil
+}
+
+func (s *Service) GetLocationSettings(ctx context.Context) (domain.Location, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	location, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
+	if err != nil {
+		return domain.Location{}, err
+	}
+
+	return location, nil
 }
 
 func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.BusinessHours, error) {

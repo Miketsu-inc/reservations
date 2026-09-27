@@ -98,10 +98,30 @@ func mapToCheckUrlResp(in string) checkUrlResp {
 	}
 }
 
-func mapToGetSettingsResp(in domain.MerchantSettingsInfo) getSettingsResp {
-	businessHours := make(map[int][]timeSlotResp, len(in.BusinessHours))
+func mapToBusinessProfileSettings(in businessProfileSettingsReq) domain.BusinessProfileSettings {
+	return domain.BusinessProfileSettings{
+		Introduction: in.Introduction,
+		Announcement: in.Announcement,
+		AboutUs:      in.AboutUs,
+		ParkingInfo:  in.ParkingInfo,
+		PaymentInfo:  in.PaymentInfo,
+	}
+}
 
-	for day, slots := range in.BusinessHours {
+func mapToSchedulingSettings(in schedulingSettingsReq) domain.SchedulingSettings {
+	return domain.SchedulingSettings{
+		CancelDeadline:   in.CancelDeadline,
+		BookingWindowMin: in.BookingWindowMin,
+		BookingWindowMax: in.BookingWindowMax,
+		BufferTime:       in.BufferTime,
+		ApprovalPolicy:   in.ApprovalPolicy,
+	}
+}
+
+func mapToBusinessHoursResp(in domain.BusinessHours) map[int][]timeSlotResp {
+	businessHours := make(map[int][]timeSlotResp, len(in))
+
+	for day, slots := range in {
 		timeSlots := make([]timeSlotResp, len(slots))
 
 		for i, s := range slots {
@@ -114,45 +134,24 @@ func mapToGetSettingsResp(in domain.MerchantSettingsInfo) getSettingsResp {
 		businessHours[day] = timeSlots
 	}
 
-	return getSettingsResp{
-		Name:              in.Name,
-		ContactEmail:      in.ContactEmail,
-		Introduction:      in.Introduction,
-		Announcement:      in.Announcement,
-		AboutUs:           in.AboutUs,
-		ParkingInfo:       in.ParkingInfo,
-		PaymentInfo:       in.PaymentInfo,
-		CancelDeadline:    in.CancelDeadline,
-		BookingWindowMin:  in.BookingWindowMin,
-		BookingWindowMax:  in.BookingWindowMax,
-		BufferTime:        in.BufferTime,
-		ApprovalPolicy:    in.ApprovalPolicy,
-		Timezone:          in.Timezone,
-		BusinessHours:     businessHours,
-		LocationId:        in.LocationId,
-		Country:           in.Country,
-		City:              in.City,
-		PostalCode:        in.PostalCode,
-		Address:           in.Address,
-		FormattedLocation: in.FormattedLocation,
-	}
+	return businessHours
 }
 
-func mapToUpdateSettingsInput(in updateSettingsReq) (merchantServ.UpdateSettingsInput, error) {
-	businessHours := make(domain.BusinessHours, len(in.BusinessHours))
+func mapToBusinessHours(in map[int][]timeSlotResp) (domain.BusinessHours, error) {
+	businessHours := make(domain.BusinessHours, len(in))
 
-	for day, slots := range in.BusinessHours {
+	for day, slots := range in {
 		timeSlots := make([]domain.TimeSlot, len(slots))
 
 		for i, s := range slots {
 			startTime, err := time.Parse("15:04", s.StartTime)
 			if err != nil {
-				return merchantServ.UpdateSettingsInput{}, err
+				return nil, err
 			}
 
 			endTime, err := time.Parse("15:04", s.EndTime)
 			if err != nil {
-				return merchantServ.UpdateSettingsInput{}, err
+				return nil, err
 			}
 
 			timeSlots[i] = domain.TimeSlot{
@@ -164,19 +163,18 @@ func mapToUpdateSettingsInput(in updateSettingsReq) (merchantServ.UpdateSettings
 		businessHours[day] = timeSlots
 	}
 
-	return merchantServ.UpdateSettingsInput{
-		Introduction:     in.Introduction,
-		Announcement:     in.Announcement,
-		AboutUs:          in.AboutUs,
-		ParkingInfo:      in.ParkingInfo,
-		PaymentInfo:      in.PaymentInfo,
-		CancelDeadline:   in.CancelDeadline,
-		BookingWindowMin: in.BookingWindowMin,
-		BookingWindowMax: in.BookingWindowMax,
-		BufferTime:       in.BufferTime,
-		ApprovalPolicy:   in.ApprovalPolicy,
-		BusinessHours:    businessHours,
-	}, nil
+	return businessHours, nil
+}
+
+func mapToLocationSettingsResp(in domain.Location) locationSettingsResp {
+	return locationSettingsResp{
+		LocationId:        in.Id,
+		Country:           in.Country,
+		City:              in.City,
+		PostalCode:        in.PostalCode,
+		Address:           in.Address,
+		FormattedLocation: in.FormattedLocation,
+	}
 }
 
 func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSlotResp {

@@ -212,22 +212,115 @@ func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type getSettingsResp struct {
-	Name             string                 `json:"merchant_name"`
-	ContactEmail     string                 `json:"contact_email"`
-	Introduction     string                 `json:"introduction"`
-	Announcement     string                 `json:"announcement"`
-	AboutUs          string                 `json:"about_us"`
-	ParkingInfo      string                 `json:"parking_info"`
-	PaymentInfo      string                 `json:"payment_info"`
-	CancelDeadline   int                    `json:"cancel_deadline"`
-	BookingWindowMin int                    `json:"booking_window_min"`
-	BookingWindowMax int                    `json:"booking_window_max"`
-	BufferTime       int                    `json:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType     `json:"approval_policy"`
-	Timezone         string                 `json:"timezone"`
-	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
+type businessProfileSettingsReq struct {
+	Introduction string `json:"introduction"`
+	Announcement string `json:"announcement"`
+	AboutUs      string `json:"about_us"`
+	ParkingInfo  string `json:"parking_info"`
+	PaymentInfo  string `json:"payment_info"`
+}
 
+type timeSlotResp struct {
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+}
+
+func (h *Handler) GetBusinessProfileSettings(w http.ResponseWriter, r *http.Request) error {
+	settings, err := h.service.GetBusinessProfileSettings(r.Context())
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetBusinessProfileSettings")
+	}
+
+	httputil.Success(w, http.StatusOK, settings)
+
+	return nil
+}
+
+func (h *Handler) UpdateBusinessProfileSettings(w http.ResponseWriter, r *http.Request) error {
+	var req businessProfileSettingsReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	err := h.service.UpdateBusinessProfileSettings(r.Context(), mapToBusinessProfileSettings(req))
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "UpdateBusinessProfileSettings")
+	}
+
+	return nil
+}
+
+type schedulingSettingsReq struct {
+	CancelDeadline   int                `json:"cancel_deadline"`
+	BookingWindowMin int                `json:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `json:"approval_policy" validate:"required"`
+}
+
+func (h *Handler) GetSchedulingSettings(w http.ResponseWriter, r *http.Request) error {
+	settings, err := h.service.GetSchedulingSettings(r.Context())
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetSchedulingSettings")
+	}
+
+	httputil.Success(w, http.StatusOK, settings)
+
+	return nil
+}
+
+func (h *Handler) UpdateSchedulingSettings(w http.ResponseWriter, r *http.Request) error {
+	var req schedulingSettingsReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	err := h.service.UpdateSchedulingSettings(r.Context(), mapToSchedulingSettings(req))
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "UpdateSchedulingSettings")
+	}
+
+	return nil
+}
+
+type businessHoursSettingsReq struct {
+	BusinessHours map[int][]timeSlotResp `json:"business_hours"`
+}
+
+func (h *Handler) GetBusinessHoursSettings(w http.ResponseWriter, r *http.Request) error {
+	businessHours, err := h.service.GetBusinessHoursSettings(r.Context())
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetBusinessHoursSettings")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToBusinessHoursResp(businessHours))
+
+	return nil
+}
+
+func (h *Handler) UpdateBusinessHoursSettings(w http.ResponseWriter, r *http.Request) error {
+	var req businessHoursSettingsReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	businessHours, err := mapToBusinessHours(req.BusinessHours)
+	if err != nil {
+		return validate.NewError(err.Error())
+	}
+
+	err = h.service.UpdateBusinessHoursSettings(r.Context(), businessHours)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "UpdateBusinessHoursSettings")
+	}
+
+	return nil
+}
+
+type locationSettingsResp struct {
 	LocationId        int     `json:"location_id"`
 	Country           *string `json:"country"`
 	City              *string `json:"city"`
@@ -236,52 +329,13 @@ type getSettingsResp struct {
 	FormattedLocation string  `json:"formatted_location"`
 }
 
-type timeSlotResp struct {
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
-}
-
-func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) error {
-	settings, err := h.service.GetSettings(r.Context())
+func (h *Handler) GetLocationSettings(w http.ResponseWriter, r *http.Request) error {
+	location, err := h.service.GetLocationSettings(r.Context())
 	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetSettings")
+		return merchantServ.ErrStatus.Resolve(err, "GetLocationSettings")
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetSettingsResp(settings))
-
-	return nil
-}
-
-type updateSettingsReq struct {
-	Introduction     string                 `json:"introduction"`
-	Announcement     string                 `json:"announcement"`
-	AboutUs          string                 `json:"about_us"`
-	ParkingInfo      string                 `json:"parking_info"`
-	PaymentInfo      string                 `json:"payment_info"`
-	CancelDeadline   int                    `json:"cancel_deadline"`
-	BookingWindowMin int                    `json:"booking_window_min"`
-	BookingWindowMax int                    `json:"booking_window_max"`
-	BufferTime       int                    `json:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType     `json:"approval_policy" validate:"required"`
-	BusinessHours    map[int][]timeSlotResp `json:"business_hours"`
-}
-
-func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) error {
-	var req updateSettingsReq
-
-	if err := validate.ParseStruct(r, &req); err != nil {
-		return err
-	}
-
-	updateSettingsInput, err := mapToUpdateSettingsInput(req)
-	if err != nil {
-		return validate.NewError(err.Error())
-	}
-
-	err = h.service.UpdateSettings(r.Context(), updateSettingsInput)
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "UpdateSettings")
-	}
+	httputil.Success(w, http.StatusOK, mapToLocationSettingsResp(location))
 
 	return nil
 }

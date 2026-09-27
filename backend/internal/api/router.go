@@ -93,9 +93,14 @@ func NewRouter(h *Handlers) *httputil.Router {
 				r.Get("/dashboard/revenue", h.Merchants.GetDashboardRevenue)
 				r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
 
-				r.Get("/settings", h.Merchants.GetSettings)
-				r.Patch("/settings", h.Merchants.UpdateSettings)
+				r.Get("/settings/business-profile", h.Merchants.GetBusinessProfileSettings)
+				r.Patch("/settings/business-profile", h.Merchants.UpdateBusinessProfileSettings)
+				r.Get("/settings/scheduling", h.Merchants.GetSchedulingSettings)
+				r.Patch("/settings/scheduling", h.Merchants.UpdateSchedulingSettings)
+				r.Get("/settings/business-hours", h.Merchants.GetBusinessHoursSettings)
+				r.Patch("/settings/business-hours", h.Merchants.UpdateBusinessHoursSettings)
 				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
+				r.Get("/settings/location", h.Merchants.GetLocationSettings)
 
 				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
@@ -147,9 +152,12 @@ func jabulaniRouter() chi.Router {
 		"/settings",
 		"/settings/profile",
 		"/settings/merchant",
+		"/settings/business-hours",
 		"/settings/billing",
 		"/settings/calendar",
 		"/settings/scheduling",
+		"/settings/blocked-time-types",
+		"/settings/location",
 		"/services",
 		"/services/new",
 		"/services/edit/{id}",

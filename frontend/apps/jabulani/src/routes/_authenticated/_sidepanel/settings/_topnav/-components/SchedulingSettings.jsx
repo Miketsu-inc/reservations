@@ -12,7 +12,7 @@ export default function SchedulingSettings({ settings, onChange }) {
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
           <div className="text-text_color text-lg font-medium">
-            Cancellation Policy
+            Cancellation policy
           </div>
 
           <div className="flex flex-col gap-2">
@@ -36,7 +36,7 @@ export default function SchedulingSettings({ settings, onChange }) {
         <div className="flex flex-col gap-4">
           <div>
             <div className="text-text_color text-lg font-medium">
-              Booking Window
+              Booking window
             </div>
             <p className="text-text_color/70 mt-1 text-sm">
               Control when customers can book appointments
@@ -80,7 +80,7 @@ export default function SchedulingSettings({ settings, onChange }) {
 
         <div className="flex flex-col gap-5">
           <div className="text-text_color text-lg font-medium">
-            Schedule Management
+            Schedule management
           </div>
           <div className="flex flex-col gap-2">
             <Select

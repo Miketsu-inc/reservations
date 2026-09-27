@@ -81,7 +81,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
             Create custom scheduling rules for this service. These settings will
             override your{" "}
             <Link
-              to="/settings/merchant"
+              to="/settings/scheduling"
               className="text-primary hover:text-primary/80 font-medium
                 hover:underline"
             >

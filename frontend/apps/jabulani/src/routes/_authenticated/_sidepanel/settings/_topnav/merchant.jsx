@@ -1,120 +1,18 @@
-import {
-  Button,
-  Loading,
-  ServerError,
-  Textarea,
-} from "@reservations/components";
+import { Loading, ServerError, Textarea } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
-  invalidateLocalStorageAuth,
-  preferencesQueryOptions,
+  businessProfileSettingsQueryOptions,
+  updateBusinessProfileSettings,
   useToast,
 } from "@reservations/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import BusinessHours from "./-components/BusinessHours";
+import { useState } from "react";
 import DangerZone from "./-components/DangerZone";
 import ImageUploader from "./-components/ImageUploader";
-import SchedulingSettings from "./-components/SchedulingSettings";
-import SectionHeader from "./-components/SectionHeader";
-
-const daysOfWeek = {
-  1: "Monday",
-  2: "Tuesday",
-  3: "Wednesday",
-  4: "Thursday",
-  5: "Friday",
-  6: "Saturday",
-  0: "Sunday",
-};
-
-const ApprovalOptions = [
-  {
-    value: "auto",
-    name: "Automatic",
-    desc: "All bookings confirmed instantly, no action needed.",
-  },
-  {
-    value: "manual",
-    name: "Manual",
-    desc: "Every request waits for your approval before confirming.",
-  },
-  {
-    value: "manual_for_new",
-    name: "Manual for new customers",
-    desc: "Returning customers auto-approved, new ones need review.",
-  },
-];
-
-async function fetchMerchantData(merchantId) {
-  const response = await fetch(`/api/v1/merchants/${merchantId}/settings`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function merchantDataQueryOptions(merchantId) {
-  return queryOptions({
-    queryKey: [merchantId, "merchant-data"],
-    queryFn: () => fetchMerchantData(merchantId),
-  });
-}
-
-function validateBusinessHours(hours) {
-  for (const day in hours) {
-    const periods = hours[day];
-
-    if (periods.length === 0) continue;
-
-    // Sort time periods by start time
-    const sortedPeriods = [...periods].sort((a, b) =>
-      a.start_time.localeCompare(b.start_time)
-    );
-
-    for (let i = 0; i < sortedPeriods.length; i++) {
-      const { start_time, end_time } = sortedPeriods[i];
-
-      if (start_time >= end_time) {
-        return `Invalid time range on ${daysOfWeek[day]}. Start time must be before end time.`;
-      }
-
-      if (i > 0 && sortedPeriods[i - 1].end_time > start_time) {
-        return `Overlapping hours on ${daysOfWeek[day]}. PLease make sure to correct it`;
-      }
-    }
-  }
-  return "";
-}
-
-const defaultMerchantInfo = {
-  merchant_name: "",
-  location_id: 0,
-  contact_email: "",
-  formatted_location: "",
-  introduction: "",
-  announcement: "",
-  about_us: "",
-  parking_info: "",
-  payment_info: "",
-  cancel_deadline: 0,
-  booking_window_min: 0,
-  booking_window_max: 5,
-  buffer_time: 0,
-  approval_policy: "auto",
-  business_hours: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: [] },
-};
+import SettingsPageHeader from "./-components/SettingsPageHeader";
+import SettingsSaveAction from "./-components/SettingsSaveAction";
+import SettingsSection from "./-components/SettingsSection";
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_topnav/merchant"
@@ -126,297 +24,146 @@ export const Route = createFileRoute(
       authContext: { merchantId },
     },
   }) => {
-    await queryClient.ensureQueryData(merchantDataQueryOptions(merchantId));
+    await queryClient.ensureQueryData(
+      businessProfileSettingsQueryOptions(merchantId)
+    );
   },
-  errorComponent: ({ error }) => {
-    return <ServerError error={error.message} />;
-  },
+  errorComponent: ({ error }) => <ServerError error={error.message} />,
 });
 
 function MerchantPage() {
-  const { merchantId, employeeId } = useAuth();
+  const { merchantId, role } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
-
-  const {
-    data: merchantData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery(merchantDataQueryOptions(merchantId));
-
-  const [merchantInfo, setMerchantInfo] = useState(
-    merchantData || defaultMerchantInfo
-  );
-
-  // only using this because this will be rewritten anyway
-  useEffect(() => {
-    if (merchantData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMerchantInfo(merchantData);
-    }
-  }, [merchantData]);
-
-  const [serverError, setServerError] = useState("");
   const { showToast } = useToast();
-
-  const { data: preferences } = useQuery(
-    preferencesQueryOptions(merchantId, employeeId)
+  const { data: profileSettings, isLoading } = useQuery(
+    businessProfileSettingsQueryOptions(merchantId)
   );
+  const [changes, setChanges] = useState({});
 
-  function handleInputData(data) {
-    setMerchantInfo((prevFormData) => ({
-      ...prevFormData,
-      [data.name]: data.value,
-    }));
-  }
+  const merchantInfo = { ...profileSettings, ...changes };
+  const hasUnsavedChanges = Object.keys(changes).length > 0;
 
-  const errorMessage = validateBusinessHours(merchantInfo.business_hours);
-  const hasUnsavedChanges =
-    JSON.stringify(merchantInfo) !== JSON.stringify(merchantData);
-
-  async function updateButtonHandler() {
-    if (errorMessage || !hasUnsavedChanges) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/v1/merchants/${merchantId}/settings`, {
-        method: "PATCH",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          introduction: merchantInfo.introduction,
-          announcement: merchantInfo.announcement,
-          about_us: merchantInfo.about_us,
-          payment_info: merchantInfo.payment_info,
-          parking_info: merchantInfo.parking_info,
-          cancel_deadline: merchantInfo.cancel_deadline,
-          booking_window_min: merchantInfo.booking_window_min,
-          booking_window_max: merchantInfo.booking_window_max,
-          buffer_time: merchantInfo.buffer_time,
-          approval_policy: merchantInfo.approval_policy,
-          business_hours: merchantInfo.business_hours,
-        }),
+  const updateMutation = useMutation({
+    mutationFn: () => updateBusinessProfileSettings(merchantId, merchantInfo),
+    onSuccess: (updatedSettings) => {
+      queryClient.setQueryData(
+        businessProfileSettingsQueryOptions(merchantId).queryKey,
+        updatedSettings
+      );
+      setChanges({});
+      showToast({
+        message: "Business profile updated successfully",
+        variant: "success",
       });
+    },
+  });
 
-      if (!response.ok) {
-        const result = await response.json();
-        setServerError(result.error.message);
-      } else {
-        queryClient.setQueryData([merchantId, "merchant-data"], merchantInfo);
-        setServerError("");
-        showToast({
-          message: "Merchant updated successfully!",
-          variant: "success",
-        });
-      }
-    } catch (err) {
-      setServerError(err.message);
-    }
+  function handleInputData({ name, value }) {
+    setChanges((current) => ({ ...current, [name]: value }));
   }
 
-  const handleImageUpload = (file) => {
-    // Process the uploaded file
-    console.log(file);
-  };
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  if (isError) {
-    return <ServerError error={error.message} />;
-  }
+  if (isLoading) return <Loading />;
 
   return (
-    <div className="flex min-h-0 w-full flex-col gap-6">
-      <div className="flex w-full flex-col gap-6">
-        <SectionHeader title="General info" styles="" />
-        <Textarea
-          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52
-            md:max-w-2xl"
-          id="intorudtion"
-          placeholder="Introduce your company to the clients"
-          name="introduction"
-          required={false}
-          labelText="Introduction"
-          value={merchantInfo.introduction}
-          inputData={handleInputData}
-        />
-        <Textarea
-          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-52 md:max-w-2xl"
-          id="announcement"
-          placeholder=""
-          name="announcement"
-          required={false}
-          labelText="Announcement"
-          value={merchantInfo.announcement}
-          inputData={handleInputData}
-        />
-        <Textarea
-          styles="p-2 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl"
-          id="payment_info"
-          placeholder=""
-          required={false}
-          name="payment_info"
-          labelText="Payment Info"
-          value={merchantInfo.payment_info}
-          inputData={handleInputData}
-        />
-        <Textarea
-          styles="p-2 max-h-24 min-h-16 md:w-2/3 min-w-52 md:max-w-2xl"
-          id="parking_info"
-          placeholder=""
-          required={false}
-          name="parking_info"
-          labelText="Parking Info"
-          value={merchantInfo.parking_info}
-          inputData={handleInputData}
-        />
-        <Textarea
-          styles="p-2 max-h-96 min-h-28 md:w-2/3 min-w-min md:min-w-52
-            md:max-w-2xl"
-          id="about_us"
-          placeholder="Tell about your company to the clients"
-          name="about_us"
-          required={false}
-          labelText="About Us"
-          value={merchantInfo.about_us}
-          inputData={handleInputData}
-        />
-
-        <div className="my-2 flex flex-col gap-3">
-          <div className="font-semibold">Business hours</div>
-          <p className="text-text_color/70">
-            Set your business hours to let your customers know when you're
-            available.
-          </p>
-          <BusinessHours
-            data={merchantInfo.business_hours}
-            setBusinessHours={(updater) => {
-              const updatedHours = updater(merchantInfo.business_hours);
-              setMerchantInfo((prev) => ({
-                ...prev,
-                business_hours: updatedHours,
-              }));
-            }}
-            preferences={preferences}
-          />
-          {errorMessage && <span className="text-red-500">{errorMessage}</span>}
-        </div>
-        <SchedulingSettings
-          settings={{
-            booking_window_max: merchantInfo.booking_window_max,
-            booking_window_min: merchantInfo.booking_window_min,
-            cancel_deadline: merchantInfo.cancel_deadline,
-            buffer_time: merchantInfo.buffer_time,
-          }}
-          onChange={handleInputData}
-        />
-        <div className="flex flex-col gap-4">
-          <span className="font-semibold">Booking Approval Policy</span>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {ApprovalOptions.map((opt) => {
-              const active = merchantInfo.approval_policy === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() =>
-                    handleInputData({
-                      name: "approval_policy",
-                      value: opt.value,
-                    })
-                  }
-                  className={`flex flex-col gap-1 rounded-md border p-4
-                  text-left transition-colors duration-150 ${
-                    active
-                      ? "border-primary bg-primary/5"
-                      : `bg-layer_bg border-gray-300 hover:border-gray-300
-                        hover:bg-gray-100 dark:border-gray-500
-                        dark:hover:border-gray-400 dark:hover:bg-gray-600/5`
-                  }`}
-                >
-                  <span className={"text-text_color text-sm font-medium"}>
-                    {opt.name}
-                  </span>
-                  <span
-                    className={
-                      "text-xs leading-relaxed text-gray-500 dark:text-gray-400"
-                    }
-                  >
-                    {opt.desc}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="mt-10 flex flex-col gap-3">
-          <span className="text-text_color/70 text-sm md:w-2/3">
-            All of the fields on this page are optional and can be deleted at
-            any time, and by filling them out, you're giving us consent to share
-            this data wherever your user profile appears.
-          </span>
-          <Button
-            styles="w-min px-2 text-nowrap py-1"
-            variant="primary"
-            buttonText="Update fields"
-            type="button"
-            onClick={updateButtonHandler}
+    <div className="flex flex-col gap-12 pb-28 md:pb-8">
+      <SettingsPageHeader
+        title="Business profile"
+        description="Manage the information customers see on your public booking page."
+        action={
+          <SettingsSaveAction
+            buttonText="Save"
+            onClick={() => updateMutation.mutate()}
             disabled={!hasUnsavedChanges}
+            isLoading={updateMutation.isPending}
+            error={updateMutation.error}
           />
-          <ServerError error={serverError} styles="mt-2" />
-        </div>
-      </div>
-      <div className="flex flex-col gap-3">
-        <SectionHeader title="Images" styles="" />
-        <p className="text-text_color/70">
-          Upload images to enhance your reservation details. Your profile
-          picture will be displayed on your account while additional images can
-          be used to showcase the relevan visuals for your booking. Make sure to
-          upload clear and appropiate images to provide the best experiance for
-          your customers.
-        </p>
-        <div
-          className="mt-6 flex flex-col items-center justify-between gap-10
-            md:flex-row"
-        >
-          <ImageUploader
-            onImageUpload={handleImageUpload}
-            text="Upload profile picture"
-            styles="rounded-3xl h-48 w-48"
-            imageStyles="object-fill overflow-hidden rounded-3xl"
-          />
+        }
+      />
 
-          <div className="flex h-full w-full items-center justify-center gap-4">
-            <ImageUploader
-              onImageUpload={handleImageUpload}
-              text="Upload image 1"
-              styles="rounded-lg"
-              imageStyles="p-2"
-            />
-            <ImageUploader
-              onImageUpload={handleImageUpload}
-              text="Upload image 2"
-              styles="rounded-lg"
-              imageStyles="p-2"
-            />
+      <SettingsSection
+        title="About your business"
+        description="Use clear, customer-facing language. All fields are optional."
+      >
+        <div className="grid gap-5">
+          <Textarea
+            styles="p-3 max-h-96 min-h-28 w-full"
+            id="introduction"
+            placeholder="A short introduction to your business"
+            name="introduction"
+            required={false}
+            labelText="Introduction"
+            value={merchantInfo.introduction}
+            inputData={handleInputData}
+          />
+          <Textarea
+            styles="p-3 max-h-72 min-h-24 w-full"
+            id="announcement"
+            placeholder="Share an important update with customers"
+            name="announcement"
+            required={false}
+            labelText="Announcement"
+            value={merchantInfo.announcement}
+            inputData={handleInputData}
+          />
+          <Textarea
+            styles="p-3 max-h-96 min-h-28 w-full"
+            id="about_us"
+            placeholder="Tell customers more about your team and services"
+            name="about_us"
+            required={false}
+            labelText="About us"
+            value={merchantInfo.about_us}
+            inputData={handleInputData}
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Visit and payment information"
+        description="Help customers prepare before they arrive."
+      >
+        <div className="grid gap-5 md:grid-cols-2">
+          <Textarea
+            styles="p-3 max-h-48 min-h-24 w-full"
+            id="payment_info"
+            placeholder="Accepted payment methods or payment instructions"
+            name="payment_info"
+            required={false}
+            labelText="Payment information"
+            value={merchantInfo.payment_info}
+            inputData={handleInputData}
+          />
+          <Textarea
+            styles="p-3 max-h-48 min-h-24 w-full"
+            id="parking_info"
+            placeholder="Parking, entrance, or arrival instructions"
+            name="parking_info"
+            required={false}
+            labelText="Arrival and parking information"
+            value={merchantInfo.parking_info}
+            inputData={handleInputData}
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Media"
+        description="Add a profile image and gallery images for your public booking page. Uploads are preview-only until media storage is connected."
+      >
+        <div className="flex flex-col items-center gap-8 md:flex-row">
+          <ImageUploader
+            text="Profile picture"
+            styles="h-48! w-48! shrink-0 rounded-3xl"
+            imageStyles="overflow-hidden rounded-3xl object-cover!"
+          />
+          <div className="grid w-full gap-4 sm:grid-cols-2">
+            <ImageUploader text="Gallery image 1" styles="h-48! rounded-lg" />
+            <ImageUploader text="Gallery image 2" styles="h-48! rounded-lg" />
           </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-4">
-        <SectionHeader title="Change location" styles="" />
-        <span>Current location: {merchantInfo.formatted_location}</span>
-        <Button
-          variant="tertiary"
-          styles="w-min text-nowrap px-2 py-1"
-          buttonText="Change location"
-        />
-      </div>
-      <DangerZone />
+      </SettingsSection>
+
+      {role === "owner" && <DangerZone />}
     </div>
   );
 }

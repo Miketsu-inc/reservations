@@ -497,7 +497,7 @@ function BlockedTypeSection({ onSelect, activeType }) {
         </button>
         {!hasTypes && (
           <Link
-            to="/settings/scheduling"
+            to="/settings/blocked-time-types"
             className="border-border_color flex h-28 w-36 shrink-0 flex-col
               items-center justify-center gap-2 rounded-lg border-2
               transition-all hover:border-gray-400"

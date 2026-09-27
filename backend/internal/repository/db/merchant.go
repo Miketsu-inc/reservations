@@ -75,17 +75,31 @@ func (r *merchantRepository) ChangeMerchantNameAndURL(ctx context.Context, merch
 	return nil
 }
 
-func (r *merchantRepository) UpdateMerchantFields(ctx context.Context, merchantId uuid.UUID, ms domain.MerchantSettingFields) error {
+func (r *merchantRepository) UpdateBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID, settings domain.BusinessProfileSettings) error {
 	query := `
 	update "Merchant"
-	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5,
-	parking_info = $6, cancel_deadline = $7, booking_window_min = $8, booking_window_max = $9, buffer_time = $10, approval_policy = $11
+	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
 	where id = $1;`
 
-	_, err := r.db.Exec(ctx, query, merchantId, ms.Introduction, ms.Announcement, ms.AboutUs, ms.PaymentInfo, ms.ParkingInfo,
-		ms.CancelDeadline, ms.BookingWindowMin, ms.BookingWindowMax, ms.BufferTime, ms.ApprovalPolicy)
+	_, err := r.db.Exec(ctx, query, merchantId, settings.Introduction, settings.Announcement, settings.AboutUs,
+		settings.PaymentInfo, settings.ParkingInfo)
 	if err != nil {
-		return fmt.Errorf("UpdateMerchantFields: %w", err)
+		return fmt.Errorf("UpdateBusinessProfileSettings: %w", err)
+	}
+
+	return nil
+}
+
+func (r *merchantRepository) UpdateSchedulingSettings(ctx context.Context, merchantId uuid.UUID, settings domain.SchedulingSettings) error {
+	query := `
+	update "Merchant"
+	set cancel_deadline = $2, booking_window_min = $3, booking_window_max = $4, buffer_time = $5, approval_policy = $6
+	where id = $1;`
+
+	_, err := r.db.Exec(ctx, query, merchantId, settings.CancelDeadline, settings.BookingWindowMin,
+		settings.BookingWindowMax, settings.BufferTime, settings.ApprovalPolicy)
+	if err != nil {
+		return fmt.Errorf("UpdateSchedulingSettings: %w", err)
 	}
 
 	return nil
@@ -231,32 +245,36 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 	return mi, nil
 }
 
-func (r *merchantRepository) GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantSettingsInfo, error) {
+func (r *merchantRepository) GetBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID) (domain.BusinessProfileSettings, error) {
+	query := `
+	select introduction, announcement, about_us, parking_info, payment_info
+	from "Merchant"
+	where id = $1;`
 
-	var msi domain.MerchantSettingsInfo
-
-	merchantQuery := `
-	select m.name, m.contact_email, m.introduction, m.announcement,
-		   m.about_us, m.parking_info, m.payment_info, m.cancel_deadline, m.booking_window_min, m.booking_window_max, m.buffer_time, m.approval_policy, m.timezone,
-	       l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location
-	from "Merchant" m inner join "Location" l on m.id = l.merchant_id
-	where m.id = $1;`
-
-	err := r.db.QueryRow(ctx, merchantQuery, merchantId).Scan(&msi.Name, &msi.ContactEmail, &msi.Introduction, &msi.Announcement,
-		&msi.AboutUs, &msi.ParkingInfo, &msi.PaymentInfo, &msi.CancelDeadline, &msi.BookingWindowMin, &msi.BookingWindowMax, &msi.BufferTime, &msi.ApprovalPolicy,
-		&msi.Timezone, &msi.LocationId, &msi.Country, &msi.City, &msi.PostalCode, &msi.Address, &msi.FormattedLocation)
+	var settings domain.BusinessProfileSettings
+	err := r.db.QueryRow(ctx, query, merchantId).Scan(&settings.Introduction, &settings.Announcement,
+		&settings.AboutUs, &settings.ParkingInfo, &settings.PaymentInfo)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, fmt.Errorf("GetMerchantSettingsInfo: %w", err)
+		return domain.BusinessProfileSettings{}, fmt.Errorf("GetBusinessProfileSettings: %w", err)
 	}
 
-	businessHours, err := r.GetBusinessHours(ctx, merchantId)
+	return settings, nil
+}
+
+func (r *merchantRepository) GetSchedulingSettings(ctx context.Context, merchantId uuid.UUID) (domain.SchedulingSettings, error) {
+	query := `
+	select cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy
+	from "Merchant"
+	where id = $1;`
+
+	var settings domain.SchedulingSettings
+	err := r.db.QueryRow(ctx, query, merchantId).Scan(&settings.CancelDeadline, &settings.BookingWindowMin,
+		&settings.BookingWindowMax, &settings.BufferTime, &settings.ApprovalPolicy)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, fmt.Errorf("GetMerchantSettingsInfo/GetBusinessHours: %w", err)
+		return domain.SchedulingSettings{}, fmt.Errorf("GetSchedulingSettings: %w", err)
 	}
 
-	msi.BusinessHours = businessHours
-
-	return msi, nil
+	return settings, nil
 }
 
 func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (domain.MerchantBookingSettings, error) {
