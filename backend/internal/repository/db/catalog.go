@@ -471,7 +471,7 @@ func (r *catalogRepository) GetAllServicePageData(ctx context.Context, serviceId
 					'sequence', sp.sequence,
 					'duration', sp.duration,
 					'phase_type', sp.phase_type
-				)
+				) order by sp.sequence
 			) as phases
 		from "ServicePhase" sp
 		group by sp.service_id
@@ -679,7 +679,7 @@ func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, servic
 	return employeeIds, nil
 }
 
-func (r *catalogRepository) GetEmployeeServicePricingDuration(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]domain.EmployeeServicePricingDuration, error) {
+func (r *catalogRepository) GetEmployeeServiceSettings(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]domain.EmployeeServiceSettings, error) {
 	query := `
 	select e.id,
 		coalesce(e.first_name, u.first_name) as first_name,
@@ -688,7 +688,10 @@ func (r *catalogRepository) GetEmployeeServicePricingDuration(ctx context.Contex
 		(es.employee_id is not null) as is_assigned,
 		es.total_duration,
 		es.price_per_person,
-		es.price_type
+		es.price_type,
+		es.min_participants,
+		es.max_participants,
+		es.buffer_time
 	from "Employee" e
 	left join "EmployeeService" es on es.employee_id = e.id and es.service_id = $1
 	left join "User" u on u.id = e.user_id
@@ -697,12 +700,30 @@ func (r *catalogRepository) GetEmployeeServicePricingDuration(ctx context.Contex
 	`
 
 	rows, _ := r.db.Query(ctx, query, serviceId, merchantId)
-	pricingDuration, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeServicePricingDuration])
+	settings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeServiceSettings])
 	if err != nil {
-		return []domain.EmployeeServicePricingDuration{}, fmt.Errorf("GetEmployeeServicePricingDuration: %w", err)
+		return nil, fmt.Errorf("GetEmployeeServiceSettings: %w", err)
 	}
 
-	return pricingDuration, nil
+	return settings, nil
+}
+
+func (r *catalogRepository) GetEmployeeServicePhaseOverrides(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]domain.EmployeeServicePhase, error) {
+	query := `
+	select esp.employee_id, esp.service_id, esp.service_phase_id, esp.duration
+	from "EmployeeServicePhase" esp
+	join "Employee" e on e.id = esp.employee_id
+	where esp.service_id = $1 and e.merchant_id = $2 and e.is_active is true
+		and esp.duration is not null
+	order by esp.employee_id, esp.service_phase_id
+	`
+	rows, _ := r.db.Query(ctx, query, serviceId, merchantId)
+	phaseOverrides, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeServicePhase])
+	if err != nil {
+		return nil, fmt.Errorf("GetEmployeeServicePhaseOverrides: %w", err)
+	}
+
+	return phaseOverrides, nil
 }
 
 func (r *catalogRepository) NewServicePhases(ctx context.Context, serviceId int, phases []domain.ServicePhase) error {
@@ -809,6 +830,7 @@ func (r *catalogRepository) GetServicePhases(ctx context.Context, serviceId int)
 	select *
 	from "ServicePhase"
 	where service_id = $1
+	order by sequence
 	`
 
 	rows, _ := r.db.Query(ctx, query, serviceId)
@@ -1030,13 +1052,13 @@ func (r *catalogRepository) BulkDeleteEmployeeService(ctx context.Context, servi
 	return nil
 }
 
-func (r *catalogRepository) BulkUpsertEmployeeServicePricing(ctx context.Context, employeeServices []domain.EmployeeService) error {
+func (r *catalogRepository) BulkUpsertEmployeeServiceSettings(ctx context.Context, employeeServices []domain.EmployeeService) error {
 	if len(employeeServices) == 0 {
 		return nil
 	}
 
 	query := `
-	insert into "EmployeeService" (employee_id, service_id, total_duration, price_per_person, price_type)
+	insert into "EmployeeService" (employee_id, service_id, total_duration, price_per_person, price_type, min_participants, max_participants, buffer_time)
 	select updates.employee_id,
 		updates.service_id,
 		updates.total_duration,
@@ -1044,13 +1066,19 @@ func (r *catalogRepository) BulkUpsertEmployeeServicePricing(ctx context.Context
 			when updates.price_number is null then null
 			else row(updates.price_number::numeric, updates.price_currency::char(3))::price
 		end,
-		updates.price_type
-	from unnest($1::int[], $2::int[], $3::int[], $4::text[], $5::text[], $6::text[])
-		as updates(employee_id, service_id, total_duration, price_number, price_currency, price_type)
+		updates.price_type,
+		updates.min_participants,
+		updates.max_participants,
+		updates.buffer_time
+	from unnest($1::int[], $2::int[], $3::int[], $4::text[], $5::text[], $6::text[], $7::int[], $8::int[], $9::int[])
+		as updates(employee_id, service_id, total_duration, price_number, price_currency, price_type, min_participants, max_participants, buffer_time)
 	on conflict (employee_id, service_id) do update
 	set total_duration = excluded.total_duration,
 		price_per_person = excluded.price_per_person,
-		price_type = excluded.price_type
+		price_type = excluded.price_type,
+		min_participants = excluded.min_participants,
+		max_participants = excluded.max_participants,
+		buffer_time = excluded.buffer_time
 	`
 
 	employeeIds := make([]int, len(employeeServices))
@@ -1059,6 +1087,9 @@ func (r *catalogRepository) BulkUpsertEmployeeServicePricing(ctx context.Context
 	priceNumbers := make([]pgtype.Text, len(employeeServices))
 	priceCurrencies := make([]pgtype.Text, len(employeeServices))
 	priceTypes := make([]pgtype.Text, len(employeeServices))
+	minParticipants := make([]pgtype.Int4, len(employeeServices))
+	maxParticipants := make([]pgtype.Int4, len(employeeServices))
+	bufferTimes := make([]pgtype.Int4, len(employeeServices))
 
 	for i, employeeService := range employeeServices {
 		employeeIds[i] = employeeService.EmployeeId
@@ -1073,11 +1104,94 @@ func (r *catalogRepository) BulkUpsertEmployeeServicePricing(ctx context.Context
 		if employeeService.PriceType != nil {
 			priceTypes[i] = pgtype.Text{String: employeeService.PriceType.String(), Valid: true}
 		}
+		if employeeService.MinParticipants != nil {
+			minParticipants[i] = pgtype.Int4{Int32: int32(*employeeService.MinParticipants), Valid: true}
+		}
+		if employeeService.MaxParticipants != nil {
+			maxParticipants[i] = pgtype.Int4{Int32: int32(*employeeService.MaxParticipants), Valid: true}
+		}
+		if employeeService.BufferTime != nil {
+			bufferTimes[i] = pgtype.Int4{Int32: int32(*employeeService.BufferTime), Valid: true}
+		}
 	}
 
-	_, err := r.db.Exec(ctx, query, employeeIds, serviceIds, totalDurations, priceNumbers, priceCurrencies, priceTypes)
+	_, err := r.db.Exec(ctx, query, employeeIds, serviceIds, totalDurations, priceNumbers, priceCurrencies, priceTypes, minParticipants, maxParticipants, bufferTimes)
 	if err != nil {
-		return fmt.Errorf("BulkUpsertEmployeeServicePricing: %w", err)
+		return fmt.Errorf("BulkUpsertEmployeeServiceSettings: %w", err)
+	}
+
+	return nil
+}
+
+func (r *catalogRepository) BulkDeleteEmployeeServicePhases(ctx context.Context, serviceId int, employeeIds []int) error {
+	if len(employeeIds) == 0 {
+		return nil
+	}
+
+	query := `
+	delete from "EmployeeServicePhase"
+	where service_id = $1 and employee_id = any($2::int[])
+	`
+	_, err := r.db.Exec(ctx, query, serviceId, employeeIds)
+	if err != nil {
+		return fmt.Errorf("BulkDeleteEmployeeServicePhases: %w", err)
+	}
+
+	return nil
+}
+
+func (r *catalogRepository) BulkInsertEmployeeServicePhases(ctx context.Context, phases []domain.EmployeeServicePhase) error {
+	if len(phases) == 0 {
+		return nil
+	}
+
+	query := `
+	insert into "EmployeeServicePhase" (employee_id, service_id, service_phase_id, duration)
+	select unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::int[])
+	`
+	employeePhaseIds := make([]int, len(phases))
+	serviceIds := make([]int, len(phases))
+	servicePhaseIds := make([]int, len(phases))
+	durations := make([]int, len(phases))
+	for i, phase := range phases {
+		employeePhaseIds[i] = phase.EmployeeId
+		serviceIds[i] = phase.ServiceId
+		servicePhaseIds[i] = phase.ServicePhaseId
+		durations[i] = phase.Duration
+	}
+
+	_, err := r.db.Exec(ctx, query, employeePhaseIds, serviceIds, servicePhaseIds, durations)
+	if err != nil {
+		return fmt.Errorf("BulkInsertEmployeeServicePhases: %w", err)
+	}
+
+	return nil
+}
+
+func (r *catalogRepository) RefreshEmployeeServiceTotalDurations(ctx context.Context, serviceId int) error {
+	query := `
+	update "EmployeeService" es
+	set total_duration = totals.total_duration
+	from (
+		select es2.employee_id,
+			case
+				when count(esp.service_phase_id) = 0 then null
+				else sum(coalesce(esp.duration, sp.duration))::int
+			end as total_duration
+		from "EmployeeService" es2
+		join "ServicePhase" sp on sp.service_id = es2.service_id
+		left join "EmployeeServicePhase" esp
+			on esp.employee_id = es2.employee_id
+			and esp.service_id = es2.service_id
+			and esp.service_phase_id = sp.id
+		where es2.service_id = $1
+		group by es2.employee_id
+	) totals
+	where es.service_id = $1 and es.employee_id = totals.employee_id
+	`
+	_, err := r.db.Exec(ctx, query, serviceId)
+	if err != nil {
+		return fmt.Errorf("RefreshEmployeeServiceTotalDurations: %w", err)
 	}
 
 	return nil

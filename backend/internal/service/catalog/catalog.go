@@ -391,6 +391,10 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			}
 		}
 
+		if err := s.catalogRepo.WithTx(tx).RefreshEmployeeServiceTotalDurations(ctx, input.Id); err != nil {
+			return err
+		}
+
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
 			Id:            input.Id,
 			MerchantId:    actor.MerchantId,
@@ -511,47 +515,80 @@ func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageDat
 	return service, nil
 }
 
-type GetEmployeePricingDurationResult struct {
-	ServiceId       int
-	ServiceName     string
-	TotalDuration   int
-	PricePerPerson  *currencyx.Price
-	PriceType       types.PriceType
-	EmployeePricing []domain.EmployeeServicePricingDuration
+type GetTeamMemberSettingsResult struct {
+	ServiceId          int
+	ServiceName        string
+	BookingType        types.BookingType
+	TotalDuration      int
+	PricePerPerson     *currencyx.Price
+	PriceType          types.PriceType
+	MinParticipants    int
+	MaxParticipants    int
+	BufferTime         *int
+	Phases             []domain.ServicePhase
+	TeamMemberSettings []domain.EmployeeServiceSettings
 }
 
-func (s *Service) GetEmployeePricingDuration(ctx context.Context, serviceId int) (GetEmployeePricingDurationResult, error) {
+func (s *Service) GetTeamMemberSettings(ctx context.Context, serviceId int) (GetTeamMemberSettingsResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
 	if err != nil {
-		return GetEmployeePricingDurationResult{}, err
+		return GetTeamMemberSettingsResult{}, err
 	}
 
-	pricing, err := s.catalogRepo.GetEmployeeServicePricingDuration(ctx, actor.MerchantId, serviceId)
+	settings, err := s.catalogRepo.GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
 	if err != nil {
-		return GetEmployeePricingDurationResult{}, err
+		return GetTeamMemberSettingsResult{}, err
+	}
+	phaseOverrides, err := s.catalogRepo.GetEmployeeServicePhaseOverrides(ctx, actor.MerchantId, serviceId)
+	if err != nil {
+		return GetTeamMemberSettingsResult{}, err
 	}
 
-	return GetEmployeePricingDurationResult{
-		ServiceId:       service.Id,
-		ServiceName:     service.Name,
-		TotalDuration:   service.TotalDuration,
-		PricePerPerson:  service.Price,
-		PriceType:       service.PriceType,
-		EmployeePricing: pricing,
+	settingIndex := make(map[int]int, len(settings))
+	for i := range settings {
+		settings[i].PhaseOverrides = []domain.EmployeeServicePhase{}
+		settingIndex[settings[i].EmployeeId] = i
+	}
+	for _, phaseOverride := range phaseOverrides {
+		if i, exists := settingIndex[phaseOverride.EmployeeId]; exists {
+			settings[i].PhaseOverrides = append(settings[i].PhaseOverrides, phaseOverride)
+		}
+	}
+
+	return GetTeamMemberSettingsResult{
+		ServiceId:          service.Id,
+		ServiceName:        service.Name,
+		BookingType:        service.BookingType,
+		TotalDuration:      service.TotalDuration,
+		PricePerPerson:     service.Price,
+		PriceType:          service.PriceType,
+		MinParticipants:    service.MinParticipants,
+		MaxParticipants:    service.MaxParticipants,
+		BufferTime:         service.BufferTime,
+		Phases:             service.Phases,
+		TeamMemberSettings: settings,
 	}, nil
 }
 
-type UpdateEmployeePricingDurationInput struct {
-	EmployeeId     int
-	IsAssigned     bool
-	TotalDuration  *int
-	PricePerPerson *currencyx.Price
-	PriceType      *types.PriceType
+type EmployeeServicePhaseInput struct {
+	ServicePhaseId int
+	Duration       int
 }
 
-func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId int, inputs []UpdateEmployeePricingDurationInput) error {
+type UpdateTeamMemberSettingsInput struct {
+	EmployeeId      int
+	IsAssigned      bool
+	PricePerPerson  *currencyx.Price
+	PriceType       *types.PriceType
+	MinParticipants *int
+	MaxParticipants *int
+	BufferTime      *int
+	PhaseOverrides  []EmployeeServicePhaseInput
+}
+
+func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, inputs []UpdateTeamMemberSettingsInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	currencyCode, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
@@ -574,9 +611,6 @@ func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId i
 			continue
 		}
 
-		if input.TotalDuration != nil && (*input.TotalDuration < 1 || *input.TotalDuration > 1440) {
-			return ErrEmployeeServiceDurationOutOfRange
-		}
 		if input.PricePerPerson != nil && input.PricePerPerson.CurrencyCode() != currencyCode {
 			return ErrEmployeeServicePriceCurrencyMismatch
 		}
@@ -589,40 +623,116 @@ func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId i
 				return ErrEmployeeServicePriceOutOfRange
 			}
 		}
+		if input.MinParticipants != nil && *input.MinParticipants < 1 {
+			return ErrEmployeeServiceParticipantsOutOfRange
+		}
+		if input.MaxParticipants != nil && *input.MaxParticipants < 1 {
+			return ErrEmployeeServiceParticipantsOutOfRange
+		}
+		if input.BufferTime != nil && (*input.BufferTime < 0 || *input.BufferTime > 1440) {
+			return ErrEmployeeServiceBufferTimeOutOfRange
+		}
 	}
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		pricingDuration, err := s.catalogRepo.WithTx(tx).GetEmployeeServicePricingDuration(ctx, actor.MerchantId, serviceId)
+		txCatalogRepo := s.catalogRepo.WithTx(tx)
+		service, err := txCatalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
+		if err != nil {
+			return err
+		}
+		settings, err := txCatalogRepo.GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
 		if err != nil {
 			return err
 		}
 
-		activeEmployeeIds := make(map[int]struct{}, len(pricingDuration))
-		assignedEmployeeIds := make(map[int]bool, len(pricingDuration))
-		for _, employee := range pricingDuration {
+		activeEmployeeIds := make(map[int]struct{}, len(settings))
+		assignedEmployeeIds := make(map[int]bool, len(settings))
+		for _, employee := range settings {
 			activeEmployeeIds[employee.EmployeeId] = struct{}{}
 			assignedEmployeeIds[employee.EmployeeId] = employee.IsAssigned
+		}
+		servicePhases := make(map[int]domain.ServicePhase, len(service.Phases))
+		for _, phase := range service.Phases {
+			servicePhases[phase.Id] = phase
 		}
 
 		employeeServices := make([]domain.EmployeeService, 0, len(inputs))
 		employeeIdsToDelete := make([]int, 0, len(inputs))
+		employeeIdsToReplacePhases := make([]int, 0, len(inputs))
+		phaseOverrides := make([]domain.EmployeeServicePhase, 0)
 		for _, input := range inputs {
 			if _, active := activeEmployeeIds[input.EmployeeId]; !active {
 				return ErrEmployeeNotActiveForMerchant
 			}
 			assignedEmployeeIds[input.EmployeeId] = input.IsAssigned
+			employeeIdsToReplacePhases = append(employeeIdsToReplacePhases, input.EmployeeId)
 
 			if !input.IsAssigned {
 				employeeIdsToDelete = append(employeeIdsToDelete, input.EmployeeId)
 				continue
 			}
 
+			overrideDurations := make(map[int]int, len(input.PhaseOverrides))
+			for _, phaseOverride := range input.PhaseOverrides {
+				if _, duplicate := overrideDurations[phaseOverride.ServicePhaseId]; duplicate {
+					return ErrDuplicateEmployeeServicePhase
+				}
+				if _, exists := servicePhases[phaseOverride.ServicePhaseId]; !exists {
+					return ErrInvalidEmployeeServicePhase
+				}
+				if phaseOverride.Duration < 1 || phaseOverride.Duration > 1440 {
+					return ErrEmployeeServiceDurationOutOfRange
+				}
+				overrideDurations[phaseOverride.ServicePhaseId] = phaseOverride.Duration
+				phaseOverrides = append(phaseOverrides, domain.EmployeeServicePhase{
+					EmployeeId:     input.EmployeeId,
+					ServiceId:      serviceId,
+					ServicePhaseId: phaseOverride.ServicePhaseId,
+					Duration:       phaseOverride.Duration,
+				})
+			}
+
+			var totalDuration *int
+			if len(overrideDurations) > 0 {
+				effectiveTotalDuration := 0
+				for _, phase := range service.Phases {
+					duration := phase.Duration
+					if override, exists := overrideDurations[phase.Id]; exists {
+						duration = override
+					}
+					effectiveTotalDuration += duration
+				}
+				totalDuration = &effectiveTotalDuration
+			}
+
+			minParticipants := input.MinParticipants
+			maxParticipants := input.MaxParticipants
+			if !service.IsGroupService() {
+				minParticipants = nil
+				maxParticipants = nil
+			} else {
+				effectiveMinParticipants := service.MinParticipants
+				if minParticipants != nil {
+					effectiveMinParticipants = *minParticipants
+				}
+				effectiveMaxParticipants := service.MaxParticipants
+				if maxParticipants != nil {
+					effectiveMaxParticipants = *maxParticipants
+				}
+				if effectiveMinParticipants > effectiveMaxParticipants {
+					return ErrEmployeeServiceParticipantRangeInvalid
+				}
+			}
+
 			employeeServices = append(employeeServices, domain.EmployeeService{
-				EmployeeId:     input.EmployeeId,
-				ServiceId:      serviceId,
-				TotalDuration:  input.TotalDuration,
-				PricePerPerson: input.PricePerPerson,
-				PriceType:      input.PriceType,
+				EmployeeId:      input.EmployeeId,
+				ServiceId:       serviceId,
+				TotalDuration:   totalDuration,
+				PricePerPerson:  input.PricePerPerson,
+				PriceType:       input.PriceType,
+				MinParticipants: minParticipants,
+				MaxParticipants: maxParticipants,
+				BufferTime:      input.BufferTime,
 			})
 		}
 
@@ -637,7 +747,6 @@ func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId i
 			return ErrServiceRequiresEmployee
 		}
 
-		txCatalogRepo := s.catalogRepo.WithTx(tx)
 		if len(employeeIdsToDelete) > 0 {
 			serviceIds := utils.RepeatSlice([]int{serviceId}, len(employeeIdsToDelete))
 			if err := txCatalogRepo.BulkDeleteEmployeeService(ctx, serviceIds, employeeIdsToDelete); err != nil {
@@ -646,15 +755,21 @@ func (s *Service) UpdateEmployeePricingDuration(ctx context.Context, serviceId i
 		}
 
 		if len(employeeServices) > 0 {
-			if err := txCatalogRepo.BulkUpsertEmployeeServicePricing(ctx, employeeServices); err != nil {
+			if err := txCatalogRepo.BulkUpsertEmployeeServiceSettings(ctx, employeeServices); err != nil {
 				return err
 			}
+		}
+		if err := txCatalogRepo.BulkDeleteEmployeeServicePhases(ctx, serviceId, employeeIdsToReplacePhases); err != nil {
+			return err
+		}
+		if err := txCatalogRepo.BulkInsertEmployeeServicePhases(ctx, phaseOverrides); err != nil {
+			return err
 		}
 
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating employee service pricing: %w", err)
+		return fmt.Errorf("error while updating team member settings: %w", err)
 	}
 
 	return nil

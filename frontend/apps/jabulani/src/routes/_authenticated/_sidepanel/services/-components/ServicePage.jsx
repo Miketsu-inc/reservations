@@ -8,7 +8,7 @@ import {
 import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
-import { Block, useRouter } from "@tanstack/react-router";
+import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import ProductAdder from "./ProductAdder";
 import { ServiceBasicDetails } from "./ServiceBasicDetails";
@@ -45,7 +45,7 @@ export default function ServicePage({
         buffer_time: service?.settings?.buffer_time ?? null,
         approval_policy: service?.settings?.approval_policy ?? null,
       },
-      phases: service?.phases || [],
+      phases: normalizeServicePhases(service?.phases || []),
       employee_ids: service?.employee_ids || [],
       used_products: service?.used_products || [],
     }),
@@ -227,6 +227,29 @@ export default function ServicePage({
                           updateServiceData({ employee_ids: employeeIds })
                         }
                       />
+                      {service.id && (
+                        <div className="pt-8">
+                          <div className="flex flex-col gap-2 rounded-lg">
+                            <div>
+                              <p className="font-medium">
+                                Advanced team member settings
+                              </p>
+                              <p className="text-text_color/70 text-sm">
+                                Manage assignments and override service
+                                defaults.
+                              </p>
+                            </div>
+                            <Link
+                              to={`/services/team-member-settings/${service.id}`}
+                              className="text-primary flex shrink-0 flex-row
+                                items-center gap-2 rounded-lg py-2 text-sm
+                                hover:underline"
+                            >
+                              Advanced settings
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                     </ScrollSpySection>
                   </form>
                   <ScrollSpySection id="products" label="Products">

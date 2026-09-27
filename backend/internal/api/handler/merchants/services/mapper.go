@@ -139,42 +139,77 @@ func mapToGetResp(in domain.ServicePageData) getResp {
 	}
 }
 
-func mapToGetEmployeePricingDurationResp(in catalogServ.GetEmployeePricingDurationResult) getEmployeePricingDurationResp {
-	employees := make([]employeePricingDurationResp, len(in.EmployeePricing))
-
-	for i, employee := range in.EmployeePricing {
-		employees[i] = employeePricingDurationResp{
-			EmployeeId: employee.EmployeeId,
-			FirstName:  employee.FirstName,
-			LastName:   employee.LastName,
-			Role:       employee.Role,
-			IsAssigned: employee.IsAssigned,
-			Duration:   employee.TotalDuration,
-			Price:      employee.PricePerPerson,
-			PriceType:  employee.PriceType,
+func mapToGetTeamMemberSettingsResp(in catalogServ.GetTeamMemberSettingsResult) getTeamMemberSettingsResp {
+	employees := make([]employeeSettingsResp, len(in.TeamMemberSettings))
+	for i, employee := range in.TeamMemberSettings {
+		phaseOverrides := make([]employeePhaseOverrideResp, len(employee.PhaseOverrides))
+		for j, phaseOverride := range employee.PhaseOverrides {
+			phaseOverrides[j] = employeePhaseOverrideResp{
+				ServicePhaseId: phaseOverride.ServicePhaseId,
+				Duration:       phaseOverride.Duration,
+			}
+		}
+		employees[i] = employeeSettingsResp{
+			EmployeeId:      employee.EmployeeId,
+			FirstName:       employee.FirstName,
+			LastName:        employee.LastName,
+			Role:            employee.Role,
+			IsAssigned:      employee.IsAssigned,
+			Duration:        employee.TotalDuration,
+			Price:           employee.PricePerPerson,
+			PriceType:       employee.PriceType,
+			MinParticipants: employee.MinParticipants,
+			MaxParticipants: employee.MaxParticipants,
+			BufferTime:      employee.BufferTime,
+			PhaseOverrides:  phaseOverrides,
 		}
 	}
 
-	return getEmployeePricingDurationResp{
-		ServiceId:        in.ServiceId,
-		ServiceName:      in.ServiceName,
-		DefaultDuration:  in.TotalDuration,
-		DefaultPrice:     in.PricePerPerson,
-		DefaultPriceType: in.PriceType,
-		Employees:        employees,
+	phases := make([]phaseReq, len(in.Phases))
+	for i, phase := range in.Phases {
+		phases[i] = phaseReq{
+			Id:        phase.Id,
+			Name:      phase.Name,
+			Sequence:  phase.Sequence,
+			Duration:  phase.Duration,
+			PhaseType: phase.PhaseType,
+		}
+	}
+
+	return getTeamMemberSettingsResp{
+		ServiceId:              in.ServiceId,
+		ServiceName:            in.ServiceName,
+		BookingType:            in.BookingType,
+		DefaultDuration:        in.TotalDuration,
+		DefaultPrice:           in.PricePerPerson,
+		DefaultPriceType:       in.PriceType,
+		DefaultMinParticipants: in.MinParticipants,
+		DefaultMaxParticipants: in.MaxParticipants,
+		DefaultBufferTime:      in.BufferTime,
+		Phases:                 phases,
+		Employees:              employees,
 	}
 }
 
-func mapToUpdateEmployeePricingDurationInput(in []employeePricingDurationReq) []catalogServ.UpdateEmployeePricingDurationInput {
-	employees := make([]catalogServ.UpdateEmployeePricingDurationInput, len(in))
-
+func mapToUpdateTeamMemberSettingsInput(in []employeeSettingsReq) []catalogServ.UpdateTeamMemberSettingsInput {
+	employees := make([]catalogServ.UpdateTeamMemberSettingsInput, len(in))
 	for i, employee := range in {
-		employees[i] = catalogServ.UpdateEmployeePricingDurationInput{
-			EmployeeId:     employee.EmployeeId,
-			IsAssigned:     employee.IsAssigned,
-			TotalDuration:  employee.Duration,
-			PricePerPerson: employee.Price,
-			PriceType:      employee.PriceType,
+		phaseOverrides := make([]catalogServ.EmployeeServicePhaseInput, len(employee.PhaseOverrides))
+		for j, phaseOverride := range employee.PhaseOverrides {
+			phaseOverrides[j] = catalogServ.EmployeeServicePhaseInput{
+				ServicePhaseId: phaseOverride.ServicePhaseId,
+				Duration:       phaseOverride.Duration,
+			}
+		}
+		employees[i] = catalogServ.UpdateTeamMemberSettingsInput{
+			EmployeeId:      employee.EmployeeId,
+			IsAssigned:      employee.IsAssigned,
+			PricePerPerson:  employee.Price,
+			PriceType:       employee.PriceType,
+			MinParticipants: employee.MinParticipants,
+			MaxParticipants: employee.MaxParticipants,
+			BufferTime:      employee.BufferTime,
+			PhaseOverrides:  phaseOverrides,
 		}
 	}
 
