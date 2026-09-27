@@ -11,7 +11,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
-	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -109,6 +108,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
 		return err
 	}
+
 	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
 		return err
 	}
@@ -290,6 +290,52 @@ func detectPhaseChanges(existingPhases []domain.ServicePhase, incomingPhases []d
 	return pc
 }
 
+func buildEmployeeTotalDurationUpdate(serviceId int, phases []domain.ServicePhase, phaseOverrides []domain.EmployeeServicePhase) []domain.EmployeeService {
+	overridesByEmployee := make(map[int]map[int]int)
+	employeeIds := make([]int, 0)
+
+	for _, employeePhase := range phaseOverrides {
+		if overridesByEmployee[employeePhase.EmployeeId] == nil {
+			overridesByEmployee[employeePhase.EmployeeId] = make(map[int]int)
+			employeeIds = append(employeeIds, employeePhase.EmployeeId)
+		}
+
+		overridesByEmployee[employeePhase.EmployeeId][employeePhase.ServicePhaseId] = employeePhase.Duration
+	}
+
+	updates := make([]domain.EmployeeService, 0, len(employeeIds))
+	for _, employeeId := range employeeIds {
+		updates = append(updates, domain.EmployeeService{
+			EmployeeId:    employeeId,
+			ServiceId:     serviceId,
+			TotalDuration: calculateTotalDurationWithOverrides(phases, overridesByEmployee[employeeId]),
+		})
+	}
+
+	return updates
+}
+
+func calculateTotalDurationWithOverrides(phases []domain.ServicePhase, overrides map[int]int) *int {
+	total := 0
+	hasOverride := false
+
+	for _, phase := range phases {
+		duration, isOverridden := overrides[phase.Id]
+		if !isOverridden {
+			duration = phase.Duration
+		}
+
+		hasOverride = hasOverride || isOverridden
+		total += duration
+	}
+
+	if !hasOverride {
+		return nil
+	}
+
+	return &total
+}
+
 type UpdateInput struct {
 	Id              int
 	BookingType     types.BookingType
@@ -321,6 +367,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
 		return err
 	}
+
 	if err := validateServiceEmployees(input.EmployeeIds); err != nil {
 		return err
 	}
@@ -391,8 +438,17 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			}
 		}
 
-		if err := s.catalogRepo.WithTx(tx).RefreshEmployeeServiceTotalDurations(ctx, input.Id); err != nil {
+		phaseOverrides, err := s.catalogRepo.WithTx(tx).GetEmployeeServicePhaseOverrides(ctx, actor.MerchantId, input.Id)
+		if err != nil {
 			return err
+		}
+
+		// when a non overriden phase changes, we have to recalculate the total duration on the EmployeeService
+		totalDurationUpdates := buildEmployeeTotalDurationUpdate(input.Id, phases, phaseOverrides)
+		if len(totalDurationUpdates) > 0 {
+			if err := s.catalogRepo.WithTx(tx).BulkUpdateEmployeeServiceDurations(ctx, totalDurationUpdates); err != nil {
+				return err
+			}
 		}
 
 		oldCategoryId, err := s.catalogRepo.WithTx(tx).UpdateService(ctx, domain.Service{
@@ -431,9 +487,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		}
 
 		if len(employeeChanges.ToDelete) > 0 {
-			serviceIds := utils.RepeatSlice([]int{input.Id}, len(employeeChanges.ToDelete))
-
-			err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceIds, employeeChanges.ToDelete)
+			err = s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, input.Id, employeeChanges.ToDelete)
 			if err != nil {
 				return err
 			}
@@ -518,6 +572,7 @@ func (s *Service) Get(ctx context.Context, serviceId int) (domain.ServicePageDat
 type GetTeamMemberSettingsResult struct {
 	ServiceId          int
 	ServiceName        string
+	CurrencyCode       string
 	BookingType        types.BookingType
 	TotalDuration      int
 	PricePerPerson     *currencyx.Price
@@ -537,22 +592,36 @@ func (s *Service) GetTeamMemberSettings(ctx context.Context, serviceId int) (Get
 		return GetTeamMemberSettingsResult{}, err
 	}
 
+	var currencyCode string
+
+	if service.Price != nil {
+		currencyCode = service.Price.CurrencyCode()
+	} else {
+		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
+		if err != nil {
+			return GetTeamMemberSettingsResult{}, err
+		}
+
+		currencyCode = curr
+	}
+
 	settings, err := s.catalogRepo.GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return GetTeamMemberSettingsResult{}, err
 	}
+
 	phaseOverrides, err := s.catalogRepo.GetEmployeeServicePhaseOverrides(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return GetTeamMemberSettingsResult{}, err
 	}
 
-	settingIndex := make(map[int]int, len(settings))
+	settingIndexByEmployee := make(map[int]int, len(settings))
 	for i := range settings {
-		settings[i].PhaseOverrides = []domain.EmployeeServicePhase{}
-		settingIndex[settings[i].EmployeeId] = i
+		settingIndexByEmployee[settings[i].EmployeeId] = i
 	}
+
 	for _, phaseOverride := range phaseOverrides {
-		if i, exists := settingIndex[phaseOverride.EmployeeId]; exists {
+		if i, exists := settingIndexByEmployee[phaseOverride.EmployeeId]; exists {
 			settings[i].PhaseOverrides = append(settings[i].PhaseOverrides, phaseOverride)
 		}
 	}
@@ -560,6 +629,7 @@ func (s *Service) GetTeamMemberSettings(ctx context.Context, serviceId int) (Get
 	return GetTeamMemberSettingsResult{
 		ServiceId:          service.Id,
 		ServiceName:        service.Name,
+		CurrencyCode:       currencyCode,
 		BookingType:        service.BookingType,
 		TotalDuration:      service.TotalDuration,
 		PricePerPerson:     service.Price,
@@ -588,6 +658,170 @@ type UpdateTeamMemberSettingsInput struct {
 	PhaseOverrides  []EmployeeServicePhaseInput
 }
 
+func validateTeamMemberSettingsInputs(inputs []UpdateTeamMemberSettingsInput, currencyCode string) error {
+	maxPrice, err := currency.NewAmount("1000000", currencyCode)
+	if err != nil {
+		return err
+	}
+
+	seenEmployeeIds := make(map[int]struct{}, len(inputs))
+
+	for _, input := range inputs {
+		if _, exists := seenEmployeeIds[input.EmployeeId]; exists {
+			return ErrDuplicateServiceEmployee
+		}
+
+		seenEmployeeIds[input.EmployeeId] = struct{}{}
+
+		if !input.IsAssigned {
+			continue
+		}
+
+		if price := input.PricePerPerson; price != nil {
+			if price.CurrencyCode() != currencyCode {
+				return ErrEmployeeServicePriceCurrencyMismatch
+			}
+
+			priceComparison, err := price.Cmp(maxPrice)
+			if err != nil {
+				return err
+			}
+
+			if price.IsNegative() || priceComparison > 0 {
+				return ErrEmployeeServicePriceOutOfRange
+			}
+		}
+
+		for _, participants := range []*int{input.MinParticipants, input.MaxParticipants} {
+			if participants != nil && *participants < 1 {
+				return ErrEmployeeServiceParticipantsOutOfRange
+			}
+		}
+
+		if input.BufferTime != nil && (*input.BufferTime < 0 || *input.BufferTime > 1440) {
+			return ErrEmployeeServiceBufferTimeOutOfRange
+		}
+	}
+
+	return nil
+}
+
+type teamMemberSettingsChanges struct {
+	employeeServices           []domain.EmployeeService
+	employeeIdsToDelete        []int
+	employeeIdsToReplacePhases []int
+	phaseOverrides             []domain.EmployeeServicePhase
+}
+
+func buildTeamMemberSettingsChanges(service domain.Service, settings []domain.EmployeeServiceSettings,
+	inputs []UpdateTeamMemberSettingsInput) (teamMemberSettingsChanges, error) {
+
+	assignmentByEmployeeId := make(map[int]bool, len(settings))
+	assignedEmployeeCount := 0
+	for _, employee := range settings {
+		assignmentByEmployeeId[employee.EmployeeId] = employee.IsAssigned
+
+		if employee.IsAssigned {
+			assignedEmployeeCount++
+		}
+	}
+
+	servicePhaseIds := make(map[int]struct{}, len(service.Phases))
+	for _, phase := range service.Phases {
+		servicePhaseIds[phase.Id] = struct{}{}
+	}
+
+	changes := teamMemberSettingsChanges{
+		employeeServices:           make([]domain.EmployeeService, 0, len(inputs)),
+		employeeIdsToDelete:        make([]int, 0, len(inputs)),
+		employeeIdsToReplacePhases: make([]int, 0, len(inputs)),
+	}
+
+	for _, input := range inputs {
+		// the queried employee service settings contains all active employees
+		// therefore if not in it, it is inactive
+		wasAssigned, isActiveEmployee := assignmentByEmployeeId[input.EmployeeId]
+		if !isActiveEmployee {
+			return teamMemberSettingsChanges{}, ErrEmployeeNotActiveForMerchant
+		}
+
+		if input.IsAssigned && !wasAssigned {
+			assignedEmployeeCount++
+		} else if !input.IsAssigned && wasAssigned {
+			assignedEmployeeCount--
+		}
+
+		if !input.IsAssigned {
+			changes.employeeIdsToDelete = append(changes.employeeIdsToDelete, input.EmployeeId)
+			continue
+		}
+
+		changes.employeeIdsToReplacePhases = append(changes.employeeIdsToReplacePhases, input.EmployeeId)
+
+		phaseOverrides := make(map[int]int, len(input.PhaseOverrides))
+		for _, phase := range input.PhaseOverrides {
+			if _, duplicate := phaseOverrides[phase.ServicePhaseId]; duplicate {
+				return teamMemberSettingsChanges{}, ErrDuplicateEmployeeServicePhase
+			}
+
+			if _, exists := servicePhaseIds[phase.ServicePhaseId]; !exists {
+				return teamMemberSettingsChanges{}, ErrInvalidEmployeeServicePhase
+			}
+
+			if phase.Duration < 1 || phase.Duration > 1440 {
+				return teamMemberSettingsChanges{}, ErrEmployeeServiceDurationOutOfRange
+			}
+
+			phaseOverrides[phase.ServicePhaseId] = phase.Duration
+
+			changes.phaseOverrides = append(changes.phaseOverrides, domain.EmployeeServicePhase{
+				EmployeeId:     input.EmployeeId,
+				ServiceId:      service.Id,
+				ServicePhaseId: phase.ServicePhaseId,
+				Duration:       phase.Duration,
+			})
+		}
+
+		minParticipants := input.MinParticipants
+		maxParticipants := input.MaxParticipants
+		if !service.IsGroupService() {
+			minParticipants = nil
+			maxParticipants = nil
+		} else {
+			effectiveMinParticipants := service.MinParticipants
+			if minParticipants != nil {
+				effectiveMinParticipants = *minParticipants
+			}
+
+			effectiveMaxParticipants := service.MaxParticipants
+			if maxParticipants != nil {
+				effectiveMaxParticipants = *maxParticipants
+			}
+
+			if effectiveMinParticipants > effectiveMaxParticipants {
+				return teamMemberSettingsChanges{}, ErrEmployeeServiceParticipantRangeInvalid
+			}
+		}
+
+		changes.employeeServices = append(changes.employeeServices, domain.EmployeeService{
+			EmployeeId:      input.EmployeeId,
+			ServiceId:       service.Id,
+			TotalDuration:   calculateTotalDurationWithOverrides(service.Phases, phaseOverrides),
+			PricePerPerson:  input.PricePerPerson,
+			PriceType:       input.PriceType,
+			MinParticipants: minParticipants,
+			MaxParticipants: maxParticipants,
+			BufferTime:      input.BufferTime,
+		})
+	}
+
+	if assignedEmployeeCount == 0 {
+		return teamMemberSettingsChanges{}, ErrServiceRequiresEmployee
+	}
+
+	return changes, nil
+}
+
 func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, inputs []UpdateTeamMemberSettingsInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
@@ -595,175 +829,49 @@ func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, i
 	if err != nil {
 		return err
 	}
-	maxPrice, err := currency.NewAmount("1000000", currencyCode)
-	if err != nil {
+
+	if err := validateTeamMemberSettingsInputs(inputs, currencyCode); err != nil {
 		return err
 	}
 
-	seenEmployeeIds := make(map[int]struct{}, len(inputs))
-	for _, input := range inputs {
-		if _, exists := seenEmployeeIds[input.EmployeeId]; exists {
-			return ErrDuplicateServiceEmployee
-		}
-		seenEmployeeIds[input.EmployeeId] = struct{}{}
-
-		if !input.IsAssigned {
-			continue
-		}
-
-		if input.PricePerPerson != nil && input.PricePerPerson.CurrencyCode() != currencyCode {
-			return ErrEmployeeServicePriceCurrencyMismatch
-		}
-		if input.PricePerPerson != nil {
-			priceComparison, err := input.PricePerPerson.Cmp(maxPrice)
-			if err != nil {
-				return err
-			}
-			if input.PricePerPerson.IsNegative() || priceComparison > 0 {
-				return ErrEmployeeServicePriceOutOfRange
-			}
-		}
-		if input.MinParticipants != nil && *input.MinParticipants < 1 {
-			return ErrEmployeeServiceParticipantsOutOfRange
-		}
-		if input.MaxParticipants != nil && *input.MaxParticipants < 1 {
-			return ErrEmployeeServiceParticipantsOutOfRange
-		}
-		if input.BufferTime != nil && (*input.BufferTime < 0 || *input.BufferTime > 1440) {
-			return ErrEmployeeServiceBufferTimeOutOfRange
-		}
-	}
-
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		txCatalogRepo := s.catalogRepo.WithTx(tx)
-		service, err := txCatalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
-		if err != nil {
-			return err
-		}
-		settings, err := txCatalogRepo.GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
+		service, err := s.catalogRepo.WithTx(tx).GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
 		if err != nil {
 			return err
 		}
 
-		activeEmployeeIds := make(map[int]struct{}, len(settings))
-		assignedEmployeeIds := make(map[int]bool, len(settings))
-		for _, employee := range settings {
-			activeEmployeeIds[employee.EmployeeId] = struct{}{}
-			assignedEmployeeIds[employee.EmployeeId] = employee.IsAssigned
-		}
-		servicePhases := make(map[int]domain.ServicePhase, len(service.Phases))
-		for _, phase := range service.Phases {
-			servicePhases[phase.Id] = phase
+		settings, err := s.catalogRepo.WithTx(tx).GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
+		if err != nil {
+			return err
 		}
 
-		employeeServices := make([]domain.EmployeeService, 0, len(inputs))
-		employeeIdsToDelete := make([]int, 0, len(inputs))
-		employeeIdsToReplacePhases := make([]int, 0, len(inputs))
-		phaseOverrides := make([]domain.EmployeeServicePhase, 0)
-		for _, input := range inputs {
-			if _, active := activeEmployeeIds[input.EmployeeId]; !active {
-				return ErrEmployeeNotActiveForMerchant
-			}
-			assignedEmployeeIds[input.EmployeeId] = input.IsAssigned
-			employeeIdsToReplacePhases = append(employeeIdsToReplacePhases, input.EmployeeId)
-
-			if !input.IsAssigned {
-				employeeIdsToDelete = append(employeeIdsToDelete, input.EmployeeId)
-				continue
-			}
-
-			overrideDurations := make(map[int]int, len(input.PhaseOverrides))
-			for _, phaseOverride := range input.PhaseOverrides {
-				if _, duplicate := overrideDurations[phaseOverride.ServicePhaseId]; duplicate {
-					return ErrDuplicateEmployeeServicePhase
-				}
-				if _, exists := servicePhases[phaseOverride.ServicePhaseId]; !exists {
-					return ErrInvalidEmployeeServicePhase
-				}
-				if phaseOverride.Duration < 1 || phaseOverride.Duration > 1440 {
-					return ErrEmployeeServiceDurationOutOfRange
-				}
-				overrideDurations[phaseOverride.ServicePhaseId] = phaseOverride.Duration
-				phaseOverrides = append(phaseOverrides, domain.EmployeeServicePhase{
-					EmployeeId:     input.EmployeeId,
-					ServiceId:      serviceId,
-					ServicePhaseId: phaseOverride.ServicePhaseId,
-					Duration:       phaseOverride.Duration,
-				})
-			}
-
-			var totalDuration *int
-			if len(overrideDurations) > 0 {
-				effectiveTotalDuration := 0
-				for _, phase := range service.Phases {
-					duration := phase.Duration
-					if override, exists := overrideDurations[phase.Id]; exists {
-						duration = override
-					}
-					effectiveTotalDuration += duration
-				}
-				totalDuration = &effectiveTotalDuration
-			}
-
-			minParticipants := input.MinParticipants
-			maxParticipants := input.MaxParticipants
-			if !service.IsGroupService() {
-				minParticipants = nil
-				maxParticipants = nil
-			} else {
-				effectiveMinParticipants := service.MinParticipants
-				if minParticipants != nil {
-					effectiveMinParticipants = *minParticipants
-				}
-				effectiveMaxParticipants := service.MaxParticipants
-				if maxParticipants != nil {
-					effectiveMaxParticipants = *maxParticipants
-				}
-				if effectiveMinParticipants > effectiveMaxParticipants {
-					return ErrEmployeeServiceParticipantRangeInvalid
-				}
-			}
-
-			employeeServices = append(employeeServices, domain.EmployeeService{
-				EmployeeId:      input.EmployeeId,
-				ServiceId:       serviceId,
-				TotalDuration:   totalDuration,
-				PricePerPerson:  input.PricePerPerson,
-				PriceType:       input.PriceType,
-				MinParticipants: minParticipants,
-				MaxParticipants: maxParticipants,
-				BufferTime:      input.BufferTime,
-			})
+		changes, err := buildTeamMemberSettingsChanges(service, settings, inputs)
+		if err != nil {
+			return err
 		}
 
-		hasAssignedEmployee := false
-		for _, isAssigned := range assignedEmployeeIds {
-			if isAssigned {
-				hasAssignedEmployee = true
-				break
-			}
-		}
-		if !hasAssignedEmployee {
-			return ErrServiceRequiresEmployee
-		}
-
-		if len(employeeIdsToDelete) > 0 {
-			serviceIds := utils.RepeatSlice([]int{serviceId}, len(employeeIdsToDelete))
-			if err := txCatalogRepo.BulkDeleteEmployeeService(ctx, serviceIds, employeeIdsToDelete); err != nil {
+		if len(changes.employeeIdsToDelete) > 0 {
+			if err := s.catalogRepo.WithTx(tx).BulkDeleteEmployeeService(ctx, serviceId, changes.employeeIdsToDelete); err != nil {
 				return err
 			}
 		}
 
-		if len(employeeServices) > 0 {
-			if err := txCatalogRepo.BulkUpsertEmployeeServiceSettings(ctx, employeeServices); err != nil {
+		if len(changes.employeeServices) > 0 {
+			if err := s.catalogRepo.WithTx(tx).BulkUpsertEmployeeServiceSettings(ctx, changes.employeeServices); err != nil {
 				return err
 			}
 		}
-		if err := txCatalogRepo.BulkDeleteEmployeeServicePhases(ctx, serviceId, employeeIdsToReplacePhases); err != nil {
-			return err
+
+		if len(changes.employeeIdsToReplacePhases) > 0 {
+			if err := s.catalogRepo.WithTx(tx).BulkDeleteEmployeeServicePhases(ctx, serviceId, changes.employeeIdsToReplacePhases); err != nil {
+				return err
+			}
 		}
-		if err := txCatalogRepo.BulkInsertEmployeeServicePhases(ctx, phaseOverrides); err != nil {
-			return err
+
+		if len(changes.phaseOverrides) > 0 {
+			if err := s.catalogRepo.WithTx(tx).BulkInsertEmployeeServicePhases(ctx, changes.phaseOverrides); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -776,7 +884,6 @@ func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, i
 }
 
 type UpdateServiceProductInput struct {
-	ServiceId    int
 	UsedProducts []ConnectedProductsInput
 }
 

@@ -46,17 +46,7 @@ function fromMinutes(duration, durationUnit) {
 }
 
 function getInitialEmployees(data) {
-  return data.employees.map((employee) => ({
-    ...employee,
-    price: employee.price ? { ...employee.price } : null,
-    phase_overrides: employee.phase_overrides.map((phase) => ({ ...phase })),
-  }));
-}
-
-function getPhaseOverride(employee, phaseId) {
-  return employee.phase_overrides.find(
-    (override) => override.service_phase_id === phaseId
-  );
+  return data.employees.map((employee) => ({ ...employee }));
 }
 
 function getDurationSum(employee, phases) {
@@ -87,7 +77,6 @@ function hasEmployeeOverrides(employee) {
 function resetOverrides(employee) {
   return {
     ...employee,
-    duration: null,
     price: null,
     price_type: null,
     min_participants: null,
@@ -114,12 +103,7 @@ async function fetchTeamMemberSettings(merchantId, serviceId) {
     throw result.error;
   }
 
-  return {
-    ...result.data,
-    phases: [...result.data.phases].sort(
-      (first, second) => first.sequence - second.sequence
-    ),
-  };
+  return result.data;
 }
 
 function teamMemberSettingsQueryOptions(merchantId, serviceId) {
@@ -196,7 +180,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
   );
 
   const filteredEmployees = employees.filter((employee) =>
-    `${employee.first_name || ""} ${employee.last_name || ""}`
+    `${employee.first_name} ${employee.last_name}`
       .toLowerCase()
       .includes(searchText.trim().toLowerCase())
   );
@@ -229,10 +213,6 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
     });
   }
 
-  function resetEmployee(employeeId) {
-    updateEmployee(employeeId, resetOverrides);
-  }
-
   function resetAll() {
     setEmployees((current) =>
       current.map((employee) =>
@@ -255,12 +235,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
         const maxParticipants =
           employee.max_participants ?? data.default_max_participants;
         if (minParticipants > maxParticipants) {
-          const name = [employee.first_name, employee.last_name]
-            .filter(Boolean)
-            .join(" ");
-          return `Minimum participants cannot exceed maximum participants for ${
-            name || "a team member"
-          }.`;
+          return `Minimum participants cannot exceed maximum participants for ${employee.first_name} ${employee.last_name}.`;
         }
       }
     }
@@ -340,12 +315,10 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
 
   return (
     <Block
-      shouldBlockFn={() => {
-        if (!hasUnsavedChanges) return false;
-        return !confirm(
-          "You have unsaved changes, are you sure you want to leave?"
-        );
-      }}
+      shouldBlockFn={() =>
+        hasUnsavedChanges &&
+        !confirm("You have unsaved changes, are you sure you want to leave?")
+      }
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 md:py-8">
         <div className="mb-5 flex items-center justify-between gap-3">
@@ -442,17 +415,14 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
                   data={data}
                   isGroupService={isGroupService}
                   isExpanded={expandedEmployeeIds.has(employee.employee_id)}
-                  priceTypeOptions={priceTypeOptions}
                   defaultBufferTime={defaultBufferTime}
                   defaultBufferTimeLabel={defaultBufferTimeLabel}
                   onToggleExpanded={() =>
                     setExpandedEmployeeIds((current) => {
                       const next = new Set(current);
-                      if (next.has(employee.employee_id)) {
-                        next.delete(employee.employee_id);
-                      } else {
-                        next.add(employee.employee_id);
-                      }
+                      next.has(employee.employee_id)
+                        ? next.delete(employee.employee_id)
+                        : next.add(employee.employee_id);
                       return next;
                     })
                   }
@@ -462,7 +432,9 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
                   onUpdatePhase={(phaseId, duration) =>
                     updatePhase(employee.employee_id, phaseId, duration)
                   }
-                  onReset={() => resetEmployee(employee.employee_id)}
+                  onReset={() =>
+                    updateEmployee(employee.employee_id, resetOverrides)
+                  }
                 />
               ))}
             </ul>
@@ -478,7 +450,6 @@ function EmployeeSettingsRow({
   data,
   isGroupService,
   isExpanded,
-  priceTypeOptions,
   defaultBufferTime,
   defaultBufferTimeLabel,
   onToggleExpanded,
@@ -490,7 +461,9 @@ function EmployeeSettingsRow({
   const hasOverrides = hasEmployeeOverrides(employee);
   const effectivePriceType = employee.price_type || data.default_price_type;
   const currency =
-    employee.price?.currency || data.default_price?.currency || "HUF";
+    employee.price?.currency ||
+    data.default_price?.currency ||
+    data.currency_code;
   const initials = `${employee.first_name?.[0]}${employee.last_name?.[0]}`;
   const name = `${employee.first_name} ${employee.last_name}`;
   const durationSum = getDurationSum(employee, data.phases);
@@ -590,8 +563,13 @@ function EmployeeSettingsRow({
               onUpdate({
                 price_type: priceType,
                 ...(option.value === "free"
-                  ? { price: { number: "0", currency } }
-                  : {}),
+                  ? {
+                      price: priceType ? { number: "0", currency } : null,
+                    }
+                  : employee.price_type === "free" &&
+                      employee.price?.number === "0"
+                    ? { price: null }
+                    : {}),
               });
             }}
           />
@@ -669,13 +647,30 @@ function EmployeeSettingsRow({
             xl:gap-x-4"
         >
           <div className="flex flex-col gap-8 xl:col-start-2 xl:col-end-6">
-            <EmployeeDurationSettings
-              employee={employee}
-              phases={data.phases}
-              getDurationUnit={getDurationUnit}
-              setDurationUnit={setDurationUnit}
-              onUpdatePhase={onUpdatePhase}
-            />
+            {data.phases.length > 1 && (
+              <section>
+                <h3 className="mb-3 font-semibold">Duration</h3>
+                <div className="flex flex-col gap-4 pt-4">
+                  {data.phases.map((phase) => (
+                    <div key={phase.id} className="flex flex-row gap-4">
+                      <PhaseDurationInput
+                        unitStyles="w-32! xl:w-52!"
+                        employee={employee}
+                        phase={phase}
+                        durationUnit={getDurationUnit(phase.id)}
+                        onDurationUnitChange={(unit) =>
+                          setDurationUnit(phase.id, unit)
+                        }
+                        onUpdate={(duration) =>
+                          onUpdatePhase(phase.id, duration)
+                        }
+                      />
+                      <PhaseTypeBadge phaseType={phase.phase_type} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section>
               <h3 className="font-semibold">Booking settings</h3>
@@ -741,41 +736,6 @@ function EmployeeSettingsRow({
   );
 }
 
-function EmployeeDurationSettings({
-  employee,
-  phases,
-  getDurationUnit,
-  setDurationUnit,
-  onUpdatePhase,
-}) {
-  if (phases.length <= 1) return null;
-
-  return (
-    <section>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <h3 className="font-semibold">Duration</h3>
-      </div>
-      <div className="flex flex-col gap-4 pt-4">
-        {phases.map((phase) => (
-          <div key={phase.id} className="flex flex-row gap-4">
-            <PhaseDurationInput
-              unitStyles="w-32! xl:w-52!"
-              employee={employee}
-              phase={phase}
-              durationUnit={getDurationUnit(phase.id)}
-              onDurationUnitChange={(durationUnit) =>
-                setDurationUnit(phase.id, durationUnit)
-              }
-              onUpdate={(duration) => onUpdatePhase(phase.id, duration)}
-            />
-            <PhaseTypeBadge phaseType={phase.phase_type} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function PhaseTypeBadge({ phaseType }) {
   const isActive = phaseType === "active";
 
@@ -798,14 +758,15 @@ function PhaseDurationInput({
   employee,
   phase,
   durationUnit,
-  labelText,
   disabled = false,
-  styles,
-  unitStyles,
+  styles = "",
+  unitStyles = "",
   onDurationUnitChange,
   onUpdate,
 }) {
-  const override = getPhaseOverride(employee, phase.id);
+  const override = employee.phase_overrides.find(
+    (item) => item.service_phase_id === phase.id
+  );
 
   return (
     <Input
@@ -817,7 +778,6 @@ function PhaseDurationInput({
       max={durationUnit === "hour" ? 24 : 1440}
       required={false}
       disabled={disabled}
-      labelText={labelText}
       placeholder={fromMinutes(phase.duration, durationUnit)}
       value={fromMinutes(override?.duration, durationUnit)}
       inputData={({ value }) => onUpdate(toMinutes(value, durationUnit))}

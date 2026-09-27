@@ -152,8 +152,7 @@ create table if not exists "EmployeeServicePhase" (
     service_phase_id         integer                 not null,
     duration                 integer,
 
-    constraint employee_service_phase_assignment_fkey
-        foreign key (employee_id, service_id) references "EmployeeService" (employee_id, service_id) on delete cascade,
+    foreign key (employee_id, service_id) references "EmployeeService" (employee_id, service_id) on delete cascade,
     foreign key (service_phase_id, service_id) references "ServicePhase" (ID, service_id) on delete cascade,
     primary key (employee_id, service_phase_id)
 );

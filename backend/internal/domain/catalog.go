@@ -54,11 +54,11 @@ type CatalogRepository interface {
 	GetServiceProducts(ctx context.Context, serviceId int) ([]ConnectedProducts, error)
 
 	BulkInsertEmployeeService(ctx context.Context, employeeServices []EmployeeService) error
-	BulkDeleteEmployeeService(ctx context.Context, serviceIds []int, employeeIds []int) error
+	BulkDeleteEmployeeService(ctx context.Context, serviceId int, employeeIds []int) error
 	BulkUpsertEmployeeServiceSettings(ctx context.Context, employeeServices []EmployeeService) error
+	BulkUpdateEmployeeServiceDurations(ctx context.Context, employeeServices []EmployeeService) error
 	BulkDeleteEmployeeServicePhases(ctx context.Context, serviceId int, employeeIds []int) error
 	BulkInsertEmployeeServicePhases(ctx context.Context, phases []EmployeeServicePhase) error
-	RefreshEmployeeServiceTotalDurations(ctx context.Context, serviceId int) error
 }
 
 type Service struct {
@@ -284,8 +284,8 @@ type EmployeeServiceSettings struct {
 }
 
 type EmployeeServicePhase struct {
-	EmployeeId     int `json:"employee_id"`
-	ServiceId      int `json:"service_id"`
-	ServicePhaseId int `json:"service_phase_id"`
-	Duration       int `json:"duration"`
+	EmployeeId     int
+	ServiceId      int
+	ServicePhaseId int
+	Duration       int
 }

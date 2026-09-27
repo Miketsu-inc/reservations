@@ -214,7 +214,6 @@ type employeeSettingsResp struct {
 	LastName        *string                     `json:"last_name"`
 	Role            types.EmployeeRole          `json:"role"`
 	IsAssigned      bool                        `json:"is_assigned"`
-	Duration        *int                        `json:"duration"`
 	Price           *currencyx.Price            `json:"price"`
 	PriceType       *types.PriceType            `json:"price_type"`
 	MinParticipants *int                        `json:"min_participants"`
@@ -226,6 +225,7 @@ type employeeSettingsResp struct {
 type getTeamMemberSettingsResp struct {
 	ServiceId              int                    `json:"service_id"`
 	ServiceName            string                 `json:"service_name"`
+	CurrencyCode           string                 `json:"currency_code"`
 	BookingType            types.BookingType      `json:"booking_type"`
 	DefaultDuration        int                    `json:"default_duration"`
 	DefaultPrice           *currencyx.Price       `json:"default_price"`
@@ -293,7 +293,6 @@ func (h *Handler) UpdateTeamMemberSettings(w http.ResponseWriter, r *http.Reques
 }
 
 type updateServiceProductReq struct {
-	ServiceId    int                    `json:"service_id" validate:"required"`
 	UsedProducts []connectedProductsReq `json:"used_products" validate:"required"`
 }
 

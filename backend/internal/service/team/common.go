@@ -24,7 +24,7 @@ func (s *Service) IsInActiveEmployees(ctx context.Context, merchantId uuid.UUID,
 
 	for _, id := range employeeIds {
 		if _, ok := activeIdsMap[id]; !ok {
-			return fmt.Errorf("active employee with this id  does not exist")
+			return fmt.Errorf("active employee with this id does not exist")
 		}
 	}
 
