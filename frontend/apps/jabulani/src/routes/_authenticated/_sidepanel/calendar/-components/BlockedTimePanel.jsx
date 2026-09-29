@@ -20,6 +20,7 @@ import {
   blockedTimeTypesQueryOptions,
   combineDateTimeLocal,
   formatDuration,
+  formatTimeInputValue,
   formatToDateString,
   generateTimeOptions,
   invalidateLocalStorageAuth,
@@ -58,6 +59,7 @@ const defaultFormData = {
 export default function BlockedTimePanel({
   onClose,
   blockedTime,
+  initialStart,
   preferences,
   onDeleted,
   onSubmitted,
@@ -69,14 +71,30 @@ export default function BlockedTimePanel({
   const isEditing = blockedTime !== null;
   const originalTimeOptions = generateTimeOptions(preferences?.time_format);
 
+  const initialDate = blockedTime?.start
+    ? new Date(blockedTime.start)
+    : initialStart
+      ? new Date(initialStart)
+      : new Date();
+
   const initialFromTime =
     !blockedTime?.extendedProps?.allDay && blockedTime?.start
       ? timeStringFromDate(blockedTime?.start)
-      : "09:00";
+      : initialStart
+        ? formatTimeInputValue(initialDate)
+        : "09:00";
+  const defaultEndDate = new Date(initialDate);
+  defaultEndDate.setHours(defaultEndDate.getHours() + 1);
+  if (defaultEndDate.getDate() !== initialDate.getDate()) {
+    defaultEndDate.setTime(initialDate.getTime());
+    defaultEndDate.setHours(23, 59, 0, 0);
+  }
   const initialToTime =
     !blockedTime?.extendedProps?.allDay && blockedTime?.end
       ? timeStringFromDate(blockedTime?.end).split(" ")[0]
-      : "17:00";
+      : initialStart
+        ? formatTimeInputValue(defaultEndDate)
+        : "17:00";
 
   const [timeOptions, setTimeOptions] = useState(() => {
     const options = originalTimeOptions;
@@ -107,7 +125,7 @@ export default function BlockedTimePanel({
     blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
     name: blockedTime?.extendedProps?.name || "",
     employee_ids: initialEmployees,
-    date: blockedTime?.start || new Date(),
+    date: initialDate,
     from_time: initialFromTime,
     to_time: initialToTime,
     is_all_day: blockedTime?.extendedProps?.allDay ?? false,

@@ -31,6 +31,7 @@ export default function NewBookingPanel({
   onClose,
   categories,
   customers,
+  initialStart,
 }) {
   const [isCustomerSectionExpanded, setIsCustomerSectionExpanded] =
     useState(false);
@@ -41,18 +42,22 @@ export default function NewBookingPanel({
   const { showToast } = useToast();
   const { merchantId, employeeId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const currentDate = new Date();
+  const initialBookingStart = initialStart
+    ? new Date(initialStart)
+    : new Date();
+  const defaultRecurrenceEnd = new Date(initialBookingStart);
+  defaultRecurrenceEnd.setMonth(defaultRecurrenceEnd.getMonth() + 1);
   const [recurData, setRecurData] = useState({
     isRecurring: false,
     frequency: "weekly",
-    endDate: new Date(currentDate.setMonth(currentDate.getMonth() + 1)),
+    endDate: defaultRecurrenceEnd,
     interval: 1,
     intervalUnit: "weeks",
     days: [],
   });
   const [bookingData, setBookingData] = useState({
-    date: new Date(),
-    time: formatTimeInputValue(new Date()),
+    date: initialBookingStart,
+    time: formatTimeInputValue(initialBookingStart),
     serviceId: null,
     customers: [],
     employee_id: employeeId,

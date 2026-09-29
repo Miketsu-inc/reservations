@@ -33,7 +33,7 @@ import {
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
 import CalendarSidePanel from "./CalendarSidePanel";
-import CreateMenu from "./CreateMenu";
+import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/palettes/indigo.css";
@@ -151,6 +151,7 @@ const defaultSidePanelState = {
   isOpen: false,
   type: null,
   data: null,
+  initialStart: null,
   bookingId: null,
   panelKey: null,
 };
@@ -160,6 +161,7 @@ function createBookingPanelState(bookingId, event = null) {
     isOpen: true,
     type: "edit-booking",
     data: event,
+    initialStart: null,
     bookingId,
     panelKey: `edit-booking:${bookingId}`,
   };
@@ -171,6 +173,7 @@ export default function Calendar({ router, route, search }) {
     bookingId ? createBookingPanelState(bookingId) : defaultSidePanelState
   );
   const [calendarTitle, setCalendarTitle] = useState("");
+  const [createSelection, setCreateSelection] = useState(null);
 
   // Keep the old booking only when the route disappears, so its panel can
   // animate out before the transition callback clears it.
@@ -249,13 +252,19 @@ export default function Calendar({ router, route, search }) {
     );
   }, [sidePanelState.bookingId, merchantId, queryClient]);
 
-  function openSidePanel(type, data, id, revert = null) {
+  const closeCreateMenu = useCallback(() => {
+    setCreateSelection(null);
+  }, []);
+
+  function openSidePanel(type, data, id, revert = null, initialStart = null) {
     dragRevertRef.current = revert;
+    setCreateSelection(null);
 
     setSidePanelState({
       isOpen: true,
       type,
       data,
+      initialStart,
       bookingId: null,
       panelKey: `${type}:${id}`,
     });
@@ -263,6 +272,7 @@ export default function Calendar({ router, route, search }) {
 
   function openBookingSidePanel(event, revert = null) {
     dragRevertRef.current = revert;
+    setCreateSelection(null);
 
     setSidePanelState(createBookingPanelState(event.id, event));
 
@@ -383,6 +393,7 @@ export default function Calendar({ router, route, search }) {
         isOpen={isPanelOpen}
         type={panelType}
         data={panelData}
+        initialStart={sidePanelState.initialStart}
         panelKey={sidePanelState.panelKey}
         onClose={closeSidePanel}
         onTransitionEnd={finishSidePanelClose}
@@ -392,6 +403,16 @@ export default function Calendar({ router, route, search }) {
           invalidateSelectedBookingQuery();
         }}
         preferences={preferences}
+      />
+      <CalendarCreateMenu
+        selection={createSelection}
+        onClose={closeCreateMenu}
+        onCreateBlockedTime={(start) =>
+          openSidePanel("blocked-time", null, start.toISOString(), null, start)
+        }
+        onCreateBooking={(start) =>
+          openSidePanel("new-booking", null, start.toISOString(), null, start)
+        }
       />
       <div className="relative flex flex-col pb-4 md:flex-row md:gap-2">
         <div
@@ -485,6 +506,24 @@ export default function Calendar({ router, route, search }) {
             }
 
             openBookingSidePanel(e.event);
+          }}
+          dateClick={(info) => {
+            const supportsSlotCreation =
+              info.view.type === "timeGridWeek" ||
+              info.view.type === "timeGridDay";
+
+            if (
+              !supportsSlotCreation ||
+              info.jsEvent.target.closest(".fc-event")
+            ) {
+              return;
+            }
+
+            setCreateSelection({
+              start: new Date(info.date),
+              x: info.jsEvent.clientX,
+              y: info.jsEvent.clientY,
+            });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
           lazyFetching={true}
