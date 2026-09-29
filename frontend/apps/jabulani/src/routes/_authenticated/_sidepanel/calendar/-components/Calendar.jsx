@@ -33,6 +33,7 @@ import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
+import CalendarEventPreview from "./CalendarEventPreview";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
@@ -104,6 +105,7 @@ function formatBookings(data) {
         participants: booking.participants,
         merchant_note: booking.merchant_note,
         service_name: booking.service_name,
+        service_color: serviceColor,
         service_id: booking.service_id,
         employee_id: booking.employee_id,
         duration: booking.duration,
@@ -140,6 +142,7 @@ function formatBlockedTimes(data) {
         id: blockedTime.id,
         type: "blocked",
         name: blockedTime.name,
+        icon: blockedTime.icon,
         blocked_type_id: blockedTime.blocked_type_id,
         employee_ids: blockedTime.employee_ids,
         allDay: blockedTime.is_all_day,
@@ -514,6 +517,12 @@ export default function Calendar({ router, route, search }) {
           height="auto"
           headerToolbar={false}
           events={calendarEvents}
+          eventContent={(eventInfo) => (
+            <CalendarEventPreview
+              eventInfo={eventInfo}
+              timeFormat={preferences.time_format}
+            />
+          )}
           datesSet={({ view }) => {
             setCalendarTitle(view.title);
 

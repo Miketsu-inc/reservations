@@ -26,6 +26,11 @@ export {
   PopoverContent,
   PopoverTrigger,
 } from "./Popover.jsx";
+export {
+  PreviewCard,
+  PreviewCardContent,
+  PreviewCardTrigger,
+} from "./PreviewCard.jsx";
 export { default as ProgressBar } from "./ProgressBar.jsx";
 export {
   ResponsiveDialog,
