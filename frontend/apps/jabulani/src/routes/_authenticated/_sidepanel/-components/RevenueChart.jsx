@@ -1,6 +1,6 @@
 import { Loading, ServerError } from "@reservations/components";
 import {
-  fillStatisticsWithDate,
+  dateStringToLocalDate,
   invalidateLocalStorageAuth,
 } from "@reservations/lib";
 import {
@@ -17,9 +17,14 @@ import {
   XAxis,
 } from "recharts";
 
-async function fetchDashboardRevenue(merchantId, period) {
+async function fetchDashboardRevenue(merchantId, period, timeZone) {
+  const params = new URLSearchParams({
+    period,
+    time_zone: timeZone,
+  });
+
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/dashboard/revenue?period=${period}`,
+    `/api/v1/merchants/${merchantId}/dashboard/revenue?${params}`,
     {
       method: "GET",
       headers: {
@@ -39,9 +44,11 @@ async function fetchDashboardRevenue(merchantId, period) {
 }
 
 function dashboardRevenueQueryOptions(merchantId, period) {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   return queryOptions({
-    queryKey: [merchantId, "dashboard-revenue", period],
-    queryFn: () => fetchDashboardRevenue(merchantId, period),
+    queryKey: [merchantId, "dashboard-revenue", period, timeZone],
+    queryFn: () => fetchDashboardRevenue(merchantId, period, timeZone),
     placeholderData: keepPreviousData,
     // staleTime: 30_000,
     // gcTime: 5 * 60 * 1000,
@@ -61,16 +68,11 @@ export default function RevenueChart({ merchantId, period }) {
     return <Loading />;
   }
 
-  const numericRevenue = data.revenue.map(({ day, value }) => ({
-    day,
+  const revenue = data.revenue.map(({ day, value, formatted_value }) => ({
+    day: formatRevenueDay(day),
+    formattedValue: formatted_value,
     value: Number(value.number),
   }));
-
-  const revenue = fillStatisticsWithDate(
-    numericRevenue,
-    data.period_start,
-    data.period_end
-  );
 
   return (
     <div className="flex h-full w-full flex-col gap-8">
@@ -130,6 +132,16 @@ export default function RevenueChart({ merchantId, period }) {
   );
 }
 
+function formatRevenueDay(day) {
+  const date = dateStringToLocalDate(day);
+  if (!date) return day;
+
+  return date.toLocaleDateString([], {
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 const CustomTick = ({ x, y, payload, index, dataLength }) => {
   if (dataLength >= 15) {
     if (index % 3 !== 0) return null;
@@ -162,7 +174,7 @@ const TooltipContent = ({ payload, label }) => {
             <div className="bg-primary size-2.5 shrink-0 rounded-xs"></div>
             <p className="text-gray-500 dark:text-gray-400">Revenue</p>
           </div>
-          <p>{item.value}</p>
+          <p>{item.payload.formattedValue}</p>
         </div>
       ))}
     </div>

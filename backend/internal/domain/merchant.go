@@ -33,7 +33,7 @@ type MerchantRepository interface {
 	GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error)
 
 	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
-	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time) ([]RevenueStat, error)
+	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, timezone *time.Location) ([]RevenueStat, error)
 
 	NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error
 	DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error

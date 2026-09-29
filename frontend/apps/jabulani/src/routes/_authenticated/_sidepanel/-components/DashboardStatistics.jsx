@@ -7,9 +7,14 @@ import {
 } from "@tanstack/react-query";
 import StatisticsCard from "./StatisticsCard";
 
-async function fetchDashboardStatistics(merchantId, period) {
+async function fetchDashboardStatistics(merchantId, period, timeZone) {
+  const params = new URLSearchParams({
+    period,
+    time_zone: timeZone,
+  });
+
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/dashboard/statistics?period=${period}`,
+    `/api/v1/merchants/${merchantId}/dashboard/statistics?${params}`,
     {
       method: "GET",
       headers: {
@@ -29,9 +34,11 @@ async function fetchDashboardStatistics(merchantId, period) {
 }
 
 function dashboardStatisticsQueryOptions(merchantId, period) {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   return queryOptions({
-    queryKey: [merchantId, "dashboard-statistics", period],
-    queryFn: () => fetchDashboardStatistics(merchantId, period),
+    queryKey: [merchantId, "dashboard-statistics", period, timeZone],
+    queryFn: () => fetchDashboardStatistics(merchantId, period, timeZone),
     placeholderData: keepPreviousData,
     // staleTime: 30_000,
     // gcTime: 5 * 60 * 1000,
