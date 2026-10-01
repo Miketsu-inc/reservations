@@ -8,19 +8,16 @@ import {
 } from "@reservations/components";
 import { useEffect, useState } from "react";
 
-const createOptionStyles = `hover:bg-hvr_gray w-full cursor-pointer rounded-lg
-  p-2 text-left outline-hidden`;
-
 function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
   return (
-    <div className="flex flex-col items-start">
-      <button
-        onClick={onCreateBooking}
-        className={`${createOptionStyles} flex items-center gap-2`}
-      >
+    <div
+      className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full
+        *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
+    >
+      <button onClick={onCreateBooking} className="flex items-center gap-2">
         <Icon icon={CalendarAdd01Icon} styles="size-6" /> Booking
       </button>
-      <button onClick={onCreateBlockedTime} className={createOptionStyles}>
+      <button className="text-left" onClick={onCreateBlockedTime}>
         Blocked Time
       </button>
     </div>
@@ -33,13 +30,9 @@ export default function CreateMenu({
   isFloating = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Popover
-      open={isOpen}
-      onOpenChange={(open) => {
-        open ? setIsOpen(true) : setIsOpen(false);
-      }}
-    >
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="primary"
@@ -79,23 +72,16 @@ export function CalendarCreateMenu({
   onCreateBlockedTime,
   onCreateBooking,
 }) {
-  const isOpen = selection !== null;
-
   useEffect(() => {
-    if (!isOpen) return;
-
-    const closeOnScroll = () => onClose();
     const listenerOptions = { capture: true, passive: true, once: true };
 
-    window.addEventListener("scroll", closeOnScroll, listenerOptions);
-    return () => window.removeEventListener("scroll", closeOnScroll, true);
-  }, [isOpen, onClose]);
-
-  if (!selection) return null;
+    window.addEventListener("scroll", onClose, listenerOptions);
+    return () => window.removeEventListener("scroll", onClose, true);
+  }, [onClose]);
 
   return (
     <Popover
-      open={true}
+      open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

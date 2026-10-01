@@ -24,7 +24,6 @@ import {
   formatToDateString,
   generateTimeOptions,
   invalidateLocalStorageAuth,
-  timeStringFromDate,
   useToast,
   useWindowSize,
 } from "@reservations/lib";
@@ -56,6 +55,32 @@ const defaultFormData = {
   is_all_day: false,
 };
 
+function getInitialDateRange(blockedTime, initialStart) {
+  const start = blockedTime?.start ?? initialStart;
+  const date = start ? new Date(start) : new Date();
+
+  if (!start || blockedTime?.extendedProps?.allDay) {
+    return { date, fromTime: "09:00", toTime: "17:00" };
+  }
+
+  const end = blockedTime?.end ? new Date(blockedTime.end) : new Date(date);
+
+  if (!blockedTime?.end) {
+    end.setHours(end.getHours() + 1);
+
+    if (end.getDate() !== date.getDate()) {
+      end.setTime(date.getTime());
+      end.setHours(23, 59, 0, 0);
+    }
+  }
+
+  return {
+    date,
+    fromTime: formatTimeInputValue(date),
+    toTime: formatTimeInputValue(end),
+  };
+}
+
 export default function BlockedTimePanel({
   onClose,
   blockedTime,
@@ -71,30 +96,11 @@ export default function BlockedTimePanel({
   const isEditing = blockedTime !== null;
   const originalTimeOptions = generateTimeOptions(preferences?.time_format);
 
-  const initialDate = blockedTime?.start
-    ? new Date(blockedTime.start)
-    : initialStart
-      ? new Date(initialStart)
-      : new Date();
-
-  const initialFromTime =
-    !blockedTime?.extendedProps?.allDay && blockedTime?.start
-      ? timeStringFromDate(blockedTime?.start)
-      : initialStart
-        ? formatTimeInputValue(initialDate)
-        : "09:00";
-  const defaultEndDate = new Date(initialDate);
-  defaultEndDate.setHours(defaultEndDate.getHours() + 1);
-  if (defaultEndDate.getDate() !== initialDate.getDate()) {
-    defaultEndDate.setTime(initialDate.getTime());
-    defaultEndDate.setHours(23, 59, 0, 0);
-  }
-  const initialToTime =
-    !blockedTime?.extendedProps?.allDay && blockedTime?.end
-      ? timeStringFromDate(blockedTime?.end).split(" ")[0]
-      : initialStart
-        ? formatTimeInputValue(defaultEndDate)
-        : "17:00";
+  const {
+    date: initialDate,
+    fromTime: initialFromTime,
+    toTime: initialToTime,
+  } = getInitialDateRange(blockedTime, initialStart);
 
   const [timeOptions, setTimeOptions] = useState(() => {
     const options = originalTimeOptions;

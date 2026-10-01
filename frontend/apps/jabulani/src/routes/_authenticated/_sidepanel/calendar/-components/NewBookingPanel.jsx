@@ -5,7 +5,7 @@ import {
   Textarea,
 } from "@reservations/components";
 import { TeamMemberSelect } from "@reservations/jabulani/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { getDefaultRecurrenceEnd, useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
   combineDateTimeLocal,
@@ -26,6 +26,30 @@ import ParticipantManager from "./ParticipantManager";
 import RecurSection from "./RecurSection";
 import ServiceSelector from "./ServiceSelector";
 
+function createInitialBookingData(initialStart, employeeId) {
+  const start = initialStart ? new Date(initialStart) : new Date();
+
+  return {
+    date: start,
+    time: formatTimeInputValue(start),
+    serviceId: null,
+    customers: [],
+    employee_id: employeeId,
+    merchantNote: "",
+  };
+}
+
+function createDefaultRecurrenceData(startDate) {
+  return {
+    isRecurring: false,
+    frequency: "weekly",
+    endDate: getDefaultRecurrenceEnd(startDate, "weekly"),
+    interval: 1,
+    intervalUnit: "weeks",
+    days: [],
+  };
+}
+
 export default function NewBookingPanel({
   onSave,
   onClose,
@@ -42,27 +66,12 @@ export default function NewBookingPanel({
   const { showToast } = useToast();
   const { merchantId, employeeId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const initialBookingStart = initialStart
-    ? new Date(initialStart)
-    : new Date();
-  const defaultRecurrenceEnd = new Date(initialBookingStart);
-  defaultRecurrenceEnd.setMonth(defaultRecurrenceEnd.getMonth() + 1);
-  const [recurData, setRecurData] = useState({
-    isRecurring: false,
-    frequency: "weekly",
-    endDate: defaultRecurrenceEnd,
-    interval: 1,
-    intervalUnit: "weeks",
-    days: [],
-  });
-  const [bookingData, setBookingData] = useState({
-    date: initialBookingStart,
-    time: formatTimeInputValue(initialBookingStart),
-    serviceId: null,
-    customers: [],
-    employee_id: employeeId,
-    merchantNote: "",
-  });
+  const [bookingData, setBookingData] = useState(() =>
+    createInitialBookingData(initialStart, employeeId)
+  );
+  const [recurData, setRecurData] = useState(() =>
+    createDefaultRecurrenceData(bookingData.date)
+  );
 
   const { isWindowSmall } = useWindowSize();
 
