@@ -3,7 +3,6 @@ import {
   Calendar02Icon,
   Clock01Icon,
   User03Icon,
-  UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Avatar,
@@ -12,11 +11,27 @@ import {
   PreviewCardContent,
   PreviewCardTrigger,
 } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
+  calendarTeamMembersQueryOptions,
   formatDuration,
   getDisplayPrice,
   timeStringFromDate,
 } from "@reservations/lib";
+import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+
+const STATUS_STYLES = {
+  booked:
+    "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
+  confirmed:
+    "bg-blue-600/20 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  completed:
+    "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
+  cancelled: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+  "no-show":
+    "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
+};
 
 function capitalize(value) {
   if (!value) return "";
@@ -100,7 +115,7 @@ function ParticipantAvatars({ participants }) {
     participants.length - visibleParticipants.length;
 
   return (
-    <div className="flex shrink-0 -space-x-2">
+    <div className="flex shrink-0 -space-x-4">
       {visibleParticipants.map((participant) => (
         <Avatar
           key={participant.id}
@@ -131,6 +146,94 @@ function DetailRow({ icon, children }) {
   );
 }
 
+function TeamMemberAvatars({ members }) {
+  const visibleMembers = members.slice(0, 4);
+  const remainingMembers = members.length - visibleMembers.length;
+
+  return (
+    <div className="flex shrink-0 -space-x-3" role="list">
+      {visibleMembers.map((member) => {
+        const name = [member.first_name, member.last_name]
+          .filter(Boolean)
+          .join(" ");
+        const initials = `${member.first_name?.[0] ?? ""}${
+          member.last_name?.[0] ?? ""
+        }`;
+
+        return (
+          <span
+            key={member.id}
+            className="rounded-full"
+            role="listitem"
+            title={name || "Team member"}
+          >
+            <Avatar
+              img={member.avatar_url}
+              initials={initials || "?"}
+              alt={name}
+              styles="size-8! rounded-full! border-2 border-layer_bg text-[11px]!"
+            />
+          </span>
+        );
+      })}
+      {remainingMembers > 0 && (
+        <div
+          className="border-layer_bg bg-hvr_gray flex size-8 items-center
+            justify-center rounded-full border-2 text-[11px] font-semibold"
+          role="listitem"
+        >
+          +{remainingMembers}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamMemberAvatarSkeleton({ count }) {
+  return (
+    <div
+      aria-label="Loading assigned team"
+      className="flex shrink-0 -space-x-3"
+    >
+      {Array.from({ length: Math.min(count, 4) }, (_, index) => (
+        <div
+          key={index}
+          className="border-layer_bg bg-hvr_gray size-8 animate-pulse
+            rounded-full border-2"
+        />
+      ))}
+    </div>
+  );
+}
+
+function AssignedTeam({ employeeIds, isPending, teamMembers }) {
+  if (employeeIds.length === 0) return null;
+
+  const assignedMembers = employeeIds.map(
+    (employeeId) =>
+      teamMembers.find(
+        (member) => String(member.id) === String(employeeId)
+      ) ?? {
+        id: employeeId,
+        first_name: null,
+        last_name: null,
+      }
+  );
+
+  return (
+    <div className="border-border_color border-t px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        {isPending ? (
+          <TeamMemberAvatarSkeleton count={employeeIds.length} />
+        ) : (
+          <TeamMemberAvatars members={assignedMembers} />
+        )}
+        <span className="text-sm font-medium">Team members</span>
+      </div>
+    </div>
+  );
+}
+
 function BookingPreview({ event, timeFormat }) {
   const { extendedProps } = event;
   const participants = extendedProps.participants ?? [];
@@ -140,9 +243,8 @@ function BookingPreview({ event, timeFormat }) {
       ? getParticipantName(participants[0]) || "Customer"
       : "Walk-in";
   const additionalParticipants = participants.length - 1;
-  const participantSummary = isGroupBooking
-    ? `${participants.length} of ${extendedProps.max_participants} participants`
-    : capitalize(extendedProps.booking_status);
+  const status = extendedProps.booking_status;
+  const groupSummary = `${participants.length} of ${extendedProps.max_participants} participants`;
 
   return (
     <div className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden">
@@ -155,16 +257,20 @@ function BookingPreview({ event, timeFormat }) {
               ? ` +${additionalParticipants}`
               : ""}
           </p>
-          <p className="text-text_color/60 mt-0.5 text-xs">
-            {participantSummary}
-          </p>
+          <div className="mt-1 flex min-w-0 items-center gap-2">
+            <span
+              className={`${STATUS_STYLES[status] ?? STATUS_STYLES["no-show"]}
+                shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium`}
+            >
+              {capitalize(status)}
+            </span>
+            {isGroupBooking && (
+              <span className="text-text_color/55 truncate text-xs">
+                {groupSummary}
+              </span>
+            )}
+          </div>
         </div>
-        <span
-          className="bg-hvr_gray text-text_color/70 rounded-full px-2 py-1
-            text-[11px] font-medium"
-        >
-          {isGroupBooking ? "Group" : "Appointment"}
-        </span>
       </div>
 
       <div className="border-border_color border-t px-4 py-3">
@@ -187,7 +293,7 @@ function BookingPreview({ event, timeFormat }) {
       <div className="border-border_color flex flex-col gap-2.5 border-t p-4">
         <DetailRow icon={Calendar02Icon}>{formatDate(event.start)}</DetailRow>
         <DetailRow icon={Clock01Icon}>
-          {timeStringFromDate(event.start, timeFormat)} –{" "}
+          {timeStringFromDate(event.start, timeFormat)} -{" "}
           {timeStringFromDate(event.end, timeFormat)}
           <span className="text-text_color/45">
             {" "}
@@ -206,17 +312,27 @@ function BookingPreview({ event, timeFormat }) {
 
 function BlockedTimePreview({ event, timeFormat }) {
   const { extendedProps } = event;
-  const employeeCount = extendedProps.employee_ids?.length ?? 0;
+  const { merchantId } = useAuth();
+  const employeeIds = extendedProps.employee_ids ?? [];
+  const {
+    data: teamMembers = [],
+    isPending,
+  } = useQuery({
+    ...calendarTeamMembersQueryOptions(merchantId),
+    enabled: employeeIds.length > 0,
+  });
 
   return (
     <div className="w-72 max-w-[calc(100vw-2rem)] overflow-hidden">
       <div className="flex items-center gap-3 p-4">
-        <div
-          className="bg-hvr_gray flex size-10 shrink-0 items-center
-            justify-center rounded-full text-lg"
-        >
-          {extendedProps.icon || "—"}
-        </div>
+        {extendedProps.icon && (
+          <div
+            className="bg-hvr_gray flex size-10 shrink-0 items-center
+              justify-center rounded-full text-lg"
+          >
+            {extendedProps.icon}
+          </div>
+        )}
         <div className="min-w-0">
           <p className="truncate font-semibold">{extendedProps.name}</p>
           <p className="text-text_color/60 mt-0.5 text-xs">Blocked time</p>
@@ -228,25 +344,45 @@ function BlockedTimePreview({ event, timeFormat }) {
         <DetailRow icon={Clock01Icon}>
           {extendedProps.allDay
             ? "All day"
-            : `${timeStringFromDate(event.start, timeFormat)} – ${timeStringFromDate(event.end, timeFormat)}`}
+            : `${timeStringFromDate(event.start, timeFormat)} - ${timeStringFromDate(event.end, timeFormat)}`}
         </DetailRow>
-        {employeeCount > 0 && (
-          <DetailRow icon={UserGroupIcon}>
-            {employeeCount} team {employeeCount === 1 ? "member" : "members"}
-          </DetailRow>
-        )}
       </div>
+      <AssignedTeam
+        employeeIds={employeeIds}
+        isPending={isPending}
+        teamMembers={teamMembers}
+      />
     </div>
   );
 }
 
 export default function CalendarEventPreview({ eventInfo, timeFormat }) {
   const isBlockedTime = eventInfo.event.extendedProps.type === "blocked";
+  const [isOpen, setIsOpen] = useState(false);
+  const suppressOpenRef = useRef(false);
+
+  function handleOpenChange(open) {
+    if (open && suppressOpenRef.current) return;
+
+    setIsOpen(open);
+  }
+
+  function dismissPreview() {
+    suppressOpenRef.current = true;
+    setIsOpen(false);
+  }
 
   return (
-    <PreviewCard>
+    <PreviewCard open={isOpen} onOpenChange={handleOpenChange}>
       <PreviewCardTrigger asChild delay={350} closeDelay={120}>
-        <div className="size-full min-w-0 cursor-pointer">
+        <div
+          className="size-full min-w-0 cursor-pointer"
+          onClick={dismissPreview}
+          onPointerDown={dismissPreview}
+          onPointerLeave={() => {
+            suppressOpenRef.current = false;
+          }}
+        >
           <EventLabel eventInfo={eventInfo} />
         </div>
       </PreviewCardTrigger>
