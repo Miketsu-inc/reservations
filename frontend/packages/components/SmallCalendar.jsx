@@ -26,6 +26,7 @@ export default function SmallCalendar({
             : undefined
       }
       selected={value}
+      defaultMonth={month === undefined ? value : undefined}
       disabled={disabled}
       modifiers={{
         disabled_selected: disabledSelectedModifier,

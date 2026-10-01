@@ -6,7 +6,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
+  return (
+    <div
+      className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full
+        *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
+    >
+      <button onClick={onCreateBooking} className="flex items-center gap-2">
+        <Icon icon={CalendarAdd01Icon} styles="size-6" /> Booking
+      </button>
+      <button className="text-left" onClick={onCreateBlockedTime}>
+        Blocked Time
+      </button>
+    </div>
+  );
+}
 
 export default function CreateMenu({
   onCreateBlockedTime,
@@ -14,13 +30,9 @@ export default function CreateMenu({
   isFloating = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Popover
-      open={isOpen}
-      onOpenChange={(open) => {
-        open ? setIsOpen(true) : setIsOpen(false);
-      }}
-    >
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="primary"
@@ -39,29 +51,52 @@ export default function CreateMenu({
       </PopoverTrigger>
 
       <PopoverContent align="end">
-        <div
-          className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full
-            *:rounded-lg *:p-2"
-        >
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onCreateBooking();
-            }}
-            className="flex cursor-pointer items-center gap-2 text-left"
-          >
-            <Icon icon={CalendarAdd01Icon} styles="size-6" /> Booking
-          </button>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onCreateBlockedTime();
-            }}
-            className="cursor-pointer text-left"
-          >
-            Blocked Time
-          </button>
-        </div>
+        <CreateOptions
+          onCreateBooking={() => {
+            setIsOpen(false);
+            onCreateBooking();
+          }}
+          onCreateBlockedTime={() => {
+            setIsOpen(false);
+            onCreateBlockedTime();
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function CalendarCreateMenu({
+  selection,
+  onClose,
+  onCreateBlockedTime,
+  onCreateBooking,
+}) {
+  useEffect(() => {
+    const listenerOptions = { capture: true, passive: true, once: true };
+
+    window.addEventListener("scroll", onClose, listenerOptions);
+    return () => window.removeEventListener("scroll", onClose, true);
+  }, [onClose]);
+
+  return (
+    <Popover
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <PopoverTrigger
+        aria-hidden="true"
+        className="pointer-events-none fixed size-px opacity-0"
+        style={{ left: selection.x, top: selection.y }}
+        tabIndex={-1}
+      />
+      <PopoverContent side="right" align="start">
+        <CreateOptions
+          onCreateBooking={() => onCreateBooking(selection.start)}
+          onCreateBlockedTime={() => onCreateBlockedTime(selection.start)}
+        />
       </PopoverContent>
     </Popover>
   );

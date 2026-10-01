@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
+  dateStringToLocalDate,
   DEFAULT_SERVICE_COLOR,
   formatToDateString,
   getMonthFromCalendarStart,
@@ -33,7 +34,7 @@ import {
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
 import CalendarSidePanel from "./CalendarSidePanel";
-import CreateMenu from "./CreateMenu";
+import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/palettes/indigo.css";
@@ -151,6 +152,7 @@ const defaultSidePanelState = {
   isOpen: false,
   type: null,
   data: null,
+  initialStart: null,
   bookingId: null,
   panelKey: null,
 };
@@ -160,9 +162,27 @@ function createBookingPanelState(bookingId, event = null) {
     isOpen: true,
     type: "edit-booking",
     data: event,
+    initialStart: null,
     bookingId,
     panelKey: `edit-booking:${bookingId}`,
   };
+}
+
+function getCalendarCreateStart(calendarApi) {
+  const now = new Date();
+  const calendarDate = new Date(calendarApi.getDate());
+
+  calendarDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
+  return calendarDate < now ? now : calendarDate;
+}
+
+function getInitialCalendarDate(search) {
+  const initialDate =
+    search.view === "dayGridMonth"
+      ? getMonthFromCalendarStart(search.start)
+      : search.start;
+
+  return dateStringToLocalDate(initialDate) ?? new Date();
 }
 
 export default function Calendar({ router, route, search }) {
@@ -171,6 +191,10 @@ export default function Calendar({ router, route, search }) {
     bookingId ? createBookingPanelState(bookingId) : defaultSidePanelState
   );
   const [calendarTitle, setCalendarTitle] = useState("");
+  const [calendarDate, setCalendarDate] = useState(() =>
+    getInitialCalendarDate(search)
+  );
+  const [createSelection, setCreateSelection] = useState(null);
 
   // Keep the old booking only when the route disappears, so its panel can
   // animate out before the transition callback clears it.
@@ -249,13 +273,19 @@ export default function Calendar({ router, route, search }) {
     );
   }, [sidePanelState.bookingId, merchantId, queryClient]);
 
-  function openSidePanel(type, data, id, revert = null) {
+  const closeCreateMenu = useCallback(() => {
+    setCreateSelection(null);
+  }, []);
+
+  function openSidePanel(type, data, id, revert = null, initialStart = null) {
     dragRevertRef.current = revert;
+    setCreateSelection(null);
 
     setSidePanelState({
       isOpen: true,
       type,
       data,
+      initialStart,
       bookingId: null,
       panelKey: `${type}:${id}`,
     });
@@ -263,6 +293,7 @@ export default function Calendar({ router, route, search }) {
 
   function openBookingSidePanel(event, revert = null) {
     dragRevertRef.current = revert;
+    setCreateSelection(null);
 
     setSidePanelState(createBookingPanelState(event.id, event));
 
@@ -271,6 +302,13 @@ export default function Calendar({ router, route, search }) {
       params: { bookingId: event.id },
       search,
     });
+  }
+
+  function openSidePanelAtTime(
+    type,
+    start = getCalendarCreateStart(calendarRef.current.getApi())
+  ) {
+    openSidePanel(type, null, start.toISOString(), null, start);
   }
 
   function closeSidePanel() {
@@ -383,6 +421,7 @@ export default function Calendar({ router, route, search }) {
         isOpen={isPanelOpen}
         type={panelType}
         data={panelData}
+        initialStart={sidePanelState.initialStart}
         panelKey={sidePanelState.panelKey}
         onClose={closeSidePanel}
         onTransitionEnd={finishSidePanelClose}
@@ -393,6 +432,16 @@ export default function Calendar({ router, route, search }) {
         }}
         preferences={preferences}
       />
+      {createSelection && (
+        <CalendarCreateMenu
+          selection={createSelection}
+          onClose={closeCreateMenu}
+          onCreateBlockedTime={(start) =>
+            openSidePanelAtTime("blocked-time", start)
+          }
+          onCreateBooking={(start) => openSidePanelAtTime("new-booking", start)}
+        />
+      )}
       <div className="relative flex flex-col pb-4 md:flex-row md:gap-2">
         <div
           className="flex w-full flex-col justify-between md:flex-row
@@ -405,18 +454,14 @@ export default function Calendar({ router, route, search }) {
             <div className="flex flex-row items-center gap-2">
               <CreateMenu
                 isFloating={isWindowSmall}
-                onCreateBlockedTime={() =>
-                  openSidePanel("blocked-time", null, "new")
-                }
-                onCreateBooking={() =>
-                  openSidePanel("new-booking", null, "new")
-                }
+                onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
+                onCreateBooking={() => openSidePanelAtTime("new-booking")}
               />
               <DatePicker
                 styles="w-fit"
+                value={calendarDate}
                 hideText={true}
                 firstDayOfWeek={preferences.first_day_of_week}
-                clearAfterClose={true}
                 onSelect={changeDateHandler}
               />
               <button
@@ -465,17 +510,20 @@ export default function Calendar({ router, route, search }) {
           selectable={true}
           initialView={search.view ? search.view : "timeGridWeek"}
           // dayGridMonth dates do not start or end with the current month's dates
-          initialDate={
-            search.view === "dayGridMonth"
-              ? getMonthFromCalendarStart(search.start)
-              : search.start
-                ? search.start
-                : undefined
-          }
+          initialDate={getInitialCalendarDate(search)}
           height="auto"
           headerToolbar={false}
           events={calendarEvents}
-          datesSet={({ view }) => setCalendarTitle(view.title)}
+          datesSet={({ view }) => {
+            setCalendarTitle(view.title);
+
+            const currentDate = view.calendar.getDate();
+            setCalendarDate((previousDate) =>
+              previousDate.getTime() === currentDate.getTime()
+                ? previousDate
+                : new Date(currentDate)
+            );
+          }}
           eventClick={(e) => {
             const type = e.event.extendedProps.type;
 
@@ -485,6 +533,25 @@ export default function Calendar({ router, route, search }) {
             }
 
             openBookingSidePanel(e.event);
+          }}
+          dateClick={(info) => {
+            const supportsSlotCreation =
+              info.view.type === "timeGridWeek" ||
+              info.view.type === "timeGridDay";
+
+            if (
+              !supportsSlotCreation ||
+              info.date.getTime() < Date.now() ||
+              info.jsEvent.target.closest(".fc-event")
+            ) {
+              return;
+            }
+
+            setCreateSelection({
+              start: info.date,
+              x: info.jsEvent.clientX,
+              y: info.jsEvent.clientY,
+            });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
           lazyFetching={true}

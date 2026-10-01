@@ -20,10 +20,10 @@ import {
   blockedTimeTypesQueryOptions,
   combineDateTimeLocal,
   formatDuration,
+  formatTimeInputValue,
   formatToDateString,
   generateTimeOptions,
   invalidateLocalStorageAuth,
-  timeStringFromDate,
   useToast,
   useWindowSize,
 } from "@reservations/lib";
@@ -55,9 +55,36 @@ const defaultFormData = {
   is_all_day: false,
 };
 
+function getInitialDateRange(blockedTime, initialStart) {
+  const start = blockedTime?.start ?? initialStart;
+  const date = start ? new Date(start) : new Date();
+
+  if (!start || blockedTime?.extendedProps?.allDay) {
+    return { date, fromTime: "09:00", toTime: "17:00" };
+  }
+
+  const end = blockedTime?.end ? new Date(blockedTime.end) : new Date(date);
+
+  if (!blockedTime?.end) {
+    end.setHours(end.getHours() + 1);
+
+    if (end.getDate() !== date.getDate()) {
+      end.setTime(date.getTime());
+      end.setHours(23, 59, 0, 0);
+    }
+  }
+
+  return {
+    date,
+    fromTime: formatTimeInputValue(date),
+    toTime: formatTimeInputValue(end),
+  };
+}
+
 export default function BlockedTimePanel({
   onClose,
   blockedTime,
+  initialStart,
   preferences,
   onDeleted,
   onSubmitted,
@@ -69,14 +96,11 @@ export default function BlockedTimePanel({
   const isEditing = blockedTime !== null;
   const originalTimeOptions = generateTimeOptions(preferences?.time_format);
 
-  const initialFromTime =
-    !blockedTime?.extendedProps?.allDay && blockedTime?.start
-      ? timeStringFromDate(blockedTime?.start)
-      : "09:00";
-  const initialToTime =
-    !blockedTime?.extendedProps?.allDay && blockedTime?.end
-      ? timeStringFromDate(blockedTime?.end).split(" ")[0]
-      : "17:00";
+  const {
+    date: initialDate,
+    fromTime: initialFromTime,
+    toTime: initialToTime,
+  } = getInitialDateRange(blockedTime, initialStart);
 
   const [timeOptions, setTimeOptions] = useState(() => {
     const options = originalTimeOptions;
@@ -107,7 +131,7 @@ export default function BlockedTimePanel({
     blocked_type_id: blockedTime?.extendedProps?.blocked_type_id || "custom",
     name: blockedTime?.extendedProps?.name || "",
     employee_ids: initialEmployees,
-    date: blockedTime?.start || new Date(),
+    date: initialDate,
     from_time: initialFromTime,
     to_time: initialToTime,
     is_all_day: blockedTime?.extendedProps?.allDay ?? false,

@@ -48,6 +48,7 @@ export default function CalendarSidePanel({
   onTransitionEnd,
   type,
   data,
+  initialStart,
   panelKey,
   onSave,
   onSoftUpdate,
@@ -120,11 +121,13 @@ export default function CalendarSidePanel({
               onClose={onClose}
               categories={services}
               customers={customers}
+              initialStart={initialStart}
             />
           )}
           {type === "blocked-time" && (
             <BlockedTimePanel
               blockedTime={data}
+              initialStart={initialStart}
               preferences={preferences}
               onClose={onClose}
               onSubmitted={onSave}
