@@ -238,7 +238,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, service.Id)
+		employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, nil)
 		if err != nil {
 			return NextAvailable{}, err
 		}

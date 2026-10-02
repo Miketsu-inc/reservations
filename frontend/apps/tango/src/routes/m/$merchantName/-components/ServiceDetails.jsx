@@ -1,5 +1,4 @@
 import {
-  Calendar02Icon,
   CalendarOffIcon,
   Clock01Icon,
   UserGroupIcon,
@@ -8,14 +7,13 @@ import {
   Avatar,
   Button,
   CloseButton,
-  Drawer,
-  DrawerContent,
   Icon,
-  Modal,
-  ModalContent,
+  ResponsiveDialog,
+  ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
 import {
+  activeTeamQueryOptions,
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
@@ -74,21 +72,26 @@ export default function ServiceDetails({
     enabled: isOpen,
   });
 
+  const { data: teamMembers } = useQuery({
+    ...activeTeamQueryOptions(merchantName),
+    enabled: isOpen && !!merchantName,
+  });
+
   if (isError) {
     return <ServerError error={error.message} />;
   }
 
-  const hasAvailableSlot = nextAvailable?.from_date;
+  const hasAvailableSlot = Boolean(nextAvailable?.from_date);
 
-  return isWindowSmall ? (
-    <Drawer
+  return (
+    <ResponsiveDialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DrawerContent
-        styles="relative"
+      <ResponsiveDialogContent
+        styles={isWindowSmall ? "relative" : "px-6 pb-4 pt-1"}
         popUpStyles="h-[calc(80vh+3rem)]! overflow-y-hidden!"
       >
         <DetailsContent
@@ -100,41 +103,15 @@ export default function ServiceDetails({
           isLoading={isLoading}
           router={router}
           locationId={locationId}
+          teamMembers={teamMembers}
         />
-      </DrawerContent>
-    </Drawer>
-  ) : (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent styles="px-6 pb-4 pt-1">
-        <DetailsContent
-          nextAvailable={nextAvailable}
-          service={service}
-          onClose={onClose}
-          hasAvailable={hasAvailableSlot}
-          category={category}
-          isLoading={isLoading}
-          router={router}
-          locationId={locationId}
-        />
-      </ModalContent>
-    </Modal>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
-function formatDate(dateString) {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-
-  const day = date.getDate();
-  const month = date.toLocaleDateString("default", { month: "short" });
-  const weekday = date.toLocaleDateString("default", { weekday: "short" });
-
-  return `${weekday}, ${month} ${day}`;
+function monthNameFromDate(date) {
+  return date.toLocaleDateString([], { month: "short" });
 }
 
 function DetailsContent({
@@ -146,9 +123,17 @@ function DetailsContent({
   isLoading,
   onClose,
   locationId,
+  teamMembers,
 }) {
   const { isWindowSmall } = useWindowSize();
   const isGroupService = service?.booking_type !== "appointment";
+
+  const assignedEmployee = teamMembers?.find(
+    (emp) => emp.id === nextAvailable?.employee
+  );
+
+  const fromDate = hasAvailable ? new Date(nextAvailable.from_date) : null;
+  const toDate = hasAvailable ? new Date(nextAvailable.to_date) : null;
 
   return (
     <div
@@ -165,8 +150,8 @@ function DetailsContent({
             <div className="flex items-center gap-7">
               {category && (
                 <div
-                  className="border-secondary flex w-fit items-center gap-2
-                    rounded-lg border bg-gray-100 px-3 py-1 text-sm
+                  className="border-input_border_color flex w-fit items-center
+                    gap-2 rounded-lg border bg-gray-100 px-3 py-1 text-sm
                     dark:bg-gray-200/10"
                 >
                   {isGroupService && (
@@ -178,10 +163,7 @@ function DetailsContent({
                   {category}
                 </div>
               )}
-              <div
-                className="flex items-center gap-1 font-medium text-gray-500
-                  dark:text-gray-400"
-              >
+              <div className="text-text_color/80 flex items-center gap-1">
                 <Icon icon={Clock01Icon} styles="size-5" />
                 <span>
                   {service?.min_duration &&
@@ -197,108 +179,88 @@ function DetailsContent({
         {service?.description && <p className="">{service?.description}</p>}
         {isLoading ? (
           <div
-            className={`border-border_color animate-pulse rounded-md border
-              bg-gray-200/50 ${isGroupService ? "h-34" : "h-20"}
-              dark:bg-gray-200/5`}
+            className="border-border_color h-24 animate-pulse rounded-lg border
+              bg-gray-200/20 dark:bg-gray-200/5"
           ></div>
-        ) : (
+        ) : hasAvailable ? (
           <div
-            className="border-border_color gap-4 rounded-md border bg-gray-100
-              p-3.5 dark:bg-gray-200/5"
+            className="border-border_color bg-layer_bg rounded-lg border
+              shadow-sm"
           >
-            {hasAvailable ? (
-              isGroupService ? (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="flex items-center justify-center rounded-lg
-                        bg-green-600/15 p-2"
-                    >
-                      <Icon
-                        icon={Calendar02Icon}
-                        styles="size-7 text-green-600"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-gray-500 dark:text-gray-400">
-                        Nearest session with spots
-                      </span>
-                      <div className="flex items-center gap-2 text-base">
-                        <span>{formatDate(nextAvailable.from_date)}</span>
-
-                        <span>
-                          {timeStringFromDate(
-                            new Date(nextAvailable.from_date)
-                          )}
-                          {` - ${timeStringFromDate(new Date(nextAvailable.to_date))}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className="border-text_color/10 flex items-center
-                      justify-between border-t px-2 pt-2"
-                  >
-                    {nextAvailable.employee && (
-                      <div className="flex items-center gap-2">
-                        <Avatar
-                          styles="size-8! text-xs rounded-full!"
-                          initials="MM"
-                        />
-                        <span className="text-text_color text-sm">
-                          {/* {nextAvailable.employee} */}
-                          Mikes Marcell
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 py-1.5 text-sm">
-                      <Icon icon={UserGroupIcon} styles="size-5" />
-                      <span>
-                        {nextAvailable.current_participants} /{" "}
-                        {service?.max_participants}
-                      </span>
-                    </div>
-                  </div>
+            <div
+              className="border-border_color flex flex-row items-center
+                justify-between border-b px-4 py-3.5"
+            >
+              <div className="flex flex-row items-center gap-4">
+                <div
+                  className="flex min-w-8 flex-col items-center justify-center"
+                >
+                  <p className="text-lg leading-none font-semibold">
+                    {fromDate.getDate()}
+                  </p>
+                  <p className="text-text_color/60 text-xs">
+                    {monthNameFromDate(fromDate)}
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <div className="rounded-lg bg-green-600/15 p-2">
+                <div className="border-border_color h-8 border-r" />
+                <div className="flex flex-col items-start justify-center gap-1">
+                  <p className="font-medium text-green-500">Next Available</p>
+                  <div className="flex flex-row items-center gap-1.5">
                     <Icon
-                      icon={Calendar02Icon}
-                      styles="text-green-600 size-8"
+                      icon={Clock01Icon}
+                      styles="size-4.5 text-text_color/60"
                     />
+                    <p className="text-text_color/60 text-sm">
+                      {fromDate.toLocaleDateString([], { weekday: "short" })},{" "}
+                      {timeStringFromDate(fromDate)}
+                      {toDate ? ` - ${timeStringFromDate(toDate)}` : ""}
+                    </p>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      Next Available
-                    </span>
-                    <div className="flex gap-2">
-                      <span className="">
-                        {formatDate(nextAvailable.from_date)}
-                      </span>
-                      <span>•</span>
-                      <span className="">
-                        {timeStringFromDate(new Date(nextAvailable.from_date))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg py-2">
-                  <Icon icon={CalendarOffIcon} styles="text-gray-400 size-7" />
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="">
-                    {isGroupService
-                      ? "No open sessions in the near future"
-                      : "No availability in the near future"}
-                  </span>
                 </div>
               </div>
-            )}
+            </div>
+
+            <div
+              className="flex flex-row items-center justify-between px-4 py-2.5"
+            >
+              <div className="flex flex-row items-center gap-2">
+                <Avatar
+                  styles="size-7! text-xs! rounded-full!"
+                  initials={`${assignedEmployee.first_name[0]}${assignedEmployee.last_name[0]}`}
+                />
+                <p className="text-text_color text-sm">{`${assignedEmployee.first_name} ${assignedEmployee.last_name}`}</p>
+              </div>
+
+              {isGroupService && (
+                <div
+                  className="border-border_color bg-bg_color text-text_color/70
+                    flex w-fit flex-row items-center gap-1.5 rounded-lg border
+                    px-2 py-1 text-xs"
+                >
+                  <Icon icon={UserGroupIcon} styles="size-3.5" />
+                  <span>
+                    {nextAvailable?.current_participants} /{" "}
+                    {service?.max_participants}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="border-border_color bg-layer_bg flex items-center gap-4
+              rounded-lg border p-4 shadow-sm"
+          >
+            <div className="rounded-lg py-1">
+              <Icon icon={CalendarOffIcon} styles="size-6 text-gray-400" />
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-text_color/70">
+                {isGroupService
+                  ? "No open sessions in the near future"
+                  : "No availability in the near future"}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -319,6 +281,7 @@ function DetailsContent({
             serviceId: service?.id,
             type: service?.booking_type,
           }}
+          onClick={onClose}
         >
           <Button
             variant="primary"
