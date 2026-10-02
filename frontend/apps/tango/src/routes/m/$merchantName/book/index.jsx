@@ -120,7 +120,8 @@ function BookingFLow() {
   const stepTitles = {
     service: "Select a Service",
     employee: "Select a Professional",
-    time: search.type === "class" ? "Select a Class" : "Select Date & Time",
+    time:
+      search.type !== "appointment" ? "Select an Event" : "Select Date & Time",
   };
 
   const canContinue =
@@ -160,6 +161,17 @@ function BookingFLow() {
       time: null,
     });
     router.history.back();
+  }
+
+  function handleEmployeeChange(emp) {
+    updateBookingDetails("employee", emp);
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        employeeId: emp.id,
+      }),
+      replace: true,
+    });
   }
 
   function handleContinue() {
@@ -343,9 +355,15 @@ function BookingFLow() {
                 onSelect={(data) => {
                   updateBookingDetails("time", data);
                 }}
+                onEmployeeChange={handleEmployeeChange}
                 employee={{
-                  first_name: fetchedSummary?.employee_first_name,
-                  last_name: fetchedSummary?.employee_last_name,
+                  first_name:
+                    selectedSummary.employee?.first_name ||
+                    fetchedSummary?.employee_first_name,
+                  last_name:
+                    selectedSummary.employee?.last_name ||
+                    fetchedSummary?.employee_last_name,
+                  avatar_url: selectedSummary.employee?.avatar_url,
                 }}
               />
             )}

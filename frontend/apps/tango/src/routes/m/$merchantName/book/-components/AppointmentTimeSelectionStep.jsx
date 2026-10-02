@@ -1,8 +1,5 @@
-import { Person } from "@hugeicons/core-free-icons";
 import {
-  Avatar,
   DatePicker,
-  Icon,
   Loading,
   ServerError,
   Textarea,
@@ -20,6 +17,7 @@ import { useState } from "react";
 import "react-day-picker/style.css";
 import AvailableTimeSection from "./AvailableTimeSection";
 import DaySelector from "./DaySelector";
+import EmployeePicker from "./EmployeePicker";
 import { StepContentSkeleton } from "./StepContentSkeleton";
 
 async function fetchAvailableDays(
@@ -127,11 +125,22 @@ export default function AppointmentTimeSelectionStep({
   serviceId,
   employeeId,
   onSelect,
+  onEmployeeChange,
   employee,
 }) {
   const [manualSelectedDay, setManualSelectedDay] = useState(null);
   const [selectedHour, setSelectedHour] = useState(null);
   const [customerNote, setCustomerNote] = useState("");
+
+  function handleEmployeeChange(emp) {
+    setSelectedHour(null);
+    onSelect({
+      date: selectedDay,
+      time: null,
+      customer_note: customerNote,
+    });
+    onEmployeeChange(emp);
+  }
 
   const {
     data: availableDays,
@@ -206,33 +215,13 @@ export default function AppointmentTimeSelectionStep({
       <h1 className="text-3xl font-bold">Select Date & Time</h1>
 
       <div className="mt-10 flex items-center justify-between">
-        <div
-          className="bg-layer_bg border-border_color flex w-fit items-center
-            gap-2 rounded-full border py-1.5 pr-3 pl-2"
-        >
-          {employeeId === "no-pref" ? (
-            <>
-              <div
-                className="bg-primary/80 flex size-8 items-center justify-center
-                  rounded-full"
-              >
-                <Icon icon={Person} styles="size-5 text-white" />
-              </div>
-              <span className="text-sm font-medium">No Preference</span>
-            </>
-          ) : (
-            <>
-              <Avatar
-                styles="size-8! text-[10px]! shrink-0 rounded-full!"
-                img={employee?.avatar_url}
-                initials={`${employee?.first_name[0]}${employee?.last_name[0]}`}
-              />
-              <span className="text-sm font-medium">
-                {employee?.first_name} {employee?.last_name}
-              </span>
-            </>
-          )}
-        </div>
+        <EmployeePicker
+          merchantName={merchantName}
+          serviceId={serviceId}
+          employeeId={employeeId}
+          employee={employee}
+          onSelectEmployee={handleEmployeeChange}
+        />
         <div>
           <DatePicker
             styles="w-min"
@@ -257,8 +246,8 @@ export default function AppointmentTimeSelectionStep({
         </div>
       </div>
       <div
-        className="lg:17 bg-bg_color sticky top-14.75 z-10 flex w-full
-          max-w-full min-w-0 items-center gap-2 py-4"
+        className="bg-bg_color sticky top-14.75 z-10 flex w-full max-w-full
+          min-w-0 items-center gap-2 py-4 lg:top-17"
       >
         <DaySelector
           days={availableDays}

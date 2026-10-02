@@ -86,7 +86,7 @@ export default function EmployeeSelectionStep({
   );
 }
 
-function EmployeeItem({
+export function EmployeeItem({
   employee,
   isSelected,
   onSelect,
@@ -97,10 +97,10 @@ function EmployeeItem({
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(employee)}
-      className={`bg-layer_bg border-border_color flex w-full cursor-pointer
+      className={`bg-layer_bg flex w-full cursor-pointer
         items-center justify-between rounded-md border px-6 py-4.5
         transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-200/5 ${
-          isSelected ? "ring-primary ring-1" : ""
+          isSelected ? "border-primary" : "border-border_color"
         } `}
     >
       <div className="flex items-center gap-4">
@@ -115,7 +115,7 @@ function EmployeeItem({
           <Avatar
             styles="size-20! text-[20px]! shrink-0 rounded-full!"
             img={employee?.avatar_url}
-            initials={`${employee.first_name[0]}${employee.last_name[0]}`}
+            initials={`${employee?.first_name?.[0] ?? ""}${employee?.last_name?.[0] ?? ""}`}
           />
         )}
         <div className="flex flex-col gap-1">
