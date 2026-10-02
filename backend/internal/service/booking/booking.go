@@ -118,60 +118,71 @@ func getNewBookingStatus(approvalPolicy types.ApprovalType, isNewCustomer bool) 
 	return status, nil
 }
 
-func (s *Service) assignEmplyoee(ctx context.Context, tx pgx.Tx, merchantId uuid.UUID, locationId int, employeeId *int, appointmentSlot domain.TimeSlot, service domain.Service, bookingSettings domain.MerchantBookingSettings, merchantTz *time.Location) (int, error) {
-
-	var employeesToCheck []int
+func (s *Service) assignEmployee(ctx context.Context, tx pgx.Tx, merchantId uuid.UUID, locationId int, serviceId int, employeeId *int, fromDate time.Time, bookingSettings domain.MerchantBookingSettings, merchantTz *time.Location) (int, domain.Service, error) {
+	var employeeIds []int
 	if employeeId != nil {
-		employeesToCheck = []int{*employeeId}
+		employeeIds = []int{*employeeId}
 	} else {
-		employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+		var err error
+		employeeIds, err = s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, serviceId)
 		if err != nil {
-			return 0, err
+			return 0, domain.Service{}, err
 		}
-		for _, emp := range employees {
-			employeesToCheck = append(employeesToCheck, emp.Id)
-		}
+	}
+
+	if len(employeeIds) == 0 {
+		return 0, domain.Service{}, ErrEmployeeNotFoundForService
 	}
 
 	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
 	if err != nil {
-		return 0, err
+		return 0, domain.Service{}, err
 	}
 
-	dayOfWeek := int(appointmentSlot.StartTime.In(merchantTz).Weekday())
+	dayOfWeek := int(fromDate.In(merchantTz).Weekday())
 	bookingDayBusinessHours := businessHours[dayOfWeek]
 
-	bookingDay := appointmentSlot.EndTime.In(merchantTz)
+	bookingDay := fromDate.In(merchantTz)
 	dateRange := timeutil.NewDateRange(bookingDay, bookingDay.AddDate(0, 0, 1), merchantTz)
 	now := time.Now().In(time.UTC)
 
-	var finalEmployeeId int
-	foundAvailableSlot := false
+	empServices, err := s.catalogRepo.WithTx(tx).GetServiceWithPhasesForEmployees(ctx, serviceId, employeeIds)
+	if err != nil {
+		return 0, domain.Service{}, err
+	}
 
-	for _, empId := range employeesToCheck {
-		reserved, err := s.bookingRepo.WithTx(tx).GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return 0, err
+	reservedByEmp, err := s.bookingRepo.WithTx(tx).GetReservedTimesByEmployees(ctx, merchantId, locationId, employeeIds, dateRange.StartTime, dateRange.EndTime)
+	if err != nil {
+		return 0, domain.Service{}, err
+	}
+
+	blockedByEmp, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimesByEmployees(ctx, merchantId, employeeIds,
+		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
+	if err != nil {
+		return 0, domain.Service{}, err
+	}
+
+	for _, empId := range employeeIds {
+		empService := empServices[empId]
+
+		empDuration := time.Duration(empService.TotalDuration) * time.Minute
+		empToDate := fromDate.Add(empDuration)
+		appointmentSlot := domain.TimeSlot{
+			StartTime: fromDate,
+			EndTime:   empToDate,
 		}
 
-		blocked, err := s.blockedTimeRepo.WithTx(tx).GetBlockedTimes(ctx, merchantId, &empId,
-			dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
-		if err != nil {
-			return 0, err
-		}
+		reserved := reservedByEmp[empId]
+		blocked := blockedByEmp[empId]
 
-		if merchant.IsValidBookingSlot(appointmentSlot, reserved, blocked, service.Phases, bookingDayBusinessHours, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
-			finalEmployeeId = empId
-			foundAvailableSlot = true
-			break
+		empBufferTime := merchant.ResolveEmployeeBufferTime(empService, bookingSettings.BufferTime)
+
+		if merchant.IsValidBookingSlot(appointmentSlot, reserved, blocked, empService.Phases, bookingDayBusinessHours, empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
+			return empId, empService, nil
 		}
 	}
 
-	if !foundAvailableSlot {
-		return 0, ErrTimeIsNotAvailable
-	}
-
-	return finalEmployeeId, nil
+	return 0, domain.Service{}, ErrTimeIsNotAvailable
 }
 
 type CreateByCustomerInput struct {
@@ -290,16 +301,16 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 			}
 
 		} else {
-			duration := time.Duration(service.TotalDuration) * time.Minute
-			toDate := fromDate.Add(duration)
-
-			finalEmployeeId, err := s.assignEmplyoee(ctx, tx, merchantId, input.LocationId, input.EmployeeId, domain.TimeSlot{
-				StartTime: fromDate, EndTime: toDate}, service, bookingSettings, merchantTz)
+			assignedEmpId, assignedService, err := s.assignEmployee(ctx, tx, merchantId, input.LocationId, input.ServiceId, input.EmployeeId,
+				fromDate, bookingSettings, merchantTz)
 			if err != nil {
 				return err
 			}
 
-			price, err := s.preventNilBookingPrice(ctx, merchantId, service.Price)
+			duration := time.Duration(assignedService.TotalDuration) * time.Minute
+			toDate := fromDate.Add(duration)
+
+			price, err := s.preventNilBookingPrice(ctx, merchantId, assignedService.Price)
 			if err != nil {
 				return err
 			}
@@ -313,15 +324,15 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				Status:              bookingStatus,
 				BookingType:         types.BookingTypeAppointment,
 				MerchantId:          merchantId,
-				EmployeeId:          &finalEmployeeId,
+				EmployeeId:          &assignedEmpId,
 				ServiceId:           &input.ServiceId,
 				LocationId:          input.LocationId,
 				FromDate:            fromDate,
 				ToDate:              toDate,
-				ServiceName:         service.Name,
+				ServiceName:         assignedService.Name,
 				PricePerPerson:      price,
 				TotalPrice:          price,
-				PriceType:           service.PriceType,
+				PriceType:           assignedService.PriceType,
 				FormattedLocation:   location.FormattedLocation,
 				MinParticipants:     1,
 				MaxParticipants:     1,
@@ -334,7 +345,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				CustomerNote: &input.CustomerNote,
 			}}
 
-			bookingId, err = s.newBooking(ctx, tx, booking, participants, service)
+			bookingId, err = s.newBooking(ctx, tx, booking, participants, assignedService)
 			if err != nil {
 				return err
 			}

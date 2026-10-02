@@ -105,7 +105,6 @@ function DayButton({ day, isSelected, isUnavailable, onClick, registerRef }) {
     <button
       ref={(el) => registerRef(day.date, el)}
       type="button"
-      disabled={isUnavailable}
       onClick={() => onClick(day.date)}
       aria-pressed={isSelected}
       aria-label={

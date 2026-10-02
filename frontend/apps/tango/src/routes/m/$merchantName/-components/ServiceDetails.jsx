@@ -183,7 +183,13 @@ function DetailsContent({
                   dark:text-gray-400"
               >
                 <Icon icon={Clock01Icon} styles="size-5" />
-                <span>{formatDuration(service?.total_duration)}</span>
+                <span>
+                  {service?.min_duration &&
+                  service?.max_duration &&
+                  service.min_duration !== service.max_duration
+                    ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
+                    : formatDuration(service?.total_duration)}
+                </span>
               </div>
             </div>
           </div>

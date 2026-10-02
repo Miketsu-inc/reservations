@@ -174,7 +174,13 @@ function ServiceItem({ service, router, locationId, onClick }) {
         </p>
 
         <div className="flex items-center gap-2">
-          <span>{formatDuration(service.total_duration)}</span>
+          <span>
+            {service.min_duration &&
+            service.max_duration &&
+            service.min_duration !== service.max_duration
+              ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
+              : formatDuration(service.total_duration)}
+          </span>
           <span className="size-1 rounded-full bg-gray-500 dark:bg-gray-400"></span>
           <span className="text-text_color">
             {getDisplayPrice(service.price, service.price_type)}

@@ -1,19 +1,23 @@
 import {
+  Clock01Icon,
   PlusSignIcon,
   Tick02Icon,
   UserQuestion02Icon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, ServerError } from "@reservations/components";
-import { activeTeamQueryOptions } from "@reservations/lib";
+import {
+  activeTeamQueryOptions,
+  formatDuration,
+  getDisplayPrice,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { StepContentSkeleton } from "./StepContentSkeleton";
 
-// implement fetching employees by service id and type later
 export default function EmployeeSelectionStep({
   merchantName,
   _locationId,
-  _serviceId,
+  serviceId,
   _serviceType,
   onSelect,
   onAutoSkip,
@@ -23,7 +27,7 @@ export default function EmployeeSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName) });
+  } = useQuery({ ...activeTeamQueryOptions(merchantName, serviceId) });
 
   const [selectedEmployee, setSelectedEmployee] = useState();
 
@@ -115,10 +119,29 @@ function EmployeeItem({
           />
         )}
         <div className="flex flex-col gap-1">
-          <span className="font-medium">{employee.first_name}</span>
-          <span className="text-gray-500">
-            {noPreference ? "Maximal avalability" : "Profil Megtekintése"}
-          </span>
+          <span className="text-lg font-medium">{employee.first_name}</span>
+          {noPreference ? (
+            <span className="text-text_color/80 text-sm">
+              Maximal availability
+            </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              {employee.total_duration && (
+                <div
+                  className="text-text_color/80 flex items-center gap-1 text-sm"
+                >
+                  <Icon icon={Clock01Icon} styles="size-3.5" />
+                  <span>{formatDuration(employee.total_duration)}</span>
+                </div>
+              )}
+              <span className="bg-text_color/80 size-1 rounded-full"></span>
+              {(employee.price || employee.price_type) && (
+                <span className="text-text_color/80 text-sm">
+                  {getDisplayPrice(employee.price, employee.price_type)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div

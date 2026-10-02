@@ -287,32 +287,36 @@ func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, 
 	return blockedTimes, nil
 }
 
-func (r *blockedTimeRepository) GetBlockedTimes(ctx context.Context, merchantId uuid.UUID, employeeId *int,
-	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimes, error) {
+func (r *blockedTimeRepository) GetBlockedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, employeeIds []int,
+	startTime, endTime, startDay, endDay time.Time) (map[int][]domain.BlockedTimes, error) {
 	query := `
-	select bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day
+	select ebt.employee_id, bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day
 	from "BlockedTime" bt
+	join "EmployeeBlockedTime" ebt on ebt.blocked_time_id = bt.id
 	where bt.merchant_id = $1
+		and ebt.employee_id = any($2::int[])
 		and (
 			(bt.is_all_day and bt.blocked_day >= $5::date and bt.blocked_day < $6::date)
 			or
-			(not bt.is_all_day and bt.to_date > $2 and bt.from_date < $3)
+			(not bt.is_all_day and bt.to_date > $3 and bt.from_date < $4)
 		)
-		and exists (
-			select 1
-			from "EmployeeBlockedTime" ebt
-			where ebt.blocked_time_id = bt.id
-				and ($4::int is null or ebt.employee_id = $4)
-		)
-	order by coalesce(bt.from_date, bt.blocked_day::timestamp)`
+	order by ebt.employee_id, coalesce(bt.from_date, bt.blocked_day::timestamp)`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, employeeId, startDay, endDay)
-	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimes])
+	result := make(map[int][]domain.BlockedTimes, len(employeeIds))
+
+	var empId int
+	var bt domain.BlockedTimes
+
+	rows, _ := r.db.Query(ctx, query, merchantId, employeeIds, startTime, endTime, startDay, endDay)
+	_, err := pgx.ForEachRow(rows, []any{&empId, &bt.FromDate, &bt.ToDate, &bt.BlockedDay, &bt.IsAllDay}, func() error {
+		result[empId] = append(result[empId], bt)
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("GetBlockedTimes: %w", err)
+		return nil, fmt.Errorf("GetBlockedTimeByEmployees: %w", err)
 	}
 
-	return blockedTimes, nil
+	return result, nil
 }
 
 func (r *blockedTimeRepository) NewBlockedTimeType(ctx context.Context, merchantId uuid.UUID, btt domain.BlockedTimeType) error {

@@ -983,18 +983,92 @@ func (s *Service) GetFormOptions(ctx context.Context) (domain.ServicePageFormOpt
 	return formOptions, nil
 }
 
-func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string) ([]domain.MerchantPageServicesGroupedByCategory, error) {
+func BuildServicePricing(basePrice *currencyx.Price, basePriceType types.PriceType, overrides []domain.ServicePriceOverride) (*currencyx.Price, types.PriceType, error) {
+	if len(overrides) == 0 {
+		return basePrice, basePriceType, nil
+	}
+
+	var minPrice *currencyx.Price
+	var minType types.PriceType
+	var needFromType bool
+
+	for _, ov := range overrides {
+		pType := basePriceType
+
+		if ov.PriceType != nil {
+			pType = *ov.PriceType
+		}
+
+		if pType == types.PriceTypeFree {
+			return nil, types.PriceTypeFree, nil
+		}
+
+		if pType == types.PriceTypeFrom {
+			needFromType = true
+		}
+
+		price := ov.Price
+		if price == nil {
+			price = basePrice
+		}
+
+		if price == nil {
+			// no need for comparison
+			continue
+		}
+
+		if minPrice == nil {
+			minPrice, minType = price, pType
+		}
+
+		dif, err := price.Cmp(minPrice.Amount)
+		if err != nil {
+			return nil, types.PriceTypeFree, fmt.Errorf("could not compare prices %v", err)
+		}
+
+		// multiple prices --> min with from type
+		if dif != 0 {
+			needFromType = true
+		}
+
+		if dif < 0 {
+			minPrice, minType = price, pType
+		}
+	}
+
+	switch {
+	case minPrice == nil:
+		return basePrice, basePriceType, nil
+	case needFromType:
+		return minPrice, types.PriceTypeFrom, nil
+	default:
+		return minPrice, minType, nil
+	}
+}
+
+func (s *Service) GetServicesGroupedByCategories(ctx context.Context, merchantName string, employeeId *int) ([]domain.MerchantPageServicesGroupedByCategory, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
 		return []domain.MerchantPageServicesGroupedByCategory{}, err
 	}
 
-	services, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId)
+	servicesGrouped, err := s.catalogRepo.GetServicesForMerchantPage(ctx, merchantId, employeeId)
 	if err != nil {
 		return []domain.MerchantPageServicesGroupedByCategory{}, err
 	}
 
-	return services, nil
+	for i := range servicesGrouped {
+		for j := range servicesGrouped[i].Services {
+			svc := &servicesGrouped[i].Services[j]
+			svc.Price, svc.PriceType, err = BuildServicePricing(svc.Price, svc.PriceType, svc.PriceOverrides)
+			if err != nil {
+				return []domain.MerchantPageServicesGroupedByCategory{}, err
+			}
+			svc.PriceOverrides = nil
+		}
+	}
+
+	return servicesGrouped, nil
 }
 
 func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, serviceId, locationId int) (domain.PublicServiceDetails, error) {

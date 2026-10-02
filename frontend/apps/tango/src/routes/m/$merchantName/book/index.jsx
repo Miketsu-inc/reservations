@@ -13,7 +13,9 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import AppointmentTimeSelectionStep from "./-components/AppointmentTimeSelectionStep";
-import BookingSummary from "./-components/BookingSummary";
+import BookingSummary, {
+  getBookingSummaryDisplayInfo,
+} from "./-components/BookingSummary";
 import EmployeeSelectionStep from "./-components/EmployeeSelectionStep";
 import ServiceSelectionStep from "./-components/ServiceSelectionStep";
 
@@ -260,6 +262,12 @@ function BookingFLow() {
     }
   }
 
+  const summaryInfo = getBookingSummaryDisplayInfo({
+    fetchedSummary,
+    selectedSummary,
+    searchEmployeeId: search.employeeId,
+  });
+
   return (
     <div
       className="bg-bg_color relative flex min-h-screen w-full flex-col gap-6"
@@ -356,6 +364,7 @@ function BookingFLow() {
               <BookingSummary
                 fetchedSummary={fetchedSummary}
                 selectedSummary={selectedSummary}
+                searchEmployeeId={search.employeeId}
                 isLoading={isLoading}
                 onContinue={handleContinue}
                 canContinue={canContinue}
@@ -374,29 +383,21 @@ function BookingFLow() {
           ${canContinue ? "translate-y-0" : "translate-y-full"}`}
         >
           <div className="flex flex-col">
-            <span className="text-lg font-medium">
-              {fetchedSummary?.price_type
-                ? getDisplayPrice(
-                    fetchedSummary?.price,
-                    fetchedSummary?.price_type
-                  )
-                : getDisplayPrice(
-                    selectedSummary.service?.price,
-                    selectedSummary.service?.price_type
-                  )}
-            </span>
+            {summaryInfo.priceDisplay && (
+              <span className="text-lg font-medium">
+                {summaryInfo.priceDisplay}
+              </span>
+            )}
             {selectedSummary.time?.time ? (
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {formatTimeRange(
                   selectedSummary.time?.time,
-                  fetchedSummary.total_duration
+                  summaryInfo.totalDuration
                 )}
               </span>
             ) : (
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {fetchedSummary?.service_name
-                  ? formatDuration(fetchedSummary?.total_duration)
-                  : formatDuration(selectedSummary.service?.total_duration)}
+                {summaryInfo.durationDisplay}
               </span>
             )}
           </div>

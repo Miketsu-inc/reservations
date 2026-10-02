@@ -64,7 +64,7 @@ type BookingRepository interface {
 	GetBookingPhases(ctx context.Context, bookingId int) ([]BookingPhase, error)
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
 
-	GetReservedTimes(ctx context.Context, merchantId uuid.UUID, locationiId int, employeeId *int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
+	GetReservedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) (map[int][]BookingSlot, error)
 	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
 	GetClosestAvailableGroupBooking(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, searchStart, searchEnd time.Time) (Booking, error)
 

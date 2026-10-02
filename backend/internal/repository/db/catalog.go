@@ -357,43 +357,70 @@ func (r *catalogRepository) GetServiceWithPhases(ctx context.Context, serviceID 
 	return s, nil
 }
 
-func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]domain.MerchantPageServicesGroupedByCategory, error) {
+func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]domain.MerchantPageServicesGroupedByCategory, error) {
 	query := `
+	with emp_overrides as (
+		select
+			es.service_id,
+			min(coalesce(es.total_duration, s.total_duration)) as min_duration,
+			max(coalesce(es.total_duration, s.total_duration)) as max_duration,
+			max(coalesce(es.max_participants, s.max_participants)) as max_participants,
+			coalesce(
+				jsonb_agg(
+					jsonb_build_object(
+						'price_per_person', es.price_per_person,
+						'price_type', es.price_type
+					)
+				) filter (where es.employee_id is not null),
+				'[]'::jsonb
+			) as price_overrides
+		from "EmployeeService" es
+		join "Employee" e on e.id = es.employee_id and e.merchant_id = $1 and e.is_active = true
+		join "Service" s on s.id = es.service_id
+		where ($2::int is null or es.employee_id = $2)
+		group by es.service_id
+	)
 	select sc.id, sc.name, sc.sequence,
 	coalesce (
 		jsonb_agg(
 			jsonb_build_object(
 				'id', s.id,
+				'category_id', s.category_id,
 				'name', s.name,
 				'description', s.description,
-				'total_duration', s.total_duration,
+				'total_duration', coalesce(eo.min_duration, s.total_duration),
+				'min_duration', coalesce(eo.min_duration, s.total_duration),
+				'max_duration', coalesce(eo.max_duration, s.total_duration),
 				'price', s.price_per_person,
 				'price_type', s.price_type,
-				'max_participants', s.max_participants,
+				'max_participants', coalesce(eo.max_participants, s.max_participants),
 				'booking_type', s.booking_type,
-				'sequence', s.sequence
+				'sequence', s.sequence,
+				'price_overrides', coalesce(eo.price_overrides, '[]'::jsonb)
 			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
+	left join emp_overrides eo on eo.service_id = s.id
 	where s.merchant_id = $1 and s.is_active = true
+		and ($2::int is null or eo.service_id is not null)
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId)
+	rows, _ := r.db.Query(ctx, query, merchantId, employeeId)
 	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.MerchantPageServicesGroupedByCategory, error) {
 		var sgby domain.MerchantPageServicesGroupedByCategory
-		var services []byte
+		var servicesJson []byte
 
-		err := row.Scan(&sgby.Id, &sgby.Name, &sgby.Sequence, &services)
+		err := row.Scan(&sgby.Id, &sgby.Name, &sgby.Sequence, &servicesJson)
 		if err != nil {
 			return domain.MerchantPageServicesGroupedByCategory{}, err
 		}
 
-		if len(services) > 0 {
-			err = json.Unmarshal(services, &sgby.Services)
+		if len(servicesJson) > 0 {
+			err = json.Unmarshal(servicesJson, &sgby.Services)
 			if err != nil {
 				return domain.MerchantPageServicesGroupedByCategory{}, err
 			}
@@ -595,78 +622,133 @@ func (r *catalogRepository) GetServicePageFormOptions(ctx context.Context, merch
 	return spfo, nil
 }
 
-func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int) (domain.MinimalServiceInfo, error) {
+func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, employeeId *int) (domain.MinimalServiceInfo, error) {
 	query := `
-	select s.name, s.total_duration, s.price_per_person as price, s.price_type, l.formatted_location
-	from "Service" s
-	left join "Location" l on l.merchant_id = $1 and l.id = $3
-	where s.merchant_id = $1 and s.id = $2
+	with emp_overrides as (
+		select
+			min(coalesce(es.total_duration, s.total_duration)) as min_duration,
+			max(coalesce(es.total_duration, s.total_duration)) as max_duration,
+			coalesce(
+				jsonb_agg(
+					jsonb_build_object(
+						'price_per_person', es.price_per_person,
+						'price_type', es.price_type
+					)
+				) filter (where es.employee_id is not null),
+				'[]'::jsonb
+			) as price_overrides
+		from "EmployeeService" es
+		join "Employee" e on e.id = es.employee_id and e.merchant_id = $1 and e.is_active = true
+		join "Service" s on s.id = es.service_id
+		where es.service_id = $2 and ($4::int is null or es.employee_id = $4)
+	)
+	select
+        s.name,
+        s.total_duration,
+        coalesce(eo.min_duration, s.total_duration) as min_duration,
+        coalesce(eo.max_duration, s.total_duration) as max_duration,
+        s.price_per_person,
+        s.price_type,
+        l.formatted_location,
+        coalesce(eo.price_overrides, '[]'::jsonb) as price_overrides
+    from "Service" s
+    inner join "Location" l on l.merchant_id = $1 and l.id = $3
+    left join emp_overrides eo on true
+    where s.merchant_id = $1 and s.id = $2 and s.is_active = true and ($4::int is null or eo.min_duration is not null)
 	`
+
 	var msi domain.MinimalServiceInfo
-	err := r.db.QueryRow(ctx, query, merchantId, serviceId, locationId).Scan(&msi.Name, &msi.TotalDuration, &msi.Price, &msi.PriceType, &msi.FormattedLocation)
+	var priceOverridesJson []byte
+
+	err := r.db.QueryRow(ctx, query, merchantId, serviceId, locationId, employeeId).Scan(
+		&msi.Name, &msi.TotalDuration, &msi.MinDuration, &msi.MaxDuration, &msi.Price, &msi.PriceType, &msi.FormattedLocation, &priceOverridesJson,
+	)
 	if err != nil {
 		return domain.MinimalServiceInfo{}, fmt.Errorf("GetMinimalServiceInfo: %w", err)
+	}
+
+	if len(priceOverridesJson) > 0 {
+		if err := json.Unmarshal(priceOverridesJson, &msi.PriceOverrides); err != nil {
+			return domain.MinimalServiceInfo{}, fmt.Errorf("GetMinimalServiceInfo unmarshal price overrides: %w", err)
+		}
 	}
 
 	return msi, nil
 }
 
-func (r *catalogRepository) GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (domain.Service, error) {
+func (r *catalogRepository) GetServiceWithPhasesForEmployees(ctx context.Context, serviceId int, employeeIds []int) (map[int]domain.Service, error) {
 	query := `
-	select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, coalesce(es.total_duration, s.total_duration) as total_duration,
-		coalesce(es.price_per_person, s.price_per_person) as price_per_person, coalesce(es.price_type, s.price_type) as price_type, s.is_active, s.sequence,
-		coalesce(es.min_participants, s.min_participants) as min_participants, coalesce(es.max_participants, s.max_participants) as max_participants,
-		s.cancel_deadline, s.booking_window_min, s.booking_window_max, coalesce(es.buffer_time, s.buffer_time) as buffer_time, s.approval_policy,
-	coalesce (
-		jsonb_agg(
-			jsonb_build_object(
-				'id', sp.id,
-				'service_id', sp.service_id,
-				'name', sp.name,
-				'sequence', sp.sequence,
-				'duration', coalesce(esp.duration, sp.duration),
-				'phase_type', sp.phase_type
-			) order by sp.sequence
-		) filter (where sp.id is not null),
-	'[]'::jsonb) as phases
+	select es.employee_id,
+		s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color,
+		coalesce(es.total_duration, s.total_duration) as total_duration,
+		coalesce(es.price_per_person, s.price_per_person) as price_per_person,
+		coalesce(es.price_type, s.price_type) as price_type,
+		s.is_active, s.sequence,
+		coalesce(es.min_participants, s.min_participants) as min_participants,
+		coalesce(es.max_participants, s.max_participants) as max_participants,
+		s.cancel_deadline, s.booking_window_min, s.booking_window_max,
+		coalesce(es.buffer_time, s.buffer_time) as buffer_time, s.approval_policy,
+		coalesce(
+			jsonb_agg(
+				jsonb_build_object(
+					'id', sp.id,
+					'service_id', sp.service_id,
+					'name', sp.name,
+					'sequence', sp.sequence,
+					'duration', coalesce(esp.duration, sp.duration),
+					'phase_type', sp.phase_type
+				) order by sp.sequence
+			) filter (where sp.id is not null),
+		'[]'::jsonb) as phases
 	from "Service" s
-	left join "EmployeeService" es on es.service_id = s.id and es.employee_id = $2
+	join "EmployeeService" es on es.service_id = s.id and es.employee_id = any($2::int[])
 	left join "ServicePhase" sp on s.id = sp.service_id
-	left join "EmployeeServicePhase" esp on esp.employee_id = $2 and esp.service_phase_id = sp.id
+	left join "EmployeeServicePhase" esp on esp.service_phase_id = sp.id and esp.employee_id = es.employee_id
 	where s.id = $1
-	group by s.id, es.employee_id, es.service_id
-	`
+	group by s.id, es.employee_id, es.service_id`
 
-	var s domain.Service
-	var phasesJson []byte
+	result := make(map[int]domain.Service, len(employeeIds))
 
-	err := r.db.QueryRow(ctx, query, serviceId, employeeId).Scan(&s.Id, &s.MerchantId, &s.CategoryId, &s.BookingType, &s.Name, &s.Description, &s.Color, &s.TotalDuration,
-		&s.Price, &s.PriceType, &s.IsActive, &s.Sequence, &s.MinParticipants, &s.MaxParticipants, &s.CancelDeadline, &s.BookingWindowMin,
-		&s.BookingWindowMax, &s.BufferTime, &s.ApprovalPolicy, &phasesJson)
-	if err != nil {
-		return domain.Service{}, fmt.Errorf("GetServiceWithPhasesForEmployee: %w", err)
-	}
+	var empId int
+	var svc domain.Service
+	var phasesJSON []byte
 
-	if len(phasesJson) > 0 {
-		err = json.Unmarshal(phasesJson, &s.Phases)
-		if err != nil {
-			return domain.Service{}, fmt.Errorf("GetServiceWithPhasesForEmployee: %w", err)
+	rows, _ := r.db.Query(ctx, query, serviceId, employeeIds)
+	_, err := pgx.ForEachRow(rows, []any{
+		&empId,
+		&svc.Id, &svc.MerchantId, &svc.CategoryId, &svc.BookingType, &svc.Name, &svc.Description, &svc.Color,
+		&svc.TotalDuration, &svc.Price, &svc.PriceType, &svc.IsActive, &svc.Sequence,
+		&svc.MinParticipants, &svc.MaxParticipants,
+		&svc.CancelDeadline, &svc.BookingWindowMin, &svc.BookingWindowMax,
+		&svc.BufferTime, &svc.ApprovalPolicy,
+		&phasesJSON,
+	}, func() error {
+		if len(phasesJSON) > 0 {
+			if err := json.Unmarshal(phasesJSON, &svc.Phases); err != nil {
+				return fmt.Errorf("unmarshal phases: %w", err)
+			}
+		} else {
+			svc.Phases = []domain.ServicePhase{}
 		}
-	} else {
-		s.Phases = []domain.ServicePhase{}
-	}
 
-	return s, nil
+		result[empId] = svc
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("GetServiceWithPhasesForEmployees: %w", err)
+	}
+	return result, nil
 }
 
 func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error) {
 	query := `
 	select coalesce(
-		array_agg(employee_id order by employee_id),
+		array_agg(es.employee_id order by es.employee_id),
 		'{}'::int[]
 		)
-	from "EmployeeService"
-	where service_id = $1
+	from "EmployeeService" es
+	join "Employee" e on e.id = es.employee_id and e.is_active is true
+	where es.service_id = $1
 	`
 
 	var employeeIds []int

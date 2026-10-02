@@ -63,6 +63,8 @@ func mapToGetServicesGroupedByCategories(in []domain.MerchantPageServicesGrouped
 				Name:            s.Name,
 				Description:     s.Description,
 				TotalDuration:   s.TotalDuration,
+				MinDuration:     s.MinDuration,
+				MaxDuration:     s.MaxDuration,
 				Price:           currencyx.FormatPrice(s.Price),
 				PriceType:       s.PriceType,
 				MaxParticipants: s.MaxParticipants,
@@ -82,17 +84,21 @@ func mapToGetServicesGroupedByCategories(in []domain.MerchantPageServicesGrouped
 	return servicesGroupedByCategory
 }
 
-func mapToGetTeam(in []domain.Employee) []teamResponse {
+func mapToGetTeam(in []domain.EmployeeWithServiceOverrides) []teamResponse {
 	employees := make([]teamResponse, len(in))
 
 	for i, emp := range in {
 		employees[i] = teamResponse{
-			Id:          emp.Id,
-			Role:        emp.Role,
-			FirstName:   *emp.FirstName,
-			LastName:    *emp.LastName,
-			Email:       emp.Email,
-			PhoneNumber: emp.PhoneNumber,
+			Id:              emp.Id,
+			Role:            emp.Role,
+			FirstName:       *emp.FirstName,
+			LastName:        *emp.LastName,
+			Email:           emp.Email,
+			PhoneNumber:     emp.PhoneNumber,
+			TotalDuration:   emp.TotalDuration,
+			Price:           currencyx.FormatPrice(emp.Price),
+			PriceType:       emp.PriceType,
+			MaxParticipants: emp.MaxParticipants,
 		}
 	}
 
@@ -149,6 +155,8 @@ func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
 		resp.Price = currencyx.FormatPrice(in.Service.Price)
 		resp.PriceType = &in.Service.PriceType
 		resp.TotalDuration = &in.Service.TotalDuration
+		resp.MinDuration = &in.Service.MinDuration
+		resp.MaxDuration = &in.Service.MaxDuration
 	}
 
 	if in.Employee != nil {
