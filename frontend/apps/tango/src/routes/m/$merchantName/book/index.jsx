@@ -2,9 +2,7 @@ import { ArrowLeft01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Button, Icon, ServerError } from "@reservations/components";
 import {
   dateAndTimeStringsToLocalDate,
-  formatDuration,
   formatTimeRange,
-  getDisplayPrice,
   invalidateLocalStorageAuth,
   useToast,
   useWindowSize,
