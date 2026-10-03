@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -206,57 +205,70 @@ func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (string, er
 	return urlName, nil
 }
 
-func (s *Service) GetSettings(ctx context.Context) (domain.MerchantSettingsInfo, error) {
+func (s *Service) GetMerchantProfileSettings(ctx context.Context) (domain.MerchantProfileSettings, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	settings, err := s.merchantRepo.GetMerchantSettingsInfo(ctx, actor.MerchantId)
+	settings, err := s.merchantRepo.GetMerchantProfileSettings(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.MerchantSettingsInfo{}, err
+		return domain.MerchantProfileSettings{}, err
 	}
 
 	return settings, nil
 }
 
-type UpdateSettingsInput struct {
-	Introduction     string
-	Announcement     string
-	AboutUs          string
-	ParkingInfo      string
-	PaymentInfo      string
-	CancelDeadline   int
-	BookingWindowMin int
-	BookingWindowMax int
-	BufferTime       int
-	ApprovalPolicy   types.ApprovalType
-	BusinessHours    domain.BusinessHours
+func (s *Service) UpdateMerchantProfileSettings(ctx context.Context, settings domain.MerchantProfileSettings) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	err := s.merchantRepo.UpdateMerchantProfileSettings(ctx, actor.MerchantId, settings)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput) error {
+func (s *Service) GetSchedulingSettings(ctx context.Context) (domain.SchedulingSettings, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	settings, err := s.merchantRepo.GetSchedulingSettings(ctx, actor.MerchantId)
+	if err != nil {
+		return domain.SchedulingSettings{}, err
+	}
+
+	return settings, nil
+}
+
+func (s *Service) UpdateSchedulingSettings(ctx context.Context, settings domain.SchedulingSettings) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.merchantRepo.UpdateSchedulingSettings(ctx, actor.MerchantId, settings); err != nil {
+		return fmt.Errorf("error while updating scheduling settings: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.BusinessHours, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, actor.MerchantId)
+	if err != nil {
+		return nil, err
+	}
+
+	return businessHours, nil
+}
+
+func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours domain.BusinessHours) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.merchantRepo.WithTx(tx).UpdateMerchantFields(ctx, actor.MerchantId, domain.MerchantSettingFields{
-			Introduction:     input.Introduction,
-			Announcement:     input.Announcement,
-			AboutUs:          input.AboutUs,
-			ParkingInfo:      input.ParkingInfo,
-			PaymentInfo:      input.PaymentInfo,
-			CancelDeadline:   input.CancelDeadline,
-			BookingWindowMin: input.BookingWindowMin,
-			BookingWindowMax: input.BookingWindowMax,
-			BufferTime:       input.BufferTime,
-			ApprovalPolicy:   input.ApprovalPolicy,
-		})
+		err := s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, actor.MerchantId, businessHours)
 		if err != nil {
 			return err
 		}
 
-		err = s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, actor.MerchantId, input.BusinessHours)
-		if err != nil {
-			return err
-		}
-
-		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, actor.MerchantId, input.BusinessHours)
+		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, actor.MerchantId, businessHours)
 		if err != nil {
 			return err
 		}
@@ -264,7 +276,7 @@ func (s *Service) UpdateSettings(ctx context.Context, input UpdateSettingsInput)
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while updating reservation fileds for merchant: %s", err.Error())
+		return fmt.Errorf("error while updating business hours: %w", err)
 	}
 
 	return nil
@@ -335,38 +347,4 @@ func (s *Service) GetBookingForCalendar(ctx context.Context, bookingId int) (dom
 	}
 
 	return booking, nil
-}
-
-type NewLocationInput struct {
-	Country           *string
-	City              *string
-	PostalCode        *string
-	Address           *string
-	GeoPoint          types.GeoPoint
-	PlaceId           *string
-	FormattedLocation string
-	IsPrimary         bool
-	IsActive          bool
-}
-
-func (s *Service) NewLocation(ctx context.Context, req NewLocationInput) error {
-	actor := actor.MustGetFromContext(ctx)
-
-	err := s.merchantRepo.NewLocation(ctx, domain.Location{
-		MerchantId:        actor.MerchantId,
-		Country:           req.Country,
-		City:              req.City,
-		PostalCode:        req.PostalCode,
-		Address:           req.Address,
-		GeoPoint:          req.GeoPoint,
-		PlaceId:           req.PlaceId,
-		FormattedLocation: req.FormattedLocation,
-		IsPrimary:         req.IsPrimary,
-		IsActive:          req.IsActive,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

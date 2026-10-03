@@ -1,9 +1,12 @@
 package locations
 
-import merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+import (
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	locationServ "github.com/miketsu-inc/reservations/backend/internal/service/location"
+)
 
-func mapToNewLocationInput(in newReq) merchantServ.NewLocationInput {
-	return merchantServ.NewLocationInput{
+func mapToNewInput(in newReq) locationServ.NewInput {
+	return locationServ.NewInput{
 		Country:           in.Country,
 		City:              in.City,
 		PostalCode:        in.PostalCode,
@@ -13,5 +16,16 @@ func mapToNewLocationInput(in newReq) merchantServ.NewLocationInput {
 		FormattedLocation: in.FormattedLocation,
 		IsPrimary:         in.IsPrimary,
 		IsActive:          in.IsActive,
+	}
+}
+
+func mapToGetResp(in domain.Location) getResp {
+	return getResp{
+		Id:                in.Id,
+		Country:           in.Country,
+		City:              in.City,
+		PostalCode:        in.PostalCode,
+		Address:           in.Address,
+		FormattedLocation: in.FormattedLocation,
 	}
 }

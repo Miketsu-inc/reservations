@@ -18,7 +18,8 @@ type MerchantRepository interface {
 	DeleteMerchant(ctx context.Context, employeeId int, merchantId uuid.UUID) error
 
 	ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, name string, urlName string) error
-	UpdateMerchantFields(ctx context.Context, merchantId uuid.UUID, merchantFields MerchantSettingFields) error
+	UpdateMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID, settings MerchantProfileSettings) error
+	UpdateSchedulingSettings(ctx context.Context, merchantId uuid.UUID, settings SchedulingSettings) error
 
 	IsMerchantUrlUnique(ctx context.Context, urlName string) (bool, error)
 	GetMerchant(ctx context.Context, merchantId uuid.UUID) (Merchant, error)
@@ -28,7 +29,8 @@ type MerchantRepository interface {
 	GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID) (string, error)
 	GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (types.SubTier, error)
 	GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error)
-	GetMerchantSettingsInfo(ctx context.Context, merchantId uuid.UUID) (MerchantSettingsInfo, error)
+	GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (MerchantProfileSettings, error)
+	GetSchedulingSettings(ctx context.Context, merchantId uuid.UUID) (SchedulingSettings, error)
 	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
 	GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error)
 
@@ -41,9 +43,6 @@ type MerchantRepository interface {
 	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, day int) ([]TimeSlot, error)
 	// Get business hours for merchant including only the first start and last ending time
 	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
-
-	NewLocation(ctx context.Context, location Location) error
-	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
 }
 
 type Merchant struct {
@@ -97,48 +96,27 @@ type MerchantInfo struct {
 	BusinessHoursStatus BusinessHoursStatus `json:"business_hours_status"`
 }
 
-type MerchantSettingsInfo struct {
-	Name             string             `json:"merchant_name" db:"merchant_name"`
-	ContactEmail     string             `json:"contact_email" db:"contact_email"`
-	Introduction     string             `json:"introduction" db:"introduction"`
-	Announcement     string             `json:"announcement" db:"announcement"`
-	AboutUs          string             `json:"about_us" db:"about_us"`
-	ParkingInfo      string             `json:"parking_info" db:"parking_info"`
-	PaymentInfo      string             `json:"payment_info" db:"payment_info"`
-	CancelDeadline   int                `json:"cancel_deadline" db:"cancel_deadline"`
-	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
-	Timezone         string             `json:"timezone" db:"timezone"`
-	BusinessHours    BusinessHours      `json:"business_hours" db:"business_hours"`
-
-	LocationId        int     `json:"location_id" db:"location_id"`
-	Country           *string `json:"country" db:"country"`
-	City              *string `json:"city" db:"city"`
-	PostalCode        *string `json:"postal_code" db:"postal_code"`
-	Address           *string `json:"address" db:"address"`
-	FormattedLocation string  `json:"formatted_location" db:"formatted_location"`
+type MerchantProfileSettings struct {
+	Introduction string `db:"introduction"`
+	Announcement string `db:"announcement"`
+	AboutUs      string `db:"about_us"`
+	ParkingInfo  string `db:"parking_info"`
+	PaymentInfo  string `db:"payment_info"`
 }
 
 type MerchantBookingSettings struct {
-	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
+	BookingWindowMin int                `db:"booking_window_min"`
+	BookingWindowMax int                `db:"booking_window_max"`
+	BufferTime       int                `db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `db:"approval_policy"`
 }
 
-type MerchantSettingFields struct {
-	Introduction     string             `json:"introduction"`
-	Announcement     string             `json:"announcement"`
-	AboutUs          string             `json:"about_us"`
-	ParkingInfo      string             `json:"parking_info"`
-	PaymentInfo      string             `json:"payment_info"`
-	CancelDeadline   int                `json:"cancel_deadline"`
-	BookingWindowMin int                `json:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType `json:"approval_policy"`
+type SchedulingSettings struct {
+	CancelDeadline   int                `db:"cancel_deadline"`
+	BookingWindowMin int                `db:"booking_window_min"`
+	BookingWindowMax int                `db:"booking_window_max"`
+	BufferTime       int                `db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `db:"approval_policy"`
 }
 
 type RevenueStat struct {
@@ -170,18 +148,4 @@ type DashboardRevenue struct {
 	PeriodStart time.Time     `json:"period_start"`
 	PeriodEnd   time.Time     `json:"period_end"`
 	Revenue     []RevenueStat `json:"revenue"`
-}
-
-type Location struct {
-	Id                int            `json:"ID"`
-	MerchantId        uuid.UUID      `json:"merchant_id"`
-	Country           *string        `json:"country"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-	PlaceId           *string        `json:"place_id"`
-	FormattedLocation string         `json:"formatted_location"`
-	IsPrimary         bool           `json:"is_primary"`
-	IsActive          bool           `json:"is_active"`
 }

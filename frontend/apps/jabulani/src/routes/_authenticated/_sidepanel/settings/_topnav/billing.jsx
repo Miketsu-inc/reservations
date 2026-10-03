@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import SectionHeader from "./-components/SectionHeader";
+import SettingsPageHeader from "./-components/SettingsPageHeader";
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_topnav/billing"
@@ -9,8 +9,11 @@ export const Route = createFileRoute(
 
 function BillingPage() {
   return (
-    <div className="flex flex-col">
-      <SectionHeader title="Billing" />
+    <div className="flex flex-col gap-6 pb-8">
+      <SettingsPageHeader
+        title="Billing"
+        description="Plans, invoices, and payment methods will be managed here."
+      />
     </div>
   );
 }

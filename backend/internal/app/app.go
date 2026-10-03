@@ -37,6 +37,7 @@ import (
 	customerSrv "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	emailSrv "github.com/miketsu-inc/reservations/backend/internal/service/email"
 	externalcalendarSrv "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
+	locationSrv "github.com/miketsu-inc/reservations/backend/internal/service/location"
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
@@ -65,6 +66,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	catalogRepo := repos.NewCatalogRepository(dbConn)
 	customerRep := repos.NewCustomerRepository(dbConn)
 	externalCalendarRepo := repos.NewExternalCalendarRepository(dbConn)
+	locationRepo := repos.NewLocationRepository(dbConn)
 	merchantRepo := repos.NewMerchantRepository(dbConn)
 	productRepo := repos.NewProductRepository(dbConn)
 	teamRepo := repos.NewTeamRepository(dbConn)
@@ -79,10 +81,11 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, nil, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, teamService, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, teamRepo, teamService, nil, transactionManager)
-	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
+	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, locationRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, transactionManager)
+	locationService := locationSrv.NewService(locationRepo)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
 
@@ -121,7 +124,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Integrations:      integrations.NewHandler(externalCalendarService),
 		Invitations:       invitations.NewHandler(teamService, middlewareManager),
 		Users:             users.NewHandler(userService, bookingService, authService, middlewareManager),
-		Locations:         locations.NewHandler(merchantService),
+		Locations:         locations.NewHandler(locationService),
 		Products:          products.NewHandler(productService),
 		Services:          services.NewHandler(catalogService),
 		ServiceCategories: servicecategories.NewHandler(catalogService),

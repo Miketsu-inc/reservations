@@ -1,14 +1,17 @@
-import { Button, Loading, Select, ServerError } from "@reservations/components";
+import { Loading, Select, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
+  useToast,
 } from "@reservations/lib";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import RadioInputGroup from "./-components/RadioInputGroup";
-import SectionHeader from "./-components/SectionHeader";
+import SettingsPageHeader from "./-components/SettingsPageHeader";
+import SettingsSaveAction from "./-components/SettingsSaveAction";
+import SettingsSection from "./-components/SettingsSection";
 
 const calendarViewOptions = [
   { value: "month", label: "Month View" },
@@ -85,10 +88,10 @@ export const Route = createFileRoute(
 
 function CalendarPage() {
   const [unsavedChanges, setUnsavedChanges] = useState({});
-  const [serverError, setServerError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const { merchantId, employeeId } = useAuth();
+  const { showToast } = useToast();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
     preferencesQueryOptions(merchantId, employeeId)
@@ -105,10 +108,10 @@ function CalendarPage() {
         preferences
       );
       setUnsavedChanges({});
-      setServerError("");
-    },
-    onError: (error) => {
-      setServerError(error.message);
+      showToast({
+        message: "Calendar preferences updated successfully",
+        variant: "success",
+      });
     },
   });
 
@@ -154,122 +157,131 @@ function CalendarPage() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        <SectionHeader title="Appearance" styles="" />
-        <RadioInputGroup
-          title="First day of the week"
-          name="firstDayOfWeek"
-          value={preferences.first_day_of_week}
-          onChange={(value) => handleInputChange("first_day_of_week", value)}
-          options={[
-            { value: "Monday", label: "Monday" },
-            { value: "Sunday", label: "Sunday" },
-          ]}
-          description="Choose which day your calendar week starts on. This setting will affect how dates are displayed in your scheduling system."
-        />
-        <RadioInputGroup
-          title="Time Format"
-          name="timeFormat"
-          value={preferences.time_format}
-          onChange={(value) => handleInputChange("time_format", value)}
-          options={[
-            { value: "24-hour", label: "24-Hour Format" },
-            { value: "12-hour", label: "12-Hour Format" },
-          ]}
-          description="Select how time is displayed in your calendar. The 24-hour format is common in Europe, while the 12-hour AM/PM format is standard in the U.S."
-        />
-      </div>
-      <div className="flex flex-col gap-6">
-        <Select
-          options={calendarViewOptions}
-          value={preferences.calendar_view}
-          labelText="Desktop Default View"
-          required={false}
-          onSelect={(option) =>
-            handleInputChange("calendar_view", option.value)
-          }
-          placeholder=""
-          styles="font-normal md:w-2/3"
-        />
-
-        <Select
-          options={calendarViewOptions}
-          value={preferences.calendar_view_mobile}
-          labelText="Mobile Default View"
-          required={false}
-          onSelect={(option) =>
-            handleInputChange("calendar_view_mobile", option.value)
-          }
-          placeholder=""
-          styles="font-normal md:w-2/3"
-        />
-      </div>
-
-      <div className="flex justify-between gap-10 md:flex-row">
-        <label
-          htmlFor="start-hour"
-          className="flex w-full flex-col gap-2 font-semibold"
-        >
-          Starting hour
-          <input
-            type="time"
-            id="start-hour"
-            value={preferences.start_hour}
-            onChange={(e) => handleInputChange("start_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal
-              dark:scheme-dark"
-            step="1800"
+    <div className="flex w-full flex-col gap-12 pb-28 md:pb-8">
+      <SettingsPageHeader
+        title="Calendar"
+        description="Personalize how the calendar is displayed for your account. These preferences do not affect other team members."
+        action={
+          <SettingsSaveAction
+            buttonText="Save"
+            onClick={handleUpdate}
+            disabled={Object.keys(unsavedChanges).length === 0}
+            isLoading={updateMutation.isPending}
+            error={updateMutation.error}
           />
-        </label>
-        <label
-          htmlFor="end-hour"
-          className="flex w-full flex-col gap-2 font-semibold"
-        >
-          Ending hour
-          <input
-            type="time"
-            id="end-hour"
-            value={preferences.end_hour}
-            onChange={(e) => handleInputChange("end_hour", e.target.value)}
-            className="bg-hvr_gray rounded-lg border p-2 font-normal
-              dark:scheme-dark"
-            step="1800"
-          />
-        </label>
-      </div>
-      {errorMessage && (
-        <div className="text-sm text-red-500">{errorMessage}</div>
-      )}
-
-      <Select
-        options={TimeFrequencyOptions}
-        value={preferences.time_frequency}
-        labelText="Time slot frequency"
-        required={false}
-        onSelect={(option) => handleInputChange("time_frequency", option.value)}
-        placeholder=""
-        styles="font-normal md:w-2/3"
+        }
       />
+      <SettingsSection
+        title="Date and time format"
+        description="Choose how weeks and times are displayed throughout your calendar."
+      >
+        <div className="flex flex-col gap-6">
+          <RadioInputGroup
+            title="First day of the week"
+            name="firstDayOfWeek"
+            value={preferences.first_day_of_week}
+            onChange={(value) => handleInputChange("first_day_of_week", value)}
+            options={[
+              { value: "Monday", label: "Monday" },
+              { value: "Sunday", label: "Sunday" },
+            ]}
+            description="Choose which day your calendar week starts on. This setting will affect how dates are displayed in your scheduling system."
+          />
+          <RadioInputGroup
+            title="Time Format"
+            name="timeFormat"
+            value={preferences.time_format}
+            onChange={(value) => handleInputChange("time_format", value)}
+            options={[
+              { value: "24-hour", label: "24-Hour Format" },
+              { value: "12-hour", label: "12-Hour Format" },
+            ]}
+            description="Select how time is displayed in your calendar. The 24-hour format is common in Europe, while the 12-hour AM/PM format is standard in the U.S."
+          />
+        </div>
+      </SettingsSection>
 
-      <div className="flex flex-col gap-3">
-        <span className="text-text_color/70 text-sm md:w-2/3">
-          Update your calendar preferences below. All fields are optional, and
-          your settings will apply to your scheduling system immediately.
-        </span>
-        <Button
-          styles="w-min px-2 text-nowrap py-1"
-          variant="primary"
-          buttonText="Update fields"
-          type="button"
-          onClick={handleUpdate}
-          disabled={
-            Object.keys(unsavedChanges).length === 0 || updateMutation.isPending
-          }
-          isLoading={updateMutation.isPending}
-        />
-        <ServerError error={serverError} styles="mt-2" />
-      </div>
+      <SettingsSection
+        title="Default views"
+        description="Set the view that opens first on each device."
+      >
+        <div className="grid gap-6 md:grid-cols-2">
+          <Select
+            options={calendarViewOptions}
+            value={preferences.calendar_view}
+            labelText="Desktop default view"
+            required={false}
+            onSelect={(option) =>
+              handleInputChange("calendar_view", option.value)
+            }
+            placeholder=""
+            styles="font-normal"
+          />
+          <Select
+            options={calendarViewOptions}
+            value={preferences.calendar_view_mobile}
+            labelText="Mobile default view"
+            required={false}
+            onSelect={(option) =>
+              handleInputChange("calendar_view_mobile", option.value)
+            }
+            placeholder=""
+            styles="font-normal"
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Calendar grid"
+        description="Limit the visible part of the day and choose the time-grid interval."
+      >
+        <div className="grid items-end gap-6 md:grid-cols-3">
+          <label htmlFor="start-hour" className="flex flex-col text-sm">
+            <span className="pb-1">Starting hour</span>
+            <input
+              type="time"
+              id="start-hour"
+              value={preferences.start_hour}
+              onChange={(event) =>
+                handleInputChange("start_hour", event.target.value)
+              }
+              className="border-input_border_color bg-layer_bg min-h-10 rounded-lg
+                border px-3 py-2 font-normal dark:scheme-dark"
+              step="1800"
+            />
+          </label>
+          <label htmlFor="end-hour" className="flex flex-col text-sm">
+            <span className="pb-1">Ending hour</span>
+            <input
+              type="time"
+              id="end-hour"
+              value={preferences.end_hour}
+              onChange={(event) =>
+                handleInputChange("end_hour", event.target.value)
+              }
+              className="border-input_border_color bg-layer_bg min-h-10 rounded-lg
+                border px-3 py-2 font-normal dark:scheme-dark"
+              step="1800"
+            />
+          </label>
+          <Select
+            options={TimeFrequencyOptions}
+            value={preferences.time_frequency}
+            labelText="Time slot frequency"
+            required={false}
+            onSelect={(option) =>
+              handleInputChange("time_frequency", option.value)
+            }
+            placeholder=""
+            styles="font-normal"
+          />
+        </div>
+        {errorMessage && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+            {errorMessage}
+          </p>
+        )}
+      </SettingsSection>
     </div>
   );
 }

@@ -19,11 +19,15 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
       ? [0, 1, 2, 3, 4, 5, 6]
       : [1, 2, 3, 4, 5, 6, 0];
 
-  const bhArray = dayOrder.map((day) => ({
-    day: day,
-    isOpen: data[day]?.length > 0,
-    timeSlots: data[day],
-  }));
+  const bhArray = dayOrder.map((day) => {
+    const timeSlots = data?.[day] ?? [];
+
+    return {
+      day: day,
+      isOpen: timeSlots.length > 0,
+      timeSlots,
+    };
+  });
 
   const toggleDay = (day) => {
     setBusinessHours((prevHours) => {
