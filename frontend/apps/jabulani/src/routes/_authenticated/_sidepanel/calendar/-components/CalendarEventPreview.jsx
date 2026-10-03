@@ -11,10 +11,7 @@ import {
   PreviewCardContent,
   PreviewCardTrigger,
 } from "@reservations/components";
-import {
-  getBookingStatusStyles,
-  useAuth,
-} from "@reservations/jabulani/lib";
+import { getBookingStatusStyles, useAuth } from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
   formatDuration,
@@ -46,31 +43,14 @@ function subscribeToPreview(previewId, listener) {
   };
 }
 
-function closeActivePreview() {
-  setActivePreviewId(null);
-}
-
 function setActivePreviewId(nextPreviewId) {
   if (nextPreviewId === activePreviewId) return;
 
   const previousPreviewId = activePreviewId;
   activePreviewId = nextPreviewId;
 
-  if (typeof window !== "undefined") {
-    window.removeEventListener("scroll", closeActivePreview, true);
-
-    if (activePreviewId) {
-      window.addEventListener("scroll", closeActivePreview, {
-        capture: true,
-        once: true,
-      });
-    }
-  }
-
   [previousPreviewId, activePreviewId].forEach((previewId) => {
-    activePreviewListeners
-      .get(previewId)
-      ?.forEach((listener) => listener());
+    activePreviewListeners.get(previewId)?.forEach((listener) => listener());
   });
 }
 
@@ -128,12 +108,6 @@ function getPreviewAlignOffset(trigger) {
   );
 }
 
-function capitalize(value) {
-  if (!value) return "";
-
-  return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("-", " ");
-}
-
 function formatDate(date) {
   return date.toLocaleDateString([], {
     weekday: "long",
@@ -144,13 +118,6 @@ function formatDate(date) {
 
 function getPersonName(person) {
   return [person.first_name, person.last_name].filter(Boolean).join(" ");
-}
-
-function getPersonInitials(person) {
-  const firstInitial = person.first_name?.[0] ?? "";
-  const lastInitial = person.last_name?.[0] ?? "";
-
-  return `${firstInitial}${lastInitial}` || "?";
 }
 
 function EventLabel({ eventInfo }) {
@@ -216,7 +183,7 @@ function AvatarStack({
           >
             <Avatar
               img={person.avatar_url}
-              initials={getPersonInitials(person)}
+              initials={`${person.first_name[0]}${person.last_name[0]}`}
               alt={name}
               styles={avatarStyles}
             />
@@ -226,7 +193,7 @@ function AvatarStack({
       {remainingPeople > 0 && (
         <div
           className={`${overflowStyles} border-layer_bg bg-hvr_gray flex
-            items-center justify-center rounded-full border-2 font-semibold`}
+          items-center justify-center rounded-full border-2 font-semibold`}
           role="listitem"
         >
           +{remainingPeople}
@@ -348,10 +315,10 @@ function BookingPreview({ event, timeFormat }) {
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2">
             <span
-              className={`${getBookingStatusStyles(status)} shrink-0
-                rounded-md px-1.5 py-0.5 text-[11px] font-medium`}
+              className={`${getBookingStatusStyles(status)} shrink-0 rounded-md
+                px-1.5 py-0.5 text-[11px] font-medium`}
             >
-              {capitalize(status)}
+              {status}
             </span>
             {isGroupBooking && (
               <span className="text-text_color/55 truncate text-xs">
