@@ -43,9 +43,6 @@ type MerchantRepository interface {
 	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, day int) ([]TimeSlot, error)
 	// Get business hours for merchant including only the first start and last ending time
 	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
-
-	NewLocation(ctx context.Context, location Location) error
-	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
 }
 
 type Merchant struct {
@@ -151,18 +148,4 @@ type DashboardRevenue struct {
 	PeriodStart time.Time     `json:"period_start"`
 	PeriodEnd   time.Time     `json:"period_end"`
 	Revenue     []RevenueStat `json:"revenue"`
-}
-
-type Location struct {
-	Id                int            `json:"ID"`
-	MerchantId        uuid.UUID      `json:"merchant_id"`
-	Country           *string        `json:"country"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-	PlaceId           *string        `json:"place_id"`
-	FormattedLocation string         `json:"formatted_location"`
-	IsPrimary         bool           `json:"is_primary"`
-	IsActive          bool           `json:"is_active"`
 }

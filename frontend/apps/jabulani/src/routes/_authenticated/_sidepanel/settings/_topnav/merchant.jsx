@@ -1,11 +1,7 @@
 import { Loading, ServerError, Textarea } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  businessProfileSettingsQueryOptions,
-  updateBusinessProfileSettings,
-  useToast,
-} from "@reservations/lib";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import DangerZone from "./-components/DangerZone";
@@ -13,6 +9,49 @@ import ImageUploader from "./-components/ImageUploader";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
+
+async function fetchBusinessProfileSettings(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/business-profile`
+  );
+  const result = await response.json();
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+
+  return result.data;
+}
+
+function businessProfileSettingsQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "business-profile-settings"],
+    queryFn: () => fetchBusinessProfileSettings(merchantId),
+  });
+}
+
+async function updateBusinessProfileSettings(merchantId, settings) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/business-profile`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(settings),
+    }
+  );
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
+    throw result.error;
+  }
+
+  return settings;
+}
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_topnav/merchant"

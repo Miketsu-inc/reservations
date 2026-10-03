@@ -1,17 +1,56 @@
 import { Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  schedulingSettingsQueryOptions,
-  updateSchedulingSettings,
-  useToast,
-} from "@reservations/lib";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import SchedulingSettings from "./-components/SchedulingSettings";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
+
+async function fetchSchedulingSettings(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/scheduling`
+  );
+  const result = await response.json();
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+
+  return result.data;
+}
+
+function schedulingSettingsQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "scheduling-settings"],
+    queryFn: () => fetchSchedulingSettings(merchantId),
+  });
+}
+
+async function updateSchedulingSettings(merchantId, settings) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/scheduling`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(settings),
+    }
+  );
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
+    throw result.error;
+  }
+
+  return settings;
+}
 
 const approvalOptions = [
   {

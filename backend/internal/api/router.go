@@ -100,7 +100,6 @@ func NewRouter(h *Handlers) *httputil.Router {
 				r.Get("/settings/business-hours", h.Merchants.GetBusinessHoursSettings)
 				r.Patch("/settings/business-hours", h.Merchants.UpdateBusinessHoursSettings)
 				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
-				r.Get("/settings/location", h.Merchants.GetLocationSettings)
 
 				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)

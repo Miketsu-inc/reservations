@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -234,17 +233,6 @@ func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours
 	return nil
 }
 
-func (s *Service) GetLocationSettings(ctx context.Context) (domain.Location, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	location, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
-	if err != nil {
-		return domain.Location{}, err
-	}
-
-	return location, nil
-}
-
 func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.BusinessHours, error) {
 	actor := actor.MustGetFromContext(ctx)
 
@@ -310,38 +298,4 @@ func (s *Service) GetBookingForCalendar(ctx context.Context, bookingId int) (dom
 	}
 
 	return booking, nil
-}
-
-type NewLocationInput struct {
-	Country           *string
-	City              *string
-	PostalCode        *string
-	Address           *string
-	GeoPoint          types.GeoPoint
-	PlaceId           *string
-	FormattedLocation string
-	IsPrimary         bool
-	IsActive          bool
-}
-
-func (s *Service) NewLocation(ctx context.Context, req NewLocationInput) error {
-	actor := actor.MustGetFromContext(ctx)
-
-	err := s.merchantRepo.NewLocation(ctx, domain.Location{
-		MerchantId:        actor.MerchantId,
-		Country:           req.Country,
-		City:              req.City,
-		PostalCode:        req.PostalCode,
-		Address:           req.Address,
-		GeoPoint:          req.GeoPoint,
-		PlaceId:           req.PlaceId,
-		FormattedLocation: req.FormattedLocation,
-		IsPrimary:         req.IsPrimary,
-		IsActive:          req.IsActive,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

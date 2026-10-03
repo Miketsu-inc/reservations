@@ -320,26 +320,6 @@ func (h *Handler) UpdateBusinessHoursSettings(w http.ResponseWriter, r *http.Req
 	return nil
 }
 
-type locationSettingsResp struct {
-	LocationId        int     `json:"location_id"`
-	Country           *string `json:"country"`
-	City              *string `json:"city"`
-	PostalCode        *string `json:"postal_code"`
-	Address           *string `json:"address"`
-	FormattedLocation string  `json:"formatted_location"`
-}
-
-func (h *Handler) GetLocationSettings(w http.ResponseWriter, r *http.Request) error {
-	location, err := h.service.GetLocationSettings(r.Context())
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetLocationSettings")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToLocationSettingsResp(location))
-
-	return nil
-}
-
 func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Request) error {
 	businessHours, err := h.service.GetNormalizedBusinessHours(r.Context())
 	if err != nil {

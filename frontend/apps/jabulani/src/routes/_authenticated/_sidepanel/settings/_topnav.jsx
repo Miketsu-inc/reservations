@@ -23,7 +23,7 @@ function RouteComponent() {
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/settings/merchant">
           <Icon icon={Briefcase04Icon} styles="size-5" />
-          <span>Business profile</span>
+          <span>Profile</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/business-hours">
           <Icon icon={Clock01Icon} styles="size-5" />

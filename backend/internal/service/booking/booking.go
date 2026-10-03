@@ -32,6 +32,7 @@ type Service struct {
 	bookingRepo     domain.BookingRepository
 	catalogRepo     domain.CatalogRepository
 	merchantRepo    domain.MerchantRepository
+	locationRepo    domain.LocationRepository
 	teamRepo        domain.TeamRepository
 	userRepo        domain.UserRepository
 	customerRepo    domain.CustomerRepository
@@ -42,12 +43,14 @@ type Service struct {
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
-	team domain.TeamRepository, user domain.UserRepository, customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository,
-	mailer *email.Service, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
+	location domain.LocationRepository, team domain.TeamRepository, user domain.UserRepository, customer domain.CustomerRepository,
+	blockedTime domain.BlockedTimeRepository, mailer *email.Service, enqueuer queue.Enqueuer,
+	txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
 		merchantRepo:    merchant,
+		locationRepo:    location,
 		teamRepo:        team,
 		userRepo:        user,
 		customerRepo:    customer,
@@ -304,7 +307,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 				return err
 			}
 
-			location, err := s.merchantRepo.GetLocation(ctx, input.LocationId, merchantId)
+			location, err := s.locationRepo.GetLocation(ctx, input.LocationId, merchantId)
 			if err != nil {
 				return err
 			}
@@ -627,7 +630,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
-	bookedLocation, err := s.merchantRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
+	bookedLocation, err := s.locationRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
 	if err != nil {
 		return err
 	}

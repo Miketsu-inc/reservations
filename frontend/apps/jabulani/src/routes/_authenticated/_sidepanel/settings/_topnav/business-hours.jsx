@@ -1,18 +1,59 @@
 import { Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
-  businessHoursSettingsQueryOptions,
+  invalidateLocalStorageAuth,
   preferencesQueryOptions,
-  updateBusinessHoursSettings,
   useToast,
 } from "@reservations/lib";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BusinessHours from "./-components/BusinessHours";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
-import SettingsSection from "./-components/SettingsSection";
+
+async function fetchBusinessHoursSettings(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/business-hours`
+  );
+  const result = await response.json();
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+
+  return result.data;
+}
+
+function businessHoursSettingsQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "business-hours-settings"],
+    queryFn: () => fetchBusinessHoursSettings(merchantId),
+  });
+}
+
+async function updateBusinessHoursSettings(merchantId, businessHours) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/settings/business-hours`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ business_hours: businessHours }),
+    }
+  );
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
+    throw result.error;
+  }
+
+  return businessHours;
+}
 
 const daysOfWeek = {
   0: "Sunday",
@@ -132,10 +173,7 @@ function BusinessHoursPage() {
           />
         }
       />
-      <SettingsSection
-        title="Weekly opening hours"
-        description="Add a second time range when your day includes a break. Availability can still vary by team member and service."
-      >
+      <section>
         <BusinessHours
           data={businessHours}
           setBusinessHours={(updater) =>
@@ -152,7 +190,7 @@ function BusinessHoursPage() {
             {errorMessage}
           </p>
         )}
-      </SettingsSection>
+      </section>
     </div>
   );
 }

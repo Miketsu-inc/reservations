@@ -128,45 +128,30 @@ function RouteComponent() {
             </Card>
           )}
           <Card>
-            <p className="text-lg font-medium">Sessions</p>
-            <div className="mt-2 flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
-              <div
-                className="flex flex-col items-start justify-between gap-3 py-4
-                  sm:flex-row sm:items-center"
-              >
-                <div>
-                  <p className="font-medium">Sign out</p>
-                  <p className="text-text_color/65 mt-1 text-sm">
-                    End the session on this device.
-                  </p>
-                </div>
-                <Button
-                  styles="shrink-0 px-4 py-2"
-                  variant="tertiary"
-                  buttonText="Sign out"
-                  onClick={() => logoutHandler(false)}
-                >
-                  <Icon icon={Logout05Icon} styles="mr-2 size-5" />
-                </Button>
-              </div>
-              <div
-                className="flex flex-col items-start justify-between gap-3 pt-4
-                  sm:flex-row sm:items-center"
-              >
-                <div>
-                  <p className="font-medium">Sign out everywhere</p>
-                  <p className="text-text_color/65 mt-1 text-sm">
-                    End every active session, including this one.
-                  </p>
-                </div>
-                <Button
-                  styles="shrink-0 px-4 py-2"
-                  variant="danger"
-                  buttonText="Sign out everywhere"
-                  onClick={() => logoutHandler(true)}
-                />
-              </div>
-            </div>
+            <p className="text-lg font-medium">Sign out</p>
+            <p className="text-text_color/65 mt-1 text-sm">
+              End the session on this device.
+            </p>
+            <Button
+              styles="mt-4 shrink-0 px-4 py-2"
+              variant="tertiary"
+              buttonText="Sign out"
+              onClick={() => logoutHandler(false)}
+            >
+              <Icon icon={Logout05Icon} styles="mr-2 size-5" />
+            </Button>
+          </Card>
+          <Card>
+            <p className="text-lg font-medium">Sign out everywhere</p>
+            <p className="text-text_color/65 mt-1 text-sm">
+              End every active session, including this one.
+            </p>
+            <Button
+              styles="mt-4 shrink-0 px-4 py-2"
+              variant="tertiary"
+              buttonText="Sign out everywhere"
+              onClick={() => logoutHandler(true)}
+            />
           </Card>
           <Card styles="border-red-300 dark:border-red-900">
             <p className="text-lg font-medium text-red-600 dark:text-red-400">

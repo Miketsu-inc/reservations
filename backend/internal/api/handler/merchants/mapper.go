@@ -166,17 +166,6 @@ func mapToBusinessHours(in map[int][]timeSlotResp) (domain.BusinessHours, error)
 	return businessHours, nil
 }
 
-func mapToLocationSettingsResp(in domain.Location) locationSettingsResp {
-	return locationSettingsResp{
-		LocationId:        in.Id,
-		Country:           in.Country,
-		City:              in.City,
-		PostalCode:        in.PostalCode,
-		Address:           in.Address,
-		FormattedLocation: in.FormattedLocation,
-	}
-}
-
 func mapToGetNormalizedBusinessHoursResp(in domain.BusinessHours) map[int]timeSlotResp {
 	businessHours := make(map[int]timeSlotResp, len(in))
 

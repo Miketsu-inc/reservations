@@ -20,7 +20,7 @@ export default function DangerZoneItem({
         <Button
           onClick={onClick}
           variant="danger"
-          styles="py-1 px-2 w-fit"
+          styles="w-fit px-3 py-2 text-nowrap"
           buttonText={buttonText}
         />
       )}
