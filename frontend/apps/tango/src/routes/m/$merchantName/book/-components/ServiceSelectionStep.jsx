@@ -27,7 +27,7 @@ import { StepContentSkeleton } from "./StepContentSkeleton";
 export default function ServiceSelectionStep({
   merchantName,
   _locationId,
-  _employeeId,
+  employeeId,
   onServiceSelect,
   employee,
 }) {
@@ -36,7 +36,7 @@ export default function ServiceSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({ ...merchantServicesQueryOptions(merchantName) });
+  } = useQuery({ ...merchantServicesQueryOptions(merchantName, employeeId) });
 
   const [searchText, setSearchText] = useState("");
   const [selectedService, setSelectedService] = useState(null);
@@ -203,6 +203,13 @@ export default function ServiceSelectionStep({
 function ServiceItem({ service, isSelected, onSelect }) {
   const isGroup = service.booking_type !== "appointment";
 
+  const durationText =
+    service.min_duration &&
+    service.max_duration &&
+    service.min_duration !== service.max_duration
+      ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
+      : formatDuration(service.total_duration);
+
   return (
     <li
       role="radio"
@@ -218,13 +225,13 @@ function ServiceItem({ service, isSelected, onSelect }) {
         <div className="text-text_color/80 flex items-center gap-5 text-sm">
           <div className="flex items-center gap-1.5">
             <Icon icon={Clock01Icon} styles="size-4" />
-            <span>{formatDuration(service.total_duration)}</span>
+            <span>{durationText}</span>
           </div>
 
           {isGroup && (
             <div className="text-text_color/80 flex items-center gap-1.5">
               <Icon icon={UserGroupIcon} styles="size-5" />
-              <span>Max {service.max_participants}</span>
+              <span>{`Max ${service.max_participants}`}</span>
             </div>
           )}
         </div>

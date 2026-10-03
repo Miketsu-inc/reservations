@@ -26,17 +26,82 @@ const formatDate = (dateString) => {
   return formattedDate;
 };
 
+export function getBookingSummaryDisplayInfo({
+  fetchedSummary,
+  selectedSummary,
+  searchEmployeeId,
+}) {
+  const service = selectedSummary?.service || fetchedSummary;
+  const selectedEmp = selectedSummary?.employee;
+  const isNoPref =
+    selectedEmp?.id === "no-pref" || searchEmployeeId === "no-pref";
+
+  let employeeName = null;
+  let empOverrides = null;
+
+  if (isNoPref) {
+    employeeName = "No preference";
+  } else if (selectedEmp?.first_name) {
+    employeeName = `${selectedEmp.first_name} ${selectedEmp.last_name}`;
+    empOverrides = selectedEmp;
+  } else if (fetchedSummary?.employee_first_name) {
+    employeeName = `${fetchedSummary.employee_first_name} ${fetchedSummary.employee_last_name}`;
+    empOverrides = fetchedSummary;
+  }
+
+  const minDur =
+    empOverrides?.total_duration ||
+    service?.min_duration ||
+    service?.total_duration;
+
+  const maxDur =
+    empOverrides?.total_duration ||
+    service?.max_duration ||
+    service?.total_duration;
+
+  const durationDisplay =
+    minDur && maxDur && minDur !== maxDur
+      ? `${formatDuration(minDur)} - ${formatDuration(maxDur)}`
+      : minDur
+        ? formatDuration(minDur)
+        : "";
+
+  const priceSource = empOverrides?.price_type ? empOverrides : service;
+  const priceDisplay = priceSource?.price_type
+    ? getDisplayPrice(priceSource.price, priceSource.price_type)
+    : "";
+
+  return {
+    serviceName: service?.name || service?.service_name || null,
+    employeeName,
+    isNoPref,
+    durationDisplay,
+    totalDuration: minDur,
+    priceDisplay,
+  };
+}
+
 export default function BookingSummary({
   fetchedSummary,
   selectedSummary,
+  searchEmployeeId,
   isLoading,
   onContinue,
   canContinue,
   isSubmitting,
   currentStep,
 }) {
-  const duration =
-    fetchedSummary?.total_duration || selectedSummary.service?.total_duration;
+  const {
+    serviceName,
+    employeeName,
+    durationDisplay,
+    totalDuration,
+    priceDisplay,
+  } = getBookingSummaryDisplayInfo({
+    fetchedSummary,
+    selectedSummary,
+    searchEmployeeId,
+  });
 
   if (isLoading) {
     return (
@@ -122,7 +187,7 @@ export default function BookingSummary({
               <div className="flex items-center gap-2">
                 <Icon icon={Clock} styles="size-5" />
                 <span className="">
-                  {formatTimeRange(selectedSummary.time.time, duration)}
+                  {formatTimeRange(selectedSummary.time.time, totalDuration)}
                 </span>
               </div>
             </div>
@@ -130,37 +195,24 @@ export default function BookingSummary({
           </>
         )}
 
-        {fetchedSummary?.service_name || selectedSummary?.service ? (
+        {serviceName ? (
           <div className="flex justify-between">
             <div className="flex flex-col gap-1">
-              <span className="text-[17px] font-medium">
-                {fetchedSummary.service_name || selectedSummary.service.name}
-              </span>
-              <span className="text-gray-600 dark:text-gray-300">
-                {fetchedSummary?.service_name
-                  ? formatDuration(fetchedSummary.total_duration)
-                  : formatDuration(selectedSummary.service.total_duration)}
-              </span>
-              {(fetchedSummary?.employee_first_name ||
-                selectedSummary?.employee) && (
+              <span className="text-[17px] font-medium">{serviceName}</span>
+              {durationDisplay && (
                 <span className="text-gray-600 dark:text-gray-300">
-                  With:{" "}
-                  {fetchedSummary?.employee_first_name ||
-                    selectedSummary.employee?.first_name}
+                  {durationDisplay}
+                </span>
+              )}
+              {employeeName && (
+                <span className="text-gray-600 dark:text-gray-300">
+                  With: {employeeName}
                 </span>
               )}
             </div>
-            <span className="font-medium">
-              {fetchedSummary?.price_type
-                ? getDisplayPrice(
-                    fetchedSummary?.price,
-                    fetchedSummary?.price_type
-                  )
-                : getDisplayPrice(
-                    selectedSummary.service?.price,
-                    selectedSummary.service?.price_type
-                  )}
-            </span>
+            {priceDisplay && (
+              <span className="font-medium">{priceDisplay}</span>
+            )}
           </div>
         ) : (
           <p className="text-gray-400">Select a service to continue...</p>

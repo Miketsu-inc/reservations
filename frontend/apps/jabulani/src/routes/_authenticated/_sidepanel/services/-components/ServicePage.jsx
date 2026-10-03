@@ -17,7 +17,12 @@ import { ServicePricingDuration } from "./ServicePricingDuration";
 import { normalizeServicePhases } from "./servicehooks";
 
 export default function ServicePage({
-  service,
+  // Fix for react compiler bug
+  //
+  // The new-service route does not provide a service. Providing a default value here
+  // keeps React Compiler's generated memo-cache checks from dereferencing an
+  // undefined value before the optional-chain fallback can run.
+  service = {},
   categories,
   products,
   onSave,
@@ -140,7 +145,7 @@ export default function ServicePage({
         !confirm("You have unsaved changes, are you sure you want to leave?")
       }
     >
-      {service && (
+      {service?.id && (
         <DeleteModal
           open={showDeleteModal}
           onOpenChange={setShowDeleteModal}
@@ -256,7 +261,7 @@ export default function ServicePage({
                       settings={serviceData.settings}
                     />
                   </ScrollSpySection>
-                  {service && (
+                  {service?.id && (
                     <Button
                       type="button"
                       styles="py-4 mb-2 shadow-none bg-transparent

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -19,6 +20,7 @@ type TeamRepository interface {
 
 	GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]Employee, error)
 	GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]Employee, error)
+	GetActiveEmployeesForService(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeWithServiceOverrides, error)
 
 	GetMerchantIdByEmployee(ctx context.Context, employeeId int) (uuid.UUID, error)
 
@@ -85,4 +87,17 @@ type EmployeePreferences struct {
 	StartHour          time.Time `db:"start_hour"`
 	EndHour            time.Time `db:"end_hour"`
 	TimeFrequency      time.Time `db:"time_frequency"`
+}
+
+type EmployeeWithServiceOverrides struct {
+	Id              int                `db:"id"`
+	Role            types.EmployeeRole `db:"role"`
+	FirstName       *string            `db:"first_name"`
+	LastName        *string            `db:"last_name"`
+	Email           *string            `db:"email"`
+	PhoneNumber     *string            `db:"phone_number"`
+	TotalDuration   *int               `db:"total_duration"`
+	Price           *currencyx.Price   `db:"price_per_person"`
+	PriceType       *types.PriceType   `db:"price_type"`
+	MaxParticipants *int               `db:"max_participants"`
 }

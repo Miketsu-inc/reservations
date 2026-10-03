@@ -12,6 +12,7 @@ var ErrStatus = apperr.StatusMap{
 	ErrMerchantNotFound:       http.StatusNotFound,
 	domain.ErrBookingNotFound: http.StatusNotFound,
 
+	ErrEmployeeNotFound:        http.StatusNotFound,
 	ErrMerchantServiceMismatch: http.StatusForbidden,
 	ErrInvalidBookingType:      http.StatusForbidden,
 }
@@ -19,5 +20,6 @@ var ErrStatus = apperr.StatusMap{
 var ErrMerchantUrlNotUnique = &apperr.Error{Code: "merchant_url_not_unique", Message: "this merchant url is already used"}
 var ErrMerchantNotFound = &apperr.Error{Code: "merchant_not_found", Message: "merchant not found"}
 
+var ErrEmployeeNotFound = &apperr.Error{Code: "employee_not_found", Message: "there is no employee doing this service"}
 var ErrMerchantServiceMismatch = &apperr.Error{Code: "merchant_service_mismatch", Message: "this service does not belong to this merchant"}
 var ErrInvalidBookingType = &apperr.Error{Code: "invalid_booking_type", Message: "this service has invalid type"}

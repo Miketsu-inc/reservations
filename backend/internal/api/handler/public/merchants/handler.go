@@ -51,10 +51,14 @@ func (h *Handler) Routes() *httputil.Router {
 
 		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
 		r.Get("/locations/{locationId}/summary", h.GetSummary)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/available-days", h.GetDayAvailability)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability", h.GetAvailability)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/next", h.GetNextAvailability)
-		r.Get("/locations/{locationId}/services/{serviceId}/availability/disabled-days", h.GetDisabledDays)
+
+		r.Route("/locations/{locationId}/services/{serviceId}/availability", func(r *httputil.Router) {
+			r.Get("/", h.GetAvailability)
+			r.Get("/next", h.GetNextAvailability)
+			r.Get("/disabled-days", h.GetDisabledDays)
+			r.Get("/available-days", h.GetDayAvailability)
+			r.Get("/group", h.GetGroupAvailability)
+		})
 	})
 
 	return r
@@ -124,6 +128,8 @@ type serviceResp struct {
 	Name            string                    `json:"name"`
 	Description     *string                   `json:"description"`
 	TotalDuration   int                       `json:"total_duration"`
+	MinDuration     int                       `json:"min_duration"`
+	MaxDuration     int                       `json:"max_duration"`
 	Price           *currencyx.FormattedPrice `json:"price"`
 	PriceType       types.PriceType           `json:"price_type"`
 	MaxParticipants int                       `json:"max_participants"`
@@ -137,7 +143,16 @@ func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	services, err := h.catalogServ.GetServicesGroupedByCategories(r.Context(), urlName)
+	var employeeId *int
+	if empId := r.URL.Query().Get("employeeId"); empId != "" {
+		parsed, err := strconv.Atoi(empId)
+		if err != nil {
+			return validate.NewError("invalid employee id")
+		}
+		employeeId = &parsed
+	}
+
+	services, err := h.catalogServ.GetServicesGroupedByCategories(r.Context(), urlName, employeeId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetServicesGroupedByCategories")
 	}
@@ -148,12 +163,16 @@ func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) error {
 }
 
 type teamResponse struct {
-	Id          int                `json:"id"`
-	Role        types.EmployeeRole `json:"role"`
-	FirstName   string             `json:"first_name"`
-	LastName    string             `json:"last_name"`
-	Email       *string            `json:"email" `
-	PhoneNumber *string            `json:"phone_number"`
+	Id              int                       `json:"id"`
+	Role            types.EmployeeRole        `json:"role"`
+	FirstName       string                    `json:"first_name"`
+	LastName        string                    `json:"last_name"`
+	Email           *string                   `json:"email"`
+	PhoneNumber     *string                   `json:"phone_number"`
+	TotalDuration   *int                      `json:"total_duration,omitempty"`
+	Price           *currencyx.FormattedPrice `json:"price,omitempty"`
+	PriceType       *types.PriceType          `json:"price_type,omitempty"`
+	MaxParticipants *int                      `json:"max_participants,omitempty"`
 }
 
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
@@ -162,7 +181,16 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	team, err := h.teamServ.GetTeamByMerchantName(r.Context(), urlName)
+	var serviceId *int
+	if sId := r.URL.Query().Get("serviceId"); sId != "" {
+		parsed, err := strconv.Atoi(sId)
+		if err != nil {
+			return validate.NewError("invalid service id")
+		}
+		serviceId = &parsed
+	}
+
+	team, err := h.teamServ.GetTeamByMerchantName(r.Context(), urlName, serviceId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetTeam")
 	}
@@ -252,6 +280,8 @@ type getSummaryResp struct {
 	Price             *currencyx.FormattedPrice `json:"price"`
 	PriceType         *types.PriceType          `json:"price_type"`
 	TotalDuration     *int                      `json:"total_duration"`
+	MinDuration       *int                      `json:"min_duration,omitempty"`
+	MaxDuration       *int                      `json:"max_duration,omitempty"`
 	EmployeeFirstName *string                   `json:"employee_first_name"`
 	EMployeeLastName  *string                   `json:"employee_last_name"`
 }
@@ -381,6 +411,10 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 
 	httputil.Success(w, http.StatusOK, mapToGetAvailabilityResp(availability))
 
+	return nil
+}
+
+func (h *Handler) GetGroupAvailability(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 

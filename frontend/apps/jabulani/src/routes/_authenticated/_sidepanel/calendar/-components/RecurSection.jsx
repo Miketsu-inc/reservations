@@ -1,4 +1,5 @@
 import { Button, DatePicker, Input, Select } from "@reservations/components";
+import { getDefaultRecurrenceEnd } from "@reservations/jabulani/lib";
 import {
   dayNameFromDate,
   getDaySuffix,
@@ -42,18 +43,13 @@ function recurFreqText(startDate, freq) {
   }
 }
 
-const currentDate = new Date();
-const defaultRecurData = {
-  isRecurring: false,
-  frequency: "weekly",
-  endDate: new Date(currentDate.setMonth(currentDate.getMonth() + 1)),
-  interval: 1,
-  intervalUnit: "weeks",
-  days: [],
-};
-
 export default function RecurSection({ booking, recurringData, onSave }) {
-  const [recurData, setRecurData] = useState(recurringData || defaultRecurData);
+  const [recurData, setRecurData] = useState(() => ({
+    ...recurringData,
+    endDate: recurringData.isRecurring
+      ? recurringData.endDate
+      : getDefaultRecurrenceEnd(booking.start, recurringData.frequency),
+  }));
 
   function updateRecurData(data) {
     setRecurData((prev) => ({ ...prev, ...data }));
@@ -81,7 +77,16 @@ export default function RecurSection({ booking, recurringData, onSave }) {
     if (option.value === "not-repeat") {
       updateRecurData({ isRecurring: false });
     } else {
-      updateRecurData({ isRecurring: true, frequency: option.value });
+      const shouldResetEndDate =
+        !recurData.isRecurring || recurData.frequency !== option.value;
+
+      updateRecurData({
+        isRecurring: true,
+        frequency: option.value,
+        ...(shouldResetEndDate && {
+          endDate: getDefaultRecurrenceEnd(booking.start, option.value),
+        }),
+      });
     }
   }
 

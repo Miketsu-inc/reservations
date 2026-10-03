@@ -3,11 +3,9 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 8 vite-jabulani tailwindcss-jabulani vite-tango tailwindcss-tango air db kv caddy
+	@make -j 6 vite-jabulani vite-tango air db kv caddy
 
 build:
-	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --minify
-	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --minify
 	@npm run build-jabulani
 	@npm run build-tango
 ifeq (${skip-email},)
@@ -36,12 +34,6 @@ go-build:
 	@go build -tags=prod -o backend/bin/reservations backend/cmd/main.go
 
 endif
-
-tailwindcss-jabulani:
-	@npx @tailwindcss/cli -i ./frontend/apps/jabulani/input.css -o ./frontend/apps/jabulani/src/output.css --watch=always
-
-tailwindcss-tango:
-	@npx @tailwindcss/cli -i ./frontend/apps/tango/input.css -o ./frontend/apps/tango/src/output.css --watch=always
 
 email:
 	@npx email dev --dir "backend/emails/templates"

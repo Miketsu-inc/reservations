@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
@@ -115,7 +117,12 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 	}
 
 	if serviceId != nil {
-		serviceInfo, err := s.catalogRepo.GetMinimalServiceInfo(ctx, merchantId, *serviceId, locationId)
+		serviceInfo, err := s.catalogRepo.GetMinimalServiceInfo(ctx, merchantId, *serviceId, locationId, employeeId)
+		if err != nil {
+			return BookingSummary{}, err
+		}
+
+		serviceInfo.Price, serviceInfo.PriceType, err = catalog.BuildServicePricing(serviceInfo.Price, serviceInfo.PriceType, serviceInfo.PriceOverrides)
 		if err != nil {
 			return BookingSummary{}, err
 		}
@@ -133,101 +140,62 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 	return summary, nil
 }
 
-func (s *Service) GetAvailability(ctx context.Context, merchantName string, serviceId, locationId int, startDate, endDate time.Time) ([]MultiDayAvailableTimes, error) {
-	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+type employeeAvailabilityData struct {
+	EmpService    domain.Service
+	ReservedTimes []domain.BookingSlot
+	BlockedTimes  []domain.BlockedTimes
+}
+
+func (s *Service) fetchEmployeeAvailabilityData(ctx context.Context, serviceId int, employeeIds []int, merchantId uuid.UUID, locationId int, dateRange timeutil.DateRange) (map[int]employeeAvailabilityData, error) {
+	empServices, err := s.catalogRepo.GetServiceWithPhasesForEmployees(ctx, serviceId, employeeIds)
 	if err != nil {
-		return []MultiDayAvailableTimes{}, err
+		return nil, err
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
+	reservedByEmp, err := s.bookingRepo.GetReservedTimesByEmployees(ctx, merchantId, locationId, employeeIds, dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
-		return []MultiDayAvailableTimes{}, err
+		return nil, err
 	}
 
-	if service.MerchantId != merchantId {
-		return []MultiDayAvailableTimes{}, fmt.Errorf("this service id does not belong to this merchant")
-	}
-
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
+	blockedByEmp, err := s.blockedTimeRepo.GetBlockedTimesByEmployees(ctx, merchantId, employeeIds, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
-		return []MultiDayAvailableTimes{}, err
+		return nil, err
 	}
 
-	var availableSlots []MultiDayAvailableTimes
-
-	dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
-
-	if service.BookingType == types.BookingTypeAppointment {
-
-		bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
-		if err != nil {
-			return []MultiDayAvailableTimes{}, err
-		}
-
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return []MultiDayAvailableTimes{}, err
-		}
-
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
-		if err != nil {
-			return []MultiDayAvailableTimes{}, err
-		}
-
-		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
-		if err != nil {
-			return []MultiDayAvailableTimes{}, err
-		}
-
-		now := time.Now()
-		availableSlots = CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
-
-	} else {
-
-		groupBookings, err := s.bookingRepo.GetAvailableGroupBookingsForPeriod(ctx, merchantId, serviceId, locationId, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return []MultiDayAvailableTimes{}, err
-		}
-
-		bookingsByDate := make(map[string][]time.Time)
-		for _, b := range groupBookings {
-			fromDate := b.FromDate.In(merchantTz)
-			date := fromDate.Format("2006-01-02")
-
-			bookingsByDate[date] = append(bookingsByDate[date], fromDate)
-		}
-
-		for d := dateRange.StartTime.In(merchantTz); d.Before(dateRange.EndTime.In(merchantTz)); d = d.AddDate(0, 0, 1) {
-			date := d.Format("2006-01-02")
-
-			var morning []string
-			var afternoon []string
-
-			times, ok := bookingsByDate[date]
-			if ok {
-				for _, t := range times {
-					formattedTime := fmt.Sprintf("%02d:%02d", t.Hour(), t.Minute())
-
-					if t.Hour() < 12 {
-						morning = append(morning, formattedTime)
-					} else if t.Hour() >= 12 {
-						afternoon = append(afternoon, formattedTime)
-					}
-				}
-			}
-
-			isAvailable := len(morning) > 0 || len(afternoon) > 0
-
-			availableSlots = append(availableSlots, MultiDayAvailableTimes{
-				Date:        date,
-				IsAvailable: isAvailable,
-				Morning:     morning,
-				Afternoon:   afternoon,
-			})
+	result := make(map[int]employeeAvailabilityData, len(employeeIds))
+	for _, empId := range employeeIds {
+		result[empId] = employeeAvailabilityData{
+			EmpService:    empServices[empId],
+			ReservedTimes: reservedByEmp[empId],
+			BlockedTimes:  blockedByEmp[empId],
 		}
 	}
 
-	return availableSlots, nil
+	return result, nil
+}
+
+func (s *Service) resolveEmployeeIds(ctx context.Context, serviceId int, employeeId *int) ([]int, error) {
+	if employeeId != nil {
+		return []int{*employeeId}, nil
+	}
+
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(employeeIds) == 0 {
+		return nil, ErrEmployeeNotFound
+	}
+
+	return employeeIds, nil
+}
+
+func ResolveEmployeeBufferTime(empService domain.Service, defaultBufferTime int) int {
+	if empService.BufferTime != nil {
+		return *empService.BufferTime
+	}
+	return defaultBufferTime
 }
 
 type NextAvailable struct {
@@ -261,49 +229,67 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 	now := time.Now().In(time.UTC)
 
 	if service.BookingType == types.BookingTypeAppointment {
-
 		startDate := now
 		endDate := startDate.AddDate(0, 3, 0)
 		dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
-
-		// TODO: should be rewritten to ensure maximal availability
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, nil, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return NextAvailable{}, err
-		}
-
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, nil, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
-		if err != nil {
-			return NextAvailable{}, err
-		}
 
 		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
 		if err != nil {
 			return NextAvailable{}, err
 		}
 
-		availableSlots := CalculateAvailableTimesPeriod(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
+		employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, nil)
+		if err != nil {
+			return NextAvailable{}, err
+		}
 
 		var na NextAvailable
-		var dateStr, timeStr string
+		var earliestStart *time.Time
+		var earliestEnd *time.Time
+		var earliestEmpId *int
 
-		for _, day := range availableSlots {
-			if len(day.Morning) > 0 {
-				dateStr, timeStr = day.Date, day.Morning[0]
-				break
-			}
-			if len(day.Afternoon) > 0 {
-				dateStr, timeStr = day.Date, day.Afternoon[0]
-				break
+		empDataByEmp, err := s.fetchEmployeeAvailabilityData(ctx, service.Id, employeeIds, merchantId, locationId, dateRange)
+		if err != nil {
+			return NextAvailable{}, err
+		}
+
+		for _, empId := range employeeIds {
+			empData := empDataByEmp[empId]
+
+			empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
+
+			availableSlots := CalculateAvailableTimesPeriod(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
+
+			for _, day := range availableSlots {
+				var firstTimeStr string
+				if len(day.Morning) > 0 {
+					firstTimeStr = day.Morning[0]
+				} else if len(day.Afternoon) > 0 {
+					firstTimeStr = day.Afternoon[0]
+				}
+
+				if firstTimeStr != "" {
+					timeString := fmt.Sprintf("%s %s", day.Date, firstTimeStr)
+					parsedTime, err := time.ParseInLocation("2006-01-02 15:04", timeString, merchantTz)
+					if err == nil {
+						parsedTimeUTC := parsedTime.UTC()
+						if earliestStart == nil || parsedTimeUTC.Before(*earliestStart) {
+							earliestStart = &parsedTimeUTC
+							endTimeUTC := parsedTimeUTC.Add(time.Duration(empData.EmpService.TotalDuration) * time.Minute)
+							earliestEnd = &endTimeUTC
+							currEmpId := empId
+							earliestEmpId = &currEmpId
+						}
+					}
+					break
+				}
 			}
 		}
 
-		if dateStr != "" && timeStr != "" {
-			timeString := fmt.Sprintf("%s %s", dateStr, timeStr)
-			parsedTime, err := time.ParseInLocation("2006-01-02 15:04", timeString, merchantTz)
-			if err == nil {
-				na.FromDate = &parsedTime
-			}
+		if earliestStart != nil {
+			na.FromDate = earliestStart
+			na.ToDate = earliestEnd
+			na.Employee = earliestEmpId
 		}
 		return na, nil
 
@@ -386,20 +372,12 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 		return []DayAvailability{}, err
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, serviceId)
 	if err != nil {
 		return []DayAvailability{}, err
 	}
 
-	if service.MerchantId != merchantId {
-		return []DayAvailability{}, ErrMerchantServiceMismatch
-	}
-
-	if service.BookingType != types.BookingTypeAppointment {
-		return []DayAvailability{}, ErrInvalidBookingType
-	}
-
-	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
+	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
 	if err != nil {
 		return []DayAvailability{}, err
 	}
@@ -419,34 +397,27 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 	endDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
 	dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 
-	var employeeIds []int
-	if employeeId != nil {
-		employeeIds = []int{*employeeId}
-	} else {
-		// TODO: only get employees that are doing this service
-		employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
-		if err != nil {
-			return []DayAvailability{}, err
-		}
-		for _, emp := range employees {
-			employeeIds = append(employeeIds, emp.Id)
-		}
-	}
-
 	dayAvailabilityMap := make(map[string]bool)
 
+	empDataByEmp, err := s.fetchEmployeeAvailabilityData(ctx, serviceId, employeeIds, merchantId, locationId, dateRange)
+	if err != nil {
+		return []DayAvailability{}, err
+	}
+
 	for _, empId := range employeeIds {
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return []DayAvailability{}, err
+		empData := empDataByEmp[empId]
+
+		if empData.EmpService.MerchantId != merchantId {
+			return []DayAvailability{}, ErrMerchantServiceMismatch
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
-		if err != nil {
-			return []DayAvailability{}, err
+		if empData.EmpService.BookingType != types.BookingTypeAppointment {
+			return []DayAvailability{}, ErrInvalidBookingType
 		}
 
-		empDayAvailability := CalculateAvailableDays(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
+		empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
+
+		empDayAvailability := CalculateAvailableDays(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 		for _, day := range empDayAvailability {
 			dayAvailabilityMap[day.Date] = dayAvailabilityMap[day.Date] || day.IsAvailable
@@ -476,25 +447,17 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 		return FormattedAvailableTimes{}, err
 	}
 
-	service, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, merchantId)
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, serviceId)
 	if err != nil {
 		return FormattedAvailableTimes{}, err
 	}
 
-	if service.MerchantId != merchantId {
-		return FormattedAvailableTimes{}, ErrMerchantServiceMismatch
-	}
-
-	if service.BookingType != types.BookingTypeAppointment {
-		return FormattedAvailableTimes{}, ErrInvalidBookingType
+	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
 	}
 
 	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
-	if err != nil {
-		return FormattedAvailableTimes{}, err
-	}
-
-	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, service.Id)
 	if err != nil {
 		return FormattedAvailableTimes{}, err
 	}
@@ -513,36 +476,27 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 	dateRange := timeutil.NewDateRange(bookingDay, bookingDay.AddDate(0, 0, 1), merchantTz)
 	now := time.Now()
 
-	var employeeIds []int
-
-	// TODO: check if the choosen employee does the selected service and belongs to this merchant
-	if employeeId != nil {
-		employeeIds = []int{*employeeId}
-	} else {
-		// TODO: only get employees that are doing this service
-		employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
-		if err != nil {
-			return FormattedAvailableTimes{}, err
-		}
-		for _, emp := range employees {
-			employeeIds = append(employeeIds, emp.Id)
-		}
-	}
-
 	uniqueAvailableTimesMap := make(map[string]time.Time)
 
+	empDataByEmp, err := s.fetchEmployeeAvailabilityData(ctx, serviceId, employeeIds, merchantId, locationId, dateRange)
+	if err != nil {
+		return FormattedAvailableTimes{}, err
+	}
+
 	for _, empId := range employeeIds {
-		reservedTimes, err := s.bookingRepo.GetReservedTimes(ctx, merchantId, locationId, &empId, dateRange.StartTime, dateRange.EndTime)
-		if err != nil {
-			return FormattedAvailableTimes{}, err
+		empData := empDataByEmp[empId]
+
+		if empData.EmpService.MerchantId != merchantId {
+			return FormattedAvailableTimes{}, ErrMerchantServiceMismatch
 		}
 
-		blockedTimes, err := s.blockedTimeRepo.GetBlockedTimes(ctx, merchantId, &empId, dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
-		if err != nil {
-			return FormattedAvailableTimes{}, err
+		if empData.EmpService.BookingType != types.BookingTypeAppointment {
+			return FormattedAvailableTimes{}, ErrInvalidBookingType
 		}
 
-		empAvailableTimes := CalculateAvailableTimes(reservedTimes, blockedTimes, service.Phases, service.TotalDuration, bookingSettings.BufferTime, bookingSettings.BookingWindowMin, bookingDay, bookingDayBusinessHours, now, merchantTz)
+		empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
+
+		empAvailableTimes := CalculateAvailableTimes(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, bookingDay, bookingDayBusinessHours, now, merchantTz)
 
 		for _, slot := range empAvailableTimes {
 			key := slot.Format("15:04")

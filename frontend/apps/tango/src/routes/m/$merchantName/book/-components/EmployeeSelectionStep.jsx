@@ -1,19 +1,23 @@
 import {
+  Clock01Icon,
   PlusSignIcon,
   Tick02Icon,
   UserQuestion02Icon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, ServerError } from "@reservations/components";
-import { activeTeamQueryOptions } from "@reservations/lib";
+import {
+  activeTeamQueryOptions,
+  formatDuration,
+  getDisplayPrice,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { StepContentSkeleton } from "./StepContentSkeleton";
 
-// implement fetching employees by service id and type later
 export default function EmployeeSelectionStep({
   merchantName,
   _locationId,
-  _serviceId,
+  serviceId,
   _serviceType,
   onSelect,
   onAutoSkip,
@@ -23,7 +27,7 @@ export default function EmployeeSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName) });
+  } = useQuery({ ...activeTeamQueryOptions(merchantName, serviceId) });
 
   const [selectedEmployee, setSelectedEmployee] = useState();
 
@@ -82,7 +86,7 @@ export default function EmployeeSelectionStep({
   );
 }
 
-function EmployeeItem({
+export function EmployeeItem({
   employee,
   isSelected,
   onSelect,
@@ -93,10 +97,10 @@ function EmployeeItem({
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(employee)}
-      className={`bg-layer_bg border-border_color flex w-full cursor-pointer
+      className={`bg-layer_bg flex w-full cursor-pointer
         items-center justify-between rounded-md border px-6 py-4.5
         transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-200/5 ${
-          isSelected ? "ring-primary ring-1" : ""
+          isSelected ? "border-primary" : "border-border_color"
         } `}
     >
       <div className="flex items-center gap-4">
@@ -111,14 +115,33 @@ function EmployeeItem({
           <Avatar
             styles="size-20! text-[20px]! shrink-0 rounded-full!"
             img={employee?.avatar_url}
-            initials={`${employee.first_name[0]}${employee.last_name[0]}`}
+            initials={`${employee?.first_name?.[0] ?? ""}${employee?.last_name?.[0] ?? ""}`}
           />
         )}
         <div className="flex flex-col gap-1">
-          <span className="font-medium">{employee.first_name}</span>
-          <span className="text-gray-500">
-            {noPreference ? "Maximal avalability" : "Profil Megtekintése"}
-          </span>
+          <span className="text-lg font-medium">{employee.first_name}</span>
+          {noPreference ? (
+            <span className="text-text_color/80 text-sm">
+              Maximal availability
+            </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              {employee.total_duration && (
+                <div
+                  className="text-text_color/80 flex items-center gap-1 text-sm"
+                >
+                  <Icon icon={Clock01Icon} styles="size-3.5" />
+                  <span>{formatDuration(employee.total_duration)}</span>
+                </div>
+              )}
+              <span className="bg-text_color/80 size-1 rounded-full"></span>
+              {(employee.price || employee.price_type) && (
+                <span className="text-text_color/80 text-sm">
+                  {getDisplayPrice(employee.price, employee.price_type)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div

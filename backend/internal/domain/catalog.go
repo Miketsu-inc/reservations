@@ -26,12 +26,12 @@ type CatalogRepository interface {
 	GetServicesGroupedByCategory(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error)
 	GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
 	GetServiceWithPhases(ctx context.Context, serviceId int, merchantId uuid.UUID) (Service, error)
-	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID) ([]MerchantPageServicesGroupedByCategory, error)
+	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]MerchantPageServicesGroupedByCategory, error)
 	GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error)
 	GetAllServicePageData(ctx context.Context, serviceId int, merchantId uuid.UUID) (ServicePageData, error)
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
-	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (MinimalServiceInfo, error)
-	GetServiceWithPhasesForEmployee(ctx context.Context, serviceId int, employeeId int) (Service, error)
+	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, employeeId *int) (MinimalServiceInfo, error)
+	GetServiceWithPhasesForEmployees(ctx context.Context, serviceId int, employeeIds []int) (map[int]Service, error)
 	GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error)
 	GetEmployeeServiceSettings(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServiceSettings, error)
 	GetEmployeeServicePhaseOverrides(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServicePhase, error)
@@ -164,16 +164,19 @@ type ServicesGroupedByCategory struct {
 }
 
 type MerchantPageService struct {
-	Id              int               `json:"id"`
-	CategoryId      *int              `json:"category_id"`
-	Name            string            `json:"name"`
-	Description     *string           `json:"description"`
-	TotalDuration   int               `json:"total_duration"`
-	Price           *currencyx.Price  `json:"price"`
-	PriceType       types.PriceType   `json:"price_type"`
-	MaxParticipants int               `json:"max_participants"`
-	BookingType     types.BookingType `json:"booking_type"`
-	Sequence        int               `json:"sequence"`
+	Id              int                    `json:"id"`
+	CategoryId      *int                   `json:"category_id"`
+	Name            string                 `json:"name"`
+	Description     *string                `json:"description"`
+	TotalDuration   int                    `json:"total_duration"`
+	MinDuration     int                    `json:"min_duration"`
+	MaxDuration     int                    `json:"max_duration"`
+	Price           *currencyx.Price       `json:"price"`
+	PriceType       types.PriceType        `json:"price_type"`
+	MaxParticipants int                    `json:"max_participants"`
+	BookingType     types.BookingType      `json:"booking_type"`
+	Sequence        int                    `json:"sequence"`
+	PriceOverrides  []ServicePriceOverride `json:"price_overrides,omitempty"`
 }
 
 type MerchantPageServicesGroupedByCategory struct {
@@ -233,11 +236,14 @@ type PublicServiceDetails struct {
 }
 
 type MinimalServiceInfo struct {
-	Name              string           `json:"name"`
-	TotalDuration     int              `json:"total_duration"`
-	Price             *currencyx.Price `json:"price"`
-	PriceType         types.PriceType  `json:"price_type"`
-	FormattedLocation string           `json:"formatted_location"`
+	Name              string
+	TotalDuration     int
+	MinDuration       int
+	MaxDuration       int
+	Price             *currencyx.Price
+	PriceType         types.PriceType
+	FormattedLocation string
+	PriceOverrides    []ServicePriceOverride
 }
 
 type ServicesGroupedByCategoriesForCalendar struct {
@@ -288,4 +294,9 @@ type EmployeeServicePhase struct {
 	ServiceId      int
 	ServicePhaseId int
 	Duration       int
+}
+
+type ServicePriceOverride struct {
+	Price     *currencyx.Price `json:"price_per_person"`
+	PriceType *types.PriceType `json:"price_type"`
 }

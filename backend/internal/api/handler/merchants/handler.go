@@ -125,6 +125,8 @@ func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) e
 }
 
 type dashboardStatisticsResp struct {
+	PeriodStart           string `json:"period_start"`
+	PeriodEnd             string `json:"period_end"`
 	RevenueSum            string `json:"revenue_sum"`
 	RevenueChange         int    `json:"revenue_change"`
 	Bookings              int    `json:"bookings"`
@@ -150,7 +152,12 @@ func (h *Handler) GetDashboardStatistics(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	statistics, err := h.service.GetDashboardStatistics(r.Context(), period)
+	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))
+	if err != nil {
+		return validate.NewError("invalid dashboard time zone")
+	}
+
+	statistics, err := h.service.GetDashboardStatistics(r.Context(), period, timezone)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetDashboardStatistics")
 	}
@@ -161,14 +168,15 @@ func (h *Handler) GetDashboardStatistics(w http.ResponseWriter, r *http.Request)
 }
 
 type dashboardRevenueResp struct {
-	PeriodStart time.Time         `json:"period_start"`
-	PeriodEnd   time.Time         `json:"period_end"`
+	PeriodStart string            `json:"period_start"`
+	PeriodEnd   string            `json:"period_end"`
 	Revenue     []revenueStatResp `json:"revenue"`
 }
 
 type revenueStatResp struct {
-	Value currencyx.Price `json:"value"`
-	Day   time.Time       `json:"day"`
+	Value          currencyx.Price          `json:"value"`
+	FormattedValue currencyx.FormattedPrice `json:"formatted_value"`
+	Day            string                   `json:"day"`
 }
 
 func (h *Handler) GetDashboardRevenue(w http.ResponseWriter, r *http.Request) error {
@@ -177,7 +185,12 @@ func (h *Handler) GetDashboardRevenue(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	revenue, err := h.service.GetDashboardRevenue(r.Context(), period)
+	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))
+	if err != nil {
+		return validate.NewError("invalid dashboard time zone")
+	}
+
+	revenue, err := h.service.GetDashboardRevenue(r.Context(), period, timezone)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetDashboardRevenue")
 	}

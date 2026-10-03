@@ -28,7 +28,8 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@react-email/ui": "^6.9.1",
-    "@tailwindcss/cli": "^4.3.3",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/eslint-plugin-query": "^5.101.4",
     "@tanstack/eslint-plugin-router": "^1.162.0",
     "@tanstack/router-plugin": "^1.168.23",

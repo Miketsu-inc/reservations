@@ -12,7 +12,7 @@ import {
   Youtube,
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
-import { JABULANI_URL, useWindowSize } from "@reservations/lib";
+import { useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -104,12 +104,12 @@ function MerchantPage() {
         className="bg-layer_bg border-border_color sticky top-0 z-50 flex w-full
           items-center justify-between border-b-2 p-3 shadow-sm lg:hidden"
       >
-        <a
+        <Link
           className="hover:bg-hvr_gray rounded-md p-1"
-          href={`${JABULANI_URL}/dashboard`}
+          to="/home"
         >
           <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
-        </a>
+        </Link>
         <span className="truncate px-2.5 text-lg font-semibold">
           {merchantInfo.merchant_name}
         </span>
@@ -130,14 +130,14 @@ function MerchantPage() {
       <div className="mx-auto flex w-full max-w-360 flex-col lg:px-10 lg:pt-6">
         {!isWindowSmall && (
           <>
-            <a
+            <Link
               className="hover:bg-hvr_gray/20 border-border_color bg-layer_bg
                 mb-5 flex h-fit w-fit rounded-full border p-3 shadow-sm
                 transition-colors"
-              href={`${JABULANI_URL}/dashboard`}
+              to="/home"
             >
               <Icon icon={ArrowLeft01Icon} styles="text-text_color size-6" />
-            </a>
+            </Link>
             <div className="flex w-full items-start justify-between pb-4">
               <div className="flex flex-col gap-4">
                 <h1 className="text-4xl font-bold">

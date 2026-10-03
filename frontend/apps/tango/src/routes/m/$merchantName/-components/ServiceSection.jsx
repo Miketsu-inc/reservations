@@ -55,6 +55,10 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
     return active;
   }, [categories, currentCategoryId, showToggles, searchText]);
 
+  const selectedCategoryName = categories?.find(
+    (c) => c.id === selectedService?.category_id
+  )?.name;
+
   if (isError) {
     return <ServerError error={error.message} />;
   }
@@ -66,7 +70,7 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
   return (
     <div className="flex h-full w-full flex-col">
       <ServiceDetails
-        merchantName={merchantInfo.merchant_name}
+        merchantName={merchantName}
         locationId={merchantInfo.location_id}
         service={selectedService}
         isOpen={isDetailsOpen}
@@ -74,7 +78,7 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
           setSelectedService(null);
           setIsDetailsOpen(false);
         }}
-        category={categories[0].name}
+        category={selectedCategoryName}
         router={router}
       />
       <div className="flex w-full flex-col gap-5 pb-5">
@@ -164,8 +168,8 @@ function ServiceItem({ service, router, locationId, onClick }) {
       type="button"
       onClick={() => onClick?.(service)}
       className="group border-border_color bg-layer_bg hover:bg-gray-30 flex
-        w-full items-center justify-between gap-4 rounded-md border p-4
-        text-left shadow-sm transition-all duration-200
+        w-full cursor-pointer items-center justify-between gap-4 rounded-md
+        border p-4 text-left shadow-sm transition-all duration-200
         dark:hover:bg-gray-200/5"
     >
       <div className="flex flex-col gap-2.5">
@@ -174,7 +178,13 @@ function ServiceItem({ service, router, locationId, onClick }) {
         </p>
 
         <div className="flex items-center gap-2">
-          <span>{formatDuration(service.total_duration)}</span>
+          <span>
+            {service.min_duration &&
+            service.max_duration &&
+            service.min_duration !== service.max_duration
+              ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
+              : formatDuration(service.total_duration)}
+          </span>
           <span className="size-1 rounded-full bg-gray-500 dark:bg-gray-400"></span>
           <span className="text-text_color">
             {getDisplayPrice(service.price, service.price_type)}
@@ -192,7 +202,7 @@ function ServiceItem({ service, router, locationId, onClick }) {
       >
         <Button
           variant="primary"
-          styles="py-1.5 px-2"
+          styles="py-1.5 px-3"
           name="Reserve"
           buttonText="Reserve"
         />

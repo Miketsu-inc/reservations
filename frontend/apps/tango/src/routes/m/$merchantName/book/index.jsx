@@ -2,9 +2,7 @@ import { ArrowLeft01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Button, Icon, ServerError } from "@reservations/components";
 import {
   dateAndTimeStringsToLocalDate,
-  formatDuration,
   formatTimeRange,
-  getDisplayPrice,
   invalidateLocalStorageAuth,
   useToast,
   useWindowSize,
@@ -13,7 +11,9 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import AppointmentTimeSelectionStep from "./-components/AppointmentTimeSelectionStep";
-import BookingSummary from "./-components/BookingSummary";
+import BookingSummary, {
+  getBookingSummaryDisplayInfo,
+} from "./-components/BookingSummary";
 import EmployeeSelectionStep from "./-components/EmployeeSelectionStep";
 import ServiceSelectionStep from "./-components/ServiceSelectionStep";
 
@@ -120,7 +120,8 @@ function BookingFLow() {
   const stepTitles = {
     service: "Select a Service",
     employee: "Select a Professional",
-    time: search.type === "class" ? "Select a Class" : "Select Date & Time",
+    time:
+      search.type !== "appointment" ? "Select an Event" : "Select Date & Time",
   };
 
   const canContinue =
@@ -160,6 +161,17 @@ function BookingFLow() {
       time: null,
     });
     router.history.back();
+  }
+
+  function handleEmployeeChange(emp) {
+    updateBookingDetails("employee", emp);
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        employeeId: emp.id,
+      }),
+      replace: true,
+    });
   }
 
   function handleContinue() {
@@ -260,6 +272,12 @@ function BookingFLow() {
     }
   }
 
+  const summaryInfo = getBookingSummaryDisplayInfo({
+    fetchedSummary,
+    selectedSummary,
+    searchEmployeeId: search.employeeId,
+  });
+
   return (
     <div
       className="bg-bg_color relative flex min-h-screen w-full flex-col gap-6"
@@ -337,9 +355,15 @@ function BookingFLow() {
                 onSelect={(data) => {
                   updateBookingDetails("time", data);
                 }}
+                onEmployeeChange={handleEmployeeChange}
                 employee={{
-                  first_name: fetchedSummary?.employee_first_name,
-                  last_name: fetchedSummary?.employee_last_name,
+                  first_name:
+                    selectedSummary.employee?.first_name ||
+                    fetchedSummary?.employee_first_name,
+                  last_name:
+                    selectedSummary.employee?.last_name ||
+                    fetchedSummary?.employee_last_name,
+                  avatar_url: selectedSummary.employee?.avatar_url,
                 }}
               />
             )}
@@ -356,6 +380,7 @@ function BookingFLow() {
               <BookingSummary
                 fetchedSummary={fetchedSummary}
                 selectedSummary={selectedSummary}
+                searchEmployeeId={search.employeeId}
                 isLoading={isLoading}
                 onContinue={handleContinue}
                 canContinue={canContinue}
@@ -374,29 +399,21 @@ function BookingFLow() {
           ${canContinue ? "translate-y-0" : "translate-y-full"}`}
         >
           <div className="flex flex-col">
-            <span className="text-lg font-medium">
-              {fetchedSummary?.price_type
-                ? getDisplayPrice(
-                    fetchedSummary?.price,
-                    fetchedSummary?.price_type
-                  )
-                : getDisplayPrice(
-                    selectedSummary.service?.price,
-                    selectedSummary.service?.price_type
-                  )}
-            </span>
+            {summaryInfo.priceDisplay && (
+              <span className="text-lg font-medium">
+                {summaryInfo.priceDisplay}
+              </span>
+            )}
             {selectedSummary.time?.time ? (
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {formatTimeRange(
                   selectedSummary.time?.time,
-                  fetchedSummary.total_duration
+                  summaryInfo.totalDuration
                 )}
               </span>
             ) : (
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {fetchedSummary?.service_name
-                  ? formatDuration(fetchedSummary?.total_duration)
-                  : formatDuration(selectedSummary.service?.total_duration)}
+                {summaryInfo.durationDisplay}
               </span>
             )}
           </div>

@@ -210,15 +210,41 @@ func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, erro
 	return teamMembers, nil
 }
 
-func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string) ([]domain.Employee, error) {
+func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string, serviceId *int) ([]domain.EmployeeWithServiceOverrides, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.Employee{}, err
+		return []domain.EmployeeWithServiceOverrides{}, err
 	}
 
-	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+	if serviceId != nil {
+		employees, err := s.teamRepo.GetActiveEmployeesForService(ctx, merchantId, *serviceId)
+		if err != nil {
+			return []domain.EmployeeWithServiceOverrides{}, err
+		}
+
+		return employees, nil
+	}
+
+	emps, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
 	if err != nil {
-		return []domain.Employee{}, err
+		return []domain.EmployeeWithServiceOverrides{}, err
+	}
+
+	employees := make([]domain.EmployeeWithServiceOverrides, len(emps))
+
+	for i, emp := range emps {
+		employees[i] = domain.EmployeeWithServiceOverrides{
+			Id:              emp.Id,
+			Role:            emp.Role,
+			FirstName:       emp.FirstName,
+			LastName:        emp.LastName,
+			Email:           emp.Email,
+			PhoneNumber:     emp.PhoneNumber,
+			TotalDuration:   nil,
+			Price:           nil,
+			PriceType:       nil,
+			MaxParticipants: nil,
+		}
 	}
 
 	return employees, nil

@@ -190,14 +190,19 @@ export function meQueryOptions() {
   });
 }
 
-async function fetchActiveTeam(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/team`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchActiveTeam(name, serviceId) {
+  const query = serviceId ? `?serviceId=${serviceId}` : "";
+
+  const response = await fetch(
+    `/api/v1/public/merchants/${name}/team${query}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
   const result = await response.json();
   if (!response.ok) {
     throw result.error;
@@ -206,17 +211,25 @@ async function fetchActiveTeam(name) {
   }
 }
 
-export function activeTeamQueryOptions(name) {
+export function activeTeamQueryOptions(name, serviceId) {
   return queryOptions({
-    queryKey: ["active-team", name],
-    queryFn: () => fetchActiveTeam(name),
+    queryKey: ["active-team", name, serviceId],
+    queryFn: () => fetchActiveTeam(name, serviceId),
   });
 }
 
-async function fetchMerchantServices(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}/services`, {
-    method: "GET",
-  });
+async function fetchMerchantServices(name, employeeId) {
+  const query = employeeId ? `?employeeId=${employeeId}` : "";
+  const response = await fetch(
+    `/api/v1/public/merchants/${name}/services${query}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
   const result = await response.json();
   if (!response.ok) {
     throw result.error;
@@ -225,10 +238,10 @@ async function fetchMerchantServices(name) {
   }
 }
 
-export function merchantServicesQueryOptions(name) {
+export function merchantServicesQueryOptions(name, employeeId) {
   return queryOptions({
-    queryKey: ["merchant-services", name],
-    queryFn: () => fetchMerchantServices(name),
+    queryKey: ["merchant-services", name, employeeId],
+    queryFn: () => fetchMerchantServices(name, employeeId),
   });
 }
 

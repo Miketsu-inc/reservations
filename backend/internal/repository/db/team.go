@@ -123,6 +123,28 @@ func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid
 	return members, nil
 }
 
+func (r *teamRepository) GetActiveEmployeesForService(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]domain.EmployeeWithServiceOverrides, error) {
+	query := `
+	select e.id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number,
+		coalesce(es.total_duration, s.total_duration) as total_duration, coalesce(es.price_type, s.price_type) as price_type, 
+		coalesce(es.price_per_person, s.price_per_person) as price_per_person, coalesce(es.max_participants, s.max_participants) as max_participants
+	from "Employee" e
+	join "EmployeeService" es on es.employee_id = e.id and es.service_id = $2
+	join "Service" s on s.id = es.service_id and s.merchant_id = $1
+	left join "User" u on u.id = e.user_id
+	where e.merchant_id = $1 and e.is_active is true
+	order by first_name, last_name, e.id`
+
+	rows, _ := r.db.Query(ctx, query, merchantId, serviceId)
+	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.EmployeeWithServiceOverrides])
+	if err != nil {
+		return []domain.EmployeeWithServiceOverrides{}, fmt.Errorf("GetActiveEmployeesForService: %w", err)
+	}
+
+	return members, nil
+}
+
 func (r *teamRepository) GetMerchantIdByEmployee(ctx context.Context, employeeId int) (uuid.UUID, error) {
 	query := `
 	select merchant_id

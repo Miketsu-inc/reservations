@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bojanz/currency"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -87,43 +88,90 @@ func (s *Service) UpdateName(ctx context.Context, input UpdateNameInput) error {
 	return nil
 }
 
-func getPeriodDates(utcDate time.Time, period int) (time.Time, time.Time, time.Time, error) {
-	// -1 because the last is the current day
-	currPeriodStart := utils.TruncateToDay(utcDate.AddDate(0, 0, -(period - 1)))
-	prevPeriodStart := utils.TruncateToDay(currPeriodStart.AddDate(0, 0, -period))
+func getPeriodDates(now time.Time, period int, timezone *time.Location) (time.Time, time.Time, time.Time) {
+	localNow := now.In(timezone)
+	periodEnd := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, timezone)
 
-	return currPeriodStart, utils.TruncateToDay(utcDate), prevPeriodStart, nil
+	// -1 because the last date is the current date in the requested timezone.
+	currPeriodStart := periodEnd.AddDate(0, 0, -(period - 1))
+	prevPeriodStart := currPeriodStart.AddDate(0, 0, -period)
+
+	return currPeriodStart, periodEnd, prevPeriodStart
 }
 
-func (s *Service) GetDashboardStatistics(ctx context.Context, period int) (domain.DashboardStatistics, error) {
-	utcDate := time.Now().UTC()
+func fillRevenueMissingDays(revenue []domain.RevenueStat, periodStart time.Time, periodEnd time.Time,
+	currencyCode string) ([]domain.RevenueStat, error) {
 
-	currPeriodStart, _, prevPeriodStart, err := getPeriodDates(utcDate, period)
+	zeroAmount, err := currency.NewAmount("0", currencyCode)
 	if err != nil {
-		return domain.DashboardStatistics{}, err
+		return nil, fmt.Errorf("format dashboard revenue zero: %w", err)
 	}
 
+	revenueByDay := make(map[string]domain.RevenueStat, len(revenue))
+	for _, stat := range revenue {
+		revenueByDay[stat.Day.Format(time.DateOnly)] = stat
+	}
+
+	completeRevenue := make([]domain.RevenueStat, 0)
+	for day := periodStart; !day.After(periodEnd); day = day.AddDate(0, 0, 1) {
+		stat, ok := revenueByDay[day.Format(time.DateOnly)]
+		if !ok {
+			stat = domain.RevenueStat{Value: currencyx.Price{Amount: zeroAmount}}
+		}
+
+		stat.Day = day
+		completeRevenue = append(completeRevenue, stat)
+	}
+
+	return completeRevenue, nil
+}
+
+type GetDashboardStatisticsResult struct {
+	PeriodStart time.Time
+	PeriodEnd   time.Time
+	Statistics  domain.DashboardStatistics
+}
+
+func (s *Service) GetDashboardStatistics(ctx context.Context, period int, timezone *time.Location) (GetDashboardStatisticsResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	statistics, err := s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart, utcDate, prevPeriodStart)
+	now := time.Now()
+	currPeriodStart, periodEnd, prevPeriodStart := getPeriodDates(now, period, timezone)
+
+	statistics, err := s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart.UTC(), now.UTC(), prevPeriodStart.UTC())
 	if err != nil {
-		return domain.DashboardStatistics{}, err
+		return GetDashboardStatisticsResult{}, err
 	}
 
-	return statistics, nil
+	return GetDashboardStatisticsResult{
+		PeriodStart: currPeriodStart,
+		PeriodEnd:   periodEnd,
+		Statistics:  statistics,
+	}, nil
 }
 
-func (s *Service) GetDashboardRevenue(ctx context.Context, period int) (domain.DashboardRevenue, error) {
-	utcDate := time.Now().UTC()
+func (s *Service) GetDashboardRevenue(ctx context.Context, period int, timezone *time.Location) (domain.DashboardRevenue, error) {
+	actor := actor.MustGetFromContext(ctx)
 
-	currPeriodStart, periodEnd, _, err := getPeriodDates(utcDate, period)
+	now := time.Now()
+	currPeriodStart, periodEnd, _ := getPeriodDates(now, period, timezone)
+
+	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart.UTC(), now.UTC(), timezone)
 	if err != nil {
 		return domain.DashboardRevenue{}, err
 	}
 
-	actor := actor.MustGetFromContext(ctx)
+	currencyCode := ""
+	if len(revenue) == 0 {
+		currencyCode, err = s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
+		if err != nil {
+			return domain.DashboardRevenue{}, err
+		}
+	} else {
+		currencyCode = revenue[0].Value.CurrencyCode()
+	}
 
-	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart, utcDate)
+	completeRevenue, err := fillRevenueMissingDays(revenue, currPeriodStart, periodEnd, currencyCode)
 	if err != nil {
 		return domain.DashboardRevenue{}, err
 	}
@@ -131,7 +179,7 @@ func (s *Service) GetDashboardRevenue(ctx context.Context, period int) (domain.D
 	return domain.DashboardRevenue{
 		PeriodStart: currPeriodStart,
 		PeriodEnd:   periodEnd,
-		Revenue:     revenue,
+		Revenue:     completeRevenue,
 	}, nil
 }
 

@@ -57,16 +57,18 @@ func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboar
 	}
 }
 
-func mapToDashboardStatisticsResp(in domain.DashboardStatistics) dashboardStatisticsResp {
+func mapToDashboardStatisticsResp(in merchantServ.GetDashboardStatisticsResult) dashboardStatisticsResp {
 	return dashboardStatisticsResp{
-		RevenueSum:            in.RevenueSum,
-		RevenueChange:         in.RevenueChange,
-		Bookings:              in.Bookings,
-		BookingsChange:        in.BookingsChange,
-		Cancellations:         in.Cancellations,
-		CancellationsChange:   in.CancellationsChange,
-		AverageDuration:       in.AverageDuration,
-		AverageDurationChange: in.AverageDurationChange,
+		PeriodStart:           in.PeriodStart.Format(time.DateOnly),
+		PeriodEnd:             in.PeriodEnd.Format(time.DateOnly),
+		RevenueSum:            in.Statistics.RevenueSum,
+		RevenueChange:         in.Statistics.RevenueChange,
+		Bookings:              in.Statistics.Bookings,
+		BookingsChange:        in.Statistics.BookingsChange,
+		Cancellations:         in.Statistics.Cancellations,
+		CancellationsChange:   in.Statistics.CancellationsChange,
+		AverageDuration:       in.Statistics.AverageDuration,
+		AverageDurationChange: in.Statistics.AverageDurationChange,
 	}
 }
 
@@ -74,14 +76,15 @@ func mapToDashboardRevenueResp(in domain.DashboardRevenue) dashboardRevenueResp 
 	revenue := make([]revenueStatResp, len(in.Revenue))
 	for i, stat := range in.Revenue {
 		revenue[i] = revenueStatResp{
-			Value: stat.Value,
-			Day:   stat.Day,
+			Value:          stat.Value,
+			FormattedValue: stat.Value.ToFormatted(),
+			Day:            stat.Day.Format(time.DateOnly),
 		}
 	}
 
 	return dashboardRevenueResp{
-		PeriodStart: in.PeriodStart,
-		PeriodEnd:   in.PeriodEnd,
+		PeriodStart: in.PeriodStart.Format(time.DateOnly),
+		PeriodEnd:   in.PeriodEnd.Format(time.DateOnly),
 		Revenue:     revenue,
 	}
 }

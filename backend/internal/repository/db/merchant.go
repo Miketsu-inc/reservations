@@ -426,10 +426,11 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 }
 
 // TODO: in the future only completed bookings should count towards revenue
-func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate, endDate time.Time) ([]domain.RevenueStat, error) {
+// Time zone conversion is needed here because we group by day
+func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate, endDate time.Time, timezone *time.Location) ([]domain.RevenueStat, error) {
 	query := `
 	SELECT
-		DATE(b.from_date) AS day,
+		DATE(b.from_date AT TIME ZONE $4::text) AS day,
 		ROW(
 			SUM((b.total_price).number),
 			(b.total_price).currency
@@ -439,11 +440,11 @@ func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uui
 		AND b.from_date >= $2
 		AND b.from_date < $3
 		AND b.status NOT IN ('cancelled')
-	GROUP BY day, (b.total_price).currency
+	GROUP BY DATE(b.from_date AT TIME ZONE $4::text), (b.total_price).currency
 	ORDER BY day
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startDate, endDate)
+	rows, _ := r.db.Query(ctx, query, merchantId, startDate, endDate, timezone.String())
 	revenue, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.RevenueStat])
 	if err != nil {
 		return []domain.RevenueStat{}, fmt.Errorf("GetRevenueStats: %w", err)
