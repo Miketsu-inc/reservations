@@ -205,22 +205,23 @@ func (s *Service) CheckUrl(ctx context.Context, input CheckUrlInput) (string, er
 	return urlName, nil
 }
 
-func (s *Service) GetBusinessProfileSettings(ctx context.Context) (domain.BusinessProfileSettings, error) {
+func (s *Service) GetMerchantProfileSettings(ctx context.Context) (domain.MerchantProfileSettings, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	settings, err := s.merchantRepo.GetBusinessProfileSettings(ctx, actor.MerchantId)
+	settings, err := s.merchantRepo.GetMerchantProfileSettings(ctx, actor.MerchantId)
 	if err != nil {
-		return domain.BusinessProfileSettings{}, err
+		return domain.MerchantProfileSettings{}, err
 	}
 
 	return settings, nil
 }
 
-func (s *Service) UpdateBusinessProfileSettings(ctx context.Context, settings domain.BusinessProfileSettings) error {
+func (s *Service) UpdateMerchantProfileSettings(ctx context.Context, settings domain.MerchantProfileSettings) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	if err := s.merchantRepo.UpdateBusinessProfileSettings(ctx, actor.MerchantId, settings); err != nil {
-		return fmt.Errorf("error while updating business profile settings: %w", err)
+	err := s.merchantRepo.UpdateMerchantProfileSettings(ctx, actor.MerchantId, settings)
+	if err != nil {
+		return err
 	}
 
 	return nil

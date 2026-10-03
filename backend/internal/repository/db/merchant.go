@@ -75,7 +75,7 @@ func (r *merchantRepository) ChangeMerchantNameAndURL(ctx context.Context, merch
 	return nil
 }
 
-func (r *merchantRepository) UpdateBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID, settings domain.BusinessProfileSettings) error {
+func (r *merchantRepository) UpdateMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID, settings domain.MerchantProfileSettings) error {
 	query := `
 	update "Merchant"
 	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
@@ -84,7 +84,7 @@ func (r *merchantRepository) UpdateBusinessProfileSettings(ctx context.Context, 
 	_, err := r.db.Exec(ctx, query, merchantId, settings.Introduction, settings.Announcement, settings.AboutUs,
 		settings.PaymentInfo, settings.ParkingInfo)
 	if err != nil {
-		return fmt.Errorf("UpdateBusinessProfileSettings: %w", err)
+		return fmt.Errorf("UpdateMerchantProfileSettings: %w", err)
 	}
 
 	return nil
@@ -245,17 +245,17 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 	return mi, nil
 }
 
-func (r *merchantRepository) GetBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID) (domain.BusinessProfileSettings, error) {
+func (r *merchantRepository) GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (domain.MerchantProfileSettings, error) {
 	query := `
 	select introduction, announcement, about_us, parking_info, payment_info
 	from "Merchant"
-	where id = $1;`
+	where id = $1
+	`
 
-	var settings domain.BusinessProfileSettings
-	err := r.db.QueryRow(ctx, query, merchantId).Scan(&settings.Introduction, &settings.Announcement,
-		&settings.AboutUs, &settings.ParkingInfo, &settings.PaymentInfo)
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	settings, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.MerchantProfileSettings])
 	if err != nil {
-		return domain.BusinessProfileSettings{}, fmt.Errorf("GetBusinessProfileSettings: %w", err)
+		return domain.MerchantProfileSettings{}, fmt.Errorf("GetMerchantProfileSettings: %w", err)
 	}
 
 	return settings, nil
@@ -265,11 +265,11 @@ func (r *merchantRepository) GetSchedulingSettings(ctx context.Context, merchant
 	query := `
 	select cancel_deadline, booking_window_min, booking_window_max, buffer_time, approval_policy
 	from "Merchant"
-	where id = $1;`
+	where id = $1
+	`
 
-	var settings domain.SchedulingSettings
-	err := r.db.QueryRow(ctx, query, merchantId).Scan(&settings.CancelDeadline, &settings.BookingWindowMin,
-		&settings.BookingWindowMax, &settings.BufferTime, &settings.ApprovalPolicy)
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	settings, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.SchedulingSettings])
 	if err != nil {
 		return domain.SchedulingSettings{}, fmt.Errorf("GetSchedulingSettings: %w", err)
 	}
@@ -287,8 +287,8 @@ func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.
 	join "Service" s on s.merchant_id = $1
 	where m.id = $1 and s.id = $2`
 
-	var mbs domain.MerchantBookingSettings
-	err := r.db.QueryRow(ctx, query, merchantId, serviceId).Scan(&mbs.BufferTime, &mbs.BookingWindowMax, &mbs.BookingWindowMin, &mbs.ApprovalPolicy)
+	rows, _ := r.db.Query(ctx, query, merchantId, serviceId)
+	mbs, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.MerchantBookingSettings])
 	if err != nil {
 		return domain.MerchantBookingSettings{}, fmt.Errorf("GetBookingSettingsByMerchantAndService: %w", err)
 	}

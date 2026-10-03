@@ -101,8 +101,8 @@ func mapToCheckUrlResp(in string) checkUrlResp {
 	}
 }
 
-func mapToBusinessProfileSettings(in businessProfileSettingsReq) domain.BusinessProfileSettings {
-	return domain.BusinessProfileSettings{
+func mapToMerchantProfileSettings(in merchantProfileSettingsReq) domain.MerchantProfileSettings {
+	return domain.MerchantProfileSettings{
 		Introduction: in.Introduction,
 		Announcement: in.Announcement,
 		AboutUs:      in.AboutUs,

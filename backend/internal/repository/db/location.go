@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -42,10 +43,8 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 	where id = $1 and merchant_id = $2
 	`
 
-	var location domain.Location
-	err := r.db.QueryRow(ctx, query, locationId, merchantId).Scan(&location.Id, &location.MerchantId, &location.Country, &location.City,
-		&location.PostalCode, &location.Address, &location.GeoPoint, &location.PlaceId, &location.FormattedLocation, &location.IsPrimary,
-		&location.IsActive)
+	rows, _ := r.db.Query(ctx, query, locationId, merchantId)
+	location, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Location])
 	if err != nil {
 		return domain.Location{}, fmt.Errorf("GetLocation: %w", err)
 	}

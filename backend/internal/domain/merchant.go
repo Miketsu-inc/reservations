@@ -18,7 +18,7 @@ type MerchantRepository interface {
 	DeleteMerchant(ctx context.Context, employeeId int, merchantId uuid.UUID) error
 
 	ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, name string, urlName string) error
-	UpdateBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID, settings BusinessProfileSettings) error
+	UpdateMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID, settings MerchantProfileSettings) error
 	UpdateSchedulingSettings(ctx context.Context, merchantId uuid.UUID, settings SchedulingSettings) error
 
 	IsMerchantUrlUnique(ctx context.Context, urlName string) (bool, error)
@@ -29,7 +29,7 @@ type MerchantRepository interface {
 	GetMerchantCurrency(ctx context.Context, merchantId uuid.UUID) (string, error)
 	GetMerchantSubscriptionTier(ctx context.Context, merchantId uuid.UUID) (types.SubTier, error)
 	GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (MerchantInfo, error)
-	GetBusinessProfileSettings(ctx context.Context, merchantId uuid.UUID) (BusinessProfileSettings, error)
+	GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (MerchantProfileSettings, error)
 	GetSchedulingSettings(ctx context.Context, merchantId uuid.UUID) (SchedulingSettings, error)
 	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
 	GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error)
@@ -96,27 +96,27 @@ type MerchantInfo struct {
 	BusinessHoursStatus BusinessHoursStatus `json:"business_hours_status"`
 }
 
-type BusinessProfileSettings struct {
-	Introduction string `json:"introduction" db:"introduction"`
-	Announcement string `json:"announcement" db:"announcement"`
-	AboutUs      string `json:"about_us" db:"about_us"`
-	ParkingInfo  string `json:"parking_info" db:"parking_info"`
-	PaymentInfo  string `json:"payment_info" db:"payment_info"`
+type MerchantProfileSettings struct {
+	Introduction string `db:"introduction"`
+	Announcement string `db:"announcement"`
+	AboutUs      string `db:"about_us"`
+	ParkingInfo  string `db:"parking_info"`
+	PaymentInfo  string `db:"payment_info"`
 }
 
 type MerchantBookingSettings struct {
-	BookingWindowMin int                `json:"booking_window_min" db:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max" db:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time" db:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType `json:"approval_policy" db:"approval_policy"`
+	BookingWindowMin int                `db:"booking_window_min"`
+	BookingWindowMax int                `db:"booking_window_max"`
+	BufferTime       int                `db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `db:"approval_policy"`
 }
 
 type SchedulingSettings struct {
-	CancelDeadline   int                `json:"cancel_deadline"`
-	BookingWindowMin int                `json:"booking_window_min"`
-	BookingWindowMax int                `json:"booking_window_max"`
-	BufferTime       int                `json:"buffer_time"`
-	ApprovalPolicy   types.ApprovalType `json:"approval_policy"`
+	CancelDeadline   int                `db:"cancel_deadline"`
+	BookingWindowMin int                `db:"booking_window_min"`
+	BookingWindowMax int                `db:"booking_window_max"`
+	BufferTime       int                `db:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `db:"approval_policy"`
 }
 
 type RevenueStat struct {

@@ -60,9 +60,9 @@ function BlockedTimeTypesPage() {
 
   const hasData = blockedTypes?.length > 0;
   const refreshBlockedTypes = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [merchantId, "blocked-time-types"],
-    });
+    await queryClient.invalidateQueries(
+      blockedTimeTypesQueryOptions(merchantId)
+    );
   }, [merchantId, queryClient]);
 
   function openModal(timeType = null) {
@@ -74,7 +74,13 @@ function BlockedTimeTypesPage() {
     try {
       const response = await fetch(
         `/api/v1/merchants/${merchantId}/blocked-time-types/${id}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+        }
       );
 
       if (!response.ok) {
@@ -95,6 +101,7 @@ function BlockedTimeTypesPage() {
   }
 
   if (isLoading) return <Loading />;
+
   if (isError) return <ServerError error={error.message} />;
 
   return (
@@ -155,7 +162,8 @@ function BlockedTimeTypesPage() {
                     <PopoverClose asChild>
                       <button
                         type="button"
-                        className="hover:bg-hvr_gray flex items-center gap-2 rounded-lg p-2"
+                        className="hover:bg-hvr_gray flex items-center gap-2
+                          rounded-lg p-2"
                         onClick={() => openModal(type)}
                       >
                         <Icon icon={Edit03Icon} styles="size-4" />
@@ -165,7 +173,8 @@ function BlockedTimeTypesPage() {
                     <PopoverClose asChild>
                       <button
                         type="button"
-                        className="hover:bg-hvr_gray flex items-center gap-2 rounded-lg p-2 text-red-600 dark:text-red-400"
+                        className="hover:bg-hvr_gray flex items-center gap-2
+                          rounded-lg p-2 text-red-600 dark:text-red-400"
                         onClick={() => handleDelete(type.id)}
                       >
                         <Icon icon={Delete02Icon} styles="size-4" />
@@ -179,7 +188,10 @@ function BlockedTimeTypesPage() {
           ))}
         </div>
       ) : (
-        <div className="border-border_color bg-layer_bg flex flex-col items-center rounded-xl border px-4 py-12 text-center shadow-sm">
+        <div
+          className="border-border_color bg-layer_bg flex flex-col items-center
+            rounded-xl border px-4 py-12 text-center shadow-sm"
+        >
           <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
             <Icon icon={PlusSignIcon} styles="size-6" />
           </div>
@@ -187,8 +199,8 @@ function BlockedTimeTypesPage() {
             No blocked time types yet
           </h2>
           <p className="text-text_color/65 mt-1 max-w-sm text-sm leading-6">
-            Add templates such as lunch, a meeting, or personal time so they
-            can be placed on the calendar quickly.
+            Add templates such as lunch, a meeting, or personal time so they can
+            be placed on the calendar quickly.
           </p>
           <Button
             variant="primary"

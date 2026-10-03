@@ -16,15 +16,15 @@ type LocationRepository interface {
 }
 
 type Location struct {
-	Id                int            `json:"ID"`
-	MerchantId        uuid.UUID      `json:"merchant_id"`
-	Country           *string        `json:"country"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-	PlaceId           *string        `json:"place_id"`
-	FormattedLocation string         `json:"formatted_location"`
-	IsPrimary         bool           `json:"is_primary"`
-	IsActive          bool           `json:"is_active"`
+	Id                int            `db:"ID"`
+	MerchantId        uuid.UUID      `db:"merchant_id"`
+	Country           *string        `db:"country"`
+	City              *string        `db:"city"`
+	PostalCode        *string        `db:"postal_code"`
+	Address           *string        `db:"address"`
+	GeoPoint          types.GeoPoint `db:"geo_point"`
+	PlaceId           *string        `db:"place_id"`
+	FormattedLocation string         `db:"formatted_location"`
+	IsPrimary         bool           `db:"is_primary"`
+	IsActive          bool           `db:"is_active"`
 }

@@ -1,6 +1,7 @@
 import { Loading, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
+  businessHoursQueryOptions,
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
   useToast,
@@ -145,9 +146,7 @@ function BusinessHoursPage() {
         businessHoursSettingsQueryOptions(merchantId).queryKey,
         updatedBusinessHours
       );
-      queryClient.invalidateQueries({
-        queryKey: [merchantId, "normalized-business-hours"],
-      });
+      queryClient.invalidateQueries(businessHoursQueryOptions(merchantId));
       setBusinessHoursChanges(null);
       showToast({
         message: "Business hours updated successfully",
@@ -178,9 +177,7 @@ function BusinessHoursPage() {
           data={businessHours}
           setBusinessHours={(updater) =>
             setBusinessHoursChanges((current) =>
-              updater(
-                current ?? savedBusinessHours ?? emptyBusinessHours
-              )
+              updater(current ?? savedBusinessHours ?? emptyBusinessHours)
             )
           }
           preferences={preferences}

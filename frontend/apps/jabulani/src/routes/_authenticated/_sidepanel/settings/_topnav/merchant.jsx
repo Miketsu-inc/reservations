@@ -10,9 +10,9 @@ import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
 
-async function fetchBusinessProfileSettings(merchantId) {
+async function fetchMerchantProfileSettings(merchantId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/settings/business-profile`
+    `/api/v1/merchants/${merchantId}/settings/merchant-profile`
   );
   const result = await response.json();
 
@@ -24,16 +24,16 @@ async function fetchBusinessProfileSettings(merchantId) {
   return result.data;
 }
 
-function businessProfileSettingsQueryOptions(merchantId) {
+function merchantProfileSettingsQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: [merchantId, "business-profile-settings"],
-    queryFn: () => fetchBusinessProfileSettings(merchantId),
+    queryKey: [merchantId, "merchant-profile-settings"],
+    queryFn: () => fetchMerchantProfileSettings(merchantId),
   });
 }
 
-async function updateBusinessProfileSettings(merchantId, settings) {
+async function updateMerchantProfileSettings(merchantId, settings) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/settings/business-profile`,
+    `/api/v1/merchants/${merchantId}/settings/merchant-profile`,
     {
       method: "PATCH",
       headers: {
@@ -64,7 +64,7 @@ export const Route = createFileRoute(
     },
   }) => {
     await queryClient.ensureQueryData(
-      businessProfileSettingsQueryOptions(merchantId)
+      merchantProfileSettingsQueryOptions(merchantId)
     );
   },
   errorComponent: ({ error }) => <ServerError error={error.message} />,
@@ -75,7 +75,7 @@ function MerchantPage() {
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
   const { data: profileSettings, isLoading } = useQuery(
-    businessProfileSettingsQueryOptions(merchantId)
+    merchantProfileSettingsQueryOptions(merchantId)
   );
   const [changes, setChanges] = useState({});
 
@@ -83,15 +83,15 @@ function MerchantPage() {
   const hasUnsavedChanges = Object.keys(changes).length > 0;
 
   const updateMutation = useMutation({
-    mutationFn: () => updateBusinessProfileSettings(merchantId, merchantInfo),
+    mutationFn: () => updateMerchantProfileSettings(merchantId, merchantInfo),
     onSuccess: (updatedSettings) => {
       queryClient.setQueryData(
-        businessProfileSettingsQueryOptions(merchantId).queryKey,
+        merchantProfileSettingsQueryOptions(merchantId).queryKey,
         updatedSettings
       );
       setChanges({});
       showToast({
-        message: "Business profile updated successfully",
+        message: "Merchant profile updated successfully",
         variant: "success",
       });
     },
@@ -106,7 +106,7 @@ function MerchantPage() {
   return (
     <div className="flex flex-col gap-12 pb-28 md:pb-8">
       <SettingsPageHeader
-        title="Business profile"
+        title="Merchant profile"
         description="Manage the information customers see on your public booking page."
         action={
           <SettingsSaveAction
