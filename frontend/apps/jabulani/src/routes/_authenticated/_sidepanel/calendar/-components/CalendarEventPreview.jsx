@@ -19,7 +19,7 @@ import {
   timeStringFromDate,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const STATUS_STYLES = {
   booked:
@@ -32,6 +32,92 @@ const STATUS_STYLES = {
   "no-show":
     "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
 };
+
+const DEFAULT_PREVIEW_ALIGN_OFFSET = -8;
+const PREVIEW_HEADER_GAP = 8;
+const activePreviewListeners = new Set();
+let activePreviewId = null;
+let removeScrollListener = null;
+
+function subscribeToActivePreview(listener) {
+  activePreviewListeners.add(listener);
+
+  return () => {
+    activePreviewListeners.delete(listener);
+  };
+}
+
+function getActivePreviewId() {
+  return activePreviewId;
+}
+
+function getServerActivePreviewId() {
+  return null;
+}
+
+function setActivePreviewId(value) {
+  const nextPreviewId =
+    typeof value === "function" ? value(activePreviewId) : value;
+
+  if (nextPreviewId === activePreviewId) return;
+
+  activePreviewId = nextPreviewId;
+  removeScrollListener?.();
+  removeScrollListener = null;
+
+  if (activePreviewId && typeof window !== "undefined") {
+    function closePreviewOnScroll() {
+      setActivePreviewId(null);
+    }
+
+    window.addEventListener("scroll", closePreviewOnScroll, {
+      capture: true,
+      once: true,
+    });
+    removeScrollListener = () => {
+      window.removeEventListener("scroll", closePreviewOnScroll, true);
+    };
+  }
+
+  activePreviewListeners.forEach((listener) => listener());
+}
+
+function getPreviewAlignOffset(trigger) {
+  if (!trigger) return DEFAULT_PREVIEW_ALIGN_OFFSET;
+
+  let scrollContainer = trigger.parentElement;
+
+  while (scrollContainer) {
+    const { overflowY } = getComputedStyle(scrollContainer);
+
+    if (overflowY === "auto" || overflowY === "scroll") break;
+    scrollContainer = scrollContainer.parentElement;
+  }
+
+  if (!scrollContainer) return DEFAULT_PREVIEW_ALIGN_OFFSET;
+
+  const dayHeader = [
+    ...scrollContainer.querySelectorAll('[role="rowgroup"]'),
+  ].find((rowGroup) => rowGroup.querySelector('[role="columnheader"]'));
+
+  if (!dayHeader) return DEFAULT_PREVIEW_ALIGN_OFFSET;
+
+  const triggerRect = trigger.getBoundingClientRect();
+  const scrollContainerRect = scrollContainer.getBoundingClientRect();
+  const dayHeaderRect = dayHeader.getBoundingClientRect();
+  const isDayHeaderVisible =
+    dayHeaderRect.bottom > scrollContainerRect.top &&
+    dayHeaderRect.top < scrollContainerRect.bottom;
+
+  if (!isDayHeaderVisible) return DEFAULT_PREVIEW_ALIGN_OFFSET;
+
+  const minimumPreviewTop = dayHeaderRect.bottom + PREVIEW_HEADER_GAP;
+
+  return Math.max(
+    DEFAULT_PREVIEW_ALIGN_OFFSET,
+    minimumPreviewTop - triggerRect.top
+  );
+}
 
 function capitalize(value) {
   if (!value) return "";
@@ -171,7 +257,8 @@ function TeamMemberAvatars({ members }) {
               img={member.avatar_url}
               initials={initials || "?"}
               alt={name}
-              styles="size-8! rounded-full! border-2 border-layer_bg text-[11px]!"
+              styles="size-8! rounded-full! border-2 border-layer_bg
+                text-[11px]!"
             />
           </span>
         );
@@ -314,10 +401,7 @@ function BlockedTimePreview({ event, timeFormat }) {
   const { extendedProps } = event;
   const { merchantId } = useAuth();
   const employeeIds = extendedProps.employee_ids ?? [];
-  const {
-    data: teamMembers = [],
-    isPending,
-  } = useQuery({
+  const { data: teamMembers = [], isPending } = useQuery({
     ...calendarTeamMembersQueryOptions(merchantId),
     enabled: employeeIds.length > 0,
   });
@@ -357,19 +441,44 @@ function BlockedTimePreview({ event, timeFormat }) {
 }
 
 export default function CalendarEventPreview({ eventInfo, timeFormat }) {
+  const currentActivePreviewId = useSyncExternalStore(
+    subscribeToActivePreview,
+    getActivePreviewId,
+    getServerActivePreviewId
+  );
   const isBlockedTime = eventInfo.event.extendedProps.type === "blocked";
-  const [isOpen, setIsOpen] = useState(false);
+  const previewId = `${isBlockedTime ? "blocked" : "booking"}:${eventInfo.event.id}`;
+  const isOpen = currentActivePreviewId === previewId;
+  const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);
   const suppressOpenRef = useRef(false);
 
-  function handleOpenChange(open) {
+  useEffect(() => {
+    return () => {
+      setActivePreviewId((currentPreviewId) =>
+        currentPreviewId === previewId ? null : currentPreviewId
+      );
+    };
+  }, [previewId]);
+
+  function handleOpenChange(open, eventDetails) {
     if (open && suppressOpenRef.current) return;
 
-    setIsOpen(open);
+    if (open) {
+      setAlignOffset(getPreviewAlignOffset(eventDetails?.trigger));
+      setActivePreviewId(previewId);
+      return;
+    }
+
+    setActivePreviewId((currentPreviewId) =>
+      currentPreviewId === previewId ? null : currentPreviewId
+    );
   }
 
   function dismissPreview() {
     suppressOpenRef.current = true;
-    setIsOpen(false);
+    setActivePreviewId((currentPreviewId) =>
+      currentPreviewId === previewId ? null : currentPreviewId
+    );
   }
 
   return (
@@ -388,8 +497,10 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
       </PreviewCardTrigger>
       <PreviewCardContent
         align="start"
+        alignOffset={alignOffset}
         side="right"
         styles="overflow-hidden"
+        sideOffset={12}
         collisionPadding={12}
       >
         {isBlockedTime ? (

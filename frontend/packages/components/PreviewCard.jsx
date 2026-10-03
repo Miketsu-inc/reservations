@@ -25,6 +25,7 @@ export function PreviewCardTrigger({ asChild = false, children, ...props }) {
 export function PreviewCardContent({
   styles = "",
   align = "center",
+  alignOffset = 0,
   side = "bottom",
   sideOffset = 8,
   collisionPadding = 5,
@@ -35,6 +36,7 @@ export function PreviewCardContent({
       <PreviewCardPrimitive.Positioner
         className="z-70"
         align={align}
+        alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
