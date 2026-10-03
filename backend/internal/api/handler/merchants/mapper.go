@@ -111,8 +111,28 @@ func mapToMerchantProfileSettings(in merchantProfileSettingsReq) domain.Merchant
 	}
 }
 
+func mapToMerchantProfileSettingsResp(in domain.MerchantProfileSettings) merchantProfileSettingsResp {
+	return merchantProfileSettingsResp{
+		Introduction: in.Introduction,
+		Announcement: in.Announcement,
+		AboutUs:      in.AboutUs,
+		ParkingInfo:  in.ParkingInfo,
+		PaymentInfo:  in.PaymentInfo,
+	}
+}
+
 func mapToSchedulingSettings(in schedulingSettingsReq) domain.SchedulingSettings {
 	return domain.SchedulingSettings{
+		CancelDeadline:   in.CancelDeadline,
+		BookingWindowMin: in.BookingWindowMin,
+		BookingWindowMax: in.BookingWindowMax,
+		BufferTime:       in.BufferTime,
+		ApprovalPolicy:   in.ApprovalPolicy,
+	}
+}
+
+func mapToSchedulingSettingsResp(in domain.SchedulingSettings) schedulingSettingsResp {
+	return schedulingSettingsResp{
 		CancelDeadline:   in.CancelDeadline,
 		BookingWindowMin: in.BookingWindowMin,
 		BookingWindowMax: in.BookingWindowMax,

@@ -225,13 +225,21 @@ func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type merchantProfileSettingsResp struct {
+	Introduction string `json:"introduction"`
+	Announcement string `json:"announcement"`
+	AboutUs      string `json:"about_us"`
+	ParkingInfo  string `json:"parking_info"`
+	PaymentInfo  string `json:"payment_info"`
+}
+
 func (h *Handler) GetMerchantProfileSettings(w http.ResponseWriter, r *http.Request) error {
 	settings, err := h.service.GetMerchantProfileSettings(r.Context())
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetMerchantProfileSettings")
 	}
 
-	httputil.Success(w, http.StatusOK, settings)
+	httputil.Success(w, http.StatusOK, mapToMerchantProfileSettingsResp(settings))
 
 	return nil
 }
@@ -267,13 +275,21 @@ type schedulingSettingsReq struct {
 	ApprovalPolicy   types.ApprovalType `json:"approval_policy" validate:"required"`
 }
 
+type schedulingSettingsResp struct {
+	CancelDeadline   int                `json:"cancel_deadline"`
+	BookingWindowMin int                `json:"booking_window_min"`
+	BookingWindowMax int                `json:"booking_window_max"`
+	BufferTime       int                `json:"buffer_time"`
+	ApprovalPolicy   types.ApprovalType `json:"approval_policy"`
+}
+
 func (h *Handler) GetSchedulingSettings(w http.ResponseWriter, r *http.Request) error {
 	settings, err := h.service.GetSchedulingSettings(r.Context())
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetSchedulingSettings")
 	}
 
-	httputil.Success(w, http.StatusOK, settings)
+	httputil.Success(w, http.StatusOK, mapToSchedulingSettingsResp(settings))
 
 	return nil
 }

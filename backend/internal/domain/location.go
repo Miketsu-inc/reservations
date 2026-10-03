@@ -16,7 +16,7 @@ type LocationRepository interface {
 }
 
 type Location struct {
-	Id                int            `db:"ID"`
+	Id                int            `db:"id"`
 	MerchantId        uuid.UUID      `db:"merchant_id"`
 	Country           *string        `db:"country"`
 	City              *string        `db:"city"`
