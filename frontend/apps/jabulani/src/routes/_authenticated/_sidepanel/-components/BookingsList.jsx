@@ -6,7 +6,10 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import {
+  getBookingStatusStyles,
+  useAuth,
+} from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
   preferencesQueryOptions,
@@ -54,18 +57,6 @@ export default function BookingsList({ bookings, onAccept, route }) {
 function monthNameFromDate(date) {
   return date.toLocaleDateString([], { month: "short" });
 }
-
-const STATUS_STYLES = {
-  booked:
-    "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
-  confirmed:
-    "bg-blue-600/20 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
-  completed:
-    "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
-  cancelled: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
-  "no-show":
-    "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
-};
 
 function BookingCard({ booking, route, onAccept }) {
   const { isWindowSmall } = useWindowSize();
@@ -123,8 +114,8 @@ function BookingCard({ booking, route, onAccept }) {
               />
               <p className="text-lg">{booking.service_name}</p>
               <div
-                className={`${STATUS_STYLES[status]} w-fit rounded-full px-2
-                  py-1 text-sm`}
+                className={`${getBookingStatusStyles(status)} w-fit
+                  rounded-full px-2 py-1 text-sm`}
               >
                 <p>{status}</p>
               </div>
