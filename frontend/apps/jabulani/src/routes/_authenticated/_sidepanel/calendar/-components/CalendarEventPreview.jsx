@@ -11,7 +11,10 @@ import {
   PreviewCardContent,
   PreviewCardTrigger,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import {
+  getBookingStatusStyles,
+  useAuth,
+} from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
   formatDuration,
@@ -19,67 +22,73 @@ import {
   timeStringFromDate,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-
-const STATUS_STYLES = {
-  booked:
-    "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
-  confirmed:
-    "bg-blue-600/20 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
-  completed:
-    "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
-  cancelled: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
-  "no-show":
-    "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
-};
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 const DEFAULT_PREVIEW_ALIGN_OFFSET = -8;
 const PREVIEW_HEADER_GAP = 8;
-const activePreviewListeners = new Set();
+const activePreviewListeners = new Map();
 let activePreviewId = null;
-let removeScrollListener = null;
 
-function subscribeToActivePreview(listener) {
-  activePreviewListeners.add(listener);
+function subscribeToPreview(previewId, listener) {
+  const listeners = activePreviewListeners.get(previewId) ?? new Set();
+  listeners.add(listener);
+  activePreviewListeners.set(previewId, listeners);
 
   return () => {
-    activePreviewListeners.delete(listener);
+    listeners.delete(listener);
+    if (listeners.size === 0) activePreviewListeners.delete(previewId);
   };
 }
 
-function getActivePreviewId() {
-  return activePreviewId;
+function closeActivePreview() {
+  setActivePreviewId(null);
 }
 
-function getServerActivePreviewId() {
-  return null;
-}
-
-function setActivePreviewId(value) {
-  const nextPreviewId =
-    typeof value === "function" ? value(activePreviewId) : value;
-
+function setActivePreviewId(nextPreviewId) {
   if (nextPreviewId === activePreviewId) return;
 
+  const previousPreviewId = activePreviewId;
   activePreviewId = nextPreviewId;
-  removeScrollListener?.();
-  removeScrollListener = null;
 
-  if (activePreviewId && typeof window !== "undefined") {
-    function closePreviewOnScroll() {
-      setActivePreviewId(null);
+  if (typeof window !== "undefined") {
+    window.removeEventListener("scroll", closeActivePreview, true);
+
+    if (activePreviewId) {
+      window.addEventListener("scroll", closeActivePreview, {
+        capture: true,
+        once: true,
+      });
     }
-
-    window.addEventListener("scroll", closePreviewOnScroll, {
-      capture: true,
-      once: true,
-    });
-    removeScrollListener = () => {
-      window.removeEventListener("scroll", closePreviewOnScroll, true);
-    };
   }
 
-  activePreviewListeners.forEach((listener) => listener());
+  [previousPreviewId, activePreviewId].forEach((previewId) => {
+    activePreviewListeners
+      .get(previewId)
+      ?.forEach((listener) => listener());
+  });
+}
+
+function closePreview(previewId) {
+  if (activePreviewId === previewId) setActivePreviewId(null);
+}
+
+function usePreviewOpen(previewId) {
+  const subscribe = useCallback(
+    (listener) => subscribeToPreview(previewId, listener),
+    [previewId]
+  );
+  const getSnapshot = useCallback(
+    () => activePreviewId === previewId,
+    [previewId]
+  );
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 function getPreviewAlignOffset(trigger) {
@@ -133,15 +142,13 @@ function formatDate(date) {
   });
 }
 
-function getParticipantName(participant) {
-  return [participant.first_name, participant.last_name]
-    .filter(Boolean)
-    .join(" ");
+function getPersonName(person) {
+  return [person.first_name, person.last_name].filter(Boolean).join(" ");
 }
 
-function getParticipantInitials(participant) {
-  const firstInitial = participant.first_name?.[0] ?? "";
-  const lastInitial = participant.last_name?.[0] ?? "";
+function getPersonInitials(person) {
+  const firstInitial = person.first_name?.[0] ?? "";
+  const lastInitial = person.last_name?.[0] ?? "";
 
   return `${firstInitial}${lastInitial}` || "?";
 }
@@ -184,6 +191,51 @@ function EventLabel({ eventInfo }) {
   );
 }
 
+function AvatarStack({
+  people,
+  limit,
+  styles,
+  avatarStyles,
+  overflowStyles,
+  fallbackTitle,
+}) {
+  const visiblePeople = people.slice(0, limit);
+  const remainingPeople = people.length - visiblePeople.length;
+
+  return (
+    <div className={`flex shrink-0 ${styles}`} role="list">
+      {visiblePeople.map((person) => {
+        const name = getPersonName(person);
+
+        return (
+          <span
+            key={person.id}
+            className="rounded-full"
+            role="listitem"
+            title={name || fallbackTitle}
+          >
+            <Avatar
+              img={person.avatar_url}
+              initials={getPersonInitials(person)}
+              alt={name}
+              styles={avatarStyles}
+            />
+          </span>
+        );
+      })}
+      {remainingPeople > 0 && (
+        <div
+          className={`${overflowStyles} border-layer_bg bg-hvr_gray flex
+            items-center justify-center rounded-full border-2 font-semibold`}
+          role="listitem"
+        >
+          +{remainingPeople}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ParticipantAvatars({ participants }) {
   if (participants.length === 0) {
     return (
@@ -196,30 +248,15 @@ function ParticipantAvatars({ participants }) {
     );
   }
 
-  const visibleParticipants = participants.slice(0, 3);
-  const remainingParticipants =
-    participants.length - visibleParticipants.length;
-
   return (
-    <div className="flex shrink-0 -space-x-4">
-      {visibleParticipants.map((participant) => (
-        <Avatar
-          key={participant.id}
-          img={participant.avatar_url}
-          initials={getParticipantInitials(participant)}
-          alt={getParticipantName(participant)}
-          styles="size-10! rounded-full! border-2 border-layer_bg text-xs!"
-        />
-      ))}
-      {remainingParticipants > 0 && (
-        <div
-          className="border-layer_bg bg-hvr_gray flex size-10 items-center
-            justify-center rounded-full border-2 text-xs font-semibold"
-        >
-          +{remainingParticipants}
-        </div>
-      )}
-    </div>
+    <AvatarStack
+      people={participants}
+      limit={3}
+      styles="-space-x-4"
+      avatarStyles="size-10! rounded-full! border-2 border-layer_bg text-xs!"
+      overflowStyles="size-10 text-xs"
+      fallbackTitle="Customer"
+    />
   );
 }
 
@@ -228,50 +265,6 @@ function DetailRow({ icon, children }) {
     <div className="text-text_color/70 flex items-center gap-2.5 text-sm">
       <Icon icon={icon} styles="size-4 shrink-0" />
       <span>{children}</span>
-    </div>
-  );
-}
-
-function TeamMemberAvatars({ members }) {
-  const visibleMembers = members.slice(0, 4);
-  const remainingMembers = members.length - visibleMembers.length;
-
-  return (
-    <div className="flex shrink-0 -space-x-3" role="list">
-      {visibleMembers.map((member) => {
-        const name = [member.first_name, member.last_name]
-          .filter(Boolean)
-          .join(" ");
-        const initials = `${member.first_name?.[0] ?? ""}${
-          member.last_name?.[0] ?? ""
-        }`;
-
-        return (
-          <span
-            key={member.id}
-            className="rounded-full"
-            role="listitem"
-            title={name || "Team member"}
-          >
-            <Avatar
-              img={member.avatar_url}
-              initials={initials || "?"}
-              alt={name}
-              styles="size-8! rounded-full! border-2 border-layer_bg
-                text-[11px]!"
-            />
-          </span>
-        );
-      })}
-      {remainingMembers > 0 && (
-        <div
-          className="border-layer_bg bg-hvr_gray flex size-8 items-center
-            justify-center rounded-full border-2 text-[11px] font-semibold"
-          role="listitem"
-        >
-          +{remainingMembers}
-        </div>
-      )}
     </div>
   );
 }
@@ -296,11 +289,12 @@ function TeamMemberAvatarSkeleton({ count }) {
 function AssignedTeam({ employeeIds, isPending, teamMembers }) {
   if (employeeIds.length === 0) return null;
 
+  const teamMembersById = new Map(
+    teamMembers.map((member) => [String(member.id), member])
+  );
   const assignedMembers = employeeIds.map(
     (employeeId) =>
-      teamMembers.find(
-        (member) => String(member.id) === String(employeeId)
-      ) ?? {
+      teamMembersById.get(String(employeeId)) ?? {
         id: employeeId,
         first_name: null,
         last_name: null,
@@ -313,7 +307,15 @@ function AssignedTeam({ employeeIds, isPending, teamMembers }) {
         {isPending ? (
           <TeamMemberAvatarSkeleton count={employeeIds.length} />
         ) : (
-          <TeamMemberAvatars members={assignedMembers} />
+          <AvatarStack
+            people={assignedMembers}
+            limit={4}
+            styles="-space-x-3"
+            avatarStyles="size-8! rounded-full! border-2 border-layer_bg
+              text-[11px]!"
+            overflowStyles="size-8 text-[11px]"
+            fallbackTitle="Team member"
+          />
         )}
         <span className="text-sm font-medium">Team members</span>
       </div>
@@ -327,7 +329,7 @@ function BookingPreview({ event, timeFormat }) {
   const isGroupBooking = extendedProps.booking_type !== "appointment";
   const customerName =
     participants.length > 0
-      ? getParticipantName(participants[0]) || "Customer"
+      ? getPersonName(participants[0]) || "Customer"
       : "Walk-in";
   const additionalParticipants = participants.length - 1;
   const status = extendedProps.booking_status;
@@ -346,8 +348,8 @@ function BookingPreview({ event, timeFormat }) {
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-2">
             <span
-              className={`${STATUS_STYLES[status] ?? STATUS_STYLES["no-show"]}
-                shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium`}
+              className={`${getBookingStatusStyles(status)} shrink-0
+                rounded-md px-1.5 py-0.5 text-[11px] font-medium`}
             >
               {capitalize(status)}
             </span>
@@ -397,13 +399,13 @@ function BookingPreview({ event, timeFormat }) {
   );
 }
 
-function BlockedTimePreview({ event, timeFormat }) {
+function BlockedTimePreview({ event, isOpen, timeFormat }) {
   const { extendedProps } = event;
   const { merchantId } = useAuth();
   const employeeIds = extendedProps.employee_ids ?? [];
   const { data: teamMembers = [], isPending } = useQuery({
     ...calendarTeamMembersQueryOptions(merchantId),
-    enabled: employeeIds.length > 0,
+    enabled: isOpen && employeeIds.length > 0,
   });
 
   return (
@@ -441,23 +443,14 @@ function BlockedTimePreview({ event, timeFormat }) {
 }
 
 export default function CalendarEventPreview({ eventInfo, timeFormat }) {
-  const currentActivePreviewId = useSyncExternalStore(
-    subscribeToActivePreview,
-    getActivePreviewId,
-    getServerActivePreviewId
-  );
   const isBlockedTime = eventInfo.event.extendedProps.type === "blocked";
   const previewId = `${isBlockedTime ? "blocked" : "booking"}:${eventInfo.event.id}`;
-  const isOpen = currentActivePreviewId === previewId;
+  const isOpen = usePreviewOpen(previewId);
   const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);
   const suppressOpenRef = useRef(false);
 
   useEffect(() => {
-    return () => {
-      setActivePreviewId((currentPreviewId) =>
-        currentPreviewId === previewId ? null : currentPreviewId
-      );
-    };
+    return () => closePreview(previewId);
   }, [previewId]);
 
   function handleOpenChange(open, eventDetails) {
@@ -469,16 +462,12 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
       return;
     }
 
-    setActivePreviewId((currentPreviewId) =>
-      currentPreviewId === previewId ? null : currentPreviewId
-    );
+    closePreview(previewId);
   }
 
   function dismissPreview() {
     suppressOpenRef.current = true;
-    setActivePreviewId((currentPreviewId) =>
-      currentPreviewId === previewId ? null : currentPreviewId
-    );
+    closePreview(previewId);
   }
 
   return (
@@ -504,7 +493,11 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
         collisionPadding={12}
       >
         {isBlockedTime ? (
-          <BlockedTimePreview event={eventInfo.event} timeFormat={timeFormat} />
+          <BlockedTimePreview
+            event={eventInfo.event}
+            isOpen={isOpen}
+            timeFormat={timeFormat}
+          />
         ) : (
           <BookingPreview event={eventInfo.event} timeFormat={timeFormat} />
         )}
