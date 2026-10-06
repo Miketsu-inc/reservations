@@ -125,7 +125,8 @@ export default function EmployeePicker({
               </div>
             ) : (
               <div
-                className={`scrollbar-thin overflow-y-auto pb-8 dark:scheme-dark
+                className={`scrollbar-thin overflow-y-auto pr-1 pb-8
+                  dark:scheme-dark
                   ${isWindowSmall ? "flex-1" : "max-h-[60vh] w-145"}`}
               >
                 <ul className="flex flex-col gap-4">

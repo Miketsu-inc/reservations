@@ -414,7 +414,51 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
+type getGroupAvailabilityResp struct {
+	Id                  int                       `json:"id"`
+	FromDate            time.Time                 `json:"from_date"`
+	ToDate              time.Time                 `json:"to_date"`
+	CurrentParticipants int                       `json:"current_participants"`
+	MaxParticipants     int                       `json:"max_participants"`
+	Price               *currencyx.FormattedPrice `json:"price"`
+	PriceType           types.PriceType           `json:"price_type"`
+	EmployeeId          int                       `json:"employee_id"`
+	EmployeeFirstName   string                    `json:"employee_first_name"`
+	EmployeeLastName    string                    `json:"employee_last_name"`
+}
+
 func (h *Handler) GetGroupAvailability(w http.ResponseWriter, r *http.Request) error {
+	urlName := chi.URLParam(r, "merchantName")
+	if urlName == "" {
+		return validate.NewError("invalid merchant name")
+	}
+
+	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	var employeeId *int
+	if empIdStr := r.URL.Query().Get("employee_id"); empIdStr != "" {
+		parsedID, err := strconv.Atoi(empIdStr)
+		if err != nil {
+			return validate.NewError("invalid employee id")
+		}
+		employeeId = &parsedID
+	}
+
+	availability, err := h.merchantServ.GetGroupAvailability(r.Context(), urlName, urlServiceId, urlLocationId, employeeId)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetGroupAvailability")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetGroupAvailabilityResp(availability))
+
 	return nil
 }
 

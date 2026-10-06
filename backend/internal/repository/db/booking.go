@@ -1076,21 +1076,29 @@ func (r *bookingRepository) GetReservedTimesByEmployees(ctx context.Context, mer
 	return result, nil
 }
 
-func (r *bookingRepository) GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startTime time.Time, endTime time.Time) ([]domain.BookingSlot, error) {
+func (r *bookingRepository) GetAvailableGroupBookings(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) ([]domain.AvailableGroupBooking, error) {
 	query := `
-	select b.from_date, b.to_date from "Booking" b
-	where b.booking_type in ('event', 'class') and b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3 and b.from_date >= $4 and b.to_date <= $5
-		and b.status not in ('cancelled', 'completed', 'no-show') and b.current_participants < b.max_participants
-	order by b.from_date
+	select b.id, b.from_date, b.to_date, b.price_per_person as price, b.price_type,
+		b.employee_id, e.first_name as employee_first_name, e.last_name as employee_last_name,
+		b.current_participants, b.max_participants
+	from "Booking" b
+	left join "Employee" e on e.id = b.employee_id
+	where b.merchant_id = $1 and b.service_id = $2 and b.location_id = $3
+		and b.employee_id = any($4::int[])
+		and b.booking_type in ('event', 'class')
+		and b.status in ('booked', 'confirmed')
+		and b.current_participants < b.max_participants
+		and b.from_date >= $5 and b.from_date <= $6
+	order by b.from_date asc
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, startTime, endTime)
-	availableBookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingSlot])
+	rows, _ := r.db.Query(ctx, query, merchantId, serviceId, locationId, employeeIds, startDate, endDate)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.AvailableGroupBooking])
 	if err != nil {
-		return nil, fmt.Errorf("GetAvailableGroupBookingsForPeriod: %w", err)
+		return nil, fmt.Errorf("GetGroupBookingsForAvailability: %w", err)
 	}
 
-	return availableBookings, nil
+	return bookings, nil
 }
 
 func (r *bookingRepository) GetClosestAvailableGroupBooking(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, searchStart, searchEnd time.Time) (domain.Booking, error) {

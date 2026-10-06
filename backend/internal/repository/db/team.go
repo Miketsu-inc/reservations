@@ -132,8 +132,22 @@ func (r *teamRepository) GetActiveEmployeesForService(ctx context.Context, merch
 	from "Employee" e
 	join "EmployeeService" es on es.employee_id = e.id and es.service_id = $2
 	join "Service" s on s.id = es.service_id and s.merchant_id = $1
+	join "Merchant" m on m.id = s.merchant_id
 	left join "User" u on u.id = e.user_id
 	where e.merchant_id = $1 and e.is_active is true
+		and (
+			s.booking_type = 'appointment'
+			or exists (
+				select 1
+				from "Booking" b
+				where b.service_id = s.id
+					and b.employee_id = e.id
+					and b.status in ('booked', 'confirmed')
+					and b.current_participants < b.max_participants
+					and b.from_date >= now() + make_interval(mins => coalesce(s.booking_window_min, m.booking_window_min))
+					and b.from_date <= now() + make_interval(months => coalesce(s.booking_window_max, m.booking_window_max))
+			)
+		)
 	order by first_name, last_name, e.id`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, serviceId)

@@ -527,3 +527,31 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 
 	return finalAvailability, nil
 }
+
+func (s *Service) GetGroupAvailability(ctx context.Context, merchantName string, serviceId int, locationId int, employeeId *int) ([]domain.AvailableGroupBooking, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []domain.AvailableGroupBooking{}, err
+	}
+
+	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
+	if err != nil {
+		return []domain.AvailableGroupBooking{}, err
+	}
+
+	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, serviceId)
+	if err != nil {
+		return []domain.AvailableGroupBooking{}, err
+	}
+
+	now := time.Now().UTC()
+	startDate := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
+	endDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
+
+	bookings, err := s.bookingRepo.GetAvailableGroupBookings(ctx, merchantId, serviceId, locationId, employeeIds, startDate, endDate)
+	if err != nil {
+		return []domain.AvailableGroupBooking{}, err
+	}
+
+	return bookings, nil
+}

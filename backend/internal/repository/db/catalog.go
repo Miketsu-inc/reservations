@@ -401,11 +401,25 @@ func (r *catalogRepository) GetServicesForMerchantPage(ctx context.Context, merc
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
 	from "Service" s
+	join "Merchant" m on m.id = s.merchant_id
 	left join "ServiceCategory" sc on s.category_id = sc.id
 	left join emp_overrides eo on eo.service_id = s.id
 	where s.merchant_id = $1 and s.is_active = true
 		and ($2::int is null or eo.service_id is not null)
-	group by sc.id, sc.name
+		and (
+			s.booking_type = 'appointment'
+			or exists (
+				select 1
+				from "Booking" b
+				where b.service_id = s.id
+					and b.status in ('booked', 'confirmed')
+					and ($2::int is null or b.employee_id = $2)
+					and b.current_participants < b.max_participants
+					and b.from_date >= now() + make_interval(mins => coalesce(s.booking_window_min, m.booking_window_min))
+					and b.from_date <= now() + make_interval(months => coalesce(s.booking_window_max, m.booking_window_max))
+			)
+		)
+	group by sc.id, sc.name, sc.sequence
 	order by sc.sequence, sc.name
 	`
 

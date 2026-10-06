@@ -15,6 +15,7 @@ import BookingSummary, {
   getBookingSummaryDisplayInfo,
 } from "./-components/BookingSummary";
 import EmployeeSelectionStep from "./-components/EmployeeSelectionStep";
+import GroupBookingStep from "./-components/GroupBookingStep";
 import ServiceSelectionStep from "./-components/ServiceSelectionStep";
 
 function validateSearch(search) {
@@ -145,6 +146,15 @@ function BookingFLow() {
     )
   );
 
+  const employeeInfo = {
+    first_name:
+      selectedSummary.employee?.first_name ||
+      fetchedSummary?.employee_first_name,
+    last_name:
+      selectedSummary.employee?.last_name || fetchedSummary?.employee_last_name,
+    avatar_url: selectedSummary.employee?.avatar_url,
+  };
+
   if (isError) {
     return <ServerError error={error.message} />;
   }
@@ -230,10 +240,17 @@ function BookingFLow() {
           merchant_name: merchantName,
           service_id: search.serviceId,
           location_id: search.locationId,
-          timeStamp: timeStamp,
-          customer_note: selectedSummary.time.customer_note,
+          timeStamp: selectedSummary.time?.from_date || timeStamp,
+          customer_note: selectedSummary.time?.customer_note,
+          // for group bookings the no-preference in the url doesnt mean that the selected booking doesn't have an employee
           employee_id:
-            search.employeeId !== "no-pref" ? search.employeeId : undefined,
+            selectedSummary.employee?.id &&
+            selectedSummary.employee.id !== "no-pref"
+              ? selectedSummary.employee.id
+              : search.employeeId !== "no-pref"
+                ? search.employeeId
+                : undefined,
+          booking_id: selectedSummary.time?.bookingId,
         }),
       });
 
@@ -321,10 +338,7 @@ function BookingFLow() {
                 onServiceSelect={(data) => {
                   updateBookingDetails("service", data);
                 }}
-                employee={{
-                  first_name: fetchedSummary?.employee_first_name,
-                  last_name: fetchedSummary?.employee_last_name,
-                }}
+                employee={employeeInfo}
               />
             )}
 
@@ -356,22 +370,24 @@ function BookingFLow() {
                   updateBookingDetails("time", data);
                 }}
                 onEmployeeChange={handleEmployeeChange}
-                employee={{
-                  first_name:
-                    selectedSummary.employee?.first_name ||
-                    fetchedSummary?.employee_first_name,
-                  last_name:
-                    selectedSummary.employee?.last_name ||
-                    fetchedSummary?.employee_last_name,
-                  avatar_url: selectedSummary.employee?.avatar_url,
-                }}
+                employee={employeeInfo}
               />
             )}
 
-            {currentStep === "time" && search.type === "class" && (
-              <div className="">
-                <h1 className="text-3xl font-bold">Select a Class</h1>
-              </div>
+            {currentStep === "time" && search.type !== "appointment" && (
+              <GroupBookingStep
+                merchantName={merchantName}
+                locationId={search.locationId}
+                serviceId={search.serviceId}
+                employeeId={search.employeeId}
+                onSelect={(data) => {
+                  updateBookingDetails("time", data);
+                  console.log(data);
+                  updateBookingDetails("employee", data.employee);
+                }}
+                onEmployeeChange={handleEmployeeChange}
+                employee={employeeInfo}
+              />
             )}
           </div>
 

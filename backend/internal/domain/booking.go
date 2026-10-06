@@ -65,7 +65,7 @@ type BookingRepository interface {
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
 
 	GetReservedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) (map[int][]BookingSlot, error)
-	GetAvailableGroupBookingsForPeriod(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, startDate time.Time, endDate time.Time) ([]BookingSlot, error)
+	GetAvailableGroupBookings(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) ([]AvailableGroupBooking, error)
 	GetClosestAvailableGroupBooking(ctx context.Context, merchantId uuid.UUID, serviceId, locationId int, searchStart, searchEnd time.Time) (Booking, error)
 
 	NewBookingSeries(ctx context.Context, bookingSeries BookingSeries) (BookingSeries, error)
@@ -464,6 +464,19 @@ type BookingForUser struct {
 	ServiceName       string              `db:"service_name"`
 	EmployeeFirstName *string             `db:"employee_first_name"`
 	EmployeeLastName  *string             `db:"employee_last_name"`
+}
+
+type AvailableGroupBooking struct {
+	Id                  int             `db:"id"`
+	FromDate            time.Time       `db:"from_date"`
+	ToDate              time.Time       `db:"to_date"`
+	CurrentParticipants int             `db:"current_participants"`
+	MaxParticipants     int             `db:"max_participants"`
+	Price               currencyx.Price `db:"price"`
+	PriceType           types.PriceType `db:"price_type"`
+	EmployeeId          int             `db:"employee_id"`
+	EmployeeFirstName   string          `db:"employee_first_name"`
+	EmployeeLastName    string          `db:"employee_last_name"`
 }
 
 type BookingCountsForUser struct {

@@ -33,17 +33,19 @@ export function getBookingSummaryDisplayInfo({
 }) {
   const service = selectedSummary?.service || fetchedSummary;
   const selectedEmp = selectedSummary?.employee;
+  const hasConcreteEmployee = selectedEmp?.id !== "no-pref";
+
   const isNoPref =
     selectedEmp?.id === "no-pref" || searchEmployeeId === "no-pref";
 
   let employeeName = null;
   let empOverrides = null;
 
-  if (isNoPref) {
-    employeeName = "No preference";
-  } else if (selectedEmp?.first_name) {
-    employeeName = `${selectedEmp.first_name} ${selectedEmp.last_name}`;
+  if (hasConcreteEmployee) {
+    employeeName = `${selectedEmp?.first_name} ${selectedEmp?.last_name}`;
     empOverrides = selectedEmp;
+  } else if (isNoPref) {
+    employeeName = "No preference";
   } else if (fetchedSummary?.employee_first_name) {
     employeeName = `${fetchedSummary.employee_first_name} ${fetchedSummary.employee_last_name}`;
     empOverrides = fetchedSummary;

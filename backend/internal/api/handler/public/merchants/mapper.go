@@ -203,3 +203,23 @@ func mapToGetDisabledDaysResp(in merchantServ.DisabledDays) getDisabledDaysResp 
 		MaxDate:    in.MaxDate,
 	}
 }
+
+func mapToGetGroupAvailabilityResp(in []domain.AvailableGroupBooking) []getGroupAvailabilityResp {
+	resp := make([]getGroupAvailabilityResp, len(in))
+	for i, b := range in {
+
+		resp[i] = getGroupAvailabilityResp{
+			Id:                  b.Id,
+			FromDate:            b.FromDate,
+			ToDate:              b.ToDate,
+			CurrentParticipants: b.CurrentParticipants,
+			MaxParticipants:     b.MaxParticipants,
+			Price:               currencyx.FormatPrice(&b.Price),
+			PriceType:           b.PriceType,
+			EmployeeId:          b.EmployeeId,
+			EmployeeFirstName:   b.EmployeeFirstName,
+			EmployeeLastName:    b.EmployeeLastName,
+		}
+	}
+	return resp
+}
