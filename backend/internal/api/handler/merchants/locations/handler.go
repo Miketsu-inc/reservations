@@ -23,26 +23,30 @@ func (h *Handler) Routes() *httputil.Router {
 	// TODO: temp until signup flow is figured out?
 	r.Post("/", h.New)
 	r.Get("/", h.Get)
+	r.Patch("/", h.Update)
 
 	return r
 }
 
 type newReq struct {
-	Country           *string        `json:"country"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-	PlaceId           *string        `json:"place_id"`
-	FormattedLocation string         `json:"formatted_location"`
-	IsPrimary         bool           `json:"is_primary"`
-	IsActive          bool           `json:"is_active"`
+	Country           *string         `json:"country"`
+	City              *string         `json:"city"`
+	PostalCode        *string         `json:"postal_code"`
+	Address           *string         `json:"address"`
+	GeoPoint          *types.GeoPoint `json:"geo_point" validate:"required"`
+	PlaceId           *string         `json:"place_id"`
+	FormattedLocation string          `json:"formatted_location" validate:"required"`
+	IsPrimary         bool            `json:"is_primary"`
+	IsActive          bool            `json:"is_active"`
 }
 
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 	var req newReq
 
 	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+	if err := validateGeoPoint(*req.GeoPoint); err != nil {
 		return err
 	}
 
@@ -57,12 +61,14 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getResp struct {
-	Id                int     `json:"id"`
-	Country           *string `json:"country"`
-	City              *string `json:"city"`
-	PostalCode        *string `json:"postal_code"`
-	Address           *string `json:"address"`
-	FormattedLocation string  `json:"formatted_location"`
+	Id                int            `json:"id"`
+	Country           *string        `json:"country"`
+	City              *string        `json:"city"`
+	PostalCode        *string        `json:"postal_code"`
+	Address           *string        `json:"address"`
+	GeoPoint          types.GeoPoint `json:"geo_point"`
+	PlaceId           *string        `json:"place_id"`
+	FormattedLocation string         `json:"formatted_location"`
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
@@ -72,6 +78,45 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetResp(location))
+
+	return nil
+}
+
+type updateReq struct {
+	Country           *string         `json:"country"`
+	City              *string         `json:"city"`
+	PostalCode        *string         `json:"postal_code"`
+	Address           *string         `json:"address"`
+	GeoPoint          *types.GeoPoint `json:"geo_point" validate:"required"`
+	PlaceId           *string         `json:"place_id"`
+	FormattedLocation string          `json:"formatted_location" validate:"required"`
+}
+
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
+	var req updateReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	if err := validateGeoPoint(*req.GeoPoint); err != nil {
+		return err
+	}
+
+	err := h.service.Update(r.Context(), mapToUpdateInput(req))
+	if err != nil {
+		return locationServ.ErrStatus.Resolve(err, "Update")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+	return nil
+}
+
+func validateGeoPoint(point types.GeoPoint) error {
+	if point.Lat < -90 || point.Lat > 90 || point.Lon < -180 || point.Lon > 180 {
+		return validate.NewError("geo_point is outside the valid coordinate range")
+	}
 
 	return nil
 }

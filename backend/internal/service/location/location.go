@@ -30,6 +30,16 @@ type NewInput struct {
 	IsActive          bool
 }
 
+type UpdateInput struct {
+	Country           *string
+	City              *string
+	PostalCode        *string
+	Address           *string
+	GeoPoint          types.GeoPoint
+	PlaceId           *string
+	FormattedLocation string
+}
+
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
@@ -64,4 +74,29 @@ func (s *Service) Get(ctx context.Context) (domain.Location, error) {
 	}
 
 	return location, nil
+}
+
+func (s *Service) Update(ctx context.Context, input UpdateInput) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	err := s.locationRepo.UpdateLocation(ctx, domain.Location{
+		Id:                actor.LocationId,
+		MerchantId:        actor.MerchantId,
+		Country:           input.Country,
+		City:              input.City,
+		PostalCode:        input.PostalCode,
+		Address:           input.Address,
+		GeoPoint:          input.GeoPoint,
+		PlaceId:           input.PlaceId,
+		FormattedLocation: input.FormattedLocation,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrLocationNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }

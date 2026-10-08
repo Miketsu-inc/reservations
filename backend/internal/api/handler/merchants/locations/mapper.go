@@ -11,11 +11,23 @@ func mapToNewInput(in newReq) locationServ.NewInput {
 		City:              in.City,
 		PostalCode:        in.PostalCode,
 		Address:           in.Address,
-		GeoPoint:          in.GeoPoint,
+		GeoPoint:          *in.GeoPoint,
 		PlaceId:           in.PlaceId,
 		FormattedLocation: in.FormattedLocation,
 		IsPrimary:         in.IsPrimary,
 		IsActive:          in.IsActive,
+	}
+}
+
+func mapToUpdateInput(in updateReq) locationServ.UpdateInput {
+	return locationServ.UpdateInput{
+		Country:           in.Country,
+		City:              in.City,
+		PostalCode:        in.PostalCode,
+		Address:           in.Address,
+		GeoPoint:          *in.GeoPoint,
+		PlaceId:           in.PlaceId,
+		FormattedLocation: in.FormattedLocation,
 	}
 }
 
@@ -26,6 +38,8 @@ func mapToGetResp(in domain.Location) getResp {
 		City:              in.City,
 		PostalCode:        in.PostalCode,
 		Address:           in.Address,
+		GeoPoint:          in.GeoPoint,
+		PlaceId:           in.PlaceId,
 		FormattedLocation: in.FormattedLocation,
 	}
 }

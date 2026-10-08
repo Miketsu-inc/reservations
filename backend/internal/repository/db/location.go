@@ -51,3 +51,22 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 
 	return location, nil
 }
+
+func (r *locationRepository) UpdateLocation(ctx context.Context, location domain.Location) error {
+	query := `
+	update "Location"
+	set country = $1, city = $2, postal_code = $3, address = $4,
+		geo_point = $5, place_id = $6, formatted_location = $7
+	where id = $8 and merchant_id = $9
+	returning id
+	`
+
+	var id int
+	err := r.db.QueryRow(ctx, query, location.Country, location.City, location.PostalCode, location.Address,
+		location.GeoPoint, location.PlaceId, location.FormattedLocation, location.Id, location.MerchantId).Scan(&id)
+	if err != nil {
+		return fmt.Errorf("UpdateLocation: %w", err)
+	}
+
+	return nil
+}
