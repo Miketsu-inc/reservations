@@ -239,7 +239,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		blocked := []domain.BlockedTimes{}
 
-		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, 12, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
@@ -273,7 +273,7 @@ func TestCalculateAvailableTimes(t *testing.T) {
 
 		currentTime := ct(2025, time.July, 1, "14:20", tz)
 
-		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, bookingDay, businessHours, currentTime, tz)
+		result := CalculateAvailableTimes(reserved, blocked, servicePhases, serviceDuration, bufferTime, bookingWindowMin, 12, bookingDay, businessHours, currentTime, tz)
 
 		assert.ElementsMatch(t, expected, result, "Available times do not match")
 	})
@@ -312,6 +312,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			serviceDuration,
 			bufferTime,
 			bookingWindowMin,
+			12,
 			startDate, endDate,
 			businessHours,
 			currentTime,
@@ -356,6 +357,7 @@ func TestCalculateAvailableTimesPeriod(t *testing.T) {
 			serviceDuration,
 			bufferTime,
 			bookingWindowMin,
+			12,
 			startDate,
 			endDate,
 			businessHours,
@@ -413,7 +415,7 @@ func TestCacluateAvailableDays(t *testing.T) {
 
 	currentTime := ct(2025, time.June, 1, "00:00", tz)
 
-	result := CalculateAvailableDays(reserved, blocked, servicePhases, 60, 0, 0, startDate, endDate, businessHours, currentTime, tz)
+	result := CalculateAvailableDays(reserved, blocked, servicePhases, 60, 0, 0, 12, startDate, endDate, businessHours, currentTime, tz)
 
 	assert.Len(t, result, 3, "There should be only 3 day in the result")
 

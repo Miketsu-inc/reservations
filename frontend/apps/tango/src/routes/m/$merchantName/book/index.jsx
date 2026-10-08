@@ -1,7 +1,6 @@
 import { ArrowLeft01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Button, Icon, ServerError } from "@reservations/components";
 import {
-  dateAndTimeStringsToLocalDate,
   formatTimeRange,
   invalidateLocalStorageAuth,
   useToast,
@@ -130,7 +129,8 @@ function BookingFLow() {
     (currentStep === "employee" && selectedSummary.employee) ||
     (currentStep === "time" &&
       selectedSummary.time?.time &&
-      selectedSummary.time?.date);
+      selectedSummary.time?.date &&
+      (selectedSummary.time?.starts_at || selectedSummary.time?.from_date));
 
   const {
     data: fetchedSummary,
@@ -206,27 +206,16 @@ function BookingFLow() {
   }
 
   async function onSubmitHandler() {
-    if (!selectedSummary.time?.time || !selectedSummary.time?.date) {
+    const startsAt =
+      selectedSummary.time?.starts_at ?? selectedSummary.time?.from_date;
+
+    if (!startsAt) {
       showToast({
         message: "Please select a date and time",
         variant: "error",
       });
       return;
     }
-
-    const date = dateAndTimeStringsToLocalDate(
-      selectedSummary.time.date,
-      selectedSummary.time.time
-    );
-    if (!date) {
-      showToast({
-        message: "Please select a valid date and time",
-        variant: "error",
-      });
-      return;
-    }
-
-    const timeStamp = date.toISOString();
 
     setIsSubmitting(true);
 
@@ -240,7 +229,7 @@ function BookingFLow() {
           merchant_name: merchantName,
           service_id: search.serviceId,
           location_id: search.locationId,
-          timeStamp: selectedSummary.time?.from_date || timeStamp,
+          starts_at: startsAt,
           customer_note: selectedSummary.time?.customer_note,
           // for group bookings the no-preference in the url doesnt mean that the selected booking doesn't have an employee
           employee_id:

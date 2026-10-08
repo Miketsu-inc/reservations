@@ -6,6 +6,7 @@ import {
 } from "@reservations/components";
 import {
   dateStringToLocalDate,
+  formatToDateString,
   invalidateLocalStorageAuth,
 } from "@reservations/lib";
 import {
@@ -19,6 +20,7 @@ import AvailableTimeSection from "./AvailableTimeSection";
 import DaySelector from "./DaySelector";
 import EmployeePicker from "./EmployeePicker";
 import { StepContentSkeleton } from "./StepContentSkeleton";
+import TimezoneWarning from "./TimezoneWarning";
 
 async function fetchAvailableDays(
   merchantName,
@@ -129,14 +131,15 @@ export default function AppointmentTimeSelectionStep({
   employee,
 }) {
   const [manualSelectedDay, setManualSelectedDay] = useState(null);
-  const [selectedHour, setSelectedHour] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [customerNote, setCustomerNote] = useState("");
 
   function handleEmployeeChange(emp) {
-    setSelectedHour(null);
+    setSelectedSlot(null);
     onSelect({
       date: selectedDay,
       time: null,
+      starts_at: null,
       customer_note: customerNote,
     });
     onEmployeeChange(emp);
@@ -176,27 +179,26 @@ export default function AppointmentTimeSelectionStep({
   );
 
   function handleDaySelect(dateStr) {
-    setSelectedHour(null);
+    setSelectedSlot(null);
     setManualSelectedDay(dateStr);
-    onSelect({ date: dateStr, time: null, customer_note: customerNote });
+    onSelect({
+      date: dateStr,
+      time: null,
+      starts_at: null,
+      customer_note: customerNote,
+    });
   }
 
   function handleDatePickerSelect(pickerDate) {
-    const d = new Date(pickerDate);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-
-    const formatted = `${year}-${month}-${day}`;
-
-    handleDaySelect(formatted);
+    handleDaySelect(formatToDateString(pickerDate));
   }
 
-  function selectedHourHandler(e) {
-    setSelectedHour(e.target.value);
+  function selectedSlotHandler(slot) {
+    setSelectedSlot(slot);
     onSelect({
       date: selectedDay,
-      time: e.target.value,
+      time: slot.time,
+      starts_at: slot.starts_at,
       customer_note: customerNote,
     });
   }
@@ -213,6 +215,8 @@ export default function AppointmentTimeSelectionStep({
   return (
     <div className="flex h-full w-full max-w-full flex-col">
       <h1 className="text-3xl font-bold">Select Date & Time</h1>
+
+      <TimezoneWarning merchantTimeZone={dayTimes?.time_zone} />
 
       <div className="mt-10 flex items-center justify-between">
         <EmployeePicker
@@ -277,15 +281,15 @@ export default function AppointmentTimeSelectionStep({
               <AvailableTimeSection
                 availableTimes={dayTimes?.morning || []}
                 timeSection="morning"
-                selectedHour={selectedHour}
-                clickedHour={selectedHourHandler}
+                selectedStartsAt={selectedSlot?.starts_at}
+                onSelect={selectedSlotHandler}
               />
               <p className="mt-4 text-lg font-medium">Afternoon</p>
               <AvailableTimeSection
                 availableTimes={dayTimes?.afternoon || []}
                 timeSection="afternoon"
-                selectedHour={selectedHour}
-                clickedHour={selectedHourHandler}
+                selectedStartsAt={selectedSlot?.starts_at}
+                onSelect={selectedSlotHandler}
               />
             </div>
           </>
@@ -301,7 +305,8 @@ export default function AppointmentTimeSelectionStep({
             setCustomerNote(data.value);
             onSelect({
               date: selectedDay,
-              time: selectedHour,
+              time: selectedSlot?.time ?? null,
+              starts_at: selectedSlot?.starts_at ?? null,
               customer_note: data.value,
             });
           }}

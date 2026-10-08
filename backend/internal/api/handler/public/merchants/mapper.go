@@ -181,9 +181,26 @@ func mapToGetDayAvailabilityResp(in []merchantServ.DayAvailability) []getDayAvai
 }
 
 func mapToGetAvailabilityResp(in merchantServ.FormattedAvailableTimes) getAvailabilityResp {
+	morning := make([]availableSlotResp, len(in.Morning))
+	for i, slot := range in.Morning {
+		morning[i] = availableSlotResp{
+			Time:     slot.Time,
+			StartsAt: slot.StartsAt,
+		}
+	}
+
+	afternoon := make([]availableSlotResp, len(in.Afternoon))
+	for i, slot := range in.Afternoon {
+		afternoon[i] = availableSlotResp{
+			Time:     slot.Time,
+			StartsAt: slot.StartsAt,
+		}
+	}
+
 	return getAvailabilityResp{
-		Morning:   in.Morning,
-		Afternoon: in.Afternoon,
+		Morning:   morning,
+		Afternoon: afternoon,
+		Timezone:  in.Timezone,
 	}
 }
 

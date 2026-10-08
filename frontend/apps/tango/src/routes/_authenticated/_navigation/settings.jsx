@@ -151,7 +151,9 @@ function RouteComponent() {
               variant="tertiary"
               buttonText="Sign out everywhere"
               onClick={() => logoutHandler(true)}
-            />
+            >
+              <Icon icon={Logout05Icon} styles="mr-2 size-5" />
+            </Button>
           </Card>
           <Card styles="border-red-300 dark:border-red-900">
             <p className="text-lg font-medium text-red-600 dark:text-red-400">

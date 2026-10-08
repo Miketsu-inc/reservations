@@ -168,20 +168,20 @@ func (s *Service) assignEmployee(ctx context.Context, tx pgx.Tx, merchantId uuid
 	for _, empId := range employeeIds {
 		empService := empServices[empId]
 
-		empDuration := time.Duration(empService.TotalDuration) * time.Minute
-		empToDate := fromDate.Add(empDuration)
-		appointmentSlot := domain.TimeSlot{
-			StartTime: fromDate,
-			EndTime:   empToDate,
-		}
-
 		reserved := reservedByEmp[empId]
 		blocked := blockedByEmp[empId]
 
 		empBufferTime := merchant.ResolveEmployeeBufferTime(empService, bookingSettings.BufferTime)
 
-		if merchant.IsValidBookingSlot(appointmentSlot, reserved, blocked, empService.Phases, bookingDayBusinessHours, empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, now, merchantTz) {
-			return empId, empService, nil
+		// TODO: decide what to do with isValidBookingSlot as it was replaced here
+		// due to it not being able to validate if the booking slot even existed
+		availableStarts := merchant.CalculateAvailableTimes(reserved, blocked, empService.Phases, empService.TotalDuration,
+			empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, bookingDay, bookingDayBusinessHours, now, merchantTz)
+
+		for _, availableStart := range availableStarts {
+			if availableStart.Equal(fromDate) {
+				return empId, empService, nil
+			}
 		}
 	}
 
@@ -192,7 +192,7 @@ type CreateByCustomerInput struct {
 	MerchantName string
 	ServiceId    int
 	LocationId   int
-	TimeStamp    time.Time
+	StartsAt     time.Time
 	CustomerNote string
 	// nil if no-preference is selected for 1-on-1 bookings
 	EmployeeId *int
@@ -227,7 +227,7 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 		return ErrBookingInactiveService
 	}
 
-	fromDate := input.TimeStamp.UTC()
+	fromDate := input.StartsAt.UTC()
 
 	// TODO: we should probably just check by querying the user
 	customerId, err := uuid.NewV7()

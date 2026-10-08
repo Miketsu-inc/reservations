@@ -258,7 +258,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 
 			empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
 
-			availableSlots := CalculateAvailableTimesPeriod(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
+			availableSlots := CalculateAvailableTimesPeriod(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 			for _, day := range availableSlots {
 				var firstTimeStr string
@@ -417,7 +417,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 
 		empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
 
-		empDayAvailability := CalculateAvailableDays(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
+		empDayAvailability := CalculateAvailableDays(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, dateRange.StartTime, dateRange.EndTime, businessHours, now, merchantTz)
 
 		for _, day := range empDayAvailability {
 			dayAvailabilityMap[day.Date] = dayAvailabilityMap[day.Date] || day.IsAvailable
@@ -476,7 +476,7 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 	dateRange := timeutil.NewDateRange(bookingDay, bookingDay.AddDate(0, 0, 1), merchantTz)
 	now := time.Now()
 
-	uniqueAvailableTimesMap := make(map[string]time.Time)
+	firstAvailableTimeByLocalTime := make(map[string]time.Time)
 
 	empDataByEmp, err := s.fetchEmployeeAvailabilityData(ctx, serviceId, employeeIds, merchantId, locationId, dateRange)
 	if err != nil {
@@ -496,32 +496,41 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 
 		empBufferTime := ResolveEmployeeBufferTime(empData.EmpService, bookingSettings.BufferTime)
 
-		empAvailableTimes := CalculateAvailableTimes(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, bookingDay, bookingDayBusinessHours, now, merchantTz)
+		empAvailableTimes := CalculateAvailableTimes(empData.ReservedTimes, empData.BlockedTimes, empData.EmpService.Phases, empData.EmpService.TotalDuration, empBufferTime, bookingSettings.BookingWindowMin, bookingSettings.BookingWindowMax, bookingDay, bookingDayBusinessHours, now, merchantTz)
 
 		for _, slot := range empAvailableTimes {
-			key := slot.Format("15:04")
-			if _, exists := uniqueAvailableTimesMap[key]; !exists {
-				uniqueAvailableTimesMap[key] = slot
+			localTime := slot.Format("15:04")
+			firstOccurrence, exists := firstAvailableTimeByLocalTime[localTime]
+			// A local time can occur twice when daylight saving time ends.
+			// Keep the earlier exact instant while showing one local-time option.
+			if !exists || slot.Before(firstOccurrence) {
+				firstAvailableTimeByLocalTime[localTime] = slot
 			}
 		}
 	}
 
-	keys := make([]string, 0, len(uniqueAvailableTimesMap))
-	for k := range uniqueAvailableTimesMap {
-		keys = append(keys, k)
+	availableTimes := make([]string, 0, len(firstAvailableTimeByLocalTime))
+	for localTime := range firstAvailableTimeByLocalTime {
+		availableTimes = append(availableTimes, localTime)
 	}
-	sort.Strings(keys)
+	sort.Strings(availableTimes)
 
 	finalAvailability := FormattedAvailableTimes{
-		Morning:   []string{},
-		Afternoon: []string{},
+		Morning:   []AvailableSlot{},
+		Afternoon: []AvailableSlot{},
+		Timezone:  merchantTz.String(),
 	}
 
-	for _, key := range keys {
-		if uniqueAvailableTimesMap[key].Hour() < 12 {
-			finalAvailability.Morning = append(finalAvailability.Morning, key)
+	for _, localTime := range availableTimes {
+		availableSlot := AvailableSlot{
+			Time:     localTime,
+			StartsAt: firstAvailableTimeByLocalTime[localTime].UTC(),
+		}
+
+		if localTime < "12:00" {
+			finalAvailability.Morning = append(finalAvailability.Morning, availableSlot)
 		} else {
-			finalAvailability.Afternoon = append(finalAvailability.Afternoon, key)
+			finalAvailability.Afternoon = append(finalAvailability.Afternoon, availableSlot)
 		}
 	}
 

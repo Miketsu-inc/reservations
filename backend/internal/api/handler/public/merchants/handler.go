@@ -367,9 +367,15 @@ func (h *Handler) GetDayAvailability(w http.ResponseWriter, r *http.Request) err
 	return nil
 }
 
+type availableSlotResp struct {
+	Time     string    `json:"time"`
+	StartsAt time.Time `json:"starts_at"`
+}
+
 type getAvailabilityResp struct {
-	Morning   []string `json:"morning"`
-	Afternoon []string `json:"afternoon"`
+	Morning   []availableSlotResp `json:"morning"`
+	Afternoon []availableSlotResp `json:"afternoon"`
+	Timezone  string              `json:"time_zone"`
 }
 
 func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error {

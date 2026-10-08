@@ -9,16 +9,16 @@ import (
 )
 
 func mapToCreateByCustomerInput(in createBookingByCustomerReq) (bookingServ.CreateByCustomerInput, error) {
-	timeStamp, err := time.Parse(time.RFC3339, in.TimeStamp)
+	startsAt, err := time.Parse(time.RFC3339, in.StartsAt)
 	if err != nil {
-		return bookingServ.CreateByCustomerInput{}, fmt.Errorf("timestamp could not be converted to time: %w", err)
+		return bookingServ.CreateByCustomerInput{}, fmt.Errorf("starts_at could not be converted to time: %w", err)
 	}
 
 	return bookingServ.CreateByCustomerInput{
 		MerchantName: in.MerchantName,
 		ServiceId:    in.ServiceId,
 		LocationId:   in.LocationId,
-		TimeStamp:    timeStamp,
+		StartsAt:     startsAt,
 		CustomerNote: in.CustomerNote,
 		EmployeeId:   in.EmployeeId,
 		BookingId:    in.BookingId,
