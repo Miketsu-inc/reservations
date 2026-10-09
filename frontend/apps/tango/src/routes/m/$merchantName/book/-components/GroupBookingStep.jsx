@@ -11,12 +11,10 @@ import {
   Textarea,
 } from "@reservations/components";
 import {
+  dateStringToLocalDate,
   formatDuration,
-  formatTimeInputValue,
-  formatToDateString,
   getDisplayPrice,
   invalidateLocalStorageAuth,
-  timeStringFromDate,
 } from "@reservations/lib";
 import {
   keepPreviousData,
@@ -27,10 +25,7 @@ import { useMemo, useState } from "react";
 import "react-day-picker/style.css";
 import EmployeePicker from "./EmployeePicker";
 import { StepContentSkeleton } from "./StepContentSkeleton";
-
-function formatSessionTime(fromIso, toIso) {
-  return `${timeStringFromDate(new Date(fromIso))} - ${timeStringFromDate(new Date(toIso))}`;
-}
+import TimezoneWarning from "./TimezoneWarning";
 
 async function fetchAvailableGroupBookings(
   merchantName,
@@ -100,7 +95,7 @@ export default function GroupBookingStep({
   const [customerNote, setCustomerNote] = useState("");
 
   const {
-    data: groupBookings,
+    data: availability,
     isLoading,
     isError,
     error,
@@ -114,13 +109,12 @@ export default function GroupBookingStep({
     placeholderData: keepPreviousData,
   });
 
+  const groupBookings = availability?.bookings ?? [];
   const groupedBookings = useMemo(() => {
-    const byDay = Map.groupBy(groupBookings ?? [], (s) =>
-      formatToDateString(new Date(s.from_date))
-    );
+    const byDay = Map.groupBy(availability?.bookings ?? [], (s) => s.date);
 
     return [...byDay].map(([dateKey, sessions]) => {
-      const date = new Date(sessions[0].from_date);
+      const date = dateStringToLocalDate(sessions[0].date);
       return {
         dateKey,
         dayNum: date.getDate(),
@@ -129,15 +123,15 @@ export default function GroupBookingStep({
         sessions,
       };
     });
-  }, [groupBookings]);
+  }, [availability]);
 
   function handleEmployeeChange(emp) {
     setSelectedSessionId(null);
     onSelect({
       date: null,
       time: null,
+      starts_at: null,
       bookingId: null,
-      from_date: null,
       customer_note: customerNote,
     });
     onEmployeeChange(emp);
@@ -149,19 +143,17 @@ export default function GroupBookingStep({
       onSelect({
         date: null,
         time: null,
+        starts_at: null,
         bookingId: null,
-        from_date: null,
         customer_note: customerNote,
       });
     } else {
       setSelectedSessionId(session.id);
-      const fromDate = new Date(session.from_date);
-      console.log(session);
       onSelect({
-        date: formatToDateString(fromDate),
-        time: formatTimeInputValue(fromDate),
+        date: session.date,
+        time: session.time,
+        starts_at: session.from_date,
         bookingId: session.id,
-        from_date: session.from_date,
         customer_note: customerNote,
         employee: {
           id: session.employee_id,
@@ -179,6 +171,8 @@ export default function GroupBookingStep({
   return (
     <div className="flex h-full w-full max-w-full flex-col gap-6">
       <h1 className="text-3xl font-bold">Select an Event</h1>
+
+      <TimezoneWarning merchantTimeZone={availability?.time_zone} />
 
       <div className="flex w-full items-center justify-between">
         <EmployeePicker
@@ -284,12 +278,11 @@ export default function GroupBookingStep({
               (s) => s.id === selectedSessionId
             );
             if (currentSession) {
-              const fromDate = new Date(currentSession.from_date);
               onSelect({
-                date: formatToDateString(fromDate),
-                time: formatTimeInputValue(fromDate),
+                date: currentSession.date,
+                time: currentSession.time,
+                starts_at: currentSession.from_date,
                 bookingId: currentSession.id,
-                from_date: currentSession.from_date,
                 customer_note: data.value,
                 employee: {
                   id: currentSession.employee_id,
@@ -334,7 +327,7 @@ function SessionCard({ session, isSelected, onSelect }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <span className="text-text_color text-xl font-semibold">
-            {formatSessionTime(session.from_date, session.to_date)}
+            {session.time} - {session.end_time}
           </span>
 
           <span

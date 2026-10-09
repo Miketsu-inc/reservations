@@ -537,20 +537,30 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 	return finalAvailability, nil
 }
 
-func (s *Service) GetGroupAvailability(ctx context.Context, merchantName string, serviceId int, locationId int, employeeId *int) ([]domain.AvailableGroupBooking, error) {
+type GroupAvailabilityResult struct {
+	Bookings []domain.AvailableGroupBooking
+	Timezone *time.Location
+}
+
+func (s *Service) GetGroupAvailability(ctx context.Context, merchantName string, serviceId int, locationId int, employeeId *int) (GroupAvailabilityResult, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.AvailableGroupBooking{}, err
+		return GroupAvailabilityResult{}, err
 	}
 
 	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
 	if err != nil {
-		return []domain.AvailableGroupBooking{}, err
+		return GroupAvailabilityResult{}, err
 	}
 
 	bookingSettings, err := s.merchantRepo.GetBookingSettingsByMerchantAndService(ctx, merchantId, serviceId)
 	if err != nil {
-		return []domain.AvailableGroupBooking{}, err
+		return GroupAvailabilityResult{}, err
+	}
+
+	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, merchantId)
+	if err != nil {
+		return GroupAvailabilityResult{}, err
 	}
 
 	now := time.Now().UTC()
@@ -559,8 +569,11 @@ func (s *Service) GetGroupAvailability(ctx context.Context, merchantName string,
 
 	bookings, err := s.bookingRepo.GetAvailableGroupBookings(ctx, merchantId, serviceId, locationId, employeeIds, startDate, endDate)
 	if err != nil {
-		return []domain.AvailableGroupBooking{}, err
+		return GroupAvailabilityResult{}, err
 	}
 
-	return bookings, nil
+	return GroupAvailabilityResult{
+		Bookings: bookings,
+		Timezone: merchantTz,
+	}, nil
 }

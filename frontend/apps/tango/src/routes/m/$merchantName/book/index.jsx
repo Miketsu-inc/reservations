@@ -130,7 +130,7 @@ function BookingFLow() {
     (currentStep === "time" &&
       selectedSummary.time?.time &&
       selectedSummary.time?.date &&
-      (selectedSummary.time?.starts_at || selectedSummary.time?.from_date));
+      selectedSummary.time?.starts_at);
 
   const {
     data: fetchedSummary,
@@ -206,10 +206,7 @@ function BookingFLow() {
   }
 
   async function onSubmitHandler() {
-    const startsAt =
-      selectedSummary.time?.starts_at ?? selectedSummary.time?.from_date;
-
-    if (!startsAt) {
+    if (!selectedSummary.time?.starts_at) {
       showToast({
         message: "Please select a date and time",
         variant: "error",
@@ -229,9 +226,10 @@ function BookingFLow() {
           merchant_name: merchantName,
           service_id: search.serviceId,
           location_id: search.locationId,
-          starts_at: startsAt,
-          customer_note: selectedSummary.time?.customer_note,
-          // for group bookings the no-preference in the url doesnt mean that the selected booking doesn't have an employee
+          starts_at: selectedSummary.time.starts_at,
+          customer_note: selectedSummary.time.customer_note,
+          // For group bookings, "no-pref" in the URL does not mean the
+          // selected booking has no employee.
           employee_id:
             selectedSummary.employee?.id &&
             selectedSummary.employee.id !== "no-pref"
@@ -371,7 +369,6 @@ function BookingFLow() {
                 employeeId={search.employeeId}
                 onSelect={(data) => {
                   updateBookingDetails("time", data);
-                  console.log(data);
                   updateBookingDetails("employee", data.employee);
                 }}
                 onEmployeeChange={handleEmployeeChange}

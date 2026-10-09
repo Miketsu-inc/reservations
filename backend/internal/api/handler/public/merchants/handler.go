@@ -420,10 +420,13 @@ func (h *Handler) GetAvailability(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-type getGroupAvailabilityResp struct {
+type availableGroupBookingResp struct {
 	Id                  int                       `json:"id"`
 	FromDate            time.Time                 `json:"from_date"`
 	ToDate              time.Time                 `json:"to_date"`
+	Date                string                    `json:"date"`
+	Time                string                    `json:"time"`
+	EndTime             string                    `json:"end_time"`
 	CurrentParticipants int                       `json:"current_participants"`
 	MaxParticipants     int                       `json:"max_participants"`
 	Price               *currencyx.FormattedPrice `json:"price"`
@@ -431,6 +434,11 @@ type getGroupAvailabilityResp struct {
 	EmployeeId          int                       `json:"employee_id"`
 	EmployeeFirstName   string                    `json:"employee_first_name"`
 	EmployeeLastName    string                    `json:"employee_last_name"`
+}
+
+type getGroupAvailabilityResp struct {
+	Bookings []availableGroupBookingResp `json:"bookings"`
+	Timezone string                      `json:"time_zone"`
 }
 
 func (h *Handler) GetGroupAvailability(w http.ResponseWriter, r *http.Request) error {

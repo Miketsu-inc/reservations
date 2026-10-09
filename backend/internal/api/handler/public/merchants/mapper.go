@@ -1,6 +1,8 @@
 package merchants
 
 import (
+	"time"
+
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -221,22 +223,31 @@ func mapToGetDisabledDaysResp(in merchantServ.DisabledDays) getDisabledDaysResp 
 	}
 }
 
-func mapToGetGroupAvailabilityResp(in []domain.AvailableGroupBooking) []getGroupAvailabilityResp {
-	resp := make([]getGroupAvailabilityResp, len(in))
-	for i, b := range in {
+func mapToGetGroupAvailabilityResp(in merchantServ.GroupAvailabilityResult) getGroupAvailabilityResp {
+	bookings := make([]availableGroupBookingResp, len(in.Bookings))
+	for i, booking := range in.Bookings {
+		localStart := booking.FromDate.In(in.Timezone)
+		localEnd := booking.ToDate.In(in.Timezone)
 
-		resp[i] = getGroupAvailabilityResp{
-			Id:                  b.Id,
-			FromDate:            b.FromDate,
-			ToDate:              b.ToDate,
-			CurrentParticipants: b.CurrentParticipants,
-			MaxParticipants:     b.MaxParticipants,
-			Price:               currencyx.FormatPrice(&b.Price),
-			PriceType:           b.PriceType,
-			EmployeeId:          b.EmployeeId,
-			EmployeeFirstName:   b.EmployeeFirstName,
-			EmployeeLastName:    b.EmployeeLastName,
+		bookings[i] = availableGroupBookingResp{
+			Id:                  booking.Id,
+			FromDate:            booking.FromDate,
+			ToDate:              booking.ToDate,
+			Date:                localStart.Format(time.DateOnly),
+			Time:                localStart.Format("15:04"),
+			EndTime:             localEnd.Format("15:04"),
+			CurrentParticipants: booking.CurrentParticipants,
+			MaxParticipants:     booking.MaxParticipants,
+			Price:               currencyx.FormatPrice(&booking.Price),
+			PriceType:           booking.PriceType,
+			EmployeeId:          booking.EmployeeId,
+			EmployeeFirstName:   booking.EmployeeFirstName,
+			EmployeeLastName:    booking.EmployeeLastName,
 		}
 	}
-	return resp
+
+	return getGroupAvailabilityResp{
+		Bookings: bookings,
+		Timezone: in.Timezone.String(),
+	}
 }
