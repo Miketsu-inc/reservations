@@ -479,6 +479,9 @@ func (h *Handler) GetGroupAvailability(w http.ResponseWriter, r *http.Request) e
 type getNextAvailabilityResp struct {
 	FromDate            *time.Time `json:"from_date"`
 	ToDate              *time.Time `json:"to_date"`
+	Date                *string    `json:"date"`
+	StartTime           *string    `json:"start_time"`
+	EndTime             *string    `json:"end_time"`
 	CurrentParticipants *int       `json:"current_participants"`
 	Employee            *int       `json:"employee"`
 }

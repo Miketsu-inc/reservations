@@ -14,10 +14,10 @@ import {
 } from "@reservations/components";
 import {
   activeTeamQueryOptions,
+  dateStringToLocalDate,
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
-  timeStringFromDate,
   useWindowSize,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
@@ -132,8 +132,9 @@ function DetailsContent({
     (emp) => emp.id === nextAvailable?.employee
   );
 
-  const fromDate = hasAvailable ? new Date(nextAvailable.from_date) : null;
-  const toDate = hasAvailable ? new Date(nextAvailable.to_date) : null;
+  const fromDate = hasAvailable
+    ? dateStringToLocalDate(nextAvailable.date)
+    : null;
 
   return (
     <div
@@ -212,8 +213,10 @@ function DetailsContent({
                     />
                     <p className="text-text_color/60 text-sm">
                       {fromDate.toLocaleDateString([], { weekday: "short" })},{" "}
-                      {timeStringFromDate(fromDate)}
-                      {toDate ? ` - ${timeStringFromDate(toDate)}` : ""}
+                      {nextAvailable.start_time}
+                      {nextAvailable.end_time
+                        ? ` - ${nextAvailable.end_time}`
+                        : ""}
                     </p>
                   </div>
                 </div>

@@ -207,11 +207,28 @@ func mapToGetAvailabilityResp(in merchantServ.FormattedAvailableTimes) getAvaila
 }
 
 func mapToGetNextAvailabilityResp(in merchantServ.NextAvailable) getNextAvailabilityResp {
+	var date string
+	var startTime string
+	var endTime string
+
+	if in.FromDate != nil {
+		localStart := in.FromDate.In(in.Timezone)
+		date = localStart.Format(time.DateOnly)
+		startTime = localStart.Format("15:04")
+	}
+
+	if in.ToDate != nil {
+		endTime = in.ToDate.In(in.Timezone).Format("15:04")
+	}
+
 	return getNextAvailabilityResp{
 		FromDate:            in.FromDate,
 		ToDate:              in.ToDate,
 		CurrentParticipants: in.CurrentParticipants,
 		Employee:            in.Employee,
+		Date:                &date,
+		StartTime:           &startTime,
+		EndTime:             &endTime,
 	}
 }
 

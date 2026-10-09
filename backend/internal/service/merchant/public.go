@@ -203,6 +203,7 @@ type NextAvailable struct {
 	ToDate              *time.Time
 	CurrentParticipants *int
 	Employee            *int
+	Timezone            *time.Location
 }
 
 func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, serviceId, locationId int) (NextAvailable, error) {
@@ -243,7 +244,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		var na NextAvailable
+		na := NextAvailable{Timezone: merchantTz}
 		var earliestStart *time.Time
 		var earliestEnd *time.Time
 		var earliestEmpId *int
@@ -301,19 +302,17 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		booking, err := s.bookingRepo.GetClosestAvailableGroupBooking(ctx, merchantId, serviceId, locationId, searchStart, searchEnd)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return NextAvailable{}, nil
+				return NextAvailable{Timezone: merchantTz}, nil
 			}
 			return NextAvailable{}, err
 		}
 
-		fromDateMechantTz := booking.FromDate.In(merchantTz)
-		toDateMerchantTz := booking.ToDate.In(merchantTz)
-
 		return NextAvailable{
-			FromDate:            &fromDateMechantTz,
-			ToDate:              &toDateMerchantTz,
+			FromDate:            &booking.FromDate,
+			ToDate:              &booking.ToDate,
 			CurrentParticipants: &booking.CurrentParticipants,
 			Employee:            booking.EmployeeId,
+			Timezone:            merchantTz,
 		}, nil
 	}
 }
