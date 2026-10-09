@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -21,7 +20,6 @@ type CustomerRepository interface {
 	GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error)
 	GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error)
 	GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error)
-	GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, statuses []string, limit int, cursorStart time.Time, cursorId int) ([]CustomerBooking, error)
 	GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]CustomerForCalendar, error)
 
 	SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error
@@ -68,22 +66,6 @@ type CustomerStatistics struct {
 	TotalSpent           currencyx.Price
 	FavoriteService      *string
 	NextBooking          *time.Time
-}
-
-type CustomerBooking struct {
-	Id                int                 `json:"id" db:"id"`
-	BookingType       types.BookingType   `json:"booking_type" db:"booking_type"`
-	IsRecurring       bool                `json:"is_recurring" db:"is_recurring"`
-	FromDate          time.Time           `json:"from_date" db:"from_date"`
-	ToDate            time.Time           `json:"to_date" db:"to_date"`
-	ServiceName       string              `json:"service_name" db:"service_name"`
-	ServiceColor      *string             `json:"service_color" db:"service_color"`
-	FormattedLocation string              `json:"formatted_location" db:"formatted_location"`
-	Price             currencyx.Price     `json:"price" db:"price"`
-	PriceType         types.PriceType     `json:"price_type" db:"price_type"`
-	Status            types.BookingStatus `json:"status" db:"status"`
-	EmployeeFirstName *string             `json:"employee_first_name" db:"employee_first_name"`
-	EmployeeLastName  *string             `json:"employee_last_name" db:"employee_last_name"`
 }
 
 type CustomerForCalendar struct {

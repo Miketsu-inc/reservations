@@ -28,7 +28,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "../-components/BlacklistModal";
 import TransferAppsModal from "../-components/TransferAppsModal";
-import BookingHistory from "./-components/BookingHistory";
+import CustomerBookings from "./-components/CustomerBookings";
 import CustomerStats from "./-components/CustomerStats";
 import ExpandableNote from "./-components/ExpandableNote";
 
@@ -328,7 +328,7 @@ function CustomerDetailsPage() {
           />
         </div>
         <div className="pt-8">
-          <BookingHistory
+          <CustomerBookings
             customerId={customerId}
             merchantId={merchantId}
             counts={stats}

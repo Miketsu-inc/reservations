@@ -30,6 +30,7 @@ func (h *Handler) Routes() *httputil.Router {
 		r.UseFunc(h.middleware.EmployeeAuthentication)
 		r.UseFunc(h.middleware.Language)
 
+		r.Get("/", h.GetBookings)
 		r.Post("/", h.CreateByMerchant)
 		r.Patch("/{id}", h.UpdateByMerchant)
 		r.Delete("/{id}", h.CancelByMerchant)

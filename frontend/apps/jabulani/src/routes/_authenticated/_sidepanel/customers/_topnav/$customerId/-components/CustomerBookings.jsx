@@ -30,6 +30,7 @@ async function fetchCustomerBookings(
   cursor
 ) {
   const params = new URLSearchParams({
+    customer_id: customerId,
     status: statuses.join(","),
     limit: PAGE_SIZE.toString(),
     cursor,
@@ -38,7 +39,7 @@ async function fetchCustomerBookings(
     params.set("before", startOfNextDay(beforeDate).toISOString());
   }
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/customers/${customerId}/bookings?${params}`,
+    `/api/v1/merchants/${merchantId}/bookings?${params}`,
     {
       headers: {
         Accept: "application/json",
@@ -56,7 +57,7 @@ async function fetchCustomerBookings(
   return result.data;
 }
 
-export default function BookingHistory({
+export default function CustomerBookings({
   merchantId,
   customerId,
   counts,
@@ -108,7 +109,7 @@ export default function BookingHistory({
           sm:justify-between"
       >
         <div>
-          <p className="text-2xl">Booking history</p>
+          <p className="text-2xl">Bookings</p>
           <p className="text-text_color/60 mt-1 text-sm">
             Search and filter this customer&apos;s bookings
           </p>
@@ -218,7 +219,8 @@ function filterBookings(bookings, searchText) {
       [booking.employee_first_name, booking.employee_last_name]
         .filter(Boolean)
         .join(" "),
-      booking.status,
+      booking.booking_status,
+      booking.participant_status,
     ].some((value) => value?.toLocaleLowerCase().includes(search))
   );
 }

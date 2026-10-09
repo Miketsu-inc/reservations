@@ -2,14 +2,11 @@ package customers
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -32,7 +29,6 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Get("/{id}", h.Get)
 
 	r.Get("/{id}/stats", h.GetStats)
-	r.Get("/{id}/bookings", h.GetBookings)
 	r.Put("/{id}/blacklist", h.Blacklist)
 	r.Delete("/{id}/blacklist", h.UnBlacklist)
 
@@ -157,28 +153,6 @@ type getStatsResp struct {
 	NextBooking          *time.Time               `json:"next_booking"`
 }
 
-type customerBookingsResp struct {
-	Id                int                      `json:"id"`
-	BookingType       types.BookingType        `json:"booking_type"`
-	IsRecurring       bool                     `json:"is_recurring"`
-	FromDate          time.Time                `json:"from_date"`
-	ToDate            time.Time                `json:"to_date"`
-	ServiceName       string                   `json:"service_name"`
-	ServiceColor      *string                  `json:"service_color"`
-	FormattedLocation string                   `json:"formatted_location"`
-	Price             currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType          `json:"price_type"`
-	Status            types.BookingStatus      `json:"status"`
-	EmployeeFirstName *string                  `json:"employee_first_name"`
-	EmployeeLastName  *string                  `json:"employee_last_name"`
-}
-
-type getBookingsResp struct {
-	Bookings    []customerBookingsResp `json:"bookings"`
-	HasNextPage bool                   `json:"has_next_page"`
-	NextCursor  *string                `json:"next_cursor"`
-}
-
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -191,52 +165,6 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetStatsResp(customerStats))
-
-	return nil
-}
-
-func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
-	urlCustomerId, err := uuid.Parse(chi.URLParam(r, "id"))
-	if err != nil {
-		return validate.NewError("invalid customer id")
-	}
-
-	statuses := strings.Split(r.URL.Query().Get("status"), ",")
-	if len(statuses) == 1 && statuses[0] == "all" {
-		statuses = []string{"booked", "confirmed", "completed", "cancelled", "no-show"}
-	}
-
-	seenStatuses := make(map[string]bool, len(statuses))
-	for _, status := range statuses {
-		if seenStatuses[status] || (status != "booked" && status != "confirmed" && status != "completed" && status != "cancelled" && status != "no-show") {
-			return validate.NewError("invalid status query parameter")
-		}
-		seenStatuses[status] = true
-	}
-
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		return validate.NewError("invalid limit query parameter")
-	}
-	if limit < 1 || limit > 20 {
-		return validate.NewError("limit must be between 1 and 20")
-	}
-
-	var before *time.Time
-	if beforeValue := r.URL.Query().Get("before"); beforeValue != "" {
-		parsedBefore, err := time.Parse(time.RFC3339, beforeValue)
-		if err != nil {
-			return validate.NewError("invalid before query parameter")
-		}
-		before = &parsedBefore
-	}
-
-	bookings, err := h.service.GetBookings(r.Context(), urlCustomerId, statuses, before, r.URL.Query().Get("cursor"), limit)
-	if err != nil {
-		return customerServ.ErrStatus.Resolve(err, "GetBookings")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToGetBookingsResp(bookings))
 
 	return nil
 }

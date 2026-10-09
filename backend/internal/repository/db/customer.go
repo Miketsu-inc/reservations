@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -232,80 +231,6 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	}
 
 	return customer, nil
-}
-
-func (r *customerRepository) GetCustomerBookings(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, statuses []string, limit int, cursorStart time.Time, cursorId int) ([]domain.CustomerBooking, error) {
-	statusConditions := make([]string, 0, len(statuses))
-	for _, status := range statuses {
-		switch status {
-		case "booked":
-			statusConditions = append(statusConditions, `(
-				b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'booked'
-			)`)
-		case "confirmed":
-			statusConditions = append(statusConditions, `(
-				b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'confirmed'
-			)`)
-		case "completed":
-			statusConditions = append(statusConditions, `(
-				b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-			)`)
-		case "cancelled":
-			statusConditions = append(statusConditions, `(
-				b.status = 'cancelled'
-				or (b.status not in ('cancelled', 'no-show') and bp.status = 'cancelled')
-			)`)
-		case "no-show":
-			statusConditions = append(statusConditions, `(
-				b.status = 'no-show'
-				or (b.status not in ('cancelled', 'no-show') and bp.status = 'no-show')
-			)`)
-		default:
-			return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: invalid status")
-		}
-	}
-
-	if len(statusConditions) == 0 {
-		return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: no statuses provided")
-	}
-
-	orderClause := "b.from_date desc, b.id desc"
-
-	statusClause := fmt.Sprintf(
-		"(%s) and (b.from_date, b.id) < ($4, $5)",
-		strings.Join(statusConditions, " or "),
-	)
-
-	query := fmt.Sprintf(`
-	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
-		b.formatted_location, b.price_per_person as price, b.price_type,
-		case
-			when b.status in ('cancelled', 'no-show') then b.status
-			when bp.status in ('cancelled', 'no-show') then bp.status
-			when b.to_date < now() then 'completed'
-			else bp.status
-		end as status,
-		e.first_name as employee_first_name, e.last_name as employee_last_name
-	from "Booking" b
-	join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
-	left join "Service" s on s.id = b.service_id
-	left join "Employee" e on e.id = b.employee_id
-	where b.merchant_id = $1 and %s
-	order by %s
-	limit $3
-	`, statusClause, orderClause)
-
-	rows, err := r.db.Query(ctx, query, merchantId, customerId, limit, cursorStart, cursorId)
-	if err != nil {
-		return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: %w", err)
-	}
-
-	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.CustomerBooking])
-	if err != nil {
-		return []domain.CustomerBooking{}, fmt.Errorf("GetCustomerBookings: %w", err)
-	}
-
-	return bookings, nil
 }
 
 func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.CustomerForCalendar, error) {

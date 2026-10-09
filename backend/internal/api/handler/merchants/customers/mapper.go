@@ -60,33 +60,6 @@ func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 	}
 }
 
-func mapToGetBookingsResp(in customerServ.GetBookingsResult) getBookingsResp {
-	bookings := make([]customerBookingsResp, len(in.Bookings))
-	for i, b := range in.Bookings {
-		bookings[i] = customerBookingsResp{
-			Id:                b.Id,
-			BookingType:       b.BookingType,
-			IsRecurring:       b.IsRecurring,
-			FromDate:          b.FromDate,
-			ToDate:            b.ToDate,
-			ServiceName:       b.ServiceName,
-			ServiceColor:      b.ServiceColor,
-			FormattedLocation: b.FormattedLocation,
-			Price:             b.Price.ToFormatted(),
-			PriceType:         b.PriceType,
-			Status:            b.Status,
-			EmployeeFirstName: b.EmployeeFirstName,
-			EmployeeLastName:  b.EmployeeLastName,
-		}
-	}
-
-	return getBookingsResp{
-		Bookings:    bookings,
-		HasNextPage: in.HasNextPage,
-		NextCursor:  in.NextCursor,
-	}
-}
-
 func mapToBlacklistInput(in blacklistReq) customerServ.BlacklistInput {
 	return customerServ.BlacklistInput{
 		CustomerId:      in.CustomerId,

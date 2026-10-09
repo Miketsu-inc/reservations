@@ -3,7 +3,6 @@ package customer
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,20 +10,8 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/repository"
-	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
-
-type bookingCursor struct {
-	Id       int       `json:"id"`
-	FromDate time.Time `json:"from_date"`
-}
-
-type GetBookingsResult struct {
-	Bookings    []domain.CustomerBooking
-	NextCursor  *string
-	HasNextPage bool
-}
 
 type Service struct {
 	customerRepo domain.CustomerRepository
@@ -156,60 +143,6 @@ func (s *Service) GetStats(ctx context.Context, customerId uuid.UUID) (domain.Cu
 	}
 
 	return customerStats, nil
-}
-
-func (s *Service) GetBookings(ctx context.Context, customerId uuid.UUID, statuses []string, before *time.Time, cursorStr string, pageSize int) (GetBookingsResult, error) {
-	actor := actor.MustGetFromContext(ctx)
-
-	decodedCursor, err := cursor.Decode[bookingCursor](cursorStr)
-	if err != nil {
-		return GetBookingsResult{}, fmt.Errorf("error during cursor decoding: %s", err.Error())
-	}
-
-	if cursorStr == "" {
-		decodedCursor = bookingCursor{
-			Id:       math.MaxInt32,
-			FromDate: time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC),
-		}
-		if before != nil {
-			decodedCursor.FromDate = *before
-		}
-	}
-
-	bookings, err := s.customerRepo.GetCustomerBookings(
-		ctx,
-		actor.MerchantId,
-		customerId,
-		statuses,
-		pageSize+1,
-		decodedCursor.FromDate,
-		decodedCursor.Id,
-	)
-	if err != nil {
-		return GetBookingsResult{}, err
-	}
-
-	hasNextPage := len(bookings) > pageSize
-	var nextCursor *string
-	if hasNextPage {
-		lastBooking := bookings[pageSize-1]
-		encodedCursor, err := cursor.Encode(bookingCursor{
-			Id:       lastBooking.Id,
-			FromDate: lastBooking.FromDate,
-		})
-		if err != nil {
-			return GetBookingsResult{}, fmt.Errorf("error during cursor encoding: %s", err.Error())
-		}
-
-		nextCursor = &encodedCursor
-		bookings = bookings[:pageSize]
-	}
-
-	return GetBookingsResult{
-		Bookings:    bookings,
-		NextCursor:  nextCursor,
-		HasNextPage: hasNextPage,
-	}, nil
 }
 
 type BlacklistInput struct {
