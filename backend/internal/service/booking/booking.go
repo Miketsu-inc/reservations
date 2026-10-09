@@ -495,10 +495,21 @@ func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, 
 		return nil, fmt.Errorf("recurring rule frequency is invalid")
 	}
 
-	untilTimeStamp, err := time.Parse(time.RFC3339, rruleInput.Until)
+	untilDate, err := time.ParseInLocation(time.DateOnly, rruleInput.UntilDate, dStart.Location())
 	if err != nil {
-		return nil, fmt.Errorf("until timestamp could not be converted to time: %s", err.Error())
+		return nil, fmt.Errorf("until date could not be converted to time: %s", err.Error())
 	}
+
+	until := time.Date(
+		untilDate.Year(),
+		untilDate.Month(),
+		untilDate.Day(),
+		dStart.Hour(),
+		dStart.Minute(),
+		dStart.Second(),
+		0,
+		dStart.Location(),
+	)
 
 	var weekdays []rrule.Weekday
 
@@ -528,7 +539,7 @@ func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, 
 		Dtstart:   dStart,
 		Interval:  rruleInput.Interval,
 		Byweekday: weekdays,
-		Until:     untilTimeStamp,
+		Until:     until,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error while creating rrule: %s", err.Error())
@@ -622,7 +633,7 @@ type RecurringRuleInput struct {
 	Frequency string
 	Interval  int
 	Weekdays  []string
-	Until     string
+	UntilDate string
 }
 
 func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantInput) error {

@@ -9,6 +9,7 @@ import { getDefaultRecurrenceEnd, useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
   combineDateTimeLocal,
+  formatToDateString,
   formatTimeInputValue,
   useToast,
   useWindowSize,
@@ -204,7 +205,7 @@ export default function NewBookingPanel({
             frequency: frequency,
             interval: Number(interval),
             weekdays: days,
-            until: recurData.endDate.toISOString(),
+            until_date: formatToDateString(recurData.endDate),
           },
         }),
       });

@@ -62,7 +62,7 @@ type recurringRuleReq struct {
 	Frequency string   `json:"frequency"`
 	Interval  int      `json:"interval"`
 	Weekdays  []string `json:"weekdays"`
-	Until     string   `json:"until"`
+	UntilDate string   `json:"until_date"`
 }
 
 func (h *Handler) CreateByMerchant(w http.ResponseWriter, r *http.Request) error {

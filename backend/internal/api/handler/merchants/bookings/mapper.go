@@ -36,7 +36,7 @@ func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMer
 			Frequency: in.Rrule.Frequency,
 			Interval:  in.Rrule.Interval,
 			Weekdays:  in.Rrule.Weekdays,
-			Until:     in.Rrule.Until,
+			UntilDate: in.Rrule.UntilDate,
 		},
 	}, nil
 }
