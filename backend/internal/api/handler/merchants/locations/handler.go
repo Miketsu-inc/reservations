@@ -2,7 +2,9 @@ package locations
 
 import (
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	locationServ "github.com/miketsu-inc/reservations/backend/internal/service/location"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -22,8 +24,8 @@ func (h *Handler) Routes() *httputil.Router {
 
 	// TODO: temp until signup flow is figured out?
 	r.Post("/", h.New)
-	r.Get("/", h.Get)
-	r.Patch("/", h.Update)
+	r.Get("/", h.GetAll)
+	r.Patch("/{id}", h.Update)
 
 	return r
 }
@@ -69,15 +71,17 @@ type getResp struct {
 	GeoPoint          types.GeoPoint `json:"geo_point"`
 	PlaceId           *string        `json:"place_id"`
 	FormattedLocation string         `json:"formatted_location"`
+	IsPrimary         bool           `json:"is_primary"`
+	IsActive          bool           `json:"is_active"`
 }
 
-func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
-	location, err := h.service.Get(r.Context())
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
+	locations, err := h.service.GetAll(r.Context())
 	if err != nil {
-		return locationServ.ErrStatus.Resolve(err, "Get")
+		return locationServ.ErrStatus.Resolve(err, "GetAll")
 	}
 
-	httputil.Success(w, http.StatusOK, mapToGetResp(location))
+	httputil.Success(w, http.StatusOK, mapToGetResp(locations))
 
 	return nil
 }
@@ -103,7 +107,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	err := h.service.Update(r.Context(), mapToUpdateInput(req))
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	err = h.service.Update(r.Context(), locationId, mapToUpdateInput(req))
 	if err != nil {
 		return locationServ.ErrStatus.Resolve(err, "Update")
 	}

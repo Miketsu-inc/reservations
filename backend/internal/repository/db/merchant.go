@@ -223,7 +223,7 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 	query := `
 	select m.name, m.url_name, m.contact_email, m.introduction, m.announcement, m.about_us, m.parking_info, m.payment_info, m.timezone,
 	l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
-	inner join "Location" l on m.id = l.merchant_id
+	inner join "Location" l on m.id = l.merchant_id and l.is_primary is true and l.is_active is true
 	where m.id = $1
 	`
 

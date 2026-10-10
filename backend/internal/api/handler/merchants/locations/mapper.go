@@ -31,15 +31,23 @@ func mapToUpdateInput(in updateReq) locationServ.UpdateInput {
 	}
 }
 
-func mapToGetResp(in domain.Location) getResp {
-	return getResp{
-		Id:                in.Id,
-		Country:           in.Country,
-		City:              in.City,
-		PostalCode:        in.PostalCode,
-		Address:           in.Address,
-		GeoPoint:          in.GeoPoint,
-		PlaceId:           in.PlaceId,
-		FormattedLocation: in.FormattedLocation,
+func mapToGetResp(in []domain.Location) []getResp {
+	out := make([]getResp, len(in))
+
+	for i, location := range in {
+		out[i] = getResp{
+			Id:                location.Id,
+			Country:           location.Country,
+			City:              location.City,
+			PostalCode:        location.PostalCode,
+			Address:           location.Address,
+			GeoPoint:          location.GeoPoint,
+			PlaceId:           location.PlaceId,
+			FormattedLocation: location.FormattedLocation,
+			IsPrimary:         location.IsPrimary,
+			IsActive:          location.IsActive,
+		}
 	}
+
+	return out
 }

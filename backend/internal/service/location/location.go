@@ -61,26 +61,22 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 	return nil
 }
 
-func (s *Service) Get(ctx context.Context) (domain.Location, error) {
+func (s *Service) GetAll(ctx context.Context) ([]domain.Location, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	location, err := s.locationRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
+	locations, err := s.locationRepo.GetLocations(ctx, actor.MerchantId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.Location{}, ErrLocationNotFound
-		}
-
-		return domain.Location{}, err
+		return nil, err
 	}
 
-	return location, nil
+	return locations, nil
 }
 
-func (s *Service) Update(ctx context.Context, input UpdateInput) error {
+func (s *Service) Update(ctx context.Context, locationId int, input UpdateInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	err := s.locationRepo.UpdateLocation(ctx, domain.Location{
-		Id:                actor.LocationId,
+		Id:                locationId,
 		MerchantId:        actor.MerchantId,
 		Country:           input.Country,
 		City:              input.City,

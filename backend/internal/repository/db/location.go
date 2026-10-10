@@ -52,6 +52,26 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 	return location, nil
 }
 
+func (r *locationRepository) GetLocations(ctx context.Context, merchantId uuid.UUID) ([]domain.Location, error) {
+	query := `
+	select * from "Location"
+	where merchant_id = $1
+	order by is_primary desc, is_active desc, id
+	`
+
+	rows, err := r.db.Query(ctx, query, merchantId)
+	if err != nil {
+		return nil, fmt.Errorf("GetLocations: %w", err)
+	}
+
+	locations, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Location])
+	if err != nil {
+		return nil, fmt.Errorf("GetLocations: %w", err)
+	}
+
+	return locations, nil
+}
+
 func (r *locationRepository) UpdateLocation(ctx context.Context, location domain.Location) error {
 	query := `
 	update "Location"

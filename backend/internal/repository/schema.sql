@@ -62,6 +62,9 @@ create table if not exists "Location" (
     is_active                boolean          not null default true
 );
 
+create unique index if not exists location_one_primary_per_merchant
+on "Location" (merchant_id) where is_primary is true;
+
 create table if not exists "Employee" (
     ID                       serial          primary key unique not null,
     user_id                  uuid            references "User" (ID) on delete set null,

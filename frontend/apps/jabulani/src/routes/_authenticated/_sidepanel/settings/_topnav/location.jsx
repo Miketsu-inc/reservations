@@ -1,9 +1,13 @@
-import { Location01Icon } from "@hugeicons/core-free-icons";
+import { Edit03Icon, Location01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
+  CloseButton,
   Icon,
   Loading,
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
 import {
@@ -41,14 +45,17 @@ async function updateLocationSettings(merchantId, location) {
     ...location,
     formatted_location: location.formatted_location.trim(),
   };
-  const response = await fetch(`/api/v1/merchants/${merchantId}/locations`, {
-    method: "PATCH",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(updatedLocation),
-  });
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/locations/${location.id}`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(updatedLocation),
+    }
+  );
 
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
@@ -57,6 +64,21 @@ async function updateLocationSettings(merchantId, location) {
   }
 
   return updatedLocation;
+}
+
+function locationSignature(location) {
+  if (!location) return "";
+
+  return JSON.stringify({
+    country: location.country ?? null,
+    city: location.city ?? null,
+    postalCode: location.postal_code ?? null,
+    address: location.address ?? null,
+    latitude: location.geo_point?.latitude ?? null,
+    longitude: location.geo_point?.longitude ?? null,
+    placeId: location.place_id ?? null,
+    formattedLocation: location.formatted_location?.trim() ?? "",
+  });
 }
 
 export const Route = createFileRoute(
@@ -74,19 +96,67 @@ export const Route = createFileRoute(
   errorComponent: ({ error }) => <ServerError error={error.message} />,
 });
 
-function Detail({ label, value }) {
-  if (!value) return null;
+function LocationCard({ location, onEdit }) {
+  const secondaryAddress = [
+    location.postal_code,
+    location.city,
+    location.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <div>
-      <dt
-        className="text-text_color/60 text-xs font-medium tracking-wide
-          uppercase"
-      >
-        {label}
-      </dt>
-      <dd className="text-text_color mt-1 text-sm">{value}</dd>
-    </div>
+    <Card styles="h-auto! flex flex-col justify-between gap-5 p-5!">
+      <div className="flex min-w-0 items-start gap-4">
+        <div className="bg-primary/10 text-primary shrink-0 rounded-full p-3">
+          <Icon icon={Location01Icon} styles="size-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h2 className="text-text_color font-semibold">
+              {location.name ??
+                (location.is_primary ? "Primary location" : "Location")}
+            </h2>
+            {location.is_primary && (
+              <span
+                className="bg-primary/10 text-primary rounded-full px-2 py-0.5
+                  text-xs font-medium"
+              >
+                Primary
+              </span>
+            )}
+            {!location.is_active && (
+              <span
+                className="rounded-full bg-gray-200 px-2 py-0.5 text-xs
+                  font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              >
+                Inactive
+              </span>
+            )}
+          </div>
+          <p className="text-text_color text-sm leading-6 font-medium">
+            {location.formatted_location}
+          </p>
+          {secondaryAddress && (
+            <p className="text-text_color/55 mt-1 text-xs leading-5">
+              {secondaryAddress}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="border-border_color flex justify-end border-t pt-4">
+        <Button
+          type="button"
+          variant="tertiary"
+          styles="px-3 py-2"
+          buttonText="Edit location"
+          onClick={() => onEdit(location)}
+        >
+          <Icon icon={Edit03Icon} styles="mr-2 size-4" />
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -94,10 +164,10 @@ function LocationPage() {
   const { merchantId } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
-  const { data: settings, isLoading } = useQuery(
+  const { data: locations, isLoading } = useQuery(
     locationSettingsQueryOptions(merchantId)
   );
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(null);
   const [draftLocation, setDraftLocation] = useState(null);
 
   const updateMutation = useMutation({
@@ -105,10 +175,13 @@ function LocationPage() {
     onSuccess: (updatedLocation) => {
       queryClient.setQueryData(
         locationSettingsQueryOptions(merchantId).queryKey,
-        updatedLocation
+        (currentLocations) =>
+          currentLocations.map((location) =>
+            location.id === updatedLocation.id ? updatedLocation : location
+          )
       );
-      setDraftLocation(updatedLocation);
-      setIsEditing(false);
+      setEditingLocation(null);
+      setDraftLocation(null);
       showToast({
         message: "Location updated successfully",
         variant: "success",
@@ -118,90 +191,119 @@ function LocationPage() {
 
   if (isLoading) return <Loading />;
 
-  function startEditing() {
-    setDraftLocation(settings);
-    setIsEditing(true);
-  }
-
-  function cancelEditing() {
-    setDraftLocation(settings);
-    setIsEditing(false);
+  function openEditor(location) {
+    setEditingLocation(location);
+    setDraftLocation(location);
     updateMutation.reset();
   }
 
-  return (
-    <div className="flex flex-col gap-12 pb-8">
-      <SettingsPageHeader
-        title="Location"
-        description="Manage the primary address shown to customers and used for new bookings."
-      />
-      <Card styles="h-auto! max-w-3xl p-6!">
-        <h2 className="text-text_color text-xl font-semibold">
-          Primary location
-        </h2>
-        <p className="text-text_color/65 mt-1 mb-8 text-sm leading-6">
-          The address text and exact map pin can be updated independently.
-        </p>
+  function closeEditor() {
+    if (updateMutation.isPending) return;
 
-        {isEditing ? (
-          <div className="flex flex-col gap-6">
-            <LocationEditor value={draftLocation} onChange={setDraftLocation} />
-            <ServerError error={updateMutation.error?.message} />
-            <div
-              className="border-border_color flex flex-col-reverse gap-3
-                border-t pt-5 sm:flex-row sm:justify-end"
-            >
-              <Button
-                type="button"
-                variant="tertiary"
-                styles="px-4 py-2"
-                buttonText="Cancel"
-                disabled={updateMutation.isPending}
-                onClick={cancelEditing}
-              />
-              <Button
-                type="button"
-                styles="px-4 py-2"
-                buttonText="Save location"
-                disabled={!isLocationComplete(draftLocation)}
-                isLoading={updateMutation.isPending}
-                onClick={() => updateMutation.mutate(draftLocation)}
-              />
-            </div>
+    setEditingLocation(null);
+    setDraftLocation(null);
+    updateMutation.reset();
+  }
+
+  const hasChanges =
+    locationSignature(draftLocation) !== locationSignature(editingLocation);
+
+  return (
+    <div className="flex flex-col gap-6 pb-8">
+      <SettingsPageHeader
+        title="Locations"
+        description="Manage the places customers can visit for their bookings."
+      />
+
+      {locations.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {locations.map((location) => (
+            <LocationCard
+              key={location.id}
+              location={location}
+              onEdit={openEditor}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="border-border_color bg-layer_bg flex flex-col items-center
+            rounded-xl border px-4 py-12 text-center shadow-sm"
+        >
+          <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
+            <Icon icon={Location01Icon} styles="size-6" />
           </div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            <div className="flex min-w-0 items-center gap-4">
-              <div
-                className="bg-primary/10 text-primary shrink-0 rounded-full p-3"
-              >
-                <Icon icon={Location01Icon} styles="size-6" />
+          <h2 className="text-text_color text-lg font-semibold">
+            No locations yet
+          </h2>
+          <p className="text-text_color/65 mt-1 max-w-sm text-sm leading-6">
+            Add a business location before accepting in-person bookings.
+          </p>
+        </div>
+      )}
+
+      <ResponsiveDialog
+        open={Boolean(editingLocation)}
+        onOpenChange={(open) => {
+          if (!open) closeEditor();
+        }}
+      >
+        <ResponsiveDialogContent
+          styles="max-h-[90vh] overflow-y-auto lg:max-w-3xl"
+        >
+          {editingLocation && (
+            <div className="flex w-full flex-col gap-5 p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-text_color text-xl font-semibold">
+                    Edit location
+                  </h2>
+                  <p className="text-text_color/65 mt-1 text-sm leading-6">
+                    Update the customer-facing address and exact map pin.
+                  </p>
+                </div>
+                <ResponsiveDialogClose asChild>
+                  <CloseButton styles="hidden lg:block" />
+                </ResponsiveDialogClose>
               </div>
-              <p className="text-text_color min-w-0 flex-1 font-medium">
-                {settings.formatted_location ||
-                  "No formatted address available"}
-              </p>
-            </div>
-            <dl className="grid gap-5 sm:grid-cols-2 sm:pl-16">
-              <Detail label="Address" value={settings.address} />
-              <Detail label="City" value={settings.city} />
-              <Detail label="Postal code" value={settings.postal_code} />
-              <Detail label="Country" value={settings.country} />
-            </dl>
-            <div
-              className="border-border_color flex border-t pt-5 sm:justify-end"
-            >
-              <Button
-                type="button"
-                variant="tertiary"
-                styles="w-full px-3 py-2 sm:w-auto"
-                buttonText="Change location"
-                onClick={startEditing}
+
+              <LocationEditor
+                key={editingLocation.id}
+                value={draftLocation}
+                onChange={(location) => {
+                  setDraftLocation(location);
+                  updateMutation.reset();
+                }}
               />
+
+              <ServerError error={updateMutation.error?.message} />
+
+              <div
+                className="border-border_color flex flex-col-reverse gap-3
+                  border-t pt-5 sm:flex-row sm:justify-end"
+              >
+                <ResponsiveDialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    styles="px-4 py-2"
+                    buttonText="Cancel"
+                    disabled={updateMutation.isPending}
+                  />
+                </ResponsiveDialogClose>
+                <Button
+                  type="button"
+                  styles="px-4 py-2"
+                  buttonText="Save location"
+                  disabled={!hasChanges || !isLocationComplete(draftLocation)}
+                  isLoading={updateMutation.isPending}
+                  onClick={() => updateMutation.mutate(draftLocation)}
+                />
+              </div>
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }

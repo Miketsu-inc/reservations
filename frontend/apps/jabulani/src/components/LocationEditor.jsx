@@ -295,8 +295,8 @@ export default function LocationEditor({ value, onChange }) {
       )}
 
       <div
-        className="border-border_color relative h-96 overflow-hidden rounded-lg
-          border"
+        className="border-border_color relative h-72 overflow-hidden rounded-lg
+          border sm:h-96"
       >
         {showMap ? (
           <>
