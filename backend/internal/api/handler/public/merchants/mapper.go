@@ -34,6 +34,7 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		Name:                    in.Name,
 		UrlName:                 in.UrlName,
 		ContactEmail:            in.ContactEmail,
+		PhoneNumber:             in.PhoneNumber,
 		Introduction:            in.Introduction,
 		Announcement:            in.Announcement,
 		AboutUs:                 in.AboutUs,

@@ -65,15 +65,16 @@ func (h *Handler) Routes() *httputil.Router {
 }
 
 type getInfoResp struct {
-	Name         string `json:"merchant_name"`
-	UrlName      string `json:"url_name"`
-	ContactEmail string `json:"contact_email"`
-	Introduction string `json:"introduction"`
-	Announcement string `json:"announcement"`
-	AboutUs      string `json:"about_us"`
-	ParkingInfo  string `json:"parking_info"`
-	PaymentInfo  string `json:"payment_info"`
-	Timezone     string `json:"timezone"`
+	Name         string  `json:"merchant_name"`
+	UrlName      string  `json:"url_name"`
+	ContactEmail string  `json:"contact_email"`
+	PhoneNumber  *string `json:"phone_number"`
+	Introduction string  `json:"introduction"`
+	Announcement string  `json:"announcement"`
+	AboutUs      string  `json:"about_us"`
+	ParkingInfo  string  `json:"parking_info"`
+	PaymentInfo  string  `json:"payment_info"`
+	Timezone     string  `json:"timezone"`
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`

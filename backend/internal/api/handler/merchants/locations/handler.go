@@ -96,6 +96,9 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 }
 
 type updateReq struct {
+	Name              string          `json:"name" validate:"required,max=100"`
+	ContactEmail      *string         `json:"contact_email" validate:"omitempty,email,max=320"`
+	PhoneNumber       *string         `json:"phone_number" validate:"omitempty,max=30"`
 	Country           *string         `json:"country"`
 	CountryCode       *string         `json:"country_code"`
 	Region            *string         `json:"region"`

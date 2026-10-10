@@ -1,9 +1,15 @@
-import { Edit03Icon, Location01Icon } from "@hugeicons/core-free-icons";
+import {
+  Call02Icon,
+  Edit03Icon,
+  Location01Icon,
+  Mail01Icon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
   CloseButton,
   Icon,
+  Input,
   Loading,
   ResponsiveDialog,
   ResponsiveDialogClose,
@@ -15,7 +21,11 @@ import {
   LocationEditor,
 } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import {
+  invalidateLocalStorageAuth,
+  useToast,
+  useWindowSize,
+} from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -43,6 +53,9 @@ function locationSettingsQueryOptions(merchantId) {
 async function updateLocationSettings(merchantId, location) {
   const updatedLocation = {
     ...location,
+    name: location.name.trim(),
+    contact_email: location.contact_email?.trim() || null,
+    phone_number: location.phone_number?.trim() || null,
     formatted_location: location.formatted_location.trim(),
   };
   const response = await fetch(
@@ -70,6 +83,9 @@ function locationSignature(location) {
   if (!location) return "";
 
   return JSON.stringify({
+    name: location.name?.trim() ?? "",
+    contactEmail: location.contact_email?.trim() || null,
+    phoneNumber: location.phone_number?.trim() || null,
     country: location.country ?? null,
     countryCode: location.country_code ?? null,
     region: location.region ?? null,
@@ -82,6 +98,19 @@ function locationSignature(location) {
     providerPlaceId: location.provider_place_id ?? null,
     formattedLocation: location.formatted_location?.trim() ?? "",
   });
+}
+
+function isValidEmail(email) {
+  return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function areLocationDetailsValid(location) {
+  return Boolean(
+    location?.name?.trim() &&
+    location.name.trim().length <= 100 &&
+    isValidEmail(location.contact_email?.trim()) &&
+    (location.phone_number?.trim().length ?? 0) <= 30
+  );
 }
 
 export const Route = createFileRoute(
@@ -134,6 +163,22 @@ function LocationCard({ location, onEdit }) {
               {secondaryAddress}
             </p>
           )}
+          {(location.contact_email || location.phone_number) && (
+            <div className="text-text_color/65 mt-4 flex flex-col gap-2 text-sm">
+              {location.contact_email && (
+                <div className="flex min-w-0 items-center gap-2">
+                  <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
+                  <span className="truncate">{location.contact_email}</span>
+                </div>
+              )}
+              {location.phone_number && (
+                <div className="flex items-center gap-2">
+                  <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+                  <span>{location.phone_number}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -156,11 +201,13 @@ function LocationPage() {
   const { merchantId } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
+  const { isWindowSmall } = useWindowSize();
   const { data: locations, isLoading } = useQuery(
     locationSettingsQueryOptions(merchantId)
   );
   const [editingLocation, setEditingLocation] = useState(null);
   const [draftLocation, setDraftLocation] = useState(null);
+  const [editorSection, setEditorSection] = useState("details");
 
   const updateMutation = useMutation({
     mutationFn: (location) => updateLocationSettings(merchantId, location),
@@ -186,6 +233,7 @@ function LocationPage() {
   function openEditor(location) {
     setEditingLocation(location);
     setDraftLocation(location);
+    setEditorSection("details");
     updateMutation.reset();
   }
 
@@ -197,14 +245,20 @@ function LocationPage() {
     updateMutation.reset();
   }
 
+  function handleLocationDetailChange({ name, value }) {
+    setDraftLocation((current) => ({ ...current, [name]: value }));
+    updateMutation.reset();
+  }
+
   const hasChanges =
     locationSignature(draftLocation) !== locationSignature(editingLocation);
+  const invalidEmail = !isValidEmail(draftLocation?.contact_email?.trim());
 
   return (
     <div className="flex flex-col gap-6 pb-8">
       <SettingsPageHeader
         title="Locations"
-        description="Manage the places customers can visit for their bookings."
+        description="Manage the address and contact details for each place customers can visit."
       />
 
       {locations.length > 0 ? (
@@ -241,37 +295,130 @@ function LocationPage() {
         }}
       >
         <ResponsiveDialogContent
-          styles="lg:max-h-[90vh] lg:max-w-3xl lg:overflow-y-auto"
-          popUpStyles="max-h-[calc(95dvh+3rem)]!"
+          styles="lg:max-h-[90vh] lg:max-w-5xl"
+          popUpStyles="h-[calc(95dvh+3rem)]! max-h-none! overflow-hidden!"
         >
           {editingLocation && (
-            <div className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-6">
+            <div
+              className="flex h-full min-h-0 w-full flex-col gap-4 p-4 sm:p-6
+                lg:h-auto lg:gap-5"
+            >
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-text_color text-xl font-semibold">
-                    Edit location
-                  </h2>
-                  <p
-                    className="text-text_color/65 mt-1 hidden text-sm leading-6
-                      lg:block"
-                  >
-                    Update the customer-facing address and exact map pin.
-                  </p>
-                </div>
+                <h2 className="text-text_color text-xl font-semibold">
+                  Edit location
+                </h2>
                 <ResponsiveDialogClose asChild>
                   <CloseButton styles="hidden lg:block" />
                 </ResponsiveDialogClose>
               </div>
 
-              <LocationEditor
-                key={editingLocation.id}
-                value={draftLocation}
-                compact
-                onChange={(location) => {
-                  setDraftLocation(location);
-                  updateMutation.reset();
-                }}
-              />
+              <div
+                className="grid grid-cols-2 rounded-lg bg-gray-100 p-1 lg:hidden
+                  dark:bg-gray-800"
+                role="tablist"
+                aria-label="Location editor sections"
+              >
+                {[
+                  ["details", "Details"],
+                  ["address", "Address & pin"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={editorSection === value}
+                    className={`${editorSection === value ? "bg-layer_bg text-text_color shadow-sm" : "text-text_color/60"}
+                    rounded-md px-3 py-2 text-sm font-medium`}
+                    onClick={() => setEditorSection(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className="min-h-0 flex-1 lg:grid
+                  lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.35fr)] lg:gap-6"
+              >
+                {(!isWindowSmall || editorSection === "details") && (
+                  <section
+                    className="lg:border-border_color flex min-h-0 flex-col
+                      gap-4 lg:border-r lg:pr-6"
+                    role="tabpanel"
+                  >
+                    <div className="hidden lg:block">
+                      <h3 className="text-text_color font-semibold">
+                        Location details
+                      </h3>
+                    </div>
+
+                    <Input
+                      type="text"
+                      id="location_name"
+                      name="name"
+                      labelText="Location name"
+                      placeholder="Main studio"
+                      maxLength={100}
+                      value={draftLocation.name ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    <Input
+                      type="email"
+                      id="location_contact_email"
+                      name="contact_email"
+                      labelText="Contact email"
+                      placeholder="location@example.com"
+                      maxLength={320}
+                      required={false}
+                      value={draftLocation.contact_email ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    {invalidEmail && (
+                      <p
+                        className="-mt-2 text-xs text-red-600 dark:text-red-400"
+                      >
+                        Enter a valid email address.
+                      </p>
+                    )}
+                    <Input
+                      type="tel"
+                      id="location_phone_number"
+                      name="phone_number"
+                      labelText="Phone number"
+                      placeholder="Phone number"
+                      maxLength={30}
+                      required={false}
+                      value={draftLocation.phone_number ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    <p className="text-text_color/55 text-xs leading-5">
+                      Leave the email blank to use the business contact email.
+                    </p>
+                  </section>
+                )}
+
+                {(!isWindowSmall || editorSection === "address") && (
+                  <section
+                    className="flex min-h-0 flex-col gap-4"
+                    role="tabpanel"
+                  >
+                    <div className="hidden lg:block">
+                      <h3 className="text-text_color font-semibold">
+                        Address and entrance
+                      </h3>
+                    </div>
+                    <LocationEditor
+                      key={editingLocation.id}
+                      value={draftLocation}
+                      compact
+                      onChange={(location) => {
+                        setDraftLocation(location);
+                        updateMutation.reset();
+                      }}
+                    />
+                  </section>
+                )}
+              </div>
 
               <ServerError error={updateMutation.error?.message} />
 
@@ -292,7 +439,11 @@ function LocationPage() {
                   type="button"
                   styles="w-full px-4 py-2 lg:w-auto"
                   buttonText="Save location"
-                  disabled={!hasChanges || !isLocationComplete(draftLocation)}
+                  disabled={
+                    !hasChanges ||
+                    !areLocationDetailsValid(draftLocation) ||
+                    !isLocationComplete(draftLocation)
+                  }
                   isLoading={updateMutation.isPending}
                   onClick={() => updateMutation.mutate(draftLocation)}
                 />

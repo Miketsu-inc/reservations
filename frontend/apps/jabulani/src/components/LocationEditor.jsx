@@ -82,6 +82,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
       if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
 
       return {
+        ...(locationRef.current ?? {}),
         country: context.country?.name ?? null,
         country_code: context.country?.country_code ?? null,
         region: context.region?.name ?? null,
@@ -285,13 +286,13 @@ export default function LocationEditor({ value, onChange, compact = false }) {
         <p className="text-text_color/60 mt-2 text-xs leading-5">
           {compact && (
             <span className="lg:hidden">
-              This exact text is shown to customers. Select a suggestion to
-              place the pin.
+              Shown exactly as typed. Select a suggestion to place the pin.
             </span>
           )}
           <span className={compact ? "hidden lg:inline" : undefined}>
-            This exact text will be shown to customers. Choose an autocomplete
-            result to position the pin, then edit the text further if needed.
+            {compact
+              ? "Shown exactly as typed. Select a suggestion to place the pin."
+              : "This exact text will be shown to customers. Choose an autocomplete result to position the pin, then edit the text further if needed."}
           </span>
         </p>
       </div>
@@ -308,7 +309,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
 
       <div
         className={`border-border_color relative overflow-hidden rounded-lg
-          border ${compact ? "h-60 lg:h-96" : "h-72 sm:h-96"}`}
+          border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
       >
         {showMap ? (
           <>

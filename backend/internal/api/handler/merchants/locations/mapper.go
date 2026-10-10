@@ -22,6 +22,9 @@ func mapToNewInput(in newReq) locationServ.NewInput {
 
 func mapToUpdateInput(in updateReq) locationServ.UpdateInput {
 	return locationServ.UpdateInput{
+		Name:              in.Name,
+		ContactEmail:      in.ContactEmail,
+		PhoneNumber:       in.PhoneNumber,
 		Country:           in.Country,
 		CountryCode:       in.CountryCode,
 		Region:            in.Region,

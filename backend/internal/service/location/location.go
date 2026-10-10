@@ -36,6 +36,9 @@ type NewInput struct {
 }
 
 type UpdateInput struct {
+	Name              string
+	ContactEmail      *string
+	PhoneNumber       *string
 	Country           *string
 	CountryCode       *string
 	Region            *string
@@ -114,6 +117,9 @@ func (s *Service) Update(ctx context.Context, locationId int, input UpdateInput)
 	err := s.locationRepo.UpdateLocation(ctx, domain.Location{
 		Id:                locationId,
 		MerchantId:        actor.MerchantId,
+		Name:              input.Name,
+		ContactEmail:      input.ContactEmail,
+		PhoneNumber:       input.PhoneNumber,
 		Country:           input.Country,
 		CountryCode:       input.CountryCode,
 		Region:            input.Region,
