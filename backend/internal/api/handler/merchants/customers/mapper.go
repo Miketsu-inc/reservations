@@ -3,6 +3,7 @@ package customers
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToNewInput(in newReq) customerServ.NewInput {
@@ -30,51 +31,42 @@ func mapToUpdateInput(in updateReq) customerServ.UpdateInput {
 
 func mapToGetResp(in domain.CustomerInfo) getResp {
 	return getResp{
-		Id:          in.Id,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
-		Email:       in.Email,
-		PhoneNumber: in.PhoneNumber,
-		Birthday:    in.Birthday,
-		Note:        in.Note,
-		IsDummy:     in.IsDummy,
+		Id:              in.Id,
+		FirstName:       in.FirstName,
+		LastName:        in.LastName,
+		Email:           in.Email,
+		PhoneNumber:     in.PhoneNumber,
+		Birthday:        in.Birthday,
+		Note:            in.Note,
+		IsDummy:         in.IsDummy,
+		IsBlacklisted:   in.IsBlacklisted,
+		BlacklistReason: in.BlacklistReason,
 	}
 }
 
 func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
-	bookings := make([]customerBookingsResp, len(in.Bookings))
+	return getStatsResp{
+		TimesBooked:     in.TimesBooked,
+		TimesConfirmed:  in.TimesConfirmed,
+		TimesCompleted:  in.TimesCompleted,
+		TimesCancelled:  in.TimesCancelled,
+		TimesNoShow:     in.TimesNoShow,
+		FirstBooking:    in.FirstBooking,
+		CompletedValues: mapToCompletedValuesResp(in.CompletedValues),
+		FavoriteService: in.FavoriteService,
+		NextBooking:     in.NextBooking,
+	}
+}
 
-	for i, b := range in.Bookings {
-		bookings[i] = customerBookingsResp{
-			FromDate:          b.FromDate,
-			ToDate:            b.ToDate,
-			ServiceName:       b.ServiceName,
-			CancelDeadline:    b.CancelDeadline,
-			FormattedLocation: b.FormattedLocation,
-			Price:             b.Price.ToFormatted(),
-			PriceType:         b.PriceType,
-			MerchantName:      b.MerchantName,
-			Status:            b.Status,
+func mapToCompletedValuesResp(in []currencyx.Price) []completedValueResp {
+	out := make([]completedValueResp, len(in))
+	for i, value := range in {
+		out[i] = completedValueResp{
+			FormattedValue: value.ToFormatted(),
 		}
 	}
 
-	return getStatsResp{
-		Id:                   in.Id,
-		FirstName:            in.FirstName,
-		LastName:             in.LastName,
-		Email:                in.Email,
-		PhoneNumber:          in.PhoneNumber,
-		Birthday:             in.Birthday,
-		Note:                 in.Note,
-		IsDummy:              in.IsDummy,
-		IsBlacklisted:        in.IsBlacklisted,
-		BlacklistReason:      in.BlacklistReason,
-		TimesBooked:          in.TimesBooked,
-		TimesCancelledByUser: in.TimesCancelledByUser,
-		TimesUpcoming:        in.TimesUpcoming,
-		TimesCompleted:       in.TimesCompleted,
-		Bookings:             bookings,
-	}
+	return out
 }
 
 func mapToBlacklistInput(in blacklistReq) customerServ.BlacklistInput {

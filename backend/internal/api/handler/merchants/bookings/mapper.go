@@ -7,6 +7,34 @@ import (
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 )
 
+func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
+	bookings := make([]bookingListItemResp, len(in.Bookings))
+	for i, booking := range in.Bookings {
+		bookings[i] = bookingListItemResp{
+			Id:                booking.Id,
+			BookingType:       booking.BookingType,
+			IsRecurring:       booking.IsRecurring,
+			FromDate:          booking.FromDate,
+			ToDate:            booking.ToDate,
+			ServiceName:       booking.ServiceName,
+			ServiceColor:      booking.ServiceColor,
+			FormattedLocation: booking.FormattedLocation,
+			Price:             booking.Price.ToFormatted(),
+			PriceType:         booking.PriceType,
+			BookingStatus:     booking.BookingStatus,
+			ParticipantStatus: booking.ParticipantStatus,
+			EmployeeFirstName: booking.EmployeeFirstName,
+			EmployeeLastName:  booking.EmployeeLastName,
+		}
+	}
+
+	return getBookingsResp{
+		Bookings:    bookings,
+		HasNextPage: in.HasNextPage,
+		NextCursor:  in.NextCursor,
+	}
+}
+
 func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMerchantInput, error) {
 	timeStamp, err := time.Parse(time.RFC3339, in.TimeStamp)
 	if err != nil {

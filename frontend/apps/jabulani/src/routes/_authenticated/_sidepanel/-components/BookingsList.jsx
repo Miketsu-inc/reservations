@@ -1,15 +1,13 @@
 import {
   Calendar02Icon,
   Clock01Icon,
+  Location01Icon,
   Note01Icon,
   Tick02Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon } from "@reservations/components";
-import {
-  getBookingStatusStyles,
-  useAuth,
-} from "@reservations/jabulani/lib";
+import { getBookingStatusStyles, useAuth } from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
   preferencesQueryOptions,
@@ -19,17 +17,33 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-export default function BookingsList({ bookings, onAccept, route }) {
+export default function BookingsList({
+  bookings,
+  onAccept,
+  route,
+  showCustomer = true,
+  emptyTitle = "No bookings yet",
+  emptyMessage = "When customers schedule bookings, they will appear here.",
+}) {
+  const { isWindowSmall } = useWindowSize();
+  const { merchantId, employeeId } = useAuth();
+  const { data: preferences } = useQuery(
+    preferencesQueryOptions(merchantId, employeeId)
+  );
+
   return (
-    <div className="h-full">
+    <div>
       {bookings.length > 0 ? (
         <div className="space-y-4">
           {bookings.map((booking, index) => (
             <BookingCard
               key={`${booking.id}-${index}`}
               booking={booking}
+              isWindowSmall={isWindowSmall}
               onAccept={onAccept}
               route={route}
+              showCustomer={showCustomer}
+              timeFormat={preferences?.time_format}
             />
           ))}
         </div>
@@ -44,9 +58,9 @@ export default function BookingsList({ bookings, onAccept, route }) {
               styles="size-8 text-gray-500 dark:text-gray-400"
             />
           </div>
-          <p className="mb-1">No bookings yet</p>
+          <p className="mb-1">{emptyTitle}</p>
           <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            When customers schedule bookings, they will appear here.
+            {emptyMessage}
           </p>
         </div>
       )}
@@ -58,25 +72,26 @@ function monthNameFromDate(date) {
   return date.toLocaleDateString([], { month: "short" });
 }
 
-function BookingCard({ booking, route, onAccept }) {
-  const { isWindowSmall } = useWindowSize();
-
+function BookingCard({
+  booking,
+  isWindowSmall,
+  route,
+  onAccept,
+  showCustomer,
+  timeFormat,
+}) {
   const fromDate = new Date(booking.from_date);
   const toDate = new Date(booking.to_date);
 
   const isGroupBooking = booking.booking_type !== "appointment";
   const status = isGroupBooking
-    ? booking.participant_status
-    : booking.booking_status;
+    ? (booking.participant_status ?? booking.status)
+    : (booking.booking_status ?? booking.status);
   const isNotConfirmed = status === "booked";
 
-  const isWalkIn =
-    booking.customer_first_name === null && booking.customer_last_name === null;
-
-  const { merchantId, employeeId } = useAuth();
-  const { data: preferences } = useQuery(
-    preferencesQueryOptions(merchantId, employeeId)
-  );
+  const customerName = `${booking.customer_first_name} ${booking.customer_last_name}`;
+  const isWalkIn = !customerName;
+  const employeeName = `${booking.employee_first_name} ${booking.employee_last_name}`;
 
   return (
     <div
@@ -89,7 +104,7 @@ function BookingCard({ booking, route, onAccept }) {
           px-4 py-4"
       >
         <Link
-          className="flex flex-1 cursor-pointer flex-row gap-4
+          className="flex min-w-0 flex-1 cursor-pointer flex-row gap-3 sm:gap-4
             lg:cursor-default"
           from={route.fullPath}
           to="/calendar/bookings/$bookingId"
@@ -103,8 +118,8 @@ function BookingCard({ booking, route, onAccept }) {
             </p>
           </div>
           <div className="border-border_color border-r" />
-          <div className="flex flex-col items-start justify-center">
-            <div className="flex flex-row items-center gap-2">
+          <div className="flex min-w-0 flex-col items-start justify-center">
+            <div className="flex min-w-0 flex-row items-center gap-2">
               <div
                 className="rounded-lg p-1"
                 style={{
@@ -112,10 +127,12 @@ function BookingCard({ booking, route, onAccept }) {
                     booking.service_color ?? DEFAULT_SERVICE_COLOR,
                 }}
               />
-              <p className="text-lg">{booking.service_name}</p>
+              <p className="truncate text-base sm:text-lg">
+                {booking.service_name}
+              </p>
               <div
-                className={`${getBookingStatusStyles(status)} w-fit
-                  rounded-full px-2 py-1 text-sm`}
+                className={`${getBookingStatusStyles(status)} w-fit shrink-0
+                  rounded-full px-2 py-1 text-xs sm:text-sm`}
               >
                 <p>{status}</p>
               </div>
@@ -126,7 +143,7 @@ function BookingCard({ booking, route, onAccept }) {
             >
               <Icon icon={Clock01Icon} styles="size-3.5" />
               <p>
-                {`${timeStringFromDate(fromDate, preferences?.time_format)} - ${timeStringFromDate(toDate, preferences?.time_format)}`}
+                {`${timeStringFromDate(fromDate, timeFormat)} - ${timeStringFromDate(toDate, timeFormat)}`}
               </p>
             </div>
           </div>
@@ -137,6 +154,7 @@ function BookingCard({ booking, route, onAccept }) {
               className="lg:hover:bg-hvr_gray h-full cursor-pointer rounded-lg
                 px-2 lg:h-fit lg:py-2"
               onClick={() => onAccept(booking)}
+              type="button"
             >
               <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
             </button>
@@ -154,17 +172,32 @@ function BookingCard({ booking, route, onAccept }) {
       </div>
       <div className="flex flex-row items-center justify-between px-3 py-2">
         <div className="flex min-w-0 flex-row items-center gap-2">
-          {!isWalkIn && (
-            <Avatar
-              styles="size-8! text-xs!"
-              initials={`${booking.customer_first_name[0]}${booking.customer_last_name[0]}`}
-            />
+          {showCustomer ? (
+            <>
+              {!isWalkIn && (
+                <Avatar
+                  styles="size-8! text-xs!"
+                  initials={`${booking.customer_first_name?.[0]}${booking.customer_last_name?.[0]}`}
+                />
+              )}
+              <p className="truncate text-sm">
+                {isWalkIn ? "Walk-in" : customerName}
+              </p>
+            </>
+          ) : employeeName ? (
+            <>
+              <Avatar
+                styles="size-8! text-xs!"
+                initials={`${booking.employee_first_name?.[0]}${booking.employee_last_name?.[0]}`}
+              />
+              <p className="truncate text-sm">{employeeName}</p>
+            </>
+          ) : (
+            <>
+              <Icon icon={Location01Icon} styles="size-4 shrink-0" />
+              <p className="truncate text-sm">{booking.formatted_location}</p>
+            </>
           )}
-          <p className="truncate text-sm">
-            {isWalkIn
-              ? "Walk-in"
-              : `${booking.customer_first_name} ${booking.customer_last_name}`}
-          </p>
         </div>
         <div className="flex flex-row items-center gap-2">
           {booking?.customer_note && (
@@ -177,7 +210,10 @@ function BookingCard({ booking, route, onAccept }) {
             <Pill>
               <Icon icon={UserGroupIcon} styles="size-4" />
               <p>
-                Group {booking.current_participants}/{booking.max_participants}
+                Group
+                {booking.current_participants !== undefined &&
+                  booking.max_participants !== undefined &&
+                  ` ${booking.current_participants}/${booking.max_participants}`}
               </p>
             </Pill>
           )}

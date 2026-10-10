@@ -1045,6 +1045,71 @@ func (r *bookingRepository) GetBookingCancelDeadline(ctx context.Context, bookin
 	return cancelDeadline, nil
 }
 
+func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingListItem, error) {
+	query := `
+	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
+		b.formatted_location, b.price_per_person as price, b.price_type,
+		b.status as booking_status, bp.status as participant_status,
+		e.first_name as employee_first_name, e.last_name as employee_last_name
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
+	left join "Service" s on s.id = b.service_id
+	left join "Employee" e on e.id = b.employee_id
+	where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
+		and (
+			(b.booking_type = 'appointment' and b.status = any($3::text[]))
+			or (b.booking_type != 'appointment' and bp.status = any($3::text[]))
+		)
+		and (b.from_date, b.id) < ($5, $6)
+	order by b.from_date desc, b.id desc
+	limit $4
+	`
+
+	statusStrings := make([]string, len(statuses))
+	for i, status := range statuses {
+		statusStrings[i] = status.String()
+	}
+
+	rows, _ := r.db.Query(ctx, query, merchantId, customerId, statusStrings, limit, cursorStart, cursorId)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingListItem])
+	if err != nil {
+		return nil, fmt.Errorf("GetBookingsForCustomer: %w", err)
+	}
+
+	return bookings, nil
+}
+
+func (r *bookingRepository) GetBookingsForEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingListItem, error) {
+	query := `
+	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
+		b.formatted_location, b.price_per_person as price, b.price_type,
+		b.status as booking_status, null::text as participant_status,
+		e.first_name as employee_first_name, e.last_name as employee_last_name
+	from "Booking" b
+	left join "Service" s on s.id = b.service_id
+	left join "Employee" e on e.id = b.employee_id
+	where b.merchant_id = $1
+		and b.employee_id = $2
+		and b.status = any($3::text[])
+		and (b.from_date, b.id) < ($5, $6)
+	order by b.from_date desc, b.id desc
+	limit $4
+	`
+
+	statusStrings := make([]string, len(statuses))
+	for i, status := range statuses {
+		statusStrings[i] = status.String()
+	}
+
+	rows, _ := r.db.Query(ctx, query, merchantId, employeeId, statusStrings, limit, cursorStart, cursorId)
+	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingListItem])
+	if err != nil {
+		return nil, fmt.Errorf("GetBookingsForEmployee: %w", err)
+	}
+
+	return bookings, nil
+}
+
 func (r *bookingRepository) GetReservedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) (map[int][]domain.BookingSlot, error) {
 	query := `
 	select b.employee_id, bp.from_date, bp.to_date

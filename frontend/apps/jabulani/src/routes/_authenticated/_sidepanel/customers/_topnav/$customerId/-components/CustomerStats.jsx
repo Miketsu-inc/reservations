@@ -1,75 +1,110 @@
-import {
-  Calendar02Icon,
-  Cancel01Icon,
-  CheckmarkCircle02Icon,
-} from "@hugeicons/core-free-icons";
-import { Icon } from "@reservations/components";
+import { Loading, ServerError } from "@reservations/components";
+import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
+import { useQuery } from "@tanstack/react-query";
 import BookingDonutChart from "./BookingDonutChart";
+import { customerStatsQueryOptions } from "./customerQueries";
 
-export default function CustomerStats({ customer }) {
+export default function CustomerStats({ customerId }) {
+  const { merchantId } = useAuth();
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useQuery(customerStatsQueryOptions(merchantId, customerId));
+
   return (
-    <div
-      className="flex w-full flex-col gap-2 sm:flex-row sm:justify-start
-        sm:gap-0"
-    >
-      {customer.times_booked !== 0 && (
-        <div className="flex h-45 w-full justify-center sm:ml-10 sm:w-1/3">
-          <BookingDonutChart
-            cancelled={customer.times_cancelled_by_user}
-            upcoming={customer.times_upcoming}
-            completed={customer.times_completed}
-          />
-        </div>
+    <section>
+      <h2 className="mb-4 text-xl">Overview</h2>
+      {error ? (
+        <ServerError error={error.message} />
+      ) : isLoading || !stats ? (
+        <Loading />
+      ) : (
+        <CustomerStatsContent stats={stats} />
       )}
+    </section>
+  );
+}
+
+function CustomerStatsContent({ stats }) {
+  const counts = {
+    booked: stats.times_booked,
+    confirmed: stats.times_confirmed,
+    completed: stats.times_completed,
+    cancelled: stats.times_cancelled,
+    "no-show": stats.times_no_show,
+  };
+  const statuses = BOOKING_STATUS_OPTIONS.map(({ value: status, label }) => ({
+    status,
+    label,
+    value: counts[status],
+  }));
+
+  return (
+    <div className="flex flex-col gap-6 md:flex-row md:items-center">
+      <div className="h-40 w-40 shrink-0 self-center md:self-auto">
+        <BookingDonutChart statuses={statuses} />
+      </div>
+
       <div
-        className={`flex w-full flex-col justify-center gap-2
-          ${customer.times_booked !== 0 ? "sm:w-2/3" : "mt-2"}`}
+        className="border-border_color grid flex-1 grid-cols-2 gap-x-6 gap-y-5
+          border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6
+          lg:grid-cols-4"
       >
-        <div className="text-text_color flex items-center justify-center gap-4">
-          <span className="text-lg font-bold">Total Bookings:</span>
-          <span className="text-xl font-bold">{customer.times_booked}</span>
-        </div>
-        <div className="grid w-full grid-cols-3 gap-4 rounded-lg p-4">
-          <StatElement
-            value={customer.times_completed}
-            color="green-600"
-            label="Completed"
-          >
-            <Icon icon={CheckmarkCircle02Icon} styles="size-7 text-green-600" />
-          </StatElement>
-          <StatElement
-            value={customer.times_cancelled_by_user}
-            color="red-600"
-            label="Cancelled/No-show"
-          >
-            <div className="w-min rounded-full border-2 border-red-600">
-              <Icon icon={Cancel01Icon} styles="size-5 text-red-600" />
-            </div>
-          </StatElement>
-          <StatElement
-            value={customer.times_upcoming}
-            color="primary"
-            label="Upcoming"
-          >
-            <Icon icon={Calendar02Icon} styles="size-6 mb-0.5 text-primary" />
-          </StatElement>
-        </div>
+        <Insight
+          label="First booking"
+          value={formatFirstBookingDate(stats.first_booking)}
+        />
+        <Insight
+          label="Completed value"
+          value={formatCompletedValues(stats.completed_values)}
+        />
+        <Insight
+          label="Favorite service"
+          value={stats.favorite_service ?? "—"}
+        />
+        <Insight
+          label="Next booking"
+          value={formatBookingDate(stats.next_booking)}
+        />
       </div>
     </div>
   );
 }
 
-function StatElement({ children, value, color, label }) {
+function Insight({ label, value }) {
   return (
-    <div className="text-center">
-      <div
-        className={`flex items-center justify-center gap-2 text-2xl font-bold
-          text-${color}`}
-      >
-        {children}
+    <div className="min-w-0">
+      <p className="text-text_color/60 text-sm">{label}</p>
+      <p className="mt-1 truncate font-medium" title={value}>
         {value}
-      </div>
-      <p className="text-text_color/70 mt-1 text-xs">{label}</p>
+      </p>
     </div>
   );
+}
+
+function formatBookingDate(dateString) {
+  if (!dateString) return "None scheduled";
+
+  return new Date(dateString).toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatFirstBookingDate(dateString) {
+  if (!dateString) return "No bookings yet";
+
+  return new Date(dateString).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatCompletedValues(values) {
+  if (!values?.length) return "—";
+
+  return values.map(({ formatted_value }) => formatted_value).join(" + ");
 }

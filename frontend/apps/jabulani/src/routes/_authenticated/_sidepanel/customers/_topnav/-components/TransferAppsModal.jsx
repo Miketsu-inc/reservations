@@ -59,7 +59,13 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
       await Promise.all([
         queryClient.invalidateQueries(customersQueryOptions(merchantId)),
         queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-info"],
+          queryKey: [merchantId, "customer-profile"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [merchantId, "customer-stats"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [merchantId, "customer-bookings"],
         }),
       ]);
       showToast({

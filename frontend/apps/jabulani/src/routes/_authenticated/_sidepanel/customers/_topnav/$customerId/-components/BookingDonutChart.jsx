@@ -1,108 +1,84 @@
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { getBookingStatusColorStyles } from "@reservations/jabulani/lib";
+import { Pie, PieChart, Sector, Tooltip } from "recharts";
 
-const COLORS = {
-  Completed: "#16a34a",
-  Cancelled: "#dc2626",
-  Upcoming: "rgb(var(--primary))",
-  Empty: "rgb(var(--hvr-gray))",
-};
-
-export default function BookingDonutChart({ upcoming, cancelled, completed }) {
-  const chartData = [
-    { name: "Upcoming", value: upcoming },
-    { name: "Cancelled", value: cancelled },
-    { name: "Completed", value: completed },
-  ];
-
-  const total = chartData.reduce((sum, d) => sum + d.value, 0);
-  // const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  const fallbackData = [{ name: "Empty", value: 1 }];
+function BookingStatusSector({ isActive, payload, ...props }) {
+  const status = payload?.status;
 
   return (
-    <ResponsiveContainer
-      initialDimension={{ width: 100, height: 100 }} // silence warning
-      width="100%"
-      height="100%"
-    >
-      <PieChart>
-        <Pie
-          data={total > 0 ? chartData : fallbackData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          innerRadius={60}
-          outerRadius={75}
-          paddingAngle={total > 0 ? 2 : 0}
-          stroke="none"
-          isAnimationActive={true}
-        >
-          {(total > 0 ? chartData : fallbackData).map((entry, index) => (
-            <Cell
-              key={`cell-${index}`}
-              fill={COLORS[entry.name] || COLORS.Empty}
-            />
-          ))}
-          {/* <Label
-            // content={<LabelContent completionRate={completionRate} />}
-            position="center"
-          /> */}
-        </Pie>
-        {total > 0 && <Tooltip content={<TooltipContent total={total} />} />}
-      </PieChart>
-    </ResponsiveContainer>
+    <Sector
+      {...props}
+      className={status ? getBookingStatusColorStyles(status) : undefined}
+      fill={status ? "currentColor" : "rgb(var(--hvr-gray))"}
+      outerRadius={
+        isActive && status ? props.outerRadius + 3 : props.outerRadius
+      }
+    />
   );
 }
 
-const TooltipContent = ({ payload, total }) => {
-  const data = payload[0]?.payload;
-  const percentage = total > 0 ? Math.round((data?.value / total) * 100) : 0;
+function BookingStatusTooltip({ payload }) {
+  const status = payload?.[0]?.payload;
+  const hasStatus = Boolean(status?.status);
 
   return (
     <div
-      className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border
-        border-gray-200 p-2 text-xs shadow-xl dark:border-gray-800"
+      aria-hidden={!hasStatus}
+      className={`border-border_color bg-layer_bg flex h-9 w-36 items-center
+        gap-3 rounded-lg border px-3 text-sm shadow-md
+        ${hasStatus ? "" : "invisible"}`}
     >
-      <div
-        className="text-text_color flex items-center justify-between
-          font-semibold"
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="size-2.5 shrink-0 rounded-xs"
-            style={{ backgroundColor: data?.fill }}
-          />
-          {data?.name}
-        </div>
-        <span>{data?.value}</span>
-      </div>
-      <div className="text-text_color/70 mt-1">Rate: {percentage}%</div>
+      <span
+        className={`${
+          hasStatus ? getBookingStatusColorStyles(status.status) : ""
+        } size-2.5
+          shrink-0 rounded-xs bg-current`}
+      />
+      <span className="min-w-0 flex-1 truncate">{status?.label}</span>
+      <span className="font-semibold">{status?.value}</span>
     </div>
   );
-};
+}
 
-// const LabelContent = ({ viewBox, completionRate }) => {
-//   const { cx, cy } = viewBox;
+export default function BookingDonutChart({ statuses }) {
+  const hasBookings = statuses.some((item) => item.value > 0);
+  const total = statuses.reduce((sum, item) => sum + item.value, 0);
+  const chartData = hasBookings
+    ? statuses
+    : [{ label: "No bookings", value: 1 }];
 
-//   return (
-//     <g>
-//       <text
-//         x={cx + 3}
-//         y={cy - 4}
-//         textAnchor="middle"
-//         className="fill-text_color text-2xl font-bold"
-//       >
-//         {`${completionRate}%`}
-//       </text>
-//       <text
-//         x={cx + 3}
-//         y={cy + 22}
-//         textAnchor="middle"
-//         className="fill-gray-500 text-xs dark:fill-gray-400"
-//       >
-//         Completion
-//       </text>
-//     </g>
-//   );
-// };
+  return (
+    <div className="relative size-40">
+      <PieChart
+        width={160}
+        height={160}
+        margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      >
+        <Pie
+          data={chartData}
+          dataKey="value"
+          cx="50%"
+          cy="50%"
+          innerRadius={52}
+          outerRadius={68}
+          paddingAngle={hasBookings ? 2 : 0}
+          stroke="none"
+          shape={BookingStatusSector}
+        />
+        <Tooltip
+          allowEscapeViewBox={{ x: true, y: true }}
+          cursor={false}
+          offset={14}
+          wrapperStyle={{ zIndex: 20 }}
+          content={<BookingStatusTooltip />}
+        />
+      </PieChart>
+      <div
+        className="pointer-events-none absolute inset-0 flex flex-col
+          items-center justify-center"
+      >
+        <span className="text-2xl leading-none font-semibold">{total}</span>
+        <span className="text-text_color/60 mt-1 text-xs">bookings</span>
+      </div>
+    </div>
+  );
+}

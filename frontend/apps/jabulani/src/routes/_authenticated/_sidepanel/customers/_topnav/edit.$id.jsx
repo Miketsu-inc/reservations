@@ -88,11 +88,11 @@ function RouteComponent() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
+        await queryClient.invalidateQueries(
+          customerQueryOptions(merchantId, id)
+        );
         await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer", id],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer-info", id],
+          queryKey: [merchantId, "customer-profile", id],
         });
         await queryClient.invalidateQueries(customersQueryOptions(merchantId));
         showToast({

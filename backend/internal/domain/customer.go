@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
 
@@ -47,19 +48,21 @@ type PublicCustomer struct {
 
 type CustomerInfo struct {
 	Customer
-	IsDummy bool `json:"is_dummy"`
+	IsDummy         bool
+	IsBlacklisted   bool
+	BlacklistReason *string
 }
 
 type CustomerStatistics struct {
-	Customer
-	IsDummy              bool            `json:"is_dummy"`
-	IsBlacklisted        bool            `json:"is_blacklisted"`
-	BlacklistReason      *string         `json:"blacklist_reason"`
-	TimesBooked          int             `json:"times_booked"`
-	TimesCancelledByUser int             `json:"times_cancelled_by_user"`
-	TimesUpcoming        int             `json:"times_upcoming"`
-	TimesCompleted       int             `json:"times_completed"`
-	Bookings             []PublicBooking `json:"bookings"`
+	TimesBooked     int
+	TimesConfirmed  int
+	TimesCompleted  int
+	TimesCancelled  int
+	TimesNoShow     int
+	FirstBooking    *time.Time
+	CompletedValues []currencyx.Price
+	FavoriteService *string
+	NextBooking     *time.Time
 }
 
 type CustomerForCalendar struct {

@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -111,14 +110,16 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getResp struct {
-	Id          uuid.UUID  `json:"id"`
-	FirstName   *string    `json:"first_name"`
-	LastName    *string    `json:"last_name"`
-	Email       *string    `json:"email"`
-	PhoneNumber *string    `json:"phone_number"`
-	Birthday    *time.Time `json:"birthday"`
-	Note        *string    `json:"note"`
-	IsDummy     bool       `json:"is_dummy"`
+	Id              uuid.UUID  `json:"id"`
+	FirstName       *string    `json:"first_name"`
+	LastName        *string    `json:"last_name"`
+	Email           *string    `json:"email"`
+	PhoneNumber     *string    `json:"phone_number"`
+	Birthday        *time.Time `json:"birthday"`
+	Note            *string    `json:"note"`
+	IsDummy         bool       `json:"is_dummy"`
+	IsBlacklisted   bool       `json:"is_blacklisted"`
+	BlacklistReason *string    `json:"blacklist_reason"`
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
@@ -138,33 +139,19 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getStatsResp struct {
-	Id                   uuid.UUID              `json:"id"`
-	FirstName            *string                `json:"first_name"`
-	LastName             *string                `json:"last_name"`
-	Email                *string                `json:"email"`
-	PhoneNumber          *string                `json:"phone_number"`
-	Birthday             *time.Time             `json:"birthday"`
-	Note                 *string                `json:"note"`
-	IsDummy              bool                   `json:"is_dummy"`
-	IsBlacklisted        bool                   `json:"is_blacklisted"`
-	BlacklistReason      *string                `json:"blacklist_reason"`
-	TimesBooked          int                    `json:"times_booked"`
-	TimesCancelledByUser int                    `json:"times_cancelled_by_user"`
-	TimesUpcoming        int                    `json:"times_upcoming"`
-	TimesCompleted       int                    `json:"times_completed"`
-	Bookings             []customerBookingsResp `json:"bookings"`
+	TimesBooked     int                  `json:"times_booked"`
+	TimesConfirmed  int                  `json:"times_confirmed"`
+	TimesCompleted  int                  `json:"times_completed"`
+	TimesCancelled  int                  `json:"times_cancelled"`
+	TimesNoShow     int                  `json:"times_no_show"`
+	FirstBooking    *time.Time           `json:"first_booking"`
+	CompletedValues []completedValueResp `json:"completed_values"`
+	FavoriteService *string              `json:"favorite_service"`
+	NextBooking     *time.Time           `json:"next_booking"`
 }
 
-type customerBookingsResp struct {
-	FromDate          time.Time                `json:"from_date"`
-	ToDate            time.Time                `json:"to_date"`
-	ServiceName       string                   `json:"service_name"`
-	CancelDeadline    int                      `json:"cancel_deadline"`
-	FormattedLocation string                   `json:"formatted_location"`
-	Price             currencyx.FormattedPrice `json:"price"`
-	PriceType         types.PriceType          `json:"price_type"`
-	MerchantName      string                   `json:"merchant_name"`
-	Status            types.BookingStatus      `json:"status"`
+type completedValueResp struct {
+	FormattedValue currencyx.FormattedPrice `json:"formatted_value"`
 }
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {

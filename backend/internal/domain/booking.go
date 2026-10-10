@@ -63,6 +63,8 @@ type BookingRepository interface {
 	GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (BookingCountsForUser, error)
 	GetBookingPhases(ctx context.Context, bookingId int) ([]BookingPhase, error)
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
+	GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]BookingListItem, error)
+	GetBookingsForEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]BookingListItem, error)
 
 	GetReservedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) (map[int][]BookingSlot, error)
 	GetAvailableGroupBookings(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) ([]AvailableGroupBooking, error)
@@ -483,4 +485,21 @@ type BookingCountsForUser struct {
 	Upcoming  int `db:"upcoming"`
 	Completed int `db:"completed"`
 	Cancelled int `db:"cancelled"`
+}
+
+type BookingListItem struct {
+	Id                int                  `db:"id"`
+	BookingType       types.BookingType    `db:"booking_type"`
+	IsRecurring       bool                 `db:"is_recurring"`
+	FromDate          time.Time            `db:"from_date"`
+	ToDate            time.Time            `db:"to_date"`
+	ServiceName       string               `db:"service_name"`
+	ServiceColor      *string              `db:"service_color"`
+	FormattedLocation string               `db:"formatted_location"`
+	Price             currencyx.Price      `db:"price"`
+	PriceType         types.PriceType      `db:"price_type"`
+	BookingStatus     types.BookingStatus  `db:"booking_status"`
+	ParticipantStatus *types.BookingStatus `db:"participant_status"`
+	EmployeeFirstName *string              `db:"employee_first_name"`
+	EmployeeLastName  *string              `db:"employee_last_name"`
 }

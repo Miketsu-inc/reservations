@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -130,6 +129,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 	left join "User" u on c.user_id = u.id
 	left join "BookingParticipant" bp on c.id = bp.customer_id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
+		and b.cancelled_by_merchant_on is null
 	where c.merchant_id = $1 and c.is_blacklisted = $2
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
@@ -152,14 +152,16 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerInfo, error) {
 	query := `
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note, c.user_id is null as is_dummy
+	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
+	c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
 	where c.id = $1 and c.merchant_id = $2`
 
 	var customer domain.CustomerInfo
 	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
-		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy)
+		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy,
+		&customer.IsBlacklisted, &customer.BlacklistReason)
 	if err != nil {
 		return domain.CustomerInfo{}, fmt.Errorf("GetCustomerInfo: %w", err)
 	}
@@ -169,62 +171,63 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 
 func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerStatistics, error) {
 	query := `
-	with bookings as (
-		select b.customer_id,
-			jsonb_agg(
-				jsonb_build_object(
-					'from_date', b.from_date,
-					'to_date', b.to_date,
-					'service_name', b.service_name,
-					'price', b.price_per_person,
-					'price_type', b.price_type,
-					'merchant_name', m.name,
-					'cancel_deadline', m.cancel_deadline,
-					'formatted_location', b.formatted_location,
-					'status', b.status
-				) order by b.from_date desc
-			) as bookings
-		from (
-			select bp.customer_id, b.id, b.from_date, b.to_date, b.merchant_id,
-				b.service_name, b.price_per_person, b.price_type, b.formatted_location, bp.status
-			from "Booking" b
-			join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
-			where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
-		) b
-		join "Merchant" m on m.id = b.merchant_id
-		group by b.customer_id
+	with customer_bookings as (
+		select b.id, b.from_date, b.to_date, b.service_name, b.price_per_person,
+			case
+				when b.booking_type = 'appointment' then b.status
+				else bp.status
+			end as status
+		from "BookingParticipant" bp
+		join "Booking" b on b.id = bp.booking_id and b.merchant_id = $1
+		where bp.customer_id = $2 and b.cancelled_by_merchant_on is null
 	)
-	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
-		coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number,birthday, note, c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
-		count(b.id) as times_booked, count(distinct case when bp.status in ('cancelled', 'no-show') then b.id end) as times_cancelled_by_user,
-		count(distinct case when bp.status in ('booked', 'confirmed') then b.id end) as times_upcoming, count(distinct case when bp.status in ('completed') then b.id end) as times_completed,
-		coalesce(ca.bookings, '[]'::jsonb) as bookings
+	select count(cb.id) filter (where cb.status = 'booked') as times_booked,
+		count(cb.id) filter (where cb.status = 'confirmed') as times_confirmed,
+		count(cb.id) filter (where cb.status = 'completed') as times_completed,
+		count(cb.id) filter (where cb.status = 'cancelled') as times_cancelled,
+		count(cb.id) filter (where cb.status = 'no-show') as times_no_show,
+		min(cb.from_date) as first_booking,
+		case
+			when count(cb.id) filter (where cb.status = 'completed') = 0 then
+				array[row(0, m.currency_code)::price]
+			else array(
+				select row(
+					sum((completed.price_per_person).number),
+					(completed.price_per_person).currency
+				)::price
+				from customer_bookings completed
+				where completed.status = 'completed'
+				group by (completed.price_per_person).currency
+				order by (completed.price_per_person).currency
+			)
+		end as completed_values,
+		(
+			select service_name
+			from customer_bookings
+			where status in ('booked', 'confirmed', 'completed')
+			group by service_name
+			order by count(*) desc, max(from_date) desc
+			limit 1
+		) as favorite_service,
+		min(cb.from_date) filter (
+			where cb.status in ('booked', 'confirmed') and cb.from_date >= now()
+		) as next_booking
 	from "Customer" c
-	left join "User" u on u.id = c.user_id
-	left join "BookingParticipant" bp on bp.customer_id = c.id
-	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
-	left join bookings ca on c.id = ca.customer_id
+	join "Merchant" m on m.id = c.merchant_id
+	left join customer_bookings cb on true
 	where c.id = $2 and c.merchant_id = $1
-	GROUP BY c.id, u.first_name, u.last_name, u.email, u.phone_number, ca.bookings
+	group by c.id, m.currency_code
 	`
 
 	var customer domain.CustomerStatistics
-	var bookingsJSON []byte
-
-	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(&customer.Id, &customer.FirstName, &customer.LastName, &customer.Email, &customer.PhoneNumber, &customer.Birthday,
-		&customer.Note, &customer.IsDummy, &customer.IsBlacklisted, &customer.BlacklistReason, &customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesUpcoming,
-		&customer.TimesCompleted, &bookingsJSON)
+	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(
+		&customer.TimesBooked, &customer.TimesConfirmed,
+		&customer.TimesCompleted, &customer.TimesCancelled, &customer.TimesNoShow,
+		&customer.FirstBooking, &customer.CompletedValues,
+		&customer.FavoriteService, &customer.NextBooking,
+	)
 	if err != nil {
 		return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)
-	}
-
-	if len(bookingsJSON) > 0 {
-		err = json.Unmarshal(bookingsJSON, &customer.Bookings)
-		if err != nil {
-			return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)
-		}
-	} else {
-		customer.Bookings = []domain.PublicBooking{}
 	}
 
 	return customer, nil
