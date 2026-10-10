@@ -249,16 +249,20 @@ function LocationPage() {
         }}
       >
         <ResponsiveDialogContent
-          styles="max-h-[90vh] overflow-y-auto lg:max-w-3xl"
+          styles="lg:max-h-[90vh] lg:max-w-3xl lg:overflow-y-auto"
+          popUpStyles="max-h-[calc(95dvh+3rem)]!"
         >
           {editingLocation && (
-            <div className="flex w-full flex-col gap-5 p-4 sm:p-6">
+            <div className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-text_color text-xl font-semibold">
                     Edit location
                   </h2>
-                  <p className="text-text_color/65 mt-1 text-sm leading-6">
+                  <p
+                    className="text-text_color/65 mt-1 hidden text-sm leading-6
+                      lg:block"
+                  >
                     Update the customer-facing address and exact map pin.
                   </p>
                 </div>
@@ -270,6 +274,7 @@ function LocationPage() {
               <LocationEditor
                 key={editingLocation.id}
                 value={draftLocation}
+                compact
                 onChange={(location) => {
                   setDraftLocation(location);
                   updateMutation.reset();
@@ -279,21 +284,21 @@ function LocationPage() {
               <ServerError error={updateMutation.error?.message} />
 
               <div
-                className="border-border_color flex flex-col-reverse gap-3
-                  border-t pt-5 sm:flex-row sm:justify-end"
+                className="border-border_color flex justify-end gap-3 border-t
+                  pt-4 lg:pt-5"
               >
                 <ResponsiveDialogClose asChild>
                   <Button
                     type="button"
                     variant="tertiary"
-                    styles="px-4 py-2"
+                    styles="hidden px-4 py-2 lg:flex"
                     buttonText="Cancel"
                     disabled={updateMutation.isPending}
                   />
                 </ResponsiveDialogClose>
                 <Button
                   type="button"
-                  styles="px-4 py-2"
+                  styles="w-full px-4 py-2 lg:w-auto"
                   buttonText="Save location"
                   disabled={!hasChanges || !isLocationComplete(draftLocation)}
                   isLoading={updateMutation.isPending}

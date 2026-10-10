@@ -30,7 +30,7 @@ export function isLocationComplete(location) {
   );
 }
 
-export default function LocationEditor({ value, onChange }) {
+export default function LocationEditor({ value, onChange, compact = false }) {
   const [address, setAddress] = useState(value?.formatted_location ?? "");
   const [showMap, setShowMap] = useState(
     Boolean(coordinatesFromLocation(value))
@@ -261,7 +261,7 @@ export default function LocationEditor({ value, onChange }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={`flex flex-col ${compact ? "gap-3 lg:gap-4" : "gap-4"}`}>
       <div>
         <label className="text-text_color mb-1 block text-sm font-medium">
           Customer-facing address
@@ -279,8 +279,16 @@ export default function LocationEditor({ value, onChange }) {
           placeholder="Type your address..."
         />
         <p className="text-text_color/60 mt-2 text-xs leading-5">
-          This exact text will be shown to customers. Choose an autocomplete
-          result to position the pin, then edit the text further if needed.
+          {compact && (
+            <span className="lg:hidden">
+              This exact text is shown to customers. Select a suggestion to
+              place the pin.
+            </span>
+          )}
+          <span className={compact ? "hidden lg:inline" : undefined}>
+            This exact text will be shown to customers. Choose an autocomplete
+            result to position the pin, then edit the text further if needed.
+          </span>
         </p>
       </div>
 
@@ -295,8 +303,8 @@ export default function LocationEditor({ value, onChange }) {
       )}
 
       <div
-        className="border-border_color relative h-72 overflow-hidden rounded-lg
-          border sm:h-96"
+        className={`border-border_color relative overflow-hidden rounded-lg
+          border ${compact ? "h-60 lg:h-96" : "h-72 sm:h-96"}`}
       >
         {showMap ? (
           <>
@@ -323,11 +331,25 @@ export default function LocationEditor({ value, onChange }) {
                 styles="mx-auto mb-3 size-14 text-gray-400"
               />
               <p className="text-text_color font-medium">
-                Choose an address to position the pin
+                {compact && (
+                  <span className="lg:hidden">
+                    Choose an address to place the pin
+                  </span>
+                )}
+                <span className={compact ? "hidden lg:inline" : undefined}>
+                  Choose an address to position the pin
+                </span>
               </p>
               <p className="text-text_color/60 mt-1 text-sm">
-                If there is no matching result, type the address and set the pin
-                manually.
+                {compact && (
+                  <span className="lg:hidden">
+                    No matching result? Set the pin manually.
+                  </span>
+                )}
+                <span className={compact ? "hidden lg:inline" : undefined}>
+                  If there is no matching result, type the address and set the
+                  pin manually.
+                </span>
               </p>
             </div>
           </div>
@@ -336,7 +358,15 @@ export default function LocationEditor({ value, onChange }) {
 
       {showMap && !mapError && (
         <p className="text-text_color/65 text-sm">
-          Drag the pin or click anywhere on the map to mark the exact entrance.
+          {compact && (
+            <span className="lg:hidden">
+              Drag the pin or tap the map to mark the exact entrance.
+            </span>
+          )}
+          <span className={compact ? "hidden lg:inline" : undefined}>
+            Drag the pin or click anywhere on the map to mark the exact
+            entrance.
+          </span>
         </p>
       )}
     </div>
