@@ -1055,7 +1055,7 @@ func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchant
 	join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
 	left join "Service" s on s.id = b.service_id
 	left join "Employee" e on e.id = b.employee_id
-	where b.merchant_id = $1
+	where b.merchant_id = $1 and b.cancelled_by_merchant_on is null
 		and (
 			(b.booking_type = 'appointment' and b.status = any($3::text[]))
 			or (b.booking_type != 'appointment' and bp.status = any($3::text[]))

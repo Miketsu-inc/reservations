@@ -1,27 +1,51 @@
-import { Cell, Pie, PieChart } from "recharts";
+import { Pie, PieChart, Sector, Tooltip } from "recharts";
+import { getBookingStatusColorStyles } from "@reservations/jabulani/lib";
 
-const COLORS = {
-  upcoming: "rgb(var(--primary))",
-  completed: "#16a34a",
-  cancelled: "#dc2626",
-  empty: "rgb(var(--hvr-gray))",
-};
+const EMPTY_COLOR = "rgb(var(--hvr-gray))";
 
-export default function BookingDonutChart({
-  upcoming,
-  completed,
-  cancelled,
-  total,
-}) {
-  const data = [
-    { name: "Upcoming", value: upcoming, color: COLORS.upcoming },
-    { name: "Completed", value: completed, color: COLORS.completed },
-    { name: "Cancelled", value: cancelled, color: COLORS.cancelled },
-  ];
-  const hasBookings = data.some((item) => item.value > 0);
+function BookingStatusSector({ isActive, payload, ...props }) {
+  return (
+    <Sector
+      {...props}
+      className={
+        payload.status ? getBookingStatusColorStyles(payload.status) : undefined
+      }
+      fill={payload.status ? "currentColor" : EMPTY_COLOR}
+      outerRadius={
+        isActive && payload.status ? props.outerRadius + 3 : props.outerRadius
+      }
+    />
+  );
+}
+
+function BookingStatusTooltip({ payload }) {
+  const status = payload?.[0]?.payload;
+  const hasStatus = Boolean(status?.status);
+
+  return (
+    <div
+      aria-hidden={!hasStatus}
+      className={`border-border_color bg-layer_bg flex h-9 w-36 items-center
+        gap-3 rounded-lg border px-3 text-sm shadow-md
+        ${hasStatus ? "" : "invisible"}`}
+    >
+      <span
+        className={`${
+          hasStatus ? getBookingStatusColorStyles(status.status) : ""
+        } size-2.5
+          shrink-0 rounded-xs bg-current`}
+      />
+      <span className="min-w-0 flex-1 truncate">{status?.label}</span>
+      <span className="font-semibold">{status?.value}</span>
+    </div>
+  );
+}
+
+export default function BookingDonutChart({ statuses, total }) {
+  const hasBookings = statuses.some((item) => item.value > 0);
   const chartData = hasBookings
-    ? data
-    : [{ name: "No bookings", value: 1, color: COLORS.empty }];
+    ? statuses
+    : [{ label: "No bookings", value: 1 }];
 
   return (
     <div className="relative size-40">
@@ -39,11 +63,15 @@ export default function BookingDonutChart({
           outerRadius={68}
           paddingAngle={hasBookings ? 2 : 0}
           stroke="none"
-        >
-          {chartData.map((item) => (
-            <Cell key={item.name} fill={item.color} />
-          ))}
-        </Pie>
+          shape={BookingStatusSector}
+        />
+        <Tooltip
+          allowEscapeViewBox={{ x: true, y: true }}
+          cursor={false}
+          offset={14}
+          wrapperStyle={{ zIndex: 20 }}
+          content={<BookingStatusTooltip />}
+        />
       </PieChart>
       <div
         className="pointer-events-none absolute inset-0 flex flex-col

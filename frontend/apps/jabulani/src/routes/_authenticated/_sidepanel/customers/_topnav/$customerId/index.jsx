@@ -7,6 +7,7 @@ import {
   Mail01Icon,
   MoreVerticalIcon,
   UnavailableIcon,
+  UserAdd01Icon,
   UserSwitchIcon,
 } from "@hugeicons/core-free-icons";
 import {
@@ -74,16 +75,6 @@ function formatBirthday(dateString) {
   });
 }
 
-function formatVisitDate(dateString) {
-  if (!dateString) return null;
-
-  return new Date(dateString).toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_topnav/$customerId/"
 )({
@@ -133,7 +124,9 @@ function CustomerDetailsPage() {
   const initials =
     `${customer.first_name?.charAt(0) ?? ""}${customer.last_name?.charAt(0) ?? ""}` ||
     "?";
-  const lastVisited = formatVisitDate(stats?.last_visited);
+  const hasContactDetails = Boolean(
+    customer.email || customer.phone_number || customer.birthday
+  );
 
   async function deleteHandler(id) {
     try {
@@ -237,104 +230,104 @@ function CustomerDetailsPage() {
         onDelete={() => deleteHandler(customer.id)}
       />
 
-      <div className="w-full max-w-4xl px-3 py-4 sm:px-5 sm:py-6">
+      <div
+        className="flex w-full max-w-4xl flex-col gap-10 px-3 py-4 sm:px-5
+          sm:py-6"
+      >
         <ServerError error={serverError} />
-
-        <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
-          <div className="flex w-full justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <Avatar styles="size-14! text-lg!" initials={initials} />
-              <div className="flex min-w-0 flex-col gap-1">
-                <h1 className="text-text_color truncate text-2xl font-bold">
-                  {fullName}
-                </h1>
-                <div className="flex flex-wrap items-center gap-2">
-                  {customer.is_blacklisted && (
-                    <span
-                      className="rounded-lg bg-red-400/30 p-1 text-sm
-                        text-red-700 dark:bg-red-700/30 dark:text-red-400"
-                    >
-                      Blacklisted
-                    </span>
-                  )}
-                  {customer.is_dummy && (
-                    <span
-                      className="bg-hvr_gray text-text_color/70 rounded-lg p-1
-                        text-sm"
-                    >
-                      Added manually
-                    </span>
-                  )}
+        <div>
+          <p className="mb-4 text-xl">Profile</p>
+          <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
+            <div className="flex w-full justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <Avatar styles="size-14! text-lg!" initials={initials} />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h1 className="text-text_color truncate text-2xl font-bold">
+                    {fullName}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {customer.is_blacklisted && (
+                      <span
+                        className="rounded-lg bg-red-400/30 p-1 text-sm
+                          text-red-700 dark:bg-red-700/30 dark:text-red-400"
+                      >
+                        Blacklisted
+                      </span>
+                    )}
+                    {customer.is_dummy && (
+                      <span
+                        className="border-border_color bg-hvr_gray/50
+                          text-text_color/70 inline-flex items-center gap-1.5
+                          rounded-full border px-2 py-1 text-xs font-medium"
+                      >
+                        <Icon icon={UserAdd01Icon} styles="size-3.5 shrink-0" />
+                        Added manually
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-text_color/60 text-sm">
-                  {lastVisited
-                    ? `Last visited: ${lastVisited}`
-                    : "No completed visits yet"}
-                </p>
               </div>
+              <CustomerActions
+                customer={customer}
+                hasBookings={(stats?.total_bookings ?? 0) > 0}
+                onBlacklist={() => setShowBlacklistModal(true)}
+                onDelete={() => setShowDeleteModal(true)}
+                onEdit={() =>
+                  navigate({
+                    from: Route.fullPath,
+                    to: `/customers/edit/${customer.id}`,
+                  })
+                }
+                onTransfer={() => setShowTransferModal(true)}
+              />
             </div>
-            <CustomerActions
-              customer={customer}
-              hasBookings={(stats?.times_booked ?? 0) > 0}
-              onBlacklist={() => setShowBlacklistModal(true)}
-              onDelete={() => setShowDeleteModal(true)}
-              onEdit={() =>
-                navigate({
-                  from: Route.fullPath,
-                  to: `/customers/edit/${customer.id}`,
-                })
-              }
-              onTransfer={() => setShowTransferModal(true)}
-            />
-          </div>
 
-          <div
-            className="text-text_color/70 flex w-full flex-col items-start gap-3
-              text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-6"
-          >
-            {customer.email && (
-              <a
-                className="flex min-w-0 items-center gap-2 hover:underline"
-                href={`mailto:${customer.email}`}
+            {hasContactDetails && (
+              <div
+                className="text-text_color/70 flex w-full flex-col items-start
+                  gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center
+                  sm:gap-6"
               >
-                <Icon icon={Mail01Icon} styles="size-5 shrink-0" />
-                <span className="truncate">{customer.email}</span>
-              </a>
-            )}
-            {customer.phone_number && (
-              <a
-                className="flex items-center gap-2 hover:underline"
-                href={`tel:${customer.phone_number}`}
-              >
-                <Icon icon={Call02Icon} styles="size-4 shrink-0" />
-                {customer.phone_number}
-              </a>
-            )}
-            {customer.birthday && (
-              <div className="flex items-center gap-2">
-                <Icon icon={BirthdayCakeIcon} styles="size-5 shrink-0" />
-                {formatBirthday(customer.birthday)}
+                {customer.email && (
+                  <a
+                    className="flex min-w-0 items-center gap-2 hover:underline"
+                    href={`mailto:${customer.email}`}
+                  >
+                    <Icon icon={Mail01Icon} styles="size-5 shrink-0" />
+                    <span className="truncate">{customer.email}</span>
+                  </a>
+                )}
+                {customer.phone_number && (
+                  <a
+                    className="flex items-center gap-2 hover:underline"
+                    href={`tel:${customer.phone_number}`}
+                  >
+                    <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+                    {customer.phone_number}
+                  </a>
+                )}
+                {customer.birthday && (
+                  <div className="flex items-center gap-2">
+                    <Icon icon={BirthdayCakeIcon} styles="size-5 shrink-0" />
+                    {formatBirthday(customer.birthday)}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-          <ExpandableNote text={customer.note} />
-        </Card>
-
-        <div className="py-6">
-          <CustomerStats
-            stats={stats}
-            isLoading={statsQuery.isLoading}
-            error={statsQuery.error}
-          />
+            <ExpandableNote text={customer.note} />
+          </Card>
         </div>
-        <div className="pt-8">
-          <CustomerBookings
-            customerId={customerId}
-            merchantId={merchantId}
-            counts={stats}
-            route={Route}
-          />
-        </div>
+        <CustomerStats
+          stats={stats}
+          isLoading={statsQuery.isLoading}
+          error={statsQuery.error}
+        />
+        <CustomerBookings
+          customerId={customerId}
+          merchantId={merchantId}
+          counts={stats}
+          route={Route}
+        />
       </div>
     </main>
   );
@@ -353,7 +346,8 @@ function CustomerActions({
       <PopoverTrigger asChild>
         <button
           aria-label="Customer actions"
-          className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+          className="hover:bg-hvr_gray flex size-9 cursor-pointer items-center
+            justify-center rounded-lg"
           type="button"
         >
           <Icon

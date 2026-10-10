@@ -54,18 +54,17 @@ type CustomerInfo struct {
 }
 
 type CustomerStatistics struct {
-	TimesBooked          int        `json:"times_booked" db:"times_booked"`
-	TimesCancelledByUser int        `json:"times_cancelled_by_user" db:"times_cancelled_by_user"`
-	TimesNoShow          int        `json:"times_no_show" db:"times_no_show"`
-	TimesUpcoming        int        `json:"times_upcoming" db:"times_upcoming"`
-	TimesBookedStatus    int        `json:"times_booked_status" db:"times_booked_status"`
-	TimesConfirmed       int        `json:"times_confirmed" db:"times_confirmed"`
-	TimesCompleted       int        `json:"times_completed" db:"times_completed"`
-	FirstBooking         *time.Time `json:"first_booking" db:"first_booking"`
-	LastVisited          *time.Time `json:"last_visited" db:"last_visited"`
-	TotalSpent           currencyx.Price
-	FavoriteService      *string
-	NextBooking          *time.Time
+	TotalBookings   int
+	TimesBooked     int
+	TimesConfirmed  int
+	TimesCompleted  int
+	TimesCancelled  int
+	TimesNoShow     int
+	FirstBooking    *time.Time
+	LastVisited     *time.Time
+	CompletedValues []currencyx.Price
+	FavoriteService *string
+	NextBooking     *time.Time
 }
 
 type CustomerForCalendar struct {

@@ -139,18 +139,22 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getStatsResp struct {
-	TimesBooked          int                      `json:"times_booked"`
-	TimesCancelledByUser int                      `json:"times_cancelled_by_user"`
-	TimesNoShow          int                      `json:"times_no_show"`
-	TimesUpcoming        int                      `json:"times_upcoming"`
-	TimesBookedStatus    int                      `json:"times_booked_status"`
-	TimesConfirmed       int                      `json:"times_confirmed"`
-	TimesCompleted       int                      `json:"times_completed"`
-	FirstBooking         *time.Time               `json:"first_booking"`
-	LastVisited          *time.Time               `json:"last_visited"`
-	TotalSpent           currencyx.FormattedPrice `json:"total_spent"`
-	FavoriteService      *string                  `json:"favorite_service"`
-	NextBooking          *time.Time               `json:"next_booking"`
+	TotalBookings   int                  `json:"total_bookings"`
+	TimesBooked     int                  `json:"times_booked"`
+	TimesConfirmed  int                  `json:"times_confirmed"`
+	TimesCompleted  int                  `json:"times_completed"`
+	TimesCancelled  int                  `json:"times_cancelled"`
+	TimesNoShow     int                  `json:"times_no_show"`
+	FirstBooking    *time.Time           `json:"first_booking"`
+	LastVisited     *time.Time           `json:"last_visited"`
+	CompletedValues []completedValueResp `json:"completed_values"`
+	FavoriteService *string              `json:"favorite_service"`
+	NextBooking     *time.Time           `json:"next_booking"`
+}
+
+type completedValueResp struct {
+	Value          currencyx.Price          `json:"value"`
+	FormattedValue currencyx.FormattedPrice `json:"formatted_value"`
 }
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {

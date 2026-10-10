@@ -3,6 +3,7 @@ package customers
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
+	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToNewInput(in newReq) customerServ.NewInput {
@@ -45,19 +46,30 @@ func mapToGetResp(in domain.CustomerInfo) getResp {
 
 func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 	return getStatsResp{
-		TimesBooked:          in.TimesBooked,
-		TimesCancelledByUser: in.TimesCancelledByUser,
-		TimesNoShow:          in.TimesNoShow,
-		TimesUpcoming:        in.TimesUpcoming,
-		TimesBookedStatus:    in.TimesBookedStatus,
-		TimesConfirmed:       in.TimesConfirmed,
-		TimesCompleted:       in.TimesCompleted,
-		FirstBooking:         in.FirstBooking,
-		LastVisited:          in.LastVisited,
-		TotalSpent:           in.TotalSpent.ToFormatted(),
-		FavoriteService:      in.FavoriteService,
-		NextBooking:          in.NextBooking,
+		TotalBookings:   in.TotalBookings,
+		TimesBooked:     in.TimesBooked,
+		TimesConfirmed:  in.TimesConfirmed,
+		TimesCompleted:  in.TimesCompleted,
+		TimesCancelled:  in.TimesCancelled,
+		TimesNoShow:     in.TimesNoShow,
+		FirstBooking:    in.FirstBooking,
+		LastVisited:     in.LastVisited,
+		CompletedValues: mapToCompletedValuesResp(in.CompletedValues),
+		FavoriteService: in.FavoriteService,
+		NextBooking:     in.NextBooking,
 	}
+}
+
+func mapToCompletedValuesResp(in []currencyx.Price) []completedValueResp {
+	out := make([]completedValueResp, len(in))
+	for i, value := range in {
+		out[i] = completedValueResp{
+			Value:          value,
+			FormattedValue: value.ToFormatted(),
+		}
+	}
+
+	return out
 }
 
 func mapToBlacklistInput(in blacklistReq) customerServ.BlacklistInput {

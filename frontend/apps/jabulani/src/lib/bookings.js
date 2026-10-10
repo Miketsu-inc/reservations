@@ -10,6 +10,21 @@ const BOOKING_STATUS_STYLES = {
     "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
 };
 
+const BOOKING_STATUS_COLOR_STYLES = {
+  booked: "text-amber-600 dark:text-amber-400",
+  confirmed: "text-blue-600 dark:text-blue-400",
+  completed: "text-green-600 dark:text-green-400",
+  cancelled: "text-red-600 dark:text-red-400",
+  "no-show": "text-gray-600 dark:text-gray-400",
+};
+
 export function getBookingStatusStyles(status) {
   return BOOKING_STATUS_STYLES[status] ?? BOOKING_STATUS_STYLES["no-show"];
+}
+
+export function getBookingStatusColorStyles(status) {
+  return (
+    BOOKING_STATUS_COLOR_STYLES[status] ??
+    BOOKING_STATUS_COLOR_STYLES["no-show"]
+  );
 }

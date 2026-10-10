@@ -98,9 +98,29 @@ export default function CustomerBookings({
 
   const allBookings = data?.pages.flatMap((page) => page.bookings) ?? [];
   const bookings = filterBookings(allBookings, searchText);
-  const cancelledCount = counts
-    ? Math.max(0, counts.times_cancelled_by_user - counts.times_no_show)
-    : null;
+  const statusFilters = [
+    {
+      value: "booked",
+      label: "Booked",
+      count: counts?.times_booked,
+    },
+    {
+      value: "confirmed",
+      label: "Confirmed",
+      count: counts?.times_confirmed,
+    },
+    {
+      value: "completed",
+      label: "Completed",
+      count: counts?.times_completed,
+    },
+    {
+      value: "cancelled",
+      label: "Cancelled",
+      count: counts?.times_cancelled,
+    },
+    { value: "no-show", label: "No-show", count: counts?.times_no_show },
+  ].filter(({ count }) => count == null || count > 0);
 
   return (
     <div>
@@ -109,9 +129,9 @@ export default function CustomerBookings({
           sm:justify-between"
       >
         <div>
-          <p className="text-2xl">Bookings</p>
+          <p className="text-xl">Bookings</p>
           <p className="text-text_color/60 mt-1 text-sm">
-            Search and filter this customer&apos;s bookings
+            Search and filter this customer's bookings
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -120,56 +140,39 @@ export default function CustomerBookings({
             searchText={searchText}
             onChange={setSearchText}
           />
-          <div className="flex items-center gap-2">
+          <div className="w-full sm:w-40">
             <DatePicker
-              styles="w-full! sm:w-40!"
+              styles="w-full!"
               value={beforeDate}
-              placeholderText="Jump to date"
+              placeholderText="All dates"
               required={false}
+              clearable
               closeOnSelect
               onSelect={setBeforeDate}
             />
-            {beforeDate && (
-              <button
-                className="text-text_color/60 hover:text-text_color px-1
-                  text-sm"
-                type="button"
-                onClick={() => setBeforeDate(null)}
-              >
-                Clear
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      <div className="mb-6 text-sm">
-        <ToggleGroup
-          styles="-mx-1 px-1 pb-1"
-          multiple
-          disableDeselect={false}
-          value={statuses}
-          onValueChange={(nextStatuses) => {
-            if (nextStatuses.length > 0) setStatuses(nextStatuses);
-          }}
-        >
-          <Toggle value="booked" badgeText={counts?.times_booked_status}>
-            Booked
-          </Toggle>
-          <Toggle value="confirmed" badgeText={counts?.times_confirmed}>
-            Confirmed
-          </Toggle>
-          <Toggle value="completed" badgeText={counts?.times_completed}>
-            Completed
-          </Toggle>
-          <Toggle value="cancelled" badgeText={cancelledCount}>
-            Cancelled
-          </Toggle>
-          <Toggle value="no-show" badgeText={counts?.times_no_show}>
-            No-show
-          </Toggle>
-        </ToggleGroup>
-      </div>
+      {statusFilters.length > 0 && (
+        <div className="mb-6 text-sm">
+          <ToggleGroup
+            styles="-mx-1 gap-2 px-1 pb-1"
+            multiple
+            disableDeselect={false}
+            value={statuses}
+            onValueChange={(nextStatuses) => {
+              if (nextStatuses.length > 0) setStatuses(nextStatuses);
+            }}
+          >
+            {statusFilters.map(({ value, label, count }) => (
+              <Toggle key={value} value={value} badgeText={count}>
+                {label}
+              </Toggle>
+            ))}
+          </ToggleGroup>
+        </div>
+      )}
 
       {isError ? (
         <ServerError error={error?.message} />

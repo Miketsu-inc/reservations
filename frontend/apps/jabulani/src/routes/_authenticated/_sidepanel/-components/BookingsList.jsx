@@ -4,7 +4,6 @@ import {
   Location01Icon,
   Note01Icon,
   Tick02Icon,
-  User03Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon } from "@reservations/components";
@@ -30,7 +29,7 @@ export default function BookingsList({
   const visibleBookings = bookings.slice(0, visibleCount);
 
   return (
-    <div className="h-full">
+    <div>
       {visibleBookings.length > 0 ? (
         <div className="space-y-4">
           {visibleBookings.map((booking, index) => (
@@ -185,7 +184,10 @@ function BookingCard({ booking, route, onAccept, showCustomer }) {
             </>
           ) : employeeName ? (
             <>
-              <Icon icon={User03Icon} styles="size-4 shrink-0" />
+              <Avatar
+                styles="size-8! text-xs!"
+                initials={`${booking.employee_first_name?.[0] ?? ""}${booking.employee_last_name?.[0] ?? ""}`}
+              />
               <p className="truncate text-sm">{employeeName}</p>
             </>
           ) : (

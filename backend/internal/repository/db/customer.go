@@ -129,6 +129,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 	left join "User" u on c.user_id = u.id
 	left join "BookingParticipant" bp on c.id = bp.customer_id
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
+		and b.cancelled_by_merchant_on is null
 	where c.merchant_id = $1 and c.is_blacklisted = $2
 	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
 	`
@@ -170,61 +171,62 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 
 func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerStatistics, error) {
 	query := `
-	select count(distinct b.id) as times_booked,
-		count(distinct b.id) filter (where b.status in ('cancelled', 'no-show') or bp.status in ('cancelled', 'no-show')) as times_cancelled_by_user,
-		count(distinct b.id) filter (
-			where b.status = 'no-show'
-				or (b.status not in ('cancelled', 'no-show') and bp.status = 'no-show')
-		) as times_no_show,
-		count(distinct b.id) filter (
-			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
-		) as times_upcoming,
-		count(distinct b.id) filter (
-			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'booked'
-		) as times_booked_status,
-		count(distinct b.id) filter (
-			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status = 'confirmed'
-		) as times_confirmed,
-		count(distinct b.id) filter (
-			where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-		) as times_completed,
-		min(b.from_date) as first_booking,
-		max(b.to_date) filter (
-			where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-		) as last_visited,
-		row(
-			coalesce(sum((b.price_per_person).number) filter (
-				where b.to_date < now() and b.status not in ('cancelled', 'no-show') and bp.status not in ('cancelled', 'no-show')
-			), 0),
-			m.currency_code
-		)::price as total_spent,
+	with customer_bookings as (
+		select b.id, b.from_date, b.to_date, b.service_name, b.price_per_person,
+			case
+				when b.booking_type = 'appointment' then b.status
+				else bp.status
+			end as status
+		from "BookingParticipant" bp
+		join "Booking" b on b.id = bp.booking_id and b.merchant_id = $1
+		where bp.customer_id = $2 and b.cancelled_by_merchant_on is null
+	)
+	select count(cb.id) as total_bookings,
+		count(cb.id) filter (where cb.status = 'booked') as times_booked,
+		count(cb.id) filter (where cb.status = 'confirmed') as times_confirmed,
+		count(cb.id) filter (where cb.status = 'completed') as times_completed,
+		count(cb.id) filter (where cb.status = 'cancelled') as times_cancelled,
+		count(cb.id) filter (where cb.status = 'no-show') as times_no_show,
+		min(cb.from_date) as first_booking,
+		max(cb.to_date) filter (where cb.status = 'completed') as last_visited,
+		case
+			when count(cb.id) filter (where cb.status = 'completed') = 0 then
+				array[row(0, m.currency_code)::price]
+			else array(
+				select row(
+					sum((completed.price_per_person).number),
+					(completed.price_per_person).currency
+				)::price
+				from customer_bookings completed
+				where completed.status = 'completed'
+				group by (completed.price_per_person).currency
+				order by (completed.price_per_person).currency
+			)
+		end as completed_values,
 		(
-			select b2.service_name
-			from "Booking" b2
-			join "BookingParticipant" bp2 on bp2.booking_id = b2.id and bp2.customer_id = $2
-			where b2.merchant_id = $1 and b2.to_date < now()
-				and b2.status not in ('cancelled', 'no-show') and bp2.status not in ('cancelled', 'no-show')
-			group by b2.service_name
-			order by count(*) desc, max(b2.from_date) desc
+			select service_name
+			from customer_bookings
+			where status in ('booked', 'confirmed', 'completed')
+			group by service_name
+			order by count(*) desc, max(from_date) desc
 			limit 1
 		) as favorite_service,
-		min(b.from_date) filter (
-			where b.to_date >= now() and b.status in ('booked', 'confirmed') and bp.status in ('booked', 'confirmed')
+		min(cb.from_date) filter (
+			where cb.status in ('booked', 'confirmed') and cb.from_date >= now()
 		) as next_booking
 	from "Customer" c
 	join "Merchant" m on m.id = c.merchant_id
-	left join "BookingParticipant" bp on bp.customer_id = c.id
-	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
+	left join customer_bookings cb on true
 	where c.id = $2 and c.merchant_id = $1
 	group by c.id, m.currency_code
 	`
 
 	var customer domain.CustomerStatistics
 	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(
-		&customer.TimesBooked, &customer.TimesCancelledByUser, &customer.TimesNoShow,
-		&customer.TimesUpcoming, &customer.TimesBookedStatus, &customer.TimesConfirmed,
-		&customer.TimesCompleted, &customer.FirstBooking, &customer.LastVisited,
-		&customer.TotalSpent, &customer.FavoriteService, &customer.NextBooking,
+		&customer.TotalBookings, &customer.TimesBooked, &customer.TimesConfirmed,
+		&customer.TimesCompleted, &customer.TimesCancelled, &customer.TimesNoShow,
+		&customer.FirstBooking, &customer.LastVisited,
+		&customer.CompletedValues, &customer.FavoriteService, &customer.NextBooking,
 	)
 	if err != nil {
 		return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)

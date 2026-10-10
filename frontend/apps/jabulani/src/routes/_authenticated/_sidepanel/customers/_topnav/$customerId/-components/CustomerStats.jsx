@@ -10,8 +10,8 @@ export default function CustomerStats({ stats, isLoading, error }) {
         <div
           className="bg-hvr_gray size-40 animate-pulse self-center rounded-full"
         />
-        <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
-          {[0, 1, 2].map((item) => (
+        <div className="grid flex-1 grid-cols-2 gap-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((item) => (
             <div
               key={item}
               className="bg-hvr_gray h-14 animate-pulse rounded"
@@ -22,46 +22,46 @@ export default function CustomerStats({ stats, isLoading, error }) {
     );
   }
 
+  const statuses = [
+    { status: "booked", label: "Booked", value: stats.times_booked },
+    {
+      status: "confirmed",
+      label: "Confirmed",
+      value: stats.times_confirmed,
+    },
+    {
+      status: "completed",
+      label: "Completed",
+      value: stats.times_completed,
+    },
+    {
+      status: "cancelled",
+      label: "Cancelled",
+      value: stats.times_cancelled,
+    },
+    { status: "no-show", label: "No-show", value: stats.times_no_show },
+  ];
   return (
     <div>
-      <p className="mb-4 text-lg">Customer overview</p>
+      <p className="mb-4 text-xl">Overview</p>
       <div className="flex flex-col gap-6 md:flex-row md:items-center">
-        <div
-          className="flex flex-col items-center justify-center gap-4 sm:flex-row
-            md:justify-start"
-        >
-          <div className="h-40 w-40 shrink-0">
-            <BookingDonutChart
-              upcoming={stats.times_upcoming}
-              completed={stats.times_completed}
-              cancelled={stats.times_cancelled_by_user}
-              total={stats.times_booked}
-            />
-          </div>
-          <div className="w-40 space-y-2 text-sm">
-            <Legend
-              color="bg-primary"
-              label="Upcoming"
-              value={stats.times_upcoming}
-            />
-            <Legend
-              color="bg-green-600"
-              label="Completed"
-              value={stats.times_completed}
-            />
-            <Legend
-              color="bg-red-600"
-              label="Cancelled"
-              value={stats.times_cancelled_by_user}
-            />
-          </div>
+        <div className="h-40 w-40 shrink-0 self-center md:self-auto">
+          <BookingDonutChart statuses={statuses} total={stats.total_bookings} />
         </div>
 
         <div
-          className="border-border_color grid flex-1 grid-cols-1 gap-5
-            sm:grid-cols-3 md:border-l md:pl-6"
+          className="border-border_color grid flex-1 grid-cols-2 gap-x-6 gap-y-5
+            border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6
+            lg:grid-cols-4"
         >
-          <Insight label="Completed value" value={stats.total_spent} />
+          <Insight
+            label="First booking"
+            value={formatFirstBookingDate(stats.first_booking)}
+          />
+          <Insight
+            label="Completed value"
+            value={formatCompletedValues(stats.completed_values)}
+          />
           <Insight
             label="Favorite service"
             value={stats.favorite_service ?? "—"}
@@ -87,18 +87,6 @@ function Insight({ label, value }) {
   );
 }
 
-function Legend({ color, label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className={`${color} size-2.5 shrink-0 rounded-xs`} />
-        <span className="text-text_color/70 truncate">{label}</span>
-      </div>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
-}
-
 function formatBookingDate(dateString) {
   if (!dateString) return "None scheduled";
 
@@ -107,4 +95,20 @@ function formatBookingDate(dateString) {
     month: "short",
     day: "numeric",
   });
+}
+
+function formatFirstBookingDate(dateString) {
+  if (!dateString) return "No bookings yet";
+
+  return new Date(dateString).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatCompletedValues(values) {
+  if (!values?.length) return "—";
+
+  return values.map(({ formatted_value }) => formatted_value).join(" + ");
 }
