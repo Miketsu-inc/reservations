@@ -1,76 +1,72 @@
-import { ServerError } from "@reservations/components";
+import { Loading, ServerError } from "@reservations/components";
+import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
+import { useQuery } from "@tanstack/react-query";
 import BookingDonutChart from "./BookingDonutChart";
+import { customerStatsQueryOptions } from "./queries";
 
-export default function CustomerStats({ stats, isLoading, error }) {
-  if (error) return <ServerError error={error.message} />;
+export default function CustomerStats({ customerId }) {
+  const { merchantId } = useAuth();
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useQuery(customerStatsQueryOptions(merchantId, customerId));
 
-  if (isLoading || !stats) {
-    return (
-      <div className="flex flex-col gap-5 md:flex-row md:items-center">
-        <div
-          className="bg-hvr_gray size-40 animate-pulse self-center rounded-full"
-        />
-        <div className="grid flex-1 grid-cols-2 gap-4 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="bg-hvr_gray h-14 animate-pulse rounded"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const statuses = [
-    { status: "booked", label: "Booked", value: stats.times_booked },
-    {
-      status: "confirmed",
-      label: "Confirmed",
-      value: stats.times_confirmed,
-    },
-    {
-      status: "completed",
-      label: "Completed",
-      value: stats.times_completed,
-    },
-    {
-      status: "cancelled",
-      label: "Cancelled",
-      value: stats.times_cancelled,
-    },
-    { status: "no-show", label: "No-show", value: stats.times_no_show },
-  ];
   return (
-    <div>
-      <p className="mb-4 text-xl">Overview</p>
-      <div className="flex flex-col gap-6 md:flex-row md:items-center">
-        <div className="h-40 w-40 shrink-0 self-center md:self-auto">
-          <BookingDonutChart statuses={statuses} total={stats.total_bookings} />
-        </div>
+    <section>
+      <h2 className="mb-4 text-xl">Overview</h2>
+      {error ? (
+        <ServerError error={error.message} />
+      ) : isLoading || !stats ? (
+        <Loading />
+      ) : (
+        <CustomerStatsContent stats={stats} />
+      )}
+    </section>
+  );
+}
 
-        <div
-          className="border-border_color grid flex-1 grid-cols-2 gap-x-6 gap-y-5
-            border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6
-            lg:grid-cols-4"
-        >
-          <Insight
-            label="First booking"
-            value={formatFirstBookingDate(stats.first_booking)}
-          />
-          <Insight
-            label="Completed value"
-            value={formatCompletedValues(stats.completed_values)}
-          />
-          <Insight
-            label="Favorite service"
-            value={stats.favorite_service ?? "—"}
-          />
-          <Insight
-            label="Next booking"
-            value={formatBookingDate(stats.next_booking)}
-          />
-        </div>
+function CustomerStatsContent({ stats }) {
+  const counts = {
+    booked: stats.times_booked,
+    confirmed: stats.times_confirmed,
+    completed: stats.times_completed,
+    cancelled: stats.times_cancelled,
+    "no-show": stats.times_no_show,
+  };
+  const statuses = BOOKING_STATUS_OPTIONS.map(({ value: status, label }) => ({
+    status,
+    label,
+    value: counts[status],
+  }));
+
+  return (
+    <div className="flex flex-col gap-6 md:flex-row md:items-center">
+      <div className="h-40 w-40 shrink-0 self-center md:self-auto">
+        <BookingDonutChart statuses={statuses} />
+      </div>
+
+      <div
+        className="border-border_color grid flex-1 grid-cols-2 gap-x-6 gap-y-5
+          border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6
+          lg:grid-cols-4"
+      >
+        <Insight
+          label="First booking"
+          value={formatFirstBookingDate(stats.first_booking)}
+        />
+        <Insight
+          label="Completed value"
+          value={formatCompletedValues(stats.completed_values)}
+        />
+        <Insight
+          label="Favorite service"
+          value={stats.favorite_service ?? "—"}
+        />
+        <Insight
+          label="Next booking"
+          value={formatBookingDate(stats.next_booking)}
+        />
       </div>
     </div>
   );

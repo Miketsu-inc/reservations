@@ -19,26 +19,31 @@ import { Link } from "@tanstack/react-router";
 
 export default function BookingsList({
   bookings,
-  visibleCount = bookings.length,
   onAccept,
   route,
   showCustomer = true,
   emptyTitle = "No bookings yet",
   emptyMessage = "When customers schedule bookings, they will appear here.",
 }) {
-  const visibleBookings = bookings.slice(0, visibleCount);
+  const { isWindowSmall } = useWindowSize();
+  const { merchantId, employeeId } = useAuth();
+  const { data: preferences } = useQuery(
+    preferencesQueryOptions(merchantId, employeeId)
+  );
 
   return (
     <div>
-      {visibleBookings.length > 0 ? (
+      {bookings.length > 0 ? (
         <div className="space-y-4">
-          {visibleBookings.map((booking, index) => (
+          {bookings.map((booking, index) => (
             <BookingCard
               key={`${booking.id}-${index}`}
               booking={booking}
+              isWindowSmall={isWindowSmall}
               onAccept={onAccept}
               route={route}
               showCustomer={showCustomer}
+              timeFormat={preferences?.time_format}
             />
           ))}
         </div>
@@ -67,9 +72,14 @@ function monthNameFromDate(date) {
   return date.toLocaleDateString([], { month: "short" });
 }
 
-function BookingCard({ booking, route, onAccept, showCustomer }) {
-  const { isWindowSmall } = useWindowSize();
-
+function BookingCard({
+  booking,
+  isWindowSmall,
+  route,
+  onAccept,
+  showCustomer,
+  timeFormat,
+}) {
   const fromDate = new Date(booking.from_date);
   const toDate = new Date(booking.to_date);
 
@@ -79,16 +89,13 @@ function BookingCard({ booking, route, onAccept, showCustomer }) {
     : (booking.booking_status ?? booking.status);
   const isNotConfirmed = status === "booked";
 
-  const isWalkIn =
-    booking.customer_first_name === null && booking.customer_last_name === null;
+  const customerName = [booking.customer_first_name, booking.customer_last_name]
+    .filter(Boolean)
+    .join(" ");
+  const isWalkIn = !customerName;
   const employeeName = [booking.employee_first_name, booking.employee_last_name]
     .filter(Boolean)
     .join(" ");
-
-  const { merchantId, employeeId } = useAuth();
-  const { data: preferences } = useQuery(
-    preferencesQueryOptions(merchantId, employeeId)
-  );
 
   return (
     <div
@@ -140,7 +147,7 @@ function BookingCard({ booking, route, onAccept, showCustomer }) {
             >
               <Icon icon={Clock01Icon} styles="size-3.5" />
               <p>
-                {`${timeStringFromDate(fromDate, preferences?.time_format)} - ${timeStringFromDate(toDate, preferences?.time_format)}`}
+                {`${timeStringFromDate(fromDate, timeFormat)} - ${timeStringFromDate(toDate, timeFormat)}`}
               </p>
             </div>
           </div>
@@ -151,6 +158,7 @@ function BookingCard({ booking, route, onAccept, showCustomer }) {
               className="lg:hover:bg-hvr_gray h-full cursor-pointer rounded-lg
                 px-2 lg:h-fit lg:py-2"
               onClick={() => onAccept(booking)}
+              type="button"
             >
               <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
             </button>
@@ -177,9 +185,7 @@ function BookingCard({ booking, route, onAccept, showCustomer }) {
                 />
               )}
               <p className="truncate text-sm">
-                {isWalkIn
-                  ? "Walk-in"
-                  : `${booking.customer_first_name} ${booking.customer_last_name}`}
+                {isWalkIn ? "Walk-in" : customerName}
               </p>
             </>
           ) : employeeName ? (

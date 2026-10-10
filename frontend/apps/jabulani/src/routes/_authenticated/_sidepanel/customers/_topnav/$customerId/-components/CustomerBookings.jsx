@@ -7,65 +7,32 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
-import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import BookingsList from "../../../../-components/BookingsList";
+import {
+  ALL_BOOKING_STATUSES,
+  customerBookingsQueryOptions,
+  customerStatsQueryOptions,
+} from "./queries";
 
-const PAGE_SIZE = 8;
+const STATUS_COUNT_KEYS = {
+  booked: "times_booked",
+  confirmed: "times_confirmed",
+  completed: "times_completed",
+  cancelled: "times_cancelled",
+  "no-show": "times_no_show",
+};
 
-const ALL_STATUSES = [
-  "booked",
-  "confirmed",
-  "completed",
-  "cancelled",
-  "no-show",
-];
-
-async function fetchCustomerBookings(
-  merchantId,
-  customerId,
-  statuses,
-  beforeDate,
-  cursor
-) {
-  const params = new URLSearchParams({
-    customer_id: customerId,
-    status: statuses.join(","),
-    limit: PAGE_SIZE.toString(),
-    cursor,
-  });
-  if (beforeDate) {
-    params.set("before", startOfNextDay(beforeDate).toISOString());
-  }
-  const response = await fetch(
-    `/api/v1/merchants/${merchantId}/bookings?${params}`,
-    {
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    throw result.error;
-  }
-
-  return result.data;
-}
-
-export default function CustomerBookings({
-  merchantId,
-  customerId,
-  counts,
-  route,
-}) {
-  const [statuses, setStatuses] = useState(ALL_STATUSES);
+export default function CustomerBookings({ customerId, route }) {
+  const { merchantId } = useAuth();
+  const [statuses, setStatuses] = useState(ALL_BOOKING_STATUSES);
   const [searchText, setSearchText] = useState("");
   const [beforeDate, setBeforeDate] = useState(null);
+  const { data: counts } = useQuery(
+    customerStatsQueryOptions(merchantId, customerId)
+  );
   const {
     data,
     error,
@@ -74,56 +41,30 @@ export default function CustomerBookings({
     isError,
     isFetchingNextPage,
     isLoading,
-  } = useInfiniteQuery({
-    queryKey: [
-      merchantId,
-      "customer-bookings",
-      customerId,
-      statuses,
-      beforeDate?.toISOString(),
-    ],
-    queryFn: ({ pageParam }) =>
-      fetchCustomerBookings(
-        merchantId,
-        customerId,
-        statuses,
-        beforeDate,
-        pageParam
-      ),
-    initialPageParam: "",
-    getNextPageParam: (lastPage) =>
-      lastPage.has_next_page ? lastPage.next_cursor : undefined,
-    placeholderData: keepPreviousData,
-  });
+  } = useInfiniteQuery(
+    customerBookingsQueryOptions(merchantId, customerId, statuses, beforeDate)
+  );
 
-  const allBookings = data?.pages.flatMap((page) => page.bookings) ?? [];
-  const bookings = filterBookings(allBookings, searchText);
-  const statusFilters = [
-    {
-      value: "booked",
-      label: "Booked",
-      count: counts?.times_booked,
-    },
-    {
-      value: "confirmed",
-      label: "Confirmed",
-      count: counts?.times_confirmed,
-    },
-    {
-      value: "completed",
-      label: "Completed",
-      count: counts?.times_completed,
-    },
-    {
-      value: "cancelled",
-      label: "Cancelled",
-      count: counts?.times_cancelled,
-    },
-    { value: "no-show", label: "No-show", count: counts?.times_no_show },
-  ].filter(({ count }) => count == null || count > 0);
+  const allBookings = useMemo(
+    () => data?.pages.flatMap((page) => page.bookings) ?? [],
+    [data]
+  );
+  const bookings = useMemo(
+    () => filterBookings(allBookings, searchText),
+    [allBookings, searchText]
+  );
+  const statusFilters = BOOKING_STATUS_OPTIONS.map((status) => ({
+    ...status,
+    count: counts?.[STATUS_COUNT_KEYS[status.value]],
+  })).filter(({ count }) => count == null || count > 0);
+  const hasActiveFilters = Boolean(
+    searchText.trim() ||
+    beforeDate ||
+    statuses.length !== ALL_BOOKING_STATUSES.length
+  );
 
   return (
-    <div>
+    <section>
       <div
         className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center
           sm:justify-between"
@@ -148,7 +89,7 @@ export default function CustomerBookings({
               required={false}
               clearable
               closeOnSelect
-              onSelect={setBeforeDate}
+              onSelect={(date) => setBeforeDate(date ?? null)}
             />
           </div>
         </div>
@@ -162,7 +103,13 @@ export default function CustomerBookings({
             disableDeselect={false}
             value={statuses}
             onValueChange={(nextStatuses) => {
-              if (nextStatuses.length > 0) setStatuses(nextStatuses);
+              if (nextStatuses.length > 0) {
+                setStatuses(
+                  ALL_BOOKING_STATUSES.filter((status) =>
+                    nextStatuses.includes(status)
+                  )
+                );
+              }
             }}
           >
             {statusFilters.map(({ value, label, count }) => (
@@ -184,12 +131,10 @@ export default function CustomerBookings({
           route={route}
           showCustomer={false}
           emptyTitle={
-            searchText || beforeDate || statuses.length !== ALL_STATUSES.length
-              ? "No matching bookings"
-              : "No bookings yet"
+            hasActiveFilters ? "No matching bookings" : "No bookings yet"
           }
           emptyMessage={
-            searchText || beforeDate || statuses.length !== ALL_STATUSES.length
+            hasActiveFilters
               ? "Try changing your search or filter."
               : "New bookings for this customer will appear here."
           }
@@ -205,7 +150,7 @@ export default function CustomerBookings({
           type="button"
         />
       )}
-    </div>
+    </section>
   );
 }
 
@@ -226,11 +171,4 @@ function filterBookings(bookings, searchText) {
       booking.participant_status,
     ].some((value) => value?.toLocaleLowerCase().includes(search))
   );
-}
-
-function startOfNextDay(date) {
-  const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-  result.setDate(result.getDate() + 1);
-  return result;
 }

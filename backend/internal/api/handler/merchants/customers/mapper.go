@@ -46,14 +46,12 @@ func mapToGetResp(in domain.CustomerInfo) getResp {
 
 func mapToGetStatsResp(in domain.CustomerStatistics) getStatsResp {
 	return getStatsResp{
-		TotalBookings:   in.TotalBookings,
 		TimesBooked:     in.TimesBooked,
 		TimesConfirmed:  in.TimesConfirmed,
 		TimesCompleted:  in.TimesCompleted,
 		TimesCancelled:  in.TimesCancelled,
 		TimesNoShow:     in.TimesNoShow,
 		FirstBooking:    in.FirstBooking,
-		LastVisited:     in.LastVisited,
 		CompletedValues: mapToCompletedValuesResp(in.CompletedValues),
 		FavoriteService: in.FavoriteService,
 		NextBooking:     in.NextBooking,

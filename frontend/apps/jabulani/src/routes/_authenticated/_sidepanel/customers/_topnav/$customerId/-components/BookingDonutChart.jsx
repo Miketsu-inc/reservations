@@ -4,15 +4,15 @@ import { getBookingStatusColorStyles } from "@reservations/jabulani/lib";
 const EMPTY_COLOR = "rgb(var(--hvr-gray))";
 
 function BookingStatusSector({ isActive, payload, ...props }) {
+  const status = payload?.status;
+
   return (
     <Sector
       {...props}
-      className={
-        payload.status ? getBookingStatusColorStyles(payload.status) : undefined
-      }
-      fill={payload.status ? "currentColor" : EMPTY_COLOR}
+      className={status ? getBookingStatusColorStyles(status) : undefined}
+      fill={status ? "currentColor" : EMPTY_COLOR}
       outerRadius={
-        isActive && payload.status ? props.outerRadius + 3 : props.outerRadius
+        isActive && status ? props.outerRadius + 3 : props.outerRadius
       }
     />
   );
@@ -41,8 +41,9 @@ function BookingStatusTooltip({ payload }) {
   );
 }
 
-export default function BookingDonutChart({ statuses, total }) {
+export default function BookingDonutChart({ statuses }) {
   const hasBookings = statuses.some((item) => item.value > 0);
+  const total = statuses.reduce((sum, item) => sum + item.value, 0);
   const chartData = hasBookings
     ? statuses
     : [{ label: "No bookings", value: 1 }];

@@ -139,14 +139,12 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getStatsResp struct {
-	TotalBookings   int                  `json:"total_bookings"`
 	TimesBooked     int                  `json:"times_booked"`
 	TimesConfirmed  int                  `json:"times_confirmed"`
 	TimesCompleted  int                  `json:"times_completed"`
 	TimesCancelled  int                  `json:"times_cancelled"`
 	TimesNoShow     int                  `json:"times_no_show"`
 	FirstBooking    *time.Time           `json:"first_booking"`
-	LastVisited     *time.Time           `json:"last_visited"`
 	CompletedValues []completedValueResp `json:"completed_values"`
 	FavoriteService *string              `json:"favorite_service"`
 	NextBooking     *time.Time           `json:"next_booking"`

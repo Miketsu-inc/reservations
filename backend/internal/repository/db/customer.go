@@ -181,14 +181,12 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 		join "Booking" b on b.id = bp.booking_id and b.merchant_id = $1
 		where bp.customer_id = $2 and b.cancelled_by_merchant_on is null
 	)
-	select count(cb.id) as total_bookings,
-		count(cb.id) filter (where cb.status = 'booked') as times_booked,
+	select count(cb.id) filter (where cb.status = 'booked') as times_booked,
 		count(cb.id) filter (where cb.status = 'confirmed') as times_confirmed,
 		count(cb.id) filter (where cb.status = 'completed') as times_completed,
 		count(cb.id) filter (where cb.status = 'cancelled') as times_cancelled,
 		count(cb.id) filter (where cb.status = 'no-show') as times_no_show,
 		min(cb.from_date) as first_booking,
-		max(cb.to_date) filter (where cb.status = 'completed') as last_visited,
 		case
 			when count(cb.id) filter (where cb.status = 'completed') = 0 then
 				array[row(0, m.currency_code)::price]
@@ -223,10 +221,10 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 
 	var customer domain.CustomerStatistics
 	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(
-		&customer.TotalBookings, &customer.TimesBooked, &customer.TimesConfirmed,
+		&customer.TimesBooked, &customer.TimesConfirmed,
 		&customer.TimesCompleted, &customer.TimesCancelled, &customer.TimesNoShow,
-		&customer.FirstBooking, &customer.LastVisited,
-		&customer.CompletedValues, &customer.FavoriteService, &customer.NextBooking,
+		&customer.FirstBooking, &customer.CompletedValues,
+		&customer.FavoriteService, &customer.NextBooking,
 	)
 	if err != nil {
 		return domain.CustomerStatistics{}, fmt.Errorf("GetCustomerStats: %w", err)

@@ -48,20 +48,18 @@ type PublicCustomer struct {
 
 type CustomerInfo struct {
 	Customer
-	IsDummy         bool    `json:"is_dummy" db:"is_dummy"`
-	IsBlacklisted   bool    `json:"is_blacklisted" db:"is_blacklisted"`
-	BlacklistReason *string `json:"blacklist_reason" db:"blacklist_reason"`
+	IsDummy         bool
+	IsBlacklisted   bool
+	BlacklistReason *string
 }
 
 type CustomerStatistics struct {
-	TotalBookings   int
 	TimesBooked     int
 	TimesConfirmed  int
 	TimesCompleted  int
 	TimesCancelled  int
 	TimesNoShow     int
 	FirstBooking    *time.Time
-	LastVisited     *time.Time
 	CompletedValues []currencyx.Price
 	FavoriteService *string
 	NextBooking     *time.Time

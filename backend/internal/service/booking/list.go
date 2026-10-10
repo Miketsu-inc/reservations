@@ -35,7 +35,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 
 	decodedCursor, err := cursor.Decode[bookingCursor](input.Cursor)
 	if err != nil {
-		return GetBookingsResult{}, fmt.Errorf("error during cursor decoding: %s", err.Error())
+		return GetBookingsResult{}, fmt.Errorf("decode booking cursor: %w", err)
 	}
 
 	if input.Cursor == "" {
@@ -84,7 +84,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 			FromDate: lastBooking.FromDate,
 		})
 		if err != nil {
-			return GetBookingsResult{}, fmt.Errorf("error during cursor encoding: %s", err.Error())
+			return GetBookingsResult{}, fmt.Errorf("encode booking cursor: %w", err)
 		}
 
 		nextCursor = &encodedCursor

@@ -13,7 +13,7 @@ function formatDate(date) {
 }
 
 export default function DatePicker({
-  styles,
+  styles = "",
   value,
   placeholderText,
   disabledBefore,

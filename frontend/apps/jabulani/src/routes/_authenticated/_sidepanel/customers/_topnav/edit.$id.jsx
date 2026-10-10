@@ -88,9 +88,9 @@ function RouteComponent() {
         const result = await response.json();
         setServerError(result.error.message);
       } else {
-        await queryClient.invalidateQueries({
-          queryKey: [merchantId, "customer", id],
-        });
+        await queryClient.invalidateQueries(
+          customerQueryOptions(merchantId, id)
+        );
         await queryClient.invalidateQueries({
           queryKey: [merchantId, "customer-profile", id],
         });
