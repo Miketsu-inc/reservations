@@ -36,7 +36,6 @@ create table if not exists "Merchant" (
     introduction             varchar(150),
     announcement             varchar(200),
     about_us                 text,
-    parking_info             text,
     payment_info             text,
     cancel_deadline          integer         not null default 0,
     booking_window_min       integer         not null default 0,
@@ -51,19 +50,31 @@ create table if not exists "Merchant" (
 create table if not exists "Location" (
     ID                       serial           primary key unique not null,
     merchant_id              uuid             references "Merchant" (ID) on delete cascade not null,
-    country                  varchar(50),
-    city                     varchar(50),
-    postal_code              varchar(10),
-    address                  varchar(100),
-    geo_point                geography(Point) not null,
-    place_id                 text,
+    name                     text             not null default 'Main location',
+    sequence                 integer          not null default 0,
+    country                  text,
+    country_code             char(2),
+    region                   text,
+    city                     text,
+    postal_code              text,
+    address                  text,
+    geo_point                geography(Point, 4326) not null,
+    geocoding_provider       text,
+    provider_place_id        text,
     formatted_location       text             not null,
-    is_primary               boolean          not null,
-    is_active                boolean          not null default true
+    contact_email            text,
+    phone_number             text,
+    parking_info             text             not null default '',
+    arrival_info             text             not null default '',
+    is_active                boolean          not null default true,
+
+    constraint location_geocoding_provider_complete check (
+        (geocoding_provider is null) = (provider_place_id is null)
+    )
 );
 
-create unique index if not exists location_one_primary_per_merchant
-on "Location" (merchant_id) where is_primary is true;
+create index if not exists location_merchant_sequence
+on "Location" (merchant_id, is_active, sequence, ID);
 
 create table if not exists "Employee" (
     ID                       serial          primary key unique not null,
@@ -302,12 +313,12 @@ create table if not exists "ServiceProduct" (
 
 create table if not exists "BusinessHours" (
     ID                       serial          primary key unique not null,
-    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    location_id              integer         references "Location" (ID) on delete cascade not null,
     day_of_week              smallint        check (day_of_week BETWEEN 0 AND 6) not null,
     start_time               time(0)         not null,
     end_time                 time(0)         not null,
 
-    constraint unique_business_hours unique (merchant_id, day_of_week, start_time, end_time)
+    constraint unique_business_hours unique (location_id, day_of_week, start_time, end_time)
 );
 
 create table if not exists "BlockedTimeType" (

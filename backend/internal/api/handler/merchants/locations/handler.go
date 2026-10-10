@@ -32,14 +32,15 @@ func (h *Handler) Routes() *httputil.Router {
 
 type newReq struct {
 	Country           *string         `json:"country"`
+	CountryCode       *string         `json:"country_code"`
+	Region            *string         `json:"region"`
 	City              *string         `json:"city"`
 	PostalCode        *string         `json:"postal_code"`
 	Address           *string         `json:"address"`
 	GeoPoint          *types.GeoPoint `json:"geo_point" validate:"required"`
-	PlaceId           *string         `json:"place_id"`
+	GeocodingProvider *string         `json:"geocoding_provider"`
+	ProviderPlaceId   *string         `json:"provider_place_id"`
 	FormattedLocation string          `json:"formatted_location" validate:"required"`
-	IsPrimary         bool            `json:"is_primary"`
-	IsActive          bool            `json:"is_active"`
 }
 
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
@@ -64,14 +65,22 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 
 type getResp struct {
 	Id                int            `json:"id"`
+	Name              string         `json:"name"`
+	Sequence          int            `json:"sequence"`
 	Country           *string        `json:"country"`
+	CountryCode       *string        `json:"country_code"`
+	Region            *string        `json:"region"`
 	City              *string        `json:"city"`
 	PostalCode        *string        `json:"postal_code"`
 	Address           *string        `json:"address"`
 	GeoPoint          types.GeoPoint `json:"geo_point"`
-	PlaceId           *string        `json:"place_id"`
+	GeocodingProvider *string        `json:"geocoding_provider"`
+	ProviderPlaceId   *string        `json:"provider_place_id"`
 	FormattedLocation string         `json:"formatted_location"`
-	IsPrimary         bool           `json:"is_primary"`
+	ContactEmail      *string        `json:"contact_email"`
+	PhoneNumber       *string        `json:"phone_number"`
+	ParkingInfo       string         `json:"parking_info"`
+	ArrivalInfo       string         `json:"arrival_info"`
 	IsActive          bool           `json:"is_active"`
 }
 
@@ -88,11 +97,14 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 
 type updateReq struct {
 	Country           *string         `json:"country"`
+	CountryCode       *string         `json:"country_code"`
+	Region            *string         `json:"region"`
 	City              *string         `json:"city"`
 	PostalCode        *string         `json:"postal_code"`
 	Address           *string         `json:"address"`
 	GeoPoint          *types.GeoPoint `json:"geo_point" validate:"required"`
-	PlaceId           *string         `json:"place_id"`
+	GeocodingProvider *string         `json:"geocoding_provider"`
+	ProviderPlaceId   *string         `json:"provider_place_id"`
 	FormattedLocation string          `json:"formatted_location" validate:"required"`
 }
 

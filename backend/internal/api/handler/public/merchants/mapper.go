@@ -42,6 +42,8 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		Timezone:                in.Timezone,
 		LocationId:              in.LocationId,
 		Country:                 in.Country,
+		CountryCode:             in.CountryCode,
+		Region:                  in.Region,
 		City:                    in.City,
 		PostalCode:              in.PostalCode,
 		Address:                 in.Address,

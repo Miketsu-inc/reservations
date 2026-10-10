@@ -20,6 +20,7 @@ import (
 type Service struct {
 	bookingRepo     domain.BookingRepository
 	catalogRepo     domain.CatalogRepository
+	locationRepo    domain.LocationRepository
 	merchantRepo    domain.MerchantRepository
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
@@ -27,12 +28,13 @@ type Service struct {
 	txManager       db.TransactionManager
 }
 
-func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
+func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, location domain.LocationRepository, merchant domain.MerchantRepository,
 	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository, team domain.TeamRepository,
 	txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
 		catalogRepo:     catalog,
+		locationRepo:    location,
 		merchantRepo:    merchant,
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
@@ -219,12 +221,18 @@ func (s *Service) GetMerchantProfileSettings(ctx context.Context) (domain.Mercha
 func (s *Service) UpdateMerchantProfileSettings(ctx context.Context, settings domain.MerchantProfileSettings) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.merchantRepo.UpdateMerchantProfileSettings(ctx, actor.MerchantId, settings)
+	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		if err := s.merchantRepo.WithTx(tx).UpdateMerchantProfileSettings(ctx, actor.MerchantId, settings); err != nil {
+			return err
+		}
+
+		return s.locationRepo.WithTx(tx).UpdateParkingInfo(ctx, location.Id, actor.MerchantId, settings.ParkingInfo)
+	})
 }
 
 func (s *Service) GetSchedulingSettings(ctx context.Context) (domain.SchedulingSettings, error) {
@@ -251,7 +259,12 @@ func (s *Service) UpdateSchedulingSettings(ctx context.Context, settings domain.
 func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.BusinessHours, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	if err != nil {
+		return nil, err
+	}
+
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, actor.MerchantId, location.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -261,14 +274,18 @@ func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.Business
 
 func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours domain.BusinessHours) error {
 	actor := actor.MustGetFromContext(ctx)
+	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	if err != nil {
+		return err
+	}
 
-	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err := s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, actor.MerchantId, businessHours)
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		err := s.merchantRepo.WithTx(tx).DeleteOutdatedBusinessHours(ctx, location.Id, businessHours)
 		if err != nil {
 			return err
 		}
 
-		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, actor.MerchantId, businessHours)
+		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, location.Id, businessHours)
 		if err != nil {
 			return err
 		}
@@ -285,7 +302,12 @@ func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours
 func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.BusinessHours, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	if err != nil {
+		return nil, err
+	}
+
+	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, actor.MerchantId, location.Id)
 	if err != nil {
 		return domain.BusinessHours{}, err
 	}
@@ -304,7 +326,7 @@ func (s *Service) GetNormalizedBusinessHoursPublic(ctx context.Context, input Ge
 		return domain.BusinessHours{}, err
 	}
 
-	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId)
+	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId, input.LocationId)
 	if err != nil {
 		return domain.BusinessHours{}, err
 	}

@@ -56,7 +56,6 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 type OAuthState struct {
 	UserId     string `json:"user_id"`
 	MerchantId string `json:"merchant_id"`
-	LocationId int    `json:"location_id"`
 	EmployeeId int    `json:"employee_id"`
 	Role       string `json:"role"`
 
@@ -73,7 +72,6 @@ func GenerateState(a actor.EmployeeContext) (string, error) {
 	state := OAuthState{
 		UserId:     a.UserId.String(),
 		MerchantId: a.MerchantId.String(),
-		LocationId: a.LocationId,
 		EmployeeId: a.EmployeeId,
 		Role:       a.Role.String(),
 		ExpiresAt:  time.Now().Add(10 * time.Minute).Unix(),

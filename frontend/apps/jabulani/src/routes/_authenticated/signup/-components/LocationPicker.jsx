@@ -34,14 +34,15 @@ export default function LocationPicker({
           },
           body: JSON.stringify({
             country: location.country,
+            country_code: location.country_code,
+            region: location.region,
             city: location.city,
             postal_code: location.postal_code,
             address: location.address,
             geo_point: location.geo_point,
-            place_id: location.place_id,
+            geocoding_provider: location.geocoding_provider,
+            provider_place_id: location.provider_place_id,
             formatted_location: location.formatted_location.trim(),
-            is_primary: true,
-            is_active: true,
           }),
         }
       );

@@ -129,7 +129,6 @@ func (m *Manager) EmployeeAuthentication(next http.Handler) httputil.HandlerFunc
 		}
 
 		ctx = actor.SetMerchantIdInContext(ctx, merchantId)
-		ctx = actor.SetLocationIdInContext(ctx, authInfo.LocationId)
 		ctx = actor.SetEmployeeIdInContext(ctx, authInfo.Id)
 		ctx = actor.SetEmployeeRoleInContext(ctx, authInfo.Role)
 

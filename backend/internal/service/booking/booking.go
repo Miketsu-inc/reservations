@@ -137,7 +137,7 @@ func (s *Service) assignEmployee(ctx context.Context, tx pgx.Tx, merchantId uuid
 		return 0, domain.Service{}, ErrEmployeeNotFoundForService
 	}
 
-	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId, locationId)
 	if err != nil {
 		return 0, domain.Service{}, err
 	}
@@ -652,7 +652,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
-	bookedLocation, err := s.locationRepo.GetLocation(ctx, actor.LocationId, actor.MerchantId)
+	bookedLocation, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}

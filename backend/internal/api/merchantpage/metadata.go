@@ -41,6 +41,7 @@ type postalAddressSchema struct {
 	Type            string `json:"@type"`
 	StreetAddress   string `json:"streetAddress,omitempty"`
 	AddressLocality string `json:"addressLocality,omitempty"`
+	AddressRegion   string `json:"addressRegion,omitempty"`
 	PostalCode      string `json:"postalCode,omitempty"`
 	AddressCountry  string `json:"addressCountry,omitempty"`
 }
@@ -128,15 +129,22 @@ func buildAddress(info domain.MerchantInfo) *postalAddressSchema {
 		address.AddressLocality = *info.City
 	}
 
+	if info.Region != nil {
+		address.AddressRegion = *info.Region
+	}
+
 	if info.PostalCode != nil {
 		address.PostalCode = *info.PostalCode
 	}
 
-	if info.Country != nil {
+	if info.CountryCode != nil {
+		address.AddressCountry = *info.CountryCode
+	} else if info.Country != nil {
 		address.AddressCountry = *info.Country
 	}
 
-	if address.StreetAddress != "" || address.AddressLocality != "" || address.PostalCode != "" || address.AddressCountry != "" {
+	if address.StreetAddress != "" || address.AddressLocality != "" || address.AddressRegion != "" ||
+		address.PostalCode != "" || address.AddressCountry != "" {
 		return &address
 	}
 

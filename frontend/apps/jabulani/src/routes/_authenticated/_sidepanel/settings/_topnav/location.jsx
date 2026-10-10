@@ -71,12 +71,15 @@ function locationSignature(location) {
 
   return JSON.stringify({
     country: location.country ?? null,
+    countryCode: location.country_code ?? null,
+    region: location.region ?? null,
     city: location.city ?? null,
     postalCode: location.postal_code ?? null,
     address: location.address ?? null,
     latitude: location.geo_point?.latitude ?? null,
     longitude: location.geo_point?.longitude ?? null,
-    placeId: location.place_id ?? null,
+    geocodingProvider: location.geocoding_provider ?? null,
+    providerPlaceId: location.provider_place_id ?? null,
     formattedLocation: location.formatted_location?.trim() ?? "",
   });
 }
@@ -113,18 +116,7 @@ function LocationCard({ location, onEdit }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h2 className="text-text_color font-semibold">
-              {location.name ??
-                (location.is_primary ? "Primary location" : "Location")}
-            </h2>
-            {location.is_primary && (
-              <span
-                className="bg-primary/10 text-primary rounded-full px-2 py-0.5
-                  text-xs font-medium"
-              >
-                Primary
-              </span>
-            )}
+            <h2 className="text-text_color font-semibold">{location.name}</h2>
             {!location.is_active && (
               <span
                 className="rounded-full bg-gray-200 px-2 py-0.5 text-xs

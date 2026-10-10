@@ -186,7 +186,6 @@ type membershipsResp struct {
 	MerchantId      uuid.UUID          `json:"merchant_id"`
 	MerchantName    string             `json:"merchant_name"`
 	MerchantUrlName string             `json:"merchant_url_name"`
-	LocationId      int                `json:"location_id"`
 	EmployeeId      int                `json:"employee_id"`
 	Role            types.EmployeeRole `json:"role"`
 }

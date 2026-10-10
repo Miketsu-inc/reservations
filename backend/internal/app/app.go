@@ -84,8 +84,8 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, locationRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
-	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, transactionManager)
-	locationService := locationSrv.NewService(locationRepo)
+	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, locationRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, transactionManager)
+	locationService := locationSrv.NewService(locationRepo, merchantRepo, transactionManager)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
 

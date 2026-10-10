@@ -111,9 +111,8 @@ func (r *userRepository) GetUserLanguage(ctx context.Context, userId uuid.UUID) 
 
 func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeAuthInfo, error) {
 	query := `
-	select e.id, l.id as location_id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
+	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
 	from "Employee" e
-	join "Location" l on l.merchant_id = e.merchant_id and l.is_primary is true and l.is_active is true
 	join "Merchant" m on m.id = e.merchant_id
 	where e.merchant_id = $1 and e.user_id = $2
 	`
@@ -129,9 +128,8 @@ func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.
 
 func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {
 	query := `
-	select e.id, l.id as location_id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
+	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
 	from "Employee" e
-	join "Location" l on l.merchant_id = e.merchant_id and l.is_primary is true and l.is_active is true
 	join "Merchant" m on m.id = e.merchant_id
 	where e.user_id = $1
 	`

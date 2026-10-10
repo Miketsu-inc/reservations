@@ -77,6 +77,8 @@ type getInfoResp struct {
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`
+	CountryCode       *string        `json:"country_code"`
+	Region            *string        `json:"region"`
 	City              *string        `json:"city"`
 	PostalCode        *string        `json:"postal_code"`
 	Address           *string        `json:"address"`
