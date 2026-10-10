@@ -29,6 +29,8 @@ type GetBookingsResult struct {
 }
 
 func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetBookingsResult, error) {
+	actor := actor.MustGetFromContext(ctx)
+
 	if (input.CustomerId == nil) == (input.EmployeeId == nil) {
 		return GetBookingsResult{}, fmt.Errorf("exactly one booking subject must be provided")
 	}
@@ -48,34 +50,18 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 		}
 	}
 
-	requestActor := actor.MustGetFromContext(ctx)
 	var bookings []domain.BookingListItem
 	if input.CustomerId != nil {
-		bookings, err = s.bookingRepo.GetBookingsForCustomer(
-			ctx,
-			requestActor.MerchantId,
-			*input.CustomerId,
-			input.Statuses,
-			input.PageSize+1,
-			decodedCursor.FromDate,
-			decodedCursor.Id,
-		)
+		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	} else {
-		bookings, err = s.bookingRepo.GetBookingsForEmployee(
-			ctx,
-			requestActor.MerchantId,
-			*input.EmployeeId,
-			input.Statuses,
-			input.PageSize+1,
-			decodedCursor.FromDate,
-			decodedCursor.Id,
-		)
+		bookings, err = s.bookingRepo.GetBookingsForEmployee(ctx, actor.MerchantId, *input.EmployeeId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	}
 	if err != nil {
 		return GetBookingsResult{}, err
 	}
 
 	hasNextPage := len(bookings) > input.PageSize
+
 	var nextCursor *string
 	if hasNextPage {
 		lastBooking := bookings[input.PageSize-1]

@@ -62,7 +62,6 @@ func mapToCompletedValuesResp(in []currencyx.Price) []completedValueResp {
 	out := make([]completedValueResp, len(in))
 	for i, value := range in {
 		out[i] = completedValueResp{
-			Value:          value,
 			FormattedValue: value.ToFormatted(),
 		}
 	}

@@ -57,7 +57,7 @@ async function fetchCustomerBookings(
   const params = new URLSearchParams({
     customer_id: customerId,
     status: statuses.join(","),
-    limit: PAGE_SIZE.toString(),
+    limit: PAGE_SIZE,
     cursor,
   });
   if (beforeDate) {

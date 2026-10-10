@@ -92,23 +92,6 @@ type BookingRepository interface {
 	GetBookingSeriesPhases(ctx context.Context, seriesId int) ([]BookingSeriesPhase, error)
 }
 
-type BookingListItem struct {
-	Id                int                  `db:"id"`
-	BookingType       types.BookingType    `db:"booking_type"`
-	IsRecurring       bool                 `db:"is_recurring"`
-	FromDate          time.Time            `db:"from_date"`
-	ToDate            time.Time            `db:"to_date"`
-	ServiceName       string               `db:"service_name"`
-	ServiceColor      *string              `db:"service_color"`
-	FormattedLocation string               `db:"formatted_location"`
-	Price             currencyx.Price      `db:"price"`
-	PriceType         types.PriceType      `db:"price_type"`
-	BookingStatus     types.BookingStatus  `db:"booking_status"`
-	ParticipantStatus *types.BookingStatus `db:"participant_status"`
-	EmployeeFirstName *string              `db:"employee_first_name"`
-	EmployeeLastName  *string              `db:"employee_last_name"`
-}
-
 type Booking struct {
 	Id                    int                 `db:"id"`
 	Status                types.BookingStatus `db:"status"`
@@ -502,4 +485,21 @@ type BookingCountsForUser struct {
 	Upcoming  int `db:"upcoming"`
 	Completed int `db:"completed"`
 	Cancelled int `db:"cancelled"`
+}
+
+type BookingListItem struct {
+	Id                int                  `db:"id"`
+	BookingType       types.BookingType    `db:"booking_type"`
+	IsRecurring       bool                 `db:"is_recurring"`
+	FromDate          time.Time            `db:"from_date"`
+	ToDate            time.Time            `db:"to_date"`
+	ServiceName       string               `db:"service_name"`
+	ServiceColor      *string              `db:"service_color"`
+	FormattedLocation string               `db:"formatted_location"`
+	Price             currencyx.Price      `db:"price"`
+	PriceType         types.PriceType      `db:"price_type"`
+	BookingStatus     types.BookingStatus  `db:"booking_status"`
+	ParticipantStatus *types.BookingStatus `db:"participant_status"`
+	EmployeeFirstName *string              `db:"employee_first_name"`
+	EmployeeLastName  *string              `db:"employee_last_name"`
 }

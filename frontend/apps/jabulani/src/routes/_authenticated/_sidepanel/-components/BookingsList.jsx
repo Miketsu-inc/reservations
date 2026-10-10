@@ -89,13 +89,9 @@ function BookingCard({
     : (booking.booking_status ?? booking.status);
   const isNotConfirmed = status === "booked";
 
-  const customerName = [booking.customer_first_name, booking.customer_last_name]
-    .filter(Boolean)
-    .join(" ");
+  const customerName = `${booking.customer_first_name} ${booking.customer_last_name}`;
   const isWalkIn = !customerName;
-  const employeeName = [booking.employee_first_name, booking.employee_last_name]
-    .filter(Boolean)
-    .join(" ");
+  const employeeName = `${booking.employee_first_name} ${booking.employee_last_name}`;
 
   return (
     <div
@@ -181,7 +177,7 @@ function BookingCard({
               {!isWalkIn && (
                 <Avatar
                   styles="size-8! text-xs!"
-                  initials={`${booking.customer_first_name?.[0] ?? ""}${booking.customer_last_name?.[0] ?? ""}`}
+                  initials={`${booking.customer_first_name?.[0]}${booking.customer_last_name?.[0]}`}
                 />
               )}
               <p className="truncate text-sm">
@@ -192,7 +188,7 @@ function BookingCard({
             <>
               <Avatar
                 styles="size-8! text-xs!"
-                initials={`${booking.employee_first_name?.[0] ?? ""}${booking.employee_last_name?.[0] ?? ""}`}
+                initials={`${booking.employee_first_name?.[0]}${booking.employee_last_name?.[0]}`}
               />
               <p className="truncate text-sm">{employeeName}</p>
             </>

@@ -8,7 +8,7 @@ import {
   customerBookingsQueryOptions,
   customerProfileQueryOptions,
   customerStatsQueryOptions,
-} from "./-components/queries";
+} from "./-components/customerQueries";
 
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_topnav/$customerId/"

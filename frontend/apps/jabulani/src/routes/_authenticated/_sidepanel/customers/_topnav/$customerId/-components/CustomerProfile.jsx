@@ -37,7 +37,7 @@ import ExpandableNote from "./ExpandableNote";
 import {
   customerProfileQueryOptions,
   customerStatsQueryOptions,
-} from "./queries";
+} from "./customerQueries";
 
 export default function CustomerProfile({ customerId }) {
   const navigate = useNavigate();
@@ -77,12 +77,9 @@ export default function CustomerProfile({ customerId }) {
   const fullName =
     [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
     "Unnamed customer";
-  const initials =
-    `${customer.first_name?.charAt(0) ?? ""}${customer.last_name?.charAt(0) ?? ""}` ||
-    "?";
-  const hasContactDetails = Boolean(
-    customer.email || customer.phone_number || customer.birthday
-  );
+
+  const hasContactDetails =
+    customer.email || customer.phone_number || customer.birthday;
   const hasBookings =
     (stats?.times_booked ?? 0) > 0 ||
     (stats?.times_confirmed ?? 0) > 0 ||
@@ -193,7 +190,10 @@ export default function CustomerProfile({ customerId }) {
       <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
         <div className="flex w-full justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
-            <Avatar styles="size-14! text-lg!" initials={initials} />
+            <Avatar
+              styles="size-14! text-lg!"
+              initials={`${customer?.first_name[0]}${customer?.last_name[0]}`}
+            />
             <div className="flex min-w-0 flex-col gap-1">
               <h1 className="text-text_color truncate text-2xl font-bold">
                 {fullName}
@@ -358,7 +358,7 @@ function CustomerActions({
 }
 
 function formatBirthday(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
+  return new Date(dateString).toLocaleDateString([], {
     month: "long",
     day: "numeric",
   });

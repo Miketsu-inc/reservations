@@ -38,23 +38,23 @@ type getBookingsResp struct {
 }
 
 func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
-	query := r.URL.Query()
-
 	var customerId *uuid.UUID
-	if value := query.Get("customer_id"); value != "" {
+	if value := r.URL.Query().Get("customer_id"); value != "" {
 		parsed, err := uuid.Parse(value)
 		if err != nil {
 			return validate.NewError("invalid customer_id query parameter")
 		}
+
 		customerId = &parsed
 	}
 
 	var employeeId *int
-	if value := query.Get("employee_id"); value != "" {
+	if value := r.URL.Query().Get("employee_id"); value != "" {
 		parsed, err := strconv.Atoi(value)
 		if err != nil || parsed < 1 {
 			return validate.NewError("invalid employee_id query parameter")
 		}
+
 		employeeId = &parsed
 	}
 
@@ -62,8 +62,9 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("exactly one of customer_id or employee_id is required")
 	}
 
-	statusValues := strings.Split(query.Get("status"), ",")
 	var statuses []types.BookingStatus
+
+	statusValues := strings.Split(r.URL.Query().Get("status"), ",")
 	if len(statusValues) == 1 && statusValues[0] == "all" {
 		statuses = []types.BookingStatus{
 			types.BookingStatusBooked,
@@ -75,30 +76,34 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 	} else {
 		statuses = make([]types.BookingStatus, 0, len(statusValues))
 		seenStatuses := make(map[types.BookingStatus]bool, len(statusValues))
+
 		for _, value := range statusValues {
 			status, err := types.NewBookingStatus(value)
 			if err != nil || seenStatuses[status] {
 				return validate.NewError("invalid status query parameter")
 			}
+
 			seenStatuses[status] = true
 			statuses = append(statuses, status)
 		}
 	}
 
-	limit, err := strconv.Atoi(query.Get("limit"))
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		return validate.NewError("invalid limit query parameter")
 	}
+
 	if limit < 1 || limit > 20 {
 		return validate.NewError("limit must be between 1 and 20")
 	}
 
 	var before *time.Time
-	if value := query.Get("before"); value != "" {
+	if value := r.URL.Query().Get("before"); value != "" {
 		parsed, err := time.Parse(time.RFC3339, value)
 		if err != nil {
 			return validate.NewError("invalid before query parameter")
 		}
+
 		before = &parsed
 	}
 
@@ -107,7 +112,7 @@ func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
 		EmployeeId: employeeId,
 		Statuses:   statuses,
 		Before:     before,
-		Cursor:     query.Get("cursor"),
+		Cursor:     r.URL.Query().Get("cursor"),
 		PageSize:   limit,
 	})
 	if err != nil {

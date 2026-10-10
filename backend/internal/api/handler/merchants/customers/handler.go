@@ -151,7 +151,6 @@ type getStatsResp struct {
 }
 
 type completedValueResp struct {
-	Value          currencyx.Price          `json:"value"`
 	FormattedValue currencyx.FormattedPrice `json:"formatted_value"`
 }
 

@@ -15,7 +15,7 @@ import {
   ALL_BOOKING_STATUSES,
   customerBookingsQueryOptions,
   customerStatsQueryOptions,
-} from "./queries";
+} from "./customerQueries";
 
 const STATUS_COUNT_KEYS = {
   booked: "times_booked",
@@ -53,15 +53,16 @@ export default function CustomerBookings({ customerId, route }) {
     () => filterBookings(allBookings, searchText),
     [allBookings, searchText]
   );
+
   const statusFilters = BOOKING_STATUS_OPTIONS.map((status) => ({
     ...status,
     count: counts?.[STATUS_COUNT_KEYS[status.value]],
   })).filter(({ count }) => count == null || count > 0);
-  const hasActiveFilters = Boolean(
+
+  const hasActiveFilters =
     searchText.trim() ||
     beforeDate ||
-    statuses.length !== ALL_BOOKING_STATUSES.length
-  );
+    statuses.length !== ALL_BOOKING_STATUSES.length;
 
   return (
     <section>
@@ -85,7 +86,7 @@ export default function CustomerBookings({ customerId, route }) {
             <DatePicker
               styles="w-full!"
               value={beforeDate}
-              placeholderText="All dates"
+              placeholderText="Before date"
               required={false}
               clearable
               closeOnSelect

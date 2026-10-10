@@ -1,7 +1,5 @@
-import { Pie, PieChart, Sector, Tooltip } from "recharts";
 import { getBookingStatusColorStyles } from "@reservations/jabulani/lib";
-
-const EMPTY_COLOR = "rgb(var(--hvr-gray))";
+import { Pie, PieChart, Sector, Tooltip } from "recharts";
 
 function BookingStatusSector({ isActive, payload, ...props }) {
   const status = payload?.status;
@@ -10,7 +8,7 @@ function BookingStatusSector({ isActive, payload, ...props }) {
     <Sector
       {...props}
       className={status ? getBookingStatusColorStyles(status) : undefined}
-      fill={status ? "currentColor" : EMPTY_COLOR}
+      fill={status ? "currentColor" : "rgb(var(--hvr-gray))"}
       outerRadius={
         isActive && status ? props.outerRadius + 3 : props.outerRadius
       }

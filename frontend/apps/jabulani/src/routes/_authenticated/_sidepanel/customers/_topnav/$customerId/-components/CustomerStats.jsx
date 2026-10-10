@@ -2,7 +2,7 @@ import { Loading, ServerError } from "@reservations/components";
 import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
 import { useQuery } from "@tanstack/react-query";
 import BookingDonutChart from "./BookingDonutChart";
-import { customerStatsQueryOptions } from "./queries";
+import { customerStatsQueryOptions } from "./customerQueries";
 
 export default function CustomerStats({ customerId }) {
   const { merchantId } = useAuth();
