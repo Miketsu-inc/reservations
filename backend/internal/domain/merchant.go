@@ -37,12 +37,12 @@ type MerchantRepository interface {
 	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
 	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, timezone *time.Location) ([]RevenueStat, error)
 
-	NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error
-	DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours BusinessHours) error
-	GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
-	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, day int) ([]TimeSlot, error)
-	// Get business hours for merchant including only the first start and last ending time
-	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (BusinessHours, error)
+	NewBusinessHours(ctx context.Context, locationId int, businessHours BusinessHours) error
+	DeleteOutdatedBusinessHours(ctx context.Context, locationId int, businessHours BusinessHours) error
+	GetBusinessHours(ctx context.Context, merchantId uuid.UUID, locationId int) (BusinessHours, error)
+	GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, locationId int, day int) ([]TimeSlot, error)
+	// Get business hours for a location including only the first start and last ending time
+	GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID, locationId int) (BusinessHours, error)
 }
 
 type Merchant struct {
@@ -53,7 +53,6 @@ type Merchant struct {
 	Introduction     string        `json:"introduction"`
 	Announcement     string        `json:"announcement"`
 	AboutUs          string        `json:"about_us"`
-	ParkingInfo      string        `json:"parking_info"`
 	PaymentInfo      string        `json:"payment_info"`
 	Timezone         string        `json:"timezone"`
 	CurrencyCode     string        `json:"currency_code"`
@@ -74,18 +73,21 @@ type BusinessHoursStatus struct {
 }
 
 type MerchantInfo struct {
-	Name         string `json:"merchant_name"`
-	UrlName      string `json:"url_name"`
-	ContactEmail string `json:"contact_email"`
-	Introduction string `json:"introduction"`
-	Announcement string `json:"announcement"`
-	AboutUs      string `json:"about_us"`
-	ParkingInfo  string `json:"parking_info"`
-	PaymentInfo  string `json:"payment_info"`
-	Timezone     string `json:"timezone"`
+	Name         string  `json:"merchant_name"`
+	UrlName      string  `json:"url_name"`
+	ContactEmail string  `json:"contact_email"`
+	PhoneNumber  *string `json:"phone_number"`
+	Introduction string  `json:"introduction"`
+	Announcement string  `json:"announcement"`
+	AboutUs      string  `json:"about_us"`
+	ParkingInfo  string  `json:"parking_info"`
+	PaymentInfo  string  `json:"payment_info"`
+	Timezone     string  `json:"timezone"`
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`
+	CountryCode       *string        `json:"country_code"`
+	Region            *string        `json:"region"`
 	City              *string        `json:"city"`
 	PostalCode        *string        `json:"postal_code"`
 	Address           *string        `json:"address"`

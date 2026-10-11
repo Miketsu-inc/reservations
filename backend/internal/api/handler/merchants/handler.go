@@ -41,7 +41,6 @@ func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamS
 type meResp struct {
 	UserId     uuid.UUID          `json:"user_id"`
 	MerchantId uuid.UUID          `json:"merchant_id"`
-	LocationId int                `json:"location_id"`
 	EmployeeId int                `json:"employee_id"`
 	Role       types.EmployeeRole `json:"role"`
 }

@@ -31,13 +31,13 @@ func (r *merchantRepository) WithTx(tx db.DBTX) domain.MerchantRepository {
 
 func (r *merchantRepository) NewMerchant(ctx context.Context, userId uuid.UUID, merchant domain.Merchant) error {
 	newMerchantQuery := `
-	insert into "Merchant" (ID, name, url_name, contact_email, introduction, announcement, about_us, parking_info,
+	insert into "Merchant" (ID, name, url_name, contact_email, introduction, announcement, about_us,
 		payment_info, timezone, currency_code, subscription_tier)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	_, err := r.db.Exec(ctx, newMerchantQuery, merchant.Id, merchant.Name, merchant.UrlName, merchant.ContactEmail,
-		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.ParkingInfo, merchant.PaymentInfo,
+		merchant.Introduction, merchant.Announcement, merchant.AboutUs, merchant.PaymentInfo,
 		merchant.Timezone, merchant.CurrencyCode, merchant.SubscriptionTier)
 	if err != nil {
 		return fmt.Errorf("NewMerchant: %w", err)
@@ -78,11 +78,11 @@ func (r *merchantRepository) ChangeMerchantNameAndURL(ctx context.Context, merch
 func (r *merchantRepository) UpdateMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID, settings domain.MerchantProfileSettings) error {
 	query := `
 	update "Merchant"
-	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5, parking_info = $6
+	set introduction = $2, announcement = $3, about_us = $4, payment_info = $5
 	where id = $1;`
 
 	_, err := r.db.Exec(ctx, query, merchantId, settings.Introduction, settings.Announcement, settings.AboutUs,
-		settings.PaymentInfo, settings.ParkingInfo)
+		settings.PaymentInfo)
 	if err != nil {
 		return fmt.Errorf("UpdateMerchantProfileSettings: %w", err)
 	}
@@ -221,21 +221,27 @@ func (r *merchantRepository) GetMerchantSubscriptionTier(ctx context.Context, me
 
 func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantInfo, error) {
 	query := `
-	select m.name, m.url_name, m.contact_email, m.introduction, m.announcement, m.about_us, m.parking_info, m.payment_info, m.timezone,
-	l.id as location_id, l.country, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
-	inner join "Location" l on m.id = l.merchant_id
+	select m.name, m.url_name, coalesce(l.contact_email, m.contact_email), l.phone_number, m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.timezone,
+	l.id as location_id, l.country, l.country_code, l.region, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
+	inner join lateral (
+		select * from "Location"
+		where merchant_id = m.id and is_active is true
+		order by sequence, id
+		limit 1
+	) l on true
 	where m.id = $1
 	`
 
 	var mi domain.MerchantInfo
-	err := r.db.QueryRow(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.Introduction, &mi.Announcement,
-		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.City, &mi.PostalCode, &mi.Address,
+	err := r.db.QueryRow(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.PhoneNumber, &mi.Introduction, &mi.Announcement,
+		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.CountryCode, &mi.Region,
+		&mi.City, &mi.PostalCode, &mi.Address,
 		&mi.FormattedLocation, &mi.GeoPoint)
 	if err != nil {
 		return domain.MerchantInfo{}, fmt.Errorf("GetAllMerchantInfo: %w", err)
 	}
 
-	businnessHours, err := r.GetBusinessHours(ctx, merchantId)
+	businnessHours, err := r.GetBusinessHours(ctx, merchantId, mi.LocationId)
 	if err != nil {
 		return domain.MerchantInfo{}, fmt.Errorf("GetAllMerchantInfo/GetBusinessHours: %w", err)
 	}
@@ -247,9 +253,15 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 
 func (r *merchantRepository) GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (domain.MerchantProfileSettings, error) {
 	query := `
-	select introduction, announcement, about_us, parking_info, payment_info
-	from "Merchant"
-	where id = $1
+	select m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info
+	from "Merchant" m
+	inner join lateral (
+		select parking_info from "Location"
+		where merchant_id = m.id and is_active is true
+		order by sequence, id
+		limit 1
+	) l on true
+	where m.id = $1
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
@@ -453,11 +465,11 @@ func (r *merchantRepository) GetRevenueStats(ctx context.Context, merchantId uui
 	return revenue, nil
 }
 
-func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours domain.BusinessHours) error {
+func (r *merchantRepository) NewBusinessHours(ctx context.Context, locationId int, businessHours domain.BusinessHours) error {
 	query := `
-	insert into "BusinessHours" (merchant_id, day_of_week, start_time, end_time)
+	insert into "BusinessHours" (location_id, day_of_week, start_time, end_time)
     select $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
-    on conflict (merchant_id, day_of_week, start_time, end_time) do nothing
+    on conflict (location_id, day_of_week, start_time, end_time) do nothing
 	`
 
 	days := make([]int, 0)
@@ -474,7 +486,7 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
 		}
 	}
 
-	_, err := r.db.Exec(ctx, query, merchantId, days, startTimes, endTimes)
+	_, err := r.db.Exec(ctx, query, locationId, days, startTimes, endTimes)
 	if err != nil {
 		return fmt.Errorf("NewBusinessHours: %w", err)
 	}
@@ -482,10 +494,10 @@ func (r *merchantRepository) NewBusinessHours(ctx context.Context, merchantId uu
 	return nil
 }
 
-func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, merchantId uuid.UUID, businessHours domain.BusinessHours) error {
+func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, locationId int, businessHours domain.BusinessHours) error {
 	query := `
 	delete from "BusinessHours"
-    where merchant_id = $1
+    where location_id = $1
     and (day_of_week, start_time, end_time) not in (
         select unnest($2::int[]), unnest($3::time[]), unnest($4::time[])
     )
@@ -505,7 +517,7 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
 		}
 	}
 
-	_, err := r.db.Exec(ctx, query, merchantId, days, startTimes, endTimes)
+	_, err := r.db.Exec(ctx, query, locationId, days, startTimes, endTimes)
 	if err != nil {
 		return fmt.Errorf("DeleteOutdatedBusinessHours: %w", err)
 	}
@@ -513,10 +525,12 @@ func (r *merchantRepository) DeleteOutdatedBusinessHours(ctx context.Context, me
 	return nil
 }
 
-func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uuid.UUID) (domain.BusinessHours, error) {
+func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uuid.UUID, locationId int) (domain.BusinessHours, error) {
 	query := `
-	select day_of_week, start_time, end_time from "BusinessHours"
-	where merchant_id = $1
+	select bh.day_of_week, bh.start_time, bh.end_time
+	from "BusinessHours" bh
+	join "Location" l on l.id = bh.location_id
+	where l.merchant_id = $1 and l.id = $2
 	order by day_of_week, start_time;
 	`
 
@@ -527,7 +541,7 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 
 	var dayOfWeek int
 	var start, end time.Time
-	rows, _ := r.db.Query(ctx, query, merchantId)
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
 	_, err := pgx.ForEachRow(rows, []any{&dayOfWeek, &start, &end}, func() error {
 		businessHours[dayOfWeek] = append(businessHours[dayOfWeek], domain.TimeSlot{
 			StartTime: start,
@@ -543,13 +557,15 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 	return businessHours, nil
 }
 
-func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, dayOfWeek int) ([]domain.TimeSlot, error) {
+func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchantId uuid.UUID, locationId int, dayOfWeek int) ([]domain.TimeSlot, error) {
 	query := `
-	select start_time, end_time from "BusinessHours"
-	where merchant_id = $1 and day_of_week = $2
+	select bh.start_time, bh.end_time
+	from "BusinessHours" bh
+	join "Location" l on l.id = bh.location_id
+	where l.merchant_id = $1 and l.id = $2 and bh.day_of_week = $3
 	order by start_time`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, dayOfWeek)
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId, dayOfWeek)
 	bHours, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.TimeSlot, error) {
 		var ts domain.TimeSlot
 		err := row.Scan(&ts.StartTime, &ts.EndTime)
@@ -563,16 +579,16 @@ func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchan
 	return bHours, nil
 }
 
-func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID) (domain.BusinessHours, error) {
+func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, merchantId uuid.UUID, locationId int) (domain.BusinessHours, error) {
 	query := `
-	select day_of_week, min(start_time) as start_time,
-	max(end_time) as end_time from "BusinessHours"
-	where merchant_id = $1
-	group by day_of_week
-	order by day_of_week;`
+	select bh.day_of_week, min(bh.start_time) as start_time,
+	max(bh.end_time) as end_time from "BusinessHours" bh
+	join "Location" l on l.id = bh.location_id
+	where l.merchant_id = $1 and l.id = $2
+	group by bh.day_of_week
+	order by bh.day_of_week;`
 
-	rows, _ := r.db.Query(ctx, query, merchantId)
-
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
 	var day int
 	var startTime, endTime time.Time
 

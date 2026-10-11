@@ -397,21 +397,25 @@ function MerchantPage() {
 
               <ReservationSection
                 name="Contact"
-                show={merchantInfo.contact_email}
+                show={merchantInfo.contact_email || merchantInfo.phone_number}
               >
                 <div className="flex flex-col gap-6 pt-2 lg:gap-8">
                   <div
                     className="flex flex-col gap-4 md:flex-row md:flex-wrap
                       lg:gap-6"
                   >
-                    <div className="flex items-center gap-4 lg:text-lg">
-                      <Icon icon={Mail01Icon} styles="size-5 lg:size-6" />
-                      {merchantInfo.contact_email}
-                    </div>
-                    <div className="flex items-center gap-4 lg:text-lg">
-                      <Icon icon={Call02Icon} styles="size-5 lg:size-6" />
-                      {"+36 20 538  3565"}
-                    </div>
+                    {merchantInfo.contact_email && (
+                      <div className="flex items-center gap-4 lg:text-lg">
+                        <Icon icon={Mail01Icon} styles="size-5 lg:size-6" />
+                        {merchantInfo.contact_email}
+                      </div>
+                    )}
+                    {merchantInfo.phone_number && (
+                      <div className="flex items-center gap-4 lg:text-lg">
+                        <Icon icon={Call02Icon} styles="size-5 lg:size-6" />
+                        {merchantInfo.phone_number}
+                      </div>
+                    )}
                   </div>
 
                   <div

@@ -234,7 +234,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 		endDate := startDate.AddDate(0, 3, 0)
 		dateRange := timeutil.NewDateRangeFromInclusiveEnd(startDate, endDate, merchantTz)
 
-		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+		businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId, locationId)
 		if err != nil {
 			return NextAvailable{}, err
 		}
@@ -345,7 +345,7 @@ func (s *Service) GetDisabledDays(ctx context.Context, merchantName string, serv
 	minDate := now.Add(time.Duration(bookingSettings.BookingWindowMin) * time.Minute)
 	maxDate := now.AddDate(0, bookingSettings.BookingWindowMax, 0)
 
-	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId)
+	businessHours, err := s.merchantRepo.GetNormalizedBusinessHours(ctx, merchantId, locationId)
 	if err != nil {
 		return DisabledDays{}, err
 	}
@@ -386,7 +386,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 		return []DayAvailability{}, err
 	}
 
-	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId, locationId)
 	if err != nil {
 		return []DayAvailability{}, err
 	}
@@ -461,7 +461,7 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 		return FormattedAvailableTimes{}, err
 	}
 
-	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId)
+	businessHours, err := s.merchantRepo.GetBusinessHours(ctx, merchantId, locationId)
 	if err != nil {
 		return FormattedAvailableTimes{}, err
 	}

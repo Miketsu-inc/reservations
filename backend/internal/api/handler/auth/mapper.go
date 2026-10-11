@@ -51,7 +51,6 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 			MerchantId:      e.MerchantId,
 			MerchantName:    e.MerchantName,
 			MerchantUrlName: e.MerchantUrlName,
-			LocationId:      e.LocationId,
 			EmployeeId:      e.Id,
 			Role:            e.Role,
 		}

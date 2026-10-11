@@ -190,13 +190,7 @@ type MerchantSignupInput struct {
 	Timezone     string
 }
 
-func ctBH(timeStr string) time.Time {
-	t, _ := time.Parse("15:04", timeStr)
-	return time.Date(0, time.January, 1, t.Hour(), t.Minute(), 0, 0, time.UTC)
-}
-
-// TODO: create new jwts here... just don't know what to put as location
-// I feel like most of this should be in merchant services
+// TODO: I feel like most of this should be in merchant services
 func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput) error {
 	urlName, err := validate.MerchantNameToUrlName(input.Name)
 	if err != nil {
@@ -231,7 +225,6 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 			Introduction:     "",
 			Announcement:     "",
 			AboutUs:          "",
-			ParkingInfo:      "",
 			PaymentInfo:      "",
 			Timezone:         input.Timezone,
 			CurrencyCode:     curr,
@@ -252,21 +245,6 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 		}
 
 		err = s.teamRepo.WithTx(tx).NewEmployeePreferences(ctx, employeeId)
-		if err != nil {
-			return err
-		}
-
-		businessHours := domain.BusinessHours{
-			0: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			1: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			2: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			3: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			4: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			5: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-			6: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
-		}
-
-		err = s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, merchantID, businessHours)
 		if err != nil {
 			return err
 		}

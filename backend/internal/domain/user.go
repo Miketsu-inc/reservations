@@ -61,7 +61,6 @@ type UserCore struct {
 
 type EmployeeAuthInfo struct {
 	Id              int                `db:"id"`
-	LocationId      int                `db:"location_id"`
 	MerchantId      uuid.UUID          `db:"merchant_id"`
 	MerchantName    string             `db:"merchant_name"`
 	MerchantUrlName string             `db:"merchant_url_name"`

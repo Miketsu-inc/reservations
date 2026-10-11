@@ -13,7 +13,6 @@ func mapToMeResp(in actor.EmployeeContext) meResp {
 	return meResp{
 		UserId:     in.UserId,
 		MerchantId: in.MerchantId,
-		LocationId: in.LocationId,
 		EmployeeId: in.EmployeeId,
 		Role:       in.Role,
 	}

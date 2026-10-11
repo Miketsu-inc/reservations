@@ -1,16 +1,36 @@
-import { Location01Icon } from "@hugeicons/core-free-icons";
+import {
+  Call02Icon,
+  Edit03Icon,
+  Location01Icon,
+  Mail01Icon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Card,
+  CloseButton,
   Icon,
+  Input,
   Loading,
+  ResponsiveDialog,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
+import { isLocationComplete } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  invalidateLocalStorageAuth,
+  useToast,
+  useWindowSize,
+} from "@reservations/lib";
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense, useState } from "react";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
+
+const LocationEditor = lazy(
+  () => import("@reservations/jabulani/components/LocationEditor.jsx")
+);
 
 async function fetchLocationSettings(merchantId) {
   const response = await fetch(`/api/v1/merchants/${merchantId}/locations`);
@@ -31,6 +51,69 @@ function locationSettingsQueryOptions(merchantId) {
   });
 }
 
+async function updateLocationSettings(merchantId, location) {
+  const updatedLocation = {
+    ...location,
+    name: location.name.trim(),
+    contact_email: location.contact_email?.trim() || null,
+    phone_number: location.phone_number?.trim() || null,
+    formatted_location: location.formatted_location.trim(),
+  };
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/locations/${location.id}`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(updatedLocation),
+    }
+  );
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
+    throw result.error;
+  }
+
+  return updatedLocation;
+}
+
+function locationSignature(location) {
+  if (!location) return "";
+
+  return JSON.stringify({
+    name: location.name?.trim() ?? "",
+    contactEmail: location.contact_email?.trim() || null,
+    phoneNumber: location.phone_number?.trim() || null,
+    country: location.country ?? null,
+    countryCode: location.country_code ?? null,
+    region: location.region ?? null,
+    city: location.city ?? null,
+    postalCode: location.postal_code ?? null,
+    address: location.address ?? null,
+    latitude: location.geo_point?.latitude ?? null,
+    longitude: location.geo_point?.longitude ?? null,
+    geocodingProvider: location.geocoding_provider ?? null,
+    providerPlaceId: location.provider_place_id ?? null,
+    formattedLocation: location.formatted_location?.trim() ?? "",
+  });
+}
+
+function isValidEmail(email) {
+  return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function areLocationDetailsValid(location) {
+  return Boolean(
+    location?.name?.trim() &&
+    location.name.trim().length <= 100 &&
+    isValidEmail(location.contact_email?.trim()) &&
+    (location.phone_number?.trim().length ?? 0) <= 30
+  );
+}
+
 export const Route = createFileRoute(
   "/_authenticated/_sidepanel/settings/_topnav/location"
 )({
@@ -46,70 +129,334 @@ export const Route = createFileRoute(
   errorComponent: ({ error }) => <ServerError error={error.message} />,
 });
 
-function Detail({ label, value }) {
-  if (!value) return null;
-
+function LocationCard({ location, onEdit }) {
   return (
-    <div>
-      <dt
-        className="text-text_color/60 text-xs font-medium tracking-wide
-          uppercase"
-      >
-        {label}
-      </dt>
-      <dd className="text-text_color mt-1 text-sm">{value}</dd>
-    </div>
+    <Card styles="h-auto! p-4! sm:p-5!">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-text_color truncate font-semibold">
+              {location.name}
+            </h2>
+            <span
+              className={`${
+                location.is_active
+                  ? "bg-green-600/15 text-green-700 dark:text-green-400"
+                  : `bg-gray-200 text-gray-600 dark:bg-gray-700
+                    dark:text-gray-300`
+                } rounded-full px-2 py-0.5 text-xs font-medium`}
+            >
+              {location.is_active ? "Active" : "Inactive"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex min-w-0 items-start gap-2">
+            <Icon
+              icon={Location01Icon}
+              styles="text-primary mt-0.5 size-4 shrink-0"
+            />
+            <p className="text-text_color text-sm leading-6 font-medium">
+              {location.formatted_location}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="tertiary"
+          styles="shrink-0 px-2.5 py-2 text-sm sm:px-3
+            [&>span:last-child]:hidden sm:[&>span:last-child]:inline"
+          buttonText="Edit"
+          aria-label={`Edit ${location.name}`}
+          onClick={() => onEdit(location)}
+        >
+          <Icon icon={Edit03Icon} styles="size-4 sm:mr-2" />
+        </Button>
+      </div>
+
+      {(location.contact_email || location.phone_number) && (
+        <div
+          className="border-border_color text-text_color/60 mt-4 flex min-w-0
+            flex-wrap items-center gap-x-5 gap-y-2 border-t pt-3 text-xs"
+        >
+          {location.contact_email && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
+              <span className="truncate">{location.contact_email}</span>
+            </div>
+          )}
+          {location.phone_number && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+              <span className="truncate">{location.phone_number}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
 function LocationPage() {
   const { merchantId } = useAuth();
-  const { data: settings, isLoading } = useQuery(
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
+  const { showToast } = useToast();
+  const { isWindowSmall } = useWindowSize();
+  const { data: locations, isLoading } = useQuery(
     locationSettingsQueryOptions(merchantId)
   );
+  const [editingLocation, setEditingLocation] = useState(null);
+  const [draftLocation, setDraftLocation] = useState(null);
+  const [editorSection, setEditorSection] = useState("details");
+
+  const updateMutation = useMutation({
+    mutationFn: (location) => updateLocationSettings(merchantId, location),
+    onSuccess: (updatedLocation) => {
+      queryClient.setQueryData(
+        locationSettingsQueryOptions(merchantId).queryKey,
+        (currentLocations) =>
+          currentLocations.map((location) =>
+            location.id === updatedLocation.id ? updatedLocation : location
+          )
+      );
+      setEditingLocation(null);
+      setDraftLocation(null);
+      showToast({
+        message: "Location updated successfully",
+        variant: "success",
+      });
+    },
+  });
 
   if (isLoading) return <Loading />;
 
+  function openEditor(location) {
+    setEditingLocation(location);
+    setDraftLocation(location);
+    setEditorSection("details");
+    updateMutation.reset();
+  }
+
+  function closeEditor() {
+    if (updateMutation.isPending) return;
+
+    setEditingLocation(null);
+    setDraftLocation(null);
+    updateMutation.reset();
+  }
+
+  function handleLocationDetailChange({ name, value }) {
+    setDraftLocation((current) => ({ ...current, [name]: value }));
+    updateMutation.reset();
+  }
+
+  const hasChanges =
+    locationSignature(draftLocation) !== locationSignature(editingLocation);
+  const invalidEmail = !isValidEmail(draftLocation?.contact_email?.trim());
+
   return (
-    <div className="flex flex-col gap-12 pb-8">
+    <div className="flex flex-col gap-6 pb-8">
       <SettingsPageHeader
-        title="Location"
-        description="Review the primary location shown to customers and attached to bookings."
+        title="Locations"
+        description="Manage the address and contact details for each place customers can visit."
       />
-      <Card styles="h-auto! max-w-2xl p-6!">
-        <h2 className="text-text_color text-xl font-semibold">
-          Primary location
-        </h2>
-        <p className="text-text_color/65 mt-1 mb-8 text-sm leading-6">
-          Location editing is not available yet. Your current location is shown
-          below.
-        </p>
-        <div className="flex flex-col gap-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <div
-              className="bg-primary/10 text-primary shrink-0 rounded-full p-3"
-            >
-              <Icon icon={Location01Icon} styles="size-6" />
-            </div>
-            <p className="text-text_color min-w-0 flex-1 font-medium">
-              {settings.formatted_location || "No formatted address available"}
-            </p>
-          </div>
-          <dl className="grid gap-5 sm:grid-cols-2 sm:pl-16">
-            <Detail label="Address" value={settings.address} />
-            <Detail label="City" value={settings.city} />
-            <Detail label="Postal code" value={settings.postal_code} />
-            <Detail label="Country" value={settings.country} />
-          </dl>
-          <div className="border-border_color flex border-t pt-5 sm:justify-end">
-            <Button
-              variant="tertiary"
-              styles="w-full px-3 py-2 sm:w-auto"
-              buttonText="Change location"
+
+      {locations.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {locations.map((location) => (
+            <LocationCard
+              key={location.id}
+              location={location}
+              onEdit={openEditor}
             />
-          </div>
+          ))}
         </div>
-      </Card>
+      ) : (
+        <div
+          className="border-border_color bg-layer_bg flex flex-col items-center
+            rounded-xl border px-4 py-12 text-center shadow-sm"
+        >
+          <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
+            <Icon icon={Location01Icon} styles="size-6" />
+          </div>
+          <h2 className="text-text_color text-lg font-semibold">
+            No locations yet
+          </h2>
+          <p className="text-text_color/65 mt-1 max-w-sm text-sm leading-6">
+            Add a business location before accepting in-person bookings.
+          </p>
+        </div>
+      )}
+
+      <ResponsiveDialog
+        open={Boolean(editingLocation)}
+        onOpenChange={(open) => {
+          if (!open) closeEditor();
+        }}
+      >
+        <ResponsiveDialogContent styles="lg:max-h-[90vh] lg:w-full lg:max-w-5xl">
+          {editingLocation && (
+            <div
+              className="flex h-full min-h-0 w-full flex-col gap-4 p-4 sm:p-6
+                lg:h-auto lg:gap-5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="text-text_color text-xl font-semibold">
+                  Edit location
+                </h2>
+                <ResponsiveDialogClose asChild>
+                  <CloseButton styles="hidden lg:block" />
+                </ResponsiveDialogClose>
+              </div>
+
+              <div
+                className="dark:bg-bg_color grid grid-cols-2 rounded-lg p-1
+                  lg:hidden"
+                role="tablist"
+                aria-label="Location editor sections"
+              >
+                {[
+                  ["details", "Details"],
+                  ["address", "Address & pin"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={editorSection === value}
+                    className={`${editorSection === value ? "bg-layer_bg text-text_color shadow-sm" : "text-text_color/60"}
+                    rounded-md px-3 py-2 text-sm font-medium`}
+                    onClick={() => setEditorSection(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className="min-h-0 flex-1 pt-4 lg:grid
+                  lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.35fr)] lg:gap-6
+                  lg:pt-0"
+              >
+                {(!isWindowSmall || editorSection === "details") && (
+                  <section
+                    className="lg:border-border_color flex min-h-0 flex-col
+                      gap-4 lg:border-r lg:pr-6"
+                    role="tabpanel"
+                  >
+                    <div className="hidden lg:block">
+                      <h3 className="text-text_color font-semibold">
+                        Location details
+                      </h3>
+                    </div>
+
+                    <Input
+                      type="text"
+                      id="location_name"
+                      name="name"
+                      labelText="Name"
+                      placeholder="Main studio"
+                      maxLength={100}
+                      value={draftLocation.name ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    <Input
+                      type="email"
+                      id="location_contact_email"
+                      name="contact_email"
+                      labelText="Contact email"
+                      placeholder="location@example.com"
+                      maxLength={320}
+                      required={false}
+                      value={draftLocation.contact_email ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    {invalidEmail && (
+                      <p
+                        className="-mt-2 text-xs text-red-600 dark:text-red-400"
+                      >
+                        Enter a valid email address.
+                      </p>
+                    )}
+                    <Input
+                      type="tel"
+                      id="location_phone_number"
+                      name="phone_number"
+                      labelText="Phone number"
+                      placeholder="Phone number"
+                      maxLength={30}
+                      required={false}
+                      value={draftLocation.phone_number ?? ""}
+                      inputData={handleLocationDetailChange}
+                    />
+                    <p className="text-text_color/55 text-xs leading-5">
+                      Leave the email blank to use the business contact email.
+                    </p>
+                  </section>
+                )}
+
+                {(!isWindowSmall || editorSection === "address") && (
+                  <section
+                    className="flex min-h-0 flex-col gap-4"
+                    role="tabpanel"
+                  >
+                    <div className="hidden lg:block">
+                      <h3 className="text-text_color font-semibold">Address</h3>
+                    </div>
+                    <Suspense
+                      fallback={
+                        <div
+                          className="h-72 animate-pulse rounded-lg bg-gray-100
+                            dark:bg-gray-800"
+                        />
+                      }
+                    >
+                      <LocationEditor
+                        key={editingLocation.id}
+                        value={draftLocation}
+                        compact
+                        onChange={(location) => {
+                          setDraftLocation(location);
+                          updateMutation.reset();
+                        }}
+                      />
+                    </Suspense>
+                  </section>
+                )}
+              </div>
+
+              <ServerError error={updateMutation.error?.message} />
+
+              <div
+                className="border-border_color flex justify-end gap-3 border-t
+                  pt-4 lg:pt-5"
+              >
+                <ResponsiveDialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    styles="hidden px-4 py-2 lg:flex"
+                    buttonText="Cancel"
+                    disabled={updateMutation.isPending}
+                  />
+                </ResponsiveDialogClose>
+                <Button
+                  type="button"
+                  styles="w-full px-4 py-2 lg:w-auto"
+                  buttonText="Save location"
+                  disabled={
+                    !hasChanges ||
+                    !areLocationDetailsValid(draftLocation) ||
+                    !isLocationComplete(draftLocation)
+                  }
+                  isLoading={updateMutation.isPending}
+                  onClick={() => updateMutation.mutate(draftLocation)}
+                />
+              </div>
+            </div>
+          )}
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }
