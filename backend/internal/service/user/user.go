@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"strings"
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
@@ -33,7 +34,7 @@ func (s *Service) Edit(ctx context.Context, input EditInput) error {
 		return err
 	}
 
-	if input.Email != user.Email {
+	if !strings.EqualFold(input.Email, user.Email) {
 		unique, err := s.userRepo.IsEmailUnique(ctx, input.Email)
 		if err != nil {
 			return err
