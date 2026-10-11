@@ -66,7 +66,7 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 }
 
 type updateReq struct {
-	Id          uuid.UUID  `json:"id" validate:"required,uuid"`
+	Id          uuid.UUID  `json:"id" validate:"required"`
 	FirstName   *string    `json:"first_name"`
 	LastName    *string    `json:"last_name"`
 	Email       *string    `json:"email"`
@@ -171,7 +171,7 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 }
 
 type blacklistReq struct {
-	CustomerId      uuid.UUID `json:"id" validate:"required,uuid"`
+	CustomerId      uuid.UUID `json:"id" validate:"required"`
 	BlacklistReason *string   `json:"blacklist_reason"`
 }
 
