@@ -48,3 +48,10 @@ func SetOauthStateCookie(w http.ResponseWriter, state string) {
 		SameSite: http.SameSiteLaxMode,
 	})
 }
+
+func DeleteOauthStateCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name: "oauth-state", Path: "/", HttpOnly: true, Secure: true,
+		SameSite: http.SameSiteLaxMode, MaxAge: -1,
+	})
+}
