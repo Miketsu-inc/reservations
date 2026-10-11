@@ -27,7 +27,7 @@ func (m *Manager) Subscription(tiers ...types.SubTier) func(next http.Handler) h
 
 			if !slices.Contains(tiers, tier) {
 				return &apperr.APIError{
-					Status: http.StatusUnauthorized,
+					Status: http.StatusForbidden,
 					Err:    ErrSubscriptionAccessDenied,
 					Meta:   map[string]any{"required_tiers": tiers},
 				}

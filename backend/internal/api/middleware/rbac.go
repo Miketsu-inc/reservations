@@ -29,7 +29,7 @@ func (m *Manager) RoleBasedAccessControl(roles ...types.EmployeeRole) func(next 
 
 			if !slices.Contains(roles, actor.Role) {
 				return &apperr.APIError{
-					Status: http.StatusUnauthorized,
+					Status: http.StatusForbidden,
 					Err:    ErrRoleAccessDenied,
 					Meta:   map[string]any{"required_roles": roles},
 				}
