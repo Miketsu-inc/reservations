@@ -160,7 +160,7 @@ func getRefreshVersionFromClaims(claims jwtlib.MapClaims) (int, bool) {
 
 	switch refreshVersion := val.(type) {
 	case float64:
-		if refreshVersion != math.Trunc(refreshVersion) || refreshVersion < 0 || refreshVersion > float64(math.MaxInt32) {
+		if math.IsNaN(refreshVersion) || refreshVersion != math.Trunc(refreshVersion) || refreshVersion < 0 || refreshVersion > float64(math.MaxInt32) {
 			return 0, false
 		}
 		return int(refreshVersion), true
@@ -195,7 +195,7 @@ func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, e
 		default:
 			return "", fmt.Errorf("jwt: unexpected token type: %v", tokenType)
 		}
-	})
+	}, jwtlib.WithValidMethods([]string{"HS256"}), jwtlib.WithExpirationRequired())
 	if err != nil {
 		switch tokenType {
 		case jwt.AccessToken:
@@ -208,6 +208,14 @@ func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, e
 	}
 
 	claims, ok := token.Claims.(jwtlib.MapClaims)
+	if ok {
+		if _, err := getUserIdFromClaims(claims); err != nil {
+			if tokenType == jwt.RefreshToken {
+				return nil, apperr.Wrap(ErrInvalidRefreshToken, err)
+			}
+			return nil, apperr.Wrap(ErrInvalidAccessToken, err)
+		}
+	}
 	if !ok || !token.Valid {
 		switch tokenType {
 		case jwt.AccessToken:
