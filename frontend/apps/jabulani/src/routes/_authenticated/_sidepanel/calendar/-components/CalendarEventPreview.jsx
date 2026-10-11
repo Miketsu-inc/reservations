@@ -120,44 +120,6 @@ function getPersonName(person) {
   return [person.first_name, person.last_name].filter(Boolean).join(" ");
 }
 
-function EventLabel({ eventInfo }) {
-  const isListView = eventInfo.view.type.startsWith("list");
-  const isMonthView = eventInfo.view.type === "dayGridMonth";
-
-  if (isListView) {
-    return (
-      <div className="flex size-full min-w-0 items-center gap-4">
-        {eventInfo.timeText && (
-          <span
-            className="w-28 shrink-0 text-sm text-gray-500 dark:text-gray-400"
-          >
-            {eventInfo.timeText}
-          </span>
-        )}
-        <span className="min-w-0 truncate font-medium">
-          {eventInfo.event.title}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`flex size-full min-w-0 overflow-hidden
-        ${isMonthView ? "flex-row items-center gap-1" : "flex-col"}`}
-    >
-      {eventInfo.timeText && (
-        <span className="shrink-0 text-xs leading-tight font-medium">
-          {eventInfo.timeText}
-        </span>
-      )}
-      <span className="min-w-0 truncate text-xs leading-tight font-semibold">
-        {eventInfo.event.title}
-      </span>
-    </div>
-  );
-}
-
 function AvatarStack({
   people,
   limit,
@@ -409,9 +371,14 @@ function BlockedTimePreview({ event, isOpen, timeFormat }) {
   );
 }
 
-export default function CalendarEventPreview({ eventInfo, timeFormat }) {
-  const isBlockedTime = eventInfo.event.extendedProps.type === "blocked";
-  const previewId = `${isBlockedTime ? "blocked" : "booking"}:${eventInfo.event.id}`;
+export default function CalendarEventPreview({
+  event,
+  timeFormat,
+  children,
+  canOpen,
+}) {
+  const isBlockedTime = event.extendedProps.type === "blocked";
+  const previewId = `${isBlockedTime ? "blocked" : "booking"}:${event.id}`;
   const isOpen = usePreviewOpen(previewId);
   const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);
   const suppressOpenRef = useRef(false);
@@ -421,7 +388,7 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
   }, [previewId]);
 
   function handleOpenChange(open, eventDetails) {
-    if (open && suppressOpenRef.current) return;
+    if (open && (suppressOpenRef.current || canOpen?.() === false)) return;
 
     if (open) {
       setAlignOffset(getPreviewAlignOffset(eventDetails?.trigger));
@@ -448,7 +415,7 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
             suppressOpenRef.current = false;
           }}
         >
-          <EventLabel eventInfo={eventInfo} />
+          {children}
         </div>
       </PreviewCardTrigger>
       <PreviewCardContent
@@ -461,12 +428,12 @@ export default function CalendarEventPreview({ eventInfo, timeFormat }) {
       >
         {isBlockedTime ? (
           <BlockedTimePreview
-            event={eventInfo.event}
+            event={event}
             isOpen={isOpen}
             timeFormat={timeFormat}
           />
         ) : (
-          <BookingPreview event={eventInfo.event} timeFormat={timeFormat} />
+          <BookingPreview event={event} timeFormat={timeFormat} />
         )}
       </PreviewCardContent>
     </PreviewCard>

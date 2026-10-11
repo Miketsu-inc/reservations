@@ -29,11 +29,12 @@ import {
 } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useMemo, useRef, useState } from "react";
+import CalendarEventContent from "./CalendarEventContent";
+import CalendarEventPreview from "./CalendarEventPreview";
 import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
-import CalendarEventPreview from "./CalendarEventPreview";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
@@ -55,8 +56,12 @@ function getContrastColor(color) {
   const green = parseInt(hex.substring(2, 4), 16);
   const blue = parseInt(hex.substring(4, 6), 16);
 
-  const brightness = red * 0.289 + green * 0.587 + blue * 0.114;
-  return brightness > 186 ? "#000000" : "#ffffff";
+  const [r, g, b] = [red, green, blue].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = r * 0.2126 + g * 0.7152 + b * 0.0722;
+  return luminance > 0.179 ? "#000000" : "#ffffff";
 }
 
 function transformBusinessHours(businessHours) {
@@ -91,7 +96,7 @@ function formatBookings(data) {
       start: booking.from_date,
       end: booking.to_date,
       color: serviceColor,
-      textColor: getContrastColor(serviceColor),
+      contrastColor: getContrastColor(serviceColor),
       durationEditable: false,
       startEditable: new Date(booking.to_date) > new Date() ? true : false,
       extendedProps: {
@@ -109,6 +114,7 @@ function formatBookings(data) {
         service_id: booking.service_id,
         employee_id: booking.employee_id,
         duration: booking.duration,
+        phases: booking.phases ?? [],
         price: booking.price,
         price_type: booking.price_type,
       },
@@ -134,7 +140,7 @@ function formatBlockedTimes(data) {
       start: start,
       end: end,
       color: "rgba(0, 0, 0, 0.6)",
-      textColor: getContrastColor("#333333"),
+      contrastColor: getContrastColor("#333333"),
       durationEditable: !blockedTime.is_all_day,
       allDay: blockedTime.is_all_day,
       startEditable: editableUntil > new Date(),
@@ -279,6 +285,7 @@ export default function Calendar({ router, route, search }) {
   const calendarRef = useRef();
   const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
+  const isDraggingRef = useRef(false);
 
   const calendarEvents = useMemo(() => {
     return [
@@ -573,11 +580,20 @@ export default function Calendar({ router, route, search }) {
             calendarScrollRef.current = null;
           }}
           events={calendarEvents}
+          blockEventClass="calendar-event bg-(--fc-event-color)!"
+          blockEventInnerClass="text-(--fc-event-contrast-color)!"
           eventContent={(eventInfo) => (
             <CalendarEventPreview
-              eventInfo={eventInfo}
+              event={eventInfo.event}
               timeFormat={preferences.time_format}
-            />
+              canOpen={() =>
+                !eventInfo.isMirror &&
+                !eventInfo.isDragging &&
+                !isDraggingRef.current
+              }
+            >
+              <CalendarEventContent eventInfo={eventInfo} />
+            </CalendarEventPreview>
           )}
           datesSet={({ view }) => {
             calendarScrollRef.current?.center();
@@ -637,6 +653,12 @@ export default function Calendar({ router, route, search }) {
           allDaySlot={true}
           displayEventEnd={false}
           snapDuration={{ minutes: 5 }}
+          eventDragStart={() => {
+            isDraggingRef.current = true;
+          }}
+          eventDragStop={() => {
+            isDraggingRef.current = false;
+          }}
           eventDrop={(e) => {
             const type = e.event.extendedProps.type;
 

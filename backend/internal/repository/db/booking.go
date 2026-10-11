@@ -728,13 +728,27 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 		left join "User" u on c.user_id = u.id
 		where bp.status not in ('cancelled')
 		group by bp.booking_id
+	), phases as (
+		select bp.booking_id, jsonb_agg(
+			jsonb_build_object(
+				'from_date', bp.from_date,
+				'to_date', bp.to_date,
+				'phase_type', bp.phase_type
+			) order by bp.from_date, bp.id
+		) as phases
+		from "BookingPhase" bp
+		join "Booking" b on bp.booking_id = b.id
+		where b.merchant_id = $1 and b.from_date < $3 and b.to_date > $2 and b.status not in ('cancelled')
+		group by bp.booking_id
 	)
 	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
 		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
-		coalesce(p.participants, '[]'::jsonb) as participants
+		coalesce(p.participants, '[]'::jsonb) as participants,
+		coalesce(ph.phases, '[]'::jsonb) as phases
 	from "Booking" b
 	left join "Service" s on b.service_id = s.id
 	left join participants p on p.booking_id = b.id
+	left join phases ph on ph.booking_id = b.id
 	where b.merchant_id = $1 and b.from_date < $3 and b.to_date > $2 and b.status not in ('cancelled')
 	order by b.id
 	`
@@ -768,13 +782,26 @@ func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantI
 		left join "User" u on c.user_id = u.id
 		where bp.status not in ('cancelled') and bp.booking_id = $2
 		group by bp.booking_id
+	), phases as (
+		select bp.booking_id, jsonb_agg(
+			jsonb_build_object(
+				'from_date', bp.from_date,
+				'to_date', bp.to_date,
+				'phase_type', bp.phase_type
+			) order by bp.from_date, bp.id
+		) as phases
+		from "BookingPhase" bp
+		where bp.booking_id = $2
+		group by bp.booking_id
 	)
 	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
 		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
-		coalesce(p.participants, '[]'::jsonb) as participants
+		coalesce(p.participants, '[]'::jsonb) as participants,
+		coalesce(ph.phases, '[]'::jsonb) as phases
 	from "Booking" b
 	left join "Service" s on b.service_id = s.id
 	left join participants p on p.booking_id = b.id
+	left join phases ph on ph.booking_id = b.id
 	where b.merchant_id = $1 and b.id = $2 and b.status not in ('cancelled')
 	`
 

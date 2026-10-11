@@ -311,6 +311,14 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		}
 	}
 
+	phases := make([]bookingPhaseForCalendar, len(in.Phases))
+	for i, phase := range in.Phases {
+		phases[i] = bookingPhaseForCalendar{
+			Duration:  int(phase.ToDate.Sub(phase.FromDate).Minutes()),
+			PhaseType: phase.PhaseType,
+		}
+	}
+
 	return bookingForCalendar{
 		ID:              in.ID,
 		BookingType:     in.BookingType,
@@ -328,5 +336,6 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		Price:           in.Price.ToFormatted(),
 		PriceType:       in.PriceType,
 		Participants:    participants,
+		Phases:          phases,
 	}
 }

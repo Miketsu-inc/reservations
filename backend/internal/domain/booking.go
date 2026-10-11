@@ -356,6 +356,13 @@ type BookingForCalendar struct {
 	Price           currencyx.Price                 `db:"price"`
 	PriceType       types.PriceType                 `db:"price_type"`
 	Participants    []BookingParticipantForCalendar `db:"participants"`
+	Phases          []BookingPhaseForCalendar       `db:"phases"`
+}
+
+type BookingPhaseForCalendar struct {
+	FromDate  time.Time              `json:"from_date"`
+	ToDate    time.Time              `json:"to_date"`
+	PhaseType types.ServicePhaseType `json:"phase_type"`
 }
 
 type BookingParticipantForCalendar struct {

@@ -448,6 +448,12 @@ type bookingForCalendar struct {
 	Price           currencyx.FormattedPrice        `json:"price"`
 	PriceType       types.PriceType                 `json:"price_type"`
 	Participants    []bookingParticipantForCalendar `json:"participants"`
+	Phases          []bookingPhaseForCalendar       `json:"phases"`
+}
+
+type bookingPhaseForCalendar struct {
+	Duration  int                    `json:"duration"`
+	PhaseType types.ServicePhaseType `json:"phase_type"`
 }
 
 type bookingParticipantForCalendar struct {
