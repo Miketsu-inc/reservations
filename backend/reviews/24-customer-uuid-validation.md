@@ -1,8 +1,8 @@
 # Validate UUID request fields as typed UUIDs
 
-Local branch: `fix/backend-customer-uuid-validation`  
-Review base: `65b122fa`  
-Original review: `fix/backend-review` at `90541a2b`  
+Local branch: `fix/backend-customer-uuid-validation`
+Review base: `65b122fa`
+Original review: `fix/backend-review` at `90541a2b`
 Prerequisites: None; this fix is based directly on `master` at `65b122fa`.
 
 This is a local review branch. It has not been pushed, merged, or applied to a running application. Compare it with the exact review base below; comparing a dependent fix directly with master also includes its prerequisites.
