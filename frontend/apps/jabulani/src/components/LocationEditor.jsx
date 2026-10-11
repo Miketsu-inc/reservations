@@ -1,12 +1,39 @@
 import { Location01Icon } from "@hugeicons/core-free-icons";
 import { SearchBox } from "@mapbox/search-js-react";
 import { Button, Icon } from "@reservations/components";
+import { useTheme } from "@reservations/lib";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const fallbackCenter = [0, 20];
+const searchBoxTheme = {
+  variables: {
+    colorText: "var(--color-text_color)",
+    colorSecondary: "rgba(var(--text-color), 0.6)",
+    colorBackground: "var(--color-layer_bg)",
+    colorBackgroundHover: "rgba(var(--text-color), 0.08)",
+    colorBackgroundActive: "rgba(var(--text-color), 0.12)",
+    border: "1px solid var(--color-input_border_color)",
+    borderRadius: "0.5rem",
+    boxShadow: "none",
+  },
+  cssText: `
+    .Input,
+    .Input:focus {
+      height: 40px;
+      color: var(--colorText);
+    }
+
+    .Results {
+      max-height: min(20rem, calc(100dvh - 17rem));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+      scrollbar-color: var(--colorSecondary) transparent;
+      scrollbar-width: thin;
+    }
+  `,
+};
 
 function coordinatesFromLocation(location) {
   const longitude = location?.geo_point?.longitude;
@@ -31,6 +58,7 @@ export function isLocationComplete(location) {
 }
 
 export default function LocationEditor({ value, onChange, compact = false }) {
+  const { isDarkTheme } = useTheme();
   const [address, setAddress] = useState(value?.formatted_location ?? "");
   const [showMap, setShowMap] = useState(
     Boolean(coordinatesFromLocation(value))
@@ -172,7 +200,9 @@ export default function LocationEditor({ value, onChange, compact = false }) {
       const initialCoordinates = initialCoordinatesRef.current;
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: isDarkTheme
+          ? "mapbox://styles/mapbox/dark-v11"
+          : "mapbox://styles/mapbox/streets-v12",
         center: initialCoordinates ?? fallbackCenter,
         zoom: initialCoordinates ? 16 : 1.5,
       });
@@ -207,7 +237,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [mapSupportError, showMap, updatePin]);
+  }, [isDarkTheme, mapSupportError, showMap, updatePin]);
 
   useEffect(() => {
     if (
@@ -269,7 +299,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
     <div className={`flex flex-col ${compact ? "gap-3 lg:gap-4" : "gap-4"}`}>
       <div>
         <label className="text-text_color mb-1 block text-sm font-medium">
-          Customer-facing address
+          Address
         </label>
         <SearchBox
           key={searchBoxKey}
@@ -278,6 +308,8 @@ export default function LocationEditor({ value, onChange, compact = false }) {
           mapboxgl={mapboxgl}
           marker={false}
           componentOptions={{ flyTo: false }}
+          popoverOptions={{ flip: true, offset: 4 }}
+          theme={searchBoxTheme}
           value={address}
           onChange={handleAddressChange}
           onRetrieve={handleRetrieve}

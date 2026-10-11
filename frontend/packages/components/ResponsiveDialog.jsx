@@ -27,13 +27,11 @@ export function ResponsiveDialogTrigger({ asChild, ...props }) {
   return <ModalTrigger asChild={asChild} {...props} />;
 }
 
-export function ResponsiveDialogContent({ styles, popUpStyles, ...props }) {
+export function ResponsiveDialogContent({ styles, ...props }) {
   const { isWindowSmall } = useWindowSize();
 
   if (isWindowSmall) {
-    return (
-      <DrawerContent styles={styles} popUpStyles={popUpStyles} {...props} />
-    );
+    return <DrawerContent styles={styles} {...props} />;
   }
 
   return <ModalContent styles={styles} {...props} />;

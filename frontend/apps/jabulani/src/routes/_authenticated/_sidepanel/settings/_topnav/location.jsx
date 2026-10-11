@@ -129,70 +129,68 @@ export const Route = createFileRoute(
 });
 
 function LocationCard({ location, onEdit }) {
-  const secondaryAddress = [
-    location.postal_code,
-    location.city,
-    location.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
   return (
-    <Card styles="h-auto! flex flex-col justify-between gap-5 p-5!">
-      <div className="flex min-w-0 items-start gap-4">
-        <div className="bg-primary/10 text-primary shrink-0 rounded-full p-3">
-          <Icon icon={Location01Icon} styles="size-6" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h2 className="text-text_color font-semibold">{location.name}</h2>
-            {!location.is_active && (
-              <span
-                className="rounded-full bg-gray-200 px-2 py-0.5 text-xs
-                  font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-              >
-                Inactive
-              </span>
-            )}
+    <Card styles="h-auto! p-4! sm:p-5!">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-text_color truncate font-semibold">
+              {location.name}
+            </h2>
+            <span
+              className={`${
+                location.is_active
+                  ? "bg-green-600/15 text-green-700 dark:text-green-400"
+                  : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              } rounded-full px-2 py-0.5 text-xs font-medium`}
+            >
+              {location.is_active ? "Active" : "Inactive"}
+            </span>
           </div>
-          <p className="text-text_color text-sm leading-6 font-medium">
-            {location.formatted_location}
-          </p>
-          {secondaryAddress && (
-            <p className="text-text_color/55 mt-1 text-xs leading-5">
-              {secondaryAddress}
-            </p>
-          )}
-          {(location.contact_email || location.phone_number) && (
-            <div className="text-text_color/65 mt-4 flex flex-col gap-2 text-sm">
-              {location.contact_email && (
-                <div className="flex min-w-0 items-center gap-2">
-                  <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
-                  <span className="truncate">{location.contact_email}</span>
-                </div>
-              )}
-              {location.phone_number && (
-                <div className="flex items-center gap-2">
-                  <Icon icon={Call02Icon} styles="size-4 shrink-0" />
-                  <span>{location.phone_number}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="border-border_color flex justify-end border-t pt-4">
+          <div className="mt-3 flex min-w-0 items-start gap-2">
+            <Icon
+              icon={Location01Icon}
+              styles="text-primary mt-0.5 size-4 shrink-0"
+            />
+            <p className="text-text_color text-sm leading-6 font-medium">
+              {location.formatted_location}
+            </p>
+          </div>
+        </div>
+
         <Button
           type="button"
           variant="tertiary"
-          styles="px-3 py-2"
-          buttonText="Edit location"
+          styles="shrink-0 px-2.5 py-2 text-sm sm:px-3
+            [&>span:last-child]:hidden sm:[&>span:last-child]:inline"
+          buttonText="Edit"
+          aria-label={`Edit ${location.name}`}
           onClick={() => onEdit(location)}
         >
-          <Icon icon={Edit03Icon} styles="mr-2 size-4" />
+          <Icon icon={Edit03Icon} styles="size-4 sm:mr-2" />
         </Button>
       </div>
+
+      {(location.contact_email || location.phone_number) && (
+        <div
+          className="border-border_color text-text_color/60 mt-4 flex min-w-0
+            flex-wrap items-center gap-x-5 gap-y-2 border-t pt-3 text-xs"
+        >
+          {location.contact_email && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
+              <span className="truncate">{location.contact_email}</span>
+            </div>
+          )}
+          {location.phone_number && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+              <span className="truncate">{location.phone_number}</span>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
@@ -294,10 +292,7 @@ function LocationPage() {
           if (!open) closeEditor();
         }}
       >
-        <ResponsiveDialogContent
-          styles="lg:max-h-[90vh] lg:max-w-5xl"
-          popUpStyles="h-[calc(95dvh+3rem)]! max-h-none! overflow-hidden!"
-        >
+        <ResponsiveDialogContent styles="lg:max-h-[90vh] lg:w-full lg:max-w-5xl">
           {editingLocation && (
             <div
               className="flex h-full min-h-0 w-full flex-col gap-4 p-4 sm:p-6
@@ -313,8 +308,8 @@ function LocationPage() {
               </div>
 
               <div
-                className="grid grid-cols-2 rounded-lg bg-gray-100 p-1 lg:hidden
-                  dark:bg-gray-800"
+                className="dark:bg-bg_color grid grid-cols-2 rounded-lg p-1
+                  lg:hidden"
                 role="tablist"
                 aria-label="Location editor sections"
               >
@@ -337,8 +332,9 @@ function LocationPage() {
               </div>
 
               <div
-                className="min-h-0 flex-1 lg:grid
-                  lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.35fr)] lg:gap-6"
+                className="min-h-0 flex-1 pt-4 lg:grid
+                  lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.35fr)] lg:gap-6
+                  lg:pt-0"
               >
                 {(!isWindowSmall || editorSection === "details") && (
                   <section
@@ -356,7 +352,7 @@ function LocationPage() {
                       type="text"
                       id="location_name"
                       name="name"
-                      labelText="Location name"
+                      labelText="Name"
                       placeholder="Main studio"
                       maxLength={100}
                       value={draftLocation.name ?? ""}
@@ -404,7 +400,7 @@ function LocationPage() {
                   >
                     <div className="hidden lg:block">
                       <h3 className="text-text_color font-semibold">
-                        Address and entrance
+                        Address
                       </h3>
                     </div>
                     <LocationEditor
