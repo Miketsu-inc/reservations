@@ -16,10 +16,7 @@ import {
   ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
-import {
-  isLocationComplete,
-  LocationEditor,
-} from "@reservations/jabulani/components";
+import { isLocationComplete } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
@@ -28,8 +25,12 @@ import {
 } from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
+
+const LocationEditor = lazy(
+  () => import("@reservations/jabulani/components/LocationEditor.jsx")
+);
 
 async function fetchLocationSettings(merchantId) {
   const response = await fetch(`/api/v1/merchants/${merchantId}/locations`);
@@ -141,8 +142,9 @@ function LocationCard({ location, onEdit }) {
               className={`${
                 location.is_active
                   ? "bg-green-600/15 text-green-700 dark:text-green-400"
-                  : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-              } rounded-full px-2 py-0.5 text-xs font-medium`}
+                  : `bg-gray-200 text-gray-600 dark:bg-gray-700
+                    dark:text-gray-300`
+                } rounded-full px-2 py-0.5 text-xs font-medium`}
             >
               {location.is_active ? "Active" : "Inactive"}
             </span>
@@ -399,19 +401,26 @@ function LocationPage() {
                     role="tabpanel"
                   >
                     <div className="hidden lg:block">
-                      <h3 className="text-text_color font-semibold">
-                        Address
-                      </h3>
+                      <h3 className="text-text_color font-semibold">Address</h3>
                     </div>
-                    <LocationEditor
-                      key={editingLocation.id}
-                      value={draftLocation}
-                      compact
-                      onChange={(location) => {
-                        setDraftLocation(location);
-                        updateMutation.reset();
-                      }}
-                    />
+                    <Suspense
+                      fallback={
+                        <div
+                          className="h-72 animate-pulse rounded-lg bg-gray-100
+                            dark:bg-gray-800"
+                        />
+                      }
+                    >
+                      <LocationEditor
+                        key={editingLocation.id}
+                        value={draftLocation}
+                        compact
+                        onChange={(location) => {
+                          setDraftLocation(location);
+                          updateMutation.reset();
+                        }}
+                      />
+                    </Suspense>
                   </section>
                 )}
               </div>

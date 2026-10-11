@@ -264,11 +264,7 @@ func (r *merchantRepository) GetMerchantProfileSettings(ctx context.Context, mer
 	where m.id = $1
 	`
 
-	rows, err := r.db.Query(ctx, query, merchantId)
-	if err != nil {
-		return domain.MerchantProfileSettings{}, fmt.Errorf("GetMerchantProfileSettings: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId)
 	settings, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.MerchantProfileSettings])
 	if err != nil {
 		return domain.MerchantProfileSettings{}, fmt.Errorf("GetMerchantProfileSettings: %w", err)
@@ -545,12 +541,8 @@ func (r *merchantRepository) GetBusinessHours(ctx context.Context, merchantId uu
 
 	var dayOfWeek int
 	var start, end time.Time
-	rows, err := r.db.Query(ctx, query, merchantId, locationId)
-	if err != nil {
-		return nil, fmt.Errorf("GetBusinessHours: %w", err)
-	}
-
-	_, err = pgx.ForEachRow(rows, []any{&dayOfWeek, &start, &end}, func() error {
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
+	_, err := pgx.ForEachRow(rows, []any{&dayOfWeek, &start, &end}, func() error {
 		businessHours[dayOfWeek] = append(businessHours[dayOfWeek], domain.TimeSlot{
 			StartTime: start,
 			EndTime:   end,
@@ -573,11 +565,7 @@ func (r *merchantRepository) GetBusinessHoursForDay(ctx context.Context, merchan
 	where l.merchant_id = $1 and l.id = $2 and bh.day_of_week = $3
 	order by start_time`
 
-	rows, err := r.db.Query(ctx, query, merchantId, locationId, dayOfWeek)
-	if err != nil {
-		return nil, fmt.Errorf("GetBusinessHoursForDay: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId, dayOfWeek)
 	bHours, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.TimeSlot, error) {
 		var ts domain.TimeSlot
 		err := row.Scan(&ts.StartTime, &ts.EndTime)
@@ -600,16 +588,12 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 	group by bh.day_of_week
 	order by bh.day_of_week;`
 
-	rows, err := r.db.Query(ctx, query, merchantId, locationId)
-	if err != nil {
-		return nil, fmt.Errorf("GetNormalizedBusinessHours: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
 	var day int
 	var startTime, endTime time.Time
 
 	result := make(domain.BusinessHours)
-	_, err = pgx.ForEachRow(rows, []any{&day, &startTime, &endTime}, func() error {
+	_, err := pgx.ForEachRow(rows, []any{&day, &startTime, &endTime}, func() error {
 		result[day] = []domain.TimeSlot{{
 			StartTime: startTime,
 			EndTime:   endTime,

@@ -53,12 +53,12 @@ create table if not exists "Location" (
     name                     text             not null default 'Main location',
     sequence                 integer          not null default 0,
     country                  text,
-    country_code             char(2),
+    country_code             text,
     region                   text,
     city                     text,
     postal_code              text,
     address                  text,
-    geo_point                geography(Point, 4326) not null,
+    geo_point                geography(Point) not null,
     geocoding_provider       text,
     provider_place_id        text,
     formatted_location       text             not null,
@@ -68,13 +68,13 @@ create table if not exists "Location" (
     arrival_info             text             not null default '',
     is_active                boolean          not null default true,
 
+    constraint location_country_code_length check (
+        country_code is null or char_length(country_code) = 2
+    ),
     constraint location_geocoding_provider_complete check (
         (geocoding_provider is null) = (provider_place_id is null)
     )
 );
-
-create index if not exists location_merchant_sequence
-on "Location" (merchant_id, is_active, sequence, ID);
 
 create table if not exists "Employee" (
     ID                       serial          primary key unique not null,

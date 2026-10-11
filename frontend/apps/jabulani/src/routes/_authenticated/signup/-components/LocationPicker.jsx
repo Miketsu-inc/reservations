@@ -1,11 +1,12 @@
 import { Button, ServerError } from "@reservations/components";
-import {
-  isLocationComplete,
-  LocationEditor,
-} from "@reservations/jabulani/components";
+import { isLocationComplete } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+
+const LocationEditor = lazy(
+  () => import("@reservations/jabulani/components/LocationEditor.jsx")
+);
 
 export default function LocationPicker({
   isSubmitDone,
@@ -80,7 +81,16 @@ export default function LocationPicker({
         </p>
       </div>
       <div className="flex flex-col gap-5 p-4">
-        <LocationEditor value={location} onChange={setLocation} />
+        <Suspense
+          fallback={
+            <div
+              className="h-96 animate-pulse rounded-lg bg-gray-100
+                dark:bg-gray-800"
+            />
+          }
+        >
+          <LocationEditor value={location} onChange={setLocation} />
+        </Suspense>
         <Button
           styles="w-full py-2"
           variant="primary"

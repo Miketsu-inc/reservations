@@ -1,13 +1,21 @@
 import { Location01Icon } from "@hugeicons/core-free-icons";
 import { SearchBox } from "@mapbox/search-js-react";
 import { Button, Icon } from "@reservations/components";
-import { useTheme } from "@reservations/lib";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  coordinatesFromLocation,
+  locationFromMapboxFeature,
+} from "./locationUtils.js";
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-const fallbackCenter = [0, 20];
+const LocationMap = lazy(() => import("./LocationMap.jsx"));
 const searchBoxTheme = {
   variables: {
     colorText: "var(--color-text_color)",
@@ -35,229 +43,26 @@ const searchBoxTheme = {
   `,
 };
 
-function coordinatesFromLocation(location) {
-  const longitude = location?.geo_point?.longitude;
-  const latitude = location?.geo_point?.latitude;
-
-  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return null;
-
-  return [longitude, latitude];
-}
-
-export function isLocationComplete(location) {
-  const coordinates = coordinatesFromLocation(location);
-
-  return Boolean(
-    location?.formatted_location?.trim() &&
-    coordinates &&
-    coordinates[0] >= -180 &&
-    coordinates[0] <= 180 &&
-    coordinates[1] >= -90 &&
-    coordinates[1] <= 90
-  );
-}
-
 export default function LocationEditor({ value, onChange, compact = false }) {
-  const { isDarkTheme } = useTheme();
   const [address, setAddress] = useState(value?.formatted_location ?? "");
-  const [showMap, setShowMap] = useState(
+  const [showMap, setShowMap] = useState(() =>
     Boolean(coordinatesFromLocation(value))
   );
   const [searchBoxKey, setSearchBoxKey] = useState(0);
-  const [mapInstance, setMapInstance] = useState(null);
-  const [runtimeMapError, setRuntimeMapError] = useState("");
-  const [mapSupportError] = useState(() =>
-    !accessToken
-      ? "The map is unavailable because its access token is missing."
-      : !mapboxgl.supported()
-        ? "The map could not start. Try enabling hardware acceleration in your browser."
-        : ""
-  );
-
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
   const locationRef = useRef(value);
   const addressRef = useRef(address);
-  const onChangeRef = useRef(onChange);
-  const reverseRequestRef = useRef(null);
-  const initialCoordinatesRef = useRef(coordinatesFromLocation(value));
-
-  const mapError = mapSupportError || runtimeMapError;
-  const longitude = value?.geo_point?.longitude;
-  const latitude = value?.geo_point?.latitude;
 
   useEffect(() => {
     locationRef.current = value;
   }, [value]);
 
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
-
-  const emitLocation = useCallback((location) => {
-    locationRef.current = location;
-    onChangeRef.current?.(location);
-  }, []);
-
-  const locationFromFeature = useCallback(
-    (feature, formattedLocation, exactCoordinates) => {
-      const properties = feature?.properties ?? {};
-      const context = properties.context ?? {};
-      const coordinates = exactCoordinates ?? feature?.geometry?.coordinates;
-      const providerPlaceId = properties.mapbox_id ?? null;
-
-      if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
-
-      return {
-        ...(locationRef.current ?? {}),
-        country: context.country?.name ?? null,
-        country_code: context.country?.country_code ?? null,
-        region: context.region?.name ?? null,
-        city: context.place?.name ?? context.locality?.name ?? null,
-        postal_code: context.postcode?.name ?? null,
-        address:
-          context.address?.name ??
-          properties.address ??
-          properties.name ??
-          null,
-        geo_point: {
-          latitude: coordinates[1],
-          longitude: coordinates[0],
-        },
-        geocoding_provider: providerPlaceId ? "mapbox" : null,
-        provider_place_id: providerPlaceId,
-        formatted_location: formattedLocation,
-      };
+  const emitLocation = useCallback(
+    (location) => {
+      locationRef.current = location;
+      onChange?.(location);
     },
-    []
+    [onChange]
   );
-
-  const updatePin = useCallback(
-    async ({ lng, lat }) => {
-      const coordinates = [lng, lat];
-      const formattedLocation = addressRef.current.trim();
-      const current = locationRef.current ?? {};
-      const exactLocation = {
-        ...current,
-        geo_point: { latitude: lat, longitude: lng },
-        formatted_location: formattedLocation,
-      };
-
-      emitLocation(exactLocation);
-
-      reverseRequestRef.current?.abort();
-      const controller = new AbortController();
-      reverseRequestRef.current = controller;
-
-      try {
-        const url = new URL("https://api.mapbox.com/search/geocode/v6/reverse");
-        url.searchParams.set("longitude", lng);
-        url.searchParams.set("latitude", lat);
-        url.searchParams.set("access_token", accessToken);
-
-        const response = await fetch(url, { signal: controller.signal });
-        if (!response.ok) return;
-
-        const result = await response.json();
-        const feature = result.features?.[0];
-        if (!feature) return;
-
-        const currentCoordinates = coordinatesFromLocation(locationRef.current);
-        if (
-          currentCoordinates?.[0] !== lng ||
-          currentCoordinates?.[1] !== lat
-        ) {
-          return;
-        }
-
-        const enrichedLocation = locationFromFeature(
-          feature,
-          addressRef.current.trim(),
-          coordinates
-        );
-        if (enrichedLocation) emitLocation(enrichedLocation);
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          console.error("Reverse geocoding failed:", error);
-        }
-      }
-    },
-    [emitLocation, locationFromFeature]
-  );
-
-  useEffect(() => {
-    return () => reverseRequestRef.current?.abort();
-  }, []);
-
-  useEffect(() => {
-    if (!showMap || !mapContainerRef.current || mapRef.current) return;
-
-    if (mapSupportError) return;
-
-    try {
-      mapboxgl.accessToken = accessToken;
-      const initialCoordinates = initialCoordinatesRef.current;
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: isDarkTheme
-          ? "mapbox://styles/mapbox/dark-v11"
-          : "mapbox://styles/mapbox/streets-v12",
-        center: initialCoordinates ?? fallbackCenter,
-        zoom: initialCoordinates ? 16 : 1.5,
-      });
-
-      mapRef.current = map;
-      setMapInstance(map);
-
-      const marker = new mapboxgl.Marker({
-        draggable: true,
-        color: "#3b82f6",
-      });
-      markerRef.current = marker;
-
-      marker.on("dragend", () => updatePin(marker.getLngLat()));
-      map.on("click", ({ lngLat }) => updatePin(lngLat));
-      map.on("webglcontextlost", () => {
-        setRuntimeMapError(
-          "The map stopped rendering. Try reloading after enabling hardware acceleration."
-        );
-      });
-    } catch (error) {
-      console.error("Map initialization failed:", error);
-      queueMicrotask(() =>
-        setRuntimeMapError(
-          "The map could not start. Try enabling hardware acceleration in your browser."
-        )
-      );
-    }
-
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-      markerRef.current = null;
-    };
-  }, [isDarkTheme, mapSupportError, showMap, updatePin]);
-
-  useEffect(() => {
-    if (
-      !mapInstance ||
-      !markerRef.current ||
-      !Number.isFinite(longitude) ||
-      !Number.isFinite(latitude)
-    ) {
-      return;
-    }
-
-    const coordinates = [longitude, latitude];
-
-    markerRef.current.setLngLat(coordinates);
-    if (!markerRef.current.getElement().parentNode) {
-      markerRef.current.addTo(mapInstance);
-    }
-
-    mapInstance.flyTo({ center: coordinates, zoom: 16 });
-  }, [latitude, longitude, mapInstance]);
 
   function handleAddressChange(nextAddress) {
     addressRef.current = nextAddress;
@@ -276,7 +81,11 @@ export default function LocationEditor({ value, onChange, compact = false }) {
     if (!feature) return;
 
     const formattedLocation = addressRef.current.trim();
-    const location = locationFromFeature(feature, formattedLocation);
+    const location = locationFromMapboxFeature(
+      feature,
+      formattedLocation,
+      locationRef.current
+    );
     if (!location) return;
 
     setShowMap(true);
@@ -288,8 +97,16 @@ export default function LocationEditor({ value, onChange, compact = false }) {
     setShowMap(true);
 
     navigator.geolocation?.getCurrentPosition(
-      ({ coords }) =>
-        updatePin({ lng: coords.longitude, lat: coords.latitude }),
+      ({ coords }) => {
+        emitLocation({
+          ...(locationRef.current ?? {}),
+          geo_point: {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+          formatted_location: addressRef.current.trim(),
+        });
+      },
       () => {},
       { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
     );
@@ -304,10 +121,6 @@ export default function LocationEditor({ value, onChange, compact = false }) {
         <SearchBox
           key={searchBoxKey}
           accessToken={accessToken}
-          map={mapInstance}
-          mapboxgl={mapboxgl}
-          marker={false}
-          componentOptions={{ flyTo: false }}
           popoverOptions={{ flip: true, offset: 4 }}
           theme={searchBoxTheme}
           value={address}
@@ -339,25 +152,27 @@ export default function LocationEditor({ value, onChange, compact = false }) {
         />
       )}
 
-      <div
-        className={`border-border_color relative overflow-hidden rounded-lg
-          border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
-      >
-        {showMap ? (
-          <>
-            <div ref={mapContainerRef} className="h-full w-full" />
-            {mapError && (
-              <div
-                role="alert"
-                className="absolute inset-0 flex items-center justify-center
-                  bg-gray-100 p-6 text-center text-sm text-red-700
-                  dark:bg-gray-900 dark:text-red-400"
-              >
-                {mapError}
-              </div>
-            )}
-          </>
-        ) : (
+      {showMap ? (
+        <Suspense
+          fallback={
+            <div
+              className={`border-border_color animate-pulse rounded-lg border
+                bg-gray-100 dark:bg-gray-800
+                ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
+            />
+          }
+        >
+          <LocationMap
+            value={value}
+            onChange={emitLocation}
+            compact={compact}
+          />
+        </Suspense>
+      ) : (
+        <div
+          className={`border-border_color relative overflow-hidden rounded-lg
+            border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
+        >
           <div
             className="flex h-full items-center justify-center bg-gray-100 p-6
               dark:bg-gray-800"
@@ -368,43 +183,37 @@ export default function LocationEditor({ value, onChange, compact = false }) {
                 styles="mx-auto mb-3 size-14 text-gray-400"
               />
               <p className="text-text_color font-medium">
-                {compact && (
+                {compact ? (
                   <span className="lg:hidden">
                     Choose an address to place the pin
                   </span>
+                ) : (
+                  "Choose an address to position the pin"
                 )}
-                <span className={compact ? "hidden lg:inline" : undefined}>
-                  Choose an address to position the pin
-                </span>
+                {compact && (
+                  <span className="hidden lg:inline">
+                    Choose an address to position the pin
+                  </span>
+                )}
               </p>
               <p className="text-text_color/60 mt-1 text-sm">
-                {compact && (
+                {compact ? (
                   <span className="lg:hidden">
                     No matching result? Set the pin manually.
                   </span>
+                ) : (
+                  "If there is no matching result, type the address and set the pin manually."
                 )}
-                <span className={compact ? "hidden lg:inline" : undefined}>
-                  If there is no matching result, type the address and set the
-                  pin manually.
-                </span>
+                {compact && (
+                  <span className="hidden lg:inline">
+                    If there is no matching result, type the address and set the
+                    pin manually.
+                  </span>
+                )}
               </p>
             </div>
           </div>
-        )}
-      </div>
-
-      {showMap && !mapError && (
-        <p className="text-text_color/65 text-sm">
-          {compact && (
-            <span className="lg:hidden">
-              Drag the pin or tap the map to mark the exact entrance.
-            </span>
-          )}
-          <span className={compact ? "hidden lg:inline" : undefined}>
-            Drag the pin or click anywhere on the map to mark the exact
-            entrance.
-          </span>
-        </p>
+        </div>
       )}
     </div>
   );

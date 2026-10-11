@@ -652,7 +652,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return fmt.Errorf("customer count (%d) exceeds class limit of %d", len(input.Customers), service.MaxParticipants)
 	}
 
-	bookedLocation, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	bookedLocation, err := s.locationRepo.GetDefaultLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}

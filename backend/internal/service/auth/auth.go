@@ -190,7 +190,7 @@ type MerchantSignupInput struct {
 	Timezone     string
 }
 
-// I feel like most of this should be in merchant services
+// TODO: I feel like most of this should be in merchant services
 func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput) error {
 	urlName, err := validate.MerchantNameToUrlName(input.Name)
 	if err != nil {

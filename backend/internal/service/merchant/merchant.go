@@ -221,7 +221,7 @@ func (s *Service) GetMerchantProfileSettings(ctx context.Context) (domain.Mercha
 func (s *Service) UpdateMerchantProfileSettings(ctx context.Context, settings domain.MerchantProfileSettings) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetDefaultLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (s *Service) UpdateSchedulingSettings(ctx context.Context, settings domain.
 func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.BusinessHours, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetDefaultLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (s *Service) GetBusinessHoursSettings(ctx context.Context) (domain.Business
 
 func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours domain.BusinessHours) error {
 	actor := actor.MustGetFromContext(ctx)
-	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetDefaultLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (s *Service) UpdateBusinessHoursSettings(ctx context.Context, businessHours
 func (s *Service) GetNormalizedBusinessHours(ctx context.Context) (domain.BusinessHours, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	location, err := s.locationRepo.GetFirstActiveLocation(ctx, actor.MerchantId)
+	location, err := s.locationRepo.GetDefaultLocation(ctx, actor.MerchantId)
 	if err != nil {
 		return nil, err
 	}

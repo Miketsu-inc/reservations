@@ -53,10 +53,13 @@ type UpdateInput struct {
 
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
+
 	locations, err := s.locationRepo.GetLocations(ctx, actor.MerchantId)
 	if err != nil {
 		return err
 	}
+
+	// TODO: until we introduce multiple locations
 	if len(locations) > 0 {
 		return ErrLocationAlreadyExists
 	}
@@ -84,20 +87,23 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 			return err
 		}
 
-		return s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, locationId, defaultBusinessHours())
+		businessHours := domain.BusinessHours{
+			0: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			1: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			2: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			3: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			4: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			5: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+			6: {{StartTime: ctBH("09:00"), EndTime: ctBH("17:00")}},
+		}
+
+		return s.merchantRepo.WithTx(tx).NewBusinessHours(ctx, locationId, businessHours)
 	})
 }
 
-func defaultBusinessHours() domain.BusinessHours {
-	start := time.Date(0, time.January, 1, 9, 0, 0, 0, time.UTC)
-	end := time.Date(0, time.January, 1, 17, 0, 0, 0, time.UTC)
-	hours := make(domain.BusinessHours, 7)
-
-	for day := 0; day <= 6; day++ {
-		hours[day] = []domain.TimeSlot{{StartTime: start, EndTime: end}}
-	}
-
-	return hours
+func ctBH(timeStr string) time.Time {
+	t, _ := time.Parse("15:04", timeStr)
+	return time.Date(0, time.January, 1, t.Hour(), t.Minute(), 0, 0, time.UTC)
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]domain.Location, error) {

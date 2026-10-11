@@ -48,11 +48,7 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 	where id = $1 and merchant_id = $2
 	`
 
-	rows, err := r.db.Query(ctx, query, locationId, merchantId)
-	if err != nil {
-		return domain.Location{}, fmt.Errorf("GetLocation: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, locationId, merchantId)
 	location, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Location])
 	if err != nil {
 		return domain.Location{}, fmt.Errorf("GetLocation: %w", err)
@@ -61,7 +57,7 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 	return location, nil
 }
 
-func (r *locationRepository) GetFirstActiveLocation(ctx context.Context, merchantId uuid.UUID) (domain.Location, error) {
+func (r *locationRepository) GetDefaultLocation(ctx context.Context, merchantId uuid.UUID) (domain.Location, error) {
 	query := `
 	select * from "Location"
 	where merchant_id = $1 and is_active is true
@@ -69,14 +65,10 @@ func (r *locationRepository) GetFirstActiveLocation(ctx context.Context, merchan
 	limit 1
 	`
 
-	rows, err := r.db.Query(ctx, query, merchantId)
-	if err != nil {
-		return domain.Location{}, fmt.Errorf("GetFirstActiveLocation: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId)
 	location, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.Location])
 	if err != nil {
-		return domain.Location{}, fmt.Errorf("GetFirstActiveLocation: %w", err)
+		return domain.Location{}, fmt.Errorf("GetDefaultLocation: %w", err)
 	}
 
 	return location, nil
@@ -89,11 +81,7 @@ func (r *locationRepository) GetLocations(ctx context.Context, merchantId uuid.U
 	order by is_active desc, sequence, id
 	`
 
-	rows, err := r.db.Query(ctx, query, merchantId)
-	if err != nil {
-		return nil, fmt.Errorf("GetLocations: %w", err)
-	}
-
+	rows, _ := r.db.Query(ctx, query, merchantId)
 	locations, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Location])
 	if err != nil {
 		return nil, fmt.Errorf("GetLocations: %w", err)
