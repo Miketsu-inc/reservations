@@ -42,7 +42,9 @@ func init() {
 
 func Format(amount currency.Amount) string {
 	formatter, ok := formatters[amount.CurrencyCode()]
-	assert.True(ok, "Currency code does not exist in currencyLocale map", amount.CurrencyCode(), currencyLocale)
+	if !ok {
+		formatter = currency.NewFormatter(currency.NewLocale("en"))
+	}
 
 	return formatter.Format(amount)
 }
