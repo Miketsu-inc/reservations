@@ -240,8 +240,6 @@ type getPreferencesResp struct {
 	TimeFormat         string `json:"time_format"`
 	CalendarView       string `json:"calendar_view"`
 	CalendarViewMobile string `json:"calendar_view_mobile"`
-	StartHour          string `json:"start_hour"`
-	EndHour            string `json:"end_hour"`
 	TimeFrequency      string `json:"time_frequency"`
 }
 
@@ -266,8 +264,6 @@ type updatePreferencesReq struct {
 	TimeFormat         string `json:"time_format"`
 	CalendarView       string `json:"calendar_view"`
 	CalendarViewMobile string `json:"calendar_view_mobile"`
-	StartHour          string `json:"start_hour"`
-	EndHour            string `json:"end_hour"`
 	TimeFrequency      string `json:"time_frequency"`
 }
 

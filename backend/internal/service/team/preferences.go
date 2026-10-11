@@ -28,8 +28,6 @@ type UpdatePreferencesInput struct {
 	TimeFormat         string
 	CalendarView       string
 	CalendarViewMobile string
-	StartHour          time.Time
-	EndHour            time.Time
 	TimeFrequency      time.Time
 }
 
@@ -45,8 +43,6 @@ func (s *Service) UpdatePreferences(ctx context.Context, employeeId int, input U
 		TimeFormat:         input.TimeFormat,
 		CalendarView:       input.CalendarView,
 		CalendarViewMobile: input.CalendarViewMobile,
-		StartHour:          input.StartHour,
-		EndHour:            input.EndHour,
 		TimeFrequency:      input.TimeFrequency,
 	})
 	if err != nil {

@@ -26,11 +26,6 @@ const TimeFrequencyOptions = [
   { value: "00:30", label: "30 minute" },
 ];
 
-function convertTimeToMinutes(time) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
 async function updatePreferences(merchantId, employeeId, preferences) {
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/team/${employeeId}/preferences`,
@@ -51,22 +46,11 @@ async function updatePreferences(merchantId, employeeId, preferences) {
   }
 }
 
-function validateTimeRange(startHour, endHour) {
-  if (!startHour || !endHour) return true;
-
-  const startTime = convertTimeToMinutes(startHour);
-  const endTime = convertTimeToMinutes(endHour);
-
-  return startTime < endTime;
-}
-
 const defaultPreferences = {
   first_day_of_week: "",
   time_format: "",
   calendar_view: "",
   calendar_view_mobile: "",
-  start_hour: "",
-  end_hour: "",
   time_frequency: "",
 };
 
@@ -88,7 +72,6 @@ export const Route = createFileRoute(
 
 function CalendarPage() {
   const [unsavedChanges, setUnsavedChanges] = useState({});
-  const [errorMessage, setErrorMessage] = useState("");
 
   const { merchantId, employeeId } = useAuth();
   const { showToast } = useToast();
@@ -124,28 +107,7 @@ function CalendarPage() {
   }
 
   function handleInputChange(key, value) {
-    setUnsavedChanges((prev) => {
-      const newChanges = { ...prev, [key]: value };
-      const newPreferences = { ...(data || defaultPreferences), ...newChanges };
-
-      if (key === "start_hour" || key === "end_hour") {
-        const startHour = newPreferences.start_hour;
-        const endHour = newPreferences.end_hour;
-
-        if (!validateTimeRange(startHour, endHour)) {
-          const errorMsg =
-            key === "start_hour"
-              ? "Start time must be before end time"
-              : "End time must be after start time";
-          setErrorMessage(errorMsg);
-          // Don't update if validation fails
-          return prev;
-        }
-      }
-
-      setErrorMessage("");
-      return newChanges;
-    });
+    setUnsavedChanges((prev) => ({ ...prev, [key]: value }));
   }
 
   if (isLoading) {
@@ -233,37 +195,9 @@ function CalendarPage() {
 
       <SettingsSection
         title="Calendar grid"
-        description="Limit the visible part of the day and choose the time-grid interval."
+        description="Choose the time-grid interval. The calendar displays the full day."
       >
-        <div className="grid items-end gap-6 md:grid-cols-3">
-          <label htmlFor="start-hour" className="flex flex-col text-sm">
-            <span className="pb-1">Starting hour</span>
-            <input
-              type="time"
-              id="start-hour"
-              value={preferences.start_hour}
-              onChange={(event) =>
-                handleInputChange("start_hour", event.target.value)
-              }
-              className="border-input_border_color bg-layer_bg min-h-10 rounded-lg
-                border px-3 py-2 font-normal dark:scheme-dark"
-              step="1800"
-            />
-          </label>
-          <label htmlFor="end-hour" className="flex flex-col text-sm">
-            <span className="pb-1">Ending hour</span>
-            <input
-              type="time"
-              id="end-hour"
-              value={preferences.end_hour}
-              onChange={(event) =>
-                handleInputChange("end_hour", event.target.value)
-              }
-              className="border-input_border_color bg-layer_bg min-h-10 rounded-lg
-                border px-3 py-2 font-normal dark:scheme-dark"
-              step="1800"
-            />
-          </label>
+        <div className="grid gap-6 md:grid-cols-2">
           <Select
             options={TimeFrequencyOptions}
             value={preferences.time_frequency}
@@ -276,11 +210,6 @@ function CalendarPage() {
             styles="font-normal"
           />
         </div>
-        {errorMessage && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-            {errorMessage}
-          </p>
-        )}
       </SettingsSection>
     </div>
   );

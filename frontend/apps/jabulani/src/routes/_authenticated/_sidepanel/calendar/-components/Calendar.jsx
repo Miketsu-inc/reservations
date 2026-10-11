@@ -188,6 +188,54 @@ function getInitialCalendarDate(search) {
   return dateStringToLocalDate(initialDate) ?? new Date();
 }
 
+/**
+ * Centers the current time in day/week views on mount and when the grid resizes.
+ * Measures the visible grid height to offset FullCalendar's top-aligned scrolling.
+ * Returns methods to recenter on date changes and clean up when the view unmounts.
+ */
+function observeCurrentTime({ el, view }) {
+  if (view.type !== "timeGridWeek" && view.type !== "timeGridDay") return;
+
+  let scroller = el.querySelector("[data-time]");
+  while (scroller && scroller !== el) {
+    if (["auto", "scroll"].includes(getComputedStyle(scroller).overflowY))
+      break;
+    scroller = scroller.parentElement;
+  }
+  if (!scroller || scroller === el) return;
+
+  let frame;
+  function center() {
+    cancelAnimationFrame(frame);
+    // Wait for FullCalendar to finish applying the measured slot heights.
+    frame = requestAnimationFrame(() => {
+      if (!scroller.clientHeight || !scroller.scrollHeight) return;
+
+      const now = new Date();
+      const currentMinutes =
+        now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+      const visibleMinutes =
+        (scroller.clientHeight / scroller.scrollHeight) * 24 * 60;
+
+      view.calendar.scrollToTime({
+        minutes: Math.max(0, currentMinutes - visibleMinutes / 2),
+      });
+    });
+  }
+
+  const observer = new ResizeObserver(center);
+  observer.observe(scroller);
+  observer.observe(scroller.firstElementChild);
+
+  return {
+    center,
+    disconnect() {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    },
+  };
+}
+
 export default function Calendar({ router, route, search }) {
   const { bookingId } = useParams({ strict: false });
   const [sidePanelState, setSidePanelState] = useState(() =>
@@ -229,6 +277,7 @@ export default function Calendar({ router, route, search }) {
 
   const { isWindowSmall } = useWindowSize();
   const calendarRef = useRef();
+  const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
 
   const calendarEvents = useMemo(() => {
@@ -419,7 +468,7 @@ export default function Calendar({ router, route, search }) {
   }
 
   return (
-    <div className="flex h-[85svh] flex-col px-4 pt-4 md:h-fit md:max-h-[90svh]">
+    <div className="flex min-h-0 flex-1 flex-col px-4 pt-4">
       <CalendarSidePanel
         isOpen={isPanelOpen}
         type={panelType}
@@ -445,7 +494,7 @@ export default function Calendar({ router, route, search }) {
           onCreateBooking={(start) => openSidePanelAtTime("new-booking", start)}
         />
       )}
-      <div className="relative flex flex-col pb-4 md:flex-row md:gap-2">
+      <div className="relative flex shrink-0 flex-col pb-4 md:flex-row md:gap-2">
         <div
           className="flex w-full flex-col justify-between md:flex-row
             md:items-center"
@@ -497,7 +546,7 @@ export default function Calendar({ router, route, search }) {
           </div>
         </div>
       </div>
-      <div className="max-h-full w-full overflow-auto rounded-lg">
+      <div className="min-h-0 w-full flex-1 overflow-hidden rounded-lg">
         <FullCalendar
           ref={calendarRef}
           plugins={[
@@ -514,8 +563,15 @@ export default function Calendar({ router, route, search }) {
           initialView={search.view ? search.view : "timeGridWeek"}
           // dayGridMonth dates do not start or end with the current month's dates
           initialDate={getInitialCalendarDate(search)}
-          height="auto"
+          height="100%"
           headerToolbar={false}
+          viewDidMount={(info) => {
+            calendarScrollRef.current = observeCurrentTime(info);
+          }}
+          viewWillUnmount={() => {
+            calendarScrollRef.current?.disconnect();
+            calendarScrollRef.current = null;
+          }}
           events={calendarEvents}
           eventContent={(eventInfo) => (
             <CalendarEventPreview
@@ -524,6 +580,7 @@ export default function Calendar({ router, route, search }) {
             />
           )}
           datesSet={({ view }) => {
+            calendarScrollRef.current?.center();
             setCalendarTitle(view.title);
 
             const currentDate = view.calendar.getDate();
@@ -570,8 +627,6 @@ export default function Calendar({ router, route, search }) {
             hour12: preferences.time_format === "12-hour",
           }}
           slotDuration={preferences.time_frequency}
-          slotMinTime={preferences.start_hour}
-          slotMaxTime={preferences.end_hour}
           nowIndicator={true}
           titleFormat={{
             year: "numeric",

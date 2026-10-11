@@ -84,8 +84,6 @@ type EmployeePreferences struct {
 	TimeFormat         string    `db:"time_format"`
 	CalendarView       string    `db:"calendar_view"`
 	CalendarViewMobile string    `db:"calendar_view_mobile"`
-	StartHour          time.Time `db:"start_hour"`
-	EndHour            time.Time `db:"end_hour"`
 	TimeFrequency      time.Time `db:"time_frequency"`
 }
 

@@ -287,8 +287,6 @@ create table if not exists "EmployeePreferences" (
     time_format              varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')) not null,
     calendar_view            varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')) not null,
     calendar_view_mobile     varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list')) not null,
-    start_hour               time(0)          default '08:00:00' not null,
-    end_hour                 time(0)          default '17:00:00' not null,
     time_frequency           time(0)          default '00:15:00' not null
 );
 
