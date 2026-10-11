@@ -311,8 +311,6 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string) error {
 			UserId:     &user.Id,
 			MerchantId: invitation.MerchantId,
 			Role:       invitation.Role.ToEmployeeRole(),
-			FirstName:  &user.FirstName,
-			LastName:   &user.LastName,
 			IsActive:   true,
 		})
 		if err != nil {
