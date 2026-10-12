@@ -237,6 +237,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) error {
 	if err := oauthutil.ValidateOauthState(r); err != nil {
 		return err
 	}
+	oauthutil.DeleteOauthStateCookie(w)
 
 	tokens, err := h.service.GoogleCallback(r.Context(), code)
 	if err != nil {
@@ -270,6 +271,7 @@ func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error
 	if err := oauthutil.ValidateOauthState(r); err != nil {
 		return err
 	}
+	oauthutil.DeleteOauthStateCookie(w)
 
 	tokens, err := h.service.FacebookCallback(r.Context(), code)
 	if err != nil {
