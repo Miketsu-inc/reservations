@@ -419,7 +419,11 @@ func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId u
 		if err != nil {
 			return domain.DashboardStatistics{}, fmt.Errorf("GetDashboardStats: %w", err)
 		}
-		formattedRevenue = currencyx.Format(amount)
+
+		formattedRevenue, err = currencyx.Format(amount)
+		if err != nil {
+			return domain.DashboardStatistics{}, fmt.Errorf("GetDashboardStats: %w", err)
+		}
 	} else {
 		formattedRevenue = "0"
 	}
