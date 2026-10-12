@@ -40,13 +40,13 @@ func init() {
 	}
 }
 
-func Format(amount currency.Amount) string {
+func Format(amount currency.Amount) (string, error) {
 	formatter, ok := formatters[amount.CurrencyCode()]
 	if !ok {
-		formatter = currency.NewFormatter(currency.NewLocale("en"))
+		return "", fmt.Errorf("currencyx: not supported currency code %s", amount.CurrencyCode())
 	}
 
-	return formatter.Format(amount)
+	return formatter.Format(amount), nil
 }
 
 // finds the most likely currency based on the user's language
@@ -79,7 +79,11 @@ type priceScanState struct {
 }
 
 func (f FormattedPrice) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Format(f.Amount))
+	curr, err := Format(f.Amount)
+	if err != nil {
+		return []byte{}, err
+	}
+	return json.Marshal(curr)
 }
 
 func (p Price) ToFormatted() FormattedPrice {
