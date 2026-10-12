@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
@@ -65,16 +66,17 @@ func (h *Handler) Routes() *httputil.Router {
 }
 
 type getInfoResp struct {
-	Name         string  `json:"merchant_name"`
-	UrlName      string  `json:"url_name"`
-	ContactEmail string  `json:"contact_email"`
-	PhoneNumber  *string `json:"phone_number"`
-	Introduction string  `json:"introduction"`
-	Announcement string  `json:"announcement"`
-	AboutUs      string  `json:"about_us"`
-	ParkingInfo  string  `json:"parking_info"`
-	PaymentInfo  string  `json:"payment_info"`
-	Timezone     string  `json:"timezone"`
+	MerchantId   uuid.UUID `json:"merchant_id"`
+	Name         string    `json:"merchant_name"`
+	UrlName      string    `json:"url_name"`
+	ContactEmail string    `json:"contact_email"`
+	PhoneNumber  *string   `json:"phone_number"`
+	Introduction string    `json:"introduction"`
+	Announcement string    `json:"announcement"`
+	AboutUs      string    `json:"about_us"`
+	ParkingInfo  string    `json:"parking_info"`
+	PaymentInfo  string    `json:"payment_info"`
+	Timezone     string    `json:"timezone"`
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`

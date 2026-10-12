@@ -3,7 +3,6 @@ import {
   Call02Icon,
   Clock01Icon,
   Facebook01Icon,
-  FavouriteIcon,
   InstagramIcon,
   Location01Icon,
   Mail01Icon,
@@ -15,8 +14,8 @@ import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import BusinessHoursSection from "./-components/BusinessHoursSection";
+import FavoriteButton from "./-components/FavoriteButton";
 import MapboxMap from "./-components/MapboxMap";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceSection from "./-components/ServiceSection";
@@ -66,7 +65,6 @@ const days = [
 
 function MerchantPage() {
   const { merchantName } = Route.useParams({ from: Route.id });
-  const [isFavourite, setIsFavourite] = useState(false);
   const { isWindowSmall } = useWindowSize();
 
   const {
@@ -104,27 +102,16 @@ function MerchantPage() {
         className="bg-layer_bg border-border_color sticky top-0 z-50 flex w-full
           items-center justify-between border-b-2 p-3 shadow-sm lg:hidden"
       >
-        <Link
-          className="hover:bg-hvr_gray rounded-md p-1"
-          to="/home"
-        >
+        <Link className="hover:bg-hvr_gray rounded-md p-1" to="/home">
           <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
         </Link>
         <span className="truncate px-2.5 text-lg font-semibold">
           {merchantInfo.merchant_name}
         </span>
-        <button
-          className="hover:bg-hvr_gray rounded-md p-1"
-          onClick={() => {
-            setIsFavourite(!isFavourite);
-          }}
-        >
-          <Icon
-            icon={FavouriteIcon}
-            styles={` size-6
-              ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
-          />
-        </button>
+        <FavoriteButton
+          merchantId={merchantInfo.merchant_id}
+          styles="hover:bg-hvr_gray cursor-pointer rounded-md p-1"
+        />
       </div>
 
       <div className="mx-auto flex w-full max-w-360 flex-col lg:px-10 lg:pt-6">
@@ -191,20 +178,12 @@ function MerchantPage() {
                 </div>
               </div>
 
-              <button
-                className="bg-layer_bg hover:bg-hvr_gray/20 border-border_color
-                  mt-1.5 h-fit rounded-full border p-3 shadow-sm
-                  transition-colors"
-                onClick={() => {
-                  setIsFavourite(!isFavourite);
-                }}
-              >
-                <Icon
-                  icon={FavouriteIcon}
-                  styles={` size-6
-                  ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
-                />
-              </button>
+              <FavoriteButton
+                merchantId={merchantInfo.merchant_id}
+                styles="bg-layer_bg border-border_color mt-1.5 h-fit
+                  cursor-pointer rounded-full border p-3 shadow-sm
+                  hover:scale-105 hover:shadow-md transition-all duration-200"
+              />
             </div>
           </>
         )}
@@ -466,20 +445,12 @@ function MerchantPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  className="bg-layer_bg hover:bg-hvr_gray/20
-                    border-border_color h-fit rounded-full border p-3 shadow-md
-                    transition-colors"
-                  onClick={() => {
-                    setIsFavourite(!isFavourite);
-                  }}
-                >
-                  <Icon
-                    icon={FavouriteIcon}
-                    styles={` size-6
-                      ${isFavourite ? "text-red-600 fill-red-600" : "text-text_color"}`}
-                  />
-                </button>
+                <FavoriteButton
+                  merchantId={merchantInfo.merchant_id}
+                  styles="bg-layer_bg border-border_color h-fit cursor-pointer
+                    rounded-full border p-3 shadow-md hover:scale-105
+                    hover:shadow-lg transition-all duration-200"
+                />
               </div>
               <Link
                 from={Route.fullPath}

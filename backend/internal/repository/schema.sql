@@ -385,3 +385,10 @@ create table if not exists "ExternalCalendarEvent" (
 
     unique (external_calendar_id, external_event_id)
 );
+
+create table if not exists "Favorite" (
+    user_id                  uuid                references "User" (ID) on delete cascade not null,
+    merchant_id              uuid                references "Merchant" (ID) on delete cascade not null,
+    created_at               timestamptz         not null default now(),
+    primary key (user_id, merchant_id)
+);

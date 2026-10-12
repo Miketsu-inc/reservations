@@ -221,7 +221,7 @@ func (r *merchantRepository) GetMerchantSubscriptionTier(ctx context.Context, me
 
 func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantInfo, error) {
 	query := `
-	select m.name, m.url_name, coalesce(l.contact_email, m.contact_email), l.phone_number, m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.timezone,
+	select m.id, m.name, m.url_name, coalesce(l.contact_email, m.contact_email), l.phone_number, m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.timezone,
 	l.id as location_id, l.country, l.country_code, l.region, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
 	inner join lateral (
 		select * from "Location"
@@ -233,7 +233,7 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 	`
 
 	var mi domain.MerchantInfo
-	err := r.db.QueryRow(ctx, query, merchantId).Scan(&mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.PhoneNumber, &mi.Introduction, &mi.Announcement,
+	err := r.db.QueryRow(ctx, query, merchantId).Scan(&mi.Id, &mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.PhoneNumber, &mi.Introduction, &mi.Announcement,
 		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.CountryCode, &mi.Region,
 		&mi.City, &mi.PostalCode, &mi.Address,
 		&mi.FormattedLocation, &mi.GeoPoint)

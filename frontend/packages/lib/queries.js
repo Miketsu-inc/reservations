@@ -268,3 +268,35 @@ export function employeeQueryOptions(merchantId, id) {
     queryFn: () => fetchEmployee(merchantId, id),
   });
 }
+
+export async function addFavorite(merchantId) {
+  const response = await fetch(`/api/v1/favorites/${merchantId}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+}
+
+export async function removeFavorite(merchantId) {
+  const response = await fetch(`/api/v1/favorites/${merchantId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const result = await response.json();
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+}
