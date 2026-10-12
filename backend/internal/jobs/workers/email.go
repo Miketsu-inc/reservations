@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"time"
@@ -406,7 +407,7 @@ func (w *EmployeeInvitationEmail) Work(ctx context.Context, job *river.Job[args.
 		return err
 	}
 
-	if !invitation.IsPending() {
+	if !invitation.IsPending() || invitation.Token != fmt.Sprintf("%x", sha256.Sum256([]byte(job.Args.Token))) {
 		return nil
 	}
 
