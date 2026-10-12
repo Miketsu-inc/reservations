@@ -213,6 +213,7 @@ func verifyToken(tokenString string, tokenType jwt.JwtType) (jwtlib.MapClaims, e
 			if tokenType == jwt.RefreshToken {
 				return nil, apperr.Wrap(ErrInvalidRefreshToken, err)
 			}
+
 			return nil, apperr.Wrap(ErrInvalidAccessToken, err)
 		}
 	}
