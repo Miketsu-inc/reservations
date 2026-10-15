@@ -67,15 +67,15 @@ export default function LocationPicker({
 
   return (
     <div
-      className="bg-layer_bg h-fit max-w-3xl overflow-hidden rounded-lg
+      className="bg-bg-raised h-fit max-w-3xl overflow-hidden rounded-lg
         shadow-lg"
     >
       <div className="px-4 py-6">
         <ServerError error={serverError} />
-        <h1 className="text-text_color mb-2 text-3xl font-bold">
+        <h1 className="text-fg mb-2 text-3xl font-bold">
           Where is your business located?
         </h1>
-        <p className="text-gray-700 dark:text-gray-300">
+        <p className="text-fg-muted">
           Enter the address customers should see, then place the pin at the
           exact entrance.
         </p>
@@ -83,10 +83,7 @@ export default function LocationPicker({
       <div className="flex flex-col gap-5 p-4">
         <Suspense
           fallback={
-            <div
-              className="h-96 animate-pulse rounded-lg bg-gray-100
-                dark:bg-gray-800"
-            />
+            <div className="bg-bg-sunken h-96 animate-pulse rounded-lg" />
           }
         >
           <LocationEditor value={location} onChange={setLocation} />

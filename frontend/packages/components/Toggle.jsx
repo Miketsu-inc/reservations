@@ -40,14 +40,9 @@ export function Toggle({
       type="button"
       disabled={disabled}
       className={`${styles} ${
-        !group || group.multiple
-          ? isPressed
-            ? "bg-black dark:bg-white"
-            : ""
-          : "relative z-10"
-        }
-        ${isPressed ? "text-white delay-25 dark:text-black" : "text-text_color"}
-        shrink-0 cursor-pointer rounded-3xl px-4 py-2 font-semibold text-nowrap`}
+        !group || group.multiple ? (isPressed ? "bg-fg" : "") : "relative z-10"
+        } ${isPressed ? "text-bg delay-25" : "text-fg"} shrink-0 cursor-pointer
+        rounded-3xl px-4 py-2 font-semibold text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -63,11 +58,7 @@ export function Toggle({
         <span
           className={`ml-2 inline-flex items-center justify-center rounded-full
           px-2 py-1 text-sm leading-none font-bold ${
-            isPressed
-              ? `bg-white/20 text-white delay-25 dark:bg-black/15
-                dark:text-black`
-              : `text-text_color dark:text-text_color bg-black/10
-                dark:bg-white/10`
+            isPressed ? "bg-bg/20 text-bg delay-25" : "text-fg bg-fg/10"
           }`}
         >
           {badgeText}
@@ -204,9 +195,8 @@ export function ToggleGroup({
           <div
             aria-hidden="true"
             style={pillStyle}
-            className={`pointer-events-none absolute inset-y-0 rounded-3xl
-            bg-black transition-[transform,width,opacity] duration-150
-            dark:bg-white`}
+            className={`bg-fg pointer-events-none absolute inset-y-0 rounded-3xl
+            transition-[transform,width,opacity] duration-150`}
           ></div>
         )}
         {children}

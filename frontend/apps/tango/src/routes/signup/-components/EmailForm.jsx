@@ -49,7 +49,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
   return (
     <>
       <h2 className="mt-2 text-center text-xl font-semibold">Email</h2>
-      <p className="mb-8 py-2 text-center text-gray-600 dark:text-gray-300">
+      <p className="text-fg-muted mb-8 py-2 text-center">
         Enter your email to get started with creating your account
       </p>
       <FloatingLabelInput

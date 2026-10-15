@@ -64,11 +64,7 @@ function RouteComponent() {
         <div className="flex w-full max-w-xl flex-col">
           <div className="pt-4 pb-12">
             <p className="text-2xl">Invalid token query parameter</p>
-            <Link
-              from={Route.fullPath}
-              to="/login"
-              className="text-text_color/60"
-            >
+            <Link from={Route.fullPath} to="/login" className="text-fg-muted">
               Back to login
             </Link>
           </div>
@@ -82,7 +78,7 @@ function RouteComponent() {
       <div className="flex w-full max-w-xl flex-col">
         <div className="pt-4 pb-12">
           <p className="text-2xl">Reset password</p>
-          <p className="text-text_color/60">Enter your new password</p>
+          <p className="text-fg-muted">Enter your new password</p>
         </div>
         <form onSubmit={submitHandler} className="flex h-full flex-col gap-6">
           <Input

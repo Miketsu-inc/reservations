@@ -108,7 +108,7 @@ export default function ServicePhases({ service, setService }) {
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1 text-sm">
             Duration
-            <span className="text-base leading-none text-red-500">*</span>
+            <span className="text-fg-danger text-base leading-none">*</span>
           </span>
           <div className="flex flex-col gap-4">
             {phases.map((phase, index) => (
@@ -124,7 +124,7 @@ export default function ServicePhases({ service, setService }) {
               />
             ))}
           </div>
-          <p className="text-text_color/70 text-sm">
+          <p className="text-fg-muted text-sm">
             Total duration: {formatDuration(durationSum)}
           </p>
         </div>
@@ -231,14 +231,14 @@ function PhaseInput({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="hover:bg-hvr_gray cursor-pointer rounded-lg p-1"
+            className="hover:bg-hover cursor-pointer rounded-lg p-1"
           >
             <Icon icon={MoreVerticalIcon} styles="size-8 rotate-90" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left">
           <div
-            className="*:hover:bg-hvr_gray flex flex-col items-start *:flex
+            className="*:hover:bg-hover flex flex-col items-start *:flex
               *:w-full *:cursor-pointer *:flex-row *:items-center *:gap-4
               *:rounded-lg *:p-2"
           >
@@ -248,7 +248,7 @@ function PhaseInput({
                 disabled={isLast}
                 onClick={onMoveDown}
                 className={`${
-                  isLast ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"
+                  isLast ? "opacity-35" : "hover:bg-hover cursor-pointer"
                 }`}
               >
                 <Icon icon={ArrowLeft02Icon} styles="size-6 -rotate-90" />
@@ -260,7 +260,7 @@ function PhaseInput({
                 type="button"
                 disabled={isFirst}
                 onClick={onMoveUp}
-                className={`${isFirst ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}`}
+                className={`${isFirst ? "opacity-35" : "hover:bg-hover cursor-pointer"}`}
               >
                 <Icon icon={ArrowLeft02Icon} styles="size-6 rotate-90" />
                 <p>Move up</p>
@@ -270,7 +270,7 @@ function PhaseInput({
               <button
                 type="button"
                 onClick={() => onDelete(phase.sequence)}
-                className="text-red-600 dark:text-red-500"
+                className="text-fg-danger"
               >
                 <Icon icon={Delete02Icon} styles="size-6" />
                 <p>Delete</p>

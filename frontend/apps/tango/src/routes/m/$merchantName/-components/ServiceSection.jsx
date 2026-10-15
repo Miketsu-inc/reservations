@@ -145,13 +145,13 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
           <div className="mt-10 flex flex-col items-center justify-start gap-4">
             {!showToggles && searchText.trim().length > 0 ? (
               <>
-                <Icon icon={Search01Icon} styles="size-15 text-gray-500!" />
-                <p className="text-gray-400 dark:text-gray-500">
+                <Icon icon={Search01Icon} styles="size-15 text-fg-muted!" />
+                <p className="text-fg-muted">
                   No services found for "{searchText}"
                 </p>
               </>
             ) : (
-              <p className="text-gray-400 dark:text-gray-500">
+              <p className="text-fg-muted">
                 No services available in this category.
               </p>
             )}
@@ -167,13 +167,12 @@ function ServiceItem({ service, router, locationId, onClick }) {
     <div
       type="button"
       onClick={() => onClick?.(service)}
-      className="group border-border_color bg-layer_bg hover:bg-gray-30 flex
-        w-full cursor-pointer items-center justify-between gap-4 rounded-md
-        border p-4 text-left shadow-sm transition-all duration-200
-        dark:hover:bg-gray-200/5"
+      className="group border-border bg-bg-raised hover:bg-hover flex w-full
+        cursor-pointer items-center justify-between gap-4 rounded-md border p-4
+        text-left shadow-sm transition-all duration-200"
     >
       <div className="flex flex-col gap-2.5">
-        <p className="text-text_color text-[17px] leading-tight font-semibold">
+        <p className="text-fg text-[17px] leading-tight font-semibold">
           {service.name}
         </p>
 
@@ -185,8 +184,8 @@ function ServiceItem({ service, router, locationId, onClick }) {
               ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
               : formatDuration(service.total_duration)}
           </span>
-          <span className="size-1 rounded-full bg-gray-500 dark:bg-gray-400"></span>
-          <span className="text-text_color">
+          <span className="bg-fg-muted size-1 rounded-full"></span>
+          <span className="text-fg">
             {getDisplayPrice(service.price, service.price_type)}
           </span>
         </div>

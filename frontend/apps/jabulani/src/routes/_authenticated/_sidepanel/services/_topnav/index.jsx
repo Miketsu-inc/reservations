@@ -264,7 +264,7 @@ function ServicesPage() {
                 </PopoverTrigger>
                 <PopoverContent align="end">
                   <div
-                    className="*:hover:bg-hvr_gray flex flex-col items-start
+                    className="*:hover:bg-hover flex flex-col items-start
                       *:w-full *:rounded-lg *:p-2"
                   >
                     <Link from={Route.fullPath} to="/services/new">

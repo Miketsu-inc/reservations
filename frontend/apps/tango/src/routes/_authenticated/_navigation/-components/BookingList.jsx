@@ -114,27 +114,26 @@ function BookingCard({ booking }) {
 
   return (
     <div
-      className="border-border_color bg-layer_bg dark:hover:bg-layer_bg/80
-        cursor-pointer rounded-lg border shadow-sm hover:border-gray-400
-        hover:bg-gray-100 dark:hover:border-zinc-700"
+      className="border-border bg-bg-raised hover:border-border-strong
+        hover:bg-hover cursor-pointer rounded-lg border shadow-sm"
     >
       <div
-        className="border-border_color flex flex-row justify-between border-b
-          px-4 py-4"
+        className="border-border flex flex-row justify-between border-b px-4
+          py-4"
       >
         <div className="flex flex-row gap-4">
           <div className="flex flex-col items-center justify-center">
             <p className="text-lg font-semibold">{fromDate.getDate()}</p>
-            <p className="text-text_color/60 text-sm">
+            <p className="text-fg-muted text-sm">
               {monthNameFromDate(fromDate)}
             </p>
           </div>
-          <div className="border-border_color border-r" />
+          <div className="border-border border-r" />
           <div className="flex flex-col items-start justify-center">
             <p className="text-lg">{booking.service_name}</p>
             <div className="flex flex-row items-center gap-2">
-              <Icon icon={Clock01Icon} styles="size-3 text-text_color/60" />
-              <p className="text-text_color/60 text-sm">
+              <Icon icon={Clock01Icon} styles="size-3 text-fg-muted" />
+              <p className="text-fg-muted text-sm">
                 {timeStringFromDate(fromDate)} - {timeStringFromDate(toDate)}
               </p>
             </div>
@@ -144,8 +143,8 @@ function BookingCard({ booking }) {
           <p>{booking.price}</p>
           {isPending && (
             <p
-              className="rounded-lg bg-yellow-300 px-2 py-1 text-xs
-                text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400"
+              className="bg-warning text-fg-warning rounded-lg px-2 py-1
+                text-xs"
             >
               pending
             </p>
@@ -182,8 +181,8 @@ function BookingCard({ booking }) {
 function Pill({ children }) {
   return (
     <div
-      className="border-border_color bg-bg_color text-text_color/60 flex w-fit
-        flex-row items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+      className="border-border bg-bg text-fg-muted flex w-fit flex-row
+        items-center gap-1 rounded-lg border px-2 py-1 text-sm"
     >
       {children}
     </div>

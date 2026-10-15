@@ -114,7 +114,7 @@ function NavLayout() {
   }
 
   return (
-    <div className="bg-layer_bg flex h-dvh flex-col overflow-hidden">
+    <div className="bg-bg-raised flex h-dvh flex-col overflow-hidden">
       {isWindowSmall ? (
         <div className="sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center px-4 py-4">
@@ -151,8 +151,7 @@ function NavLayout() {
                   icon={Moon02Icon}
                   altIcon={Sun03Icon}
                   showAlt={isDarkTheme}
-                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                    hover:stroke-text_color"
+                  styles="size-5 stroke-fg hover:stroke-fg"
                 />
               </button>
             </div>
@@ -163,7 +162,7 @@ function NavLayout() {
         {!isWindowSmall && (
           <aside
             id="sidepanel"
-            className={`bg-layer_bg relative left-0 z-30 flex h-full w-60
+            className={`bg-bg-raised relative left-0 z-30 flex h-full w-60
             flex-col overflow-hidden transition-[width,translate] duration-300
             md:translate-x-0`}
             aria-label="Sidepanel"
@@ -190,14 +189,15 @@ function NavLayout() {
                     <Link
                       to={item.href}
                       activeProps={{
-                        className: "bg-primary/20 *:text-primary! *:duration-0",
+                        className:
+                          "bg-primary-subtle *:text-fg-primary! *:duration-0",
                       }}
-                      className={`text-text_color hover:bg-primary/20 flex h-10
+                      className={`text-fg hover:bg-primary-subtle flex h-10
                       items-center rounded-lg px-2`}
                     >
                       <span
-                        className="shrink-0 text-gray-500 transition duration-75
-                          dark:text-gray-400"
+                        className="text-fg-muted shrink-0 transition
+                          duration-75"
                       >
                         {item.icon}
                       </span>
@@ -218,9 +218,9 @@ function NavLayout() {
               <Popover>
                 <PopoverTrigger>
                   <div
-                    className={`hover:bg-primary/20 flex flex-row items-center
-                    gap-2 rounded-lg p-2 transition-[padding,gap] duration-300
-                    hover:cursor-pointer`}
+                    className={`hover:bg-primary-subtle flex flex-row
+                    items-center gap-2 rounded-lg p-2 transition-[padding,gap]
+                    duration-300 hover:cursor-pointer`}
                   >
                     <Avatar
                       styles="size-10! text-sm! shrink-0"
@@ -236,7 +236,7 @@ function NavLayout() {
                 </PopoverTrigger>
                 <PopoverContent align="start">
                   <div
-                    className="*:hover:bg-primary/20 space-y-2 text-sm
+                    className="*:hover:bg-primary-subtle space-y-2 text-sm
                       *:cursor-pointer *:rounded-lg *:p-2"
                   >
                     <div>
@@ -261,8 +261,8 @@ function NavLayout() {
         >
           <div
             id="page-scroll-container"
-            className="bg-bg_color flex-1 scrollbar-gutter-stable
-              overflow-y-auto rounded-t-xl px-4 pt-4 pb-32 lg:pb-12"
+            className="bg-bg flex-1 scrollbar-gutter-stable overflow-y-auto
+              rounded-t-xl px-4 pt-4 pb-32 lg:pb-12"
           >
             <Outlet />
           </div>
@@ -270,8 +270,8 @@ function NavLayout() {
       </div>
       {isWindowSmall && (
         <nav
-          className="border-border_color bg-layer_bg fixed right-0 bottom-0
-            left-0 z-50 border-t"
+          className="border-border bg-bg-raised fixed right-0 bottom-0 left-0
+            z-50 border-t"
           style={{
             paddingBottom: "env(safe-area-inset-bottom)",
           }}
@@ -290,8 +290,8 @@ function NavLayout() {
             </MobileNavLink>
             <div className="relative flex w-9 justify-center">
               <button
-                className="bg-primary border-bg_color absolute -top-16 flex
-                  size-18 items-center justify-center rounded-full border-4"
+                className="bg-primary border-bg absolute -top-16 flex size-18
+                  items-center justify-center rounded-full border-4"
               >
                 <Icon icon={Search01Icon} styles="size-8" />
               </button>
@@ -320,7 +320,7 @@ function MobileNavLink({ children, from, to }) {
       from={from}
       to={to}
       activeProps={{
-        className: "bg-primary/20 *:text-primary!",
+        className: "bg-primary-subtle *:text-fg-primary!",
       }}
       className="flex justify-center rounded-lg"
     >

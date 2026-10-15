@@ -59,7 +59,7 @@ export default function ServiceCategorySection({
   }
 
   return (
-    <div className="border-border_color overflow-hidden rounded-lg">
+    <div className="border-border overflow-hidden rounded-lg">
       <DeleteModal
         itemName={category.name}
         open={isDeleteModalOpen}
@@ -88,8 +88,8 @@ export default function ServiceCategorySection({
             />
           )}
           <button
-            className="hover:bg-hvr_gray hover:*:stroke-text_color
-              cursor-pointer rounded-lg p-1"
+            className="hover:bg-hover hover:*:stroke-fg cursor-pointer
+              rounded-lg p-1"
             onClick={() => {
               localStorage.setItem(
                 `category_${category.id}_collapsed`,
@@ -101,8 +101,7 @@ export default function ServiceCategorySection({
             <Icon
               icon={ArrowLeft01Icon}
               styles={`${isCollapsed ? "-rotate-90" : "rotate-90"}
-                transition-transform duration-200 size-6 text-gray-400
-                dark:text-gray-500`}
+                transition-transform duration-200 size-6 text-fg-muted `}
             />
           </button>
         </div>
@@ -117,7 +116,7 @@ export default function ServiceCategorySection({
               children
             ) : (
               <div
-                className="bg-layer_bg border-text_color rounded-lg border
+                className="bg-bg-raised border-fg rounded-lg border
                   border-dashed py-18"
               >
                 <p className="text-center">
@@ -144,12 +143,12 @@ function CategoryOptions({
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="hover:bg-hvr_gray hover:*:stroke-text_color cursor-pointer
-            rounded-lg p-1"
+          className="hover:bg-hover hover:*:stroke-fg cursor-pointer rounded-lg
+            p-1"
         >
           <Icon
             icon={MoreVerticalIcon}
-            styles="size-6 rotate-90 text-gray-400 dark:text-gray-500"
+            styles="size-6 rotate-90 text-fg-muted"
           />
         </button>
       </PopoverTrigger>
@@ -161,7 +160,7 @@ function CategoryOptions({
           <PopoverClose asChild>
             <button
               onClick={onEdit}
-              className="hover:bg-hvr_gray cursor-pointer gap-4"
+              className="hover:bg-hover cursor-pointer gap-4"
             >
               <Icon icon={Edit03Icon} styles="size-6" />
               <p>Edit category</p>
@@ -174,7 +173,7 @@ function CategoryOptions({
               className={`${
                 category.sequence === categoryCount
                   ? "opacity-35"
-                  : "hover:bg-hvr_gray cursor-pointer"
+                  : "hover:bg-hover cursor-pointer"
                 } gap-4`}
             >
               <Icon
@@ -188,7 +187,7 @@ function CategoryOptions({
             <button
               disabled={category.sequence === 1}
               onClick={onMoveUp}
-              className={`${category.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}
+              className={`${category.sequence === 1 ? "opacity-35" : "hover:bg-hover cursor-pointer"}
                 gap-4`}
             >
               <Icon
@@ -201,13 +200,13 @@ function CategoryOptions({
           <PopoverClose asChild>
             <button
               onClick={onDelete}
-              className="hover:bg-hvr_gray cursor-pointer gap-4"
+              className="hover:bg-hover cursor-pointer gap-4"
             >
               <Icon
                 icon={Delete02Icon}
-                styles="size-6 ml-0.5 mb-0.5 text-red-600 dark:text-red-500"
+                styles="size-6 ml-0.5 mb-0.5 text-fg-danger"
               />
-              <p className="text-red-600 dark:text-red-500">Delete category</p>
+              <p className="text-fg-danger">Delete category</p>
             </button>
           </PopoverClose>
         </div>

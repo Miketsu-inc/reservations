@@ -51,7 +51,7 @@ export default function DaySelector({ days, selectedDate, onSelect }) {
         type="button"
         aria-label="Scroll to earlier days"
         onClick={() => scrollByPage(-1)}
-        className="border-border_color bg-layer_bg pointer-events-none absolute
+        className="border-border bg-bg-raised pointer-events-none absolute
           left-0 z-10 hidden size-10 -translate-x-1/4 items-center
           justify-center rounded-full border opacity-0 shadow-lg
           transition-opacity duration-200 group-hover:pointer-events-auto
@@ -81,7 +81,7 @@ export default function DaySelector({ days, selectedDate, onSelect }) {
         type="button"
         aria-label="Scroll to later days"
         onClick={() => scrollByPage(1)}
-        className="border-border_color bg-layer_bg pointer-events-none absolute
+        className="border-border bg-bg-raised pointer-events-none absolute
           right-0 z-10 hidden size-10 translate-x-1/4 items-center
           justify-center rounded-full border opacity-0 shadow-lg
           transition-opacity duration-200 group-hover:pointer-events-auto
@@ -117,10 +117,8 @@ function DayButton({ day, isSelected, isUnavailable, onClick, registerRef }) {
           isSelected
             ? "bg-primary border-primary text-white"
             : isUnavailable
-              ? `border-border_color text-text_color/50 hover:bg-bg_color
-                bg-gray-200/50 dark:bg-gray-200/5`
-              : `border-border_color bg-layer_bg text-text_color
-                hover:bg-bg_color`
+              ? "border-border text-fg-muted hover:bg-bg bg-hover"
+              : "border-border bg-bg-raised text-fg hover:bg-bg"
         }`}
     >
       <span className="text-xs font-medium uppercase opacity-70">

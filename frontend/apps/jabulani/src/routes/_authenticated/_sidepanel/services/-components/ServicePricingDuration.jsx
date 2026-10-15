@@ -36,11 +36,9 @@ export function ServicePricingDuration({ service, setService, onUpdate }) {
           }
         >
           <p
-            className={`border-input_border_color
-              peer-disabled:text-text_color/70
-              peer-disabled:border-input_border_color/60 rounded-r-lg border
-              px-4 py-2 peer-disabled:bg-gray-200/60
-              peer-disabled:dark:bg-gray-700/20`}
+            className={`border-border-strong peer-disabled:text-fg-muted
+              peer-disabled:border-border peer-disabled:bg-bg-sunken
+              rounded-r-lg border px-4 py-2`}
           >
             {service.price?.currency || "HUF"}
           </p>
@@ -48,10 +46,7 @@ export function ServicePricingDuration({ service, setService, onUpdate }) {
         <label className="flex w-auto flex-col">
           <div className="flex items-center gap-2 pb-1">
             <span className="text-sm">Price Note</span>
-            <Icon
-              icon={InformationCircleIcon}
-              styles="size-4 text-gray-500 dark:text-gray-400"
-            />
+            <Icon icon={InformationCircleIcon} styles="size-4 text-fg-muted" />
           </div>
           <Select
             value={service.price_type}

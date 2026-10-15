@@ -35,8 +35,8 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
   return (
     <button
       onClick={onClick}
-      className="border-input_border_color hover:bg-hvr_gray/20 flex w-full
-        items-center justify-between rounded-md border px-6 py-4 transition-all"
+      className="border-border-strong hover:bg-hover flex w-full items-center
+        justify-between rounded-md border px-6 py-4 transition-all"
     >
       {hasParticipants ? (
         <div className="flex items-center gap-6">
@@ -46,14 +46,14 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
                 key={participant.customer_id}
                 img={participant.avatar_url}
                 initials={participant.first_name[0] + participant.last_name[0]}
-                styles="size-12! rounded-full! border-2 border-layer_bg"
+                styles="size-12! rounded-full! border-2 border-bg-raised"
               />
             ))}
             {remainingParticipants > 0 && (
               <div
-                className="border-layer_bg flex size-12 items-center
-                  justify-center rounded-full border-2 bg-gray-300 text-sm
-                  font-semibold text-white dark:bg-gray-600"
+                className="border-bg-raised bg-bg-inactive flex size-12
+                  items-center justify-center rounded-full border-2 text-sm
+                  font-semibold text-white"
               >
                 +{remainingParticipants}
               </div>
@@ -61,13 +61,13 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
           </div>
 
           <div className="flex flex-col items-start gap-0.5">
-            <span className="text-text_color font-medium">
+            <span className="text-fg font-medium">
               {participants.length} / {maxParticipants} added
             </span>
           </div>
         </div>
       ) : (
-        <span className="text-text_color text-left">
+        <span className="text-fg text-left">
           Add customers to this group event
         </span>
       )}
@@ -75,15 +75,14 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
       {hasParticipants ? (
         <Icon
           icon={ArrowLeft01Icon}
-          styles="size-6 rotate-180 stroke-current text-gray-500
-            dark:text-gray-400"
+          styles="size-6 rotate-180 stroke-current text-fg-muted"
         />
       ) : (
         <div
-          className="bg-primary/20 flex size-12 shrink-0 items-center
+          className="bg-primary-subtle flex size-12 shrink-0 items-center
             justify-center rounded-full"
         >
-          <Icon icon={PlusSignIcon} styles="size-6 text-primary" />
+          <Icon icon={PlusSignIcon} styles="size-6 text-fg-primary" />
         </div>
       )}
     </button>
@@ -92,10 +91,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
 
 export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
   return (
-    <Card
-      styles="flex justify-start border-input_border_color relative
-        shadow-none!"
-    >
+    <Card styles="flex justify-start border-border-strong relative shadow-none!">
       <div className="flex gap-4">
         <Avatar
           styles="size-14! text-[16px]! shrink-0 rounded-full!"
@@ -112,19 +108,15 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
           </div>
           <div className="flex w-full flex-col items-start gap-2">
             {customer.email && (
-              <div
-                className="text-text_color/70 flex items-center gap-2 text-sm"
-              >
-                <Icon icon={Mail01Icon} styles="size-4 text-text_color/70" />
+              <div className="text-fg-muted flex items-center gap-2 text-sm">
+                <Icon icon={Mail01Icon} styles="size-4 text-fg-muted" />
 
                 <span className="truncate">{customer.email}</span>
               </div>
             )}
             {customer.phone_number && (
-              <div
-                className="text-text_color/70 flex items-center gap-2 text-sm"
-              >
-                <Icon icon={Call02Icon} styles="size-3.5 text-text_color/70" />
+              <div className="text-fg-muted flex items-center gap-2 text-sm">
+                <Icon icon={Call02Icon} styles="size-3.5 text-fg-muted" />
 
                 <span>{customer.phone_number}</span>
               </div>
@@ -134,26 +126,19 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
       </div>
       {customer.customer_note && (
         <button
-          className="ring-layer_bg absolute top-4 left-14 inline-flex
-            items-center gap-2 rounded-full bg-yellow-300 p-1 text-xs ring-2
-            dark:bg-yellow-700"
+          className="ring-bg-raised bg-warning absolute top-4 left-14
+            inline-flex items-center gap-2 rounded-full p-1 text-xs ring-2"
         >
-          <Icon
-            icon={Message01Icon}
-            styles="size-3 fill-yellow-700 dark:fill-yellow-300"
-          />
+          <Icon icon={Message01Icon} styles="size-3 fill-warning" />
         </button>
       )}
       <Popover>
         <PopoverTrigger asChild>
           <button
-            className="hover:bg-hvr_gray hover:*:stroke-text_color absolute
-              top-4 right-3 h-fit cursor-pointer rounded-lg p-1"
+            className="hover:bg-hover hover:*:stroke-fg absolute top-4 right-3
+              h-fit cursor-pointer rounded-lg p-1"
           >
-            <Icon
-              icon={MoreVerticalIcon}
-              styles="size-6 text-gray-600 dark:text-gray-500"
-            />
+            <Icon icon={MoreVerticalIcon} styles="size-6 text-fg-muted" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left" styles="w-auto">
@@ -163,24 +148,23 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
           >
             <PopoverClose asChild>
               <button
-                className="hover:bg-hvr_gray cursor-pointer gap-3"
+                className="hover:bg-hover cursor-pointer gap-3"
                 onClick={onView}
               >
-                <Icon icon={User03Icon} styles="size-5 ml-1 text-text_color" />
+                <Icon icon={User03Icon} styles="size-5 ml-1 text-fg" />
                 View Customer
               </button>
             </PopoverClose>
             {customer.customer_note && (
               <PopoverClose asChild>
                 <button
-                  className="hover:bg-hvr_gray cursor-pointer gap-3
-                    text-yellow-600 dark:text-yellow-500"
+                  className="hover:bg-hover text-fg-warning cursor-pointer
+                    gap-3"
                   onClick={onView}
                 >
                   <Icon
                     icon={Message01Icon}
-                    styles="size-4 ml-1 mt-0.5 fill-yellow-600
-                      dark:fill-yellow-500"
+                    styles="size-4 ml-1 mt-0.5 fill-warning"
                   />
                   View Note
                 </button>
@@ -189,13 +173,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
             {customer.phone_number && (
               <PopoverClose nativeButton={false} asChild>
                 <a
-                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  className="hover:bg-hover cursor-pointer gap-3"
                   href={`tel:${customer.phone_number}`}
                 >
-                  <Icon
-                    icon={Call02Icon}
-                    styles="size-4 ml-1 text-text_color"
-                  />
+                  <Icon icon={Call02Icon} styles="size-4 ml-1 text-fg" />
                   Call customer
                 </a>
               </PopoverClose>
@@ -203,13 +184,10 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
             {customer.email && (
               <PopoverClose nativeButton={false} asChild>
                 <a
-                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  className="hover:bg-hover cursor-pointer gap-3"
                   href={`mailto:${customer.email}`}
                 >
-                  <Icon
-                    icon={Mail01Icon}
-                    styles="size-4 ml-1 text-text_color"
-                  />
+                  <Icon icon={Mail01Icon} styles="size-4 ml-1 text-fg" />
                   Email customer
                 </a>
               </PopoverClose>
@@ -218,15 +196,13 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
               <PopoverClose asChild>
                 <button
                   onClick={onRemove}
-                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  className="hover:bg-hover cursor-pointer gap-3"
                 >
                   <Icon
                     icon={Delete02Icon}
-                    styles="size-5 mb-0.5 text-red-600 dark:text-red-500"
+                    styles="size-5 mb-0.5 text-fg-danger"
                   />
-                  <p className="text-red-600 dark:text-red-500">
-                    Remove customer
-                  </p>
+                  <p className="text-fg-danger">Remove customer</p>
                 </button>
               </PopoverClose>
             )}
@@ -244,9 +220,9 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`hover:bg-hvr_gray/20 border-input_border_color relative flex
-        w-full cursor-pointer items-center justify-between overflow-hidden
-        rounded-md border border-l-0 px-7 py-4 disabled:pointer-events-none
+      className={`hover:bg-hover border-border-strong relative flex w-full
+        cursor-pointer items-center justify-between overflow-hidden rounded-md
+        border border-l-0 px-7 py-4 disabled:pointer-events-none
         disabled:hover:bg-transparent ${styles}`}
     >
       <div
@@ -255,27 +231,18 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
       />
 
       <div className="flex flex-col items-start gap-2">
-        <span className="text-text_color text-left text-lg font-semibold">
+        <span className="text-fg text-left text-lg font-semibold">
           {service.name}
         </span>
 
-        <div
-          className="flex items-center gap-5 text-sm text-gray-500
-            dark:text-gray-400"
-        >
+        <div className="text-fg-muted flex items-center gap-5 text-sm">
           <div className="flex items-center gap-1.5 font-medium">
-            <Icon
-              icon={Clock01Icon}
-              styles="size-4 text-gray-500 dark:text-gray-400"
-            />
+            <Icon icon={Clock01Icon} styles="size-4 text-fg-muted" />
             <span>{formatDuration(service.duration)}</span>
           </div>
 
           {isGroup && (
-            <div
-              className="flex items-center gap-1.5 font-medium text-gray-500
-                dark:text-gray-400"
-            >
+            <div className="text-fg-muted flex items-center gap-1.5 font-medium">
               <Icon icon={UserGroupIcon} styles="size-5" />
               <span>Max {service.max_participants}</span>
             </div>
@@ -284,7 +251,7 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
       </div>
 
       <div className="flex items-center">
-        <span className="text-text_color text-lg font-medium">
+        <span className="text-fg text-lg font-medium">
           {getDisplayPrice(service.price, service.price_type)}
         </span>
       </div>
@@ -294,22 +261,19 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
 
 export function AddCustomerCard({ onClick }) {
   return (
-    <Card
-      styles="w-full hover:bg-gray-200/30 dark:hover:bg-gray-700/10
-        border-input_border_color! shadow-none!"
-    >
+    <Card styles="w-full hover:bg-hover border-border-strong! shadow-none!">
       <button
         className="flex w-full items-center justify-between px-2"
         onClick={onClick}
       >
         <div className="flex flex-col items-start gap-1">
-          <span className="text-text_color font-medium">Add Client</span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-fg font-medium">Add Client</span>
+          <span className="text-fg-muted text-sm">
             Leave empty for walk-ins
           </span>
         </div>
         <div
-          className="bg-primary/20 text-primary flex size-12 items-center
+          className="bg-primary-subtle text-fg-primary flex size-12 items-center
             justify-center rounded-full"
         >
           <Icon icon={PlusSignIcon} styles="size-6" />
@@ -339,17 +303,17 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="border-input_border_color flex w-full cursor-pointer
+      className="border-border-strong hover:bg-hover flex w-full cursor-pointer
         items-center justify-between rounded-md border p-3.5 shadow-none!
-        transition-colors hover:bg-gray-200/30 dark:hover:bg-gray-700/10"
+        transition-colors"
     >
       <div className="flex flex-col items-start gap-1">
         <div className="flex items-center gap-2">
           <Icon
             icon={ArrowReloadHorizontalIcon}
-            styles="size-5 text-text_color/80 mt-0.5"
+            styles="size-5 text-fg mt-0.5"
           />
-          <span className="text-text_color">
+          <span className="text-fg">
             {recurData.isRecurring
               ? `Repeats ${getFrequencyText()}`
               : "Does not repeat"}
@@ -358,7 +322,7 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
 
         {recurData.isRecurring && (
           <>
-            <div className="text-left text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-fg-muted text-left text-sm">
               {timeStringFromDate(booking.start)} -{" "}
               {timeStringFromDate(booking.end)}
               {" • "}
@@ -374,8 +338,8 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
                 {recurData.days.map((day) => (
                   <span
                     key={day}
-                    className="bg-primary/10 text-primary rounded px-2 py-0.5
-                      text-xs font-medium"
+                    className="bg-primary-subtle text-fg-primary rounded px-2
+                      py-0.5 text-xs font-medium"
                   >
                     {day}
                   </span>
@@ -388,8 +352,7 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
 
       <Icon
         icon={ArrowLeft01Icon}
-        styles="size-6 rotate-180 stroke-current text-gray-500
-          dark:text-gray-400"
+        styles="size-6 rotate-180 stroke-current text-fg-muted"
       />
     </button>
   );

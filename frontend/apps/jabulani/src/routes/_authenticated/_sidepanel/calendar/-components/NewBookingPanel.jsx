@@ -403,13 +403,12 @@ export default function NewBookingPanel({
                       onSelect={(date) => updateBookingData({ date: date })}
                     />
                     <input
-                      className="bg-layer_bg border-input_border_color
-                        focus:border-primary focus:ring-primary/30
-                        disabled:text-text_color/70
-                        disabled:border-input_border_color/60 w-32 resize-none
-                        rounded-lg border px-2 py-1.5 placeholder-stone-500
-                        outline-hidden transition-[border-color,box-shadow]
-                        duration-150 ease-in-out focus:ring-4 dark:scheme-dark"
+                      className="bg-bg-raised border-border-strong
+                        focus:border-primary focus:ring-primary-focus
+                        disabled:text-fg-muted disabled:border-border w-32
+                        resize-none rounded-lg border px-2 py-1.5 outline-hidden
+                        transition-[border-color,box-shadow] duration-150
+                        ease-in-out focus:ring-4 dark:scheme-dark"
                       type="time"
                       value={bookingData.time}
                       onChange={(e) => {
@@ -451,7 +450,7 @@ export default function NewBookingPanel({
                 </div>
               </div>
               <div
-                className="border-border_color bg-layer_bg items center fixed
+                className="border-border bg-bg-raised items center fixed
                   bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
               >
                 <Button

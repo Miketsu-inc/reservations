@@ -64,22 +64,22 @@ export default function LowStockProductsAlert({ merchantId, route }) {
 
   function getStockSeverity(stock, fill_ratio) {
     const percentage = fill_ratio * 100;
-    if (stock === 0) return "text-red-600";
-    if (percentage < 5) return "text-red-500";
-    if (percentage <= 10) return "text-orange-500";
-    if (percentage <= 20) return "text-amber-500";
-    if (percentage <= 35) return "text-yellow-500";
-    return "text-amber-400";
+    if (stock === 0) return "text-fg-danger";
+    if (percentage < 5) return "text-fg-danger";
+    if (percentage <= 10) return "text-fg-warning";
+    if (percentage <= 20) return "text-fg-warning";
+    if (percentage <= 35) return "text-fg-warning";
+    return "text-fg-warning";
   }
 
   function getProgressColor(stock, fill_ratio) {
     const percentage = fill_ratio * 100;
-    if (stock === 0) return "bg-red-600";
-    if (percentage < 5) return "bg-red-500";
-    if (percentage <= 10) return "bg-orange-500";
-    if (percentage <= 20) return "bg-amber-500";
-    if (percentage <= 35) return "bg-yellow-500";
-    return "bg-amber-400";
+    if (stock === 0) return "bg-danger";
+    if (percentage < 5) return "bg-danger";
+    if (percentage <= 10) return "bg-warning";
+    if (percentage <= 20) return "bg-warning";
+    if (percentage <= 35) return "bg-warning";
+    return "bg-warning";
   }
 
   function getPercentLabel(stock, fill_ratio) {
@@ -96,26 +96,24 @@ export default function LowStockProductsAlert({ merchantId, route }) {
         className={`flex flex-col justify-center ${hasLowStock ? "" : "gap-12"}`}
       >
         <div
-          className="border-border_color flex items-center justify-between
-            border-b p-4"
+          className="border-border flex items-center justify-between border-b
+            p-4"
         >
           <div className="flex items-center">
             <div
               className={`mr-3 rounded-md p-2 ${
-                hasLowStock
-                  ? "bg-amber-500/20 dark:bg-amber-500/20"
-                  : "bg-green-100 dark:bg-green-500/20"
-                }`}
+                hasLowStock ? "bg-warning-subtle" : "bg-success-subtle"
+              }`}
             >
               {hasLowStock ? (
                 <Icon
                   icon={Alert02Icon}
-                  styles="size-6 shrink-0 text-amber-600 dark:text-amber-400"
+                  styles="size-6 shrink-0 text-fg-warning"
                 />
               ) : (
                 <Icon
                   icon={ShoppingBag02Icon}
-                  styles="size-6 shrink-0 text-green-600"
+                  styles="size-6 shrink-0 text-fg-success"
                 />
               )}
             </div>
@@ -124,7 +122,7 @@ export default function LowStockProductsAlert({ merchantId, route }) {
                 Low Stock {hasLowStock ? `(${totalLowStock})` : ""}
               </h3>
               {hasLowStock && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-fg-muted text-xs">
                   Products about to run out
                 </p>
               )}
@@ -134,13 +132,13 @@ export default function LowStockProductsAlert({ merchantId, route }) {
           <Link
             from={route.fullPath}
             to="/products"
-            className="text-text_color/70 hover:bg-hvr_gray flex items-center
+            className="text-fg-muted hover:bg-hover flex items-center
               justify-end gap-1 rounded-lg p-0 text-sm sm:p-2"
           >
             <span className="hidden text-right sm:block">Manage Products</span>
             <Icon
               icon={ArrowLeft01Icon}
-              styles="stroke-text_color/70 size-5 shrink-0 rotate-180"
+              styles="stroke-fg-muted size-5 shrink-0 rotate-180"
             />
           </Link>
         </div>
@@ -177,9 +175,9 @@ export default function LowStockProductsAlert({ merchantId, route }) {
                         </span>
                       </div>
                       <div
-                        className="flex items-center justify-center gap-2
-                          text-xs font-medium whitespace-nowrap text-gray-500
-                          dark:text-gray-400"
+                        className="text-fg-muted flex items-center
+                          justify-center gap-2 text-xs font-medium
+                          whitespace-nowrap"
                       >
                         <span>
                           {current} / {max}
@@ -189,8 +187,7 @@ export default function LowStockProductsAlert({ merchantId, route }) {
                     </div>
                     <div className="flex items-center">
                       <div
-                        className="dark:bg-bg_color mr-2 h-1.5 w-full
-                          rounded-full bg-gray-200"
+                        className="bg-bg-sunken mr-2 h-1.5 w-full rounded-full"
                       >
                         <div
                           className={`h-1.5 rounded-full ${getProgressColor(
@@ -219,16 +216,16 @@ export default function LowStockProductsAlert({ merchantId, route }) {
         ) : (
           <div className="flex flex-col items-center justify-center">
             <div
-              className="mb-4 flex w-min items-center justify-center
-                rounded-full bg-green-100 p-2 dark:bg-green-500/20"
+              className="bg-success-subtle mb-4 flex w-min items-center
+                justify-center rounded-full p-2"
             >
-              <Icon icon={Tick02Icon} styles="size-12 text-green-600" />
+              <Icon icon={Tick02Icon} styles="size-12 text-fg-success" />
             </div>
 
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-fg-muted text-sm">
               All products are well-stocked
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
+            <p className="text-fg-muted text-xs">
               No items require immediate attention
             </p>
           </div>

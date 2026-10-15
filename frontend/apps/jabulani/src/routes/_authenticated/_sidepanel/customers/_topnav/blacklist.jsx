@@ -162,13 +162,10 @@ function BlacklistPage() {
 
 function NoRowsComponent() {
   return (
-    <div
-      className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
-        dark:text-gray-300"
-    >
+    <div className="text-fg-muted mb-16 flex flex-col items-center gap-4 px-2">
       <Icon icon={User03Icon} styles="size-16" />
       <div className="flex flex-col items-center gap-2">
-        <p className="text-text_color text-base font-medium">
+        <p className="text-fg text-base font-medium">
           No blacklisted customers
         </p>
         <p className="text-sm md:w-2/3">

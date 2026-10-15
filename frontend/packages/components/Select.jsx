@@ -116,7 +116,7 @@ export default function Select({
             {required !== false && (
               <span
                 aria-hidden="true"
-                className="text-base leading-none text-red-500"
+                className="text-fg-danger text-base leading-none"
               >
                 *
               </span>
@@ -125,18 +125,17 @@ export default function Select({
         )}
         <PopoverTrigger asChild>
           <button
-            className={`${styles} border-input_border_color
-              disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
-              border py-2 pr-2 pl-3 text-left transition-opacity
-              disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20`}
+            className={`${styles} border-border-strong disabled:border-border
+              disabled:bg-bg-sunken w-full min-w-fit rounded-lg border py-2 pr-2
+              pl-3 text-left transition-opacity`}
             type="button"
             ref={containerRef}
             disabled={disabled}
           >
             <div className="flex items-center justify-between gap-2">
               <span
-                className={`${selectedOption ? "text-text_color" : "text-gray-500"}
-                  min-h-6 ${disabled ? "text-text_color/70" : ""}`}
+                className={`${selectedOption ? "text-fg" : "text-fg-muted"}
+                  min-h-6 ${disabled ? "text-fg-muted" : ""}`}
               >
                 {!selectedOption ? (
                   placeholder
@@ -153,8 +152,8 @@ export default function Select({
               </span>
               <Icon
                 icon={ArrowLeft01Icon}
-                styles={`text-gray-700 dark:text-gray-300 transition-transform
-                  -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} size-6`}
+                styles={`text-fg-muted transition-transform -rotate-90 shrink-0
+                  ${isOpen ? "rotate-90" : ""} size-6`}
               />
             </div>
           </button>
@@ -185,10 +184,7 @@ export default function Select({
           }}
         >
           {options.length === 0 ? (
-            <li
-              className="px-4 py-6 text-center text-gray-500 select-none
-                dark:text-gray-400"
-            >
+            <li className="text-fg-muted px-4 py-6 text-center select-none">
               {emptyText || "No results found"}
             </li>
           ) : (
@@ -225,9 +221,8 @@ const SelectItem = memo(
           onSelect(option);
           handleClose();
         }}
-        className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-          dark:text-text_color cursor-pointer rounded-sm py-1 pr-0.5 pl-2
-          text-gray-700 select-none`}
+        className={`${isHighlighted ? "bg-hover" : isUsingKeyboard ? "" : "hover:bg-hover"}
+          text-fg-muted cursor-pointer rounded-sm py-1 pr-0.5 pl-2 select-none`}
         role="option"
         aria-selected={isSelected}
       >
@@ -241,7 +236,7 @@ const SelectItem = memo(
             <span className="truncate">{option.label}</span>
           </div>
           {isSelected && (
-            <Icon icon={Tick02Icon} styles="size-6 text-text_color shrink-0" />
+            <Icon icon={Tick02Icon} styles="size-6 text-fg shrink-0" />
           )}
         </div>
       </li>

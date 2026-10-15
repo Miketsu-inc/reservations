@@ -66,7 +66,7 @@ export default function ServiceCard({
         style={{
           backgroundColor: service.is_active ? service.color : undefined,
         }}
-        className="w-2 shrink-0 rounded-l-lg bg-gray-400 dark:bg-gray-500"
+        className="bg-fg-muted w-2 shrink-0 rounded-l-lg"
       ></div>
       <div
         className={`${service.is_active ? "dark:opacity-10" : ""} absolute
@@ -75,9 +75,7 @@ export default function ServiceCard({
           background: `linear-gradient(90deg, ${service.color} 0%, ${service.color}30 30%, transparent 70%)`,
         }}
       />
-      <div
-        className="border-border_color bg-layer_bg w-full rounded-r-lg border"
-      >
+      <div className="border-border bg-bg-raised w-full rounded-r-lg border">
         <div className="relative z-5 flex flex-row items-center p-4">
           <Link
             to={`/services/edit/${service.id}`}
@@ -88,16 +86,16 @@ export default function ServiceCard({
               <div className="flex flex-col justify-center gap-2">
                 <p className="truncate font-semibold">{service.name}</p>
                 <div
-                  className="text-text_color/80 flex min-h-8 flex-row
-                    items-center gap-2 text-sm"
+                  className="text-fg flex min-h-8 flex-row items-center gap-2
+                    text-sm"
                 >
                   <Icon icon={Clock01Icon} styles="size-4" />
                   <p>{formatDuration(service.total_duration)}</p>
                   {service.booking_type !== "appointment" && (
                     <div
-                      className="border-border_color bg-bg_color
-                        text-text_color/60 ml-2 flex w-fit flex-row items-center
-                        gap-1 rounded-lg border px-2 py-1 text-sm"
+                      className="border-border bg-bg text-fg-muted ml-2 flex
+                        w-fit flex-row items-center gap-1 rounded-lg border px-2
+                        py-1 text-sm"
                     >
                       <Icon icon={UserGroupIcon} styles="size-4" />
                       <p>Group</p>
@@ -109,14 +107,11 @@ export default function ServiceCard({
           </Link>
           <div className="flex flex-row items-center gap-2 text-base">
             <Link
-              className="hover:bg-hvr_gray hidden cursor-pointer rounded-lg p-2
+              className="hover:bg-hover hidden cursor-pointer rounded-lg p-2
                 lg:block"
               to={`/services/edit/${service.id}`}
             >
-              <Icon
-                icon={Edit03Icon}
-                styles="size-6 text-text_color/40 dark:text-text_color/50"
-              />
+              <Icon icon={Edit03Icon} styles="size-6 text-fg-muted" />
             </Link>
             <ServiceOptions
               service={service}
@@ -145,12 +140,12 @@ function ServiceOptions({
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
-            cursor-pointer rounded-lg p-1"
+          className="hover:bg-hover hover:*:stroke-fg h-fit cursor-pointer
+            rounded-lg p-1"
         >
           <Icon
             icon={MoreVerticalIcon}
-            styles="size-8 text-text_color/40 dark:text-text_color/50 rotate-90"
+            styles="size-8 text-fg-muted rotate-90"
           />
         </button>
       </PopoverTrigger>
@@ -173,7 +168,7 @@ function ServiceOptions({
               className={`${
                 service.sequence === serviceCount
                   ? "opacity-35"
-                  : "hover:bg-hvr_gray cursor-pointer"
+                  : "hover:bg-hover cursor-pointer"
                 }`}
             >
               <Icon icon={ArrowLeft02Icon} styles="size-6 -rotate-90 ml-1.5" />
@@ -184,7 +179,7 @@ function ServiceOptions({
             <button
               disabled={service.sequence === 1}
               onClick={onMoveUp}
-              className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hvr_gray cursor-pointer"}`}
+              className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hover cursor-pointer"}`}
             >
               <Icon icon={ArrowLeft02Icon} styles="size-6 rotate-90 ml-1.5" />
               <p className="ml-0.5">Move up</p>
@@ -193,8 +188,7 @@ function ServiceOptions({
           <PopoverClose asChild>
             <button
               onClick={onDelete}
-              className="hover:bg-hvr_gray cursor-pointer text-red-600
-                dark:text-red-500"
+              className="hover:bg-hover text-fg-danger cursor-pointer"
             >
               <Icon icon={Delete02Icon} styles="size-6 ml-1.5 mb-0.5" />
               <p className="ml-0.5">Delete</p>

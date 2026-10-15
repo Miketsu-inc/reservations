@@ -29,7 +29,7 @@ function RouteComponent() {
             href={`${JABULANI_URL}/api/v1/merchants/${merchantId}/integrations/google/calendar`}
           >
             <Button styles="py-2 px-4" buttonText="Sync" onClick={() => {}}>
-              <GoogleIcon styles="size-5 fill-text_color mr-3" />
+              <GoogleIcon styles="size-5 fill-fg mr-3" />
             </Button>
           </a>
         </Card>

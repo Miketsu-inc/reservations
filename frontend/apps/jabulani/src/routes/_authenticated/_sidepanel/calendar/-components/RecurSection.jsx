@@ -122,7 +122,7 @@ export default function RecurSection({ booking, recurringData, onSave }) {
               }`}
           >
             <div className="flex flex-col gap-3">
-              <p className="text-text_color/70 px-1">
+              <p className="text-fg-muted px-1">
                 {`Repeats ${recurFreqText(
                   booking.start,
                   recurData?.frequency
@@ -148,9 +148,10 @@ export default function RecurSection({ booking, recurringData, onSave }) {
                             onClick={() => toggleDay(value)}
                             className={`${
                               isSelected
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border_color hover:border-gray-400"
-                            } text-text_color/70 size-10 flex-1 cursor-pointer
+                                ? `border-primary bg-primary-subtle
+                                  text-fg-primary`
+                                : "border-border hover:border-border-strong"
+                            } text-fg-muted size-10 flex-1 cursor-pointer
                             rounded-full border-2 p-2 text-center text-sm
                             font-medium transition-all duration-200 md:size-12
                             md:text-base`}
@@ -198,7 +199,7 @@ export default function RecurSection({ booking, recurringData, onSave }) {
           </div>
         </div>
         <div
-          className="border-border_color bg-layer_bg items center fixed right-0
+          className="border-border bg-bg-raised items center fixed right-0
             bottom-0 left-0 flex w-full border-t px-6 py-4"
         >
           <Button

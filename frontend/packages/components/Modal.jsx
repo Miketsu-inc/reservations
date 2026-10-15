@@ -30,10 +30,9 @@ export function ModalContent({ styles = "", ...props }) {
           p-4"
       >
         <DialogPrimitive.Popup
-          className={`${styles} bg-layer_bg text-text_color
-            dark:border-border_color w-full rounded-lg shadow-lg shadow-gray-500
+          className={`${styles} bg-bg-raised text-fg w-full rounded-lg shadow-lg
             transition-all focus:outline-none sm:w-fit dark:border
-            dark:shadow-md dark:shadow-gray-950`}
+            dark:shadow-md`}
           {...props}
         />
       </DialogPrimitive.Viewport>

@@ -9,17 +9,13 @@ export default function StatisticsChangeIndicator({ styles, percent }) {
       <Icon
         icon={TradeUpIcon}
         styles={`size-5 ${
-          isNegative
-            ? "text-red-700 dark:text-red-500 rotate-x-180"
-            : "text-green-700 dark:text-green-500"
-          }`}
+          isNegative ? "text-fg-danger rotate-x-180" : "text-fg-success"
+        }`}
       />
       <span
         className={`${styles} font-semibold text-nowrap ${
-          isNegative
-            ? "text-red-700 dark:text-red-500"
-            : "text-green-700 dark:text-green-500"
-          }`}
+          isNegative ? "text-fg-danger" : "text-fg-success"
+        }`}
       >
         {`${!isNegative ? "+" : ""}${percent} %`}
       </span>

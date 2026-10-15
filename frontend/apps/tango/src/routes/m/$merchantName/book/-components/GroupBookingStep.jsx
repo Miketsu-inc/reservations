@@ -196,9 +196,9 @@ export default function GroupBookingStep({
           <div
             className="flex flex-col items-center gap-2 px-4 py-16 text-center"
           >
-            <Icon icon={UserGroupIcon} styles="size-12 text-gray-400" />
+            <Icon icon={UserGroupIcon} styles="size-12 text-fg-muted" />
             <p className="text-lg font-medium">No upcoming sessions</p>
-            <p className="max-w-sm text-sm text-gray-500">
+            <p className="text-fg-muted max-w-sm text-sm">
               There are currently no scheduled sessions available for this
               service. Please check back later or choose another service.
             </p>
@@ -220,11 +220,11 @@ export default function GroupBookingStep({
                   >
                     <span
                       className={`text-2xl leading-none font-bold
-                        ${groupHasSelected ? "text-primary" : "text-text_color"}`}
+                        ${groupHasSelected ? "text-fg-primary" : "text-fg"}`}
                     >
                       {group.dayNum}
                     </span>
-                    <span className="text-text_color/60 text-sm font-medium">
+                    <span className="text-fg-muted text-sm font-medium">
                       {group.weekdayShort}, {group.monthShort}
                     </span>
                   </div>
@@ -236,14 +236,14 @@ export default function GroupBookingStep({
                     <span
                       className={`block text-3xl leading-none font-bold
                         tracking-tight transition-colors ${
-                          groupHasSelected ? "text-primary" : "text-text_color"
+                          groupHasSelected ? "text-fg-primary" : "text-fg"
                         }`}
                     >
                       {group.dayNum}
                     </span>
                     <span
-                      className="text-text_color/60 mt-1 block text-sm
-                        leading-tight font-medium"
+                      className="text-fg-muted mt-1 block text-sm leading-tight
+                        font-medium"
                     >
                       {group.weekdayShort}, {group.monthShort}
                     </span>
@@ -316,23 +316,21 @@ function SessionCard({ session, isSelected, onSelect }) {
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(session)}
-      className={`bg-layer_bg border-border_color dark:hover:bg-layer_bg/80 flex
-        w-full cursor-pointer flex-col justify-between gap-3.5 rounded-md border
-        p-5 hover:bg-gray-100/40 hover:shadow-sm ${
-          isSelected
-            ? " border-primary "
-            : "hover:border-gray-400 dark:hover:border-zinc-700"
+      className={`bg-bg-raised border-border hover:bg-hover flex w-full
+        cursor-pointer flex-col justify-between gap-3.5 rounded-md border p-5
+        hover:shadow-sm ${
+          isSelected ? " border-primary " : "hover:border-border-strong"
         }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <span className="text-text_color text-xl font-semibold">
+          <span className="text-fg text-xl font-semibold">
             {session.time} - {session.end_time}
           </span>
 
           <span
-            className="text-text_color/70 rounded-full bg-gray-200/80 px-3 py-1
-              text-xs font-semibold dark:bg-gray-400/25"
+            className="text-fg-muted bg-hover rounded-full px-3 py-1 text-xs
+              font-semibold"
           >
             {spotsLeft} spots left
           </span>
@@ -343,7 +341,7 @@ function SessionCard({ session, isSelected, onSelect }) {
             rounded-full border transition-all ${
               isSelected
                 ? "border-primary bg-primary text-white shadow-xs"
-                : "border-gray-300 dark:border-gray-600"
+                : "border-border"
             }`}
         >
           {isSelected && <Icon icon={Tick02Icon} styles="size-4.5" />}
@@ -356,20 +354,18 @@ function SessionCard({ session, isSelected, onSelect }) {
             styles="size-7! text-[10px] shrink-0 rounded-full!"
             initials={`${session.employee_first_name[0]}${session.employee_last_name[0]}`}
           />
-          <span className="text-text_color truncate text-sm">
+          <span className="text-fg truncate text-sm">
             {session.employee_first_name} {session.employee_last_name}
           </span>
-          <span className="text-text_color/30 text-xs">•</span>
+          <span className="text-fg-muted text-xs">•</span>
 
-          <div
-            className="text-text_color flex shrink-0 items-center gap-1 text-sm"
-          >
+          <div className="text-fg flex shrink-0 items-center gap-1 text-sm">
             <Icon icon={Clock01Icon} styles="size-4" />
             <span>{formatDuration(durationMinutes)}</span>
           </div>
         </div>
 
-        <span className="text-text_color shrink-0 font-medium">
+        <span className="text-fg shrink-0 font-medium">
           {getDisplayPrice(session.price, session.price_type)}
         </span>
       </div>

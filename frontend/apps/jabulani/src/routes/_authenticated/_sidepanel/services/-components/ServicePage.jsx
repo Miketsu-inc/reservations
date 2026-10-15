@@ -167,9 +167,9 @@ export default function ServicePage({
                 {serviceData.id ? "Edit service" : "New service"}
               </p>
               <div
-                className="bg-layer_bg border-t-border_color fixed bottom-0
-                  left-0 z-30 w-full border-t p-4 md:static md:w-auto
-                  md:border-t-0 md:bg-transparent md:p-0"
+                className="bg-bg-raised border-t-border fixed bottom-0 left-0
+                  z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
+                  md:bg-transparent md:p-0"
               >
                 <Button
                   type="button"
@@ -230,12 +230,12 @@ export default function ServicePage({
                           <p className="font-medium">
                             Advanced team member settings
                           </p>
-                          <p className="text-text_color/70 text-sm">
+                          <p className="text-fg-muted text-sm">
                             Manage assignments and override service defaults.
                           </p>
                           <Link
                             to={`/services/team-member-settings/${service.id}`}
-                            className="text-primary inline-block py-2 text-sm
+                            className="text-fg-primary inline-block py-2 text-sm
                               hover:underline"
                           >
                             Advanced settings
@@ -265,7 +265,7 @@ export default function ServicePage({
                     <Button
                       type="button"
                       styles="py-4 mb-2 shadow-none bg-transparent
-                        hover:bg-transparent! text-red-500!"
+                        hover:bg-transparent! text-fg-danger!"
                       buttonText="Delete service"
                       onClick={() => setShowDeleteModal(true)}
                     ></Button>

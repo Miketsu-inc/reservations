@@ -8,9 +8,9 @@ export default function CheckBox({ checked, styles, onChange, ...props }) {
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className={`${styles} checked:border-primary checked:bg-primary size-5
-          cursor-pointer appearance-none rounded border-2 border-gray-400
-          transition-colors dark:border-gray-500`}
+        className={`${styles} checked:border-primary checked:bg-primary
+          border-border-strong size-5 cursor-pointer appearance-none rounded
+          border-2 transition-colors`}
         {...props}
       />
       {checked && (

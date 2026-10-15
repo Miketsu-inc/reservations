@@ -49,19 +49,14 @@ export default function BookingsList({
         </div>
       ) : (
         <div
-          className="bg-layer_bg flex flex-col items-center justify-center
+          className="bg-bg-raised flex flex-col items-center justify-center
             rounded-lg p-4 text-center shadow-sm"
         >
-          <div className="mb-3 rounded-full bg-gray-300 p-3 dark:bg-gray-700">
-            <Icon
-              icon={Calendar02Icon}
-              styles="size-8 text-gray-500 dark:text-gray-400"
-            />
+          <div className="bg-bg-inactive mb-3 rounded-full p-3">
+            <Icon icon={Calendar02Icon} styles="size-8 text-fg-muted" />
           </div>
           <p className="mb-1">{emptyTitle}</p>
-          <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            {emptyMessage}
-          </p>
+          <p className="text-fg-muted mb-3 text-sm">{emptyMessage}</p>
         </div>
       )}
     </div>
@@ -95,13 +90,12 @@ function BookingCard({
 
   return (
     <div
-      className="border-border_color bg-layer_bg dark:hover:bg-layer_bg/80
-        rounded-lg border shadow-sm hover:border-gray-400 hover:bg-gray-100
-        dark:hover:border-zinc-700"
+      className="border-border bg-bg-raised hover:border-border-strong
+        hover:bg-hover rounded-lg border shadow-sm"
     >
       <div
-        className="border-border_color flex flex-row justify-between border-b
-          px-4 py-4"
+        className="border-border flex flex-row justify-between border-b px-4
+          py-4"
       >
         <Link
           className="flex min-w-0 flex-1 cursor-pointer flex-row gap-3 sm:gap-4
@@ -113,11 +107,11 @@ function BookingCard({
         >
           <div className="flex flex-col items-center justify-center">
             <p className="text-lg font-semibold">{fromDate.getDate()}</p>
-            <p className="text-text_color/60 text-sm">
+            <p className="text-fg-muted text-sm">
               {monthNameFromDate(fromDate)}
             </p>
           </div>
-          <div className="border-border_color border-r" />
+          <div className="border-border border-r" />
           <div className="flex min-w-0 flex-col items-start justify-center">
             <div className="flex min-w-0 flex-row items-center gap-2">
               <div
@@ -138,8 +132,7 @@ function BookingCard({
               </div>
             </div>
             <div
-              className="text-text_color/60 flex flex-row items-center gap-2
-                text-sm"
+              className="text-fg-muted flex flex-row items-center gap-2 text-sm"
             >
               <Icon icon={Clock01Icon} styles="size-3.5" />
               <p>
@@ -151,22 +144,22 @@ function BookingCard({
         <div className="flex flex-row items-center">
           {isNotConfirmed && onAccept && (
             <button
-              className="lg:hover:bg-hvr_gray h-full cursor-pointer rounded-lg
-                px-2 lg:h-fit lg:py-2"
+              className="lg:hover:bg-hover h-full cursor-pointer rounded-lg px-2
+                lg:h-fit lg:py-2"
               onClick={() => onAccept(booking)}
               type="button"
             >
-              <Icon icon={Tick02Icon} styles="size-6 text-text_color" />
+              <Icon icon={Tick02Icon} styles="size-6 text-fg" />
             </button>
           )}
           <Link
-            className="lg:hover:bg-hvr_gray hidden h-full items-center
-              rounded-lg px-2.5 lg:flex lg:h-fit lg:py-2.5"
+            className="lg:hover:bg-hover hidden h-full items-center rounded-lg
+              px-2.5 lg:flex lg:h-fit lg:py-2.5"
             from={route.fullPath}
             to="/calendar/bookings/$bookingId"
             params={{ bookingId: String(booking.id) }}
           >
-            <Icon icon={Calendar02Icon} styles="size-5 text-text_color" />
+            <Icon icon={Calendar02Icon} styles="size-5 text-fg" />
           </Link>
         </div>
       </div>
@@ -226,8 +219,8 @@ function BookingCard({
 function Pill({ children }) {
   return (
     <div
-      className="border-border_color bg-bg_color text-text_color/60 flex w-fit
-        flex-row items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+      className="border-border bg-bg text-fg-muted flex w-fit flex-row
+        items-center gap-1 rounded-lg border px-2 py-1 text-sm"
     >
       {children}
     </div>

@@ -2,58 +2,220 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-@theme {
+/*
+  Design tokens
+  -------------
+  Every color below has a light and a dark value, so components should use the
+  semantic utility (bg-bg-raised, text-fg-muted, border-border, ...) and never
+  need a `dark:` color variant.
+
+  Backgrounds  canvas < bg < bg-raised < bg-overlay
+               canvas      app shell behind the sidebar and top bar
+               bg          the page
+               bg-raised   cards, tables, anything sitting on the page
+               bg-overlay  popovers, dropdowns, modals, side panels
+               bg-sunken   recessed fills: table headers, wells, disabled inputs
+               bg-input    inside of inputs, selects and checkboxes
+               bg-backdrop dimmed layer behind modals and side panels
+               bg-inactive off / empty parts: switch track, unfilled bars
+  Text         fg > fg-muted > fg-disabled
+               fg-primary / fg-success / fg-warning / fg-danger / fg-info
+                           colored text on a normal background
+               fg-on-primary  text on a primary-colored background
+  Borders      border-subtle < border < border-strong
+               border-primary / border-success / ...  tinted borders
+  Fills        hover < active     (translucent, work on any background)
+  Brand        primary (+hover/active), primary-subtle, primary-focus (ring)
+  Status       success | warning | danger | info, each with a -subtle fill
+*/
+@theme inline {
   --font-family-sans: "Onest", sans-serif;
 
-  --color-primary: rgba(var(--primary));
-  --color-hvr_primary: rgba(var(--hvr-primary));
-  --color-secondary: rgba(var(--secondary));
-  --color-hvr_secondary: rgba(var(--hvr-secondary));
-  --color-accent: rgba(var(--accent));
-  --color-bg_color: rgba(var(--bg-color));
-  --color-layer_bg: rgba(var(--layer-bg));
-  --color-text_color: rgba(var(--text-color));
-  --color-hvr_gray: rgba(var(--hvr-gray));
-  --color-border_color: rgba(var(--border-color));
-  --color-input_border_color: rgba(var(--input-border-color));
+  /* backgrounds */
+  --color-canvas: var(--canvas);
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-overlay: var(--bg-overlay);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-bg-input: var(--bg-input);
+  --color-bg-backdrop: var(--bg-backdrop);
+  --color-bg-inactive: var(--bg-inactive);
+
+  /* interactive fills */
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+
+  /* text */
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-disabled: var(--fg-disabled);
+  --color-fg-on-primary: var(--fg-on-primary);
+  --color-fg-primary: var(--fg-primary);
+  --color-fg-success: var(--fg-success);
+  --color-fg-warning: var(--fg-warning);
+  --color-fg-danger: var(--fg-danger);
+  --color-fg-info: var(--fg-info);
+
+  /* borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-primary: var(--border-primary);
+  --color-border-success: var(--border-success);
+  --color-border-warning: var(--border-warning);
+  --color-border-danger: var(--border-danger);
+  --color-border-info: var(--border-info);
+
+  /* brand */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-hover: var(--primary-subtle-hover);
+  --color-primary-focus: var(--primary-focus);
+
+  /* status */
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
 }
 
 :root {
-  --primary: 66, 90, 190;
-  --hvr-primary: 56, 77, 163;
-  --secondary: 210, 151, 190;
-  --hvr-secondary: 189, 136, 171;
-  --accent: 226, 201, 102;
-  --bg-color: 236, 238, 248;
-  --layer-bg: 245, 246, 251;
-  --text-color: 12, 14, 28;
-  --hvr-gray: 209, 213, 219;
-  --border-color: 209, 213, 219;
-  --input-border-color: 168, 162, 158;
+  --canvas: #f1f1f4;
+  --bg: #f9f9fb;
+  --bg-raised: #ffffff;
+  --bg-overlay: #ffffff;
+  --bg-sunken: #f1f1f4;
+  --bg-input: #ffffff;
+  --bg-backdrop: rgb(17 17 26 / 0.4);
+  --bg-inactive: #e2e2e8;
+
+  --hover: rgb(20 20 40 / 0.05);
+  --active: rgb(20 20 40 / 0.09);
+
+  --fg: #15151a;
+  --fg-muted: #5a5a66;
+  --fg-disabled: #b3b3bd;
+
+  --border: #e3e3e9;
+  --border-subtle: #ececf0;
+  --border-strong: #cfcfd8;
+
+  --primary: #5b5bd6;
+  --primary-hover: #4e4ec6;
+  --primary-active: #4343b3;
+  --fg-primary: #4a4ac4;
+  --primary-subtle: rgb(91 91 214 / 0.1);
+  --primary-subtle-hover: rgb(91 91 214 / 0.16);
+  --border-primary: rgb(91 91 214 / 0.35);
+  --fg-on-primary: #ffffff;
+  --primary-focus: rgb(91 91 214 / 0.28);
+
+  --success: #1f9d5b;
+  --fg-success: #17794a;
+  --success-subtle: rgb(31 157 91 / 0.12);
+  --border-success: rgb(31 157 91 / 0.3);
+
+  --warning: #e0900b;
+  --fg-warning: #945a00;
+  --warning-subtle: rgb(240 160 20 / 0.16);
+  --border-warning: rgb(224 144 11 / 0.38);
+
+  --danger: #d93545;
+  --danger-hover: #c22636;
+  --fg-danger: #c02536;
+  --danger-subtle: rgb(217 53 69 / 0.09);
+  --border-danger: rgb(217 53 69 / 0.3);
+
+  --info: #2b7fe0;
+  --fg-info: #1b62b5;
+  --info-subtle: rgb(43 127 224 / 0.11);
+  --border-info: rgb(43 127 224 / 0.3);
 }
 
 .dark {
-  --primary: 99, 84, 176;
-  --hvr-primary: 109, 95, 179;
-  --secondary: 137, 57, 134;
-  --hvr-secondary: 179, 71, 175;
-  --accent: 206, 199, 64;
-  --bg-color: 19, 18, 23;
-  --layer-bg: 25, 25, 26;
-  --text-color: 236, 236, 238;
-  --hvr-gray: 31, 41, 55;
-  --border-color: 38, 38, 38;
-  --input-border-color: 82, 82, 91;
+  --canvas: #0d0d10;
+  --bg: #131317;
+  --bg-raised: #1a1a1f;
+  --bg-overlay: #222228;
+  --bg-sunken: #0f0f12;
+  --bg-input: rgb(255 255 255 / 0.035);
+  --bg-backdrop: rgb(0 0 0 / 0.62);
+  --bg-inactive: #303038;
+
+  --hover: rgb(255 255 255 / 0.06);
+  --active: rgb(255 255 255 / 0.1);
+
+  --fg: #ededf1;
+  --fg-muted: #a5a5b1;
+  --fg-disabled: #53535d;
+
+  --border: #2a2a31;
+  --border-subtle: #222228;
+  --border-strong: #3b3b45;
+
+  --primary: #5b5bd6;
+  --primary-hover: #6a6ae0;
+  --primary-active: #7878e8;
+  --fg-primary: #a9a9ff;
+  --primary-subtle: rgb(122 122 255 / 0.15);
+  --primary-subtle-hover: rgb(122 122 255 / 0.23);
+  --border-primary: rgb(122 122 255 / 0.4);
+  --fg-on-primary: #ffffff;
+  --primary-focus: rgb(122 122 255 / 0.35);
+
+  --success: #30a46c;
+  --fg-success: #4cc38a;
+  --success-subtle: rgb(48 164 108 / 0.15);
+  --border-success: rgb(48 164 108 / 0.35);
+
+  --warning: #f0a31a;
+  --fg-warning: #f3b13f;
+  --warning-subtle: rgb(240 163 26 / 0.14);
+  --border-warning: rgb(240 163 26 / 0.35);
+
+  --danger: #dc3d4d;
+  --danger-hover: #e8525f;
+  --fg-danger: #ff8b8f;
+  --danger-subtle: rgb(229 72 77 / 0.15);
+  --border-danger: rgb(229 72 77 / 0.38);
+
+  --info: #3b8ff0;
+  --fg-info: #75b9ff;
+  --info-subtle: rgb(59 143 240 / 0.15);
+  --border-info: rgb(59 143 240 / 0.36);
 }
 
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+
+  ::selection {
+    background-color: var(--primary-subtle-hover);
+  }
+
+  ::placeholder {
+    color: var(--fg-muted);
+  }
+
   .autofill:-webkit-autofill,
   .autofill:-webkit-autofill:hover,
   .autofill:-webkit-autofill:focus,
   .autofill-styles select:-webkit-autofill,
   .autofill-styles select:-webkit-autofill:hover,
   .autofill-styles select:-webkit-autofill:focus {
-    -webkit-text-fill-color: rgb(var(--text-color));
+    -webkit-text-fill-color: var(--fg);
     -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0) inset;
     transition: background-color 5000s ease-in-out 0s;
   }

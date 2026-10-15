@@ -47,11 +47,11 @@ export default function TeamSection({ merchantName }) {
               <div className="flex items-center gap-1.5">
                 <Icon
                   icon={StarIcon}
-                  styles="fill-yellow-500 size-4.5 text-yellow-500"
+                  styles="fill-warning size-4.5 text-fg-warning"
                 />
                 <div className="flex items-center gap-1 text-sm">
                   <span className="font-medium">4.6</span>
-                  <span className="text-gray-500 dark:text-gray-400">(9)</span>
+                  <span className="text-fg-muted">(9)</span>
                 </div>
               </div>
             </div>

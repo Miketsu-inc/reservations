@@ -16,9 +16,9 @@ export default function ProgressBar({ currentStep, stepCount, isSubmitDone }) {
             <div
               className={
                 currentStep > i
-                  ? `flex-auto border-t-4 border-green-700 transition-all
+                  ? `border-success flex-auto border-t-4 transition-all
                     duration-700 ease-in`
-                  : "flex-auto border-t-4 border-gray-400 dark:border-gray-600"
+                  : "border-border-strong flex-auto border-t-4"
               }
             ></div>
           ) : (
@@ -35,15 +35,15 @@ function ProgressBarStep({ step, isActive, isCompleted }) {
     <div
       className={
         isCompleted
-          ? `relative flex h-8 w-8 items-center justify-center rounded-full
-            border-[3px] border-green-700 bg-green-700 p-4 transition-all
+          ? `border-success bg-success relative flex h-8 w-8 items-center
+            justify-center rounded-full border-[3px] p-4 transition-all
             duration-500 ease-in`
           : isActive
-            ? `border-primary/70 relative flex h-8 w-8 items-center
+            ? `border-border-primary relative flex h-8 w-8 items-center
               justify-center rounded-full border-[3px] p-4 transition-all
               duration-700 ease-in`
-            : `relative flex h-8 w-8 items-center justify-center rounded-full
-              border-[3px] border-gray-400 p-4 dark:border-gray-600`
+            : `border-border-strong relative flex h-8 w-8 items-center
+              justify-center rounded-full border-[3px] p-4`
       }
     >
       {isCompleted ? (

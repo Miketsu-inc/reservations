@@ -73,15 +73,14 @@ export default function ProductAdder({
               return (
                 <div
                   key={product.id}
-                  className="border-border_color flex flex-row items-center
-                    justify-center gap-4 rounded-md border px-4 py-2
-                    dark:border-gray-600"
+                  className="border-border flex flex-row items-center
+                    justify-center gap-4 rounded-md border px-4 py-2"
                 >
-                  <span className="text-text_color flex-1 font-medium">
+                  <span className="text-fg flex-1 font-medium">
                     {product?.name}
                   </span>
 
-                  <div className="mr-6 flex gap-3 text-gray-500">
+                  <div className="text-fg-muted mr-6 flex gap-3">
                     <span>{product.amount_used}</span>
                     <span>{product?.unit}</span>
                   </div>
@@ -111,14 +110,9 @@ export default function ProductAdder({
           <div
             className="mb-4 flex w-min items-center justify-center rounded-full"
           >
-            <Icon
-              icon={ShoppingBag02Icon}
-              styles="size-12 dark:text-gray-500 text-gray-400"
-            />
+            <Icon icon={ShoppingBag02Icon} styles="size-12 text-fg-muted" />
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            No products added yet
-          </p>
+          <p className="text-fg-muted text-sm">No products added yet</p>
         </div>
       )}
     </div>
@@ -219,10 +213,7 @@ function ProductForm({
             }
           >
             {productData.unit && (
-              <p
-                className="border-input_border_color rounded-r-lg border px-4
-                  py-2"
-              >
+              <p className="border-border-strong rounded-r-lg border px-4 py-2">
                 {productData.unit}
               </p>
             )}

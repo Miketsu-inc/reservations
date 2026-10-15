@@ -73,7 +73,7 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
         >
           <div>
             <p className="text-lg font-semibold">New Invitation</p>
-            <p className="text-text_color/80">
+            <p className="text-fg">
               Invite a person to your team. They will get an email asking them
               to join.
             </p>

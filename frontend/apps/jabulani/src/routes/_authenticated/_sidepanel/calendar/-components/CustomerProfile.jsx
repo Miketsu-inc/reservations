@@ -28,7 +28,7 @@ export default function CustomerProfile({
         ${styles}`}
     >
       <div
-        className="border-border_color flex w-full flex-col items-center gap-3
+        className="border-border flex w-full flex-col items-center gap-3
           border-b"
       >
         <div className="flex flex-col items-center gap-6">
@@ -37,7 +37,7 @@ export default function CustomerProfile({
             img={customer?.avatar_url}
             initials={`${customer?.first_name?.[0] || "?"}${customer?.last_name?.[0] || ""}`}
           />
-          <div className="text-text_color text-center text-xl font-bold">
+          <div className="text-fg text-center text-xl font-bold">
             {customer?.first_name} {customer?.last_name}
           </div>
         </div>
@@ -46,13 +46,13 @@ export default function CustomerProfile({
           <div className="flex w-full flex-col items-center gap-2">
             {customer.email && (
               <div className="flex items-center gap-3 text-sm">
-                <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
+                <Icon icon={Mail01Icon} styles="size-5 text-fg-muted" />
                 <span className="truncate">{customer.email}</span>
               </div>
             )}
             {customer.phone_number && (
               <div className="flex items-center gap-3 text-sm">
-                <Icon icon={Call02Icon} styles="size-4 text-text_color/70" />
+                <Icon icon={Call02Icon} styles="size-4 text-fg-muted" />
 
                 <span>{customer.phone_number}</span>
               </div>
@@ -69,10 +69,8 @@ export default function CustomerProfile({
               />
             )}
             <Link
-              className="text-text_color w-28 rounded-lg border-2
-                border-gray-300 bg-transparent px-2 py-1.5 text-center
-                shadow-none hover:bg-gray-300 dark:border-gray-800
-                dark:hover:bg-gray-800"
+              className="text-fg border-border hover:bg-hover w-28 rounded-lg
+                border-2 bg-transparent px-2 py-1.5 text-center shadow-none"
               to={`/customers/${customer?.customer_id}`}
               from=""
             >
@@ -84,13 +82,13 @@ export default function CustomerProfile({
       <div className="flex w-full flex-col justify-start gap-3 px-8">
         {customer.birthday && (
           <div className="flex items-center gap-3 text-sm">
-            <Icon icon={BirthdayCakeIcon} styles="size-5 text-text_color/70" />
+            <Icon icon={BirthdayCakeIcon} styles="size-5 text-fg-muted" />
             <span>{formatBirthday(customer.birthday)}</span>
           </div>
         )}
         {customer.last_visited && (
           <div className="flex items-center gap-3 text-sm">
-            <Icon icon={User03Icon} styles="size-5 text-text_color/70" />
+            <Icon icon={User03Icon} styles="size-5 text-fg-muted" />
 
             <span className="">
               Last visited: {formatBirthday(customer.last_visited)}
@@ -100,19 +98,14 @@ export default function CustomerProfile({
       </div>
       {customer.customer_note && (
         <div className="w-full px-4 pb-4">
-          <div
-            className="rounded-md bg-gray-200/30 px-4 py-4 dark:bg-gray-500/5"
-          >
+          <div className="bg-hover rounded-md px-4 py-4">
             <div className="mb-2 flex items-center gap-3">
-              <Icon icon={Message01Icon} styles="size-4 mt-1 fill-text_color" />
+              <Icon icon={Message01Icon} styles="size-4 mt-1 fill-fg" />
               <span className="text-sm font-medium">
                 Note from {customer.first_name}
               </span>
             </div>
-            <p
-              className="text-sm leading-relaxed text-stone-500
-                dark:text-stone-300"
-            >
+            <p className="text-fg-muted text-sm leading-relaxed">
               {customer.customer_note}
             </p>
           </div>

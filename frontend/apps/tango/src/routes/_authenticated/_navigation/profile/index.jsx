@@ -37,7 +37,7 @@ function RouteComponent() {
       <div className="flex w-full max-w-sm flex-col justify-center gap-4">
         <p className="pt-4 pb-4 text-2xl">Profile</p>
         <Card styles="p-8">
-          <div className="text-primary mb-12 flex justify-end">
+          <div className="text-fg-primary mb-12 flex justify-end">
             <Link from={Route.fullPath} to="edit">
               <span className="flex flex-row items-center gap-2">
                 <Icon icon={Edit03Icon} styles="size-5" />
@@ -52,23 +52,23 @@ function RouteComponent() {
             />
             <p className="text-2xl">{`${user.first_name} ${user.last_name}`}</p>
           </div>
-          <hr className="text-border_color my-12" />
+          <hr className="text-border my-12" />
           <div className="flex flex-col gap-4">
             <div>
               <p>First name</p>
-              <p className="text-text_color/70 text-sm">{user.first_name}</p>
+              <p className="text-fg-muted text-sm">{user.first_name}</p>
             </div>
             <div>
               <p>Last name</p>
-              <p className="text-text_color/70 text-sm">{user.last_name}</p>
+              <p className="text-fg-muted text-sm">{user.last_name}</p>
             </div>
             <div>
               <p>Email</p>
-              <p className="text-text_color/70 text-sm">{user.email}</p>
+              <p className="text-fg-muted text-sm">{user.email}</p>
             </div>
             <div>
               <p>Phone number</p>
-              <p className="text-text_color/70 text-sm">{user.phone_number}</p>
+              <p className="text-fg-muted text-sm">{user.phone_number}</p>
             </div>
           </div>
         </Card>
@@ -86,7 +86,7 @@ function RouteComponent() {
                 </span>
                 <Icon
                   icon={ArrowLeft01Icon}
-                  styles="size-6 text-text_color rotate-180"
+                  styles="size-6 text-fg rotate-180"
                 />
               </Link>
             </Card>
@@ -98,7 +98,7 @@ function RouteComponent() {
                 <p className="font-bold">For businesses</p>
                 <Icon
                   icon={ArrowLeft01Icon}
-                  styles="size-6 text-text_color rotate-180"
+                  styles="size-6 text-fg rotate-180"
                 />
               </a>
             </Card>

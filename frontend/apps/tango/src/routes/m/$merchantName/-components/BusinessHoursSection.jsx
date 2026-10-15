@@ -58,18 +58,16 @@ export default function BusinessHoursSection({ hoursData }) {
               <div className="flex items-center gap-3">
                 <span
                   className={`size-3 rounded-full ${
-                    isClosed
-                      ? "bg-gray-400 dark:bg-gray-600"
-                      : "bg-green-500 dark:bg-green-400"
+                    isClosed ? "bg-fg-muted" : "bg-success"
                   }`}
                 ></span>
                 <span
                   className={`${
                     isClosed
-                      ? "text-gray-500 dark:text-gray-400"
+                      ? "text-fg-muted"
                       : isToday
-                        ? "text-text_color font-semibold"
-                        : "text-text_color"
+                        ? "text-fg font-semibold"
+                        : "text-fg"
                   }`}
                 >
                   {day}
@@ -78,10 +76,10 @@ export default function BusinessHoursSection({ hoursData }) {
               <span
                 className={`${
                   isClosed
-                    ? "text-gray-500 dark:text-gray-400"
+                    ? "text-fg-muted"
                     : isToday
-                      ? "text-text_color font-semibold"
-                      : "text-text_color"
+                      ? "text-fg font-semibold"
+                      : "text-fg"
                 }`}
               >
                 {hours}

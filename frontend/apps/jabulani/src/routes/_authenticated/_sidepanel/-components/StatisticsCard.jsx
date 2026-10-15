@@ -25,7 +25,7 @@ export default function StatisticsCard({
               <TooltipTrigger>
                 <Icon
                   icon={InformationCircleIcon}
-                  styles="size-4 text-gray-500 dark:text-gray-400"
+                  styles="size-4 text-fg-muted"
                 />
               </TooltipTrigger>
               <TooltipContent>

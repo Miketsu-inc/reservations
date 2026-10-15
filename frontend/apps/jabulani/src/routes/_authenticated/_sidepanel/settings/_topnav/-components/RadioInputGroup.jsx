@@ -20,8 +20,8 @@ export default function RadioInputGroup({
               htmlFor={option.value}
               className={`${
                 value === option.value
-                  ? "border-primary bg-primary/10"
-                  : "border-gray-500 hover:border-gray-400"
+                  ? "border-primary bg-primary-subtle"
+                  : "border-border-strong hover:border-border-strong"
               } flex items-center rounded-lg border-2 px-5 py-1`}
             >
               <input
@@ -38,9 +38,7 @@ export default function RadioInputGroup({
           ))}
         </div>
       </div>
-      {description && (
-        <p className="text-text_color/70 text-sm">{description}</p>
-      )}
+      {description && <p className="text-fg-muted text-sm">{description}</p>}
     </>
   );
 }

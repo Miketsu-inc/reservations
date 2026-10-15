@@ -58,7 +58,7 @@ export default function MapboxMap({
   return (
     <div
       ref={mapContainerRef}
-      className={`${styles} h-full w-full rounded-lg bg-red-400`}
+      className={`${styles} bg-danger h-full w-full rounded-lg`}
       style={{ minHeight: minHeight }}
     />
   );

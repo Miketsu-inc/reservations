@@ -22,11 +22,10 @@ export default function DeleteModal({
       <ResponsiveDialogContent>
         <div className="m-2 md:m-4">
           <div className="flex justify-center py-2">
-            <div className="flex rounded-full bg-red-200 p-3 dark:bg-red-600">
+            <div className="bg-danger-subtle flex rounded-full p-3">
               <Icon
                 icon={Alert02Icon}
-                styles="size-8 text-red-600 dark:text-red-200
-                  translate-y-[-0.15rem]"
+                styles="size-8 text-fg-danger translate-y-[-0.15rem]"
               />
             </div>
           </div>
@@ -35,9 +34,9 @@ export default function DeleteModal({
           </div>
           <div className="flex justify-center py-3">
             <div className="w-4/5 py-4 text-center">
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-fg-muted">
                 You are about to delete
-                <span className="text-text_color font-bold"> {itemName}</span>.
+                <span className="text-fg font-bold"> {itemName}</span>.
                 <br />
                 This is a permanent action which cannot be reverted!
               </p>

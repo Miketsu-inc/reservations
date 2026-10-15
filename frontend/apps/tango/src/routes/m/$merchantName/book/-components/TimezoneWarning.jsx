@@ -8,9 +8,8 @@ export default function TimezoneWarning({ merchantTimeZone }) {
 
   return (
     <div
-      className="bord mt-4 flex items-start gap-2 rounded-md border
-        border-stone-400 bg-amber-400 p-3 text-sm text-black
-        dark:border-amber-800 dark:bg-amber-500"
+      className="bord border-border-strong bg-warning mt-4 flex items-start
+        gap-2 rounded-md border p-3 text-sm text-black"
       role="status"
     >
       <Icon icon={Alert02Icon} styles="mt-0.5 size-5 shrink-0" />

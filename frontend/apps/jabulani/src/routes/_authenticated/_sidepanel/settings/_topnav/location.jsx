@@ -135,15 +135,12 @@ function LocationCard({ location, onEdit }) {
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1 pt-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-text_color truncate font-semibold">
-              {location.name}
-            </h2>
+            <h2 className="text-fg truncate font-semibold">{location.name}</h2>
             <span
               className={`${
                 location.is_active
-                  ? "bg-green-600/15 text-green-700 dark:text-green-400"
-                  : `bg-gray-200 text-gray-600 dark:bg-gray-700
-                    dark:text-gray-300`
+                  ? "bg-success-subtle text-fg-success"
+                  : "bg-bg-sunken text-fg-muted "
                 } rounded-full px-2 py-0.5 text-xs font-medium`}
             >
               {location.is_active ? "Active" : "Inactive"}
@@ -153,9 +150,9 @@ function LocationCard({ location, onEdit }) {
           <div className="mt-3 flex min-w-0 items-start gap-2">
             <Icon
               icon={Location01Icon}
-              styles="text-primary mt-0.5 size-4 shrink-0"
+              styles="text-fg-primary mt-0.5 size-4 shrink-0"
             />
-            <p className="text-text_color text-sm leading-6 font-medium">
+            <p className="text-fg text-sm leading-6 font-medium">
               {location.formatted_location}
             </p>
           </div>
@@ -176,8 +173,8 @@ function LocationCard({ location, onEdit }) {
 
       {(location.contact_email || location.phone_number) && (
         <div
-          className="border-border_color text-text_color/60 mt-4 flex min-w-0
-            flex-wrap items-center gap-x-5 gap-y-2 border-t pt-3 text-xs"
+          className="border-border text-fg-muted mt-4 flex min-w-0 flex-wrap
+            items-center gap-x-5 gap-y-2 border-t pt-3 text-xs"
         >
           {location.contact_email && (
             <div className="flex min-w-0 items-center gap-2">
@@ -273,16 +270,16 @@ function LocationPage() {
         </div>
       ) : (
         <div
-          className="border-border_color bg-layer_bg flex flex-col items-center
+          className="border-border bg-bg-raised flex flex-col items-center
             rounded-xl border px-4 py-12 text-center shadow-sm"
         >
-          <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
+          <div
+            className="bg-primary-subtle text-fg-primary mb-4 rounded-full p-3"
+          >
             <Icon icon={Location01Icon} styles="size-6" />
           </div>
-          <h2 className="text-text_color text-lg font-semibold">
-            No locations yet
-          </h2>
-          <p className="text-text_color/65 mt-1 max-w-sm text-sm leading-6">
+          <h2 className="text-fg text-lg font-semibold">No locations yet</h2>
+          <p className="text-fg-muted mt-1 max-w-sm text-sm leading-6">
             Add a business location before accepting in-person bookings.
           </p>
         </div>
@@ -301,17 +298,14 @@ function LocationPage() {
                 lg:h-auto lg:gap-5"
             >
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-text_color text-xl font-semibold">
-                  Edit location
-                </h2>
+                <h2 className="text-fg text-xl font-semibold">Edit location</h2>
                 <ResponsiveDialogClose asChild>
                   <CloseButton styles="hidden lg:block" />
                 </ResponsiveDialogClose>
               </div>
 
               <div
-                className="dark:bg-bg_color grid grid-cols-2 rounded-lg p-1
-                  lg:hidden"
+                className="grid grid-cols-2 rounded-lg p-1 lg:hidden"
                 role="tablist"
                 aria-label="Location editor sections"
               >
@@ -324,7 +318,7 @@ function LocationPage() {
                     type="button"
                     role="tab"
                     aria-selected={editorSection === value}
-                    className={`${editorSection === value ? "bg-layer_bg text-text_color shadow-sm" : "text-text_color/60"}
+                    className={`${editorSection === value ? "bg-bg-raised text-fg shadow-sm" : "text-fg-muted"}
                     rounded-md px-3 py-2 text-sm font-medium`}
                     onClick={() => setEditorSection(value)}
                   >
@@ -340,12 +334,12 @@ function LocationPage() {
               >
                 {(!isWindowSmall || editorSection === "details") && (
                   <section
-                    className="lg:border-border_color flex min-h-0 flex-col
-                      gap-4 lg:border-r lg:pr-6"
+                    className="lg:border-border flex min-h-0 flex-col gap-4
+                      lg:border-r lg:pr-6"
                     role="tabpanel"
                   >
                     <div className="hidden lg:block">
-                      <h3 className="text-text_color font-semibold">
+                      <h3 className="text-fg font-semibold">
                         Location details
                       </h3>
                     </div>
@@ -372,9 +366,7 @@ function LocationPage() {
                       inputData={handleLocationDetailChange}
                     />
                     {invalidEmail && (
-                      <p
-                        className="-mt-2 text-xs text-red-600 dark:text-red-400"
-                      >
+                      <p className="text-fg-danger -mt-2 text-xs">
                         Enter a valid email address.
                       </p>
                     )}
@@ -389,7 +381,7 @@ function LocationPage() {
                       value={draftLocation.phone_number ?? ""}
                       inputData={handleLocationDetailChange}
                     />
-                    <p className="text-text_color/55 text-xs leading-5">
+                    <p className="text-fg-muted text-xs leading-5">
                       Leave the email blank to use the business contact email.
                     </p>
                   </section>
@@ -401,13 +393,12 @@ function LocationPage() {
                     role="tabpanel"
                   >
                     <div className="hidden lg:block">
-                      <h3 className="text-text_color font-semibold">Address</h3>
+                      <h3 className="text-fg font-semibold">Address</h3>
                     </div>
                     <Suspense
                       fallback={
                         <div
-                          className="h-72 animate-pulse rounded-lg bg-gray-100
-                            dark:bg-gray-800"
+                          className="bg-bg-sunken h-72 animate-pulse rounded-lg"
                         />
                       }
                     >
@@ -428,8 +419,8 @@ function LocationPage() {
               <ServerError error={updateMutation.error?.message} />
 
               <div
-                className="border-border_color flex justify-end gap-3 border-t
-                  pt-4 lg:pt-5"
+                className="border-border flex justify-end gap-3 border-t pt-4
+                  lg:pt-5"
               >
                 <ResponsiveDialogClose asChild>
                   <Button

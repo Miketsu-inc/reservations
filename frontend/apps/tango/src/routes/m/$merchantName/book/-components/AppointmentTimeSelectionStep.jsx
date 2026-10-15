@@ -250,8 +250,8 @@ export default function AppointmentTimeSelectionStep({
         </div>
       </div>
       <div
-        className="bg-bg_color sticky top-14.75 z-10 flex w-full max-w-full
-          min-w-0 items-center gap-2 py-4 lg:top-17"
+        className="bg-bg sticky top-14.75 z-10 flex w-full max-w-full min-w-0
+          items-center gap-2 py-4 lg:top-17"
       >
         <DaySelector
           days={availableDays}
@@ -270,7 +270,7 @@ export default function AppointmentTimeSelectionStep({
             className="flex flex-col items-center gap-1 px-4 py-10 text-center"
           >
             <p className="font-medium">No availability for this day</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-fg-muted text-sm">
               There's no place left on this day. Please choose another date.
             </p>
           </div>

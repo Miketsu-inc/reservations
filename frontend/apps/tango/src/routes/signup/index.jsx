@@ -105,7 +105,7 @@ function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-layer_bg flex w-full max-w-md flex-col px-8 shadow-sm
+        className="sm:bg-bg-raised flex w-full max-w-md flex-col px-8 shadow-sm
           sm:rounded-xl sm:pt-6 sm:pb-16 sm:shadow-lg"
       >
         <ProgressBar

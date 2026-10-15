@@ -156,7 +156,7 @@ function LabelWrapper({ id, labelText, required, children }) {
           {required !== false && (
             <span
               aria-hidden="true"
-              className="text-base leading-none text-red-500"
+              className="text-fg-danger text-base leading-none"
             >
               *
             </span>

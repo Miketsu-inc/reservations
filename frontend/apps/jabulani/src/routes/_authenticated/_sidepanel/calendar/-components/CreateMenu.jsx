@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
   return (
     <div
-      className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full
+      className="*:hover:bg-hover flex flex-col items-start *:w-full
         *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
     >
       <button onClick={onCreateBooking} className="flex items-center gap-2">

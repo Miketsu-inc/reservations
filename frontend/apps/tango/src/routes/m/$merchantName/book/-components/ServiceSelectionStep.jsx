@@ -97,8 +97,8 @@ export default function ServiceSelectionStep({
       <h1 className="text-3xl font-bold">Select a Service</h1>
       {employee?.first_name && (
         <div
-          className="bg-layer_bg border-border_color flex w-fit items-center
-            gap-2 rounded-full border py-1.5 pr-3 pl-2"
+          className="bg-bg-raised border-border flex w-fit items-center gap-2
+            rounded-full border py-1.5 pr-3 pl-2"
         >
           <Avatar
             styles="size-8! text-[12px]! shrink-0 rounded-full!"
@@ -112,8 +112,8 @@ export default function ServiceSelectionStep({
       )}
       <div className="flex flex-1 flex-col">
         <div
-          className="bg-bg_color sticky top-14.75 z-10 flex w-full flex-col
-            gap-5 py-4 lg:top-17"
+          className="bg-bg sticky top-14.75 z-10 flex w-full flex-col gap-5 py-4
+            lg:top-17"
         >
           {!showToggles && (
             <SearchInput
@@ -158,7 +158,7 @@ export default function ServiceSelectionStep({
                     id={catId}
                     className="flex scroll-mt-60 flex-col gap-4"
                   >
-                    <div className="text-text_color font-semibold">
+                    <div className="text-fg font-semibold">
                       {category.name || "Uncategorized"}
                     </div>
 
@@ -182,15 +182,13 @@ export default function ServiceSelectionStep({
             >
               {searchText.trim().length > 0 ? (
                 <>
-                  <Icon icon={Search01Icon} styles="size-10 text-gray-500" />
-                  <p className="text-gray-400 dark:text-gray-500">
+                  <Icon icon={Search01Icon} styles="size-10 text-fg-muted" />
+                  <p className="text-fg-muted">
                     No services found for "{searchText}"
                   </p>
                 </>
               ) : (
-                <p className="text-gray-400 dark:text-gray-500">
-                  No services available.
-                </p>
+                <p className="text-fg-muted">No services available.</p>
               )}
             </div>
           )}
@@ -215,30 +213,28 @@ function ServiceItem({ service, isSelected, onSelect }) {
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(service)}
-      className={`bg-layer_bg text-text_color border-border_color flex w-full
+      className={`bg-bg-raised text-fg border-border hover:bg-hover flex w-full
         cursor-pointer items-center justify-between gap-4 rounded-md border p-4
-        transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-200/5
-        ${isSelected ? "ring-primary ring-1" : ""} `}
+        transition-all duration-200
+        ${isSelected ? "ring-primary-focus ring-1" : ""} `}
     >
       <div className="flex flex-col gap-2">
         <p className="text-[17px] font-medium">{service.name}</p>
-        <div className="text-text_color/80 flex items-center gap-5 text-sm">
+        <div className="text-fg flex items-center gap-5 text-sm">
           <div className="flex items-center gap-1.5">
             <Icon icon={Clock01Icon} styles="size-4" />
             <span>{durationText}</span>
           </div>
 
           {isGroup && (
-            <div className="text-text_color/80 flex items-center gap-1.5">
+            <div className="text-fg flex items-center gap-1.5">
               <Icon icon={UserGroupIcon} styles="size-5" />
               <span>{`Max ${service.max_participants}`}</span>
             </div>
           )}
         </div>
         {service.description && (
-          <div
-            className="line-clamp-2 text-sm text-gray-500 dark:text-gray-300/80"
-          >
+          <div className="text-fg-muted line-clamp-2 text-sm">
             {service.description}
           </div>
         )}
@@ -249,13 +245,13 @@ function ServiceItem({ service, isSelected, onSelect }) {
       <div
         className={`flex size-8 shrink-0 items-center justify-center
           rounded-full border transition-colors ${
-            isSelected ? "border-primary bg-primary" : "border-gray-400"
+            isSelected ? "border-primary bg-primary" : "border-border-strong"
           } `}
       >
         <Icon
           icon={isSelected ? Tick02Icon : PlusSignIcon}
           styles={`
-            ${isSelected ? "text-white size-6" : "text-gray-400 size-5"}`}
+            ${isSelected ? "text-white size-6" : "text-fg-muted size-5"}`}
         />
       </div>
     </li>

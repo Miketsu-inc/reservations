@@ -28,19 +28,19 @@ import NewCustomerOverlay from "./NewCutomerForm";
 
 const statusMap = {
   completed: {
-    bgColor: "bg-green-600",
+    bgColor: "bg-success",
     icon: <Icon icon={Tick02Icon} styles="size-4 text-white" />,
   },
   "no-show": {
-    bgColor: "bg-red-500",
+    bgColor: "bg-danger",
     icon: <Icon icon={UnavailableIcon} styles="size-3.5 text-white" />,
   },
   booked: {
-    bgColor: "bg-gray-500",
+    bgColor: "bg-fg-muted",
     icon: <Icon icon={Calendar02Icon} styles="size-3.5 text-white" />,
   },
   confirmed: {
-    bgColor: "bg-accent",
+    bgColor: "bg-warning",
     icon: <Icon icon={CheckmarkCircle02Icon} styles="size-3.5 text-white" />,
   },
 };
@@ -106,7 +106,7 @@ export default function ParticipantManager({
   );
 
   return (
-    <div className="bg-layer_bg relative flex h-full w-full flex-col">
+    <div className="bg-bg-raised relative flex h-full w-full flex-col">
       {isWindowSmall ? (
         <Drawer
           open={nestedPageState.isOpen}
@@ -137,14 +137,12 @@ export default function ParticipantManager({
         className={`${isWindowSmall ? "px-5 pt-0" : "px-4 pt-8"} flex h-full
           flex-col pb-4`}
       >
-        <div className="border-border_color flex flex-col gap-5 border-b pb-4">
+        <div className="border-border flex flex-col gap-5 border-b pb-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-text_color text-xl font-semibold">
-              Participants
-            </p>
+            <p className="text-fg text-xl font-semibold">Participants</p>
             <span
-              className="bg-primary/10 text-primary rounded-md px-2.5 py-0.5
-                text-sm font-semibold"
+              className="bg-primary-subtle text-fg-primary rounded-md px-2.5
+                py-0.5 text-sm font-semibold"
             >
               {participants.length} / {maxParticipants}
             </span>
@@ -155,18 +153,17 @@ export default function ParticipantManager({
                 onSave={handleSaveNewCustomer}
                 trigger={
                   <button
-                    className="flex w-full cursor-pointer items-center gap-4
-                      rounded-lg px-3 py-2 hover:bg-gray-200/40
-                      dark:hover:bg-gray-700/20"
+                    className="hover:bg-hover flex w-full cursor-pointer
+                      items-center gap-4 rounded-lg px-3 py-2"
                   >
                     <div
-                      className="bg-primary/20 text-primary flex size-14
+                      className="bg-primary-subtle text-fg-primary flex size-14
                         shrink-0 items-center justify-center rounded-full"
                     >
                       <Icon icon={PlusSignIcon} styles="size-6" />
                     </div>
                     <div className="flex flex-col items-start">
-                      <span className="text-text_color font-medium">
+                      <span className="text-fg font-medium">
                         Add New Customer
                       </span>
                     </div>
@@ -174,26 +171,23 @@ export default function ParticipantManager({
                 }
               />
               <button
-                className="flex w-full cursor-pointer items-center gap-4
-                  rounded-lg px-3 py-2 hover:bg-gray-200/40
-                  dark:hover:bg-gray-700/20"
+                className="hover:bg-hover flex w-full cursor-pointer
+                  items-center gap-4 rounded-lg px-3 py-2"
                 onClick={handleOpenAdd}
               >
                 <div
-                  className="bg-primary/20 text-primary flex size-14 shrink-0
-                    items-center justify-center rounded-full"
+                  className="bg-primary-subtle text-fg-primary flex size-14
+                    shrink-0 items-center justify-center rounded-full"
                 >
-                  <Icon icon={User03Icon} styles="size-7 text-primary" />
+                  <Icon icon={User03Icon} styles="size-7 text-fg-primary" />
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-text_color font-medium">
-                    Select Customers
-                  </span>
+                  <span className="text-fg font-medium">Select Customers</span>
                 </div>
               </button>
             </div>
           ) : (
-            <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-fg-muted pb-2 text-sm">
               View all the participants for this booking
             </span>
           )}
@@ -206,17 +200,14 @@ export default function ParticipantManager({
                 pt-5 text-center opacity-60"
             >
               <div
-                className="flex size-18 items-center justify-center rounded-full
-                  bg-gray-400/20"
+                className="bg-hover flex size-18 items-center justify-center
+                  rounded-full"
               >
-                <Icon
-                  icon={UserGroupIcon}
-                  styles="size-12 text-gray-500 dark:text-gray-400"
-                />
+                <Icon icon={UserGroupIcon} styles="size-12 text-fg-muted" />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-lg font-medium">No participants yet</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-fg-muted text-sm">
                   Add customers to this group booking.
                 </p>
               </div>
@@ -252,8 +243,8 @@ function ParticipantItem({
 
   return (
     <div
-      className="group relative flex w-full items-center justify-between gap-2
-        rounded-xl px-3 py-2 hover:bg-gray-200/40 dark:hover:bg-gray-700/20"
+      className="group hover:bg-hover relative flex w-full items-center
+        justify-between gap-2 rounded-xl px-3 py-2"
     >
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <Avatar
@@ -266,12 +257,12 @@ function ParticipantItem({
           }
         />
         <div className="flex min-w-0 flex-col">
-          <span className="text-text_color truncate font-semibold">
+          <span className="text-fg truncate font-semibold">
             {customer.first_name} {customer.last_name}
           </span>
 
           {customer.phone_number && (
-            <span className="text-sm text-gray-400 dark:text-gray-500">
+            <span className="text-fg-muted text-sm">
               {customer.phone_number}
             </span>
           )}
@@ -279,7 +270,7 @@ function ParticipantItem({
       </div>
       {customer.participant_id && (
         <div
-          className={`ring-layer_bg absolute top-12 left-13 inline-flex size-5
+          className={`ring-bg-raised absolute top-12 left-13 inline-flex size-5
           items-center justify-center gap-2 rounded-full text-xs ring-2
           ${status.bgColor}`}
           title={customer.status} // couldnt do with tooltip
@@ -291,19 +282,16 @@ function ParticipantItem({
       <Popover>
         <PopoverTrigger asChild>
           <button className="cursor-pointer rounded-lg p-0.5">
-            <Icon icon={MoreVerticalIcon} styles="size-6 text-gray-500" />
+            <Icon icon={MoreVerticalIcon} styles="size-6 text-fg-muted" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left" styles="w-auto">
           <div className="flex flex-col gap-2">
             {customer.participant_id && (
               <div
-                className="border-border_color flex flex-col gap-1 border-b pt-1
-                  pb-2"
+                className="border-border flex flex-col gap-1 border-b pt-1 pb-2"
               >
-                <span className="pl-2 text-sm text-gray-500 dark:text-gray-400">
-                  Set Status
-                </span>
+                <span className="text-fg-muted pl-2 text-sm">Set Status</span>
                 <div
                   className="itmes-start flex flex-col *:flex *:w-full
                     *:flex-row *:items-center *:rounded-lg *:p-2"
@@ -311,8 +299,7 @@ function ParticipantItem({
                   {customer.status !== "completed" && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3
-                          pl-1.5!"
+                        className="hover:bg-hover cursor-pointer gap-3 pl-1.5!"
                         onClick={() =>
                           onStatusChange(
                             customer.participant_id,
@@ -321,10 +308,7 @@ function ParticipantItem({
                           )
                         }
                       >
-                        <Icon
-                          icon={Tick02Icon}
-                          styles="size-6 fill-text_color"
-                        />
+                        <Icon icon={Tick02Icon} styles="size-6 fill-fg" />
                         Completed
                       </button>
                     </PopoverClose>
@@ -332,7 +316,7 @@ function ParticipantItem({
                   {customer.status !== "confirmed" && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        className="hover:bg-hover cursor-pointer gap-3"
                         onClick={() =>
                           onStatusChange(
                             customer.participant_id,
@@ -343,7 +327,7 @@ function ParticipantItem({
                       >
                         <Icon
                           icon={CheckmarkCircle02Icon}
-                          styles="size-5 text-text_color"
+                          styles="size-5 text-fg"
                         />
                         Confirmed
                       </button>
@@ -352,7 +336,7 @@ function ParticipantItem({
                   {customer.status !== "no-show" && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        className="hover:bg-hover cursor-pointer gap-3"
                         onClick={() =>
                           onStatusChange(
                             customer.participant_id,
@@ -376,7 +360,7 @@ function ParticipantItem({
             >
               <PopoverClose asChild>
                 <button
-                  className="hover:bg-hvr_gray cursor-pointer gap-3"
+                  className="hover:bg-hover cursor-pointer gap-3"
                   onClick={() => {
                     // let the Popover fully close before the drawer opens
                     setTimeout(() => {
@@ -384,7 +368,7 @@ function ParticipantItem({
                     }, 50);
                   }}
                 >
-                  <Icon icon={User03Icon} styles="size-5 text-text_color" />
+                  <Icon icon={User03Icon} styles="size-5 text-fg" />
                   <p>View Customer</p>
                 </button>
               </PopoverClose>
@@ -392,15 +376,13 @@ function ParticipantItem({
                 <PopoverClose asChild>
                   <button
                     onClick={onRemove}
-                    className="hover:bg-hvr_gray cursor-pointer gap-3"
+                    className="hover:bg-hover cursor-pointer gap-3"
                   >
                     <Icon
                       icon={Delete02Icon}
-                      styles="size-5 mb-0.5 text-red-600 dark:text-red-500"
+                      styles="size-5 mb-0.5 text-fg-danger"
                     />
-                    <p className="text-red-600 dark:text-red-500">
-                      Remove customer
-                    </p>
+                    <p className="text-fg-danger">Remove customer</p>
                   </button>
                 </PopoverClose>
               )}

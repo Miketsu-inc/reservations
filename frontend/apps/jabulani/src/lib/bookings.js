@@ -8,28 +8,24 @@ export const BOOKING_STATUS_OPTIONS = [
 
 const BOOKING_STATUS_STYLES = {
   booked: {
-    badge:
-      "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
-    color: "text-amber-600 dark:text-amber-400",
+    badge: "bg-warning-subtle text-fg-warning",
+    color: "text-fg-warning",
   },
   confirmed: {
-    badge:
-      "bg-blue-600/20 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
-    color: "text-blue-600 dark:text-blue-400",
+    badge: "bg-info-subtle text-fg-info",
+    color: "text-fg-info",
   },
   completed: {
-    badge:
-      "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
-    color: "text-green-600 dark:text-green-400",
+    badge: "bg-success-subtle text-fg-success",
+    color: "text-fg-success",
   },
   cancelled: {
-    badge: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
-    color: "text-red-600 dark:text-red-400",
+    badge: "bg-danger-subtle text-fg-danger",
+    color: "text-fg-danger",
   },
   "no-show": {
-    badge:
-      "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
-    color: "text-gray-600 dark:text-gray-400",
+    badge: "bg-hover text-fg-muted",
+    color: "text-fg-muted",
   },
 };
 

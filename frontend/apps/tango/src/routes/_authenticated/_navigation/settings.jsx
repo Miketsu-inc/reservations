@@ -84,14 +84,14 @@ function RouteComponent() {
       <div className="flex w-full max-w-md flex-col justify-center pb-8">
         <div className="pt-4 pb-8">
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-text_color/65 mt-1 text-sm">
+          <p className="text-fg-muted mt-1 text-sm">
             Manage your account, appearance, and active sessions.
           </p>
         </div>
         <div className="flex flex-col gap-4">
           <Card>
             <p className="text-lg font-medium">Password</p>
-            <p className="text-text_color/65 mt-1 text-sm">
+            <p className="text-fg-muted mt-1 text-sm">
               Update the password used to sign in to your account.
             </p>
             <ChangePasswordModal
@@ -129,7 +129,7 @@ function RouteComponent() {
           )}
           <Card>
             <p className="text-lg font-medium">Sign out</p>
-            <p className="text-text_color/65 mt-1 text-sm">
+            <p className="text-fg-muted mt-1 text-sm">
               End the session on this device.
             </p>
             <Button
@@ -143,7 +143,7 @@ function RouteComponent() {
           </Card>
           <Card>
             <p className="text-lg font-medium">Sign out everywhere</p>
-            <p className="text-text_color/65 mt-1 text-sm">
+            <p className="text-fg-muted mt-1 text-sm">
               End every active session, including this one.
             </p>
             <Button
@@ -155,11 +155,9 @@ function RouteComponent() {
               <Icon icon={Logout05Icon} styles="mr-2 size-5" />
             </Button>
           </Card>
-          <Card styles="border-red-300 dark:border-red-900">
-            <p className="text-lg font-medium text-red-600 dark:text-red-400">
-              Delete account
-            </p>
-            <p className="text-text_color/65 mt-1 mb-4 text-sm">
+          <Card styles="border-border-danger">
+            <p className="text-fg-danger text-lg font-medium">Delete account</p>
+            <p className="text-fg-muted mt-1 mb-4 text-sm">
               Permanently delete your personal account and its data.
             </p>
             <DeleteModal

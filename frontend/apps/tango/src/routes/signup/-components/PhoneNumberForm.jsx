@@ -58,7 +58,7 @@ export default function PhoneNumberForm({ isCompleted, sendInputData }) {
   return (
     <>
       <h1 className="mt-2 text-center text-xl font-semibold">Phone number</h1>
-      <p className="mb-8 py-2 text-center text-gray-600 dark:text-gray-300">
+      <p className="text-fg-muted mb-8 py-2 text-center">
         Enter your phone number to receive notifications about your bookings
       </p>
       <FloatingLabelInput

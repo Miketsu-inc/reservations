@@ -151,9 +151,8 @@ function DetailsContent({
             <div className="flex items-center gap-7">
               {category && (
                 <div
-                  className="border-input_border_color flex w-fit items-center
-                    gap-2 rounded-lg border bg-gray-100 px-3 py-1 text-sm
-                    dark:bg-gray-200/10"
+                  className="border-border-strong bg-bg-sunken flex w-fit
+                    items-center gap-2 rounded-lg border px-3 py-1 text-sm"
                 >
                   {isGroupService && (
                     <div className="flex items-center gap-2">
@@ -164,7 +163,7 @@ function DetailsContent({
                   {category}
                 </div>
               )}
-              <div className="text-text_color/80 flex items-center gap-1">
+              <div className="text-fg flex items-center gap-1">
                 <Icon icon={Clock01Icon} styles="size-5" />
                 <span>
                   {service?.min_duration &&
@@ -180,16 +179,15 @@ function DetailsContent({
         {service?.description && <p className="">{service?.description}</p>}
         {isLoading ? (
           <div
-            className="border-border_color h-24 animate-pulse rounded-lg border
-              bg-gray-200/20 dark:bg-gray-200/5"
+            className="border-border bg-hover h-24 animate-pulse rounded-lg
+              border"
           ></div>
         ) : hasAvailable ? (
           <div
-            className="border-border_color bg-layer_bg rounded-lg border
-              shadow-sm"
+            className="border-border bg-bg-raised rounded-lg border shadow-sm"
           >
             <div
-              className="border-border_color flex flex-row items-center
+              className="border-border flex flex-row items-center
                 justify-between border-b px-4 py-3.5"
             >
               <div className="flex flex-row items-center gap-4">
@@ -199,19 +197,16 @@ function DetailsContent({
                   <p className="text-lg leading-none font-semibold">
                     {fromDate.getDate()}
                   </p>
-                  <p className="text-text_color/60 text-xs">
+                  <p className="text-fg-muted text-xs">
                     {monthNameFromDate(fromDate)}
                   </p>
                 </div>
-                <div className="border-border_color h-8 border-r" />
+                <div className="border-border h-8 border-r" />
                 <div className="flex flex-col items-start justify-center gap-1">
-                  <p className="font-medium text-green-500">Next Available</p>
+                  <p className="text-fg-success font-medium">Next Available</p>
                   <div className="flex flex-row items-center gap-1.5">
-                    <Icon
-                      icon={Clock01Icon}
-                      styles="size-4.5 text-text_color/60"
-                    />
-                    <p className="text-text_color/60 text-sm">
+                    <Icon icon={Clock01Icon} styles="size-4.5 text-fg-muted" />
+                    <p className="text-fg-muted text-sm">
                       {fromDate.toLocaleDateString([], { weekday: "short" })},{" "}
                       {nextAvailable.start_time}
                       {nextAvailable.end_time
@@ -231,14 +226,14 @@ function DetailsContent({
                   styles="size-7! text-xs! rounded-full!"
                   initials={`${assignedEmployee.first_name[0]}${assignedEmployee.last_name[0]}`}
                 />
-                <p className="text-text_color text-sm">{`${assignedEmployee.first_name} ${assignedEmployee.last_name}`}</p>
+                <p className="text-fg text-sm">{`${assignedEmployee.first_name} ${assignedEmployee.last_name}`}</p>
               </div>
 
               {isGroupService && (
                 <div
-                  className="border-border_color bg-bg_color text-text_color/70
-                    flex w-fit flex-row items-center gap-1.5 rounded-lg border
-                    px-2 py-1 text-xs"
+                  className="border-border bg-bg text-fg-muted flex w-fit
+                    flex-row items-center gap-1.5 rounded-lg border px-2 py-1
+                    text-xs"
                 >
                   <Icon icon={UserGroupIcon} styles="size-3.5" />
                   <span>
@@ -251,14 +246,14 @@ function DetailsContent({
           </div>
         ) : (
           <div
-            className="border-border_color bg-layer_bg flex items-center gap-4
+            className="border-border bg-bg-raised flex items-center gap-4
               rounded-lg border p-4 shadow-sm"
           >
             <div className="rounded-lg py-1">
-              <Icon icon={CalendarOffIcon} styles="size-6 text-gray-400" />
+              <Icon icon={CalendarOffIcon} styles="size-6 text-fg-muted" />
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-text_color/70">
+              <span className="text-fg-muted">
                 {isGroupService
                   ? "No open sessions in the near future"
                   : "No availability in the near future"}
@@ -269,7 +264,7 @@ function DetailsContent({
       </div>
 
       <div
-        className={`${isWindowSmall ? "border-border_color absolute right-0 bottom-0 left-0 border-t" : "pt-10"}
+        className={`${isWindowSmall ? "border-border absolute right-0 bottom-0 left-0 border-t" : "pt-10"}
           flex w-full items-center justify-between px-3 py-3`}
       >
         <span className="text-lg font-medium">

@@ -87,15 +87,15 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
 
   return (
     <div
-      className="flex max-w-xl flex-col gap-4 rounded border border-gray-300
-        px-3 py-4 sm:px-4 dark:border-gray-500"
+      className="border-border flex max-w-xl flex-col gap-4 rounded border px-3
+        py-4 sm:px-4"
     >
       {bhArray.map((day) => (
         <div
           key={day.day}
           className={`flex flex-col items-start
-          ${day.isOpen ? "gap-3" : "gap-0 pb-5"} border-b border-b-gray-300 pb-3
-          last:border-b-0 last:pb-0 lg:flex-row lg:gap-6 dark:border-b-gray-500`}
+          ${day.isOpen ? "gap-3" : "gap-0 pb-5"} border-b-border border-b pb-3
+          last:border-b-0 last:pb-0 lg:flex-row lg:gap-6`}
         >
           <div className="flex items-center gap-10 md:mt-2 md:gap-20">
             <label className="inline-flex cursor-pointer items-center gap-3">
@@ -108,7 +108,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
             </label>
 
             {!day.isOpen && (
-              <div className="text-gray-500">
+              <div className="text-fg-muted">
                 <span>Closed</span>
               </div>
             )}
@@ -133,7 +133,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                     styles="flex-1 lg:min-w-28"
                     maxVisibleItems={7}
                   />
-                  <span className="text-gray-500">to</span>
+                  <span className="text-fg-muted">to</span>
                   <Select
                     options={timeOptions.filter(
                       (option) => option.value > timeSlot.start_time
@@ -155,8 +155,8 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                       onClick={() => addTimePeriod(day.day)}
                       className={`${
                         day.timeSlots.length >= 2
-                          ? "border-text_color/50 text-text_color/50"
-                          : "border-text_color text-text_color"
+                          ? "border-border-strong text-fg-muted"
+                          : "border-fg text-fg"
                         } cursor-pointer rounded-full border p-1
                         transition-colors`}
                       disabled={day.timeSlots.length >= 2}
@@ -166,12 +166,12 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                   ) : (
                     <button
                       onClick={() => removeTimePeriod(day.day, timeSlotIndex)}
-                      className="border-text_color cursor-pointer rounded-full
-                        border p-1"
+                      className="border-fg cursor-pointer rounded-full border
+                        p-1"
                     >
                       <Icon
                         icon={Delete02Icon}
-                        styles="size-4 text-red-600 dark:text-red-500"
+                        styles="size-4 text-fg-danger"
                       />
                     </button>
                   )}

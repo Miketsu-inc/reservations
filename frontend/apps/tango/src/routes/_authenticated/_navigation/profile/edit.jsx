@@ -75,7 +75,7 @@ function RouteComponent() {
         <div className="flex flex-row items-center gap-4 pt-4 pb-8">
           {!isWindowSmall && (
             <Link from={Route.fullPath} to="..">
-              <Icon icon={ArrowLeft01Icon} styles="size-7 text-text_color" />
+              <Icon icon={ArrowLeft01Icon} styles="size-7 text-fg" />
             </Link>
           )}
           <p className="text-2xl">Edit profile</p>

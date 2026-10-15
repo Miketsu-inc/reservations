@@ -40,7 +40,7 @@ export default function EmployeeTable({
             />
             <div className="flex flex-col justify-center">
               <p className="text-base">{`${params.data.first_name} ${params.data.last_name}`}</p>
-              <p className="text-text_color/60 text-sm">{params.data.email}</p>
+              <p className="text-fg-muted text-sm">{params.data.email}</p>
             </div>
           </div>
         );
@@ -80,14 +80,14 @@ export default function EmployeeTable({
             className="flex h-full flex-row items-center justify-center"
           >
             <button
-              className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+              className="hover:bg-hover cursor-pointer rounded-lg p-2"
               onClick={() => onEdit(data[params.node.sourceRowIndex])}
             >
               <Icon icon={Edit03Icon} styles="size-5 mx-1" />
             </button>
             {params.data.role !== "owner" && (
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                className="hover:bg-hover cursor-pointer rounded-lg p-2"
                 onClick={() => {
                   setSelected({
                     id: params.data.id,
@@ -97,10 +97,7 @@ export default function EmployeeTable({
                   setShowDeleteModal(true);
                 }}
               >
-                <Icon
-                  icon={Delete02Icon}
-                  styles="text-red-600 dark:text-red-500 size-5 mx-1"
-                />
+                <Icon icon={Delete02Icon} styles="text-fg-danger size-5 mx-1" />
               </button>
             )}
           </div>

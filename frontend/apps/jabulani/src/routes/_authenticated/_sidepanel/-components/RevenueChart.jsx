@@ -92,20 +92,17 @@ export default function RevenueChart({ merchantId, period }) {
               <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="rgb(var(--primary))"
+                  stopColor="var(--primary)"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor="rgb(var(--primary))"
+                  stopColor="var(--primary)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              className="stroke-neutral-200 dark:stroke-neutral-800"
-              vertical={false}
-            />
+            <CartesianGrid className="stroke-fg-muted" vertical={false} />
             <XAxis
               dataKey="day"
               tickLine={false}
@@ -120,10 +117,10 @@ export default function RevenueChart({ merchantId, period }) {
             <Area
               type="monotone"
               dataKey="value"
-              stroke="rgb(var(--primary))"
+              stroke="var(--primary)"
               fillOpacity={0.8}
               fill="url(#fillRevenue)"
-              activeDot={{ stroke: "rgb(var(--primary))" }}
+              activeDot={{ stroke: "var(--primary)" }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -153,7 +150,7 @@ const CustomTick = ({ x, y, payload, index, dataLength }) => {
     <text
       x={x}
       y={y + 10}
-      className="fill-gray-500 text-sm dark:fill-gray-400"
+      className="fill-fg-muted text-sm"
       textAnchor="middle"
     >
       {payload.value}
@@ -164,15 +161,15 @@ const CustomTick = ({ x, y, payload, index, dataLength }) => {
 const TooltipContent = ({ payload, label }) => {
   return (
     <div
-      className="bg-bg_color flex h-fit min-w-32 flex-col rounded-lg border
-        border-gray-200 p-2 text-xs shadow-xl dark:border-gray-800"
+      className="bg-bg border-border flex h-fit min-w-32 flex-col rounded-lg
+        border p-2 text-xs shadow-xl"
     >
       <p>{label}</p>
       {payload.map((item, index) => (
         <div key={index} className="flex flex-row justify-between">
           <div className="flex flex-row items-center gap-2">
             <div className="bg-primary size-2.5 shrink-0 rounded-xs"></div>
-            <p className="text-gray-500 dark:text-gray-400">Revenue</p>
+            <p className="text-fg-muted">Revenue</p>
           </div>
           <p>{item.payload.formattedValue}</p>
         </div>

@@ -97,16 +97,16 @@ export function EmployeeItem({
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(employee)}
-      className={`bg-layer_bg flex w-full cursor-pointer
+      className={`bg-bg-raised hover:bg-hover flex w-full cursor-pointer
         items-center justify-between rounded-md border px-6 py-4.5
-        transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-200/5 ${
-          isSelected ? "border-primary" : "border-border_color"
+        transition-all duration-200 ${
+          isSelected ? "border-primary" : "border-border"
         } `}
     >
       <div className="flex items-center gap-4">
         {noPreference ? (
           <div
-            className="text-primary bg-primary/20 flex size-20 shrink-0
+            className="text-fg-primary bg-primary-subtle flex size-20 shrink-0
               items-center justify-center rounded-full"
           >
             <Icon icon={UserQuestion02Icon} styles="size-10" />
@@ -121,22 +121,18 @@ export function EmployeeItem({
         <div className="flex flex-col gap-1">
           <span className="text-lg font-medium">{employee.first_name}</span>
           {noPreference ? (
-            <span className="text-text_color/80 text-sm">
-              Maximal availability
-            </span>
+            <span className="text-fg text-sm">Maximal availability</span>
           ) : (
             <div className="flex items-center gap-2">
               {employee.total_duration && (
-                <div
-                  className="text-text_color/80 flex items-center gap-1 text-sm"
-                >
+                <div className="text-fg flex items-center gap-1 text-sm">
                   <Icon icon={Clock01Icon} styles="size-3.5" />
                   <span>{formatDuration(employee.total_duration)}</span>
                 </div>
               )}
-              <span className="bg-text_color/80 size-1 rounded-full"></span>
+              <span className="bg-fg size-1 rounded-full"></span>
               {(employee.price || employee.price_type) && (
-                <span className="text-text_color/80 text-sm">
+                <span className="text-fg text-sm">
                   {getDisplayPrice(employee.price, employee.price_type)}
                 </span>
               )}
@@ -147,13 +143,13 @@ export function EmployeeItem({
       <div
         className={`flex size-8 shrink-0 items-center justify-center
           rounded-full border transition-colors ${
-            isSelected ? "border-primary bg-primary" : "border-gray-400"
+            isSelected ? "border-primary bg-primary" : "border-border-strong"
           } `}
       >
         <Icon
           icon={isSelected ? Tick02Icon : PlusSignIcon}
           styles={`
-            ${isSelected ? "text-white size-6" : "text-gray-400 size-5"}`}
+            ${isSelected ? "text-white size-6" : "text-fg-muted size-5"}`}
         />
       </div>
     </li>

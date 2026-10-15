@@ -169,8 +169,7 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                 }
               >
                 <p
-                  className="border-input_border_color rounded-r-lg border px-4
-                    py-2"
+                  className="border-border-strong rounded-r-lg border px-4 py-2"
                 >
                   {productData.price?.currency || "HUF"}
                 </p>
@@ -245,7 +244,9 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                   </Input>
                 </div>
                 {unitError && (
-                  <span className="my-1 text-sm text-red-500">{unitError}</span>
+                  <span className="text-fg-danger my-1 text-sm">
+                    {unitError}
+                  </span>
                 )}
                 {productData.services.length > 0 && (
                   <div className="flex flex-col gap-2">
@@ -258,14 +259,14 @@ export default function ProductModal({ data, isOpen, onClose, onSubmit }) {
                       {productData.services.map((service) => (
                         <div
                           key={service.id}
-                          className="bg-hvr_gray flex max-w-44 items-center
-                            gap-2 rounded-full px-3 py-1 text-sm md:max-w-36"
+                          className="bg-hover flex max-w-44 items-center gap-2
+                            rounded-full px-3 py-1 text-sm md:max-w-36"
                         >
                           <span
                             className="size-3 shrink-0 rounded-full"
                             style={{ backgroundColor: service.color }}
                           ></span>
-                          <span className="text-text_color truncate">
+                          <span className="text-fg truncate">
                             {service.name}
                           </span>
                         </div>

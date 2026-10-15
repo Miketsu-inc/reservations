@@ -95,22 +95,22 @@ function MerchantPage() {
 
   return (
     <div
-      className="bg-layer_bg lg:bg-bg_color relative flex min-h-screen w-full
+      className="bg-bg-raised lg:bg-bg relative flex min-h-screen w-full
         flex-col"
     >
       <div
-        className="bg-layer_bg border-border_color sticky top-0 z-50 flex w-full
+        className="bg-bg-raised border-border sticky top-0 z-50 flex w-full
           items-center justify-between border-b-2 p-3 shadow-sm lg:hidden"
       >
-        <Link className="hover:bg-hvr_gray rounded-md p-1" to="/home">
-          <Icon icon={ArrowLeft01Icon} styles="text-text_color" />
+        <Link className="hover:bg-hover rounded-md p-1" to="/home">
+          <Icon icon={ArrowLeft01Icon} styles="text-fg" />
         </Link>
         <span className="truncate px-2.5 text-lg font-semibold">
           {merchantInfo.merchant_name}
         </span>
         <FavoriteButton
           merchantId={merchantInfo.merchant_id}
-          styles="hover:bg-hvr_gray cursor-pointer rounded-md p-1"
+          styles="hover:bg-hover cursor-pointer rounded-md p-1"
         />
       </div>
 
@@ -118,12 +118,11 @@ function MerchantPage() {
         {!isWindowSmall && (
           <>
             <Link
-              className="hover:bg-hvr_gray/20 border-border_color bg-layer_bg
-                mb-5 flex h-fit w-fit rounded-full border p-3 shadow-sm
-                transition-colors"
+              className="hover:bg-hover border-border bg-bg-raised mb-5 flex
+                h-fit w-fit rounded-full border p-3 shadow-sm transition-colors"
               to="/home"
             >
-              <Icon icon={ArrowLeft01Icon} styles="text-text_color size-6" />
+              <Icon icon={ArrowLeft01Icon} styles="text-fg size-6" />
             </Link>
             <div className="flex w-full items-start justify-between pb-4">
               <div className="flex flex-col gap-4">
@@ -131,10 +130,10 @@ function MerchantPage() {
                   {merchantInfo.merchant_name}
                 </h1>
                 <div className="flex items-center gap-3 text-base">
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    <Icon icon={StarIcon} styles="size-5 fill-yellow-500" />
+                  <div className="text-fg-warning flex items-center gap-1">
+                    <Icon icon={StarIcon} styles="size-5 fill-warning" />
                     <span className="font-medium">4.6</span>
-                    <span className="text-primary ml-1 cursor-pointer">
+                    <span className="text-fg-primary ml-1 cursor-pointer">
                       (9 reviews)
                     </span>
                   </div>
@@ -143,17 +142,13 @@ function MerchantPage() {
                     <Icon icon={Clock01Icon} styles="size-5" />
                     {businessHoursStatus.is_business_open ? (
                       <span className="flex items-center gap-1">
-                        <span className="text-green-600 dark:text-green-500">
-                          Open
-                        </span>
-                        - closes at {businessHoursStatus.close_time}
+                        <span className="text-fg-success">Open</span>- closes at{" "}
+                        {businessHoursStatus.close_time}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-nowrap">
-                        <span className="text-orange-700 dark:text-orange-500">
-                          Closed
-                        </span>
-                        - opens {nextOpenStr}
+                        <span className="text-fg-warning">Closed</span>- opens{" "}
+                        {nextOpenStr}
                       </span>
                     )}
                   </div>
@@ -169,7 +164,7 @@ function MerchantPage() {
                         href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+                        className="text-fg-primary hover:underline"
                       >
                         (Plan a ride)
                       </a>
@@ -180,9 +175,9 @@ function MerchantPage() {
 
               <FavoriteButton
                 merchantId={merchantInfo.merchant_id}
-                styles="bg-layer_bg border-border_color mt-1.5 h-fit
-                  cursor-pointer rounded-full border p-3 shadow-sm
-                  hover:scale-105 hover:shadow-md transition-all duration-200"
+                styles="bg-bg-raised border-border mt-1.5 h-fit cursor-pointer
+                  rounded-full border p-3 shadow-sm hover:scale-105
+                  hover:shadow-md transition-all duration-200"
               />
             </div>
           </>
@@ -225,43 +220,35 @@ function MerchantPage() {
             lg:pt-14 xl:gap-18"
         >
           <div
-            className="bg-layer_bg lg:bg-bg_color relative z-10 -mt-6 flex
-              w-full flex-col gap-10 rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0
-              lg:w-[65%] lg:gap-12 lg:rounded-none lg:px-0 lg:pt-0"
+            className="bg-bg-raised lg:bg-bg relative z-10 -mt-6 flex w-full
+              flex-col gap-10 rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%]
+              lg:gap-12 lg:rounded-none lg:px-0 lg:pt-0"
           >
             <div className="flex flex-col gap-3.5 lg:hidden">
               <h1 className="text-3xl font-bold">
                 {merchantInfo.merchant_name}
               </h1>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 text-yellow-500">
-                  <Icon icon={StarIcon} styles="size-5 fill-yellow-500" />
+                <div className="text-fg-warning flex items-center gap-2">
+                  <Icon icon={StarIcon} styles="size-5 fill-warning" />
                   <div className="flex items-center gap-1">
                     <span>4.6</span>
-                    <button className="text-primary" onClick={() => {}}>
+                    <button className="text-fg-primary" onClick={() => {}}>
                       (9)
                     </button>
                   </div>
                 </div>
-                <span className="text-gray-400">•</span>
+                <span className="text-fg-muted">•</span>
                 <div className="flex items-center gap-2">
                   <Icon icon={Clock01Icon} styles="size-5" />
                   {businessHoursStatus.is_business_open ? (
                     <span className="flex items-center gap-1">
-                      <span
-                        className="font-medium text-green-600
-                          dark:text-green-500"
-                      >
-                        Open
-                      </span>
-                      - closes at {businessHoursStatus.close_time}
+                      <span className="text-fg-success font-medium">Open</span>-
+                      closes at {businessHoursStatus.close_time}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-nowrap">
-                      <span
-                        className="font-medium text-orange-700
-                          dark:text-orange-500"
-                      >
+                      <span className="text-fg-warning font-medium">
                         Closed
                       </span>
                       - opens {nextOpenStr}
@@ -269,10 +256,7 @@ function MerchantPage() {
                   )}
                 </div>
               </div>
-              <div
-                className="flex items-center gap-3 text-gray-600
-                  dark:text-gray-300"
-              >
+              <div className="text-fg-muted flex items-center gap-3">
                 <Icon icon={Location01Icon} styles="size-5" />
                 <span>{merchantInfo.formatted_location}</span>
               </div>
@@ -285,7 +269,7 @@ function MerchantPage() {
               <p className="lg:text-lg">{merchantInfo.introduction}</p>
               {merchantInfo.announcement && (
                 <div
-                  className="border-primary bg-primary/5 mt-2 rounded-r-lg
+                  className="border-primary bg-primary-subtle mt-2 rounded-r-lg
                     border-l-3 py-3 pl-4"
                 >
                   <p className="text-primary-dark text-base lg:text-lg">
@@ -324,14 +308,14 @@ function MerchantPage() {
                     href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-fg-primary hover:underline"
                   >
                     (Plan a ride)
                   </a>
                 </div>
                 <div
-                  className="border-border_color overflow-hidden rounded-2xl
-                    border shadow-sm"
+                  className="border-border overflow-hidden rounded-2xl border
+                    shadow-sm"
                 >
                   <MapboxMap
                     styles={isWindowSmall ? "h-64 w-full" : "h-87.5 w-full"}
@@ -351,9 +335,8 @@ function MerchantPage() {
             </ReservationSection>
 
             <div
-              className="border-border_color bg-layer_bg sticky bottom-0 z-10
-                flex w-full items-center justify-between border-y py-4
-                lg:hidden"
+              className="border-border bg-bg-raised sticky bottom-0 z-10 flex
+                w-full items-center justify-between border-y py-4 lg:hidden"
             >
               <span>{merchantName}</span>
               <Link
@@ -398,20 +381,17 @@ function MerchantPage() {
                   </div>
 
                   <div
-                    className="border-border_color pt-2 lg:max-w-md lg:border-t
+                    className="border-border pt-2 lg:max-w-md lg:border-t
                       lg:pt-6"
                   >
-                    <p
-                      className="mb-4 font-semibold text-gray-500 lg:mb-5
-                        dark:text-gray-400"
-                    >
+                    <p className="text-fg-muted mb-4 font-semibold lg:mb-5">
                       Follow us
                     </p>
                     <div
-                      className="*:hover:text-primary flex items-center
-                        justify-evenly gap-6 *:size-7 *:cursor-pointer
-                        *:text-gray-600 *:transition-colors sm:justify-start
-                        lg:gap-8 lg:*:size-7 dark:*:text-gray-400"
+                      className="*:hover:text-fg-primary *:text-fg-muted flex
+                        items-center justify-evenly gap-6 *:size-7
+                        *:cursor-pointer *:transition-colors sm:justify-start
+                        lg:gap-8 lg:*:size-7"
                     >
                       <Icon icon={InstagramIcon} />
                       <Icon icon={Facebook01Icon} />
@@ -426,8 +406,8 @@ function MerchantPage() {
 
           <div className="hidden lg:block lg:w-[35%]">
             <div
-              className="border-border_color bg-layer_bg sticky top-14 flex
-                flex-col gap-5 rounded-xl border p-8 shadow-lg"
+              className="border-border bg-bg-raised sticky top-14 flex flex-col
+                gap-5 rounded-xl border p-8 shadow-lg"
             >
               <div className="flex items-start justify-between gap-2 pb-4">
                 <div className="flex flex-col gap-2">
@@ -437,17 +417,17 @@ function MerchantPage() {
                   <div className="flex items-center gap-2 text-xl font-medium">
                     <Icon
                       icon={StarIcon}
-                      styles="size-5 fill-yellow-500 text-yellow-500"
+                      styles="size-5 fill-warning text-fg-warning"
                     />
                     <span>4.6</span>
-                    <span className="text-primary ml-1 font-normal">
+                    <span className="text-fg-primary ml-1 font-normal">
                       (9 reviews)
                     </span>
                   </div>
                 </div>
                 <FavoriteButton
                   merchantId={merchantInfo.merchant_id}
-                  styles="bg-layer_bg border-border_color h-fit cursor-pointer
+                  styles="bg-bg-raised border-border h-fit cursor-pointer
                     rounded-full border p-3 shadow-md hover:scale-105
                     hover:shadow-lg transition-all duration-200"
                 />
@@ -464,27 +444,19 @@ function MerchantPage() {
               </Link>
 
               <div
-                className="border-border_color mt-2 flex flex-col gap-5 border-t
-                  pt-6 text-gray-600 dark:text-gray-300"
+                className="border-border text-fg-muted mt-2 flex flex-col gap-5
+                  border-t pt-6"
               >
                 <div className="flex items-center gap-2">
                   <Icon icon={Clock01Icon} styles="size-5" />
                   {businessHoursStatus.is_business_open ? (
                     <span className="flex items-center gap-1">
-                      <span
-                        className="font-medium text-green-600
-                          dark:text-green-500"
-                      >
-                        Open
-                      </span>
-                      - closes at {businessHoursStatus.close_time}
+                      <span className="text-fg-success font-medium">Open</span>-
+                      closes at {businessHoursStatus.close_time}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-nowrap">
-                      <span
-                        className="font-medium text-orange-700
-                          dark:text-orange-500"
-                      >
+                      <span className="text-fg-warning font-medium">
                         Closed
                       </span>
                       - opens {nextOpenStr}

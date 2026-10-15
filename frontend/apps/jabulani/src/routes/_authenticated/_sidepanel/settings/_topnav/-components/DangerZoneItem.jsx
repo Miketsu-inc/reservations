@@ -14,7 +14,7 @@ export default function DangerZoneItem({
     >
       <div className="flex flex-col">
         <span className="font-medium">{title}</span>
-        <span className="text-text_color/65 mt-1 text-sm">{description}</span>
+        <span className="text-fg-muted mt-1 text-sm">{description}</span>
       </div>
       {action ?? (
         <Button

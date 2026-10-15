@@ -8,10 +8,7 @@ export default function TableActions({ onEdit, onDelete }) {
         <Icon icon={Edit03Icon} styles="size-5" />
       </button>
       <button className="cursor-pointer" onClick={onDelete}>
-        <Icon
-          icon={Delete02Icon}
-          styles="size-5 text-red-600 dark:text-red-500"
-        />
+        <Icon icon={Delete02Icon} styles="size-5 text-fg-danger" />
       </button>
     </div>
   );

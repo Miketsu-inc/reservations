@@ -30,8 +30,8 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             </p>
           </div>
           <div
-            className="text-text_color/80 flex flex-col justify-center gap-4
-              py-3 text-center"
+            className="text-fg flex flex-col justify-center gap-4 py-3
+              text-center"
           >
             {data?.is_blacklisted ? (
               <p>

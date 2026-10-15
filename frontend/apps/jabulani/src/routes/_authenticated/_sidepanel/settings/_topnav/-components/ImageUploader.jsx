@@ -50,10 +50,10 @@ export default function ImageUploader({
         if (file) handleFile(file);
       }}
       onDragOver={(event) => event.preventDefault()}
-      className={`${styles} group bg-hvr_gray relative flex h-64 w-full
-        cursor-pointer flex-col items-center justify-center border-2
-        border-dashed border-gray-400 transition-colors hover:border-gray-500
-        dark:border-gray-600 dark:hover:border-gray-400`}
+      className={`${styles} group bg-hover border-border-strong
+        hover:border-border-strong relative flex h-64 w-full cursor-pointer
+        flex-col items-center justify-center border-2 border-dashed
+        transition-colors`}
     >
       {preview ? (
         <>
@@ -66,25 +66,23 @@ export default function ImageUploader({
             type="button"
             aria-label={`Remove ${text.toLowerCase()}`}
             onClick={clearImage}
-            className="absolute top-2 right-2 rounded-full bg-gray-600 p-1
+            className="bg-fg-muted absolute top-2 right-2 rounded-full p-1
               text-white"
           >
             <Icon icon={Delete02Icon} styles="size-5" />
           </button>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center px-4 text-center">
-          <Icon icon={FileImageIcon} styles="text-gray-500 dark:text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <div
+          className="flex flex-col items-center justify-center px-4 text-center"
+        >
+          <Icon icon={FileImageIcon} styles="text-fg-muted" />
+          <p className="text-fg-muted mt-2 text-sm">
             <span className="font-semibold">Click to upload</span> or drag and
             drop
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            JPG, PNG, SVG (max. 5 MB)
-          </p>
-          <span className="mt-5 text-sm text-gray-500 dark:text-gray-400">
-            {text}
-          </span>
+          <p className="text-fg-muted text-xs">JPG, PNG, SVG (max. 5 MB)</p>
+          <span className="text-fg-muted mt-5 text-sm">{text}</span>
         </div>
       )}
       <input

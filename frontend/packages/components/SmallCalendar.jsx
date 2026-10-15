@@ -33,7 +33,7 @@ export default function SmallCalendar({
       }}
       modifiersClassNames={{
         disabled_selected:
-          "rounded-md bg-primary/80 focus:bg-primary/80! hover:bg-primary/80! hover:text-white text-white",
+          "rounded-md bg-primary-hover focus:bg-primary-hover! hover:bg-primary-hover! hover:text-white text-white",
       }}
       onSelect={(date) => onSelect(date)}
       onMonthChange={onMonthChange}
@@ -46,19 +46,17 @@ export default function SmallCalendar({
         caption_label: "font-medium",
         nav: "absolute flex items-center justify-between w-full p-2",
         weekdays: "flex px-2",
-        weekday:
-          "w-9 font-normal text-[0.8rem] text-gray-600 dark:text-gray-400",
+        weekday: "w-9 font-normal text-[0.8rem] text-fg-muted",
         week: "flex w-full mt-2 px-2",
-        day: "size-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hvr_gray hover:text-text_color",
+        day: "size-9 inline-flex justify-center items-center text-sm rounded-md hover:bg-hover hover:text-fg",
         day_button: "size-full",
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-white text-white",
-        today: !disabledTodayStyling ? "bg-hvr_gray" : "",
-        outside: "text-gray-400 dark:text-gray-600",
-        disabled: "hover:bg-transparent text-gray-300! dark:text-gray-800!",
+        today: !disabledTodayStyling ? "bg-hover" : "",
+        outside: "text-fg-muted",
+        disabled: "hover:bg-transparent text-fg-disabled!",
         hidden: "invisible",
-        chevron:
-          "w-5 h-5 m-1 fill-gray-500 dark:fill-gray-300 hover:fill-text_color",
+        chevron: "w-5 h-5 m-1 fill-fg-muted hover:fill-fg",
       }}
     />
   );

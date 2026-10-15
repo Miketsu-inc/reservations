@@ -100,7 +100,7 @@ export default function MerchantNameModal({ trigger, onSubmit }) {
       <ResponsiveDialogContent styles="lg:max-w-xl">
         <form className="m-4 flex flex-col gap-4" onSubmit={handleSubmit}>
           <h2 className="text-xl font-semibold">Change Merchant Name</h2>
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-fg-muted">
             Changing your merchant name will also change your booking page URL.
             Any customers with the old URL will no longer be able to access it.
           </p>
@@ -116,12 +116,9 @@ export default function MerchantNameModal({ trigger, onSubmit }) {
             placeholder="My Company Ltd."
           />
 
-          <p
-            className={`${merchantUrl.url ? "" : "invisible"} text-sm
-              dark:text-gray-400`}
-          >
+          <p className={`${merchantUrl.url ? "" : "invisible"} text-sm`}>
             <span
-              className={`${merchantUrl.valid ? "text-text_color" : "text-red-600"}`}
+              className={`${merchantUrl.valid ? "text-fg" : "text-fg-danger"}`}
             >
               {merchantUrl.valid
                 ? `Your URL will be: https://miketsu.com/m/${merchantUrl.url}`

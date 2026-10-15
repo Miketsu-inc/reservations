@@ -39,7 +39,6 @@ import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
 import "@fullcalendar/react/skeleton.css";
-import "@fullcalendar/react/themes/breezy/palettes/indigo.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
 const calendarViewOptions = [
@@ -524,7 +523,7 @@ export default function Calendar({ router, route, search }) {
                 onSelect={changeDateHandler}
               />
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                className="hover:bg-hover cursor-pointer rounded-lg"
                 type="button"
                 onClick={() => navButtonHandler("prev")}
               >
@@ -537,7 +536,7 @@ export default function Calendar({ router, route, search }) {
                 onClick={todayButtonHandler}
               />
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                className="hover:bg-hover cursor-pointer rounded-lg"
                 type="button"
                 onClick={() => navButtonHandler("next")}
               >

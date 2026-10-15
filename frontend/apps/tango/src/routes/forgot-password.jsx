@@ -45,7 +45,7 @@ function RouteComponent() {
       <div className="flex w-full max-w-xl flex-col">
         <div className="pt-4 pb-12">
           <p className="text-2xl">Forgot password</p>
-          <p className="text-text_color/60">
+          <p className="text-fg-muted">
             You will get an email with a link to reset your password
           </p>
         </div>

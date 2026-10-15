@@ -157,13 +157,13 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
           </div>
           <p
             className={`${showValidationError ? "visible" : "invisible"}
-              text-center text-red-500`}
+              text-fg-danger text-center`}
           >
             Please select a customer!
           </p>
           <div className="flex justify-center py-3">
             <div className="py-4 text-center">
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-fg-muted">
                 You are about to transfer all past and future bookings (booked
                 until now) to another customer.
                 <br />

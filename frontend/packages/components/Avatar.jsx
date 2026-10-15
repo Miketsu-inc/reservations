@@ -9,7 +9,7 @@ export default function Avatar({ styles = "", img, initials, alt = "" }) {
         />
       ) : (
         <div
-          className={`${styles} from-secondary to-primary bg-primary flex
+          className={`${styles} from-fg-primary to-primary bg-primary flex
             size-16 items-center justify-center rounded-md text-lg text-white
             dark:bg-linear-to-br`}
         >

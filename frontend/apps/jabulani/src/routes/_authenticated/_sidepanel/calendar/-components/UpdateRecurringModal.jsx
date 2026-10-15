@@ -31,10 +31,10 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
     >
       <ResponsiveDialogContent styles="w-full p-5 flex flex-col gap-5">
         <div
-          className="border-border_color flex items-start justify-between gap-4
+          className="border-border flex items-start justify-between gap-4
             border-b pb-3"
         >
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <p className="text-fg text-lg font-semibold">
             Edit recurring booking
           </p>
 
@@ -52,19 +52,15 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
                 className={`flex flex-1 cursor-pointer flex-col gap-2 rounded-lg
                 border px-4 py-4 text-left transition-all ${
                   active
-                    ? "border-primary bg-primary/5 "
-                    : `border-input_border_color hover:bg-gray-50
-                      dark:hover:bg-gray-700/10`
+                    ? "border-primary bg-primary-subtle "
+                    : "border-border-strong hover:bg-hover "
                 }`}
               >
                 <span className="flex flex-col gap-1">
-                  <span className={"text-text_color/90 text-sm font-semibold"}>
+                  <span className={"text-fg text-sm font-semibold"}>
                     {opt.label}
                   </span>
-                  <span
-                    className="text-xs leading-relaxed text-gray-500
-                      dark:text-gray-400"
-                  >
+                  <span className="text-fg-muted text-xs leading-relaxed">
                     {opt.description}
                   </span>
                 </span>

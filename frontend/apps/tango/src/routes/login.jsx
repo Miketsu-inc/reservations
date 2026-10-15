@@ -139,7 +139,7 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-layer_bg flex w-full max-w-md flex-col px-8 sm:h-auto
+        className="sm:bg-bg-raised flex w-full max-w-md flex-col px-8 sm:h-auto
           sm:min-h-0 sm:rounded-xl sm:py-8 sm:shadow-lg lg:px-8"
       >
         <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
@@ -147,35 +147,33 @@ function LoginPage() {
         <p className="text-sms mt-2 py-2">Welcome back!</p>
 
         <a
-          className="group border-secondary hover:border-hvr_secondary
-            text-secondary! hover:*:text-hvr_secondary
-            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
-            items-center justify-center border bg-transparent py-2 font-normal!
-            hover:bg-transparent focus:outline-hidden"
+          className="group border-fg-primary hover:border-fg-primary
+            text-fg-primary! hover:*:text-fg-primary focus:*:text-fg-primary
+            focus:border-fg-primary my-2 flex items-center justify-center border
+            bg-transparent py-2 font-normal! hover:bg-transparent
+            focus:outline-hidden"
           href="/api/v1/auth/oauth/google"
         >
-          <GoogleIcon
-            styles="group-hover:fill-hvr_secondary fill-secondary mr-3"
-          />
+          <GoogleIcon styles="group-hover:fill-fg-primary fill-fg-primary mr-3" />
           Login with Google
         </a>
         <a
-          className="group border-secondary hover:border-hvr_secondary
-            text-secondary! hover:*:text-hvr_secondary
-            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
-            items-center justify-center border bg-transparent py-2 font-normal!
-            hover:bg-transparent focus:outline-hidden"
+          className="group border-fg-primary hover:border-fg-primary
+            text-fg-primary! hover:*:text-fg-primary focus:*:text-fg-primary
+            focus:border-fg-primary my-2 flex items-center justify-center border
+            bg-transparent py-2 font-normal! hover:bg-transparent
+            focus:outline-hidden"
           href="/api/v1/auth/oauth/facebook"
         >
           <FacebookIcon
-            styles="group-hover:fill-hvr_secondary fill-secondary mr-1"
+            styles="group-hover:fill-fg-primary fill-fg-primary mr-1"
           />
           Login with Facebook
         </a>
         <div className="my-4 grid grid-cols-3 items-center">
-          <hr className="border-text_color" />
+          <hr className="border-fg" />
           <p className="text-center text-sm">OR</p>
-          <hr className="border-text_color" />
+          <hr className="border-fg" />
         </div>
         <form
           onSubmit={formSubmitHandler}
@@ -221,7 +219,7 @@ function LoginPage() {
             isLoading={isLoading}
           />
         </form>
-        <hr className="border-text_color mt-10" />
+        <hr className="border-fg mt-10" />
         <div
           className="mt-2 flex items-center justify-evenly pt-8 pb-4 text-sm
             sm:mt-2 sm:pt-8"

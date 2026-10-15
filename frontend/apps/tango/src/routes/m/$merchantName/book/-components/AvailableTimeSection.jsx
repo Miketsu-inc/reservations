@@ -11,10 +11,9 @@ export default function AvailableTimeSection({
           {availableTimes.map((slot) => (
             <button
               key={`${timeSection}-${slot.starts_at}`}
-              className={`bg-layer_bg border-border_color text-text_color
+              className={`bg-bg-raised border-border text-fg hover:bg-hover
                 cursor-pointer rounded-md border py-1.5 transition-all
-                hover:bg-gray-50 dark:hover:bg-gray-200/5
-                ${selectedStartsAt === slot.starts_at ? "ring-primary ring-2" : ""}`}
+                ${selectedStartsAt === slot.starts_at ? "ring-primary-focus ring-2" : ""}`}
               onClick={() => onSelect(slot)}
               type="button"
             >

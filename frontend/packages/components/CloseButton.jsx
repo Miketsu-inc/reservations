@@ -4,17 +4,14 @@ import Icon from "./Icon.jsx";
 export default function CloseButton({ styles, onClick, ...props }) {
   return (
     <button
-      className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+      className="hover:bg-hover cursor-pointer rounded-lg"
       name="close"
       type="button"
       onClick={onClick}
       aria-label="Close"
       {...props}
     >
-      <Icon
-        icon={Cancel01Icon}
-        styles={`${styles} size-8 text-gray-700 dark:text-gray-200`}
-      />
+      <Icon icon={Cancel01Icon} styles={`${styles} size-8 text-fg-muted`} />
     </button>
   );
 }

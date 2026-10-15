@@ -2,13 +2,13 @@ import { LoaderIcon } from "@reservations/assets";
 import { forwardRef } from "react";
 
 const variants = {
-  primary: "bg-primary hover:not-disabled:bg-hvr_primary text-white shadow-md",
+  primary:
+    "bg-primary hover:not-disabled:bg-primary-hover text-white shadow-md",
   secondary:
-    "bg-transparent text-primary hover:not-disabled:text-hvr_primary border-2 border-primary hover:not-disabled:border-hvr_primary",
+    "bg-transparent text-fg-primary hover:not-disabled:text-primary-hover border-2 border-primary hover:not-disabled:border-primary-hover",
   tertiary:
-    "bg-transparent hover:not-disabled:bg-gray-300 dark:hover:not-disabled:bg-gray-800 text-text_color shadow-none border-2 border-gray-300 dark:border-gray-800",
-  danger:
-    "dark:hover:not-disabled:bg-red-800 dark:bg-red-700 bg-red-500 hover:not-disabled:bg-red-600 text-white shadow-md",
+    "bg-transparent hover:not-disabled:bg-hover text-fg shadow-none border-2 border-border",
+  danger: " bg-danger hover:not-disabled:bg-danger-hover text-white shadow-md",
 };
 
 const Button = forwardRef(function Button(

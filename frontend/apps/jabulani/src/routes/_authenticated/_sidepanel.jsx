@@ -157,14 +157,14 @@ function SidePanelLayout() {
   }
 
   return (
-    <div className="bg-layer_bg flex h-dvh flex-col overflow-hidden">
+    <div className="bg-bg-raised flex h-dvh flex-col overflow-hidden">
       {isWindowSmall ? (
         <nav className="sticky top-0 z-20 w-full">
           <div className="flex flex-row items-center justify-between px-4 py-2">
             <button
               aria-controls="sidepanel"
               type="button"
-              className="text-text_color hover:bg-primary/20 rounded-lg text-sm"
+              className="text-fg hover:bg-primary-subtle rounded-lg text-sm"
               onClick={() => setIsOpened(true)}
             >
               <span className="sr-only">Open sidepanel</span>
@@ -172,8 +172,8 @@ function SidePanelLayout() {
             </button>
             <div className="flex flex-row gap-4">
               <a
-                className="hover:bg-primary/20 flex flex-row items-center gap-2
-                  rounded-lg p-2"
+                className="hover:bg-primary-subtle flex flex-row items-center
+                  gap-2 rounded-lg p-2"
                 href={`${TANGO_URL}/m/${merchantUrlName}`}
               >
                 <Icon icon={LinkSquare02Icon} styles="size-5" />
@@ -187,8 +187,7 @@ function SidePanelLayout() {
                   icon={Moon02Icon}
                   altIcon={Sun03Icon}
                   showAlt={isDarkTheme}
-                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                    hover:stroke-text_color"
+                  styles="size-5 stroke-fg hover:stroke-fg"
                 />
               </button>
             </div>
@@ -211,8 +210,8 @@ function SidePanelLayout() {
             </div>
             <div className="flex flex-row gap-4">
               <a
-                className="hover:bg-primary/20 flex flex-row items-center gap-2
-                  rounded-lg p-2"
+                className="hover:bg-primary-subtle flex flex-row items-center
+                  gap-2 rounded-lg p-2"
                 href={`${TANGO_URL}/m/${merchantUrlName}`}
               >
                 <Icon icon={LinkSquare02Icon} styles="size-5" />
@@ -226,8 +225,7 @@ function SidePanelLayout() {
                   icon={Moon02Icon}
                   altIcon={Sun03Icon}
                   showAlt={isDarkTheme}
-                  styles="size-5 stroke-gray-800 dark:stroke-gray-300
-                    hover:stroke-text_color"
+                  styles="size-5 stroke-fg hover:stroke-fg"
                 />
               </button>
             </div>
@@ -247,7 +245,7 @@ function SidePanelLayout() {
           id="sidepanel"
           className={`${isOpen ? "md:translate-x-0" : "-translate-x-full"}
             ${!isWindowSmall && isCollapsed ? "w-16" : "w-60"}
-            ${isWindowSmall ? "fixed top-0" : "relative"} bg-layer_bg left-0
+            ${isWindowSmall ? "fixed top-0" : "relative"} bg-bg-raised left-0
             z-30 flex h-full flex-col overflow-hidden
             transition-[width,translate] duration-300`}
           aria-label="Sidepanel"
@@ -281,15 +279,16 @@ function SidePanelLayout() {
                       }
                       to={item.href}
                       activeProps={{
-                        className: "bg-primary/20 *:text-primary! *:duration-0",
+                        className:
+                          "bg-primary-subtle *:text-fg-primary! *:duration-0",
                       }}
                       className={`${isCollapsed && !isWindowSmall ? "h-10 w-10 justify-center" : "h-10 px-2"}
-                      text-text_color hover:bg-primary/20 flex items-center
+                      text-fg hover:bg-primary-subtle flex items-center
                       rounded-lg`}
                     >
                       <span
-                        className="shrink-0 text-gray-500 transition duration-75
-                          dark:text-gray-400"
+                        className="text-fg-muted shrink-0 transition
+                          duration-75"
                       >
                         {item.icon}
                       </span>
@@ -304,10 +303,9 @@ function SidePanelLayout() {
                           </span>
                           {item.isPro && (
                             <span
-                              className="ms-3 inline-flex items-center
-                                justify-center rounded-full bg-gray-300 px-2
-                                text-sm font-medium text-gray-800
-                                dark:bg-gray-700 dark:text-gray-300"
+                              className="bg-bg-inactive text-fg ms-3 inline-flex
+                                items-center justify-center rounded-full px-2
+                                text-sm font-medium"
                             >
                               Pro
                             </span>
@@ -323,8 +321,9 @@ function SidePanelLayout() {
               <PopoverTrigger>
                 <div
                   className={`${!isWindowSmall && isCollapsed ? "px-0 py-2 hover:bg-transparent" : "gap-2 p-2"}
-                    hover:bg-primary/20 flex flex-row items-center rounded-lg
-                    transition-[padding,gap] duration-300 hover:cursor-pointer`}
+                    hover:bg-primary-subtle flex flex-row items-center
+                    rounded-lg transition-[padding,gap] duration-300
+                    hover:cursor-pointer`}
                 >
                   <Avatar
                     styles="size-10! text-sm! shrink-0"
@@ -342,7 +341,7 @@ function SidePanelLayout() {
               </PopoverTrigger>
               <PopoverContent align="start">
                 <div
-                  className="*:hover:bg-primary/20 space-y-2 text-sm
+                  className="*:hover:bg-primary-subtle space-y-2 text-sm
                     *:cursor-pointer *:rounded-lg *:p-2"
                 >
                   <div>
@@ -385,7 +384,7 @@ function SidePanelLayout() {
             duration-300 md:pt-2 md:pr-2`}
         >
           <div
-            className="bg-bg_color flex min-h-0 min-w-0 flex-1 flex-col
+            className="bg-bg flex min-h-0 min-w-0 flex-1 flex-col
               overflow-y-auto pb-2 md:rounded-t-xl"
           >
             <Outlet />

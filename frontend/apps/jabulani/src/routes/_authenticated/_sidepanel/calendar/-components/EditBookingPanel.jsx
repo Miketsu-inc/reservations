@@ -428,7 +428,7 @@ export default function EditBookingPanel({
             />
             {isPastBooking ? (
               <div
-                className="border-input_border_color flex items-center
+                className="border-border-strong flex items-center
                   justify-between rounded-lg border px-4 py-3"
               >
                 <div className="flex items-center gap-2">
@@ -450,13 +450,12 @@ export default function EditBookingPanel({
                   onSelect={(date) => updateBookingData({ date: date })}
                 />
                 <input
-                  className="bg-layer_bg border-input_border_color
-                    focus:border-primary focus:ring-primary/30
-                    disabled:text-text_color/70
-                    disabled:border-input_border_color/60 w-32 resize-none
-                    rounded-lg border px-2 py-1.5 placeholder-stone-500
-                    outline-hidden transition-[border-color,box-shadow]
-                    duration-150 ease-in-out focus:ring-4 dark:scheme-dark"
+                  className="bg-bg-raised border-border-strong
+                    focus:border-primary focus:ring-primary-focus
+                    disabled:text-fg-muted disabled:border-border w-32
+                    resize-none rounded-lg border px-2 py-1.5 outline-hidden
+                    transition-[border-color,box-shadow] duration-150
+                    ease-in-out focus:ring-4 dark:scheme-dark"
                   type="time"
                   value={bookingData.time}
                   onChange={(e) => {
@@ -475,7 +474,7 @@ export default function EditBookingPanel({
             />
             {isRecurring && (
               <div
-                className="border-input_border_color flex items-center gap-2
+                className="border-border-strong flex items-center gap-2
                   rounded-lg border p-3"
               >
                 <Icon icon={ArrowReloadHorizontalIcon} styles="size-5" />
@@ -497,7 +496,7 @@ export default function EditBookingPanel({
             ) : bookingData.merchantNote ? (
               <div className="flex flex-col gap-3">
                 <span className="text-sm font-medium">Your Note</span>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-fg-muted text-sm">
                   {bookingData.merchantNote}
                 </div>
               </div>
@@ -508,8 +507,8 @@ export default function EditBookingPanel({
         </div>
         {!isBookingCompleted && (
           <div
-            className="border-border_color bg-layer_bg items center fixed
-              bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
+            className="border-border bg-bg-raised items center fixed bottom-0
+              flex w-full border-t px-6 py-4 lg:w-110"
           >
             <Button
               styles="py-2 px-4 w-full"
@@ -598,12 +597,12 @@ function BookingHeader({
                 {isPastBooking && bookingData.bookingStatus !== "completed" && (
                   <PopoverClose asChild>
                     <button
-                      className="hover:bg-hvr_gray gap-2"
+                      className="hover:bg-hover gap-2"
                       onClick={() =>
                         updateBookingData({ bookingStatus: "completed" })
                       }
                     >
-                      <Icon icon={Tick02Icon} styles="size-6 fill-text_color" />
+                      <Icon icon={Tick02Icon} styles="size-6 fill-fg" />
                       Completed
                     </button>
                   </PopoverClose>
@@ -614,8 +613,7 @@ function BookingHeader({
                   bookingData.bookingStatus !== "no-show" && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray gap-3 text-red-600
-                          dark:text-red-800"
+                        className="hover:bg-hover text-fg-danger gap-3"
                         onClick={() =>
                           updateBookingData({ bookingStatus: "no-show" })
                         }
@@ -629,7 +627,7 @@ function BookingHeader({
                   !isPastBooking && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        className="hover:bg-hover cursor-pointer gap-3"
                         onClick={() =>
                           updateBookingData({ bookingStatus: "confirmed" })
                         }
@@ -640,14 +638,13 @@ function BookingHeader({
                   )}
                 {!isPastBooking && (
                   <PopoverClose asChild>
-                    <button className="hover:bg-hvr_gray">Reschedule</button>
+                    <button className="hover:bg-hover">Reschedule</button>
                   </PopoverClose>
                 )}
                 {!isPastBooking && (
                   <PopoverClose asChild>
                     <button
-                      className="hover:bg-hvr_gray text-red-600
-                        dark:text-red-800"
+                      className="hover:bg-hover text-fg-danger"
                       onClick={onCancel}
                     >
                       Cancel

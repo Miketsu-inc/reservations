@@ -58,7 +58,7 @@ export default function CustomerSelector({
     >
       <div className={`flex flex-col gap-5 pt-6 pb-2 ${styles}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-text_color text-xl font-semibold">
+          <h2 className="text-fg text-xl font-semibold">
             {isGroupMode ? "Select clients" : "Select a client"}
           </h2>
         </div>
@@ -72,7 +72,7 @@ export default function CustomerSelector({
       </div>
 
       {!isGroupMode && (
-        <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
+        <ul className="border-border flex flex-col gap-3 border-b pb-2">
           <NewCustomerOverlay
             onSave={handleNewCustomer}
             trigger={
@@ -117,8 +117,8 @@ export default function CustomerSelector({
 
       {isGroupMode && (
         <div
-          className="bg-layer_bg border-border_color absolute right-0 bottom-0
-            left-0 border-t px-4 py-2"
+          className="bg-bg-raised border-border absolute right-0 bottom-0 left-0
+            border-t px-4 py-2"
         >
           <Button
             buttonText="Save"
@@ -146,14 +146,13 @@ function CustomerRow({
   return (
     <button
       onClick={onSelect ? () => onSelect(customer) : undefined}
-      className="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3
-        py-2 text-left transition-all hover:bg-gray-200/40
-        dark:hover:bg-gray-700/10"
+      className="hover:bg-hover flex w-full cursor-pointer items-center gap-4
+        rounded-xl px-3 py-2 text-left transition-all"
       {...props}
     >
       {isAction ? (
         <div
-          className="text-primary bg-primary/20 flex size-14 shrink-0
+          className="text-fg-primary bg-primary-subtle flex size-14 shrink-0
             items-center justify-center rounded-full"
         >
           {icon}
@@ -171,12 +170,12 @@ function CustomerRow({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-text_color truncate font-semibold">
+        <span className="text-fg truncate font-semibold">
           {isAction ? label : `${customer?.first_name} ${customer?.last_name}`}
         </span>
 
         {!isAction && customer?.phone_number && (
-          <span className="text-sm text-gray-500">{customer.phone_number}</span>
+          <span className="text-fg-muted text-sm">{customer.phone_number}</span>
         )}
       </div>
 

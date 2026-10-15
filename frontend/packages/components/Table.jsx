@@ -21,10 +21,10 @@ const theme = themeQuartz.withParams({
   headerVerticalPaddingScale: 1,
   rowBorder: true,
   // wrapperBorder: false,
-  borderColor: "rgb(var(--border-color))",
-  backgroundColor: "rgb(var(--bg-color))",
-  headerBackgroundColor: "rgb(var(--layer-bg))",
-  accentColor: "rgb(var(--primary))",
+  borderColor: "var(--border)",
+  backgroundColor: "var(--bg)",
+  headerBackgroundColor: "var(--bg-raised)",
+  accentColor: "var(--primary)",
 });
 
 const modules = [
@@ -83,7 +83,7 @@ export default function Table({
           >
             <Icon
               icon={Download01Icon}
-              styles="text-text_color md:mr-2 md:mb-0.5 size-5"
+              styles="text-fg md:mr-2 md:mb-0.5 size-5"
             />
           </Button>
         </div>

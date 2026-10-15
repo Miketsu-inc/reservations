@@ -324,8 +324,8 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
         <div className="mb-5 flex items-center justify-between gap-3">
           <Link
             to={`/services/edit/${serviceId}`}
-            className="hover:bg-hvr_gray flex min-w-0 items-center gap-2
-              rounded-lg py-2 pr-2"
+            className="hover:bg-hover flex min-w-0 items-center gap-2 rounded-lg
+              py-2 pr-2"
           >
             <Icon icon={ArrowLeft01Icon} styles="size-6 shrink-0" />
             <span className="truncate">Back to {data.service_name}</span>
@@ -343,7 +343,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
           <h1 className="text-2xl font-semibold sm:text-3xl">
             Team member settings
           </h1>
-          <p className="text-text_color/70 mt-2 max-w-2xl">
+          <p className="text-fg-muted mt-2 max-w-2xl">
             Manage assignments and customize pricing, service phases, capacity,
             and scheduling for each team member.
           </p>
@@ -353,7 +353,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
 
         <div className="overflow-hidden">
           <div
-            className="bg-layer_bg flex flex-col gap-3 rounded-xl p-4
+            className="bg-bg-raised flex flex-col gap-3 rounded-xl p-4
               sm:flex-row sm:items-center sm:justify-between"
           >
             <SearchInput
@@ -372,28 +372,28 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
             />
           </div>
           <div
-            className="border-border_color hidden
+            className="border-border hidden
               grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
               gap-4 border-b px-5 pt-8 pb-4 text-sm xl:grid"
           >
-            <span className="text-text_color flex items-center font-semibold">
+            <span className="text-fg flex items-center font-semibold">
               Team member
             </span>
             <span>
-              <span className="text-text_color font-semibold">Duration</span>
-              <span className="text-text_color/60 mt-1 block text-sm">
+              <span className="text-fg font-semibold">Duration</span>
+              <span className="text-fg-muted mt-1 block text-sm">
                 Default: {formatDuration(data.default_duration)}
               </span>
             </span>
             <span>
-              <span className="text-text_color font-semibold">Price type</span>
-              <span className="text-text_color/60 mt-1 block text-sm">
+              <span className="text-fg font-semibold">Price type</span>
+              <span className="text-fg-muted mt-1 block text-sm">
                 Default: {data.default_price_type}
               </span>
             </span>
             <span>
-              <span className="text-text_color font-semibold">Price</span>
-              <span className="text-text_color/60 mt-1 block text-sm">
+              <span className="text-fg font-semibold">Price</span>
+              <span className="text-fg-muted mt-1 block text-sm">
                 Default: {formatPrice(data.default_price)}
               </span>
             </span>
@@ -401,7 +401,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
           </div>
 
           {filteredEmployees.length === 0 ? (
-            <div className="text-text_color/60 px-6 py-14 text-center">
+            <div className="text-fg-muted px-6 py-14 text-center">
               {employees.length === 0
                 ? "No active team members are available."
                 : "No team members match your search."}
@@ -482,7 +482,7 @@ function EmployeeSettingsRow({
   }
 
   return (
-    <li className={employee.is_assigned ? "" : "bg-bg_color/60"}>
+    <li className={employee.is_assigned ? "" : "bg-bg"}>
       <div
         className="grid grid-cols-1 gap-4 p-5
           xl:grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
@@ -511,7 +511,7 @@ function EmployeeSettingsRow({
             className={`min-w-0 ${employee.is_assigned ? "" : "opacity-50"}`}
           >
             <p className="truncate">{name}</p>
-            <p className="text-text_color/60 text-sm">
+            <p className="text-fg-muted text-sm">
               {employee.is_assigned
                 ? employee.role
                 : `${employee.role} · not assigned`}
@@ -597,11 +597,9 @@ function EmployeeSettingsRow({
             }
           >
             <span
-              className="border-input_border_color
-                peer-disabled:text-text_color/70
-                peer-disabled:border-input_border_color/60 rounded-r-lg border
-                px-4 py-2 peer-disabled:bg-gray-200/60
-                peer-disabled:dark:bg-gray-700/20"
+              className="border-border-strong peer-disabled:text-fg-muted
+                peer-disabled:border-border peer-disabled:bg-bg-sunken
+                rounded-r-lg border px-4 py-2"
             >
               {currency}
             </span>
@@ -615,7 +613,7 @@ function EmployeeSettingsRow({
             disabled={!employee.is_assigned}
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? "Hide" : "Show"} more settings for ${name}`}
-            className="hover:bg-hvr_gray flex cursor-pointer items-center gap-1
+            className="hover:bg-hover flex cursor-pointer items-center gap-1
               rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
               disabled:opacity-30 disabled:hover:bg-transparent"
           >
@@ -631,7 +629,7 @@ function EmployeeSettingsRow({
             type="button"
             onClick={onReset}
             disabled={!employee.is_assigned || !hasOverrides}
-            className="text-primary hover:bg-primary/10 cursor-pointer
+            className="text-fg-primary hover:bg-primary-subtle cursor-pointer
               rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
               disabled:opacity-30 disabled:hover:bg-transparent"
           >
@@ -744,8 +742,8 @@ function PhaseTypeBadge({ phaseType }) {
       <div
         className={`h-fit gap-2 rounded-xl px-2 py-2 text-sm ${
           isActive
-            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+            ? "bg-success-subtle text-fg-success"
+            : "bg-warning-subtle text-fg-warning"
           }`}
       >
         {isActive ? "Active" : "Waiting"}

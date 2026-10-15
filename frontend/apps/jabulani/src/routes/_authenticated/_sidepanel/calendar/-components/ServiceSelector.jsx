@@ -72,9 +72,7 @@ export default function ServiceSelector({
           <CloseButton onClick={onClose} styles="size-8" />
         </div>
       )}
-      <div
-        className="border-border_color flex flex-col gap-7 border-b px-6 pb-5"
-      >
+      <div className="border-border flex flex-col gap-7 border-b px-6 pb-5">
         <div className="flex flex-col gap-4">
           <p className="text-2xl font-semibold">Select a service</p>
           <SearchInput
@@ -107,12 +105,12 @@ export default function ServiceSelector({
                 className="flex flex-col gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-text_color text-lg font-medium">
+                  <span className="text-fg text-lg font-medium">
                     {category.name || "Other"}
                   </span>
                   <div
-                    className="flex size-6 items-center justify-center
-                      rounded-full bg-gray-200 font-medium dark:bg-gray-400/20"
+                    className="bg-bg-sunken flex size-6 items-center
+                      justify-center rounded-full font-medium"
                   >
                     {category.services.length}
                   </div>
@@ -133,8 +131,8 @@ export default function ServiceSelector({
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center justify-start gap-4">
-            <Icon icon={Search01Icon} styles="size-15 text-gray-500!" />
-            <p className="text-gray-40 dark:text-gray-500">No services found</p>
+            <Icon icon={Search01Icon} styles="size-15 text-fg-muted!" />
+            <p className="text-fg-disabled">No services found</p>
           </div>
         )}
       </div>
