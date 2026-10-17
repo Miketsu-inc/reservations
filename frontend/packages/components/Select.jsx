@@ -132,10 +132,10 @@ export default function Select({
               hover:not-disabled:border-fg-muted focus-visible:border-primary
               focus-visible:ring-primary-focus data-popup-open:border-primary
               data-popup-open:ring-primary-focus disabled:border-border
-              disabled:bg-bg-sunken w-full min-w-fit rounded-lg border py-2 pr-2
-              pl-3 text-left outline-hidden transition-[border-color,box-shadow]
-              duration-150 focus-visible:ring-3 data-popup-open:ring-3
-              md:text-sm`}
+              disabled:bg-bg-sunken w-full min-w-fit rounded-lg border py-1.5
+              pr-2 pl-3 text-left outline-hidden
+              transition-[border-color,box-shadow] duration-150
+              focus-visible:ring-3 data-popup-open:ring-3 md:text-sm`}
             type="button"
             ref={containerRef}
             disabled={disabled}

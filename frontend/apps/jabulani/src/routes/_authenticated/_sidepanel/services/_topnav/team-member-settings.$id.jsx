@@ -599,7 +599,7 @@ function EmployeeSettingsRow({
             <span
               className="border-border-strong peer-disabled:text-fg-muted
                 peer-disabled:border-border peer-disabled:bg-bg-sunken
-                rounded-r-lg border px-4 py-2"
+                bg-bg-input rounded-r-lg border px-4 py-1.5"
             >
               {currency}
             </span>
