@@ -60,7 +60,7 @@ export default function ChangePasswordModal({ trigger }) {
       <ResponsiveDialogTrigger asChild>{trigger}</ResponsiveDialogTrigger>
       <ResponsiveDialogContent>
         <form onSubmit={submitHandler} className="w-full p-4">
-          <p className="mb-6 text-xl">Change password</p>
+          <p className="mb-6 text-lg font-semibold">Change password</p>
           <div className="flex flex-col gap-4">
             <Input
               name="OldPassword"

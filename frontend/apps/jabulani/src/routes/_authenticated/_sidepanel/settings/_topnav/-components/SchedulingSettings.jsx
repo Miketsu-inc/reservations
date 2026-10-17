@@ -11,7 +11,7 @@ export default function SchedulingSettings({ settings, onChange }) {
     <>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
-          <div className="text-fg text-lg font-medium">Cancellation policy</div>
+          <div className="text-fg font-semibold">Cancellation policy</div>
 
           <div className="flex flex-col gap-2">
             <Select
@@ -33,7 +33,7 @@ export default function SchedulingSettings({ settings, onChange }) {
 
         <div className="flex flex-col gap-4">
           <div>
-            <div className="text-fg text-lg font-medium">Booking window</div>
+            <div className="text-fg font-semibold">Booking window</div>
             <p className="text-fg-muted mt-1 text-sm">
               Control when customers can book appointments
             </p>
@@ -75,7 +75,7 @@ export default function SchedulingSettings({ settings, onChange }) {
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="text-fg text-lg font-medium">Schedule management</div>
+          <div className="text-fg font-semibold">Schedule management</div>
           <div className="flex flex-col gap-2">
             <Select
               options={BUFFER_TIME_OPTIONS}

@@ -10,11 +10,9 @@ export default function SettingsPageHeader({ title, description, action }) {
         }`}
     >
       <div className="min-w-0">
-        <h1 className="text-fg text-2xl font-semibold tracking-tight">
-          {title}
-        </h1>
+        <h1 className="text-fg text-xl font-semibold">{title}</h1>
         {description && (
-          <p className="text-fg-muted mt-1 max-w-2xl text-sm leading-6">
+          <p className="text-fg-muted mt-0.5 max-w-2xl text-sm">
             {description}
           </p>
         )}

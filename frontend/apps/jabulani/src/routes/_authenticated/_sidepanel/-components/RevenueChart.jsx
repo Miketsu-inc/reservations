@@ -76,7 +76,7 @@ export default function RevenueChart({ merchantId, period }) {
 
   return (
     <div className="flex h-full w-full flex-col gap-8">
-      <p>Revenue</p>
+      <p className="text-fg-muted text-sm">Revenue</p>
       <div className="flex-1">
         <ResponsiveContainer
           initialDimension={{ width: 100, height: 100 }} // silence warning
@@ -93,16 +93,17 @@ export default function RevenueChart({ merchantId, period }) {
                 <stop
                   offset="5%"
                   stopColor="var(--primary)"
-                  stopOpacity={0.8}
+                  stopOpacity={0.6}
                 />
-                <stop
-                  offset="95%"
-                  stopColor="var(--primary)"
-                  stopOpacity={0.1}
-                />
+                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid className="stroke-fg-muted" vertical={false} />
+            <CartesianGrid
+              className="stroke-border-subtle"
+              stroke="currentColor"
+              strokeDasharray="3 4"
+              vertical={false}
+            />
             <XAxis
               dataKey="day"
               tickLine={false}
@@ -118,7 +119,8 @@ export default function RevenueChart({ merchantId, period }) {
               type="monotone"
               dataKey="value"
               stroke="var(--primary)"
-              fillOpacity={0.8}
+              strokeWidth={2}
+              fillOpacity={1}
               fill="url(#fillRevenue)"
               activeDot={{ stroke: "var(--primary)" }}
             />
@@ -150,7 +152,7 @@ const CustomTick = ({ x, y, payload, index, dataLength }) => {
     <text
       x={x}
       y={y + 10}
-      className="fill-fg-muted text-sm"
+      className="fill-fg-muted text-xs"
       textAnchor="middle"
     >
       {payload.value}
@@ -161,13 +163,13 @@ const CustomTick = ({ x, y, payload, index, dataLength }) => {
 const TooltipContent = ({ payload, label }) => {
   return (
     <div
-      className="bg-bg border-border flex h-fit min-w-32 flex-col rounded-lg
-        border p-2 text-xs shadow-xl"
+      className="bg-bg-overlay border-border shadow-overlay flex h-fit min-w-32
+        flex-col gap-1 rounded-lg border p-2 text-xs"
     >
-      <p>{label}</p>
+      <p className="text-fg-muted">{label}</p>
       {payload.map((item, index) => (
-        <div key={index} className="flex flex-row justify-between">
-          <div className="flex flex-row items-center gap-2">
+        <div key={index} className="flex flex-row justify-between gap-2">
+          <div className="flex flex-row items-center gap-1">
             <div className="bg-primary size-2.5 shrink-0 rounded-xs"></div>
             <p className="text-fg-muted">Revenue</p>
           </div>

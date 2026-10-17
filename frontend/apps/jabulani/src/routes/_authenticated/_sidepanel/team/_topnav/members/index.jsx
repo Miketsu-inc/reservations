@@ -119,7 +119,7 @@ function RouteComponent() {
 
   return (
     <>
-      <p className="shrink-0 pb-6 text-xl">Team members</p>
+      <h1 className="shrink-0 pb-4 text-xl font-semibold">Team members</h1>
       <ServerError error={serverError} />
       <div className="flex min-h-0 flex-1">
         <EmployeeTable

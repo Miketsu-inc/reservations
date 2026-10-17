@@ -41,15 +41,20 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center px-4">
-      <div className="flex w-full max-w-xl flex-col">
-        <div className="pt-4 pb-12">
-          <p className="text-2xl">Forgot password</p>
-          <p className="text-fg-muted">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div
+        className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+          max-w-xl flex-col sm:rounded-2xl sm:border sm:p-8"
+      >
+        <div className="pb-10">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Forgot password
+          </h1>
+          <p className="text-fg-muted mt-1 text-sm">
             You will get an email with a link to reset your password
           </p>
         </div>
-        <form onSubmit={submitHandler} className="flex h-full flex-col gap-6">
+        <form onSubmit={submitHandler} className="flex h-full flex-col gap-5">
           <Input
             name="email"
             labelText="Email"
@@ -58,7 +63,7 @@ function RouteComponent() {
             inputData={(data) => setEmail(data.value)}
             value={email}
           />
-          <Button styles="p-2" type="submit" buttonText="Send email" />
+          <Button styles="py-2.5" type="submit" buttonText="Send email" />
         </form>
       </div>
     </div>

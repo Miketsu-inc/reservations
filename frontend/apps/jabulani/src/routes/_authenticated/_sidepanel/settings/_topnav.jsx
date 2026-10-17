@@ -22,31 +22,31 @@ function RouteComponent() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/settings/merchant">
-          <Icon icon={Briefcase04Icon} styles="size-5" />
+          <Icon icon={Briefcase04Icon} styles="size-4.5" />
           <span>Profile</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/business-hours">
-          <Icon icon={Clock01Icon} styles="size-5" />
+          <Icon icon={Clock01Icon} styles="size-4.5" />
           <span>Business hours</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/scheduling">
-          <Icon icon={TimeScheduleIcon} styles="size-5" />
+          <Icon icon={TimeScheduleIcon} styles="size-4.5" />
           <span>Scheduling</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/blocked-time-types">
-          <Icon icon={UnavailableIcon} styles="size-5" />
+          <Icon icon={UnavailableIcon} styles="size-4.5" />
           <span>Blocked time types</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/calendar">
-          <Icon icon={Calendar02Icon} styles="size-5" />
+          <Icon icon={Calendar02Icon} styles="size-4.5" />
           <span>Calendar</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/location">
-          <Icon icon={Location01Icon} styles="size-5" />
+          <Icon icon={Location01Icon} styles="size-4.5" />
           <span>Location</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/settings/billing">
-          <Icon icon={CreditCardIcon} styles="size-5" />
+          <Icon icon={CreditCardIcon} styles="size-4.5" />
           <span>Billing</span>
         </TopNavBarItem>
       </TopNavBar>

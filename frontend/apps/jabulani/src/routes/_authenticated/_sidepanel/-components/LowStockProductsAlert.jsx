@@ -93,32 +93,32 @@ export default function LowStockProductsAlert({ merchantId, route }) {
   return (
     <Card styles="p-0!">
       <div
-        className={`flex flex-col justify-center ${hasLowStock ? "" : "gap-12"}`}
+        className={`flex flex-col justify-center ${hasLowStock ? "" : "gap-10"}`}
       >
         <div
-          className="border-border flex items-center justify-between border-b
-            p-4"
+          className="border-border-subtle flex items-center justify-between
+            border-b px-4 py-3"
         >
           <div className="flex items-center">
             <div
-              className={`mr-3 rounded-md p-2 ${
+              className={`mr-3 rounded-lg p-1.5 ${
                 hasLowStock ? "bg-warning-subtle" : "bg-success-subtle"
               }`}
             >
               {hasLowStock ? (
                 <Icon
                   icon={Alert02Icon}
-                  styles="size-6 shrink-0 text-fg-warning"
+                  styles="size-5 shrink-0 text-fg-warning"
                 />
               ) : (
                 <Icon
                   icon={ShoppingBag02Icon}
-                  styles="size-6 shrink-0 text-fg-success"
+                  styles="size-5 shrink-0 text-fg-success"
                 />
               )}
             </div>
             <div>
-              <h3 className="text-lg text-nowrap dark:font-semibold">
+              <h3 className="text-sm font-semibold text-nowrap">
                 Low Stock {hasLowStock ? `(${totalLowStock})` : ""}
               </h3>
               {hasLowStock && (
@@ -132,14 +132,12 @@ export default function LowStockProductsAlert({ merchantId, route }) {
           <Link
             from={route.fullPath}
             to="/products"
-            className="text-fg-muted hover:bg-hover flex items-center
-              justify-end gap-1 rounded-lg p-0 text-sm sm:p-2"
+            className="text-fg-muted hover:bg-hover hover:text-fg flex
+              items-center justify-end gap-1 rounded-lg p-0 text-sm font-medium
+              transition-colors sm:py-1.5 sm:pr-1.5 sm:pl-2.5"
           >
             <span className="hidden text-right sm:block">Manage Products</span>
-            <Icon
-              icon={ArrowLeft01Icon}
-              styles="stroke-fg-muted size-5 shrink-0 rotate-180"
-            />
+            <Icon icon={ArrowLeft01Icon} styles="size-4 shrink-0 rotate-180" />
           </Link>
         </div>
 
@@ -187,7 +185,8 @@ export default function LowStockProductsAlert({ merchantId, route }) {
                     </div>
                     <div className="flex items-center">
                       <div
-                        className="bg-bg-sunken mr-2 h-1.5 w-full rounded-full"
+                        className="bg-bg-inactive mr-2 h-1.5 w-full
+                          rounded-full"
                       >
                         <div
                           className={`h-1.5 rounded-full ${getProgressColor(
@@ -217,14 +216,12 @@ export default function LowStockProductsAlert({ merchantId, route }) {
           <div className="flex flex-col items-center justify-center">
             <div
               className="bg-success-subtle mb-4 flex w-min items-center
-                justify-center rounded-full p-2"
+                justify-center rounded-full p-2.5"
             >
-              <Icon icon={Tick02Icon} styles="size-12 text-fg-success" />
+              <Icon icon={Tick02Icon} styles="size-7 text-fg-success" />
             </div>
 
-            <p className="text-fg-muted text-sm">
-              All products are well-stocked
-            </p>
+            <p className="text-sm font-medium">All products are well-stocked</p>
             <p className="text-fg-muted text-xs">
               No items require immediate attention
             </p>

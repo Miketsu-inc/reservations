@@ -14,7 +14,7 @@ export default function CustomerStats({ customerId }) {
 
   return (
     <section>
-      <h2 className="mb-4 text-xl">Overview</h2>
+      <h2 className="mb-4 text-xl font-semibold">Overview</h2>
       {error ? (
         <ServerError error={error.message} />
       ) : isLoading || !stats ? (

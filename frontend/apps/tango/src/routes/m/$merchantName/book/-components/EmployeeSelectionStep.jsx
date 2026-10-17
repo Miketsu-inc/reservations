@@ -58,10 +58,10 @@ export default function EmployeeSelectionStep({
   }
 
   return (
-    <div className="flex h-full w-full flex-col gap-10">
-      <h1 className="text-3xl font-bold">Select an Employee</h1>
+    <div className="flex h-full w-full flex-col gap-6">
+      <h1 className="text-2xl font-bold">Select an Employee</h1>
       <div className="flex flex-col">
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-3">
           <EmployeeItem
             employee={noPrefEmployee}
             isSelected={selectedEmployee?.id === "no-pref"}
@@ -97,42 +97,43 @@ export function EmployeeItem({
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(employee)}
-      className={`bg-bg-raised hover:bg-hover flex w-full cursor-pointer
-        items-center justify-between rounded-md border px-6 py-4.5
-        transition-all duration-200 ${
-          isSelected ? "border-primary" : "border-border"
+      className={`group bg-bg-raised shadow-card flex w-full cursor-pointer
+        items-center justify-between rounded-xl border px-4 py-3.5 text-left ${
+          isSelected
+            ? "border-primary ring-primary-focus ring-2"
+            : "border-border hover:border-border-strong"
         } `}
     >
       <div className="flex items-center gap-4">
         {noPreference ? (
           <div
-            className="text-fg-primary bg-primary-subtle flex size-20 shrink-0
+            className="text-fg-primary bg-primary-subtle flex size-16 shrink-0
               items-center justify-center rounded-full"
           >
-            <Icon icon={UserQuestion02Icon} styles="size-10" />
+            <Icon icon={UserQuestion02Icon} styles="size-8" />
           </div>
         ) : (
           <Avatar
-            styles="size-20! text-[20px]! shrink-0 rounded-full!"
+            styles="size-16! text-[16px]! shrink-0"
             img={employee?.avatar_url}
             initials={`${employee?.first_name?.[0] ?? ""}${employee?.last_name?.[0] ?? ""}`}
           />
         )}
         <div className="flex flex-col gap-1">
-          <span className="text-lg font-medium">{employee.first_name}</span>
+          <span className="font-semibold">{employee.first_name}</span>
           {noPreference ? (
-            <span className="text-fg text-sm">Maximal availability</span>
+            <span className="text-fg-muted text-sm">Maximal availability</span>
           ) : (
             <div className="flex items-center gap-2">
               {employee.total_duration && (
-                <div className="text-fg flex items-center gap-1 text-sm">
+                <div className="text-fg-muted flex items-center gap-1 text-sm">
                   <Icon icon={Clock01Icon} styles="size-3.5" />
                   <span>{formatDuration(employee.total_duration)}</span>
                 </div>
               )}
-              <span className="bg-fg size-1 rounded-full"></span>
+              <span className="bg-fg-muted size-1 rounded-full"></span>
               {(employee.price || employee.price_type) && (
-                <span className="text-fg text-sm">
+                <span className="text-fg text-sm font-medium">
                   {getDisplayPrice(employee.price, employee.price_type)}
                 </span>
               )}
@@ -143,13 +144,15 @@ export function EmployeeItem({
       <div
         className={`flex size-8 shrink-0 items-center justify-center
           rounded-full border transition-colors ${
-            isSelected ? "border-primary bg-primary" : "border-border-strong"
+            isSelected
+              ? "border-primary bg-primary"
+              : "border-border-strong group-hover:border-fg-muted"
           } `}
       >
         <Icon
           icon={isSelected ? Tick02Icon : PlusSignIcon}
           styles={`
-            ${isSelected ? "text-white size-6" : "text-fg-muted size-5"}`}
+            ${isSelected ? "text-fg-on-primary size-5" : "text-fg-muted size-5"}`}
         />
       </div>
     </li>

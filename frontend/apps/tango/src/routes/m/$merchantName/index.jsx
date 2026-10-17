@@ -94,13 +94,10 @@ function MerchantPage() {
   }
 
   return (
-    <div
-      className="bg-bg-raised lg:bg-bg relative flex min-h-screen w-full
-        flex-col"
-    >
+    <div className="bg-bg relative flex min-h-screen w-full flex-col">
       <div
-        className="bg-bg-raised border-border sticky top-0 z-50 flex w-full
-          items-center justify-between border-b-2 p-3 shadow-sm lg:hidden"
+        className="bg-bg border-border sticky top-0 z-50 flex w-full
+          items-center justify-between border-b p-3 shadow-sm lg:hidden"
       >
         <Link className="hover:bg-hover rounded-md p-1" to="/home">
           <Icon icon={ArrowLeft01Icon} styles="text-fg" />
@@ -118,18 +115,18 @@ function MerchantPage() {
         {!isWindowSmall && (
           <>
             <Link
-              className="hover:bg-hover border-border bg-bg-raised mb-5 flex
-                h-fit w-fit rounded-full border p-3 shadow-sm transition-colors"
+              className="hover:bg-hover border-border bg-bg-raised shadow-card
+                mb-5 flex h-fit w-fit rounded-full border p-2.5"
               to="/home"
             >
-              <Icon icon={ArrowLeft01Icon} styles="text-fg size-6" />
+              <Icon icon={ArrowLeft01Icon} styles="text-fg size-5" />
             </Link>
             <div className="flex w-full items-start justify-between pb-4">
-              <div className="flex flex-col gap-4">
-                <h1 className="text-4xl font-bold">
+              <div className="flex flex-col gap-3">
+                <h1 className="text-4xl font-semibold">
                   {merchantInfo.merchant_name}
                 </h1>
-                <div className="flex items-center gap-3 text-base">
+                <div className="text-fg-muted flex items-center gap-3">
                   <div className="text-fg-warning flex items-center gap-1">
                     <Icon icon={StarIcon} styles="size-5 fill-warning" />
                     <span className="font-medium">4.6</span>
@@ -137,7 +134,7 @@ function MerchantPage() {
                       (9 reviews)
                     </span>
                   </div>
-                  <span className="">•</span>
+                  <span>•</span>
                   <div className="flex items-center gap-2">
                     <Icon icon={Clock01Icon} styles="size-5" />
                     {businessHoursStatus.is_business_open ? (
@@ -152,13 +149,11 @@ function MerchantPage() {
                       </span>
                     )}
                   </div>
-                  <span className="">•</span>
+                  <span>•</span>
                   <div className="flex items-center gap-2">
                     <Icon icon={Location01Icon} styles="size-5" />
                     <div className="flex items-start gap-2">
-                      <p className="lg:text-lg">
-                        {merchantInfo.formatted_location}
-                      </p>
+                      <p>{merchantInfo.formatted_location}</p>
 
                       <a
                         href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
@@ -175,9 +170,9 @@ function MerchantPage() {
 
               <FavoriteButton
                 merchantId={merchantInfo.merchant_id}
-                styles="bg-bg-raised border-border mt-1.5 h-fit cursor-pointer
-                  rounded-full border p-3 shadow-sm hover:scale-105
-                  hover:shadow-md transition-all duration-200"
+                styles="bg-bg-raised border-border shadow-card hover:bg-hover
+                  mt-1.5 h-fit cursor-pointer rounded-full border p-3
+                  hover:scale-105"
               />
             </div>
           </>
@@ -220,15 +215,15 @@ function MerchantPage() {
             lg:pt-14 xl:gap-18"
         >
           <div
-            className="bg-bg-raised lg:bg-bg relative z-10 -mt-6 flex w-full
-              flex-col gap-10 rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%]
-              lg:gap-12 lg:rounded-none lg:px-0 lg:pt-0"
+            className="bg-bg relative z-10 -mt-6 flex w-full flex-col gap-10
+              rounded-t-3xl px-6 pt-10 pb-12 lg:mt-0 lg:w-[65%] lg:gap-12
+              lg:rounded-none lg:px-0 lg:pt-0"
           >
             <div className="flex flex-col gap-3.5 lg:hidden">
               <h1 className="text-3xl font-bold">
                 {merchantInfo.merchant_name}
               </h1>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="text-fg-muted flex flex-wrap items-center gap-3">
                 <div className="text-fg-warning flex items-center gap-2">
                   <Icon icon={StarIcon} styles="size-5 fill-warning" />
                   <div className="flex items-center gap-1">
@@ -238,7 +233,7 @@ function MerchantPage() {
                     </button>
                   </div>
                 </div>
-                <span className="text-fg-muted">•</span>
+                <span>•</span>
                 <div className="flex items-center gap-2">
                   <Icon icon={Clock01Icon} styles="size-5" />
                   {businessHoursStatus.is_business_open ? (
@@ -256,7 +251,7 @@ function MerchantPage() {
                   )}
                 </div>
               </div>
-              <div className="text-fg-muted flex items-center gap-3">
+              <div className="text-fg-muted flex items-center gap-2">
                 <Icon icon={Location01Icon} styles="size-5" />
                 <span>{merchantInfo.formatted_location}</span>
               </div>
@@ -266,28 +261,25 @@ function MerchantPage() {
               <h2 className="text-xl font-semibold lg:text-2xl">
                 Get to Know Us
               </h2>
-              <p className="lg:text-lg">{merchantInfo.introduction}</p>
+              <p className="text-fg-muted">{merchantInfo.introduction}</p>
               {merchantInfo.announcement && (
                 <div
                   className="border-primary bg-primary-subtle mt-2 rounded-r-lg
-                    border-l-3 py-3 pl-4"
+                    border-l-3 py-3 pr-4 pl-4"
                 >
-                  <p className="text-primary-dark text-base lg:text-lg">
-                    {merchantInfo.announcement}
-                  </p>
+                  <p className="text-fg text-sm">{merchantInfo.announcement}</p>
                 </div>
               )}
             </div>
             <ReservationSection name="Select a Service" show={true}>
               <ServiceSection
-                onSelect={() => {}}
                 router={Route}
                 merchantInfo={merchantInfo}
                 merchantName={merchantName}
               />
             </ReservationSection>
             <ReservationSection name="About us" show={merchantInfo.about_us}>
-              <p className="lg:text-lg">{merchantInfo.about_us}</p>
+              <p className="text-fg-muted">{merchantInfo.about_us}</p>
             </ReservationSection>
 
             <ReservationSection name="Team" show={true}>
@@ -300,9 +292,7 @@ function MerchantPage() {
             >
               <div className="flex flex-col gap-4 lg:gap-6">
                 <div className="flex flex-wrap items-start gap-1">
-                  <p className="lg:text-lg">
-                    {merchantInfo.formatted_location}
-                  </p>
+                  <p>{merchantInfo.formatted_location}</p>
 
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
@@ -314,8 +304,8 @@ function MerchantPage() {
                   </a>
                 </div>
                 <div
-                  className="border-border overflow-hidden rounded-2xl border
-                    shadow-sm"
+                  className="border-border shadow-card overflow-hidden
+                    rounded-2xl border"
                 >
                   <MapboxMap
                     styles={isWindowSmall ? "h-64 w-full" : "h-87.5 w-full"}
@@ -328,15 +318,15 @@ function MerchantPage() {
                   />
                 </div>
 
-                <p className="text-center lg:text-lg">
+                <p className="text-fg-muted text-center text-sm">
                   {merchantInfo.parking_info}
                 </p>
               </div>
             </ReservationSection>
 
             <div
-              className="border-border bg-bg-raised sticky bottom-0 z-10 flex
-                w-full items-center justify-between border-y py-4 lg:hidden"
+              className="border-border bg-bg sticky bottom-0 z-10 flex w-full
+                items-center justify-between border-y py-3 lg:hidden"
             >
               <span>{merchantName}</span>
               <Link
@@ -344,7 +334,7 @@ function MerchantPage() {
                 to="book"
                 search={{ locationId: merchantInfo.location_id }}
               >
-                <Button buttonText="Reserve Now" styles="py-2 px-4" />
+                <Button buttonText="Reserve Now" styles="py-2 px-4 text-sm" />
               </Link>
             </div>
 
@@ -367,14 +357,20 @@ function MerchantPage() {
                       lg:gap-6"
                   >
                     {merchantInfo.contact_email && (
-                      <div className="flex items-center gap-4 lg:text-lg">
-                        <Icon icon={Mail01Icon} styles="size-5 lg:size-6" />
+                      <div
+                        className="text-fg-muted flex items-center gap-3
+                          text-sm"
+                      >
+                        <Icon icon={Mail01Icon} styles="size-5" />
                         {merchantInfo.contact_email}
                       </div>
                     )}
                     {merchantInfo.phone_number && (
-                      <div className="flex items-center gap-4 lg:text-lg">
-                        <Icon icon={Call02Icon} styles="size-5 lg:size-6" />
+                      <div
+                        className="text-fg-muted flex items-center gap-3
+                          text-sm"
+                      >
+                        <Icon icon={Call02Icon} styles="size-5" />
                         {merchantInfo.phone_number}
                       </div>
                     )}
@@ -384,14 +380,14 @@ function MerchantPage() {
                     className="border-border pt-2 lg:max-w-md lg:border-t
                       lg:pt-6"
                   >
-                    <p className="text-fg-muted mb-4 font-semibold lg:mb-5">
+                    <p className="text-fg mb-4 text-sm font-semibold">
                       Follow us
                     </p>
                     <div
                       className="*:hover:text-fg-primary *:text-fg-muted flex
-                        items-center justify-evenly gap-6 *:size-7
+                        items-center justify-evenly gap-6 *:size-6
                         *:cursor-pointer *:transition-colors sm:justify-start
-                        lg:gap-8 lg:*:size-7"
+                        lg:gap-8 lg:*:size-6"
                     >
                       <Icon icon={InstagramIcon} />
                       <Icon icon={Facebook01Icon} />
@@ -406,18 +402,18 @@ function MerchantPage() {
 
           <div className="hidden lg:block lg:w-[35%]">
             <div
-              className="border-border bg-bg-raised sticky top-14 flex flex-col
-                gap-5 rounded-xl border p-8 shadow-lg"
+              className="border-border bg-bg-raised shadow-card sticky top-14
+                flex flex-col gap-5 rounded-2xl border p-6"
             >
               <div className="flex items-start justify-between gap-2 pb-4">
                 <div className="flex flex-col gap-2">
-                  <h2 className="text-4xl font-bold">
+                  <h2 className="text-2xl font-semibold tracking-tight">
                     {merchantInfo.merchant_name}
                   </h2>
-                  <div className="flex items-center gap-2 text-xl font-medium">
+                  <div className="flex items-center gap-1.5 text-sm font-medium">
                     <Icon
                       icon={StarIcon}
-                      styles="size-5 fill-warning text-fg-warning"
+                      styles="size-4 fill-warning text-fg-warning"
                     />
                     <span>4.6</span>
                     <span className="text-fg-primary ml-1 font-normal">
@@ -427,9 +423,8 @@ function MerchantPage() {
                 </div>
                 <FavoriteButton
                   merchantId={merchantInfo.merchant_id}
-                  styles="bg-bg-raised border-border h-fit cursor-pointer
-                    rounded-full border p-3 shadow-md hover:scale-105
-                    hover:shadow-lg transition-all duration-200"
+                  styles="bg-bg-raised border-border hover:bg-hover h-fit
+                    cursor-pointer rounded-full border p-2.5 hover:scale-105"
                 />
               </div>
               <Link
@@ -437,18 +432,15 @@ function MerchantPage() {
                 to="book"
                 search={{ locationId: merchantInfo.location_id }}
               >
-                <Button
-                  buttonText="Reserve Now"
-                  styles="w-full py-2.5 text-lg"
-                />
+                <Button buttonText="Reserve Now" styles="w-full py-2.5" />
               </Link>
 
               <div
-                className="border-border text-fg-muted mt-2 flex flex-col gap-5
-                  border-t pt-6"
+                className="border-border-subtle text-fg-muted mt-2 flex flex-col
+                  gap-4 border-t pt-6 text-sm"
               >
                 <div className="flex items-center gap-2">
-                  <Icon icon={Clock01Icon} styles="size-5" />
+                  <Icon icon={Clock01Icon} styles="size-4" />
                   {businessHoursStatus.is_business_open ? (
                     <span className="flex items-center gap-1">
                       <span className="text-fg-success font-medium">Open</span>-
@@ -464,7 +456,7 @@ function MerchantPage() {
                   )}
                 </div>
                 <div className="flex items-start gap-1.5">
-                  <Icon icon={Location01Icon} styles="size-5 mt-0.5" />
+                  <Icon icon={Location01Icon} styles="size-4 mt-0.5" />
                   <span>{merchantInfo.formatted_location}</span>
                 </div>
               </div>

@@ -159,25 +159,26 @@ function CancelPage() {
         </div>
       )}
       <div
-        className="bg-bg-raised border-border w-full rounded-t-lg rounded-b-none
-          border border-b-0 p-4 shadow-none sm:rounded-lg sm:border
-          sm:shadow-sm"
+        className="bg-bg-raised border-border sm:shadow-card w-full rounded-t-xl
+          rounded-b-none border border-b-0 p-4 sm:rounded-xl sm:border"
       >
         <div className="flex items-center gap-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold">{dateInfo.day}</div>
-            <div className="text-sm font-medium">{dateInfo.month}</div>
-            <div className="text-xs opacity-60">{dateInfo.weekday}</div>
+          <div className="shrink-0 rounded-lg py-2 text-center">
+            <div className="text-xl font-bold">{dateInfo.day}</div>
+            <div className="text-fg-muted text-xs font-medium uppercase">
+              {dateInfo.month}
+            </div>
+            <div className="text-fg-muted text-[11px]">{dateInfo.weekday}</div>
           </div>
 
           <div className="flex-1">
-            <h2 className="text-lg font-bold">{bookingData.service_name}</h2>
+            <h2 className="font-bold">{bookingData.service_name}</h2>
             <p className="text-fg-muted mb-1 text-sm">
               {bookingData.merchant_name}
             </p>
             <div className="flex items-center gap-2">
               <Icon icon={Clock01Icon} styles="size-4 text-fg-muted" />
-              <span className="text-fg-muted font-medium">
+              <span className="text-fg-muted text-sm font-medium">
                 {`${timeStringFromDate(
                   new Date(bookingData.from_date)
                 )} - ${timeStringFromDate(new Date(bookingData.to_date))}`}
@@ -185,7 +186,7 @@ function CancelPage() {
             </div>
           </div>
           <div
-            className="from-fg-primary to-primary h-16 w-16 rounded-xl
+            className="from-primary to-primary-hover h-16 w-16 rounded-xl
               bg-linear-to-br sm:h-20 sm:w-20"
           ></div>
         </div>
@@ -195,33 +196,33 @@ function CancelPage() {
           grid-cols-1 gap-0 sm:gap-4 sm:pb-2`}
       >
         <div
-          className="border-border bg-bg-raised rounded-none border border-y-0
-            p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4
-            sm:shadow-sm"
+          className="border-border bg-bg-raised sm:shadow-card rounded-none
+            border border-y-0 p-4 pt-2 sm:mb-0 sm:rounded-xl sm:border sm:p-4"
         >
           <div className="mb-1 flex items-center gap-2">
             <Icon icon={Location01Icon} styles="size-4 text-fg-info" />
-            <span className="text-fg text-xs font-semibold">LOCATION</span>
+            <span className="text-fg-muted text-xs font-semibold tracking-wide">
+              LOCATION
+            </span>
           </div>
-          <p className={"text-fg-muted mt-2 text-sm font-medium"}>
+          <p className={"text-fg mt-2 text-sm font-medium"}>
             {bookingData.formatted_location}
           </p>
         </div>
         {bookingData.price && (
           <div
-            className="border-border bg-bg-raised rounded-none border border-y-0
-              p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border sm:p-4
-              sm:shadow-sm"
+            className="border-border bg-bg-raised sm:shadow-card rounded-none
+              border border-y-0 p-4 pt-2 sm:mb-0 sm:rounded-xl sm:border sm:p-4"
           >
             <div
-              className="text-fg mb-1 flex items-center gap-2 text-xs
-                font-semibold"
+              className="text-fg-muted mb-1 flex items-center gap-2 text-xs
+                font-semibold tracking-wide"
             >
               <span className="text-fg-success">$</span>
               PRICE
             </div>
 
-            <p className="text-fg-muted mt-1 font-medium">
+            <p className="text-fg mt-1 text-sm font-medium">
               {getDisplayPrice(bookingData.price, bookingData.price_type)}
             </p>
           </div>
@@ -229,7 +230,7 @@ function CancelPage() {
       </div>
       <div
         className="border-border bg-bg-raised flex w-full flex-col items-center
-          gap-5 rounded-b-lg border border-t-0 py-4 sm:border-none
+          gap-5 rounded-b-xl border border-t-0 py-4 sm:border-none
           sm:bg-transparent"
       >
         <div className="text-fg-muted px-5 text-center text-sm">
@@ -241,7 +242,7 @@ function CancelPage() {
           isLoading={cancelling}
           disabled={!canBeCancelled}
           variant="danger"
-          styles="px-2 py-1 w-min truncate"
+          styles="px-4 py-2 text-sm w-min truncate"
         />
       </div>
       {serverError && <ServerError error={serverError} />}

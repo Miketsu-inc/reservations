@@ -72,11 +72,12 @@ export function StyledInputBase({ styles = "", ...props }) {
   return (
     <InputBase
       {...props}
-      styles={`${styles} peer border bg-bg-raised outline-hidden
-        transition-[border-color,box-shadow] ease-in-out duration-150
-        border-border-strong focus:border-primary focus:ring-4
-        focus:ring-primary-focus disabled:text-fg-muted disabled:border-border
-        disabled:bg-bg-sunken p-2`}
+      styles={`${styles} peer border bg-bg-input md:text-sm border-border-strong
+        outline-hidden transition-[border-color,box-shadow] ease-in-out
+        duration-150 hover:not-disabled:not-focus:border-fg-muted
+        focus:border-primary focus:ring-3 focus:ring-primary-focus
+        disabled:text-fg-disabled disabled:border-border disabled:bg-bg-sunken
+        p-2`}
     />
   );
 }

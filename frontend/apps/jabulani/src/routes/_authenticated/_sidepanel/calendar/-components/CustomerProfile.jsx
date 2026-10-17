@@ -33,7 +33,7 @@ export default function CustomerProfile({
       >
         <div className="flex flex-col items-center gap-6">
           <Avatar
-            styles="size-28! text-[24px]! shrink-0 rounded-full!"
+            styles="size-28! text-[24px]! shrink-0"
             img={customer?.avatar_url}
             initials={`${customer?.first_name?.[0] || "?"}${customer?.last_name?.[0] || ""}`}
           />

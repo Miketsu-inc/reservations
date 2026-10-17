@@ -156,8 +156,8 @@ function SchedulingPage() {
                 }
                 className={`rounded-xl border p-4 text-left transition-colors ${
                   active
-                    ? "border-primary bg-primary-subtle"
-                    : "border-border hover:border-border-primary hover:bg-hover"
+                    ? "border-primary/60 bg-primary-subtle"
+                    : "border-border bg-bg-raised hover:border-border-strong"
                 }`}
               >
                 <span className="text-fg block text-sm font-semibold">

@@ -111,7 +111,10 @@ export default function Select({
     >
       <div className={`w-full ${styles}`}>
         {labelText && (
-          <span className="flex items-center gap-1 pb-1 text-sm">
+          <span
+            className="text-fg flex items-center gap-1 pb-1.5 text-sm
+              font-medium"
+          >
             {labelText}
             {required !== false && (
               <span
@@ -125,9 +128,14 @@ export default function Select({
         )}
         <PopoverTrigger asChild>
           <button
-            className={`${styles} border-border-strong disabled:border-border
+            className={`${styles} bg-bg-input border-border-strong
+              hover:not-disabled:border-fg-muted focus-visible:border-primary
+              focus-visible:ring-primary-focus data-popup-open:border-primary
+              data-popup-open:ring-primary-focus disabled:border-border
               disabled:bg-bg-sunken w-full min-w-fit rounded-lg border py-2 pr-2
-              pl-3 text-left transition-opacity`}
+              pl-3 text-left outline-hidden transition-[border-color,box-shadow]
+              duration-150 focus-visible:ring-3 data-popup-open:ring-3
+              md:text-sm`}
             type="button"
             ref={containerRef}
             disabled={disabled}
@@ -135,7 +143,7 @@ export default function Select({
             <div className="flex items-center justify-between gap-2">
               <span
                 className={`${selectedOption ? "text-fg" : "text-fg-muted"}
-                  min-h-6 ${disabled ? "text-fg-muted" : ""}`}
+                  min-h-6 ${disabled ? "text-fg-disabled" : ""}`}
               >
                 {!selectedOption ? (
                   placeholder
@@ -153,7 +161,7 @@ export default function Select({
               <Icon
                 icon={ArrowLeft01Icon}
                 styles={`text-fg-muted transition-transform -rotate-90 shrink-0
-                  ${isOpen ? "rotate-90" : ""} size-6`}
+                  ${isOpen ? "rotate-90" : ""} size-5`}
               />
             </div>
           </button>
@@ -184,7 +192,10 @@ export default function Select({
           }}
         >
           {options.length === 0 ? (
-            <li className="text-fg-muted px-4 py-6 text-center select-none">
+            <li
+              className="text-fg-muted px-4 py-6 text-center text-sm
+                select-none"
+            >
               {emptyText || "No results found"}
             </li>
           ) : (
@@ -222,7 +233,7 @@ const SelectItem = memo(
           handleClose();
         }}
         className={`${isHighlighted ? "bg-hover" : isUsingKeyboard ? "" : "hover:bg-hover"}
-          text-fg-muted cursor-pointer rounded-sm py-1 pr-0.5 pl-2 select-none`}
+          text-fg cursor-pointer rounded-md py-1 pr-1 pl-2 select-none`}
         role="option"
         aria-selected={isSelected}
       >
@@ -236,7 +247,7 @@ const SelectItem = memo(
             <span className="truncate">{option.label}</span>
           </div>
           {isSelected && (
-            <Icon icon={Tick02Icon} styles="size-6 text-fg shrink-0" />
+            <Icon icon={Tick02Icon} styles="size-5 text-fg-primary shrink-0" />
           )}
         </div>
       </li>

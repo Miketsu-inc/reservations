@@ -114,7 +114,7 @@ export default function MultiSelect({
     >
       <div className={`w-full ${styles}`}>
         {labelText && (
-          <span className="flex items-center gap-1 pb-1 text-sm">
+          <span className="text-fg flex items-center gap-1 pb-1.5 text-sm">
             {labelText}
             {required !== false && (
               <span
@@ -128,9 +128,14 @@ export default function MultiSelect({
         )}
         <PopoverTrigger asChild>
           <button
-            className={`${styles} border-border-strong disabled:border-border
+            className={`${styles} bg-bg-input border-border-strong
+              hover:not-disabled:border-fg-muted focus-visible:border-primary
+              focus-visible:ring-primary-focus data-popup-open:border-primary
+              data-popup-open:ring-primary-focus disabled:border-border
               disabled:bg-bg-sunken w-full min-w-fit rounded-lg border py-2 pr-2
-              pl-3 text-left transition-opacity`}
+              pl-3 text-left outline-hidden transition-[border-color,box-shadow]
+              duration-150 focus-visible:ring-3 data-popup-open:ring-3
+              md:text-sm`}
             type="button"
             ref={containerRef}
             disabled={disabled}
@@ -189,7 +194,7 @@ export default function MultiSelect({
                 className={`${
                   highlightedIndex === 0 ? "bg-hover" : "hover:bg-hover"
                 }
-                  text-fg-muted mb-1 cursor-pointer rounded-sm py-2 pr-0.5 pl-2
+                  text-fg mb-1 cursor-pointer rounded-sm py-2 pr-1 pl-2
                   select-none`}
                 role="option"
                 aria-selected={allSelected}
@@ -216,7 +221,7 @@ export default function MultiSelect({
                     key={option.value}
                     onClick={() => handleToggleOption(option.value)}
                     className={`${isHighlighted ? "bg-hover" : isUsingKeyboard ? "" : "hover:bg-hover"}
-                      text-fg-muted cursor-pointer rounded-sm py-2 pr-0.5 pl-2
+                      text-fg cursor-pointer rounded-sm py-2 pr-0.5 pl-2
                       select-none`}
                     role="option"
                     aria-selected={isSelected}
@@ -235,7 +240,7 @@ export default function MultiSelect({
                           initials={
                             option.initials || option.label?.substring(0, 2)
                           }
-                          styles="size-6! text-[10px]! shrink-0 rounded-full!"
+                          styles="size-6! text-[10px]! shrink-0"
                         />
                         <span className="mb-0.5 truncate text-sm">
                           {option.label}
@@ -268,7 +273,7 @@ function TriggerContent({
   if (selectedOptions.length === 0) {
     return (
       <span
-        className={`${disabled ? "text-fg-muted" : "text-fg-muted"} min-h-6
+        className={`${disabled ? "text-fg-disabled" : "text-fg-muted"} min-h-6
           flex-1 truncate`}
       >
         {placeholder}
@@ -294,21 +299,23 @@ function TriggerContent({
             key={option.value}
             img={option.img}
             initials={option.initials || option.label?.substring(0, 2)}
-            styles="size-6! text-[10px]! rounded-full! border border-bg-raised"
+            styles="size-6! text-[10px]! border border-bg-raised"
           />
         ))}
         {remainingCount > 0 && (
           <div
-            className="border-bg-raised bg-bg-inactive flex size-6 items-center
-              justify-center rounded-full border-2 text-[10px] font-semibold
-              text-white"
+            className="border-bg-raised bg-bg-sunken text-fg-muted flex size-6
+              items-center justify-center rounded-full border-2 text-[10px]
+              font-semibold"
           >
             +{remainingCount}
           </div>
         )}
       </div>
       <span
-        className={`truncate text-sm ${disabled ? "text-fg-muted" : "text-fg"}`}
+        className={`truncate text-sm ${
+          disabled ? "text-fg-disabled" : "text-fg"
+        }`}
       >
         {text}
       </span>

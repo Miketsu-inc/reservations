@@ -74,9 +74,9 @@ export default function ServiceCategorySection({
       />
       <div className={"flex flex-row items-center justify-between gap-2"}>
         <div className="flex flex-row items-center">
-          <p className="text-lg font-semibold">{`${category.id ? `${category.name}` : "Uncategorized"}`}</p>
+          <p className="text-base font-semibold">{`${category.id ? `${category.name}` : "Uncategorized"}`}</p>
         </div>
-        <div className="flex flex-row gap-3">
+        <div className="flex flex-row gap-0.5">
           {category.id !== null && (
             <CategoryOptions
               category={category}
@@ -88,8 +88,8 @@ export default function ServiceCategorySection({
             />
           )}
           <button
-            className="hover:bg-hover hover:*:stroke-fg cursor-pointer
-              rounded-lg p-1"
+            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
+              rounded-lg p-2"
             onClick={() => {
               localStorage.setItem(
                 `category_${category.id}_collapsed`,
@@ -101,7 +101,7 @@ export default function ServiceCategorySection({
             <Icon
               icon={ArrowLeft01Icon}
               styles={`${isCollapsed ? "-rotate-90" : "rotate-90"}
-                transition-transform duration-200 size-6 text-fg-muted `}
+                transition-transform duration-200 size-4.5`}
             />
           </button>
         </div>
@@ -111,13 +111,13 @@ export default function ServiceCategorySection({
           transition-[grid, opcaity] grid duration-300 ease-in-out`}
       >
         <div className="overflow-hidden">
-          <div className="py-4">
+          <div className="pt-2 pb-4">
             {category.services.length > 0 ? (
               children
             ) : (
               <div
-                className="bg-bg-raised border-fg rounded-lg border
-                  border-dashed py-18"
+                className="border-border-strong text-fg-muted rounded-xl border
+                  border-dashed py-10 text-sm"
               >
                 <p className="text-center">
                   Drop a service here to add it to the category
@@ -143,13 +143,10 @@ function CategoryOptions({
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="hover:bg-hover hover:*:stroke-fg cursor-pointer rounded-lg
-            p-1"
+          className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
+            rounded-lg p-2"
         >
-          <Icon
-            icon={MoreVerticalIcon}
-            styles="size-6 rotate-90 text-fg-muted"
-          />
+          <Icon icon={MoreVerticalIcon} styles="size-4.5 rotate-90" />
         </button>
       </PopoverTrigger>
       <PopoverContent side="left">
@@ -160,9 +157,9 @@ function CategoryOptions({
           <PopoverClose asChild>
             <button
               onClick={onEdit}
-              className="hover:bg-hover cursor-pointer gap-4"
+              className="hover:bg-hover cursor-pointer gap-2.5"
             >
-              <Icon icon={Edit03Icon} styles="size-6" />
+              <Icon icon={Edit03Icon} styles="size-4.5 text-fg-muted" />
               <p>Edit category</p>
             </button>
           </PopoverClose>
@@ -174,11 +171,11 @@ function CategoryOptions({
                 category.sequence === categoryCount
                   ? "opacity-35"
                   : "hover:bg-hover cursor-pointer"
-                } gap-4`}
+                } gap-2.5`}
             >
               <Icon
                 icon={ArrowLeft02Icon}
-                styles="size-6 -rotate-90 stroke-current"
+                styles="size-4.5 -rotate-90 text-fg-muted"
               />
               <p>Move down</p>
             </button>
@@ -188,11 +185,11 @@ function CategoryOptions({
               disabled={category.sequence === 1}
               onClick={onMoveUp}
               className={`${category.sequence === 1 ? "opacity-35" : "hover:bg-hover cursor-pointer"}
-                gap-4`}
+                gap-2.5`}
             >
               <Icon
                 icon={ArrowLeft02Icon}
-                styles="size-6 rotate-90 stroke-current"
+                styles="size-4.5 rotate-90 text-fg-muted"
               />
               <p>Move up</p>
             </button>
@@ -200,12 +197,9 @@ function CategoryOptions({
           <PopoverClose asChild>
             <button
               onClick={onDelete}
-              className="hover:bg-hover cursor-pointer gap-4"
+              className="hover:bg-hover cursor-pointer gap-2.5"
             >
-              <Icon
-                icon={Delete02Icon}
-                styles="size-6 ml-0.5 mb-0.5 text-fg-danger"
-              />
+              <Icon icon={Delete02Icon} styles="size-4.5 text-fg-danger" />
               <p className="text-fg-danger">Delete category</p>
             </button>
           </PopoverClose>

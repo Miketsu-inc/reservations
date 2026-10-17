@@ -24,15 +24,20 @@ export function ModalTrigger({ asChild = false, children, ...props }) {
 export function ModalContent({ styles = "", ...props }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop className="fixed inset-0 bg-black/45" />
+      <DialogPrimitive.Backdrop
+        className="bg-bg-backdrop fixed inset-0 transition-opacity duration-150
+          data-ending-style:opacity-0 data-starting-style:opacity-0"
+      />
       <DialogPrimitive.Viewport
         className="fixed inset-0 z-60 flex w-full items-center justify-center
           p-4"
       >
         <DialogPrimitive.Popup
-          className={`${styles} bg-bg-raised text-fg w-full rounded-lg shadow-lg
-            transition-all focus:outline-none sm:w-fit dark:border
-            dark:shadow-md`}
+          className={`${styles} bg-bg text-fg border-border shadow-modal w-full
+            rounded-2xl border transition-all duration-150 focus:outline-none
+            data-ending-style:scale-[0.98] data-ending-style:opacity-0
+            data-starting-style:scale-[0.98] data-starting-style:opacity-0
+            sm:w-fit`}
           {...props}
         />
       </DialogPrimitive.Viewport>

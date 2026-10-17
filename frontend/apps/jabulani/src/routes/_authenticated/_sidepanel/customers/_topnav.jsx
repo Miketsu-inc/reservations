@@ -24,12 +24,12 @@ function CustomersLayout() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem
-          styles={isCustomersActive ? "after:opacity-100" : ""}
+          styles={isCustomersActive ? "text-fg! after:opacity-100" : ""}
           from={Route.fullPath}
           to="/customers"
           activeProps={{}}
         >
-          <Icon icon={User03Icon} styles="size-5" />
+          <Icon icon={User03Icon} styles="size-4.5" />
           <span>Customers</span>
         </TopNavBarItem>
         <TopNavBarItem
@@ -37,7 +37,7 @@ function CustomersLayout() {
           to="/customers/blacklist"
           activeOptions={{ exact: true }}
         >
-          <Icon icon={UnavailableIcon} styles="size-5" />
+          <Icon icon={UnavailableIcon} styles="size-4.5" />
           <span>Blacklisted</span>
         </TopNavBarItem>
       </TopNavBar>

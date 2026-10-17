@@ -403,7 +403,7 @@ export default function NewBookingPanel({
                       onSelect={(date) => updateBookingData({ date: date })}
                     />
                     <input
-                      className="bg-bg-raised border-border-strong
+                      className="bg-bg-overlay border-border-strong
                         focus:border-primary focus:ring-primary-focus
                         disabled:text-fg-muted disabled:border-border w-32
                         resize-none rounded-lg border px-2 py-1.5 outline-hidden
@@ -450,7 +450,7 @@ export default function NewBookingPanel({
                 </div>
               </div>
               <div
-                className="border-border bg-bg-raised items center fixed
+                className="border-border bg-bg-overlay items center fixed
                   bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
               >
                 <Button

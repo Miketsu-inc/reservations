@@ -83,7 +83,7 @@ export default function NameForm({ isLoading, SubmitForm }) {
 
   return (
     <>
-      <h2 className="mb-8 text-center text-xl font-semibold">Username</h2>
+      <h2 className="mb-6 text-center text-xl font-semibold">Username</h2>
       <FloatingLabelInput
         ref={firstNameRef}
         type="text"
@@ -107,10 +107,10 @@ export default function NameForm({ isLoading, SubmitForm }) {
         inputValidation={lastNameValidation}
         inputData={handleInputData}
       />
-      <div className="mt-10 flex items-center justify-center">
+      <div className="mt-6 flex items-center justify-center">
         <Button
           variant="primary"
-          styles="w-full py-2"
+          styles="w-full py-2.5"
           type="button"
           onClick={handleClick}
           isLoading={isLoading}

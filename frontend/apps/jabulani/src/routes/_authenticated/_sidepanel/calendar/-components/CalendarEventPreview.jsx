@@ -240,7 +240,7 @@ function AssignedTeam({ employeeIds, isPending, teamMembers }) {
             people={assignedMembers}
             limit={4}
             styles="-space-x-3"
-            avatarStyles="size-8! rounded-full! border-2 border-bg-raised
+            avatarStyles="size-8! border-2 border-bg-raised
               text-[11px]!"
             overflowStyles="size-8 text-[11px]"
             fallbackTitle="Team member"

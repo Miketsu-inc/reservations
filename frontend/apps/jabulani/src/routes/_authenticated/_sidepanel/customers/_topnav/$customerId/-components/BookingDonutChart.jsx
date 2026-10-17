@@ -8,7 +8,7 @@ function BookingStatusSector({ isActive, payload, ...props }) {
     <Sector
       {...props}
       className={status ? getBookingStatusColorStyles(status) : undefined}
-      fill={status ? "currentColor" : "var(--hover)"}
+      fill={status ? "currentColor" : "var(--bg-inactive)"}
       outerRadius={
         isActive && status ? props.outerRadius + 3 : props.outerRadius
       }
@@ -23,8 +23,8 @@ function BookingStatusTooltip({ payload }) {
   return (
     <div
       aria-hidden={!hasStatus}
-      className={`border-border bg-bg-raised flex h-9 w-36 items-center gap-3
-        rounded-lg border px-3 text-sm shadow-md
+      className={`border-border bg-bg-overlay shadow-overlay flex h-9 w-36
+        items-center gap-3 rounded-lg border px-3 text-sm
         ${hasStatus ? "" : "invisible"}`}
     >
       <span

@@ -5,7 +5,7 @@ export default function StatisticsChangeIndicator({ styles, percent }) {
   const isNegative = percent < 0;
 
   return (
-    <div className="flex w-fit flex-row items-center gap-2">
+    <div className={"flex w-fit flex-row items-center gap-1"}>
       <Icon
         icon={TradeUpIcon}
         styles={`size-5 ${

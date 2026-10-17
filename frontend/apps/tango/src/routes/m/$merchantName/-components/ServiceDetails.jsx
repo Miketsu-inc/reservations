@@ -223,7 +223,7 @@ function DetailsContent({
             >
               <div className="flex flex-row items-center gap-2">
                 <Avatar
-                  styles="size-7! text-xs! rounded-full!"
+                  styles="size-7! text-xs!"
                   initials={`${assignedEmployee.first_name[0]}${assignedEmployee.last_name[0]}`}
                 />
                 <p className="text-fg text-sm">{`${assignedEmployee.first_name} ${assignedEmployee.last_name}`}</p>

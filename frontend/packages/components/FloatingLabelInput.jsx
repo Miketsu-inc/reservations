@@ -59,13 +59,13 @@ export default forwardRef(function FloatingLabelInput(
   return (
     <>
       <div
-        className={`relative flex w-full items-center rounded-lg border-2
-          ${styles} ${
+        className={`bg-bg-input relative flex w-full items-center rounded-lg
+          border transition-[border-color,box-shadow] duration-150 ${styles} ${
             errorTriggered || (!isEmpty && !isValid)
-              ? "border-danger"
+              ? "border-danger ring-danger-subtle ring-3"
               : isInputFocused
-                ? "border-primary"
-                : "border-fg"
+                ? "border-primary ring-primary-focus ring-3"
+                : "border-border-strong hover:border-fg-muted"
           } `}
       >
         <InputBase
@@ -83,7 +83,7 @@ export default forwardRef(function FloatingLabelInput(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `peer-focus:text-fg-primary text-fg-muted left-3 text-lg
+              ? `peer-focus:text-fg-primary text-fg-muted left-3
                 peer-focus:left-3 peer-focus:-translate-y-4 peer-focus:text-sm `
               : `${
                   isValid

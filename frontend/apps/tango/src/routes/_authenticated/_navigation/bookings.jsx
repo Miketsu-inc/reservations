@@ -78,14 +78,14 @@ function RouteComponent() {
     <div className="flex justify-center">
       <div className="flex w-full max-w-xl flex-col justify-center">
         <div className="flex flex-row items-center justify-between pt-4">
-          <p className="text-2xl">Bookings</p>
+          <h1 className="text-xl font-semibold">Bookings</h1>
           <SearchInput
             styles="w-40! md:w-full!"
             searchText={searchText}
             onChange={setSearchText}
           />
         </div>
-        <div className="py-8 text-sm">
+        <div className="py-5 text-sm">
           <ToggleGroup
             multiple={false}
             value={status}

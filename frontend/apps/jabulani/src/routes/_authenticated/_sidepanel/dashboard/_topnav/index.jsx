@@ -23,7 +23,7 @@ function DashboardPage() {
   return (
     <div className="flex h-full flex-col px-4 pt-4 lg:h-[90svh]">
       <div className="flex flex-row items-center justify-between pb-3">
-        <p className="text-xl">Your dashboard</p>
+        <h1 className="text-xl font-semibold">Your dashboard</h1>
         <Select
           styles="w-38!"
           options={[
@@ -50,8 +50,8 @@ function DashboardPage() {
             <LowStockProductsAlert merchantId={merchantId} route={Route} />
           </div>
         </div>
-        <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">
-          <p className="text-lg">Upcoming bookings</p>
+        <div className="flex h-full flex-1 flex-col gap-3 lg:max-w-1/2">
+          <h2 className="text-fg-muted text-sm">Upcoming bookings</h2>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
             <DashboardBookingsList
               merchantId={merchantId}
@@ -59,7 +59,7 @@ function DashboardPage() {
               route={Route}
             />
           </div>
-          <p className="text-lg">Latest bookings</p>
+          <h2 className="text-fg-muted text-sm">Latest bookings</h2>
           <div className="flex max-h-1/2 flex-col gap-2 rounded-lg">
             <DashboardBookingsList
               merchantId={merchantId}

@@ -94,14 +94,14 @@ export default function ServiceSelectionStep({
 
   return (
     <div className="flex h-full w-full flex-col gap-6">
-      <h1 className="text-3xl font-bold">Select a Service</h1>
+      <h1 className="text-2xl font-bold">Select a Service</h1>
       {employee?.first_name && (
         <div
           className="bg-bg-raised border-border flex w-fit items-center gap-2
             rounded-full border py-1.5 pr-3 pl-2"
         >
           <Avatar
-            styles="size-8! text-[12px]! shrink-0 rounded-full!"
+            styles="size-8! text-[12px]! shrink-0"
             img={employee?.avatar_url}
             initials={`${employee.first_name[0]}${employee.last_name[0]}`}
           />
@@ -120,7 +120,7 @@ export default function ServiceSelectionStep({
               searchText={searchText}
               onChange={(text) => setSearchText(text)}
               placeholder="Search for a service..."
-              styles="w-full p-3"
+              styles="w-full"
             />
           )}
           {showToggles && (
@@ -158,11 +158,11 @@ export default function ServiceSelectionStep({
                     id={catId}
                     className="flex scroll-mt-60 flex-col gap-4"
                   >
-                    <div className="text-fg font-semibold">
+                    <div className="text-fg-muted text-sm font-semibold">
                       {category.name || "Uncategorized"}
                     </div>
 
-                    <ul className="flex flex-col gap-4">
+                    <ul className="flex flex-col gap-3">
                       {category.services.map((service) => (
                         <ServiceItem
                           key={service.id}
@@ -213,22 +213,25 @@ function ServiceItem({ service, isSelected, onSelect }) {
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(service)}
-      className={`bg-bg-raised text-fg border-border hover:bg-hover flex w-full
-        cursor-pointer items-center justify-between gap-4 rounded-md border p-4
-        transition-all duration-200
-        ${isSelected ? "ring-primary-focus ring-1" : ""} `}
+      className={`group bg-bg-raised text-fg shadow-card flex w-full
+        cursor-pointer items-center justify-between gap-4 rounded-xl border p-4
+        text-left transition-colors duration-150 ${
+          isSelected
+            ? "border-primary ring-primary-focus ring-2"
+            : "border-border hover:border-border-strong"
+        }`}
     >
       <div className="flex flex-col gap-2">
-        <p className="text-[17px] font-medium">{service.name}</p>
-        <div className="text-fg flex items-center gap-5 text-sm">
+        <p className="font-semibold">{service.name}</p>
+        <div className="text-fg-muted flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
-            <Icon icon={Clock01Icon} styles="size-4" />
+            <Icon icon={Clock01Icon} styles="size-3.5" />
             <span>{durationText}</span>
           </div>
 
           {isGroup && (
-            <div className="text-fg flex items-center gap-1.5">
-              <Icon icon={UserGroupIcon} styles="size-5" />
+            <div className="flex items-center gap-1.5">
+              <Icon icon={UserGroupIcon} styles="size-3.5" />
               <span>{`Max ${service.max_participants}`}</span>
             </div>
           )}
@@ -238,20 +241,22 @@ function ServiceItem({ service, isSelected, onSelect }) {
             {service.description}
           </div>
         )}
-        <span className="text-[17px]">
+        <span className="text-sm">
           {getDisplayPrice(service.price, service.price_type)}
         </span>
       </div>
       <div
         className={`flex size-8 shrink-0 items-center justify-center
           rounded-full border transition-colors ${
-            isSelected ? "border-primary bg-primary" : "border-border-strong"
+            isSelected
+              ? "border-primary bg-primary"
+              : "border-border-strong group-hover:border-fg-muted"
           } `}
       >
         <Icon
           icon={isSelected ? Tick02Icon : PlusSignIcon}
           styles={`
-            ${isSelected ? "text-white size-6" : "text-fg-muted size-5"}`}
+            ${isSelected ? "text-fg-on-primary size-5" : "text-fg-muted size-5"}`}
         />
       </div>
     </li>

@@ -4,12 +4,13 @@ import { Icon } from "@reservations/components";
 export default function NestedSidePanel({ onBack, isOpen, children, styles }) {
   return (
     <div
-      className={`bg-bg-raised absolute inset-0 z-20 flex flex-col
+      className={`bg-bg-overlay absolute inset-0 z-20 flex flex-col
         transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "translate-x-full"}`}
     >
       <button
-        className="hover:bg-hover mx-5 my-5 w-fit cursor-pointer rounded-lg p-1"
+        className="text-fg-muted hover:bg-hover hover:text-fg mx-5 my-5 w-fit
+          cursor-pointer rounded-lg p-1"
         type="button"
         onClick={onBack}
       >

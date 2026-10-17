@@ -71,7 +71,7 @@ export default function CustomerBookings({ customerId, route }) {
           sm:justify-between"
       >
         <div>
-          <p className="text-xl">Bookings</p>
+          <p className="text-xl font-semibold">Bookings</p>
           <p className="text-fg-muted mt-1 text-sm">
             Search and filter this customer's bookings
           </p>

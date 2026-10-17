@@ -299,8 +299,9 @@ export function ScrollSpyNav() {
                 active
                   ? `bg-primary-subtle text-fg-primary shrink-0 rounded-lg px-3
                     py-2 text-sm whitespace-nowrap md:w-full md:py-2.5`
-                  : `text-fg-muted hover:bg-primary-subtle shrink-0 rounded-lg
-                    px-3 py-2 text-sm whitespace-nowrap md:w-full md:py-2.5`
+                  : `text-fg-muted hover:bg-hover hover:text-fg shrink-0
+                    rounded-lg px-3 py-2 text-sm whitespace-nowrap md:w-full
+                    md:py-2.5`
               }
             >
               {getLabel(id)}

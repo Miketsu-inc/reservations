@@ -11,8 +11,8 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useCallback, useRef, useState } from "react";
-import Icon from "./Icon.jsx";
 import Button from "./Button";
+import Icon from "./Icon.jsx";
 import SearchInput from "./SearchInput";
 
 const theme = themeQuartz.withParams({
@@ -23,8 +23,13 @@ const theme = themeQuartz.withParams({
   // wrapperBorder: false,
   borderColor: "var(--border)",
   backgroundColor: "var(--bg)",
+  foregroundColor: "var(--fg)",
   headerBackgroundColor: "var(--bg-raised)",
+  headerTextColor: "var(--fg-muted)",
+  headerFontSize: 13,
+  rowHoverColor: "var(--hover)",
   accentColor: "var(--primary)",
+  wrapperBorderRadius: 12,
 });
 
 const modules = [
@@ -65,10 +70,10 @@ export default function Table({
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
       <div
-        className="flex shrink-0 flex-col-reverse justify-between gap-2 pb-2
+        className="flex shrink-0 flex-col-reverse justify-between gap-2 pb-3
           sm:flex-row sm:gap-0"
       >
-        <div className="flex items-center justify-center gap-3 pt-2 md:pt-0">
+        <div className="flex items-center justify-center gap-2 pt-2 md:pt-0">
           <div className="w-full md:w-auto">
             <SearchInput
               searchText={searchText}
@@ -77,13 +82,13 @@ export default function Table({
           </div>
           <Button
             variant="tertiary"
-            styles="p-2 text-sm w-fit text-nowrap"
+            styles="p-2 md:py-2 md:pr-3 md:pl-2.5 text-sm w-fit text-nowrap"
             buttonText={windowSize !== "sm" ? "Export" : ""}
             onClick={onBtnExport}
           >
             <Icon
               icon={Download01Icon}
-              styles="text-fg md:mr-2 md:mb-0.5 size-5"
+              styles="text-fg-muted md:mr-1.5 size-4"
             />
           </Button>
         </div>
@@ -92,13 +97,10 @@ export default function Table({
             <Button
               variant="primary"
               onClick={onNewItem}
-              styles="p-2 text-sm w-fit"
+              styles="py-2 pr-3 pl-2.5 text-sm w-fit"
               buttonText={`New ${itemName}`}
             >
-              <Icon
-                icon={PlusSignIcon}
-                styles="size-4 md:size-5 mr-1 text-white"
-              />
+              <Icon icon={PlusSignIcon} styles="size-4 mr-1.5" />
             </Button>
           </div>
         )}

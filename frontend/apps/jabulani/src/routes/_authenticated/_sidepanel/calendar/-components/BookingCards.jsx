@@ -46,7 +46,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
                 key={participant.customer_id}
                 img={participant.avatar_url}
                 initials={participant.first_name[0] + participant.last_name[0]}
-                styles="size-12! rounded-full! border-2 border-bg-raised"
+                styles="size-12! border-2 border-bg-raised"
               />
             ))}
             {remainingParticipants > 0 && (
@@ -94,7 +94,7 @@ export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
     <Card styles="flex justify-start border-border-strong relative shadow-none!">
       <div className="flex gap-4">
         <Avatar
-          styles="size-14! text-[16px]! shrink-0 rounded-full!"
+          styles="size-14! text-[16px]! shrink-0"
           img={customer?.avatar_url}
           initials={
             customer?.first_name && customer?.last_name

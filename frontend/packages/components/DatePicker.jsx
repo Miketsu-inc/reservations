@@ -55,7 +55,10 @@ export default function DatePicker({
       <Popover open={showCalendar} onOpenChange={handleOpenChange}>
         <div className="w-full">
           {labelText && (
-            <span className="flex items-center gap-1 pb-1 text-sm">
+            <span
+              className="text-fg flex items-center gap-1 pb-1.5 text-sm
+                font-medium"
+            >
               {labelText}
               {required !== false && (
                 <span
@@ -71,8 +74,11 @@ export default function DatePicker({
             <PopoverTrigger disabled={disabled} asChild>
               <button
                 className={`${styles} ${disabled ? "outline-none" : ""}
-                  border-border-strong w-full rounded-lg border px-3 py-2
-                  text-left`}
+                  bg-bg-input border-border-strong
+                  hover:not-disabled:border-fg-muted
+                  focus-visible:border-primary focus-visible:ring-primary-focus
+                  w-full rounded-lg border px-3 py-2 text-left outline-hidden
+                  focus-visible:ring-2 md:text-sm`}
                 type="button"
                 disabled={disabled}
                 aria-label={

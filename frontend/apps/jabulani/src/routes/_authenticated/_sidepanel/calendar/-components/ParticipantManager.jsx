@@ -106,7 +106,7 @@ export default function ParticipantManager({
   );
 
   return (
-    <div className="bg-bg-raised relative flex h-full w-full flex-col">
+    <div className="bg-bg-overlay relative flex h-full w-full flex-col">
       {isWindowSmall ? (
         <Drawer
           open={nestedPageState.isOpen}
@@ -248,7 +248,7 @@ function ParticipantItem({
     >
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <Avatar
-          styles="size-14! text-[16px]! shrink-0 rounded-full!"
+          styles="size-14! text-[16px]! shrink-0"
           img={customer?.avatar_url}
           initials={
             customer?.first_name && customer?.last_name

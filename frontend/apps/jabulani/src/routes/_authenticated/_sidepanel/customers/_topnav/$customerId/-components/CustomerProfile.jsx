@@ -58,7 +58,7 @@ export default function CustomerProfile({ customerId }) {
   if (profileQuery.isLoading) {
     return (
       <section>
-        <h2 className="mb-4 text-xl">Profile</h2>
+        <h2 className="mb-4 text-xl font-semibold">Profile</h2>
         <Loading />
       </section>
     );
@@ -67,7 +67,7 @@ export default function CustomerProfile({ customerId }) {
   if (profileQuery.isError) {
     return (
       <section>
-        <h2 className="mb-4 text-xl">Profile</h2>
+        <h2 className="mb-4 text-xl font-semibold">Profile</h2>
         <ServerError error={profileQuery.error?.message} />
       </section>
     );
@@ -186,7 +186,7 @@ export default function CustomerProfile({ customerId }) {
       />
 
       <ServerError error={serverError} />
-      <h2 className="mb-4 text-xl">Profile</h2>
+      <h2 className="mb-4 text-xl font-semibold">Profile</h2>
       <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
         <div className="flex w-full justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">

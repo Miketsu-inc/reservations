@@ -151,7 +151,10 @@ function LabelWrapper({ id, labelText, required, children }) {
   return (
     <div className="flex w-full flex-col">
       {labelText && (
-        <label htmlFor={id} className="flex items-center gap-1 pb-1 text-sm">
+        <label
+          htmlFor={id}
+          className="text-fg flex items-center gap-1 pb-1.5 text-sm"
+        >
           {labelText}
           {required !== false && (
             <span

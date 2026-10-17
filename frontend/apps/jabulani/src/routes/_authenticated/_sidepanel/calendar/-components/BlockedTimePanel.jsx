@@ -415,7 +415,7 @@ export default function BlockedTimePanel({
       </div>
 
       <div
-        className="border-border bg-bg-raised fixed bottom-0 flex w-full
+        className="border-border bg-bg-overlay fixed bottom-0 flex w-full
           items-center gap-2 border-t px-6 py-4"
       >
         {isEditing && (

@@ -50,10 +50,10 @@ export default function ImageUploader({
         if (file) handleFile(file);
       }}
       onDragOver={(event) => event.preventDefault()}
-      className={`${styles} group bg-hover border-border-strong
-        hover:border-border-strong relative flex h-64 w-full cursor-pointer
-        flex-col items-center justify-center border-2 border-dashed
-        transition-colors`}
+      className={`${styles} group bg-bg-sunken border-border-strong
+        hover:border-border-primary hover:bg-primary-subtle relative flex h-64
+        w-full cursor-pointer flex-col items-center justify-center border
+        border-dashed transition-colors`}
     >
       {preview ? (
         <>
@@ -66,10 +66,11 @@ export default function ImageUploader({
             type="button"
             aria-label={`Remove ${text.toLowerCase()}`}
             onClick={clearImage}
-            className="bg-fg-muted absolute top-2 right-2 rounded-full p-1
-              text-white"
+            className="bg-bg-overlay text-fg border-border shadow-overlay
+              absolute top-2 right-2 cursor-pointer rounded-full border p-1.5
+              opacity-80 hover:opacity-100"
           >
-            <Icon icon={Delete02Icon} styles="size-5" />
+            <Icon icon={Delete02Icon} styles="size-4" />
           </button>
         </>
       ) : (
@@ -78,11 +79,11 @@ export default function ImageUploader({
         >
           <Icon icon={FileImageIcon} styles="text-fg-muted" />
           <p className="text-fg-muted mt-2 text-sm">
-            <span className="font-semibold">Click to upload</span> or drag and
-            drop
+            <span className="text-fg-primary font-medium">Click to upload</span>{" "}
+            or drag and drop
           </p>
           <p className="text-fg-muted text-xs">JPG, PNG, SVG (max. 5 MB)</p>
-          <span className="text-fg-muted mt-5 text-sm">{text}</span>
+          <span className="text-fg mt-4 text-sm font-medium">{text}</span>
         </div>
       )}
       <input

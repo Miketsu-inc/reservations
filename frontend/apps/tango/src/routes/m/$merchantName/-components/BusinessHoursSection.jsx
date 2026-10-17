@@ -35,7 +35,7 @@ export default function BusinessHoursSection({ hoursData }) {
   }, [hoursData]);
 
   return (
-    <ul className="flex w-full flex-col gap-3 text-base">
+    <ul className="flex w-full flex-col gap-3">
       {Object.entries(businessHours)
         .sort(([a], [b]) => {
           const order = [
@@ -57,8 +57,8 @@ export default function BusinessHoursSection({ hoursData }) {
             <li key={day} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span
-                  className={`size-3 rounded-full ${
-                    isClosed ? "bg-fg-muted" : "bg-success"
+                  className={`size-2 rounded-full ${
+                    isClosed ? "bg-bg-inactive" : "bg-success"
                   }`}
                 ></span>
                 <span

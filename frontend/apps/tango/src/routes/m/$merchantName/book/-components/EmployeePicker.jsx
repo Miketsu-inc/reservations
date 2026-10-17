@@ -66,17 +66,17 @@ export default function EmployeePicker({
         {isNoPref ? (
           <>
             <div
-              className="bg-primary-hover flex size-8 items-center
+              className="bg-primary-subtle flex size-8 items-center
                 justify-center rounded-full"
             >
-              <Icon icon={Person} styles="size-5 text-white" />
+              <Icon icon={Person} styles="size-5 text-fg-primary" />
             </div>
             <span className="text-sm font-medium">No Preference</span>
           </>
         ) : (
           <>
             <Avatar
-              styles="size-8! text-[11px]! shrink-0 rounded-full!"
+              styles="size-8! text-[11px]! shrink-0"
               img={avatarUrl}
               initials={`${empFirstName?.[0]}${empLastName?.[0]}`}
             />

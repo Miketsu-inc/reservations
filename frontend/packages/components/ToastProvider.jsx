@@ -61,13 +61,13 @@ export default function ToastProvider({ children }) {
 
 const icons = {
   success: (
-    <div className="border-success w-min rounded-full border">
-      <Icon icon={Tick02Icon} styles="size-6 text-fg-success" />
+    <div className="bg-success-subtle w-min rounded-full p-0.5">
+      <Icon icon={Tick02Icon} styles="size-5 text-fg-success" />
     </div>
   ),
   error: (
-    <div className="border-danger w-min rounded-full border">
-      <Icon icon={Cancel01Icon} styles="size-6 text-fg-danger" />
+    <div className="bg-danger-subtle w-min rounded-full p-0.5">
+      <Icon icon={Cancel01Icon} styles="size-5 text-fg-danger" />
     </div>
   ),
   warning: (
@@ -76,13 +76,6 @@ const icons = {
     </div>
   ),
   info: <Icon icon={InformationCircleIcon} styles="size-7 text-fg-info" />,
-};
-
-const typeStyles = {
-  success: "border border-success bg-success-subtle",
-  error: "border border-danger bg-danger-subtle",
-  warning: "border border-warning bg-warning-subtle",
-  info: "border border-info bg-info-subtle",
 };
 
 function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
@@ -104,9 +97,8 @@ function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
   return (
     <div
       role={variant === "error" ? "alert" : "status"}
-      className={`${typeStyles[variant]} flex w-full items-center
-        justify-between rounded-md p-4 shadow-lg transition-all sm:max-w-md
-        dark:shadow-none
+      className={`bg-bg shadow-overlay flex w-full items-center justify-between
+        rounded-xl border p-3 transition-all sm:max-w-md
         ${fadingOut ? "toast-exit" : window.innerWidth < 640 ? "toast-enter-top" : "toast-enter-bottom"}`}
     >
       <div className="mr-6 flex items-center gap-3">
@@ -121,8 +113,7 @@ function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
       >
         <Icon
           icon={Cancel01Icon}
-          styles="size-6 m-1 text-fg-muted group-hover:text-current
-            cursor-pointer"
+          styles="size-5 m-1 text-fg-muted group-hover:text-fg cursor-pointer"
         />
       </button>
     </div>

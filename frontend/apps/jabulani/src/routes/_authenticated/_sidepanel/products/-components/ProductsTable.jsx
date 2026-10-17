@@ -85,7 +85,7 @@ export default function ProductsTable({
             {params.data.services?.map((service) => (
               <span
                 key={service.id}
-                className="size-4 shrink-0 rounded-full"
+                className="size-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: service.color }}
               ></span>
             ))}
@@ -145,7 +145,7 @@ export default function ProductsTable({
 function DefaultNoRowsOverlay() {
   return (
     <div className="text-fg-muted mb-16 flex flex-col items-center gap-4 px-2">
-      <Icon icon={ShoppingBag02Icon} styles="size-16" />
+      <Icon icon={ShoppingBag02Icon} styles="text-fg-disabled size-12" />
       <div className="flex flex-col items-center gap-2">
         <p className="text-fg text-base font-medium">No products added</p>
         <p className="text-sm md:w-2/3">

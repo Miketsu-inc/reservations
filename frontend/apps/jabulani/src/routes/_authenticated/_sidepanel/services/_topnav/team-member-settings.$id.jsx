@@ -502,7 +502,7 @@ function EmployeeSettingsRow({
             styles="shrink-0"
           />
           <Avatar
-            styles={`size-11! rounded-full! shrink-0 text-sm ${
+            styles={`size-11! shrink-0 text-sm ${
               employee.is_assigned ? "" : "opacity-50"
             }`}
             initials={initials}

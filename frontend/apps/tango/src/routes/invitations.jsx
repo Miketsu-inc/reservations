@@ -113,11 +113,21 @@ function RouteComponent() {
 
   if (!token) {
     return (
-      <div className="flex h-screen items-center justify-center px-4">
-        <div className="flex w-full max-w-xl flex-col">
-          <div className="pt-4 pb-12">
-            <p className="text-2xl">Invalid token query parameter</p>
-            <Link from={Route.fullPath} to="/login" className="text-fg-muted">
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div
+          className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+            max-w-xl flex-col sm:rounded-2xl sm:border sm:p-8"
+        >
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Invalid token query parameter
+            </h1>
+            <Link
+              from={Route.fullPath}
+              to="/login"
+              className="text-fg-primary mt-2 inline-block text-sm font-medium
+                hover:underline"
+            >
               Back to login
             </Link>
           </div>
@@ -127,30 +137,35 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center px-4">
-      <div className="flex w-full max-w-xl flex-col gap-6">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div
+        className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+          max-w-xl flex-col gap-6 sm:rounded-2xl sm:border sm:p-8"
+      >
         <div>
-          <p className="text-2xl">Team Invitation</p>
-          <p className="text-fg-muted">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Team Invitation
+          </h1>
+          <p className="text-fg-muted mt-1 text-sm">
             {`You have been invited to ${invitation?.merchant_name} by ${invitation?.invitor_name}`}
           </p>
-          <p className="text-fg-muted">
+          <p className="text-fg-muted text-sm">
             Accept the invitation to join the team
           </p>
           <div className="flex flex-row justify-center py-4">
-            <Avatar styles={"size-24"} />
+            <Avatar styles="size-20" />
           </div>
         </div>
         <div className="flex h-full flex-row items-center justify-end gap-4">
           <Button
-            styles="py-2 px-4"
+            styles="py-2 px-4 text-sm"
             variant="tertiary"
             type="button"
             buttonText="Decline"
             onClick={declineHandler}
           />
           <Button
-            styles="py-2 px-4"
+            styles="py-2 px-4 text-sm"
             type="button"
             buttonText="Accept"
             onClick={acceptHandler}

@@ -86,17 +86,18 @@ export default function CalendarSidePanel({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40
+        className={`bg-bg-backdrop fixed inset-0 z-40 transition-opacity
+          duration-200
           ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={onClose}
         aria-hidden="true"
       />
 
       <aside
-        className={`bg-bg-raised border-border fixed top-0 right-0 z-50 h-full
-          shadow-2xl transition-all duration-300 ease-in-out
+        className={`bg-bg-overlay border-border shadow-modal fixed top-0 right-0
+          z-50 h-full transition-all duration-200 ease-in-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
-          ${isWindowSmall ? "w-full" : "w-fit border-l-2"}`}
+          ${isWindowSmall ? "w-full" : "w-fit border-l"}`}
         onTransitionEnd={(event) => {
           if (event.target === event.currentTarget && !isOpen) {
             onTransitionEnd?.();
@@ -106,15 +107,15 @@ export default function CalendarSidePanel({
         {isOpen && !isWindowSmall && (
           <button
             onClick={onClose}
-            className="border-border bg-bg-raised absolute top-4 -left-12
-              rounded-full border p-1 shadow-xl transition-transform
-              hover:scale-110"
+            className="border-border bg-bg-overlay text-fg-muted hover:text-fg
+              shadow-overlay absolute top-4 -left-12 cursor-pointer rounded-full
+              border p-1 transition-transform hover:scale-110"
             aria-label="Close panel"
           >
             <Icon icon={Cancel01Icon} styles="size-7 fill-fg" />
           </button>
         )}
-        <div key={panelKey} className="bg-bg-raised h-full min-w-full">
+        <div key={panelKey} className="bg-bg-overlay h-full min-w-full">
           {type === "new-booking" && (
             <NewBookingPanel
               onSave={onSave}

@@ -34,7 +34,7 @@ export default function BookingsList({
   return (
     <div>
       {bookings.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {bookings.map((booking, index) => (
             <BookingCard
               key={`${booking.id}-${index}`}
@@ -49,14 +49,14 @@ export default function BookingsList({
         </div>
       ) : (
         <div
-          className="bg-bg-raised flex flex-col items-center justify-center
-            rounded-lg p-4 text-center shadow-sm"
+          className="border-border flex flex-col items-center justify-center
+            rounded-xl border border-dashed p-6 text-center"
         >
-          <div className="bg-bg-inactive mb-3 rounded-full p-3">
-            <Icon icon={Calendar02Icon} styles="size-8 text-fg-muted" />
+          <div className="bg-bg-sunken mb-3 rounded-full p-2.5">
+            <Icon icon={Calendar02Icon} styles="size-6 text-fg-muted" />
           </div>
-          <p className="mb-1">{emptyTitle}</p>
-          <p className="text-fg-muted mb-3 text-sm">{emptyMessage}</p>
+          <p className="mb-1 text-sm font-medium">{emptyTitle}</p>
+          <p className="text-fg-muted text-sm">{emptyMessage}</p>
         </div>
       )}
     </div>
@@ -90,12 +90,12 @@ function BookingCard({
 
   return (
     <div
-      className="border-border bg-bg-raised hover:border-border-strong
-        hover:bg-hover rounded-lg border shadow-sm"
+      className="border-border bg-bg-raised shadow-card
+        hover:border-border-strong rounded-xl border"
     >
       <div
-        className="border-border flex flex-row justify-between border-b px-4
-          py-4"
+        className="border-border-subtle flex flex-row justify-between border-b
+          px-4 py-3"
       >
         <Link
           className="flex min-w-0 flex-1 cursor-pointer flex-row gap-3 sm:gap-4
@@ -105,28 +105,30 @@ function BookingCard({
           params={{ bookingId: String(booking.id) }}
           disabled={!isWindowSmall}
         >
-          <div className="flex flex-col items-center justify-center">
-            <p className="text-lg font-semibold">{fromDate.getDate()}</p>
+          <div
+            className="flex shrink-0 flex-col items-center justify-center
+              rounded-lg pt-1"
+          >
+            <p className="leading-tight font-semibold">{fromDate.getDate()}</p>
             <p className="text-fg-muted text-sm">
               {monthNameFromDate(fromDate)}
             </p>
           </div>
-          <div className="border-border border-r" />
           <div className="flex min-w-0 flex-col items-start justify-center">
-            <div className="flex min-w-0 flex-row items-center gap-2">
+            <div className="flex min-w-0 flex-row items-center gap-2 pl-0.5">
               <div
-                className="rounded-lg p-1"
+                className="size-2 shrink-0 rounded-full"
                 style={{
                   backgroundColor:
                     booking.service_color ?? DEFAULT_SERVICE_COLOR,
                 }}
               />
-              <p className="truncate text-base sm:text-lg">
+              <p className="truncate text-sm font-medium sm:text-base">
                 {booking.service_name}
               </p>
               <div
                 className={`${getBookingStatusStyles(status)} w-fit shrink-0
-                  rounded-full px-2 py-1 text-xs sm:text-sm`}
+                  rounded-full px-2 py-0.5 text-xs font-medium capitalize`}
               >
                 <p>{status}</p>
               </div>
@@ -144,22 +146,22 @@ function BookingCard({
         <div className="flex flex-row items-center">
           {isNotConfirmed && onAccept && (
             <button
-              className="lg:hover:bg-hover h-full cursor-pointer rounded-lg px-2
-                lg:h-fit lg:py-2"
+              className="lg:hover:bg-hover text-fg-muted hover:text-fg h-full
+                cursor-pointer rounded-lg px-2 lg:h-fit lg:py-2"
               onClick={() => onAccept(booking)}
               type="button"
             >
-              <Icon icon={Tick02Icon} styles="size-6 text-fg" />
+              <Icon icon={Tick02Icon} styles="size-5" />
             </button>
           )}
           <Link
-            className="lg:hover:bg-hover hidden h-full items-center rounded-lg
-              px-2.5 lg:flex lg:h-fit lg:py-2.5"
+            className="text-fg-muted lg:hover:bg-hover lg:hover:text-fg hidden
+              h-full items-center rounded-lg px-2 lg:flex lg:h-fit lg:py-2"
             from={route.fullPath}
             to="/calendar/bookings/$bookingId"
             params={{ bookingId: String(booking.id) }}
           >
-            <Icon icon={Calendar02Icon} styles="size-5 text-fg" />
+            <Icon icon={Calendar02Icon} styles="size-5" />
           </Link>
         </div>
       </div>
@@ -169,39 +171,41 @@ function BookingCard({
             <>
               {!isWalkIn && (
                 <Avatar
-                  styles="size-8! text-xs!"
+                  styles="size-6! text-[10px]!"
                   initials={`${booking.customer_first_name?.[0]}${booking.customer_last_name?.[0]}`}
                 />
               )}
-              <p className="truncate text-sm">
+              <p className="text-fg-muted truncate text-sm">
                 {isWalkIn ? "Walk-in" : customerName}
               </p>
             </>
           ) : employeeName ? (
             <>
               <Avatar
-                styles="size-8! text-xs!"
+                styles="size-6! text-[10px]!"
                 initials={`${booking.employee_first_name?.[0]}${booking.employee_last_name?.[0]}`}
               />
-              <p className="truncate text-sm">{employeeName}</p>
+              <p className="text-fg-muted truncate text-sm">{employeeName}</p>
             </>
           ) : (
             <>
               <Icon icon={Location01Icon} styles="size-4 shrink-0" />
-              <p className="truncate text-sm">{booking.formatted_location}</p>
+              <p className="text-fg-muted truncate text-sm">
+                {booking.formatted_location}
+              </p>
             </>
           )}
         </div>
         <div className="flex flex-row items-center gap-2">
           {booking?.customer_note && (
             <Pill>
-              <Icon icon={Note01Icon} styles="size-4" />
+              <Icon icon={Note01Icon} styles="size-3.5" />
               <p>Note</p>
             </Pill>
           )}
           {isGroupBooking && (
             <Pill>
-              <Icon icon={UserGroupIcon} styles="size-4" />
+              <Icon icon={UserGroupIcon} styles="size-3.5" />
               <p>
                 Group
                 {booking.current_participants !== undefined &&
@@ -219,8 +223,8 @@ function BookingCard({
 function Pill({ children }) {
   return (
     <div
-      className="border-border bg-bg text-fg-muted flex w-fit flex-row
-        items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+      className="bg-bg-sunken text-fg-muted flex w-fit flex-row items-center
+        gap-1 rounded-md px-1.5 py-0.5 text-xs"
     >
       {children}
     </div>

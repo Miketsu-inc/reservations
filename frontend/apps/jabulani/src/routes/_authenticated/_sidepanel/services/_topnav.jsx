@@ -14,7 +14,7 @@ function ServicesLayout() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/services">
-          <Icon icon={Note01Icon} styles="size-5" />
+          <Icon icon={Note01Icon} styles="size-4.5" />
           <span>Services</span>
         </TopNavBarItem>
       </TopNavBar>

@@ -152,7 +152,7 @@ export default function InvitationsTable({
           itemName="invitation"
           onNewItem={onNewItem}
           exportName="invitations"
-          rowHeight={70}
+          rowHeight={64}
         />
       </Suspense>
     </div>

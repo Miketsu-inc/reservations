@@ -119,7 +119,7 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
     >
       <ResponsiveDialogContent>
         <form onSubmit={submitHandler} className="m-3 sm:w-md">
-          <p className="pb-6 text-xl">Transfer bookings</p>
+          <p className="pb-6 text-xl font-semibold">Transfer bookings</p>
           <ServerError
             styles="mb-4"
             error={

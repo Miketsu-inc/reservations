@@ -105,8 +105,8 @@ function SingUpPage() {
   return (
     <div className="flex min-h-screen min-w-min items-center justify-center">
       <div
-        className="sm:bg-bg-raised flex w-full max-w-md flex-col px-8 shadow-sm
-          sm:rounded-xl sm:pt-6 sm:pb-16 sm:shadow-lg"
+        className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+          max-w-md flex-col px-6 sm:rounded-2xl sm:border sm:p-8"
       >
         <ProgressBar
           currentStep={stepIndex}

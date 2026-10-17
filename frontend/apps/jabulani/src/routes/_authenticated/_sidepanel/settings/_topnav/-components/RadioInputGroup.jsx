@@ -9,7 +9,7 @@ export default function RadioInputGroup({
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-20">
-        <span className="font-semibold">{title}</span>
+        <span className="text-sm">{title}</span>
         <div
           className="flex justify-center gap-10 sm:gap-32 md:justify-baseline
             md:gap-10"
@@ -20,9 +20,11 @@ export default function RadioInputGroup({
               htmlFor={option.value}
               className={`${
                 value === option.value
-                  ? "border-primary bg-primary-subtle"
-                  : "border-border-strong hover:border-border-strong"
-              } flex items-center rounded-lg border-2 px-5 py-1`}
+                  ? "border-primary/60 bg-primary-subtle text-fg-primary "
+                  : `border-border-strong bg-bg-input text-fg-muted
+                    hover:border-primary/60 hover:text-fg`
+              } flex cursor-pointer items-center rounded-lg border px-4 py-1.5
+              text-sm`}
             >
               <input
                 className="hidden"

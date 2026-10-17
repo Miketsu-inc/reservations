@@ -78,7 +78,7 @@ function RouteComponent() {
               <Icon icon={ArrowLeft01Icon} styles="size-7 text-fg" />
             </Link>
           )}
-          <p className="text-2xl">Edit profile</p>
+          <h1 className="text-xl font-semibold">Edit profile</h1>
         </div>
         <Card styles="p-8">
           <form className="flex flex-col gap-4" onSubmit={submitHandler}>

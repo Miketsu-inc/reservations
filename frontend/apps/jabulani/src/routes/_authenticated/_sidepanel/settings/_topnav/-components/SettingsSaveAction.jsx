@@ -5,7 +5,7 @@ function SaveButton({ buttonText, onClick, disabled, isLoading, styles = "" }) {
     <Button
       type="button"
       variant="primary"
-      styles={`px-6 py-2 ${styles}`}
+      styles={`px-4 py-2 text-sm ${styles}`}
       buttonText={buttonText}
       onClick={onClick}
       disabled={disabled}

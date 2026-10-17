@@ -72,10 +72,10 @@ export default function BookingList({ statusFilter, searchText }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {filteredBookings.length === 0 ? (
         <div className="flex justify-center pt-8">
-          <p>
+          <p className="text-fg-muted text-sm">
             {searchText?.trim()
               ? "No bookings match your search"
               : `You do not have ${statusFilter} bookings`}
@@ -90,7 +90,7 @@ export default function BookingList({ statusFilter, searchText }) {
       )}
       {hasNextPage && (
         <Button
-          styles="px-4 py-2 w-full mt-2"
+          styles="px-4 py-2 w-full mt-2 text-sm"
           buttonText="Load more"
           onClick={fetchNextPage}
           disabled={isFetching}
@@ -114,25 +114,28 @@ function BookingCard({ booking }) {
 
   return (
     <div
-      className="border-border bg-bg-raised hover:border-border-strong
-        hover:bg-hover cursor-pointer rounded-lg border shadow-sm"
+      className="border-border bg-bg-raised shadow-card
+        hover:border-border-strong cursor-pointer rounded-xl border"
     >
       <div
-        className="border-border flex flex-row justify-between border-b px-4
-          py-4"
+        className="border-border-subtle flex flex-row justify-between border-b
+          px-4 py-3"
       >
-        <div className="flex flex-row gap-4">
-          <div className="flex flex-col items-center justify-center">
-            <p className="text-lg font-semibold">{fromDate.getDate()}</p>
+        <div className="flex flex-row gap-3">
+          <div
+            className="flex shrink-0 flex-col items-center justify-center pt-1"
+          >
+            <p className="leading-tight font-semibold">{fromDate.getDate()}</p>
             <p className="text-fg-muted text-sm">
               {monthNameFromDate(fromDate)}
             </p>
           </div>
-          <div className="border-border border-r" />
           <div className="flex flex-col items-start justify-center">
-            <p className="text-lg">{booking.service_name}</p>
+            <p className="truncate text-sm sm:text-base">
+              {booking.service_name}
+            </p>
             <div className="flex flex-row items-center gap-2">
-              <Icon icon={Clock01Icon} styles="size-3 text-fg-muted" />
+              <Icon icon={Clock01Icon} styles="size-3.5 text-fg-muted" />
               <p className="text-fg-muted text-sm">
                 {timeStringFromDate(fromDate)} - {timeStringFromDate(toDate)}
               </p>
@@ -140,11 +143,11 @@ function BookingCard({ booking }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <p>{booking.price}</p>
+          <p className="text-sm">{booking.price}</p>
           {isPending && (
             <p
-              className="bg-warning text-fg-warning rounded-lg px-2 py-1
-                text-xs"
+              className="bg-warning-subtle text-fg-warning rounded-full px-2
+                py-0.5 text-xs"
             >
               pending
             </p>
@@ -154,21 +157,23 @@ function BookingCard({ booking }) {
       <div className="flex flex-row items-center justify-between px-3 py-2">
         <div className="flex flex-row items-center gap-2">
           <Avatar
-            styles="size-8! text-xs!"
+            styles="size-6! text-[10px]!"
             initials={booking.merchant_name.slice(0, 2)}
           />
-          <p className="text-sm">{booking.merchant_name}</p>
+          <p className="text-fg-muted truncate text-sm">
+            {booking.merchant_name}
+          </p>
         </div>
         <div className="flex flex-row items-center gap-2">
           {isGroupBooking && (
             <Pill>
-              <Icon icon={UserGroupIcon} styles="size-4" />
+              <Icon icon={UserGroupIcon} styles="size-3.5" />
               <p>Group</p>
             </Pill>
           )}
           {isRecurring && (
             <Pill>
-              <Icon icon={ArrowReloadHorizontalIcon} styles="size-4" />
+              <Icon icon={ArrowReloadHorizontalIcon} styles="size-3.5" />
               <p>Repeating</p>
             </Pill>
           )}
@@ -181,8 +186,8 @@ function BookingCard({ booking }) {
 function Pill({ children }) {
   return (
     <div
-      className="border-border bg-bg text-fg-muted flex w-fit flex-row
-        items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+      className="bg-bg-sunken text-fg-muted flex w-fit flex-row items-center
+        gap-1 rounded-md px-1.5 py-0.5 text-xs"
     >
       {children}
     </div>

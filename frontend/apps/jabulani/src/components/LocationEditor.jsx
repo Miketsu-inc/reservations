@@ -20,7 +20,7 @@ const searchBoxTheme = {
   variables: {
     colorText: "var(--fg)",
     colorSecondary: "var(--fg-muted)",
-    colorBackground: "var(--bg-raised)",
+    colorBackground: "var(--bg-overlay)",
     colorBackgroundHover: "var(--hover)",
     colorBackgroundActive: "var(--active)",
     border: "1px solid var(--border-strong)",

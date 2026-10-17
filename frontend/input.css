@@ -2,35 +2,7 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-/*
-  Design tokens
-  -------------
-  Every color below has a light and a dark value, so components should use the
-  semantic utility (bg-bg-raised, text-fg-muted, border-border, ...) and never
-  need a `dark:` color variant.
-
-  Backgrounds  canvas < bg < bg-raised < bg-overlay
-               canvas      app shell behind the sidebar and top bar
-               bg          the page
-               bg-raised   cards, tables, anything sitting on the page
-               bg-overlay  popovers, dropdowns, modals, side panels
-               bg-sunken   recessed fills: table headers, wells, disabled inputs
-               bg-input    inside of inputs, selects and checkboxes
-               bg-backdrop dimmed layer behind modals and side panels
-               bg-inactive off / empty parts: switch track, unfilled bars
-  Text         fg > fg-muted > fg-disabled
-               fg-primary / fg-success / fg-warning / fg-danger / fg-info
-                           colored text on a normal background
-               fg-on-primary  text on a primary-colored background
-  Borders      border-subtle < border < border-strong
-               border-primary / border-success / ...  tinted borders
-  Fills        hover < active     (translucent, work on any background)
-  Brand        primary (+hover/active), primary-subtle, primary-focus (ring)
-  Status       success | warning | danger | info, each with a -subtle fill
-*/
 @theme inline {
-  --font-family-sans: "Onest", sans-serif;
-
   /* backgrounds */
   --color-canvas: var(--canvas);
   --color-bg: var(--bg);
@@ -84,6 +56,11 @@
   --color-danger-subtle: var(--danger-subtle);
   --color-info: var(--info);
   --color-info-subtle: var(--info-subtle);
+
+  /* shadow */
+  --shadow-card: var(--shadow-card);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-modal: var(--shadow-modal);
 }
 
 :root {
@@ -137,6 +114,13 @@
   --fg-info: #1b62b5;
   --info-subtle: rgb(43 127 224 / 0.11);
   --border-info: rgb(43 127 224 / 0.3);
+
+  --shadow-card: 0 1px 2px rgb(17 17 26 / 0.04);
+  --shadow-overlay:
+    0 0 0 1px rgb(17 17 26 / 0.02), 0 2px 4px -1px rgb(17 17 26 / 0.06),
+    0 10px 24px -6px rgb(17 17 26 / 0.14);
+  --shadow-modal:
+    0 4px 8px -2px rgb(17 17 26 / 0.06), 0 28px 56px -16px rgb(17 17 26 / 0.3);
 }
 
 .dark {
@@ -190,6 +174,12 @@
   --fg-info: #75b9ff;
   --info-subtle: rgb(59 143 240 / 0.15);
   --border-info: rgb(59 143 240 / 0.36);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.24);
+  --shadow-overlay:
+    0 0 0 1px rgb(0 0 0 / 0.3), 0 12px 28px -6px rgb(0 0 0 / 0.6);
+  --shadow-modal:
+    0 0 0 1px rgb(0 0 0 / 0.3), 0 32px 64px -16px rgb(0 0 0 / 0.75);
 }
 
 @layer base {
@@ -201,8 +191,10 @@
     border-color: var(--border);
   }
 
-  ::selection {
-    background-color: var(--primary-subtle-hover);
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   ::placeholder {

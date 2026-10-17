@@ -43,8 +43,8 @@ export function PreviewCardContent({
       >
         <PreviewCardPrimitive.Popup
           data-slot="preview-card-content"
-          className={`${styles} bg-bg-raised text-fg border-border rounded-xl
-            border shadow-lg outline-hidden duration-100`}
+          className={`${styles} bg-bg-overlay text-fg border-border
+            shadow-overlay rounded-xl border outline-hidden duration-100`}
           {...props}
         />
       </PreviewCardPrimitive.Positioner>

@@ -136,18 +136,15 @@ function CustomersPage() {
 
   return (
     <div className="h-full">
-      <div className="flex flex-row items-center justify-between">
-        <p className="pb-6 text-xl">Customers</p>
+      <div className="flex flex-row items-start justify-between">
+        <h1 className="pb-4 text-xl font-semibold">Customers</h1>
         <Link from={Route.fullPath} to="new">
           <Button
             variant="primary"
-            styles="p-2 md:px-4 w-fit"
+            styles="p-2 md:py-2 md:pr-3 md:pl-2.5 text-sm w-fit"
             buttonText={windowSize !== "sm" ? "New Customer" : ""}
           >
-            <Icon
-              icon={PlusSignIcon}
-              styles="size-6 md:size-5 md:mr-2 text-white"
-            />
+            <Icon icon={PlusSignIcon} styles="size-5 md:size-4 md:mr-1.5" />
           </Button>
         </Link>
       </div>

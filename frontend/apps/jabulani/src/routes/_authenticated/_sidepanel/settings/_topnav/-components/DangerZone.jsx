@@ -73,8 +73,8 @@ export default function DangerZone() {
   return (
     <section>
       <Card styles="h-auto! border-border-danger! p-6!">
-        <h2 className="text-fg-danger text-xl font-semibold">Danger zone</h2>
-        <p className="text-fg-muted mt-1 mb-6 text-sm">
+        <h2 className="text-fg-danger font-semibold">Danger zone</h2>
+        <p className="text-fg-muted mt-0.5 mb-6 text-sm">
           These actions affect your business identity or permanently remove it.
         </p>
         <div className="flex flex-col gap-5">
@@ -87,26 +87,26 @@ export default function DangerZone() {
                 trigger={
                   <Button
                     variant="danger"
-                    styles="py-2 px-3 w-fit text-nowrap"
+                    styles="py-2 px-3 w-fit text-sm text-nowrap"
                     buttonText="Change name"
                   />
                 }
               />
             }
           />
-          <div className="border-border border-t" />
+          <div className="border-border-subtle border-t" />
           <DangerZoneItem
             title="Business visibility"
             description="Make this business private or public."
             buttonText="Change visibility"
           />
-          <div className="border-border border-t" />
+          <div className="border-border-subtle border-t" />
           <DangerZoneItem
             title="Ownership transfer"
             description="Transfer this business to another account."
             buttonText="Transfer ownership"
           />
-          <div className="border-border border-t" />
+          <div className="border-border-subtle border-t" />
           <DangerZoneItem
             title="Delete business"
             description="This permanently deletes the business and cannot be undone."
@@ -117,7 +117,7 @@ export default function DangerZone() {
                 trigger={
                   <Button
                     variant="danger"
-                    styles="py-2 px-3 w-fit text-nowrap"
+                    styles="py-2 px-3 w-fit text-sm text-nowrap"
                     buttonText="Delete business"
                   />
                 }

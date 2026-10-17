@@ -113,11 +113,11 @@ function BlockedTimeTypesPage() {
           hasData ? (
             <Button
               variant="primary"
-              styles="px-3 py-2 sm:px-4"
+              styles="py-2 pr-3 pl-2.5 text-sm"
               buttonText={isWindowSmall ? "" : "New type"}
               onClick={() => openModal()}
             >
-              <Icon icon={PlusSignIcon} styles="size-5 sm:mr-2" />
+              <Icon icon={PlusSignIcon} styles="size-4 lg:mr-1.5" />
             </Button>
           ) : null
         }

@@ -82,22 +82,22 @@ function RouteComponent() {
   return (
     <div className="flex justify-center">
       <div className="flex w-full max-w-md flex-col justify-center pb-8">
-        <div className="pt-4 pb-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <div className="pt-4 pb-6">
+          <h1 className="text-xl font-semibold">Settings</h1>
           <p className="text-fg-muted mt-1 text-sm">
             Manage your account, appearance, and active sessions.
           </p>
         </div>
         <div className="flex flex-col gap-4">
           <Card>
-            <p className="text-lg font-medium">Password</p>
+            <p className="font-semibold">Password</p>
             <p className="text-fg-muted mt-1 text-sm">
               Update the password used to sign in to your account.
             </p>
             <ChangePasswordModal
               trigger={
                 <Button
-                  styles="mt-4 px-4 py-2"
+                  styles="mt-4 px-3 py-2 text-sm"
                   variant="tertiary"
                   buttonText="Update password"
                 />
@@ -110,14 +110,14 @@ function RouteComponent() {
                 className="flex w-full flex-row items-center justify-between
                   p-2"
               >
-                <div className="flex flex-row items-center gap-4">
+                <div className="flex flex-row items-center gap-3">
                   <Icon
                     icon={Moon02Icon}
                     altIcon={Sun03Icon}
                     showAlt={isDarkTheme}
-                    styles="size-6"
+                    styles="size-5 text-fg-muted"
                   />
-                  <p>Use dark theme</p>
+                  <p className="text-sm">Use dark theme</p>
                 </div>
                 <Switch
                   size="large"
@@ -128,35 +128,35 @@ function RouteComponent() {
             </Card>
           )}
           <Card>
-            <p className="text-lg font-medium">Sign out</p>
+            <p className="font-semibold">Sign out</p>
             <p className="text-fg-muted mt-1 text-sm">
               End the session on this device.
             </p>
             <Button
-              styles="mt-4 shrink-0 px-4 py-2"
+              styles="mt-4 shrink-0 px-3 py-2 text-sm"
               variant="tertiary"
               buttonText="Sign out"
               onClick={() => logoutHandler(false)}
             >
-              <Icon icon={Logout05Icon} styles="mr-2 size-5" />
+              <Icon icon={Logout05Icon} styles="mr-1.5 size-4 text-fg-muted" />
             </Button>
           </Card>
           <Card>
-            <p className="text-lg font-medium">Sign out everywhere</p>
+            <p className="font-semibold">Sign out everywhere</p>
             <p className="text-fg-muted mt-1 text-sm">
               End every active session, including this one.
             </p>
             <Button
-              styles="mt-4 shrink-0 px-4 py-2"
+              styles="mt-4 shrink-0 px-3 py-2 text-sm"
               variant="tertiary"
               buttonText="Sign out everywhere"
               onClick={() => logoutHandler(true)}
             >
-              <Icon icon={Logout05Icon} styles="mr-2 size-5" />
+              <Icon icon={Logout05Icon} styles="mr-1.5 size-4 text-fg-muted" />
             </Button>
           </Card>
           <Card styles="border-border-danger">
-            <p className="text-fg-danger text-lg font-medium">Delete account</p>
+            <p className="text-fg-danger font-semibold">Delete account</p>
             <p className="text-fg-muted mt-1 mb-4 text-sm">
               Permanently delete your personal account and its data.
             </p>
@@ -165,7 +165,7 @@ function RouteComponent() {
               itemName="your user account"
               trigger={
                 <Button
-                  styles="px-4 py-2"
+                  styles="px-3 py-2 text-sm"
                   variant="danger"
                   buttonText="Delete account"
                 />

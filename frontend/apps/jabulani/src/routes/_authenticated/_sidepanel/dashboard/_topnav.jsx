@@ -14,7 +14,7 @@ function DashboardLayout() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/dashboard">
-          <Icon icon={DashboardSquare01Icon} styles="size-5" />
+          <Icon icon={DashboardSquare01Icon} styles="size-4.5" />
           <span>Dashboard</span>
         </TopNavBarItem>
       </TopNavBar>

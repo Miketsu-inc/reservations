@@ -117,8 +117,8 @@ export default function CustomerSelector({
 
       {isGroupMode && (
         <div
-          className="bg-bg-raised border-border absolute right-0 bottom-0 left-0
-            border-t px-4 py-2"
+          className="bg-bg-overlay border-border absolute right-0 bottom-0
+            left-0 border-t px-4 py-2"
         >
           <Button
             buttonText="Save"
@@ -159,7 +159,7 @@ function CustomerRow({
         </div>
       ) : (
         <Avatar
-          styles="size-14! text-[16px]! shrink-0 rounded-full!"
+          styles="size-14! text-[16px]! shrink-0"
           img={customer?.avatar_url}
           initials={
             customer?.first_name && customer?.last_name

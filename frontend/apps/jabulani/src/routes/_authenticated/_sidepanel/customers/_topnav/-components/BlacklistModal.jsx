@@ -19,7 +19,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
     >
       <ResponsiveDialogContent>
         <div className="m-3 sm:w-md md:m-4">
-          <p className="pb-6 text-xl">
+          <p className="pb-6 text-xl font-semibold">
             {data?.is_blacklisted
               ? "Remove customer from blacklist"
               : "Blacklist customer"}

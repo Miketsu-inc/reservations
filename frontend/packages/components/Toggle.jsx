@@ -41,8 +41,8 @@ export function Toggle({
       disabled={disabled}
       className={`${styles} ${
         !group || group.multiple ? (isPressed ? "bg-fg" : "") : "relative z-10"
-        } ${isPressed ? "text-bg delay-25" : "text-fg"} shrink-0 cursor-pointer
-        rounded-3xl px-4 py-2 font-semibold text-nowrap`}
+        } ${isPressed ? "text-bg delay-25" : "text-fg-muted hover:text-fg"}
+        shrink-0 cursor-pointer rounded-3xl px-4 py-2 text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -57,8 +57,8 @@ export function Toggle({
       {badgeText !== null && (
         <span
           className={`ml-2 inline-flex items-center justify-center rounded-full
-          px-2 py-1 text-sm leading-none font-bold ${
-            isPressed ? "bg-bg/20 text-bg delay-25" : "text-fg bg-fg/10"
+          px-2 py-1 text-sm leading-none ${
+            isPressed ? "bg-bg/15 text-bg delay-25" : "text-fg bg-bg-inactive"
           }`}
         >
           {badgeText}

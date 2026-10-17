@@ -14,7 +14,7 @@ function ProductsLayout() {
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/products">
-          <Icon icon={ShoppingBag02Icon} styles="size-5" />
+          <Icon icon={ShoppingBag02Icon} styles="size-4.5" />
           <span>Products</span>
         </TopNavBarItem>
       </TopNavBar>

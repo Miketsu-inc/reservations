@@ -199,7 +199,7 @@ export default function RecurSection({ booking, recurringData, onSave }) {
           </div>
         </div>
         <div
-          className="border-border bg-bg-raised items center fixed right-0
+          className="border-border bg-bg-overlay items center fixed right-0
             bottom-0 left-0 flex w-full border-t px-6 py-4"
         >
           <Button

@@ -87,7 +87,7 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
             searchText={searchText}
             onChange={(text) => setSearchText(text)}
             placeholder="Search for a service..."
-            styles="w-full p-3"
+            styles="w-full"
           />
         )}
 
@@ -145,7 +145,7 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
           <div className="mt-10 flex flex-col items-center justify-start gap-4">
             {!showToggles && searchText.trim().length > 0 ? (
               <>
-                <Icon icon={Search01Icon} styles="size-15 text-fg-muted!" />
+                <Icon icon={Search01Icon} styles="size-10 text-fg-disabled!" />
                 <p className="text-fg-muted">
                   No services found for "{searchText}"
                 </p>
@@ -167,16 +167,14 @@ function ServiceItem({ service, router, locationId, onClick }) {
     <div
       type="button"
       onClick={() => onClick?.(service)}
-      className="group border-border bg-bg-raised hover:bg-hover flex w-full
-        cursor-pointer items-center justify-between gap-4 rounded-md border p-4
-        text-left shadow-sm transition-all duration-200"
+      className="group border-border bg-bg-raised shadow-card
+        hover:border-border-strong flex w-full cursor-pointer items-center
+        justify-between gap-4 rounded-xl border p-4 text-left"
     >
       <div className="flex flex-col gap-2.5">
-        <p className="text-fg text-[17px] leading-tight font-semibold">
-          {service.name}
-        </p>
+        <p className="text-fg leading-tight font-semibold">{service.name}</p>
 
-        <div className="flex items-center gap-2">
+        <div className="text-fg-muted flex items-center gap-2 text-sm">
           <span>
             {service.min_duration &&
             service.max_duration &&
@@ -201,7 +199,7 @@ function ServiceItem({ service, router, locationId, onClick }) {
       >
         <Button
           variant="primary"
-          styles="py-1.5 px-3"
+          styles="py-1.5 px-3 text-sm"
           name="Reserve"
           buttonText="Reserve"
         />

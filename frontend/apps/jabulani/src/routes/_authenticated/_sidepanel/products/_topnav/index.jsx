@@ -161,8 +161,8 @@ function ProductsPage() {
         onClose={() => setShowProductModal(false)}
         onSubmit={modalHandler}
       />
-      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
-        <p className="shrink-0 text-xl">Products</p>
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
+        <h1 className="shrink-0 text-xl font-semibold">Products</h1>
         <ServerError error={serverError} />
         <div className="flex min-h-0 w-full flex-1">
           <ProductsTable

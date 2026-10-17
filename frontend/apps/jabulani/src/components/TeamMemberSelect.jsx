@@ -33,7 +33,7 @@ export default function TeamMemberSelect({
     label: `${member.first_name} ${member.last_name}`,
     icon: (
       <Avatar
-        styles="size-6! rounded-full! text-[10px]!"
+        styles="size-6! text-[10px]!"
         initials={`${member.first_name[0]}${member.last_name[0]}`}
       />
     ),

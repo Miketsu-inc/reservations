@@ -114,17 +114,18 @@ function NavLayout() {
   }
 
   return (
-    <div className="bg-bg-raised flex h-dvh flex-col overflow-hidden">
+    <div className="bg-canvas flex h-dvh flex-col overflow-hidden">
       {isWindowSmall ? (
         <div className="sticky top-0 z-20 w-full">
-          <div className="flex flex-row items-center px-4 py-4">
+          <div className="flex flex-row items-center px-3 py-3">
             <button
               type="button"
               aria-label="Go back"
-              className="cursor-pointer"
+              className="text-fg-muted hover:bg-hover hover:text-fg
+                cursor-pointer rounded-lg p-1.5"
               onClick={handleBack}
             >
-              <Icon icon={ArrowLeft02Icon} styles="size-6" />
+              <Icon icon={ArrowLeft02Icon} styles="size-5" />
             </button>
           </div>
         </div>
@@ -142,28 +143,30 @@ function NavLayout() {
                 />
               </div>
             </div>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-row items-center gap-1">
               <button
-                className="cursor-pointer transition-transform duration-300"
+                aria-label="Switch theme"
+                className="text-fg-muted hover:bg-hover hover:text-fg
+                  cursor-pointer rounded-lg p-2 transition-colors"
                 onClick={switchTheme}
               >
                 <Icon
                   icon={Moon02Icon}
                   altIcon={Sun03Icon}
                   showAlt={isDarkTheme}
-                  styles="size-5 stroke-fg hover:stroke-fg"
+                  styles="size-4.5"
                 />
               </button>
             </div>
           </div>
         </header>
       )}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 overflow-hidden">
         {!isWindowSmall && (
           <aside
             id="sidepanel"
-            className={`bg-bg-raised relative left-0 z-30 flex h-full w-60
-            flex-col overflow-hidden transition-[width,translate] duration-300
+            className={`bg-canvas relative left-0 z-30 flex h-full w-60 flex-col
+            overflow-hidden transition-[width,translate] duration-300
             md:translate-x-0`}
             aria-label="Sidepanel"
           >
@@ -183,24 +186,19 @@ function NavLayout() {
             <div
               className="flex min-h-0 flex-1 flex-col justify-between px-3 py-2"
             >
-              <ol className="flex flex-col space-y-2">
+              <ol className="flex flex-col space-y-1.5">
                 {navigation.map((item, index) => (
                   <li key={index}>
                     <Link
                       to={item.href}
                       activeProps={{
                         className:
-                          "bg-primary-subtle *:text-fg-primary! *:duration-0",
+                          "bg-bg-raised! text-fg! shadow-card ring-border ring-1 [&>span:first-child]:text-fg-primary!",
                       }}
-                      className={`text-fg hover:bg-primary-subtle flex h-10
-                      items-center rounded-lg px-2`}
+                      className={`text-fg-muted hover:bg-hover hover:text-fg
+                      flex h-9 items-center rounded-lg px-2.5 text-sm`}
                     >
-                      <span
-                        className="text-fg-muted shrink-0 transition
-                          duration-75"
-                      >
-                        {item.icon}
-                      </span>
+                      <span className="shrink-0">{item.icon}</span>
                       {!isWindowSmall && (
                         <>
                           <span
@@ -218,12 +216,11 @@ function NavLayout() {
               <Popover>
                 <PopoverTrigger>
                   <div
-                    className={`hover:bg-primary-subtle flex flex-row
-                    items-center gap-2 rounded-lg p-2 transition-[padding,gap]
-                    duration-300 hover:cursor-pointer`}
+                    className={`hover:bg-hover flex flex-row items-center gap-2
+                    rounded-lg p-2 hover:cursor-pointer`}
                   >
                     <Avatar
-                      styles="size-10! text-sm! shrink-0"
+                      styles="size-9! text-xs! shrink-0"
                       initials={`${user?.first_name.charAt(0)}${user?.last_name.charAt(0)}`}
                     />
                     <div
@@ -236,7 +233,7 @@ function NavLayout() {
                 </PopoverTrigger>
                 <PopoverContent align="start">
                   <div
-                    className="*:hover:bg-primary-subtle space-y-2 text-sm
+                    className="*:hover:bg-hover space-y-1 text-sm
                       *:cursor-pointer *:rounded-lg *:p-2"
                   >
                     <div>
@@ -245,7 +242,10 @@ function NavLayout() {
                           gap-2"
                         onClick={handleLogout}
                       >
-                        <Icon icon={Logout05Icon} styles="size-5" />
+                        <Icon
+                          icon={Logout05Icon}
+                          styles="size-4.5 text-fg-muted"
+                        />
                         Sign out
                       </button>
                     </div>
@@ -256,13 +256,14 @@ function NavLayout() {
           </aside>
         )}
         <div
-          className="flex min-h-0 flex-1 flex-col transition-[margin]
-            duration-300 md:pt-2 md:pr-2"
+          className="flex min-h-0 min-w-0 flex-1 flex-col transition-[margin]
+            duration-300 lg:pt-2 lg:pr-2"
         >
           <div
             id="page-scroll-container"
-            className="bg-bg flex-1 scrollbar-gutter-stable overflow-y-auto
-              rounded-t-xl px-4 pt-4 pb-32 lg:pb-12"
+            className="bg-bg lg:border-border lg:shadow-card flex-1
+              scrollbar-gutter-stable overflow-y-auto px-4 pt-4 pb-32
+              lg:rounded-t-2xl lg:border lg:border-b-0 lg:pb-12"
           >
             <Outlet />
           </div>
@@ -270,8 +271,8 @@ function NavLayout() {
       </div>
       {isWindowSmall && (
         <nav
-          className="border-border bg-bg-raised fixed right-0 bottom-0 left-0
-            z-50 border-t"
+          className="border-border bg-canvas fixed right-0 bottom-0 left-0 z-50
+            border-t"
           style={{
             paddingBottom: "env(safe-area-inset-bottom)",
           }}
@@ -281,31 +282,32 @@ function NavLayout() {
               grid-cols-[1fr_1fr_auto_1fr_1fr] items-center p-2"
           >
             <MobileNavLink from={Route.fullPath} to="/home">
-              <Icon icon={Home07Icon} styles="size-8" />
-              <p className="text-sm">Home</p>
+              <Icon icon={Home07Icon} styles="size-6" />
+              <p className="text-xs">Home</p>
             </MobileNavLink>
             <MobileNavLink from={Route.fullPath} to="/bookings">
-              <Icon icon={Calendar02Icon} styles="size-8" />
-              <p className="text-sm">Bookings</p>
+              <Icon icon={Calendar02Icon} styles="size-6" />
+              <p className="text-xs">Bookings</p>
             </MobileNavLink>
             <div className="relative flex w-9 justify-center">
               <button
-                className="bg-primary border-bg absolute -top-16 flex size-18
-                  items-center justify-center rounded-full border-4"
+                className="bg-primary border-bg absolute -top-14 flex size-16
+                  cursor-pointer items-center justify-center rounded-full
+                  border-4"
               >
-                <Icon icon={Search01Icon} styles="size-8" />
+                <Icon icon={Search01Icon} styles="size-7" />
               </button>
             </div>
             <MobileNavLink from={Route.fullPath} to="/favorites">
-              <Icon icon={FavouriteIcon} styles="size-8" />
-              <p className="text-sm">Favorites</p>
+              <Icon icon={FavouriteIcon} styles="size-6" />
+              <p className="text-xs">Favorites</p>
             </MobileNavLink>
             <MobileNavLink from={Route.fullPath} to="/profile">
               <Avatar
-                styles="size-8! text-xs"
+                styles="size-7! text-[10px]!"
                 initials={`${user.first_name[0]}${user.last_name[0]}`}
               />
-              <p className="text-sm">Profile</p>
+              <p className="text-xs">Profile</p>
             </MobileNavLink>
           </div>
         </nav>
@@ -320,9 +322,9 @@ function MobileNavLink({ children, from, to }) {
       from={from}
       to={to}
       activeProps={{
-        className: "bg-primary-subtle *:text-fg-primary!",
+        className: "text-fg-primary!",
       }}
-      className="flex justify-center rounded-lg"
+      className="text-fg-muted flex justify-center rounded-lg"
     >
       <span className="flex flex-col items-center gap-1 py-2">{children}</span>
     </Link>
