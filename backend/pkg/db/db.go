@@ -3,7 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -24,9 +27,16 @@ type AfterConnectFunc func(context.Context, *pgx.Conn) error
 func New(ctx context.Context, afterConnect AfterConnectFunc) *pgxpool.Pool {
 	cfg := config.LoadEnvVars()
 
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", cfg.DB_USERNAME, cfg.DB_PASSWORD, cfg.DB_HOST, cfg.DB_PORT, cfg.DB_DATABASE, cfg.DB_SCHEMA)
+	connURL := url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(cfg.DB_USERNAME, cfg.DB_PASSWORD),
+		Host:   net.JoinHostPort(cfg.DB_HOST, cfg.DB_PORT),
+		Path:   "/" + cfg.DB_DATABASE,
+		// pgx follows libpq and treats "+" in query values literally, so spaces must be "%20"
+		RawQuery: strings.ReplaceAll(url.Values{"sslmode": {"disable"}, "search_path": {cfg.DB_SCHEMA}}.Encode(), "+", "%20"),
+	}
 
-	poolConfig, err := pgxpool.ParseConfig(connStr)
+	poolConfig, err := pgxpool.ParseConfig(connURL.String())
 	assert.Nil(err, "Connection string parsing failed", err)
 
 	poolConfig.AfterConnect = afterConnect

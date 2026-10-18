@@ -1,3 +1,3 @@
-import createBaseConfig from "../../vite.config";
+import createBaseConfig from "../../vite.config.js";
 
-export default createBaseConfig({ root: __dirname });
+export default createBaseConfig({ root: import.meta.dirname });

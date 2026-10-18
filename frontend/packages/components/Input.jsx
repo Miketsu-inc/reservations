@@ -119,7 +119,7 @@ function PhoneInput({
     <LabelWrapper id={id} labelText={labelText} required={required}>
       <div className={`${styles} flex w-full items-center`}>
         <ComboBox
-          styles="w-fit! border-r-0 rounded-r-none"
+          styles="w-fit! border-r-0 rounded-r-none py-1.5!"
           value={country.iso2}
           options={countryOptions}
           onSelect={(option) => {

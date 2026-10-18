@@ -1,7 +1,7 @@
-import createBaseConfig from "../../vite.config";
+import createBaseConfig from "../../vite.config.js";
 
 export default createBaseConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   resolve: {
     alias: {
       "@reservations/jabulani/lib": "/src/lib",

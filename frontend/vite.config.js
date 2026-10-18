@@ -9,8 +9,8 @@ import { defineConfig } from "vite";
 const createBaseConfig = (additionalConfig) =>
   defineConfig(({ mode }) => {
     return {
-      envDir: path.resolve(__dirname, ".."),
-      publicDir: path.resolve(__dirname, "public"),
+      envDir: path.resolve(import.meta.dirname, ".."),
+      publicDir: path.resolve(import.meta.dirname, "public"),
       plugins: [
         tanstackRouter({
           target: "react",
