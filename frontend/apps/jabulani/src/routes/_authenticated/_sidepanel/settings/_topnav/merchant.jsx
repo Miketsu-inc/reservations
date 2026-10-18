@@ -1,11 +1,21 @@
-import { Loading, ServerError, Textarea } from "@reservations/components";
+import {
+  ImageCropDialog,
+  Loading,
+  ServerError,
+  Textarea,
+} from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
+import {
+  deleteImage,
+  invalidateLocalStorageAuth,
+  uploadImage,
+  useToast,
+} from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import DangerZone from "./-components/DangerZone";
-import ImageUploader from "./-components/ImageUploader";
+import LogoUploader from "./-components/LogoUploader";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
@@ -97,8 +107,56 @@ function MerchantPage() {
     },
   });
 
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
+
+  const canEditLogo = role === "owner" || role === "admin";
+  const logoUrl = `/api/v1/merchants/${merchantId}/media/logo`;
+
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));
+  }
+
+  function selectLogo(file) {
+    setLogoFile(file);
+    setLogoPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function closeLogoCropDialog() {
+    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    setLogoFile(null);
+    setLogoPreviewUrl(null);
+  }
+
+  async function refreshLogo() {
+    // only the logo is refetched, unsaved text changes are kept
+    await queryClient.invalidateQueries(
+      merchantProfileSettingsQueryOptions(merchantId)
+    );
+  }
+
+  async function saveLogo(crop) {
+    setIsLogoUploading(true);
+
+    try {
+      await uploadImage(logoUrl, logoFile, crop);
+      await refreshLogo();
+      closeLogoCropDialog();
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
+    } finally {
+      setIsLogoUploading(false);
+    }
+  }
+
+  async function removeLogo() {
+    try {
+      await deleteImage(logoUrl);
+      await refreshLogo();
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
+    }
   }
 
   if (isLoading) return <Loading />;
@@ -118,6 +176,45 @@ function MerchantPage() {
           />
         }
       />
+
+      {canEditLogo && (
+        <SettingsSection
+          title="Logo"
+          description={
+            <>
+              Shown on your booking page and in link previews. Photos of your
+              business are managed in the{" "}
+              <Link
+                from={Route.fullPath}
+                to="/settings/location"
+                className="text-fg-primary font-medium hover:underline"
+              >
+                location settings
+              </Link>
+              .
+            </>
+          }
+        >
+          <LogoUploader
+            logoUrl={profileSettings.logo_url}
+            isUploading={isLogoUploading}
+            onFileSelected={selectLogo}
+            onRemove={removeLogo}
+          />
+          <ImageCropDialog
+            key={logoPreviewUrl}
+            open={logoPreviewUrl !== null}
+            onOpenChange={(open) =>
+              !open && !isLogoUploading && closeLogoCropDialog()
+            }
+            imageSrc={logoPreviewUrl}
+            title="Crop logo"
+            cropShape="rect"
+            isSaving={isLogoUploading}
+            onSave={saveLogo}
+          />
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="About your business"
@@ -182,23 +279,6 @@ function MerchantPage() {
             value={merchantInfo.parking_info}
             inputData={handleInputData}
           />
-        </div>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Media"
-        description="Add a profile image and gallery images for your public booking page. Uploads are preview-only until media storage is connected."
-      >
-        <div className="flex flex-col items-center gap-8 md:flex-row">
-          <ImageUploader
-            text="Profile picture"
-            styles="h-48! w-48! shrink-0 rounded-3xl"
-            imageStyles="overflow-hidden rounded-3xl object-cover!"
-          />
-          <div className="grid w-full gap-4 sm:grid-cols-2">
-            <ImageUploader text="Gallery image 1" styles="h-48! rounded-lg" />
-            <ImageUploader text="Gallery image 2" styles="h-48! rounded-lg" />
-          </div>
         </div>
       </SettingsSection>
 

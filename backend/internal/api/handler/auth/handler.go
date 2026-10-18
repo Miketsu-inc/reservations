@@ -179,6 +179,7 @@ type meResp struct {
 	LastName    string            `json:"last_name"`
 	Email       string            `json:"email"`
 	PhoneNumber *string           `json:"phone_number"`
+	AvatarUrl   *string           `json:"avatar_url"`
 	Memberships []membershipsResp `json:"memberships"`
 }
 

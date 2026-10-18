@@ -14,6 +14,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/favorites"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/invitations"
+	mediaHandler "github.com/miketsu-inc/reservations/backend/internal/api/handler/media"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
@@ -40,6 +41,7 @@ import (
 	externalcalendarSrv "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	favoriteSrv "github.com/miketsu-inc/reservations/backend/internal/service/favorite"
 	locationSrv "github.com/miketsu-inc/reservations/backend/internal/service/location"
+	mediaSrv "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantSrv "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	productSrv "github.com/miketsu-inc/reservations/backend/internal/service/product"
 	teamSrv "github.com/miketsu-inc/reservations/backend/internal/service/team"
@@ -48,6 +50,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/miketsu-inc/reservations/backend/pkg/kv"
+	"github.com/miketsu-inc/reservations/backend/pkg/objectstore"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
 	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
@@ -69,6 +72,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	customerRep := repos.NewCustomerRepository(dbConn)
 	externalCalendarRepo := repos.NewExternalCalendarRepository(dbConn)
 	favoriteRepo := repos.NewFavoriteRepository(dbConn)
+	imageRepo := repos.NewImageRepository(dbConn)
 	locationRepo := repos.NewLocationRepository(dbConn)
 	merchantRepo := repos.NewMerchantRepository(dbConn)
 	productRepo := repos.NewProductRepository(dbConn)
@@ -79,6 +83,10 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	kvClient := kv.NewClient()
 
+	r2Client := objectstore.NewR2Client(cfg.R2_ACCOUNT_ID, cfg.R2_ACCESS_KEY_ID, cfg.R2_SECRET_ACCESS_KEY)
+	uploadsBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_UPLOADS_BUCKET)
+	mediaBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_MEDIA_BUCKET)
+
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
 	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, nil, transactionManager)
@@ -87,16 +95,18 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, locationRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, emailService, nil, transactionManager)
 	customerService := customerSrv.NewService(customerRep, bookingRepo, transactionManager)
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
-	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, locationRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, transactionManager)
+	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, locationRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, imageRepo, transactionManager)
 	locationService := locationSrv.NewService(locationRepo, merchantRepo, transactionManager)
 	favoriteService := favoriteSrv.NewService(favoriteRepo)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
+	mediaService := mediaSrv.NewService(imageRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, kvClient, nil, transactionManager)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,
 		EmailService:       emailService,
 		ExtCalendarService: externalCalendarService,
+		MediaService:       mediaService,
 		BookingRepo:        bookingRepo,
 		CatalogRepo:        catalogRepo,
 		UserRepo:           userRepo,
@@ -112,6 +122,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	bookingService.SetEnqueuer(enqueuer)
 	externalCalendarService.SetEnqueuer(enqueuer)
 	blockedTimeService.SetEnqueuer(enqueuer)
+	mediaService.SetEnqueuer(enqueuer)
 
 	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
 
@@ -127,6 +138,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Customers:         customers.NewHandler(customerService),
 		Integrations:      integrations.NewHandler(externalCalendarService),
 		Invitations:       invitations.NewHandler(teamService, middlewareManager),
+		Media:             mediaHandler.NewHandler(mediaService, middlewareManager),
 		Users:             users.NewHandler(userService, bookingService, authService, middlewareManager),
 		Favorites:         favorites.NewHandler(favoriteService, middlewareManager),
 		Locations:         locations.NewHandler(locationService),

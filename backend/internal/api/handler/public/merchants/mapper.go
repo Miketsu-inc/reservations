@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
@@ -30,6 +31,17 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		NextOpenDay: in.BusinessHoursStatus.NextOpenDay,
 	}
 
+	images := make([]imageResp, len(in.Images))
+	for i, img := range in.Images {
+		images[i] = imageResp{
+			Url:          mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge),
+			ThumbnailUrl: mediaServ.VariantURL(img.ImageId, mediaServ.VariantSmall),
+			AltText:      img.AltText,
+			Width:        img.Width,
+			Height:       img.Height,
+		}
+	}
+
 	return getInfoResp{
 		MerchantId:              in.Id,
 		Name:                    in.Name,
@@ -42,6 +54,7 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		ParkingInfo:             in.ParkingInfo,
 		PaymentInfo:             in.PaymentInfo,
 		Timezone:                in.Timezone,
+		LogoUrl:                 mediaServ.URL(in.LogoImageId, mediaServ.VariantSmall),
 		LocationId:              in.LocationId,
 		Country:                 in.Country,
 		CountryCode:             in.CountryCode,
@@ -51,6 +64,7 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		Address:                 in.Address,
 		FormattedLocation:       in.FormattedLocation,
 		GeoPoint:                in.GeoPoint,
+		Images:                  images,
 		BusinessHours:           businessHours,
 		BusinessHoursStatusResp: businessStatus,
 	}
@@ -101,6 +115,7 @@ func mapToGetTeam(in []domain.EmployeeWithServiceOverrides) []teamResponse {
 			LastName:        *emp.LastName,
 			Email:           emp.Email,
 			PhoneNumber:     emp.PhoneNumber,
+			AvatarUrl:       mediaServ.URL(emp.AvatarImageId, mediaServ.VariantSmall),
 			TotalDuration:   emp.TotalDuration,
 			Price:           currencyx.FormatPrice(emp.Price),
 			PriceType:       emp.PriceType,
@@ -154,6 +169,7 @@ func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
 	resp := getSummaryResp{
 		MerchantName:      in.MerchantName,
 		FormattedLocation: in.Location,
+		LogoUrl:           mediaServ.URL(in.LogoImageId, mediaServ.VariantSmall),
 	}
 
 	if in.Service != nil {
@@ -264,6 +280,7 @@ func mapToGetGroupAvailabilityResp(in merchantServ.GroupAvailabilityResult) getG
 			EmployeeId:          booking.EmployeeId,
 			EmployeeFirstName:   booking.EmployeeFirstName,
 			EmployeeLastName:    booking.EmployeeLastName,
+			EmployeeAvatarUrl:   mediaServ.URL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

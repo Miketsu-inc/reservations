@@ -331,6 +331,7 @@ function SidePanelLayout() {
                 >
                   <Avatar
                     styles="size-9! text-xs! shrink-0"
+                    img={user?.avatar_url}
                     initials={`${user?.first_name.charAt(0)}${user?.last_name.charAt(0)}`}
                   />
                   <div

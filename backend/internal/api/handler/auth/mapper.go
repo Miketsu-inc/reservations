@@ -2,6 +2,7 @@ package auth
 
 import (
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 )
 
@@ -62,6 +63,7 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 		LastName:    in.User.LastName,
 		Email:       in.User.Email,
 		PhoneNumber: in.User.PhoneNumber,
+		AvatarUrl:   mediaServ.URL(in.User.AvatarImageId, mediaServ.VariantSmall),
 		Memberships: memberships,
 	}
 }

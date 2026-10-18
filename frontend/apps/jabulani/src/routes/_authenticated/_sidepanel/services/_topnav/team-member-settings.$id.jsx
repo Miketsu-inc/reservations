@@ -505,6 +505,8 @@ function EmployeeSettingsRow({
             styles={`size-11! shrink-0 text-sm ${
               employee.is_assigned ? "" : "opacity-50"
             }`}
+            img={employee.avatar_url}
+            alt={name}
             initials={initials}
           />
           <div

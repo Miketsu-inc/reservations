@@ -25,11 +25,12 @@ type Service struct {
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
 	teamRepo        domain.TeamRepository
+	imageRepo       domain.ImageRepository
 	txManager       db.TransactionManager
 }
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, location domain.LocationRepository, merchant domain.MerchantRepository,
-	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository, team domain.TeamRepository,
+	customer domain.CustomerRepository, blockedTime domain.BlockedTimeRepository, team domain.TeamRepository, image domain.ImageRepository,
 	txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
@@ -39,6 +40,7 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
 		teamRepo:        team,
+		imageRepo:       image,
 		txManager:       txManager,
 	}
 }

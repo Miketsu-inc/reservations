@@ -29,6 +29,7 @@ type bookingListItemResp struct {
 	ParticipantStatus *types.BookingStatus     `json:"participant_status"`
 	EmployeeFirstName *string                  `json:"employee_first_name"`
 	EmployeeLastName  *string                  `json:"employee_last_name"`
+	EmployeeAvatarUrl *string                  `json:"employee_avatar_url"`
 }
 
 type getBookingsResp struct {

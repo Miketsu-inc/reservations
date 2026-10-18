@@ -16,6 +16,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import BusinessHoursSection from "./-components/BusinessHoursSection";
 import FavoriteButton from "./-components/FavoriteButton";
+import Gallery from "./-components/Gallery";
 import MapboxMap from "./-components/MapboxMap";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceSection from "./-components/ServiceSection";
@@ -123,9 +124,18 @@ function MerchantPage() {
             </Link>
             <div className="flex w-full items-start justify-between pb-4">
               <div className="flex flex-col gap-3">
-                <h1 className="text-4xl font-semibold">
-                  {merchantInfo.merchant_name}
-                </h1>
+                <div className="flex items-center gap-4">
+                  {merchantInfo.logo_url && (
+                    <img
+                      className="size-14 shrink-0 rounded-xl object-cover"
+                      src={merchantInfo.logo_url}
+                      alt={`${merchantInfo.merchant_name} logo`}
+                    />
+                  )}
+                  <h1 className="text-4xl font-semibold">
+                    {merchantInfo.merchant_name}
+                  </h1>
+                </div>
                 <div className="text-fg-muted flex items-center gap-3">
                   <div className="text-fg-warning flex items-center gap-1">
                     <Icon icon={StarIcon} styles="size-5 fill-warning" />
@@ -178,37 +188,11 @@ function MerchantPage() {
           </>
         )}
 
-        <div
-          className="grid w-full grid-cols-1 gap-2 lg:h-125
-            lg:grid-cols-[2fr_1fr] lg:overflow-hidden lg:rounded-2xl"
-        >
-          <div className="relative h-62.5 w-full lg:h-full">
-            <img
-              className="absolute inset-0 size-full cursor-pointer object-cover
-                transition-opacity hover:opacity-95"
-              src="https://dummyimage.com/1920x1080/d156c3/000000.jpg"
-              alt="Main location view"
-            />
-          </div>
-          <div className="hidden h-full w-full flex-col gap-2 lg:flex">
-            <div className="relative flex-1">
-              <img
-                className="absolute inset-0 size-full cursor-pointer
-                  object-cover transition-opacity hover:opacity-95"
-                src="https://dummyimage.com/800x600/a34298/fff.jpg"
-                alt="Gallery top right"
-              />
-            </div>
-            <div className="relative flex-1">
-              <img
-                className="absolute inset-0 size-full cursor-pointer
-                  object-cover transition-opacity hover:opacity-95"
-                src="https://dummyimage.com/800x600/8a3781/fff.jpg"
-                alt="Gallery bottom right"
-              />
-            </div>
-          </div>
-        </div>
+        <Gallery
+          images={merchantInfo.images}
+          merchantName={merchantInfo.merchant_name}
+          logoUrl={merchantInfo.logo_url}
+        />
 
         <div
           className="relative flex flex-col pt-0 pb-24 lg:flex-row lg:gap-3
@@ -220,9 +204,18 @@ function MerchantPage() {
               lg:rounded-none lg:px-0 lg:pt-0"
           >
             <div className="flex flex-col gap-3.5 lg:hidden">
-              <h1 className="text-3xl font-bold">
-                {merchantInfo.merchant_name}
-              </h1>
+              <div className="flex items-center gap-3">
+                {merchantInfo.logo_url && (
+                  <img
+                    className="size-12 shrink-0 rounded-xl object-cover"
+                    src={merchantInfo.logo_url}
+                    alt={`${merchantInfo.merchant_name} logo`}
+                  />
+                )}
+                <h1 className="text-3xl font-bold">
+                  {merchantInfo.merchant_name}
+                </h1>
+              </div>
               <div className="text-fg-muted flex flex-wrap items-center gap-3">
                 <div className="text-fg-warning flex items-center gap-2">
                   <Icon icon={StarIcon} styles="size-5 fill-warning" />

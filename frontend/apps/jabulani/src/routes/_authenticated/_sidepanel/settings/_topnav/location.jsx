@@ -26,6 +26,7 @@ import {
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useState } from "react";
+import LocationGallery from "./-components/LocationGallery";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 
 const LocationEditor = lazy(
@@ -129,32 +130,54 @@ export const Route = createFileRoute(
   errorComponent: ({ error }) => <ServerError error={error.message} />,
 });
 
-function LocationCard({ location, onEdit }) {
+function LocationCard({ location, merchantId, canEditPhotos, onEdit }) {
   return (
-    <Card styles="h-auto! p-4! sm:p-5!">
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-fg truncate font-semibold">{location.name}</h2>
-            <span
-              className={`${
-                location.is_active
-                  ? "bg-success-subtle text-fg-success"
-                  : "bg-bg-sunken text-fg-muted "
-                } rounded-full px-2 py-0.5 text-xs font-medium`}
-            >
-              {location.is_active ? "Active" : "Inactive"}
-            </span>
+    <Card styles="h-auto! p-0! overflow-hidden">
+      <div className="flex min-w-0 items-start justify-between gap-4 p-4 sm:p-6">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <div
+            className="bg-primary-subtle text-fg-primary hidden shrink-0
+              rounded-xl p-2.5 sm:block"
+          >
+            <Icon icon={Location01Icon} styles="size-5" />
           </div>
-
-          <div className="mt-3 flex min-w-0 items-start gap-2">
-            <Icon
-              icon={Location01Icon}
-              styles="text-fg-primary mt-0.5 size-4 shrink-0"
-            />
-            <p className="text-fg text-sm leading-6 font-medium">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-fg truncate text-base font-semibold">
+                {location.name}
+              </h2>
+              <span
+                className={`${
+                  location.is_active
+                    ? "bg-success-subtle text-fg-success"
+                    : "bg-bg-sunken text-fg-muted"
+                  } rounded-full px-2 py-0.5 text-xs font-medium`}
+              >
+                {location.is_active ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <p className="text-fg-muted mt-1 text-sm leading-6">
               {location.formatted_location}
             </p>
+            {(location.contact_email || location.phone_number) && (
+              <div
+                className="text-fg-muted mt-2 flex min-w-0 flex-wrap
+                  items-center gap-x-5 gap-y-1.5 text-sm"
+              >
+                {location.contact_email && (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
+                    <span className="truncate">{location.contact_email}</span>
+                  </div>
+                )}
+                {location.phone_number && (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Icon icon={Call02Icon} styles="size-4 shrink-0" />
+                    <span className="truncate">{location.phone_number}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,7 +186,7 @@ function LocationCard({ location, onEdit }) {
           variant="secondary"
           styles="shrink-0 px-2.5 py-2 text-sm sm:px-3
             [&>span:last-child]:hidden sm:[&>span:last-child]:inline"
-          buttonText="Edit"
+          buttonText="Edit details"
           aria-label={`Edit ${location.name}`}
           onClick={() => onEdit(location)}
         >
@@ -171,31 +194,19 @@ function LocationCard({ location, onEdit }) {
         </Button>
       </div>
 
-      {(location.contact_email || location.phone_number) && (
-        <div
-          className="border-border text-fg-muted mt-4 flex min-w-0 flex-wrap
-            items-center gap-x-5 gap-y-2 border-t pt-3 text-xs"
-        >
-          {location.contact_email && (
-            <div className="flex min-w-0 items-center gap-2">
-              <Icon icon={Mail01Icon} styles="size-4 shrink-0" />
-              <span className="truncate">{location.contact_email}</span>
-            </div>
-          )}
-          {location.phone_number && (
-            <div className="flex min-w-0 items-center gap-2">
-              <Icon icon={Call02Icon} styles="size-4 shrink-0" />
-              <span className="truncate">{location.phone_number}</span>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="border-border bg-bg/40 border-t p-4 sm:p-6">
+        <LocationGallery
+          merchantId={merchantId}
+          locationId={location.id}
+          canEdit={canEditPhotos}
+        />
+      </div>
     </Card>
   );
 }
 
 function LocationPage() {
-  const { merchantId } = useAuth();
+  const { merchantId, role } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
   const { isWindowSmall } = useWindowSize();
@@ -255,15 +266,17 @@ function LocationPage() {
     <div className="flex flex-col gap-6 pb-8">
       <SettingsPageHeader
         title="Locations"
-        description="Manage the address and contact details for each place customers can visit."
+        description="Manage the address, contact details and photos for each place customers can visit."
       />
 
       {locations.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-6">
           {locations.map((location) => (
             <LocationCard
               key={location.id}
               location={location}
+              merchantId={merchantId}
+              canEditPhotos={role === "owner" || role === "admin"}
               onEdit={openEditor}
             />
           ))}

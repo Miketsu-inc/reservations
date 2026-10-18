@@ -32,7 +32,7 @@ type MerchantRepository interface {
 	GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (MerchantProfileSettings, error)
 	GetSchedulingSettings(ctx context.Context, merchantId uuid.UUID) (SchedulingSettings, error)
 	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
-	GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error)
+	GetMerchantSummary(ctx context.Context, merchantId uuid.UUID, locationId int) (MerchantSummary, error)
 
 	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
 	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, timezone *time.Location) ([]RevenueStat, error)
@@ -73,17 +73,18 @@ type BusinessHoursStatus struct {
 }
 
 type MerchantInfo struct {
-	Id           uuid.UUID `json:"merchant_id"`
-	Name         string    `json:"merchant_name"`
-	UrlName      string    `json:"url_name"`
-	ContactEmail string    `json:"contact_email"`
-	PhoneNumber  *string   `json:"phone_number"`
-	Introduction string    `json:"introduction"`
-	Announcement string    `json:"announcement"`
-	AboutUs      string    `json:"about_us"`
-	ParkingInfo  string    `json:"parking_info"`
-	PaymentInfo  string    `json:"payment_info"`
-	Timezone     string    `json:"timezone"`
+	Id           uuid.UUID  `json:"merchant_id"`
+	Name         string     `json:"merchant_name"`
+	UrlName      string     `json:"url_name"`
+	ContactEmail string     `json:"contact_email"`
+	PhoneNumber  *string    `json:"phone_number"`
+	Introduction string     `json:"introduction"`
+	Announcement string     `json:"announcement"`
+	AboutUs      string     `json:"about_us"`
+	ParkingInfo  string     `json:"parking_info"`
+	PaymentInfo  string     `json:"payment_info"`
+	Timezone     string     `json:"timezone"`
+	LogoImageId  *uuid.UUID `json:"logo_image_id"`
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`
@@ -94,17 +95,20 @@ type MerchantInfo struct {
 	Address           *string        `json:"address"`
 	FormattedLocation string         `json:"formatted_location"`
 	GeoPoint          types.GeoPoint `json:"geo_point"`
+	// Images of the location ordered by their sequence
+	Images []LocationImage `json:"images"`
 
 	BusinessHours       BusinessHours       `json:"business_hours"`
 	BusinessHoursStatus BusinessHoursStatus `json:"business_hours_status"`
 }
 
 type MerchantProfileSettings struct {
-	Introduction string `db:"introduction"`
-	Announcement string `db:"announcement"`
-	AboutUs      string `db:"about_us"`
-	ParkingInfo  string `db:"parking_info"`
-	PaymentInfo  string `db:"payment_info"`
+	Introduction string     `db:"introduction"`
+	Announcement string     `db:"announcement"`
+	AboutUs      string     `db:"about_us"`
+	ParkingInfo  string     `db:"parking_info"`
+	PaymentInfo  string     `db:"payment_info"`
+	LogoImageId  *uuid.UUID `db:"logo_image_id"`
 }
 
 type MerchantBookingSettings struct {
@@ -151,4 +155,10 @@ type DashboardRevenue struct {
 	PeriodStart time.Time     `json:"period_start"`
 	PeriodEnd   time.Time     `json:"period_end"`
 	Revenue     []RevenueStat `json:"revenue"`
+}
+
+type MerchantSummary struct {
+	Name              string     `db:"name"`
+	FormattedLocation string     `db:"formatted_location"`
+	LogoImageId       *uuid.UUID `db:"logo_image_id"`
 }

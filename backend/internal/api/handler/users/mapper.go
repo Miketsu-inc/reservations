@@ -4,6 +4,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
 )
 
@@ -30,6 +31,7 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 			Price:             b.PricePerPerson.ToFormatted(),
 			MerchantName:      b.MerchantName,
 			MerchantUrl:       b.MerchantUrl,
+			MerchantLogoUrl:   mediaServ.URL(b.MerchantLogoImageId, mediaServ.VariantSmall),
 			FormattedLocation: b.FormattedLocation,
 			ServiceName:       b.ServiceName,
 			EmployeeFirstName: b.EmployeeFirstName,

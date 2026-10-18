@@ -31,6 +31,13 @@ func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.Merc
 		return domain.MerchantInfo{}, err
 	}
 
+	images, err := s.imageRepo.GetLocationImages(ctx, merchantId, merchantInfo.LocationId)
+	if err != nil {
+		return domain.MerchantInfo{}, err
+	}
+
+	merchantInfo.Images = images
+
 	merchantTz, err := time.LoadLocation(merchantInfo.Timezone)
 	if err != nil {
 		return domain.MerchantInfo{}, fmt.Errorf("invalid merchant timezone: %w", err)
@@ -95,6 +102,7 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 type BookingSummary struct {
 	MerchantName string
 	Location     string
+	LogoImageId  *uuid.UUID
 	Service      *domain.MinimalServiceInfo
 	Employee     *domain.Employee
 }
@@ -106,14 +114,15 @@ func (s *Service) GetSummary(ctx context.Context, merchantName string, locationI
 		return BookingSummary{}, err
 	}
 
-	merchantName, location, err := s.merchantRepo.GetMerchantNameAndLocation(ctx, merchantId, locationId)
+	merchantSummary, err := s.merchantRepo.GetMerchantSummary(ctx, merchantId, locationId)
 	if err != nil {
 		return BookingSummary{}, err
 	}
 
 	summary := BookingSummary{
-		MerchantName: merchantName,
-		Location:     location,
+		MerchantName: merchantSummary.Name,
+		Location:     merchantSummary.FormattedLocation,
+		LogoImageId:  merchantSummary.LogoImageId,
 	}
 
 	if serviceId != nil {

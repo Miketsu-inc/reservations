@@ -77,6 +77,7 @@ type getInfoResp struct {
 	ParkingInfo  string    `json:"parking_info"`
 	PaymentInfo  string    `json:"payment_info"`
 	Timezone     string    `json:"timezone"`
+	LogoUrl      *string   `json:"logo_url"`
 
 	LocationId        int            `json:"location_id"`
 	Country           *string        `json:"country"`
@@ -87,9 +88,18 @@ type getInfoResp struct {
 	Address           *string        `json:"address"`
 	FormattedLocation string         `json:"formatted_location"`
 	GeoPoint          types.GeoPoint `json:"geo_point"`
+	Images            []imageResp    `json:"images"`
 
 	BusinessHours           map[int][]timeSlotResp  `json:"business_hours"`
 	BusinessHoursStatusResp businessHoursStatusResp `json:"business_hours_status"`
+}
+
+type imageResp struct {
+	Url          string `json:"url"`
+	ThumbnailUrl string `json:"thumbnail_url"`
+	AltText      string `json:"alt_text"`
+	Width        int    `json:"width"`
+	Height       int    `json:"height"`
 }
 
 type timeSlotResp struct {
@@ -174,6 +184,7 @@ type teamResponse struct {
 	LastName        string                    `json:"last_name"`
 	Email           *string                   `json:"email"`
 	PhoneNumber     *string                   `json:"phone_number"`
+	AvatarUrl       *string                   `json:"avatar_url"`
 	TotalDuration   *int                      `json:"total_duration,omitempty"`
 	Price           *currencyx.FormattedPrice `json:"price,omitempty"`
 	PriceType       *types.PriceType          `json:"price_type,omitempty"`
@@ -281,6 +292,7 @@ func (h *Handler) GetServiceDetails(w http.ResponseWriter, r *http.Request) erro
 type getSummaryResp struct {
 	MerchantName      string                    `json:"merchant_name"`
 	FormattedLocation string                    `json:"formatted_location"`
+	LogoUrl           *string                   `json:"logo_url"`
 	ServiceName       *string                   `json:"service_name"`
 	Price             *currencyx.FormattedPrice `json:"price"`
 	PriceType         *types.PriceType          `json:"price_type"`
@@ -439,6 +451,7 @@ type availableGroupBookingResp struct {
 	EmployeeId          int                       `json:"employee_id"`
 	EmployeeFirstName   string                    `json:"employee_first_name"`
 	EmployeeLastName    string                    `json:"employee_last_name"`
+	EmployeeAvatarUrl   *string                   `json:"employee_avatar_url"`
 }
 
 type getGroupAvailabilityResp struct {

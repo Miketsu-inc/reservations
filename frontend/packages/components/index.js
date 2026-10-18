@@ -1,4 +1,5 @@
 export { default as Avatar } from "./Avatar.jsx";
+export { default as AvatarUpload } from "./AvatarUpload.jsx";
 export { default as Breadcrumbs } from "./Breadcrumbs.jsx";
 export { default as Button } from "./Button.jsx";
 export { default as Card } from "./Card.jsx";
@@ -15,6 +16,7 @@ export {
 } from "./Drawer.jsx";
 export { default as FloatingLabelInput } from "./FloatingLabelInput.jsx";
 export { default as Icon } from "./Icon.jsx";
+export { default as ImageCropDialog } from "./ImageCropDialog.jsx";
 export { default as Input } from "./Input.jsx";
 export { default as InputBase } from "./InputBase.jsx";
 export { default as Loading } from "./Loading.jsx";

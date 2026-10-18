@@ -74,7 +74,8 @@ func (r *teamRepository) DeleteEmployee(ctx context.Context, merchantId uuid.UUI
 func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, memberId int) (domain.Employee, error) {
 	query := `
 	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
-		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id, e.avatar_image_id is not null as has_own_avatar
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1 and e.id = $2
@@ -92,7 +93,8 @@ func (r *teamRepository) GetEmployee(ctx context.Context, merchantId uuid.UUID, 
 func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.Employee, error) {
 	query := `
 	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
-		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id, e.avatar_image_id is not null as has_own_avatar
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1`
@@ -109,7 +111,8 @@ func (r *teamRepository) GetEmployees(ctx context.Context, merchantId uuid.UUID)
 func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid.UUID) ([]domain.Employee, error) {
 	query := `
 	select e.id, e.user_id, e.merchant_id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
-		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active
+		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number, e.is_active,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id, e.avatar_image_id is not null as has_own_avatar
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
 	where merchant_id = $1 and e.is_active is true`
@@ -127,6 +130,7 @@ func (r *teamRepository) GetActiveEmployeesForService(ctx context.Context, merch
 	query := `
 	select e.id, e.role, coalesce(e.first_name, u.first_name) as first_name, coalesce(e.last_name, u.last_name) as last_name,
 		coalesce(e.email, u.email) as email, coalesce(e.phone_number, u.phone_number) as phone_number,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id,
 		coalesce(es.total_duration, s.total_duration) as total_duration, coalesce(es.price_type, s.price_type) as price_type, 
 		coalesce(es.price_per_person, s.price_per_person) as price_per_person, coalesce(es.max_participants, s.max_participants) as max_participants
 	from "Employee" e

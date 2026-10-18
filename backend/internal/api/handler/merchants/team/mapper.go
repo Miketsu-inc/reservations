@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 )
 
@@ -31,14 +32,16 @@ func mapToUpdateMemberInput(in updateMemberReq) teamServ.UpdateMemberInput {
 
 func mapToGetMemberResp(in domain.Employee) getMemberResp {
 	return getMemberResp{
-		Id:          in.Id,
-		Role:        in.Role,
-		IsUser:      in.UserId != nil,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
-		Email:       in.Email,
-		PhoneNumber: in.PhoneNumber,
-		IsActive:    in.IsActive,
+		Id:           in.Id,
+		Role:         in.Role,
+		IsUser:       in.UserId != nil,
+		FirstName:    in.FirstName,
+		LastName:     in.LastName,
+		Email:        in.Email,
+		PhoneNumber:  in.PhoneNumber,
+		IsActive:     in.IsActive,
+		AvatarUrl:    mediaServ.URL(in.AvatarImageId, mediaServ.VariantSmall),
+		HasOwnAvatar: in.HasOwnAvatar,
 	}
 }
 

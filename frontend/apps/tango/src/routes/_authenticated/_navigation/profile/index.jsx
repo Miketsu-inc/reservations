@@ -4,7 +4,7 @@ import {
   Settings02Icon,
 } from "@hugeicons/core-free-icons";
 import {
-  Avatar,
+  AvatarUpload,
   Card,
   Icon,
   Loading,
@@ -12,7 +12,7 @@ import {
 } from "@reservations/components";
 import { JABULANI_URL, meQueryOptions, useWindowSize } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/_navigation/profile/")({
   loader: async ({ context: { queryClient } }) => {
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/_navigation/profile/")({
 function RouteComponent() {
   const { data: user, isLoading } = useQuery(meQueryOptions());
   const { isWindowSmall } = useWindowSize();
+  const { queryClient } = useRouteContext({ from: Route.id });
 
   if (isLoading) {
     return <Loading />;
@@ -49,9 +50,15 @@ function RouteComponent() {
             </Link>
           </div>
           <div className="flex flex-col items-center gap-4">
-            <Avatar
+            <AvatarUpload
               styles="size-20 text-2xl!"
+              img={user.avatar_url}
               initials={`${user.first_name[0]}${user.last_name[0]}`}
+              alt={`${user.first_name} ${user.last_name}`}
+              uploadUrl="/api/v1/media/avatar"
+              deleteUrl="/api/v1/media/avatar"
+              canRemove={!!user.avatar_url}
+              onChange={() => queryClient.invalidateQueries(meQueryOptions())}
             />
             <p className="text-xl font-semibold">{`${user.first_name} ${user.last_name}`}</p>
           </div>

@@ -192,6 +192,7 @@ export default function CustomerProfile({ customerId }) {
           <div className="flex min-w-0 items-center gap-4">
             <Avatar
               styles="size-14! text-lg!"
+              img={customer?.avatar_url}
               initials={`${customer?.first_name[0]}${customer?.last_name[0]}`}
             />
             <div className="flex min-w-0 flex-col gap-1">

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -30,6 +32,8 @@ type oauthProfile struct {
 	LastName      string
 	Email         string
 	EmailVerified bool
+	// empty if the provider has no picture of the user
+	PictureURL string
 }
 
 type oauthProvider struct {
@@ -61,6 +65,7 @@ func decodeGoogleProfile(r io.Reader) (oauthProfile, error) {
 		FamilyName    string `json:"family_name"`
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
+		Picture       string `json:"picture"`
 	}
 	if err := json.NewDecoder(r).Decode(&user); err != nil {
 		return oauthProfile{}, err
@@ -72,8 +77,12 @@ func decodeGoogleProfile(r io.Reader) (oauthProfile, error) {
 		LastName:      user.FamilyName,
 		Email:         user.Email,
 		EmailVerified: user.EmailVerified,
+		PictureURL:    googlePictureSizeRegex.ReplaceAllString(user.Picture, "=s512-c"),
 	}, nil
 }
+
+// Google picture urls end with a size parameter (e.g. =s96-c), which is changed to request a larger picture
+var googlePictureSizeRegex = regexp.MustCompile(`=s\d+(-c)?$`)
 
 func (s *Service) GoogleLogin(ctx context.Context) (string, string, error) {
 	return oauthLogin(googleProvider)
@@ -92,7 +101,7 @@ var facebookProvider = oauthProvider{
 		Scopes:       []string{"email", "public_profile"},
 		Endpoint:     facebook.Endpoint,
 	},
-	userInfoURL:   "https://graph.facebook.com/v24.0/me?fields=id,first_name,last_name,email",
+	userInfoURL:   "https://graph.facebook.com/v24.0/me?fields=id,first_name,last_name,email,picture.width(512).height(512)",
 	decodeProfile: decodeFacebookProfile,
 }
 
@@ -102,9 +111,21 @@ func decodeFacebookProfile(r io.Reader) (oauthProfile, error) {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		Email     string `json:"email"`
+		Picture   struct {
+			Data struct {
+				Url          string `json:"url"`
+				IsSilhouette bool   `json:"is_silhouette"`
+			} `json:"data"`
+		} `json:"picture"`
 	}
 	if err := json.NewDecoder(r).Decode(&user); err != nil {
 		return oauthProfile{}, err
+	}
+
+	// silhouette is facebook's default picture for users without one
+	var pictureURL string
+	if !user.Picture.Data.IsSilhouette {
+		pictureURL = user.Picture.Data.Url
 	}
 
 	return oauthProfile{
@@ -112,6 +133,7 @@ func decodeFacebookProfile(r io.Reader) (oauthProfile, error) {
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
 		Email:      user.Email,
+		PictureURL: pictureURL,
 	}, nil
 }
 
@@ -212,17 +234,36 @@ func (s *Service) findOrCreateOauthUser(ctx context.Context, provider types.Auth
 		return uuid.Nil, 0, fmt.Errorf("error creating user id: %w", err)
 	}
 
-	err = s.userRepo.NewUser(ctx, domain.User{
-		Id:                userId,
-		FirstName:         profile.FirstName,
-		LastName:          profile.LastName,
-		Email:             profile.Email,
-		PhoneNumber:       nil,
-		PasswordHash:      nil,
-		JwtRefreshVersion: 0,
-		Language:          lang.LangFromContext(ctx).String(),
-		AuthProvider:      &provider,
-		ProviderId:        &profile.ProviderId,
+	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		err := s.userRepo.WithTx(tx).NewUser(ctx, domain.User{
+			Id:                userId,
+			FirstName:         profile.FirstName,
+			LastName:          profile.LastName,
+			Email:             profile.Email,
+			PhoneNumber:       nil,
+			PasswordHash:      nil,
+			JwtRefreshVersion: 0,
+			Language:          lang.LangFromContext(ctx).String(),
+			AuthProvider:      &provider,
+			ProviderId:        &profile.ProviderId,
+		})
+		if err != nil {
+			return err
+		}
+
+		if profile.PictureURL == "" {
+			return nil
+		}
+
+		_, err = s.enqueuer.InsertTx(ctx, tx, args.ImportOauthAvatar{
+			UserId: userId,
+			Url:    profile.PictureURL,
+		}, nil)
+		if err != nil {
+			return fmt.Errorf("error scheduling oauth avatar import: %w", err)
+		}
+
+		return nil
 	})
 	if err != nil {
 		if db.IsUniqueConstraintViolation(err, repository.UserEmailLowerUniqueConstraint) {

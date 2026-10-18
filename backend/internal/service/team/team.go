@@ -240,6 +240,7 @@ func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string
 			LastName:        emp.LastName,
 			Email:           emp.Email,
 			PhoneNumber:     emp.PhoneNumber,
+			AvatarImageId:   emp.AvatarImageId,
 			TotalDuration:   nil,
 			Price:           nil,
 			PriceType:       nil,

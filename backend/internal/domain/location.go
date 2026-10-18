@@ -13,6 +13,7 @@ type LocationRepository interface {
 
 	NewLocation(ctx context.Context, location Location) (int, error)
 	GetLocation(ctx context.Context, locationId int, merchantId uuid.UUID) (Location, error)
+	LockLocation(ctx context.Context, locationId int, merchantId uuid.UUID) error
 	GetDefaultLocation(ctx context.Context, merchantId uuid.UUID) (Location, error)
 	GetLocations(ctx context.Context, merchantId uuid.UUID) ([]Location, error)
 	UpdateLocation(ctx context.Context, location Location) error

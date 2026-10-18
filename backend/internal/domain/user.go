@@ -45,6 +45,7 @@ type User struct {
 	Language          string                  `json:"language" db:"language"`
 	AuthProvider      *types.AuthProviderType `json:"auth_provider" db:"auth_provider"`
 	ProviderId        *string                 `json:"provider_id" db:"provider_id"`
+	AvatarImageId     *uuid.UUID              `json:"avatar_image_id" db:"avatar_image_id"`
 }
 
 func (u User) IsOauthUser() bool {

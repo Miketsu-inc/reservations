@@ -279,6 +279,7 @@ type EmployeeServiceSettings struct {
 	FirstName       *string                `db:"first_name"`
 	LastName        *string                `db:"last_name"`
 	Role            types.EmployeeRole     `db:"role"`
+	AvatarImageId   *uuid.UUID             `db:"avatar_image_id"`
 	IsAssigned      bool                   `db:"is_assigned"`
 	TotalDuration   *int                   `db:"total_duration"`
 	PricePerPerson  *currencyx.Price       `db:"price_per_person"`

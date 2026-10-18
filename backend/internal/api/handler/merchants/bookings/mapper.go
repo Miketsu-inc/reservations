@@ -5,6 +5,7 @@ import (
 	"time"
 
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 )
 
 func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
@@ -25,6 +26,7 @@ func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
 			ParticipantStatus: booking.ParticipantStatus,
 			EmployeeFirstName: booking.EmployeeFirstName,
 			EmployeeLastName:  booking.EmployeeLastName,
+			EmployeeAvatarUrl: mediaServ.URL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

@@ -120,14 +120,16 @@ func (h *Handler) DeleteMember(w http.ResponseWriter, r *http.Request) error {
 }
 
 type getMemberResp struct {
-	Id          int                `json:"id"`
-	Role        types.EmployeeRole `json:"role"`
-	IsUser      bool               `json:"is_user"`
-	FirstName   *string            `json:"first_name"`
-	LastName    *string            `json:"last_name"`
-	Email       *string            `json:"email"`
-	PhoneNumber *string            `json:"phone_number"`
-	IsActive    bool               `json:"is_active"`
+	Id           int                `json:"id"`
+	Role         types.EmployeeRole `json:"role"`
+	IsUser       bool               `json:"is_user"`
+	FirstName    *string            `json:"first_name"`
+	LastName     *string            `json:"last_name"`
+	Email        *string            `json:"email"`
+	PhoneNumber  *string            `json:"phone_number"`
+	IsActive     bool               `json:"is_active"`
+	AvatarUrl    *string            `json:"avatar_url"`
+	HasOwnAvatar bool               `json:"has_own_avatar"`
 }
 
 func (h *Handler) GetMember(w http.ResponseWriter, r *http.Request) error {

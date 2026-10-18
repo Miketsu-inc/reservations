@@ -39,6 +39,13 @@ type Config struct {
 	TANGO_URL    string
 	JABULANI_URL string
 	DOMAIN       string
+
+	R2_ACCOUNT_ID        string
+	R2_ACCESS_KEY_ID     string
+	R2_SECRET_ACCESS_KEY string
+	R2_UPLOADS_BUCKET    string
+	R2_MEDIA_BUCKET      string
+	MEDIA_PUBLIC_URL     string
 }
 
 var instance *Config
@@ -69,6 +76,12 @@ func LoadEnvVars() *Config {
 		tango_url := os.Getenv("TANGO_URL")
 		jabulani_url := os.Getenv("JABULANI_URL")
 		domain := os.Getenv("DOMAIN")
+		r2_account_id := os.Getenv("R2_ACCOUNT_ID")
+		r2_access_key_id := os.Getenv("R2_ACCESS_KEY_ID")
+		r2_secret_access_key := os.Getenv("R2_SECRET_ACCESS_KEY")
+		r2_uploads_bucket := os.Getenv("R2_UPLOADS_BUCKET")
+		r2_media_bucket := os.Getenv("R2_MEDIA_BUCKET")
+		media_public_url := os.Getenv("MEDIA_PUBLIC_URL")
 
 		instance = &Config{
 			PORT:                         port,
@@ -94,6 +107,12 @@ func LoadEnvVars() *Config {
 			TANGO_URL:                    tango_url,
 			JABULANI_URL:                 jabulani_url,
 			DOMAIN:                       domain,
+			R2_ACCOUNT_ID:                r2_account_id,
+			R2_ACCESS_KEY_ID:             r2_access_key_id,
+			R2_SECRET_ACCESS_KEY:         r2_secret_access_key,
+			R2_UPLOADS_BUCKET:            r2_uploads_bucket,
+			R2_MEDIA_BUCKET:              r2_media_bucket,
+			MEDIA_PUBLIC_URL:             media_public_url,
 		}
 	})
 	return instance
@@ -123,6 +142,12 @@ func (c *Config) Validate() {
 	assert.True(c.TANGO_URL != "", "TANGO_URL environment variable could not be found")
 	assert.True(c.JABULANI_URL != "", "JABULANI_URL environment variable could not be found")
 	assert.True(c.DOMAIN != "", "DOMAIN environment variable could not be found")
+	assert.True(c.R2_ACCOUNT_ID != "", "R2_ACCOUNT_ID environment variable could not be found")
+	assert.True(c.R2_ACCESS_KEY_ID != "", "R2_ACCESS_KEY_ID environment variable could not be found")
+	assert.True(c.R2_SECRET_ACCESS_KEY != "", "R2_SECRET_ACCESS_KEY environment variable could not be found")
+	assert.True(c.R2_UPLOADS_BUCKET != "", "R2_UPLOADS_BUCKET environment variable could not be found")
+	assert.True(c.R2_MEDIA_BUCKET != "", "R2_MEDIA_BUCKET environment variable could not be found")
+	assert.True(c.MEDIA_PUBLIC_URL != "", "MEDIA_PUBLIC_URL environment variable could not be found")
 }
 
 func (c *Config) IsProd() bool {

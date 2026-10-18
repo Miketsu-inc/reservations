@@ -39,11 +39,12 @@ type Customer struct {
 
 type PublicCustomer struct {
 	Customer
-	IsDummy         bool    `json:"is_dummy" db:"is_dummy"`
-	IsBlacklisted   bool    `json:"is_blacklisted" db:"is_blacklisted"`
-	BlacklistReason *string `json:"blacklist_reason" db:"blacklist_reason"`
-	TimesBooked     int     `json:"times_booked" db:"times_booked"`
-	TimesCancelled  int     `json:"times_cancelled" db:"times_cancelled"`
+	IsDummy         bool       `json:"is_dummy" db:"is_dummy"`
+	IsBlacklisted   bool       `json:"is_blacklisted" db:"is_blacklisted"`
+	BlacklistReason *string    `json:"blacklist_reason" db:"blacklist_reason"`
+	TimesBooked     int        `json:"times_booked" db:"times_booked"`
+	TimesCancelled  int        `json:"times_cancelled" db:"times_cancelled"`
+	AvatarImageId   *uuid.UUID `json:"avatar_image_id" db:"avatar_image_id"`
 }
 
 type CustomerInfo struct {
@@ -51,6 +52,7 @@ type CustomerInfo struct {
 	IsDummy         bool
 	IsBlacklisted   bool
 	BlacklistReason *string
+	AvatarImageId   *uuid.UUID
 }
 
 type CustomerStatistics struct {
@@ -66,12 +68,13 @@ type CustomerStatistics struct {
 }
 
 type CustomerForCalendar struct {
-	CustomerId  uuid.UUID  `json:"customer_id" db:"customer_id"`
-	FirstName   string     `json:"first_name" db:"first_name"`
-	LastName    string     `json:"last_name" db:"last_name"`
-	Email       *string    `json:"email" db:"email"`
-	PhoneNumber *string    `json:"phone_number" db:"phone_number"`
-	BirthDay    *time.Time `json:"birthday" db:"birthday"`
-	IsDummy     bool       `json:"is_dummy" db:"is_dummy"`
-	LastVisited *time.Time `json:"last_visited" db:"last_visited"`
+	CustomerId    uuid.UUID  `json:"customer_id" db:"customer_id"`
+	FirstName     string     `json:"first_name" db:"first_name"`
+	LastName      string     `json:"last_name" db:"last_name"`
+	Email         *string    `json:"email" db:"email"`
+	PhoneNumber   *string    `json:"phone_number" db:"phone_number"`
+	BirthDay      *time.Time `json:"birthday" db:"birthday"`
+	IsDummy       bool       `json:"is_dummy" db:"is_dummy"`
+	LastVisited   *time.Time `json:"last_visited" db:"last_visited"`
+	AvatarImageId *uuid.UUID `json:"avatar_image_id" db:"avatar_image_id"`
 }

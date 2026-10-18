@@ -105,6 +105,8 @@ type dashboardBookingResp struct {
 	CustomerLastName    *string                  `json:"customer_last_name"`
 	EmployeeFirstName   *string                  `json:"employee_first_name"`
 	EmployeeLastName    *string                  `json:"employee_last_name"`
+	CustomerAvatarUrl   *string                  `json:"customer_avatar_url"`
+	EmployeeAvatarUrl   *string                  `json:"employee_avatar_url"`
 }
 
 func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) error {
@@ -225,11 +227,12 @@ func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
 }
 
 type merchantProfileSettingsResp struct {
-	Introduction string `json:"introduction"`
-	Announcement string `json:"announcement"`
-	AboutUs      string `json:"about_us"`
-	ParkingInfo  string `json:"parking_info"`
-	PaymentInfo  string `json:"payment_info"`
+	Introduction string  `json:"introduction"`
+	Announcement string  `json:"announcement"`
+	AboutUs      string  `json:"about_us"`
+	ParkingInfo  string  `json:"parking_info"`
+	PaymentInfo  string  `json:"payment_info"`
+	LogoUrl      *string `json:"logo_url"`
 }
 
 func (h *Handler) GetMerchantProfileSettings(w http.ResponseWriter, r *http.Request) error {
@@ -360,9 +363,10 @@ func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Requ
 }
 
 type getTeamMembersForCalendarResp struct {
-	Id        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	Id        int     `json:"id"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) error {
@@ -413,6 +417,7 @@ type getCustomersForCalendarResp struct {
 	BirthDay    *time.Time `json:"birthday"`
 	IsDummy     bool       `json:"is_dummy"`
 	LastVisited *time.Time `json:"last_visited"`
+	AvatarUrl   *string    `json:"avatar_url"`
 }
 
 func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) error {
@@ -463,6 +468,7 @@ type bookingParticipantForCalendar struct {
 	LastName     *string             `json:"last_name"`
 	CustomerNote *string             `json:"customer_note"`
 	Status       types.BookingStatus `json:"status"`
+	AvatarUrl    *string             `json:"avatar_url"`
 }
 
 type blockedTime struct {

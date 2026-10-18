@@ -213,6 +213,7 @@ type employeeSettingsResp struct {
 	FirstName       *string                     `json:"first_name"`
 	LastName        *string                     `json:"last_name"`
 	Role            types.EmployeeRole          `json:"role"`
+	AvatarUrl       *string                     `json:"avatar_url"`
 	IsAssigned      bool                        `json:"is_assigned"`
 	Price           *currencyx.Price            `json:"price"`
 	PriceType       *types.PriceType            `json:"price_type"`

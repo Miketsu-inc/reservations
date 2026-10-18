@@ -93,6 +93,7 @@ type bookingForUser struct {
 	Price             currencyx.FormattedPrice `json:"price"`
 	MerchantName      string                   `json:"merchant_name"`
 	MerchantUrl       string                   `json:"merchant_url"`
+	MerchantLogoUrl   *string                  `json:"merchant_logo_url"`
 	FormattedLocation string                   `json:"formatted_location"`
 	ServiceName       string                   `json:"service_name"`
 	EmployeeFirstName *string                  `json:"employee_first_name"`

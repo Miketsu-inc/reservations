@@ -120,6 +120,7 @@ type getResp struct {
 	IsDummy         bool       `json:"is_dummy"`
 	IsBlacklisted   bool       `json:"is_blacklisted"`
 	BlacklistReason *string    `json:"blacklist_reason"`
+	AvatarUrl       *string    `json:"avatar_url"`
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) error {
@@ -222,6 +223,7 @@ type getAllResp struct {
 	BlacklistReason *string    `json:"blacklist_reason"`
 	TimesBooked     int        `json:"times_booked"`
 	TimesCancelled  int        `json:"times_cancelled"`
+	AvatarUrl       *string    `json:"avatar_url"`
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {

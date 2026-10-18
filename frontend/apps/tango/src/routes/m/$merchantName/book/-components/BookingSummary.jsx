@@ -142,12 +142,21 @@ export default function BookingSummary({
     >
       <div>
         <div className="flex items-start gap-3">
-          <div className="flex size-18 shrink-0 overflow-hidden rounded-lg">
-            <img
-              className="size-full object-cover"
-              src="https://dummyimage.com/70x70/d156c3/000000.jpg"
-              alt="service photo"
-            />
+          <div
+            className="bg-bg-sunken flex size-18 shrink-0 items-center
+              justify-center overflow-hidden rounded-lg"
+          >
+            {fetchedSummary?.logo_url ? (
+              <img
+                className="size-full object-cover"
+                src={fetchedSummary.logo_url}
+                alt={`${fetchedSummary.merchant_name} logo`}
+              />
+            ) : (
+              <span className="text-fg-muted text-xl font-semibold">
+                {fetchedSummary?.merchant_name?.slice(0, 2).toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="flex flex-col gap-0.5">
             <h2 className="text-lg font-semibold">

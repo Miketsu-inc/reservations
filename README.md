@@ -54,9 +54,23 @@ TANGO_URL
 JABULANI_URL
 DOMAIN
 
+R2_ACCOUNT_ID
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+R2_UPLOADS_BUCKET
+R2_MEDIA_BUCKET
+MEDIA_PUBLIC_URL
+
 VITE_TANGO_URL=$TANGO_URL
 VITE_JABULANI_URL=$JABULANI_URL
 ```
+
+Images are stored in two Cloudflare R2 buckets.
+
+- `R2_UPLOADS_BUCKET` is private, clients upload the original files to it with presigned urls. It needs a lifecycle rule deleting objects after 1 day and a CORS rule allowing `PUT` requests with the `Content-Type` header from the `TANGO_URL` and `JABULANI_URL` origins.
+- `R2_MEDIA_BUCKET` is public and contains the processed images. `MEDIA_PUBLIC_URL` is it's public url (the `r2.dev` url or a custom domain).
+
+The API token only needs Object Read & Write permission for these two buckets.
 
 Create a PostgreSQL database in docker using the create-db command.
 

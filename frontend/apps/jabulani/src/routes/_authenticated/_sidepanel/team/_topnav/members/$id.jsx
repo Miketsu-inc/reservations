@@ -6,7 +6,7 @@ import {
   MoreVerticalIcon,
 } from "@hugeicons/core-free-icons";
 import {
-  Avatar,
+  AvatarUpload,
   Card,
   DeleteModal,
   Icon,
@@ -23,7 +23,7 @@ import {
   invalidateLocalStorageAuth,
   useToast,
 } from "@reservations/lib";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -54,6 +54,7 @@ function RouteComponent() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId } = useAuth();
+  const queryClient = useQueryClient();
 
   const {
     data: employee,
@@ -118,8 +119,18 @@ function RouteComponent() {
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <Avatar
+              <AvatarUpload
+                img={employee.avatar_url}
                 initials={`${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`}
+                alt={`${employee.first_name} ${employee.last_name}`}
+                uploadUrl={`/api/v1/merchants/${merchantId}/media/team/${employee.id}/avatar`}
+                deleteUrl={`/api/v1/merchants/${merchantId}/media/team/${employee.id}/avatar`}
+                canRemove={employee.has_own_avatar}
+                onChange={() =>
+                  queryClient.invalidateQueries(
+                    employeeQueryOptions(merchantId, id)
+                  )
+                }
               />
 
               <div className="flex flex-col gap-1">

@@ -3,6 +3,7 @@ package customers
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -41,6 +42,7 @@ func mapToGetResp(in domain.CustomerInfo) getResp {
 		IsDummy:         in.IsDummy,
 		IsBlacklisted:   in.IsBlacklisted,
 		BlacklistReason: in.BlacklistReason,
+		AvatarUrl:       mediaServ.URL(in.AvatarImageId, mediaServ.VariantSmall),
 	}
 }
 
@@ -93,6 +95,7 @@ func mapToGetAllResp(in []domain.PublicCustomer) []getAllResp {
 			BlacklistReason: c.BlacklistReason,
 			TimesBooked:     c.TimesBooked,
 			TimesCancelled:  c.TimesCancelled,
+			AvatarUrl:       mediaServ.URL(c.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

@@ -123,7 +123,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 	select c.id,
 		   coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 		   coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
-		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason,
+		   c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason, u.avatar_image_id,
 		count(b.id) as times_booked, count(b.id) filter (where bp.status = 'cancelled') as times_cancelled
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
@@ -131,7 +131,7 @@ func (r *customerRepository) GetCustomers(ctx context.Context, merchantId uuid.U
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1
 		and b.cancelled_by_merchant_on is null
 	where c.merchant_id = $1 and c.is_blacklisted = $2
-	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number, u.avatar_image_id
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId, isBlacklisted)
@@ -153,7 +153,7 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 	query := `
 	select c.id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name,
 	coalesce(c.email, u.email) as email, coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.note,
-	c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason
+	c.user_id is null as is_dummy, c.is_blacklisted, c.blacklist_reason, u.avatar_image_id
 	from "Customer" c
 	left join "User" u on u.id = c.user_id
 	where c.id = $1 and c.merchant_id = $2`
@@ -161,7 +161,7 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 	var customer domain.CustomerInfo
 	err := r.db.QueryRow(ctx, query, customerId, merchantId).Scan(&customer.Id, &customer.FirstName, &customer.LastName,
 		&customer.Email, &customer.PhoneNumber, &customer.Birthday, &customer.Note, &customer.IsDummy,
-		&customer.IsBlacklisted, &customer.BlacklistReason)
+		&customer.IsBlacklisted, &customer.BlacklistReason, &customer.AvatarImageId)
 	if err != nil {
 		return domain.CustomerInfo{}, fmt.Errorf("GetCustomerInfo: %w", err)
 	}
@@ -236,13 +236,14 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.CustomerForCalendar, error) {
 	query := `
 	select c.id as customer_id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, coalesce(c.email, u.email) as email,
-		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited
+		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited,
+		u.avatar_image_id
 	from "Customer" c
 	left join "User" u on c.user_id = u.id
 	left join "BookingParticipant" bp on bp.customer_id = c.id and bp.status = 'completed'
 	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1 and b.from_date < now()
 	where c.merchant_id = $1
-	group by c.id, u.first_name, u.last_name, u.email, u.phone_number
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number, u.avatar_image_id
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
