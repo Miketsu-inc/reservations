@@ -44,3 +44,16 @@
   --fc-breezy-muted-border: var(--border-subtle);
   --fc-breezy-strong-border: var(--border-strong);
 }
+
+/*
+  remove focus outline which appears when clicking on a chart
+*/
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+}
+
+.recharts-wrapper svg:focus {
+  outline: none;
+  stroke: none;
+}

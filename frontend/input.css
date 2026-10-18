@@ -191,12 +191,6 @@
     border-color: var(--border);
   }
 
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
-
   ::placeholder {
     color: var(--fg-muted);
   }
@@ -252,28 +246,6 @@
   animation: slideDown 0.5s ease-out forwards;
 }
 
-/*
-  remove focus outline which appears when clicking on a chart
-*/
-.recharts-wrapper:focus,
-.recharts-wrapper *:focus {
-  outline: none !important;
-}
-
-.recharts-wrapper svg:focus {
-  outline: none;
-  stroke: none;
-}
-
 .ag-header-hidden .ag-header {
   display: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }

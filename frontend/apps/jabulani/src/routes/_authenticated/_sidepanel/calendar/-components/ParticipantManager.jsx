@@ -191,7 +191,7 @@ export default function ParticipantManager({
           )}
         </div>
 
-        <div className="no-scrollbar flex-1 overflow-y-auto pt-4">
+        <div className="flex-1 scrollbar-none overflow-y-auto pt-4">
           {participants.length === 0 ? (
             <div
               className="flex h-full flex-col items-center justify-start gap-3

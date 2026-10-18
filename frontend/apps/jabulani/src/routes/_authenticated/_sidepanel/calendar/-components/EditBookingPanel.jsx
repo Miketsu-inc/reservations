@@ -375,7 +375,7 @@ export default function EditBookingPanel({
           )}
         </NestedSidePanel>
         <div
-          className="no-scrollbar relative flex h-full w-full flex-col
+          className="relative flex h-full w-full scrollbar-none flex-col
             overflow-y-auto"
         >
           <BookingHeader

@@ -339,7 +339,7 @@ export default function NewBookingPanel({
               )}
             </NestedSidePanel>
             <div
-              className={`no-scrollbar relative h-full w-full overflow-y-auto
+              className={`relative h-full w-full scrollbar-none overflow-y-auto
                 pb-20 ${isWindowSmall ? "pt-0" : "pt-10"} `}
             >
               {isWindowSmall && (
