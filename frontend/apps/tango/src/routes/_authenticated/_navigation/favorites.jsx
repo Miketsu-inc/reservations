@@ -83,7 +83,7 @@ function FavoritesPage() {
     <div className="flex justify-center">
       <div className="flex w-full max-w-2xl flex-col justify-center">
         <div className="flex flex-row items-center justify-between pt-4 pb-6">
-          <p className="text-2xl font-semibold">Favorites</p>
+          <h1 className="text-xl font-semibold">Favorites</h1>
           {favorites.length > 0 && (
             <SearchInput
               styles="w-40! md:w-60!"
@@ -98,16 +98,19 @@ function FavoritesPage() {
             className="flex h-full flex-col items-center justify-center py-16
               text-center"
           >
-            <div className="bg-primary/10 text-primary mb-4 rounded-full p-4">
-              <Icon icon={FavouriteIcon} styles="size-10" />
+            <div
+              className="bg-primary-subtle text-fg-primary mb-4 rounded-full
+                p-3"
+            >
+              <Icon icon={FavouriteIcon} styles="size-7" />
             </div>
-            <p className="text-lg font-medium">You do not have any favorites</p>
-            <p className="text-text_color/60 mt-1 max-w-sm text-sm">
+            <p className="font-semibold">You do not have any favorites</p>
+            <p className="text-fg-muted mt-1 max-w-sm text-sm">
               Explore businesses and tap the heart icon on any merchant page to
               save them here for quick access.
             </p>
             <Link to="/home" className="mt-6">
-              <Button buttonText="Explore" styles="px-6 py-2" />
+              <Button buttonText="Explore" styles="px-4 py-2 text-sm" />
             </Link>
           </div>
         ) : filteredFavorites.length === 0 ? (
@@ -115,9 +118,9 @@ function FavoritesPage() {
             className="flex flex-col items-center justify-center py-12
               text-center"
           >
-            <p className="text-base">No favorites match "{searchText}"</p>
+            <p>No favorites found for this search.</p>
             <button
-              className="text-primary mt-2 cursor-pointer text-sm underline"
+              className="text-fg-primary mt-2 cursor-pointer text-sm underline"
               onClick={() => setSearchText("")}
             >
               Clear search
@@ -145,10 +148,9 @@ function FavoriteMerchantCard({ merchant, onRemove, isRemoving }) {
 
   return (
     <div
-      className="border-border_color bg-layer_bg dark:hover:bg-layer_bg/80
-        relative flex w-full flex-col justify-between gap-4 rounded-lg border
-        p-2 shadow-sm transition-colors hover:border-gray-400 hover:bg-gray-100
-        dark:hover:border-zinc-700"
+      className="border-border bg-bg-raised shadow-card
+        hover:border-border-strong relative flex w-full flex-col justify-between
+        gap-4 rounded-xl border p-2"
     >
       <div className="flex flex-col gap-3">
         <div
@@ -161,36 +163,34 @@ function FavoriteMerchantCard({ merchant, onRemove, isRemoving }) {
             alt="service photo"
           />
           <button
-            className="group bg-layer_bg border-border_color absolute top-2
-              right-2 h-fit cursor-pointer rounded-full border p-1.5 shadow-sm
-              transition-all duration-200 hover:scale-105 hover:shadow-md
-              active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+            className="group bg-bg-overlay border-border shadow-overlay absolute
+              top-2 right-2 h-fit cursor-pointer rounded-full border p-1.5
+              transition-transform duration-200 hover:scale-105 active:scale-95
+              disabled:pointer-events-none disabled:opacity-50"
             onClick={onRemove}
             disabled={isRemoving}
           >
             <Icon
               icon={FavouriteIcon}
-              styles="size-6 text-red-500 fill-red-500 transition-all
-                duration-200 group-hover:scale-105"
+              styles="size-5 text-fg-danger fill-danger group-hover:scale-105"
             />
           </button>
         </div>
         <div className="flex flex-col items-start gap-1.5 px-2">
           <div className="flex w-full items-center justify-between">
-            <p className="text-2xl font-semibold">{merchant.merchant_name}</p>
+            <p className="font-semibold">{merchant.merchant_name}</p>
             <div className="flex items-center gap-1 text-sm">
               <Icon
                 icon={StarIcon}
-                styles="size-5 text-yellow-500 fill-yellow-500"
+                styles="size-4 text-fg-warning fill-warning"
               />
               <span className="font-medium">4.6</span>
-              <span className="ml-1 cursor-pointer text-gray-500">(9)</span>
+              <span className="text-fg-muted ml-1 cursor-pointer">(9)</span>
             </div>
           </div>
           {merchant.formatted_location && (
             <div
-              className="text-text_color/70 flex flex-row items-center gap-1
-                text-sm"
+              className="text-fg-muted flex flex-row items-center gap-1 text-sm"
             >
               <Icon icon={Location01Icon} styles="size-4 shrink-0" />
               <span className="line-clamp-1">

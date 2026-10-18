@@ -50,10 +50,10 @@ export default function ImageUploader({
         if (file) handleFile(file);
       }}
       onDragOver={(event) => event.preventDefault()}
-      className={`${styles} group bg-hvr_gray relative flex h-64 w-full
-        cursor-pointer flex-col items-center justify-center border-2
-        border-dashed border-gray-400 transition-colors hover:border-gray-500
-        dark:border-gray-600 dark:hover:border-gray-400`}
+      className={`${styles} group bg-bg-sunken border-border-strong
+        hover:border-border-primary hover:bg-primary-subtle relative flex h-64
+        w-full cursor-pointer flex-col items-center justify-center border
+        border-dashed transition-colors`}
     >
       {preview ? (
         <>
@@ -66,25 +66,24 @@ export default function ImageUploader({
             type="button"
             aria-label={`Remove ${text.toLowerCase()}`}
             onClick={clearImage}
-            className="absolute top-2 right-2 rounded-full bg-gray-600 p-1
-              text-white"
+            className="bg-bg-overlay text-fg border-border shadow-overlay
+              absolute top-2 right-2 cursor-pointer rounded-full border p-1.5
+              opacity-80 hover:opacity-100"
           >
-            <Icon icon={Delete02Icon} styles="size-5" />
+            <Icon icon={Delete02Icon} styles="size-4" />
           </button>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center px-4 text-center">
-          <Icon icon={FileImageIcon} styles="text-gray-500 dark:text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            <span className="font-semibold">Click to upload</span> or drag and
-            drop
+        <div
+          className="flex flex-col items-center justify-center px-4 text-center"
+        >
+          <Icon icon={FileImageIcon} styles="text-fg-muted" />
+          <p className="text-fg-muted mt-2 text-sm">
+            <span className="text-fg-primary font-medium">Click to upload</span>{" "}
+            or drag and drop
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            JPG, PNG, SVG (max. 5 MB)
-          </p>
-          <span className="mt-5 text-sm text-gray-500 dark:text-gray-400">
-            {text}
-          </span>
+          <p className="text-fg-muted text-xs">JPG, PNG, SVG (max. 5 MB)</p>
+          <span className="text-fg mt-4 text-sm font-medium">{text}</span>
         </div>
       )}
       <input

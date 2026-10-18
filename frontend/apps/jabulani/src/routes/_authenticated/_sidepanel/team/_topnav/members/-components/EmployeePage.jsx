@@ -63,7 +63,7 @@ export default function EmployeePage({ employee, onSave }) {
         className="flex w-full flex-col gap-4 px-3 lg:w-2/3 lg:px-0 2xl:w-1/2"
       >
         <Card>
-          <p className="text-xl">
+          <p className="text-xl font-semibold">
             {employee ? "Edit team member" : "Add new team member"}
           </p>
         </Card>
@@ -149,7 +149,7 @@ export default function EmployeePage({ employee, onSave }) {
           <div className="flex w-full justify-end gap-2">
             <Link from={router.fullPath}>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 styles="sm:py-2 sm:px-4 w-fit p-2"
                 buttonText="Cancel"
                 type="button"

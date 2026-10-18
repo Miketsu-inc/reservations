@@ -2,13 +2,12 @@ import { LoaderIcon } from "@reservations/assets";
 import { forwardRef } from "react";
 
 const variants = {
-  primary: "bg-primary hover:not-disabled:bg-hvr_primary text-white shadow-md",
-  secondary:
-    "bg-transparent text-primary hover:not-disabled:text-hvr_primary border-2 border-primary hover:not-disabled:border-hvr_primary",
-  tertiary:
-    "bg-transparent hover:not-disabled:bg-gray-300 dark:hover:not-disabled:bg-gray-800 text-text_color shadow-none border-2 border-gray-300 dark:border-gray-800",
-  danger:
-    "dark:hover:not-disabled:bg-red-800 dark:bg-red-700 bg-red-500 hover:not-disabled:bg-red-600 text-white shadow-md",
+  primary: `bg-primary text-fg-on-primary shadow-card border-transparent
+    hover:not-disabled:bg-primary-hover active:not-disabled:bg-primary-active`,
+  secondary: `bg-bg-input text-fg border-border-strong shadow-card
+    hover:not-disabled:bg-hover`,
+  danger: `bg-danger text-white shadow-card border-transparent
+    hover:not-disabled:bg-danger-hover`,
 };
 
 const Button = forwardRef(function Button(
@@ -31,8 +30,9 @@ const Button = forwardRef(function Button(
     <button
       ref={ref}
       onClick={onClick}
-      className={`${styles} ${variants[variant]} flex items-center
-        justify-center rounded-lg focus-visible:outline-1
+      className={`${styles} ${variants[variant]} focus-visible:outline-primary
+        flex items-center justify-center rounded-lg border
+        focus-visible:outline-2 focus-visible:outline-offset-2
         ${childSide === "right" ? "flex-row-reverse" : ""}
         ${isLoading || disabled ? "opacity-50 transition-opacity duration-300" : "cursor-pointer"}`}
       name={name}

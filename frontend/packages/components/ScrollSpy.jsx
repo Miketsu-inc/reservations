@@ -277,13 +277,12 @@ export function ScrollSpyNav() {
 
   return (
     <div
-      className="border-border_color bg-bg_color sticky top-0 z-10 w-full
-        min-w-0 border-b py-2.5 md:self-start md:overflow-y-auto md:border-0
-        md:py-0"
+      className="border-border bg-bg sticky top-0 z-10 w-full min-w-0 border-b
+        py-2.5 md:self-start md:overflow-y-auto md:border-0 md:py-0"
     >
       <nav
         aria-label="Section navigation"
-        className="md:border-border_color md:bg-layer_bg flex w-full min-w-0
+        className="md:border-border md:bg-bg-raised flex w-full min-w-0
           scrollbar-thin flex-row gap-1.5 overflow-x-auto px-4 md:flex-col
           md:gap-1 md:overflow-visible md:rounded-lg md:border md:p-2"
       >
@@ -298,10 +297,11 @@ export function ScrollSpyNav() {
               aria-current={active ? "location" : undefined}
               className={
                 active
-                  ? `bg-primary/10 text-primary shrink-0 rounded-lg px-3 py-2
-                    text-sm whitespace-nowrap md:w-full md:py-2.5`
-                  : `text-text_color/70 hover:bg-primary/10 shrink-0 rounded-lg
-                    px-3 py-2 text-sm whitespace-nowrap md:w-full md:py-2.5`
+                  ? `bg-primary-subtle text-fg-primary shrink-0 rounded-lg px-3
+                    py-2 text-sm whitespace-nowrap md:w-full md:py-2.5`
+                  : `text-fg-muted hover:bg-hover hover:text-fg shrink-0
+                    rounded-lg px-3 py-2 text-sm whitespace-nowrap md:w-full
+                    md:py-2.5`
               }
             >
               {getLabel(id)}

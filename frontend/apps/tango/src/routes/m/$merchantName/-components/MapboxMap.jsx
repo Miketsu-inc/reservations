@@ -1,8 +1,15 @@
+import { useTheme } from "@reservations/lib";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef } from "react";
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+function mapStyle(isDarkTheme) {
+  return isDarkTheme
+    ? "mapbox://styles/mapbox/dark-v11"
+    : "mapbox://styles/mapbox/streets-v12";
+}
 
 export default function MapboxMap({
   styles,
@@ -10,9 +17,11 @@ export default function MapboxMap({
   minHeight = 400,
   zoom = 15,
 }) {
+  const { isDarkTheme } = useTheme();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const currentStyleRef = useRef(mapStyle(isDarkTheme));
 
   useEffect(() => {
     if (!accessToken || !coordinates || mapRef.current) return;
@@ -25,7 +34,7 @@ export default function MapboxMap({
       try {
         map = new mapboxgl.Map({
           container: mapContainerRef.current,
-          style: "mapbox://styles/mapbox/streets-v12",
+          style: currentStyleRef.current,
           center: coordinates,
           zoom: zoom,
           interactive: false, // Disable all interactions
@@ -55,10 +64,21 @@ export default function MapboxMap({
     };
   }, [coordinates, zoom]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const nextStyle = mapStyle(isDarkTheme);
+    if (nextStyle === currentStyleRef.current) return;
+
+    currentStyleRef.current = nextStyle;
+    map.setStyle(nextStyle);
+  }, [isDarkTheme]);
+
   return (
     <div
       ref={mapContainerRef}
-      className={`${styles} h-full w-full rounded-lg bg-red-400`}
+      className={`${styles} bg-bg-sunken h-full w-full rounded-lg`}
       style={{ minHeight: minHeight }}
     />
   );

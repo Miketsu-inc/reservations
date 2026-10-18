@@ -5,9 +5,9 @@ import {
   Select,
   Switch,
   Textarea,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tooltip,
 } from "@reservations/components";
 import { useMemo } from "react";
 
@@ -47,8 +47,8 @@ export function ServiceBasicDetails({ service, categories, onUpdate }) {
         >
           <input
             id="color"
-            className="border-input_border_color size-10.5 cursor-pointer
-              rounded-l-lg border bg-transparent"
+            className="border-border-strong size-9.5 cursor-pointer rounded-l-lg
+              border bg-transparent"
             name="color"
             type="color"
             value={service.color}
@@ -130,7 +130,7 @@ export function ServiceBasicDetails({ service, categories, onUpdate }) {
               <TooltipTrigger>
                 <Icon
                   icon={InformationCircleIcon}
-                  styles="size-4 text-gray-500 dark:text-gray-400"
+                  styles="size-4 text-fg-muted"
                 />
               </TooltipTrigger>
               <TooltipContent side="right">

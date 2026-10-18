@@ -119,7 +119,7 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
     >
       <ResponsiveDialogContent>
         <form onSubmit={submitHandler} className="m-3 sm:w-md">
-          <p className="pb-6 text-xl">Transfer bookings</p>
+          <p className="pb-6 text-xl font-semibold">Transfer bookings</p>
           <ServerError
             styles="mb-4"
             error={
@@ -157,13 +157,13 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
           </div>
           <p
             className={`${showValidationError ? "visible" : "invisible"}
-              text-center text-red-500`}
+              text-fg-danger text-center`}
           >
             Please select a customer!
           </p>
           <div className="flex justify-center py-3">
             <div className="py-4 text-center">
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-fg-muted">
                 You are about to transfer all past and future bookings (booked
                 until now) to another customer.
                 <br />
@@ -174,7 +174,7 @@ export default function TransferAppsModal({ fromCustomerId, isOpen, onClose }) {
           <div className="flex flex-row items-center justify-end gap-4">
             <ResponsiveDialogClose asChild>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 name="cancel"
                 styles="py-2 px-3 hidden lg:block"
                 buttonText="Cancel"

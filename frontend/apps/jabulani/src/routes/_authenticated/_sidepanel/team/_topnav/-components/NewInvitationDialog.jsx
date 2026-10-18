@@ -73,7 +73,7 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
         >
           <div>
             <p className="text-lg font-semibold">New Invitation</p>
-            <p className="text-text_color/80">
+            <p className="text-fg">
               Invite a person to your team. They will get an email asking them
               to join.
             </p>
@@ -107,7 +107,7 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
               <Button
                 styles="py-2 px-4 hidden lg:block"
                 buttonText="Cancel"
-                variant="tertiary"
+                variant="secondary"
                 type="button"
               />
             </ResponsiveDialogClose>

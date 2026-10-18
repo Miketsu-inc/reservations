@@ -58,26 +58,25 @@ export default function EmployeePicker({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="bg-layer_bg border-border_color focus-visible:ring-primary
-          flex w-fit cursor-pointer items-center gap-2 rounded-full border
-          py-1.5 pr-3 pl-2 transition-all duration-200 hover:bg-gray-50
-          focus-visible:ring-2 focus-visible:outline-none
-          dark:hover:bg-gray-200/5"
+        className="bg-bg-raised border-border focus-visible:ring-primary-focus
+          hover:bg-hover flex w-fit cursor-pointer items-center gap-2
+          rounded-full border py-1.5 pr-3 pl-2 transition-all duration-200
+          focus-visible:ring-2 focus-visible:outline-none"
       >
         {isNoPref ? (
           <>
             <div
-              className="bg-primary/80 flex size-8 items-center justify-center
-                rounded-full"
+              className="bg-primary-subtle flex size-8 items-center
+                justify-center rounded-full"
             >
-              <Icon icon={Person} styles="size-5 text-white" />
+              <Icon icon={Person} styles="size-5 text-fg-primary" />
             </div>
             <span className="text-sm font-medium">No Preference</span>
           </>
         ) : (
           <>
             <Avatar
-              styles="size-8! text-[11px]! shrink-0 rounded-full!"
+              styles="size-8! text-[11px]! shrink-0"
               img={avatarUrl}
               initials={`${empFirstName?.[0]}${empLastName?.[0]}`}
             />
@@ -88,8 +87,8 @@ export default function EmployeePicker({
         )}
         <Icon
           icon={ArrowLeft01Icon}
-          styles={`text-text_color/60 -rotate-90 size-5 shrink-0
-            transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+          styles={`text-fg-muted -rotate-90 size-5 shrink-0 transition-transform
+            duration-200 ${isOpen ? "rotate-90" : ""}`}
         />
       </button>
 
@@ -109,7 +108,7 @@ export default function EmployeePicker({
             <div className="flex flex-col gap-1">
               <h2 className="text-2xl font-bold">Select an Employee</h2>
               {isSingleEmployee && (
-                <p className="text-text_color/70 text-sm">
+                <p className="text-fg-muted text-sm">
                   Only this employee provides this service.
                 </p>
               )}

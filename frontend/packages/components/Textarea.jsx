@@ -18,23 +18,22 @@ export default function Textarea({
   return (
     <label htmlFor={id} className="flex w-full flex-1 flex-col">
       {labelText && (
-        <span className="flex items-center gap-1 pb-1 text-sm">
+        <span className="text-fg flex items-center gap-1 pb-1.5 text-sm">
           {labelText}
           {required !== false && (
-            <span className="text-base leading-none text-red-500">*</span>
+            <span className="text-fg-danger text-base leading-none">*</span>
           )}
         </span>
       )}
       <textarea
         id={id}
         name={name}
-        className={`${styles} bg-layer_bg border-input_border_color
-          focus:border-primary focus:ring-primary/30 disabled:text-text_color/70
-          disabled:border-input_border_color/60 resize-none rounded-lg border
-          placeholder-stone-500 outline-hidden
-          transition-[border-color,box-shadow] duration-150 ease-in-out
-          focus:ring-4 disabled:bg-gray-200/60 dark:placeholder-zinc-400
-          dark:scheme-dark disabled:dark:bg-gray-700/20`}
+        className={`${styles} bg-bg-input border-border-strong
+          hover:not-disabled:not-focus:border-border-hover focus:border-primary
+          focus:ring-primary-focus disabled:text-fg-disabled
+          disabled:border-border disabled:bg-bg-sunken resize-none rounded-lg
+          border outline-hidden transition-[border-color,box-shadow]
+          duration-150 ease-in-out focus:ring-3 md:text-sm dark:scheme-dark`}
         onChange={handleChange}
         required={required === undefined ? true : required}
         value={value}

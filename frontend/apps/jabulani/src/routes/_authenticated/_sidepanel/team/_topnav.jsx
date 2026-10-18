@@ -14,11 +14,11 @@ function RouteComponent() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden pt-2">
       <TopNavBar>
         <TopNavBarItem from={Route.fullPath} to="/team/members">
-          <Icon icon={HierarchyIcon} styles="size-5" />
+          <Icon icon={HierarchyIcon} styles="size-4.5" />
           <span>Members</span>
         </TopNavBarItem>
         <TopNavBarItem from={Route.fullPath} to="/team/invitations">
-          <Icon icon={MailAccount01Icon} styles="size-5" />
+          <Icon icon={MailAccount01Icon} styles="size-4.5" />
           <span>Invitations</span>
         </TopNavBarItem>
       </TopNavBar>

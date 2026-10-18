@@ -242,8 +242,8 @@ function ServicesPage() {
           onClose={() => setShowAddCategoryModal(false)}
           onAdded={invalidateServicesQuery}
         />
-        <p className="pb-12 text-2xl">Services</p>
-        <div className="flex flex-col gap-8">
+        <h1 className="pb-6 text-xl font-semibold">Services</h1>
+        <div className="flex flex-col gap-6">
           <div className="flex w-full flex-col">
             <ServerError error={serverError} />
             <div className="flex flex-row items-center justify-between">
@@ -254,17 +254,17 @@ function ServicesPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    styles="py-2 px-4"
+                    styles="py-2 pr-2.5 pl-3.5 text-sm"
                     childSide="right"
                     variant="primary"
                     buttonText="New"
                   >
-                    <Icon icon={ArrowDown01Icon} styles="size-5 ml-2" />
+                    <Icon icon={ArrowDown01Icon} styles="size-4 ml-1.5" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end">
                   <div
-                    className="*:hover:bg-hvr_gray flex flex-col items-start
+                    className="*:hover:bg-hover flex flex-col items-start
                       *:w-full *:rounded-lg *:p-2"
                   >
                     <Link from={Route.fullPath} to="/services/new">
@@ -293,7 +293,7 @@ function ServicesPage() {
                   refresh={invalidateServicesQuery}
                   onMove={moveCategoryHandler}
                 >
-                  <ul className="flex flex-col gap-4">
+                  <ul className="flex flex-col gap-2">
                     {category.services.map((service) => (
                       <li className="w-full" key={service.id}>
                         <ServiceCard

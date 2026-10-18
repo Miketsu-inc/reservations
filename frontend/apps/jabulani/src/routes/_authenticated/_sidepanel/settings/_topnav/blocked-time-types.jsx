@@ -113,11 +113,11 @@ function BlockedTimeTypesPage() {
           hasData ? (
             <Button
               variant="primary"
-              styles="px-3 py-2 sm:px-4"
+              styles="py-2 pr-3 pl-2.5 text-sm"
               buttonText={isWindowSmall ? "" : "New type"}
               onClick={() => openModal()}
             >
-              <Icon icon={PlusSignIcon} styles="size-5 sm:mr-2" />
+              <Icon icon={PlusSignIcon} styles="size-4 lg:mr-1.5" />
             </Button>
           ) : null
         }
@@ -135,10 +135,10 @@ function BlockedTimeTypesPage() {
                   {type.icon}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-text_color truncate font-medium">
+                  <div className="text-fg truncate font-medium">
                     {type.name}
                   </div>
-                  <div className="text-text_color/60 text-sm">
+                  <div className="text-fg-muted text-sm">
                     {formatDuration(type.duration)}
                   </div>
                 </div>
@@ -149,11 +149,11 @@ function BlockedTimeTypesPage() {
                   <button
                     type="button"
                     aria-label={`Actions for ${type.name}`}
-                    className="hover:bg-hvr_gray shrink-0 rounded-lg p-2"
+                    className="hover:bg-hover shrink-0 rounded-lg p-2"
                   >
                     <Icon
                       icon={MoreVerticalIcon}
-                      styles="size-5 rotate-90 text-gray-500"
+                      styles="size-5 rotate-90 text-fg-muted"
                     />
                   </button>
                 </PopoverTrigger>
@@ -162,7 +162,7 @@ function BlockedTimeTypesPage() {
                     <PopoverClose asChild>
                       <button
                         type="button"
-                        className="hover:bg-hvr_gray flex items-center gap-2
+                        className="hover:bg-hover flex items-center gap-2
                           rounded-lg p-2"
                         onClick={() => openModal(type)}
                       >
@@ -173,8 +173,8 @@ function BlockedTimeTypesPage() {
                     <PopoverClose asChild>
                       <button
                         type="button"
-                        className="hover:bg-hvr_gray flex items-center gap-2
-                          rounded-lg p-2 text-red-600 dark:text-red-400"
+                        className="hover:bg-hover text-fg-danger flex
+                          items-center gap-2 rounded-lg p-2"
                         onClick={() => handleDelete(type.id)}
                       >
                         <Icon icon={Delete02Icon} styles="size-4" />
@@ -189,16 +189,18 @@ function BlockedTimeTypesPage() {
         </div>
       ) : (
         <div
-          className="border-border_color bg-layer_bg flex flex-col items-center
+          className="border-border bg-bg-raised flex flex-col items-center
             rounded-xl border px-4 py-12 text-center shadow-sm"
         >
-          <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
+          <div
+            className="bg-primary-subtle text-fg-primary mb-4 rounded-full p-3"
+          >
             <Icon icon={PlusSignIcon} styles="size-6" />
           </div>
-          <h2 className="text-text_color text-lg font-semibold">
+          <h2 className="text-fg text-lg font-semibold">
             No blocked time types yet
           </h2>
-          <p className="text-text_color/65 mt-1 max-w-sm text-sm leading-6">
+          <p className="text-fg-muted mt-1 max-w-sm text-sm leading-6">
             Add templates such as lunch, a meeting, or personal time so they can
             be placed on the calendar quickly.
           </p>

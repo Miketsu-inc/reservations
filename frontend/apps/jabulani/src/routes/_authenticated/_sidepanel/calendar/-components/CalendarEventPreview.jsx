@@ -154,7 +154,7 @@ function AvatarStack({
       })}
       {remainingPeople > 0 && (
         <div
-          className={`${overflowStyles} border-layer_bg bg-hvr_gray flex
+          className={`${overflowStyles} border-bg-raised bg-hover flex
           items-center justify-center rounded-full border-2 font-semibold`}
           role="listitem"
         >
@@ -169,10 +169,10 @@ function ParticipantAvatars({ participants }) {
   if (participants.length === 0) {
     return (
       <div
-        className="bg-hvr_gray flex size-10 shrink-0 items-center justify-center
+        className="bg-hover flex size-10 shrink-0 items-center justify-center
           rounded-full"
       >
-        <Icon icon={User03Icon} styles="size-5 text-text_color/60" />
+        <Icon icon={User03Icon} styles="size-5 text-fg-muted" />
       </div>
     );
   }
@@ -182,7 +182,7 @@ function ParticipantAvatars({ participants }) {
       people={participants}
       limit={3}
       styles="-space-x-4"
-      avatarStyles="size-10! rounded-full! border-2 border-layer_bg text-xs!"
+      avatarStyles="size-10! rounded-full! border-2 border-bg-raised text-xs!"
       overflowStyles="size-10 text-xs"
       fallbackTitle="Customer"
     />
@@ -191,7 +191,7 @@ function ParticipantAvatars({ participants }) {
 
 function DetailRow({ icon, children }) {
   return (
-    <div className="text-text_color/70 flex items-center gap-2.5 text-sm">
+    <div className="text-fg-muted flex items-center gap-2.5 text-sm">
       <Icon icon={icon} styles="size-4 shrink-0" />
       <span>{children}</span>
     </div>
@@ -207,8 +207,8 @@ function TeamMemberAvatarSkeleton({ count }) {
       {Array.from({ length: Math.min(count, 4) }, (_, index) => (
         <div
           key={index}
-          className="border-layer_bg bg-hvr_gray size-8 animate-pulse
-            rounded-full border-2"
+          className="border-bg-raised bg-hover size-8 animate-pulse rounded-full
+            border-2"
         />
       ))}
     </div>
@@ -231,7 +231,7 @@ function AssignedTeam({ employeeIds, isPending, teamMembers }) {
   );
 
   return (
-    <div className="border-border_color border-t px-4 py-3.5">
+    <div className="border-border border-t px-4 py-3.5">
       <div className="flex items-center gap-3">
         {isPending ? (
           <TeamMemberAvatarSkeleton count={employeeIds.length} />
@@ -240,7 +240,7 @@ function AssignedTeam({ employeeIds, isPending, teamMembers }) {
             people={assignedMembers}
             limit={4}
             styles="-space-x-3"
-            avatarStyles="size-8! rounded-full! border-2 border-layer_bg
+            avatarStyles="size-8! border-2 border-bg-raised
               text-[11px]!"
             overflowStyles="size-8 text-[11px]"
             fallbackTitle="Team member"
@@ -283,7 +283,7 @@ function BookingPreview({ event, timeFormat }) {
               {status}
             </span>
             {isGroupBooking && (
-              <span className="text-text_color/55 truncate text-xs">
+              <span className="text-fg-muted truncate text-xs">
                 {groupSummary}
               </span>
             )}
@@ -291,7 +291,7 @@ function BookingPreview({ event, timeFormat }) {
         </div>
       </div>
 
-      <div className="border-border_color border-t px-4 py-3">
+      <div className="border-border border-t px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <span
@@ -308,12 +308,12 @@ function BookingPreview({ event, timeFormat }) {
         </div>
       </div>
 
-      <div className="border-border_color flex flex-col gap-2.5 border-t p-4">
+      <div className="border-border flex flex-col gap-2.5 border-t p-4">
         <DetailRow icon={Calendar02Icon}>{formatDate(event.start)}</DetailRow>
         <DetailRow icon={Clock01Icon}>
           {timeStringFromDate(event.start, timeFormat)} -{" "}
           {timeStringFromDate(event.end, timeFormat)}
-          <span className="text-text_color/45">
+          <span className="text-fg-muted">
             {" "}
             · {formatDuration(extendedProps.duration)}
           </span>
@@ -342,7 +342,7 @@ function BlockedTimePreview({ event, isOpen, timeFormat }) {
       <div className="flex items-center gap-3 p-4">
         {extendedProps.icon && (
           <div
-            className="bg-hvr_gray flex size-10 shrink-0 items-center
+            className="bg-hover flex size-10 shrink-0 items-center
               justify-center rounded-full text-lg"
           >
             {extendedProps.icon}
@@ -350,11 +350,11 @@ function BlockedTimePreview({ event, isOpen, timeFormat }) {
         )}
         <div className="min-w-0">
           <p className="truncate font-semibold">{extendedProps.name}</p>
-          <p className="text-text_color/60 mt-0.5 text-xs">Blocked time</p>
+          <p className="text-fg-muted mt-0.5 text-xs">Blocked time</p>
         </div>
       </div>
 
-      <div className="border-border_color flex flex-col gap-2.5 border-t p-4">
+      <div className="border-border flex flex-col gap-2.5 border-t p-4">
         <DetailRow icon={Calendar02Icon}>{formatDate(event.start)}</DetailRow>
         <DetailRow icon={Clock01Icon}>
           {extendedProps.allDay

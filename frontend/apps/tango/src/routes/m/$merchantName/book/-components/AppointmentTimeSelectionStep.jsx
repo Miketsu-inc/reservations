@@ -214,11 +214,11 @@ export default function AppointmentTimeSelectionStep({
 
   return (
     <div className="flex h-full w-full max-w-full flex-col">
-      <h1 className="text-3xl font-bold">Select Date & Time</h1>
+      <h1 className="text-2xl font-semibold">Select Date & Time</h1>
 
       <TimezoneWarning merchantTimeZone={dayTimes?.time_zone} />
 
-      <div className="mt-10 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between">
         <EmployeePicker
           merchantName={merchantName}
           serviceId={serviceId}
@@ -250,8 +250,8 @@ export default function AppointmentTimeSelectionStep({
         </div>
       </div>
       <div
-        className="bg-bg_color sticky top-14.75 z-10 flex w-full max-w-full
-          min-w-0 items-center gap-2 py-4 lg:top-17"
+        className="bg-bg sticky top-14.75 z-10 flex w-full max-w-full min-w-0
+          items-center gap-2 py-4 lg:top-17"
       >
         <DaySelector
           days={availableDays}
@@ -260,7 +260,7 @@ export default function AppointmentTimeSelectionStep({
         />
       </div>
 
-      <div className="mt-8 flex w-full flex-1 flex-col gap-6">
+      <div className="mt-4 flex w-full flex-1 flex-col gap-6">
         {timesIsError ? (
           <ServerError error={timesError.message} />
         ) : timesIsLoading ? (
@@ -270,21 +270,23 @@ export default function AppointmentTimeSelectionStep({
             className="flex flex-col items-center gap-1 px-4 py-10 text-center"
           >
             <p className="font-medium">No availability for this day</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-fg-muted text-sm">
               There's no place left on this day. Please choose another date.
             </p>
           </div>
         ) : (
           <>
             <div className="flex flex-col gap-3">
-              <p className="text-lg font-medium">Morning</p>
+              <p className="text-fg-muted text-sm font-semibold">Morning</p>
               <AvailableTimeSection
                 availableTimes={dayTimes?.morning || []}
                 timeSection="morning"
                 selectedStartsAt={selectedSlot?.starts_at}
                 onSelect={selectedSlotHandler}
               />
-              <p className="mt-4 text-lg font-medium">Afternoon</p>
+              <p className="text-fg-muted mt-4 text-sm font-semibold">
+                Afternoon
+              </p>
               <AvailableTimeSection
                 availableTimes={dayTimes?.afternoon || []}
                 timeSection="afternoon"

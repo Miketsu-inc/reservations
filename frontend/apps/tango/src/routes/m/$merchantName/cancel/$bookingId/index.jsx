@@ -143,16 +143,15 @@ function CancelPage() {
     >
       <div className={`${!canBeCancelled ? "pt-6" : "py-6"} text-center`}>
         <h1 className="text-2xl font-bold">Cancel Booking</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="text-fg-muted mt-1 text-sm">
           Review your booking details below
         </p>
       </div>
       {!canBeCancelled && (
         <div
-          className="my-4 flex w-full items-start justify-start gap-3 rounded-lg
-            border border-yellow-800 bg-yellow-400/25 px-3 py-3 text-yellow-900
-            sm:mt-0 sm:mb-2 dark:border-yellow-800 dark:bg-yellow-700/15
-            dark:text-yellow-500"
+          className="border-border-warning bg-warning-subtle text-fg-warning
+            my-4 flex w-full items-start justify-start gap-3 rounded-lg border
+            px-3 py-3 sm:mt-0 sm:mb-2"
         >
           <Icon icon={Alert02Icon} styles="size-5 shrink-0" />
 
@@ -160,28 +159,26 @@ function CancelPage() {
         </div>
       )}
       <div
-        className="bg-layer_bg border-border_color w-full rounded-t-lg
-          rounded-b-none border border-b-0 p-4 shadow-none sm:rounded-lg
-          sm:border sm:shadow-sm"
+        className="bg-bg-raised border-border sm:shadow-card w-full rounded-t-xl
+          rounded-b-none border border-b-0 p-4 sm:rounded-xl sm:border"
       >
         <div className="flex items-center gap-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold">{dateInfo.day}</div>
-            <div className="text-sm font-medium">{dateInfo.month}</div>
-            <div className="text-xs opacity-60">{dateInfo.weekday}</div>
+          <div className="shrink-0 rounded-lg py-2 text-center">
+            <div className="text-xl font-bold">{dateInfo.day}</div>
+            <div className="text-fg-muted text-xs font-medium uppercase">
+              {dateInfo.month}
+            </div>
+            <div className="text-fg-muted text-[11px]">{dateInfo.weekday}</div>
           </div>
 
           <div className="flex-1">
-            <h2 className="text-lg font-bold">{bookingData.service_name}</h2>
-            <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
+            <h2 className="font-bold">{bookingData.service_name}</h2>
+            <p className="text-fg-muted mb-1 text-sm">
               {bookingData.merchant_name}
             </p>
             <div className="flex items-center gap-2">
-              <Icon
-                icon={Clock01Icon}
-                styles="size-4 dark:text-gray-400 text-gray-500"
-              />
-              <span className="font-medium text-gray-500 dark:text-gray-400">
+              <Icon icon={Clock01Icon} styles="size-4 text-fg-muted" />
+              <span className="text-fg-muted text-sm font-medium">
                 {`${timeStringFromDate(
                   new Date(bookingData.from_date)
                 )} - ${timeStringFromDate(new Date(bookingData.to_date))}`}
@@ -189,7 +186,7 @@ function CancelPage() {
             </div>
           </div>
           <div
-            className="from-secondary to-primary h-16 w-16 rounded-xl
+            className="from-primary to-primary-hover h-16 w-16 rounded-xl
               bg-linear-to-br sm:h-20 sm:w-20"
           ></div>
         </div>
@@ -199,53 +196,44 @@ function CancelPage() {
           grid-cols-1 gap-0 sm:gap-4 sm:pb-2`}
       >
         <div
-          className="border-border_color bg-layer_bg rounded-none border
-            border-y-0 p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border
-            sm:p-4 sm:shadow-sm"
+          className="border-border bg-bg-raised sm:shadow-card rounded-none
+            border border-y-0 p-4 pt-2 sm:mb-0 sm:rounded-xl sm:border sm:p-4"
         >
           <div className="mb-1 flex items-center gap-2">
-            <Icon
-              icon={Location01Icon}
-              styles="size-4 dark:text-blue-400 text-blue-600"
-            />
-            <span className="text-text_color text-xs font-semibold">
+            <Icon icon={Location01Icon} styles="size-4 text-fg-info" />
+            <span className="text-fg-muted text-xs font-semibold tracking-wide">
               LOCATION
             </span>
           </div>
-          <p
-            className={
-              "mt-2 text-sm font-medium text-gray-500 dark:text-gray-400"
-            }
-          >
+          <p className={"text-fg mt-2 text-sm font-medium"}>
             {bookingData.formatted_location}
           </p>
         </div>
         {bookingData.price && (
           <div
-            className="border-border_color bg-layer_bg rounded-none border
-              border-y-0 p-4 pt-2 shadow-none sm:mb-0 sm:rounded-lg sm:border
-              sm:p-4 sm:shadow-sm"
+            className="border-border bg-bg-raised sm:shadow-card rounded-none
+              border border-y-0 p-4 pt-2 sm:mb-0 sm:rounded-xl sm:border sm:p-4"
           >
             <div
-              className="text-text_color mb-1 flex items-center gap-2 text-xs
-                font-semibold"
+              className="text-fg-muted mb-1 flex items-center gap-2 text-xs
+                font-semibold tracking-wide"
             >
-              <span className="text-green-600 dark:text-green-400">$</span>
+              <span className="text-fg-success">$</span>
               PRICE
             </div>
 
-            <p className="mt-1 font-medium text-gray-500 dark:text-gray-400">
+            <p className="text-fg mt-1 text-sm font-medium">
               {getDisplayPrice(bookingData.price, bookingData.price_type)}
             </p>
           </div>
         )}
       </div>
       <div
-        className="border-border_color bg-layer_bg flex w-full flex-col
-          items-center gap-5 rounded-b-lg border border-t-0 py-4 sm:border-none
+        className="border-border bg-bg-raised flex w-full flex-col items-center
+          gap-5 rounded-b-xl border border-t-0 py-4 sm:border-none
           sm:bg-transparent"
       >
-        <div className="px-5 text-center text-sm text-gray-500">
+        <div className="text-fg-muted px-5 text-center text-sm">
           The cancellation is inmediate and cannot be undone.
         </div>
         <Button
@@ -254,7 +242,7 @@ function CancelPage() {
           isLoading={cancelling}
           disabled={!canBeCancelled}
           variant="danger"
-          styles="px-2 py-1 w-min truncate"
+          styles="px-4 py-2 text-sm w-min truncate"
         />
       </div>
       {serverError && <ServerError error={serverError} />}

@@ -43,14 +43,14 @@ export default function CustomersTable({
         `${params.data.first_name} ${params.data.last_name}`.trim(),
       cellRenderer: (params) => {
         return (
-          <div className="flex h-full flex-row items-center gap-2">
+          <div className="flex h-full flex-row items-center gap-3">
             <Avatar
-              styles="size-12! text-sm shrink-0"
+              styles="size-9! text-xs! shrink-0"
               initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
             />
             <div className="flex flex-col justify-center">
-              <p className="text-base">{`${params.data.first_name} ${params.data.last_name}`}</p>
-              <p className="text-text_color/60 text-sm">{params.data.email}</p>
+              <p className="text-sm">{`${params.data.first_name} ${params.data.last_name}`}</p>
+              <p className="text-fg-muted text-xs">{params.data.email}</p>
             </div>
           </div>
         );
@@ -113,25 +113,28 @@ export default function CustomersTable({
             className="flex h-full flex-row items-center justify-center"
           >
             <button
-              className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+              className="text-fg-muted hover:bg-hover hover:text-fg
+                cursor-pointer rounded-lg p-2"
               onClick={() => onEdit(customersData[params.node.sourceRowIndex])}
             >
-              <Icon icon={Edit03Icon} styles="size-5 mx-1" />
+              <Icon icon={Edit03Icon} styles="size-4.5" />
             </button>
             {params.data.is_dummy ? (
               <>
                 {params.data.times_booked || params.data.times_cancelled ? (
                   <button
-                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                    className="text-fg-muted hover:bg-hover hover:text-fg
+                      cursor-pointer rounded-lg p-2"
                     onClick={() => onTransfer(params.data.id)}
                   >
-                    <Icon icon={UserSwitchIcon} styles="size-5 mx-1" />
+                    <Icon icon={UserSwitchIcon} styles="size-4.5" />
                   </button>
                 ) : (
                   <></>
                 )}
                 <button
-                  className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                  className="text-fg-muted hover:bg-hover hover:text-fg
+                    cursor-pointer rounded-lg p-2"
                   onClick={() => {
                     setSelected({
                       id: params.data.id,
@@ -141,10 +144,7 @@ export default function CustomersTable({
                     setShowDeleteModal(true);
                   }}
                 >
-                  <Icon
-                    icon={Delete02Icon}
-                    styles="size-5 mx-1 text-red-600 dark:text-red-500"
-                  />
+                  <Icon icon={Delete02Icon} styles="size-4.5 text-fg-danger" />
                 </button>
               </>
             ) : (
@@ -152,17 +152,19 @@ export default function CustomersTable({
               <>
                 {params.data.is_blacklisted ? (
                   <button
-                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                    className="text-fg-muted hover:bg-hover hover:text-fg
+                      cursor-pointer rounded-lg p-2"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <Icon icon={CheckmarkCircle02Icon} styles="size-5 mx-1" />
+                    <Icon icon={CheckmarkCircle02Icon} styles="size-4.5" />
                   </button>
                 ) : (
                   <button
-                    className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                    className="text-fg-muted hover:bg-hover hover:text-fg
+                      cursor-pointer rounded-lg p-2"
                     onClick={() => onBlackList(params.data)}
                   >
-                    <Icon icon={UnavailableIcon} styles="size-5 mx-1" />
+                    <Icon icon={UnavailableIcon} styles="size-4.5" />
                   </button>
                 )}
               </>
@@ -204,7 +206,7 @@ export default function CustomersTable({
             noRowsOverlayComponent || DefaultNoRowsOverlay
           }
           showControls={false}
-          rowHeight={80}
+          rowHeight={64}
         />
       </Suspense>
     </div>
@@ -213,15 +215,10 @@ export default function CustomersTable({
 
 function DefaultNoRowsOverlay() {
   return (
-    <div
-      className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
-        dark:text-gray-300"
-    >
-      <Icon icon={User03Icon} styles="text-gray-200 size-16" />
+    <div className="text-fg-muted mb-16 flex flex-col items-center gap-4 px-2">
+      <Icon icon={User03Icon} styles="text-fg-disabled size-12" />
       <div className="flex flex-col items-center gap-2">
-        <p className="text-text_color text-base font-medium">
-          No customers found
-        </p>
+        <p className="text-fg text-base font-medium">No customers found</p>
         <p className="text-sm md:w-2/3">
           Once a customer makes a booking or a purchase, their information will
           appear here. You can use this list to track and manage your regular

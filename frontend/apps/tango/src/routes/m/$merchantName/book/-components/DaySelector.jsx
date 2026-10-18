@@ -51,11 +51,11 @@ export default function DaySelector({ days, selectedDate, onSelect }) {
         type="button"
         aria-label="Scroll to earlier days"
         onClick={() => scrollByPage(-1)}
-        className="border-border_color bg-layer_bg pointer-events-none absolute
-          left-0 z-10 hidden size-10 -translate-x-1/4 items-center
-          justify-center rounded-full border opacity-0 shadow-lg
-          transition-opacity duration-200 group-hover:pointer-events-auto
-          group-hover:opacity-100 hover:size-11 md:flex"
+        className="border-border bg-bg-raised shadow-overlay pointer-events-none
+          absolute left-0 z-10 hidden size-10 -translate-x-1/4 items-center
+          justify-center rounded-full border opacity-0 transition-opacity
+          duration-200 group-hover:pointer-events-auto group-hover:opacity-100
+          hover:size-11 md:flex"
       >
         <Icon icon={ArrowLeft01Icon} styles="size-5" />
       </button>
@@ -81,11 +81,11 @@ export default function DaySelector({ days, selectedDate, onSelect }) {
         type="button"
         aria-label="Scroll to later days"
         onClick={() => scrollByPage(1)}
-        className="border-border_color bg-layer_bg pointer-events-none absolute
-          right-0 z-10 hidden size-10 translate-x-1/4 items-center
-          justify-center rounded-full border opacity-0 shadow-lg
-          transition-opacity duration-200 group-hover:pointer-events-auto
-          group-hover:opacity-100 hover:size-11 md:flex"
+        className="border-border bg-bg-raised shadow-overlay pointer-events-none
+          absolute right-0 z-10 hidden size-10 translate-x-1/4 items-center
+          justify-center rounded-full border opacity-0 transition-opacity
+          duration-200 group-hover:pointer-events-auto group-hover:opacity-100
+          hover:size-11 md:flex"
       >
         <Icon icon={ArrowRight01Icon} styles="size-5" />
       </button>
@@ -115,18 +115,16 @@ function DayButton({ day, isSelected, isUnavailable, onClick, registerRef }) {
       className={`flex w-16 shrink-0 snap-center scroll-mx-4 flex-col
         items-center gap-1 rounded-lg border py-3 transition-colors ${
           isSelected
-            ? "bg-primary border-primary text-white"
+            ? "bg-primary border-primary text-fg-on-primary"
             : isUnavailable
-              ? `border-border_color text-text_color/50 hover:bg-bg_color
-                bg-gray-200/50 dark:bg-gray-200/5`
-              : `border-border_color bg-layer_bg text-text_color
-                hover:bg-bg_color`
+              ? "border-border-subtle bg-bg-sunken text-fg-disabled"
+              : "border-border bg-bg-raised text-fg hover:border-border-strong"
         }`}
     >
       <span className="text-xs font-medium uppercase opacity-70">
         {weekday}
       </span>
-      <span className="text-xl font-bold">{dayNumber}</span>
+      <span className="text-lg font-bold">{dayNumber}</span>
       <span className="text-[11px] opacity-70">{month}</span>
     </button>
   );

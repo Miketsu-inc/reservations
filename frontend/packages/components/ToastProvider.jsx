@@ -61,39 +61,21 @@ export default function ToastProvider({ children }) {
 
 const icons = {
   success: (
-    <div
-      className="w-min rounded-full border border-green-700
-        dark:border-green-600"
-    >
-      <Icon
-        icon={Tick02Icon}
-        styles="size-6 dark:text-green-600 text-green-700"
-      />
+    <div className="bg-success-subtle w-min rounded-full p-0.5">
+      <Icon icon={Tick02Icon} styles="size-5 text-fg-success" />
     </div>
   ),
   error: (
-    <div
-      className="w-min rounded-full border border-red-700 dark:border-red-600"
-    >
-      <Icon
-        icon={Cancel01Icon}
-        styles="size-6 dark:text-red-600 text-red-700"
-      />
+    <div className="bg-danger-subtle w-min rounded-full p-0.5">
+      <Icon icon={Cancel01Icon} styles="size-5 text-fg-danger" />
     </div>
   ),
   warning: (
     <div className="w-min rounded-full">
-      <Icon icon={Alert02Icon} styles="size-6 text-yellow-600" />
+      <Icon icon={Alert02Icon} styles="size-6 text-fg-warning" />
     </div>
   ),
-  info: <Icon icon={InformationCircleIcon} styles="size-7 text-blue-600" />,
-};
-
-const typeStyles = {
-  success: "border dark:border-green-500 border-green-700 bg-green-50",
-  error: "border dark:border-red-500 border-red-700 bg-red-50",
-  warning: "border border-yellow-600 bg-yellow-50",
-  info: "border border-blue-500 bg-blue-50",
+  info: <Icon icon={InformationCircleIcon} styles="size-7 text-fg-info" />,
 };
 
 function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
@@ -115,27 +97,23 @@ function ToastElement({ variant, message, onClose, toastId, duration = 5000 }) {
   return (
     <div
       role={variant === "error" ? "alert" : "status"}
-      className={`${typeStyles[variant]} flex w-full items-center
-        justify-between rounded-md p-4 shadow-lg transition-all sm:max-w-md
-        dark:bg-gray-900 dark:shadow-none
+      className={`bg-bg shadow-overlay flex w-full items-center justify-between
+        rounded-xl border p-3 transition-all sm:max-w-md
         ${fadingOut ? "toast-exit" : window.innerWidth < 640 ? "toast-enter-top" : "toast-enter-bottom"}`}
     >
       <div className="mr-6 flex items-center gap-3">
         <div>{icons[variant]}</div>
-        <span className="grow text-sm text-gray-800 dark:text-gray-400">
-          {message}
-        </span>
+        <span className="text-fg grow text-sm">{message}</span>
       </div>
       <button
         type="button"
         aria-label="Dismiss notification"
         onClick={() => onClose(toastId)}
-        className="group dark:hover:bg-hvr_gray rounded-lg hover:bg-gray-200/25"
+        className="group hover:bg-hover rounded-lg"
       >
         <Icon
           icon={Cancel01Icon}
-          styles="size-6 dark:text-gray-400 m-1 text-gray-500
-            group-hover:text-current cursor-pointer"
+          styles="size-5 m-1 text-fg-muted group-hover:text-fg cursor-pointer"
         />
       </button>
     </div>

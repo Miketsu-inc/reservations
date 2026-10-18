@@ -5,7 +5,7 @@ function SaveButton({ buttonText, onClick, disabled, isLoading, styles = "" }) {
     <Button
       type="button"
       variant="primary"
-      styles={`px-6 py-2 ${styles}`}
+      styles={`px-4 py-2 text-sm ${styles}`}
       buttonText={buttonText}
       onClick={onClick}
       disabled={disabled}
@@ -33,8 +33,8 @@ export default function SettingsSaveAction({
         />
       </div>
       <div
-        className="bg-layer_bg border-border_color fixed right-0 bottom-0 left-0
-          z-30 border-t px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]
+        className="bg-bg-raised border-border fixed right-0 bottom-0 left-0 z-30
+          border-t px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]
           md:hidden"
       >
         {error && <ServerError error={error.message} styles="mb-2" />}

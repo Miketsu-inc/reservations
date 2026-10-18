@@ -8,16 +8,18 @@ export default function CheckBox({ checked, styles, onChange, ...props }) {
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className={`${styles} checked:border-primary checked:bg-primary size-5
-          cursor-pointer appearance-none rounded border-2 border-gray-400
-          transition-colors dark:border-gray-500`}
+        className={`${styles} checked:border-primary checked:bg-primary
+          bg-bg-input hover:not-checked:border-border-hover
+          focus-visible:ring-primary-focus border-border-strong size-5
+          cursor-pointer appearance-none rounded-md border outline-hidden
+          transition-colors focus-visible:ring-2`}
         {...props}
       />
       {checked && (
         <Icon
           aria-hidden="true"
           icon={Tick02Icon}
-          styles="pointer-events-none absolute size-5 text-white"
+          styles="pointer-events-none absolute size-4 text-fg-on-primary"
         />
       )}
     </div>

@@ -170,7 +170,7 @@ export default function GroupBookingStep({
 
   return (
     <div className="flex h-full w-full max-w-full flex-col gap-6">
-      <h1 className="text-3xl font-bold">Select an Event</h1>
+      <h1 className="text-2xl font-bold">Select an Event</h1>
 
       <TimezoneWarning merchantTimeZone={availability?.time_zone} />
 
@@ -196,72 +196,59 @@ export default function GroupBookingStep({
           <div
             className="flex flex-col items-center gap-2 px-4 py-16 text-center"
           >
-            <Icon icon={UserGroupIcon} styles="size-12 text-gray-400" />
-            <p className="text-lg font-medium">No upcoming sessions</p>
-            <p className="max-w-sm text-sm text-gray-500">
+            <Icon icon={UserGroupIcon} styles="size-10 text-fg-disabled" />
+            <p className="font-semibold">No upcoming sessions</p>
+            <p className="text-fg-muted max-w-sm text-sm">
               There are currently no scheduled sessions available for this
               service. Please check back later or choose another service.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-6 sm:gap-8">
-            {groupedBookings.map((group) => {
-              const groupHasSelected = group.sessions.some(
-                (s) => s.id === selectedSessionId
-              );
-
-              return (
-                <div
-                  key={group.dateKey}
-                  className="relative flex w-full flex-col gap-2.5"
-                >
-                  <div
-                    className="flex items-baseline gap-2 select-none xl:hidden"
-                  >
-                    <span
-                      className={`text-2xl leading-none font-bold
-                        ${groupHasSelected ? "text-primary" : "text-text_color"}`}
-                    >
-                      {group.dayNum}
-                    </span>
-                    <span className="text-text_color/60 text-sm font-medium">
-                      {group.weekdayShort}, {group.monthShort}
-                    </span>
-                  </div>
-
-                  <div
-                    className="hidden xl:absolute xl:top-2 xl:-left-20 xl:flex
-                      xl:w-16 xl:flex-col xl:items-start xl:text-left"
-                  >
-                    <span
-                      className={`block text-3xl leading-none font-bold
-                        tracking-tight transition-colors ${
-                          groupHasSelected ? "text-primary" : "text-text_color"
-                        }`}
-                    >
-                      {group.dayNum}
-                    </span>
-                    <span
-                      className="text-text_color/60 mt-1 block text-sm
-                        leading-tight font-medium"
-                    >
-                      {group.weekdayShort}, {group.monthShort}
-                    </span>
-                  </div>
-
-                  <ul className="flex w-full min-w-0 flex-1 flex-col gap-3">
-                    {group.sessions.map((session) => (
-                      <SessionCard
-                        key={session.id}
-                        session={session}
-                        isSelected={selectedSessionId === session.id}
-                        onSelect={handleSessionSelect}
-                      />
-                    ))}
-                  </ul>
+            {groupedBookings.map((group) => (
+              <div
+                key={group.dateKey}
+                className="relative flex w-full flex-col gap-2.5"
+              >
+                <div className="flex items-baseline gap-2 select-none xl:hidden">
+                  <span className={"text-xl leading-none font-bold"}>
+                    {group.dayNum}
+                  </span>
+                  <span className="text-fg-muted text-sm font-medium">
+                    {group.weekdayShort}, {group.monthShort}
+                  </span>
                 </div>
-              );
-            })}
+
+                <div
+                  className="hidden xl:absolute xl:top-2 xl:-left-20 xl:flex
+                    xl:w-16 xl:flex-col xl:items-start xl:text-left"
+                >
+                  <span
+                    className={`block text-2xl leading-none font-bold
+                      tracking-tight`}
+                  >
+                    {group.dayNum}
+                  </span>
+                  <span
+                    className="text-fg-muted mt-1 block text-sm leading-tight
+                      font-medium"
+                  >
+                    {group.weekdayShort}, {group.monthShort}
+                  </span>
+                </div>
+
+                <ul className="flex w-full min-w-0 flex-1 flex-col gap-2.5">
+                  {group.sessions.map((session) => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      isSelected={selectedSessionId === session.id}
+                      onSelect={handleSessionSelect}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         )}
 
@@ -316,23 +303,23 @@ function SessionCard({ session, isSelected, onSelect }) {
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(session)}
-      className={`bg-layer_bg border-border_color dark:hover:bg-layer_bg/80 flex
-        w-full cursor-pointer flex-col justify-between gap-3.5 rounded-md border
-        p-5 hover:bg-gray-100/40 hover:shadow-sm ${
+      className={`bg-bg-raised shadow-card flex w-full cursor-pointer flex-col
+        justify-between gap-3 rounded-xl border p-4 text-left transition-colors
+        ${
           isSelected
-            ? " border-primary "
-            : "hover:border-gray-400 dark:hover:border-zinc-700"
+            ? "border-primary ring-primary-focus ring-2"
+            : "border-border hover:border-border-strong"
         }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <span className="text-text_color text-xl font-semibold">
+          <span className="text-fg font-semibold">
             {session.time} - {session.end_time}
           </span>
 
           <span
-            className="text-text_color/70 rounded-full bg-gray-200/80 px-3 py-1
-              text-xs font-semibold dark:bg-gray-400/25"
+            className="text-fg-muted bg-hover rounded-full px-3 py-1 text-xs
+              font-semibold"
           >
             {spotsLeft} spots left
           </span>
@@ -342,8 +329,8 @@ function SessionCard({ session, isSelected, onSelect }) {
           className={`flex size-7 shrink-0 items-center justify-center
             rounded-full border transition-all ${
               isSelected
-                ? "border-primary bg-primary text-white shadow-xs"
-                : "border-gray-300 dark:border-gray-600"
+                ? "border-primary bg-primary text-fg-on-primary shadow-xs"
+                : "border-border"
             }`}
         >
           {isSelected && <Icon icon={Tick02Icon} styles="size-4.5" />}
@@ -353,23 +340,23 @@ function SessionCard({ session, isSelected, onSelect }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar
-            styles="size-7! text-[10px] shrink-0 rounded-full!"
+            styles="size-7! text-[10px] shrink-0"
             initials={`${session.employee_first_name[0]}${session.employee_last_name[0]}`}
           />
-          <span className="text-text_color truncate text-sm">
+          <span className="text-fg-muted truncate text-sm">
             {session.employee_first_name} {session.employee_last_name}
           </span>
-          <span className="text-text_color/30 text-xs">•</span>
+          <span className="text-fg-muted text-xs">•</span>
 
           <div
-            className="text-text_color flex shrink-0 items-center gap-1 text-sm"
+            className="text-fg-muted flex shrink-0 items-center gap-1.5 text-sm"
           >
-            <Icon icon={Clock01Icon} styles="size-4" />
+            <Icon icon={Clock01Icon} styles="size-3.5" />
             <span>{formatDuration(durationMinutes)}</span>
           </div>
         </div>
 
-        <span className="text-text_color shrink-0 font-medium">
+        <span className="text-fg shrink-0 text-sm">
           {getDisplayPrice(session.price, session.price_type)}
         </span>
       </div>

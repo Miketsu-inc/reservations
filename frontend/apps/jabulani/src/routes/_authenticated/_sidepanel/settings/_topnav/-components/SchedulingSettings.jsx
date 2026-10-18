@@ -11,9 +11,7 @@ export default function SchedulingSettings({ settings, onChange }) {
     <>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
-          <div className="text-text_color text-lg font-medium">
-            Cancellation policy
-          </div>
+          <div className="text-fg font-semibold">Cancellation policy</div>
 
           <div className="flex flex-col gap-2">
             <Select
@@ -26,7 +24,7 @@ export default function SchedulingSettings({ settings, onChange }) {
               }
               styles="w-full sm:w-2/3"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Customers must cancel at least this amount of time before their
               appointment
             </p>
@@ -35,10 +33,8 @@ export default function SchedulingSettings({ settings, onChange }) {
 
         <div className="flex flex-col gap-4">
           <div>
-            <div className="text-text_color text-lg font-medium">
-              Booking window
-            </div>
-            <p className="text-text_color/70 mt-1 text-sm">
+            <div className="text-fg font-semibold">Booking window</div>
+            <p className="text-fg-muted mt-1 text-sm">
               Control when customers can book appointments
             </p>
           </div>
@@ -55,7 +51,7 @@ export default function SchedulingSettings({ settings, onChange }) {
                 }
                 styles="w-full"
               />
-              <p className="text-text_color/70 text-sm">
+              <p className="text-fg-muted text-sm">
                 Customers must book at least this far in advance
               </p>
             </div>
@@ -71,7 +67,7 @@ export default function SchedulingSettings({ settings, onChange }) {
                 }
                 styles="w-full"
               />
-              <p className="text-text_color/70 text-sm">
+              <p className="text-fg-muted text-sm">
                 Customers can book appointments up to this far ahead
               </p>
             </div>
@@ -79,9 +75,7 @@ export default function SchedulingSettings({ settings, onChange }) {
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="text-text_color text-lg font-medium">
-            Schedule management
-          </div>
+          <div className="text-fg font-semibold">Schedule management</div>
           <div className="flex flex-col gap-2">
             <Select
               options={BUFFER_TIME_OPTIONS}
@@ -93,7 +87,7 @@ export default function SchedulingSettings({ settings, onChange }) {
               }
               styles="w-full sm:w-2/3"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Automatic break time added between consecutive appointments
             </p>
           </div>

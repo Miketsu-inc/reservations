@@ -60,14 +60,20 @@ function RouteComponent() {
 
   if (!token) {
     return (
-      <div className="flex h-screen items-center justify-center px-4">
-        <div className="flex w-full max-w-xl flex-col">
-          <div className="pt-4 pb-12">
-            <p className="text-2xl">Invalid token query parameter</p>
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div
+          className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+            max-w-xl flex-col sm:rounded-2xl sm:border sm:p-8"
+        >
+          <div>
+            <h1 className="text-xl font-semibold">
+              Invalid token query parameter
+            </h1>
             <Link
               from={Route.fullPath}
               to="/login"
-              className="text-text_color/60"
+              className="text-fg-primary mt-2 inline-block text-sm font-medium
+                hover:underline"
             >
               Back to login
             </Link>
@@ -78,13 +84,16 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center px-4">
-      <div className="flex w-full max-w-xl flex-col">
-        <div className="pt-4 pb-12">
-          <p className="text-2xl">Reset password</p>
-          <p className="text-text_color/60">Enter your new password</p>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div
+        className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+          max-w-xl flex-col sm:rounded-2xl sm:border sm:p-8"
+      >
+        <div className="pb-6">
+          <h1 className="text-2xl font-semibold">Reset password</h1>
+          <p className="text-fg-muted mt-1 text-sm">Enter your new password</p>
         </div>
-        <form onSubmit={submitHandler} className="flex h-full flex-col gap-6">
+        <form onSubmit={submitHandler} className="flex h-full flex-col gap-5">
           <Input
             name="NewPassword"
             type="password"
@@ -102,7 +111,7 @@ function RouteComponent() {
             value={passwords.confirmPassword}
           />
           <Button
-            styles="p-2"
+            styles="py-2.5"
             type="submit"
             buttonText="Reset password"
             disabled={!doPasswordsMatch}

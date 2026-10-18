@@ -19,7 +19,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
     >
       <ResponsiveDialogContent>
         <div className="m-3 sm:w-md md:m-4">
-          <p className="pb-6 text-xl">
+          <p className="pb-6 text-xl font-semibold">
             {data?.is_blacklisted
               ? "Remove customer from blacklist"
               : "Blacklist customer"}
@@ -30,8 +30,8 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
             </p>
           </div>
           <div
-            className="text-text_color/80 flex flex-col justify-center gap-4
-              py-3 text-center"
+            className="text-fg flex flex-col justify-center gap-4 py-3
+              text-center"
           >
             {data?.is_blacklisted ? (
               <p>
@@ -62,7 +62,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
           <div className="flex flex-row items-center justify-end gap-4">
             <ResponsiveDialogClose asChild>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 name="cancel"
                 styles="py-2 px-3 hidden lg:block"
                 buttonText="Cancel"

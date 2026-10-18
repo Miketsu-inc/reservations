@@ -5,15 +5,12 @@ import { lazy, Suspense } from "react";
 
 const Table = lazy(() => import("@reservations/components/Table"));
 
-const GRAY_STYLES =
-  "bg-gray-600/20 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400";
+const GRAY_STYLES = "bg-hover text-fg-muted";
 
 const INVITATIONS_STYLES = {
-  pending:
-    "bg-amber-600/20 text-amber-600 dark:bg-amber-600/15 dark:text-amber-400",
-  accepted:
-    "bg-green-600/20 text-green-600 dark:bg-green-500/15 dark:text-green-400",
-  declined: "bg-red-600/20 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+  pending: "bg-warning-subtle text-fg-warning",
+  accepted: "bg-success-subtle text-fg-success",
+  declined: "bg-danger-subtle text-fg-danger",
   revoked: GRAY_STYLES,
   expired: GRAY_STYLES,
 };
@@ -55,7 +52,7 @@ export default function InvitationsTable({
         return (
           <div className="flex h-full flex-col justify-center leading-5">
             <p className="">{params.data.email}</p>
-            <p className="text-text_color/60 text-sm">{params.data.role}</p>
+            <p className="text-fg-muted text-sm">{params.data.role}</p>
           </div>
         );
       },
@@ -118,7 +115,7 @@ export default function InvitationsTable({
           >
             {canResend && (
               <button
-                className="hover:bg-hvr_gray flex cursor-pointer flex-row
+                className="hover:bg-hover flex cursor-pointer flex-row
                   items-center gap-2 rounded-lg px-2"
                 onClick={() => onResend(data[params.node.sourceRowIndex])}
               >
@@ -128,7 +125,7 @@ export default function InvitationsTable({
             )}
             {canRevoke && (
               <button
-                className="hover:bg-hvr_gray flex cursor-pointer flex-row
+                className="hover:bg-hover flex cursor-pointer flex-row
                   items-center gap-2 rounded-lg px-2"
                 onClick={() => onRevoke(data[params.node.sourceRowIndex])}
               >
@@ -155,7 +152,7 @@ export default function InvitationsTable({
           itemName="invitation"
           onNewItem={onNewItem}
           exportName="invitations"
-          rowHeight={70}
+          rowHeight={64}
         />
       </Suspense>
     </div>

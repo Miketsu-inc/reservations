@@ -87,15 +87,15 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
 
   return (
     <div
-      className="flex max-w-xl flex-col gap-4 rounded border border-gray-300
-        px-3 py-4 sm:px-4 dark:border-gray-500"
+      className="border-border bg-bg-raised shadow-card flex max-w-xl flex-col
+        gap-3 rounded-xl border px-3 py-4 sm:px-4"
     >
       {bhArray.map((day) => (
         <div
           key={day.day}
           className={`flex flex-col items-start
-          ${day.isOpen ? "gap-3" : "gap-0 pb-5"} border-b border-b-gray-300 pb-3
-          last:border-b-0 last:pb-0 lg:flex-row lg:gap-6 dark:border-b-gray-500`}
+          ${day.isOpen ? "gap-3" : "gap-0 pb-5"} border-b-border-subtle border-b
+          pb-3 last:border-b-0 last:pb-0 lg:flex-row lg:gap-6`}
         >
           <div className="flex items-center gap-10 md:mt-2 md:gap-20">
             <label className="inline-flex cursor-pointer items-center gap-3">
@@ -108,15 +108,15 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
             </label>
 
             {!day.isOpen && (
-              <div className="text-gray-500">
+              <div className="text-fg-muted text-sm">
                 <span>Closed</span>
               </div>
             )}
           </div>
-          <div className="flex w-full flex-1 flex-col gap-4">
+          <div className="flex w-full flex-1 flex-col gap-2">
             {day.isOpen &&
               day.timeSlots.map((timeSlot, timeSlotIndex) => (
-                <div key={timeSlotIndex} className="flex items-center gap-3">
+                <div key={timeSlotIndex} className="flex items-center gap-2">
                   <Select
                     options={timeOptions.filter(
                       (option) => option.value !== "23:30"
@@ -133,7 +133,7 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                     styles="flex-1 lg:min-w-28"
                     maxVisibleItems={7}
                   />
-                  <span className="text-gray-500">to</span>
+                  <span className="text-fg-muted text-sm">to</span>
                   <Select
                     options={timeOptions.filter(
                       (option) => option.value > timeSlot.start_time
@@ -155,10 +155,10 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                       onClick={() => addTimePeriod(day.day)}
                       className={`${
                         day.timeSlots.length >= 2
-                          ? "border-text_color/50 text-text_color/50"
-                          : "border-text_color text-text_color"
-                        } cursor-pointer rounded-full border p-1
-                        transition-colors`}
+                          ? "text-fg-disabled"
+                          : `text-fg-muted hover:bg-hover hover:text-fg
+                            cursor-pointer`
+                        } rounded-lg p-2`}
                       disabled={day.timeSlots.length >= 2}
                     >
                       <Icon icon={PlusSignIcon} styles="size-4" />
@@ -166,12 +166,12 @@ export default function BusinessHours({ data, setBusinessHours, preferences }) {
                   ) : (
                     <button
                       onClick={() => removeTimePeriod(day.day, timeSlotIndex)}
-                      className="border-text_color cursor-pointer rounded-full
-                        border p-1"
+                      className="hover:bg-danger-subtle cursor-pointer
+                        rounded-lg p-2"
                     >
                       <Icon
                         icon={Delete02Icon}
-                        styles="size-4 text-red-600 dark:text-red-500"
+                        styles="size-4 text-fg-danger"
                       />
                     </button>
                   )}

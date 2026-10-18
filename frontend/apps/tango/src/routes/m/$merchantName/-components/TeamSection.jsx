@@ -34,24 +34,24 @@ export default function TeamSection({ merchantName }) {
               text-center"
           >
             <Avatar
-              styles={`rounded-full! shrink-0 font-semibold
-              ${isWindowSmall ? "size-23 text-xl!" : "size-26 text-2xl!"}`}
+              styles={`shrink-0 font-semibold
+              ${isWindowSmall ? "size-20 text-lg!" : "size-22 text-xl!"}`}
               initials={`${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`}
             />
 
             <div className="flex flex-col items-center justify-center gap-1.5">
-              <span className="text-lg leading-tight font-medium">
+              <span className="leading-tight font-semibold">
                 {employee.first_name} {employee.last_name.charAt(0)}.
               </span>
 
               <div className="flex items-center gap-1.5">
                 <Icon
                   icon={StarIcon}
-                  styles="fill-yellow-500 size-4.5 text-yellow-500"
+                  styles="fill-warning size-4 text-fg-warning"
                 />
                 <div className="flex items-center gap-1 text-sm">
                   <span className="font-medium">4.6</span>
-                  <span className="text-gray-500 dark:text-gray-400">(9)</span>
+                  <span className="text-fg-muted">(9)</span>
                 </div>
               </div>
             </div>

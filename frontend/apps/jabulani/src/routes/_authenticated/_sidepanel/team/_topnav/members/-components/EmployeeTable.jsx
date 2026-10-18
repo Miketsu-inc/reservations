@@ -33,14 +33,14 @@ export default function EmployeeTable({
         `${params.data.first_name} ${params.data.last_name}`.trim(),
       cellRenderer: (params) => {
         return (
-          <div className="flex h-full flex-row items-center gap-2">
+          <div className="flex h-full flex-row items-center gap-3">
             <Avatar
-              styles="size-12! text-sm shrink-0"
+              styles="size-9! text-xs! shrink-0"
               initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
             />
             <div className="flex flex-col justify-center">
-              <p className="text-base">{`${params.data.first_name} ${params.data.last_name}`}</p>
-              <p className="text-text_color/60 text-sm">{params.data.email}</p>
+              <p className="text-sm">{`${params.data.first_name} ${params.data.last_name}`}</p>
+              <p className="text-fg-muted text-xs">{params.data.email}</p>
             </div>
           </div>
         );
@@ -80,14 +80,16 @@ export default function EmployeeTable({
             className="flex h-full flex-row items-center justify-center"
           >
             <button
-              className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+              className="text-fg-muted hover:bg-hover hover:text-fg
+                cursor-pointer rounded-lg p-2"
               onClick={() => onEdit(data[params.node.sourceRowIndex])}
             >
-              <Icon icon={Edit03Icon} styles="size-5 mx-1" />
+              <Icon icon={Edit03Icon} styles="size-4.5" />
             </button>
             {params.data.role !== "owner" && (
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg p-2"
+                className="text-fg-muted hover:bg-hover hover:text-fg
+                  cursor-pointer rounded-lg p-2"
                 onClick={() => {
                   setSelected({
                     id: params.data.id,
@@ -97,10 +99,7 @@ export default function EmployeeTable({
                   setShowDeleteModal(true);
                 }}
               >
-                <Icon
-                  icon={Delete02Icon}
-                  styles="text-red-600 dark:text-red-500 size-5 mx-1"
-                />
+                <Icon icon={Delete02Icon} styles="text-fg-danger size-4.5" />
               </button>
             )}
           </div>
@@ -130,7 +129,7 @@ export default function EmployeeTable({
           onRowClick={onRowClick}
           exportName="team_members"
           columnsToExport={["name, role, email, phone_number"]}
-          rowHeight={80}
+          rowHeight={64}
         />
       </Suspense>
     </div>

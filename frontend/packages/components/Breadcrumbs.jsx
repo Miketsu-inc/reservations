@@ -21,7 +21,7 @@ export default function Breadcrumbs() {
       <ol className="wrap-break-words flex flex-wrap items-center gap-2">
         {items.map((item, index) => (
           <li
-            className="hover:text-text_color inline-flex items-center gap-2"
+            className="hover:text-fg inline-flex items-center gap-2"
             key={item.href}
           >
             {lastMatch?.pathname === item.href ? (

@@ -163,13 +163,13 @@ export default function ServicePage({
               className="flex flex-row items-center justify-between px-4 pt-6
                 pb-2 md:shrink-0 md:py-4"
             >
-              <p className="text-2xl">
+              <p className="text-xl font-semibold">
                 {serviceData.id ? "Edit service" : "New service"}
               </p>
               <div
-                className="bg-layer_bg border-t-border_color fixed bottom-0
-                  left-0 z-30 w-full border-t p-4 md:static md:w-auto
-                  md:border-t-0 md:bg-transparent md:p-0"
+                className="bg-bg-raised border-t-border fixed bottom-0 left-0
+                  z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
+                  md:bg-transparent md:p-0"
               >
                 <Button
                   type="button"
@@ -195,9 +195,7 @@ export default function ServicePage({
                     onSubmit={saveService}
                   >
                     <ScrollSpySection id="basicDetails" label="Basic details">
-                      <p className="mb-8 text-xl font-semibold">
-                        Basic details
-                      </p>
+                      <p className="mb-5 font-semibold">Basic details</p>
                       <ServiceBasicDetails
                         service={serviceData}
                         categories={categories}
@@ -208,9 +206,7 @@ export default function ServicePage({
                       id="pricingDuration"
                       label="Pricing & duration"
                     >
-                      <p className="mb-8 text-xl font-semibold">
-                        Pricing & duration
-                      </p>
+                      <p className="mb-5 font-semibold">Pricing & duration</p>
                       <ServicePricingDuration
                         service={serviceData}
                         setService={setServiceData}
@@ -218,7 +214,7 @@ export default function ServicePage({
                       />
                     </ScrollSpySection>
                     <ScrollSpySection id="teamMembers" label="Team members">
-                      <p className="mb-8 text-xl font-semibold">Team members</p>
+                      <p className="mb-5 font-semibold">Team members</p>
                       <TeamMemberMultiSelect
                         values={serviceData.employee_ids}
                         onSelect={(employeeIds) =>
@@ -230,12 +226,12 @@ export default function ServicePage({
                           <p className="font-medium">
                             Advanced team member settings
                           </p>
-                          <p className="text-text_color/70 text-sm">
+                          <p className="text-fg-muted text-sm">
                             Manage assignments and override service defaults.
                           </p>
                           <Link
                             to={`/services/team-member-settings/${service.id}`}
-                            className="text-primary inline-block py-2 text-sm
+                            className="text-fg-primary inline-block py-2 text-sm
                               hover:underline"
                           >
                             Advanced settings
@@ -245,7 +241,7 @@ export default function ServicePage({
                     </ScrollSpySection>
                   </form>
                   <ScrollSpySection id="products" label="Products">
-                    <p className="mb-8 text-xl font-semibold">Products</p>
+                    <p className="mb-5 font-semibold">Products</p>
                     <ProductAdder
                       availableProducts={products}
                       usedProducts={serviceData.used_products}
@@ -255,7 +251,7 @@ export default function ServicePage({
                     />
                   </ScrollSpySection>
                   <ScrollSpySection id="bookings" label="Bookings">
-                    <p className="mb-8 text-xl font-semibold">Bookings</p>
+                    <p className="mb-5 font-semibold">Bookings</p>
                     <ServiceBookingSettings
                       onUpdate={updateServiceData}
                       settings={serviceData.settings}
@@ -265,7 +261,7 @@ export default function ServicePage({
                     <Button
                       type="button"
                       styles="py-4 mb-2 shadow-none bg-transparent
-                        hover:bg-transparent! text-red-500!"
+                        hover:bg-transparent! text-fg-danger!"
                       buttonText="Delete service"
                       onClick={() => setShowDeleteModal(true)}
                     ></Button>

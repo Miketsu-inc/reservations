@@ -156,15 +156,14 @@ function SchedulingPage() {
                 }
                 className={`rounded-xl border p-4 text-left transition-colors ${
                   active
-                    ? "border-primary bg-primary/10"
-                    : `border-border_color hover:border-primary/50
-                      hover:bg-hvr_gray`
+                    ? "border-primary/60 bg-primary-subtle"
+                    : "border-border bg-bg-raised hover:border-border-strong"
                 }`}
               >
-                <span className="text-text_color block text-sm font-semibold">
+                <span className="text-fg block text-sm font-semibold">
                   {option.name}
                 </span>
-                <span className="text-text_color/65 mt-1 block text-xs leading-5">
+                <span className="text-fg-muted mt-1 block text-xs leading-5">
                   {option.description}
                 </span>
               </button>
@@ -172,7 +171,6 @@ function SchedulingPage() {
           })}
         </div>
       </SettingsSection>
-
     </div>
   );
 }

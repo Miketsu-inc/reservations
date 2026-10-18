@@ -58,7 +58,7 @@ export default function CustomerProfile({ customerId }) {
   if (profileQuery.isLoading) {
     return (
       <section>
-        <h2 className="mb-4 text-xl">Profile</h2>
+        <h2 className="mb-4 text-xl font-semibold">Profile</h2>
         <Loading />
       </section>
     );
@@ -67,7 +67,7 @@ export default function CustomerProfile({ customerId }) {
   if (profileQuery.isError) {
     return (
       <section>
-        <h2 className="mb-4 text-xl">Profile</h2>
+        <h2 className="mb-4 text-xl font-semibold">Profile</h2>
         <ServerError error={profileQuery.error?.message} />
       </section>
     );
@@ -186,7 +186,7 @@ export default function CustomerProfile({ customerId }) {
       />
 
       <ServerError error={serverError} />
-      <h2 className="mb-4 text-xl">Profile</h2>
+      <h2 className="mb-4 text-xl font-semibold">Profile</h2>
       <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
         <div className="flex w-full justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
@@ -195,23 +195,23 @@ export default function CustomerProfile({ customerId }) {
               initials={`${customer?.first_name[0]}${customer?.last_name[0]}`}
             />
             <div className="flex min-w-0 flex-col gap-1">
-              <h1 className="text-text_color truncate text-2xl font-bold">
+              <h1 className="text-fg truncate text-2xl font-bold">
                 {fullName}
               </h1>
               <div className="flex flex-wrap items-center gap-2">
                 {customer.is_blacklisted && (
                   <span
-                    className="rounded-lg bg-red-400/30 p-1 text-sm text-red-700
-                      dark:bg-red-700/30 dark:text-red-400"
+                    className="bg-danger-subtle text-fg-danger rounded-lg p-1
+                      text-sm"
                   >
                     Blacklisted
                   </span>
                 )}
                 {customer.is_dummy && (
                   <span
-                    className="border-border_color bg-hvr_gray/50
-                      text-text_color/70 inline-flex items-center gap-1.5
-                      rounded-full border px-2 py-1 text-xs font-medium"
+                    className="border-border bg-hover text-fg-muted inline-flex
+                      items-center gap-1.5 rounded-full border px-2 py-1 text-xs
+                      font-medium"
                   >
                     <Icon icon={UserAdd01Icon} styles="size-3.5 shrink-0" />
                     Added manually
@@ -232,7 +232,7 @@ export default function CustomerProfile({ customerId }) {
 
         {hasContactDetails && (
           <div
-            className="text-text_color/70 flex w-full flex-col items-start gap-3
+            className="text-fg-muted flex w-full flex-col items-start gap-3
               text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-6"
           >
             {customer.email && (
@@ -280,13 +280,13 @@ function CustomerActions({
       <PopoverTrigger asChild>
         <button
           aria-label="Customer actions"
-          className="hover:bg-hvr_gray flex size-9 cursor-pointer items-center
+          className="hover:bg-hover flex size-9 cursor-pointer items-center
             justify-center rounded-lg"
           type="button"
         >
           <Icon
             icon={MoreVerticalIcon}
-            styles="size-5 rotate-90 text-text_color/60"
+            styles="size-5 rotate-90 text-fg-muted"
           />
         </button>
       </PopoverTrigger>
@@ -298,7 +298,7 @@ function CustomerActions({
           {!customer.is_dummy && (
             <PopoverClose asChild>
               <button
-                className="hover:bg-hvr_gray cursor-pointer"
+                className="hover:bg-hover cursor-pointer"
                 onClick={onBlacklist}
                 type="button"
               >
@@ -318,7 +318,7 @@ function CustomerActions({
           )}
           <PopoverClose asChild>
             <button
-              className="hover:bg-hvr_gray cursor-pointer"
+              className="hover:bg-hover cursor-pointer"
               onClick={onEdit}
               type="button"
             >
@@ -329,7 +329,7 @@ function CustomerActions({
           {customer.is_dummy && hasBookings && (
             <PopoverClose asChild>
               <button
-                className="hover:bg-hvr_gray cursor-pointer"
+                className="hover:bg-hover cursor-pointer"
                 onClick={onTransfer}
                 type="button"
               >
@@ -341,8 +341,7 @@ function CustomerActions({
           {customer.is_dummy && (
             <PopoverClose asChild>
               <button
-                className="hover:bg-hvr_gray cursor-pointer text-red-600
-                  dark:text-red-500"
+                className="hover:bg-hover text-fg-danger cursor-pointer"
                 onClick={onDelete}
                 type="button"
               >

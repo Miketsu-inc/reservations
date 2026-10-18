@@ -9,8 +9,8 @@ import { getDefaultRecurrenceEnd, useAuth } from "@reservations/jabulani/lib";
 import {
   addTimeToDate,
   combineDateTimeLocal,
-  formatToDateString,
   formatTimeInputValue,
+  formatToDateString,
   useToast,
   useWindowSize,
 } from "@reservations/lib";
@@ -339,7 +339,7 @@ export default function NewBookingPanel({
               )}
             </NestedSidePanel>
             <div
-              className={`no-scrollbar relative h-full w-full overflow-y-auto
+              className={`relative h-full w-full scrollbar-none overflow-y-auto
                 pb-20 ${isWindowSmall ? "pt-0" : "pt-10"} `}
             >
               {isWindowSmall && (
@@ -352,11 +352,11 @@ export default function NewBookingPanel({
                   />
                 </div>
               )}
-              <div className="flex w-full flex-col gap-10 px-6 pb-6">
-                <p className="text-2xl font-semibold">New Booking</p>
-                <div className="flex w-full flex-col gap-8 md:gap-6">
-                  <label className="flex flex-col gap-1">
-                    <span className="">Service</span>
+              <div className="flex w-full flex-col gap-6 px-6 pb-6">
+                <p className="text-xl font-semibold">New Booking</p>
+                <div className="flex w-full flex-col gap-5">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-fg text-sm">Service</span>
                     <ServiceCard
                       onClick={() =>
                         setNestedPageState({
@@ -397,19 +397,20 @@ export default function NewBookingPanel({
                   <div className="flex flex-row items-end gap-2">
                     <DatePicker
                       styles=""
-                      labelText="Date"
+                      labelText="Date & time"
                       value={bookingData.date}
                       disabledBefore={new Date()}
                       onSelect={(date) => updateBookingData({ date: date })}
                     />
                     <input
-                      className="bg-layer_bg border-input_border_color
-                        focus:border-primary focus:ring-primary/30
-                        disabled:text-text_color/70
-                        disabled:border-input_border_color/60 w-32 resize-none
-                        rounded-lg border px-2 py-1.5 placeholder-stone-500
-                        outline-hidden transition-[border-color,box-shadow]
-                        duration-150 ease-in-out focus:ring-4 dark:scheme-dark"
+                      className="bg-bg-input border-border-strong
+                        hover:not-disabled:not-focus:border-border-hover
+                        focus:border-primary focus:ring-primary-focus
+                        disabled:text-fg-disabled disabled:border-border w-32
+                        rounded-lg border px-3 py-1.5 outline-hidden
+                        transition-[border-color,box-shadow] duration-150
+                        ease-in-out focus:ring-3 md:py-2 md:text-sm
+                        dark:scheme-dark"
                       type="time"
                       value={bookingData.time}
                       onChange={(e) => {
@@ -423,20 +424,26 @@ export default function NewBookingPanel({
                       updateBookingData({ employee_id: option.value })
                     }
                   />
-                  <RecurSummaryCard
-                    recurData={recurData}
-                    booking={{
-                      start: combinedStartDateTime,
-                      end: addTimeToDate(
-                        combinedStartDateTime,
-                        0,
-                        selectedServiceDuration()
-                      ),
-                    }}
-                    onClick={() =>
-                      setNestedPageState({ isOpen: true, active: "recurring" })
-                    }
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-fg text-sm">Repeat</span>
+                    <RecurSummaryCard
+                      recurData={recurData}
+                      booking={{
+                        start: combinedStartDateTime,
+                        end: addTimeToDate(
+                          combinedStartDateTime,
+                          0,
+                          selectedServiceDuration()
+                        ),
+                      }}
+                      onClick={() =>
+                        setNestedPageState({
+                          isOpen: true,
+                          active: "recurring",
+                        })
+                      }
+                    />
+                  </div>
                   <Textarea
                     styles="p-2 text-sm h-24"
                     name="merchantNote"
@@ -451,8 +458,8 @@ export default function NewBookingPanel({
                 </div>
               </div>
               <div
-                className="border-border_color bg-layer_bg items center fixed
-                  bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
+                className="border-border bg-bg items center fixed bottom-0 flex
+                  w-full border-t px-6 py-4 lg:w-110"
               >
                 <Button
                   styles="py-2 px-4 w-full"

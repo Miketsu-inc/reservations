@@ -59,13 +59,13 @@ export default forwardRef(function FloatingLabelInput(
   return (
     <>
       <div
-        className={`relative flex w-full items-center rounded-lg border-2
-          ${styles} ${
+        className={`bg-bg-input relative flex w-full items-center rounded-lg
+          border transition-[border-color,box-shadow] duration-150 ${styles} ${
             errorTriggered || (!isEmpty && !isValid)
-              ? "border-red-600"
+              ? "border-danger ring-danger-subtle ring-3"
               : isInputFocused
-                ? "border-primary"
-                : "border-text_color"
+                ? "border-primary ring-primary-focus ring-3"
+                : "border-border-strong hover:border-border-hover"
           } `}
       >
         <InputBase
@@ -83,14 +83,13 @@ export default forwardRef(function FloatingLabelInput(
         <label
           className={`${
             isEmpty && !errorTriggered
-              ? `peer-focus:text-primary left-3 text-lg text-gray-500
-                peer-focus:left-3 peer-focus:-translate-y-4 peer-focus:text-sm
-                dark:text-gray-400`
+              ? `peer-focus:text-fg-primary text-fg-muted left-3
+                peer-focus:left-3 peer-focus:-translate-y-4 peer-focus:text-sm `
               : `${
                   isValid
-                    ? `peer-focus:text-primary peer-focus:left-3
+                    ? `peer-focus:text-fg-primary peer-focus:left-3
                       peer-focus:-translate-y-4 peer-focus:text-sm`
-                    : "text-red-600"
+                    : "text-fg-danger"
                 } left-3 -translate-y-4 text-sm`
             } pointer-events-none absolute transition-all peer-autofill:left-3
             peer-autofill:-translate-y-4 peer-autofill:text-sm`}
@@ -100,7 +99,7 @@ export default forwardRef(function FloatingLabelInput(
         </label>
       </div>
       {(!isValid && !isEmpty) || errorTriggered ? (
-        <span className="text-sm text-nowrap text-red-600">{errorText}</span>
+        <span className="text-fg-danger text-sm text-nowrap">{errorText}</span>
       ) : (
         <></>
       )}

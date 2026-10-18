@@ -124,7 +124,7 @@ export default function MerchantInfoForm({ isCompleted }) {
     <>
       <form
         noValidate
-        className="bg-layer_bg flex h-fit w-full max-w-md flex-col gap-4
+        className="bg-bg-raised flex h-fit w-full max-w-md flex-col gap-4
           rounded-lg px-4 py-6 shadow-lg"
         onSubmit={handleSubmit}
       >
@@ -142,12 +142,9 @@ export default function MerchantInfoForm({ isCompleted }) {
           labelText="Company Name"
           inputData={handleInputData}
         />
-        <p
-          className={`${merchantUrl.url ? "" : "invisible"} text-sm
-            dark:text-gray-400`}
-        >
+        <p className={`${merchantUrl.url ? "" : "invisible"} text-sm`}>
           <span
-            className={`${merchantUrl.valid ? "text-text_color" : "text-red-600"}`}
+            className={`${merchantUrl.valid ? "text-fg" : "text-fg-danger"}`}
           >
             {merchantUrl.valid
               ? `Your URL will be: https://miketsu.com/m/${merchantUrl.url}`

@@ -94,14 +94,14 @@ export default function ServiceSelectionStep({
 
   return (
     <div className="flex h-full w-full flex-col gap-6">
-      <h1 className="text-3xl font-bold">Select a Service</h1>
+      <h1 className="text-2xl font-bold">Select a Service</h1>
       {employee?.first_name && (
         <div
-          className="bg-layer_bg border-border_color flex w-fit items-center
-            gap-2 rounded-full border py-1.5 pr-3 pl-2"
+          className="bg-bg-raised border-border flex w-fit items-center gap-2
+            rounded-full border py-1.5 pr-3 pl-2"
         >
           <Avatar
-            styles="size-8! text-[12px]! shrink-0 rounded-full!"
+            styles="size-8! text-[12px]! shrink-0"
             img={employee?.avatar_url}
             initials={`${employee.first_name[0]}${employee.last_name[0]}`}
           />
@@ -112,15 +112,15 @@ export default function ServiceSelectionStep({
       )}
       <div className="flex flex-1 flex-col">
         <div
-          className="bg-bg_color sticky top-14.75 z-10 flex w-full flex-col
-            gap-5 py-4 lg:top-17"
+          className="bg-bg sticky top-14.75 z-10 flex w-full flex-col gap-5 py-4
+            lg:top-17"
         >
           {!showToggles && (
             <SearchInput
               searchText={searchText}
               onChange={(text) => setSearchText(text)}
               placeholder="Search for a service..."
-              styles="w-full p-3"
+              styles="w-full"
             />
           )}
           {showToggles && (
@@ -158,11 +158,11 @@ export default function ServiceSelectionStep({
                     id={catId}
                     className="flex scroll-mt-60 flex-col gap-4"
                   >
-                    <div className="text-text_color font-semibold">
+                    <div className="text-fg-muted text-sm font-semibold">
                       {category.name || "Uncategorized"}
                     </div>
 
-                    <ul className="flex flex-col gap-4">
+                    <ul className="flex flex-col gap-3">
                       {category.services.map((service) => (
                         <ServiceItem
                           key={service.id}
@@ -182,15 +182,13 @@ export default function ServiceSelectionStep({
             >
               {searchText.trim().length > 0 ? (
                 <>
-                  <Icon icon={Search01Icon} styles="size-10 text-gray-500" />
-                  <p className="text-gray-400 dark:text-gray-500">
+                  <Icon icon={Search01Icon} styles="size-10 text-fg-muted" />
+                  <p className="text-fg-muted">
                     No services found for "{searchText}"
                   </p>
                 </>
               ) : (
-                <p className="text-gray-400 dark:text-gray-500">
-                  No services available.
-                </p>
+                <p className="text-fg-muted">No services available.</p>
               )}
             </div>
           )}
@@ -215,47 +213,50 @@ function ServiceItem({ service, isSelected, onSelect }) {
       role="radio"
       aria-checked={isSelected}
       onClick={() => onSelect(service)}
-      className={`bg-layer_bg text-text_color border-border_color flex w-full
-        cursor-pointer items-center justify-between gap-4 rounded-md border p-4
-        transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-200/5
-        ${isSelected ? "ring-primary ring-1" : ""} `}
+      className={`group bg-bg-raised text-fg shadow-card flex w-full
+        cursor-pointer items-center justify-between gap-4 rounded-xl border p-4
+        text-left transition-colors duration-150 ${
+          isSelected
+            ? "border-primary ring-primary-focus ring-2"
+            : "border-border hover:border-border-strong"
+        }`}
     >
       <div className="flex flex-col gap-2">
-        <p className="text-[17px] font-medium">{service.name}</p>
-        <div className="text-text_color/80 flex items-center gap-5 text-sm">
+        <p className="font-semibold">{service.name}</p>
+        <div className="text-fg-muted flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
-            <Icon icon={Clock01Icon} styles="size-4" />
+            <Icon icon={Clock01Icon} styles="size-3.5" />
             <span>{durationText}</span>
           </div>
 
           {isGroup && (
-            <div className="text-text_color/80 flex items-center gap-1.5">
-              <Icon icon={UserGroupIcon} styles="size-5" />
+            <div className="flex items-center gap-1.5">
+              <Icon icon={UserGroupIcon} styles="size-3.5" />
               <span>{`Max ${service.max_participants}`}</span>
             </div>
           )}
         </div>
         {service.description && (
-          <div
-            className="line-clamp-2 text-sm text-gray-500 dark:text-gray-300/80"
-          >
+          <div className="text-fg-muted line-clamp-2 text-sm">
             {service.description}
           </div>
         )}
-        <span className="text-[17px]">
+        <span className="text-sm">
           {getDisplayPrice(service.price, service.price_type)}
         </span>
       </div>
       <div
         className={`flex size-8 shrink-0 items-center justify-center
           rounded-full border transition-colors ${
-            isSelected ? "border-primary bg-primary" : "border-gray-400"
+            isSelected
+              ? "border-primary bg-primary"
+              : "border-border-strong group-hover:border-border-hover"
           } `}
       >
         <Icon
           icon={isSelected ? Tick02Icon : PlusSignIcon}
           styles={`
-            ${isSelected ? "text-white size-6" : "text-gray-400 size-5"}`}
+            ${isSelected ? "text-fg-on-primary size-5" : "text-fg-muted size-5"}`}
         />
       </div>
     </li>

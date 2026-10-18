@@ -170,16 +170,15 @@ export default function LocationMap({ value, onChange, compact = false }) {
   return (
     <>
       <div
-        className={`border-border_color relative overflow-hidden rounded-lg
-          border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
+        className={`border-border relative overflow-hidden rounded-lg border
+          ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
       >
         <div ref={mapContainerRef} className="h-full w-full" />
         {mapError && (
           <div
             role="alert"
-            className="absolute inset-0 flex items-center justify-center
-              bg-gray-100 p-6 text-center text-sm text-red-700 dark:bg-gray-900
-              dark:text-red-400"
+            className="bg-bg-sunken text-fg-danger absolute inset-0 flex
+              items-center justify-center p-6 text-center text-sm"
           >
             {mapError}
           </div>
@@ -187,7 +186,7 @@ export default function LocationMap({ value, onChange, compact = false }) {
       </div>
 
       {!mapError && (
-        <p className="text-text_color/65 text-sm">
+        <p className="text-fg-muted text-sm">
           {compact && (
             <span className="lg:hidden">
               Drag the pin or tap the map to mark the exact entrance.

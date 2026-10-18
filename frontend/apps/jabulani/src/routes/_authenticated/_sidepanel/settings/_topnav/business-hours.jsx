@@ -183,9 +183,7 @@ function BusinessHoursPage() {
           preferences={preferences}
         />
         {errorMessage && (
-          <p className="mt-4 text-sm text-red-600 dark:text-red-400">
-            {errorMessage}
-          </p>
+          <p className="text-fg-danger mt-4 text-sm">{errorMessage}</p>
         )}
       </section>
     </div>

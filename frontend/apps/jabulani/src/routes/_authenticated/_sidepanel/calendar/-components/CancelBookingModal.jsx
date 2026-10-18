@@ -102,22 +102,16 @@ export default function CancelBookingModal({
                         className={`flex flex-1 cursor-pointer flex-col gap-2
                         rounded-lg border px-4 py-4 text-left transition-all ${
                           active
-                            ? "border-primary bg-primary/5 "
-                            : `border-input_border_color hover:bg-gray-50
-                              dark:hover:bg-gray-700/10`
+                            ? "border-primary bg-primary-subtle "
+                            : "border-border-strong hover:bg-hover "
                         }`}
                       >
                         <span className="flex flex-col gap-1">
-                          <span
-                            className={
-                              "text-text_color/90 text-sm font-semibold"
-                            }
-                          >
+                          <span className={"text-fg text-sm font-semibold"}>
                             {opt.label}
                           </span>
                           <span
-                            className="text-xs leading-relaxed text-gray-500
-                              dark:text-gray-400"
+                            className="text-fg-muted text-xs leading-relaxed"
                           >
                             {opt.description}
                           </span>

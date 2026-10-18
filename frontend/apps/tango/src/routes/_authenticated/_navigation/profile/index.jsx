@@ -35,40 +35,51 @@ function RouteComponent() {
   return (
     <div className="flex justify-center">
       <div className="flex w-full max-w-sm flex-col justify-center gap-4">
-        <p className="pt-4 pb-4 text-2xl">Profile</p>
-        <Card styles="p-8">
-          <div className="text-primary mb-12 flex justify-end">
+        <h1 className="pt-4 pb-2 text-xl font-semibold">Profile</h1>
+        <Card styles="p-6">
+          <div className="text-fg-primary -mt-1 -mr-1 flex justify-end text-sm">
             <Link from={Route.fullPath} to="edit">
-              <span className="flex flex-row items-center gap-2">
-                <Icon icon={Edit03Icon} styles="size-5" />
+              <span
+                className="hover:bg-primary-subtle flex flex-row items-center
+                  gap-1.5 rounded-lg px-2 py-1"
+              >
+                <Icon icon={Edit03Icon} styles="size-4" />
                 <p>Edit</p>
               </span>
             </Link>
           </div>
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-4">
             <Avatar
-              styles="size-24 text-2xl!"
+              styles="size-20 text-2xl!"
               initials={`${user.first_name[0]}${user.last_name[0]}`}
             />
-            <p className="text-2xl">{`${user.first_name} ${user.last_name}`}</p>
+            <p className="text-xl font-semibold">{`${user.first_name} ${user.last_name}`}</p>
           </div>
-          <hr className="text-border_color my-12" />
+          <hr className="border-border-subtle my-6" />
           <div className="flex flex-col gap-4">
             <div>
-              <p>First name</p>
-              <p className="text-text_color/70 text-sm">{user.first_name}</p>
+              <p className="text-fg-muted text-xs tracking-wide uppercase">
+                First name
+              </p>
+              <p className="text-fg mt-0.5 text-sm">{user.first_name}</p>
             </div>
             <div>
-              <p>Last name</p>
-              <p className="text-text_color/70 text-sm">{user.last_name}</p>
+              <p className="text-fg-muted text-xs tracking-wide uppercase">
+                Last name
+              </p>
+              <p className="text-fg mt-0.5 text-sm">{user.last_name}</p>
             </div>
             <div>
-              <p>Email</p>
-              <p className="text-text_color/70 text-sm">{user.email}</p>
+              <p className="text-fg-muted text-xs tracking-wide uppercase">
+                Email
+              </p>
+              <p className="text-fg mt-0.5 text-sm">{user.email}</p>
             </div>
             <div>
-              <p>Phone number</p>
-              <p className="text-text_color/70 text-sm">{user.phone_number}</p>
+              <p className="text-fg-muted text-xs tracking-wide uppercase">
+                Phone number
+              </p>
+              <p className="text-fg mt-0.5 text-sm">{user.phone_number}</p>
             </div>
           </div>
         </Card>
@@ -76,29 +87,31 @@ function RouteComponent() {
           <>
             <Card>
               <Link
-                className="flex flex-row items-center justify-between p-2"
+                className="flex flex-row items-center justify-between p-2.5
+                  text-sm"
                 from={Route.fullPath}
                 to="/settings"
               >
-                <span className="flex flex-row items-center gap-4">
-                  <Icon icon={Settings02Icon} styles="size-6" />
+                <span className="flex flex-row items-center gap-3">
+                  <Icon icon={Settings02Icon} styles="size-5 text-fg-muted" />
                   <p>Settings</p>
                 </span>
                 <Icon
                   icon={ArrowLeft01Icon}
-                  styles="size-6 text-text_color rotate-180"
+                  styles="size-5 text-fg-muted rotate-180"
                 />
               </Link>
             </Card>
             <Card>
               <a
-                className="flex flex-row items-center justify-between p-2"
+                className="flex flex-row items-center justify-between p-2.5
+                  text-sm"
                 href={JABULANI_URL}
               >
-                <p className="font-bold">For businesses</p>
+                <p>For businesses</p>
                 <Icon
                   icon={ArrowLeft01Icon}
-                  styles="size-6 text-text_color rotate-180"
+                  styles="size-5 text-fg-muted rotate-180"
                 />
               </a>
             </Card>

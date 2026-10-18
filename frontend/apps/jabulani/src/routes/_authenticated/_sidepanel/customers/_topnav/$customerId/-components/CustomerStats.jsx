@@ -14,7 +14,7 @@ export default function CustomerStats({ customerId }) {
 
   return (
     <section>
-      <h2 className="mb-4 text-xl">Overview</h2>
+      <h2 className="mb-4 text-xl font-semibold">Overview</h2>
       {error ? (
         <ServerError error={error.message} />
       ) : isLoading || !stats ? (
@@ -47,7 +47,7 @@ function CustomerStatsContent({ stats }) {
       </div>
 
       <div
-        className="border-border_color grid flex-1 grid-cols-2 gap-x-6 gap-y-5
+        className="border-border grid flex-1 grid-cols-2 gap-x-6 gap-y-5
           border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6
           lg:grid-cols-4"
       >
@@ -75,7 +75,7 @@ function CustomerStatsContent({ stats }) {
 function Insight({ label, value }) {
   return (
     <div className="min-w-0">
-      <p className="text-text_color/60 text-sm">{label}</p>
+      <p className="text-fg-muted text-sm">{label}</p>
       <p className="mt-1 truncate font-medium" title={value}>
         {value}
       </p>

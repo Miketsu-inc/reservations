@@ -70,8 +70,8 @@ export function PopoverContent({
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={`${styles} bg-layer_bg text-text_color border-border_color
-            data-[side=bottom]:slide-in-from-top-2
+          className={`${styles} bg-bg-overlay text-fg border-border
+            shadow-overlay data-[side=bottom]:slide-in-from-top-2
             data-[side=inline-end]:slide-in-from-left-2
             data-[side=inline-start]:slide-in-from-right-2
             data-[side=left]:slide-in-from-right-2
@@ -79,8 +79,8 @@ export function PopoverContent({
             data-[side=top]:slide-in-from-bottom-2 data-open:animate-in
             data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out
             data-closed:fade-out-0 data-closed:zoom-out-95 w-48
-            origin-(--transform-origin) rounded-lg border p-2 shadow-md
-            outline-hidden duration-100 dark:shadow-gray-950`}
+            origin-(--transform-origin) rounded-xl border p-1.5 text-sm
+            outline-hidden duration-100`}
           {...props}
         />
       </PopoverPrimitive.Positioner>

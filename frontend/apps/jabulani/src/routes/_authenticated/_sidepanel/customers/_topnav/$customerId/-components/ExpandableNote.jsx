@@ -27,19 +27,19 @@ export default function ExpandableNote({ text }) {
     <>
       {text && (
         <div
-          className="text-text_color/70 flex w-full items-start justify-start
-            gap-3 pr-2 sm:pr-4"
+          className="text-fg-muted flex w-full items-start justify-start gap-3
+            pr-2 sm:pr-4"
         >
           <Icon
             icon={Message01Icon}
-            styles="size-4 shrink-0 mt-1 text-text_color/50"
+            styles="size-4 shrink-0 mt-1 text-fg-muted"
           />
 
           {showFullNote ? (
             <div className="min-w-0 flex-1 text-sm">
               <span>Note: {text}</span>
               <button
-                className="text-secondary ml-2 cursor-pointer text-xs"
+                className="text-fg-primary ml-2 cursor-pointer text-xs"
                 onClick={() => setShowFullNote(false)}
               >
                 Show less
@@ -55,7 +55,7 @@ export default function ExpandableNote({ text }) {
               </span>
               {isNoteOverflowing && (
                 <button
-                  className="text-secondary cursor-pointer text-xs text-nowrap"
+                  className="text-fg-primary cursor-pointer text-xs text-nowrap"
                   onClick={() => setShowFullNote(true)}
                 >
                   Show more

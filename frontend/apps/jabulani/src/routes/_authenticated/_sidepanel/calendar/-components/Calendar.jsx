@@ -39,7 +39,6 @@ import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 
 import "@fullcalendar/react/skeleton.css";
-import "@fullcalendar/react/themes/breezy/palettes/indigo.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
 const calendarViewOptions = [
@@ -139,8 +138,8 @@ function formatBlockedTimes(data) {
       title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
       start: start,
       end: end,
-      color: "rgba(0, 0, 0, 0.6)",
-      contrastColor: getContrastColor("#333333"),
+      color: "#6b6b78",
+      contrastColor: getContrastColor("#6b6b78"),
       durationEditable: !blockedTime.is_all_day,
       allDay: blockedTime.is_all_day,
       startEditable: editableUntil > new Date(),
@@ -503,14 +502,14 @@ export default function Calendar({ router, route, search }) {
       )}
       <div className="relative flex shrink-0 flex-col pb-4 md:flex-row md:gap-2">
         <div
-          className="flex w-full flex-col justify-between md:flex-row
+          className="flex w-full flex-col justify-between gap-2 md:flex-row
             md:items-center"
         >
-          <p className="text-2xl whitespace-nowrap md:text-3xl">
+          <p className="text-xl font-semibold whitespace-nowrap md:text-2xl">
             {calendarTitle}
           </p>
           <div className="flex flex-row items-center justify-between gap-2">
-            <div className="flex flex-row items-center gap-2">
+            <div className="flex flex-row items-center gap-1">
               <CreateMenu
                 isFloating={isWindowSmall}
                 onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
@@ -524,24 +523,26 @@ export default function Calendar({ router, route, search }) {
                 onSelect={changeDateHandler}
               />
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                className="text-fg-muted hover:bg-hover hover:text-fg
+                  cursor-pointer rounded-lg p-2"
                 type="button"
                 onClick={() => navButtonHandler("prev")}
               >
-                <Icon icon={ArrowLeft01Icon} styles="size-8" />
+                <Icon icon={ArrowLeft01Icon} styles="size-5" />
               </button>
               <Button
-                variant="primary"
-                styles="p-2 text-sm"
-                buttonText="today"
+                variant="secondary"
+                styles="px-3 py-2 text-sm"
+                buttonText="Today"
                 onClick={todayButtonHandler}
               />
               <button
-                className="hover:bg-hvr_gray cursor-pointer rounded-lg"
+                className="text-fg-muted hover:bg-hover hover:text-fg
+                  cursor-pointer rounded-lg p-2"
                 type="button"
                 onClick={() => navButtonHandler("next")}
               >
-                <Icon icon={ArrowLeft01Icon} styles="size-8 rotate-180" />
+                <Icon icon={ArrowLeft01Icon} styles="size-5 rotate-180" />
               </button>
             </div>
             <Select
@@ -553,7 +554,7 @@ export default function Calendar({ router, route, search }) {
           </div>
         </div>
       </div>
-      <div className="min-h-0 w-full flex-1 overflow-hidden rounded-lg">
+      <div className="min-h-0 w-full flex-1 overflow-hidden">
         <FullCalendar
           ref={calendarRef}
           plugins={[

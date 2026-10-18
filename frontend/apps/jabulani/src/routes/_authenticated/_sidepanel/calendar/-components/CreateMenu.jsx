@@ -11,11 +11,11 @@ import { useEffect, useState } from "react";
 function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
   return (
     <div
-      className="*:hover:bg-hvr_gray flex flex-col items-start *:w-full
+      className="*:hover:bg-hover flex flex-col items-start text-sm *:w-full
         *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
     >
       <button onClick={onCreateBooking} className="flex items-center gap-2">
-        <Icon icon={CalendarAdd01Icon} styles="size-6" /> Booking
+        <Icon icon={CalendarAdd01Icon} styles="size-5 text-fg-muted" /> Booking
       </button>
       <button className="text-left" onClick={onCreateBlockedTime}>
         Blocked Time
@@ -39,13 +39,13 @@ export default function CreateMenu({
           styles={` ${
             isFloating
               ? "fixed bottom-10 right-5 z-10 p-3 shadow-xl"
-              : "p-2 text-sm mr-5"
+              : "py-2 pr-3 pl-2.5 text-sm mr-2"
             } `}
           buttonText={isFloating ? "" : "Create"}
         >
           <Icon
             icon={PlusSignIcon}
-            styles={isFloating ? "size-7 text-white" : "size-4 mr-2 text-white"}
+            styles={isFloating ? "size-7" : "size-4 mr-1.5"}
           />
         </Button>
       </PopoverTrigger>

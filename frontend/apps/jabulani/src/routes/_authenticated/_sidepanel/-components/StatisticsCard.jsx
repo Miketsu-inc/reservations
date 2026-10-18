@@ -2,9 +2,9 @@ import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import {
   Card,
   Icon,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tooltip,
 } from "@reservations/components";
 import StatisticsChangeIndicator from "./StatisticsChangeIndicator";
 
@@ -19,13 +19,15 @@ export default function StatisticsCard({
     <Card>
       <div className="flex h-full flex-col gap-3">
         <div className="flex flex-row items-center gap-1">
-          <span className="text-sm whitespace-nowrap">{title}</span>
+          <span className="text-fg-muted text-sm whitespace-nowrap">
+            {title}
+          </span>
           {tooltip && (
             <Tooltip>
               <TooltipTrigger>
                 <Icon
                   icon={InformationCircleIcon}
-                  styles="size-4 text-gray-500 dark:text-gray-400"
+                  styles="size-3.5 text-fg-muted"
                 />
               </TooltipTrigger>
               <TooltipContent>
@@ -34,8 +36,8 @@ export default function StatisticsCard({
             </Tooltip>
           )}
         </div>
-        <div className="flex flex-col">
-          <span className="text-lg font-medium">{text}</span>
+        <div className="flex flex-col gap-1">
+          <span className="text-xl">{text}</span>
           <StatisticsChangeIndicator styles="text-xs" percent={percent} />
         </div>
       </div>

@@ -130,7 +130,7 @@ function RouteComponent() {
 
   return (
     <>
-      <p className="pb-6 text-xl">Invitations</p>
+      <h1 className="pb-4 text-xl font-semibold">Invitations</h1>
       <NewInvitationDialog
         Route={Route}
         isOpen={showNewInvitationDialog}

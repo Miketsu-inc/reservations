@@ -8,7 +8,7 @@ function BookingStatusSector({ isActive, payload, ...props }) {
     <Sector
       {...props}
       className={status ? getBookingStatusColorStyles(status) : undefined}
-      fill={status ? "currentColor" : "rgb(var(--hvr-gray))"}
+      fill={status ? "currentColor" : "var(--bg-inactive)"}
       outerRadius={
         isActive && status ? props.outerRadius + 3 : props.outerRadius
       }
@@ -23,8 +23,8 @@ function BookingStatusTooltip({ payload }) {
   return (
     <div
       aria-hidden={!hasStatus}
-      className={`border-border_color bg-layer_bg flex h-9 w-36 items-center
-        gap-3 rounded-lg border px-3 text-sm shadow-md
+      className={`border-border bg-bg-overlay shadow-overlay flex h-9 w-36
+        items-center gap-3 rounded-lg border px-3 text-sm
         ${hasStatus ? "" : "invisible"}`}
     >
       <span
@@ -77,7 +77,7 @@ export default function BookingDonutChart({ statuses }) {
           items-center justify-center"
       >
         <span className="text-2xl leading-none font-semibold">{total}</span>
-        <span className="text-text_color/60 mt-1 text-xs">bookings</span>
+        <span className="text-fg-muted mt-1 text-xs">bookings</span>
       </div>
     </div>
   );

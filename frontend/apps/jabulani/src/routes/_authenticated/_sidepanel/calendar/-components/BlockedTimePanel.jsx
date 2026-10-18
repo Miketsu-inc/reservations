@@ -313,7 +313,7 @@ export default function BlockedTimePanel({
   }
   return (
     <form
-      className={`no-scrollbar relative h-full w-full justify-between
+      className={`relative h-full w-full scrollbar-none justify-between
         overflow-y-auto ${isWindowSmall ? "pt-0" : "pt-10"} lg:w-110`}
       id="BlockedTimeForm"
       onSubmit={handleSubmit}
@@ -332,7 +332,7 @@ export default function BlockedTimePanel({
       )}
 
       <div className="flex flex-col gap-5 px-6 pb-6">
-        <p className="text-2xl font-semibold">
+        <p className="text-xl font-semibold">
           {isEditing ? "Edit Blocked Time" : "Add Blocked Time"}
         </p>
         <BlockedTypeSection
@@ -375,7 +375,7 @@ export default function BlockedTimePanel({
           />
         </div>
         {!formData?.is_all_day && (
-          <div className="text-text_color grid grid-cols-2 gap-4">
+          <div className="text-fg grid grid-cols-2 gap-4">
             <Select
               allOptions={timeOptions}
               options={originalTimeOptions.filter(
@@ -415,20 +415,17 @@ export default function BlockedTimePanel({
       </div>
 
       <div
-        className="border-border_color bg-layer_bg fixed bottom-0 flex w-full
-          items-center gap-2 border-t px-6 py-4"
+        className="border-border bg-bg fixed bottom-0 flex w-full items-center
+          gap-2 border-t px-6 py-4"
       >
         {isEditing && (
           <Button
             styles="p-2 w-fit"
-            variant="tertiary"
+            variant="secondary"
             type="button"
             onClick={() => handleDelete(formData)}
           >
-            <Icon
-              icon={Delete02Icon}
-              styles="size-6 text-red-600 dark:text-red-500"
-            />
+            <Icon icon={Delete02Icon} styles="size-6 text-fg-danger" />
           </Button>
         )}
         <div className="flex flex-1 justify-end gap-3">
@@ -493,7 +490,7 @@ function BlockedTypeSection({ onSelect, activeType }) {
   }
 
   return (
-    <div className="text-text_color flex w-full flex-col gap-3">
+    <div className="text-fg flex w-full flex-col gap-3">
       <label className="text-sm">Block time type</label>
 
       <div
@@ -507,34 +504,30 @@ function BlockedTypeSection({ onSelect, activeType }) {
             justify-center gap-2 rounded-md border-2 transition-all ${
               activeType === "custom"
                 ? "border-primary"
-                : "border-border_color hover:border-gray-400"
+                : "border-border hover:border-border-strong"
             } `}
         >
           <Icon icon={Edit03Icon} styles="size-7 mt-3" />
 
           <div className="text-center">
             <div className="text-sm font-medium">Custom</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              New blocked time
-            </div>
+            <div className="text-fg-muted text-xs">New blocked time</div>
           </div>
         </button>
         {!hasTypes && (
           <Link
             to="/settings/blocked-time-types"
-            className="border-border_color flex h-28 w-36 shrink-0 flex-col
-              items-center justify-center gap-2 rounded-lg border-2
-              transition-all hover:border-gray-400"
+            className="border-border hover:border-border-strong flex h-28 w-36
+              shrink-0 flex-col items-center justify-center gap-2 rounded-lg
+              border-2 transition-all"
           >
             <div
-              className="bg-primary/20 text-primary flex size-12 items-center
-                justify-center rounded-full"
+              className="bg-primary-subtle text-fg-primary flex size-12
+                items-center justify-center rounded-full"
             >
               <Icon icon={PlusSignIcon} styles="size-6" />
             </div>
-            <div
-              className="text-sm font-medium text-gray-500 dark:text-gray-400"
-            >
+            <div className="text-fg-muted text-sm font-medium">
               Add new types
             </div>
           </Link>
@@ -548,13 +541,13 @@ function BlockedTypeSection({ onSelect, activeType }) {
             justify-center gap-2 rounded-lg border-2 transition-all ${
               activeType === type.id
                 ? "border-primary"
-                : " border-border_color hover:border-gray-400"
+                : " border-border hover:border-border-strong"
             }`}
           >
             <span className="text-4xl">{type.icon}</span>
             <div className="text-center">
               <div className="text-sm font-medium">{type.name}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-fg-muted text-xs">
                 {formatDuration(type.duration)}
               </div>
             </div>

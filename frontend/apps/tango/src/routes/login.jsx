@@ -137,45 +137,43 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen min-w-min items-center justify-center">
+    <div
+      className="flex min-h-screen min-w-min items-center justify-center py-10"
+    >
       <div
-        className="sm:bg-layer_bg flex w-full max-w-md flex-col px-8 sm:h-auto
-          sm:min-h-0 sm:rounded-xl sm:py-8 sm:shadow-lg lg:px-8"
+        className="sm:bg-bg-raised sm:border-border sm:shadow-card flex w-full
+          max-w-md flex-col px-6 sm:rounded-2xl sm:border sm:p-8"
       >
-        <h2 className="mt-8 py-1 text-4xl font-bold sm:mt-4">Login</h2>
+        <h1 className="text-2xl font-semibold">Login</h1>
         <ServerError styles="mb-2 mt-4" error={serverError} />
-        <p className="text-sms mt-2 py-2">Welcome back!</p>
+        <p className="text-fg-muted mt-1 mb-6 text-sm">Welcome back!</p>
 
         <a
-          className="group border-secondary hover:border-hvr_secondary
-            text-secondary! hover:*:text-hvr_secondary
-            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
-            items-center justify-center border bg-transparent py-2 font-normal!
-            hover:bg-transparent focus:outline-hidden"
+          className="border-border-strong bg-bg-input text-fg hover:bg-hover
+            focus-visible:outline-primary my-1.5 flex items-center
+            justify-center gap-2.5 rounded-lg border py-2 text-sm font-medium
+            transition-colors focus-visible:outline-2
+            focus-visible:outline-offset-2"
           href="/api/v1/auth/oauth/google"
         >
-          <GoogleIcon
-            styles="group-hover:fill-hvr_secondary fill-secondary mr-3"
-          />
+          <GoogleIcon styles="fill-fg size-4" />
           Login with Google
         </a>
         <a
-          className="group border-secondary hover:border-hvr_secondary
-            text-secondary! hover:*:text-hvr_secondary
-            focus:*:text-hvr_secondary focus:border-hvr_secondary my-2 flex
-            items-center justify-center border bg-transparent py-2 font-normal!
-            hover:bg-transparent focus:outline-hidden"
+          className="border-border-strong bg-bg-input text-fg hover:bg-hover
+            focus-visible:outline-primary my-1.5 flex items-center
+            justify-center gap-2.5 rounded-lg border py-2 text-sm font-medium
+            transition-colors focus-visible:outline-2
+            focus-visible:outline-offset-2"
           href="/api/v1/auth/oauth/facebook"
         >
-          <FacebookIcon
-            styles="group-hover:fill-hvr_secondary fill-secondary mr-1"
-          />
+          <FacebookIcon styles="fill-fg size-5" />
           Login with Facebook
         </a>
-        <div className="my-4 grid grid-cols-3 items-center">
-          <hr className="border-text_color" />
-          <p className="text-center text-sm">OR</p>
-          <hr className="border-text_color" />
+        <div className="my-5 flex items-center gap-3">
+          <hr className="border-border flex-1" />
+          <p className="text-fg-muted text-xs">OR</p>
+          <hr className="border-border flex-1" />
         </div>
         <form
           onSubmit={formSubmitHandler}
@@ -207,8 +205,8 @@ function LoginPage() {
           />
           <Link
             to="/forgot-password"
-            className="text-right text-sm hover:underline focus:underline
-              focus:outline-hidden"
+            className="text-fg-primary -mt-1 text-right text-sm font-medium
+              hover:underline focus:underline focus:outline-hidden"
           >
             Forgot your password?
           </Link>
@@ -216,24 +214,25 @@ function LoginPage() {
             variant="primary"
             name="login"
             type="submit"
-            styles="py-2"
+            styles="py-2.5"
             buttonText="Login"
             isLoading={isLoading}
           />
         </form>
-        <hr className="border-text_color mt-10" />
+        <hr className="border-border-subtle mt-8" />
         <div
-          className="mt-2 flex items-center justify-evenly pt-8 pb-4 text-sm
-            sm:mt-2 sm:pt-8"
+          className="text-fg-muted flex items-center justify-center gap-1 pt-6
+            text-sm"
         >
-          <p className="flex-1">If you don't have an account...</p>
+          <p>Don't have an account?</p>
           <Link
             from={Route.fullPath}
             to="/signup"
             search={{
               redirect: search.redirect,
             }}
-            className="px-4 py-2 whitespace-nowrap hover:underline"
+            className="text-fg-primary font-medium whitespace-nowrap
+              hover:underline"
           >
             Sign up
           </Link>

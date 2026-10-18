@@ -114,12 +114,12 @@ export default function MultiSelect({
     >
       <div className={`w-full ${styles}`}>
         {labelText && (
-          <span className="flex items-center gap-1 pb-1 text-sm">
+          <span className="text-fg flex items-center gap-1 pb-1.5 text-sm">
             {labelText}
             {required !== false && (
               <span
                 aria-hidden="true"
-                className="text-base leading-none text-red-500"
+                className="text-fg-danger text-base leading-none"
               >
                 *
               </span>
@@ -128,10 +128,14 @@ export default function MultiSelect({
         )}
         <PopoverTrigger asChild>
           <button
-            className={`${styles} border-input_border_color
-              disabled:border-input_border_color/60 w-full min-w-fit rounded-lg
-              border py-2 pr-2 pl-3 text-left transition-opacity
-              disabled:bg-gray-200/60 disabled:dark:bg-gray-700/20`}
+            className={`${styles} bg-bg-input border-border-strong
+              hover:not-disabled:not-focus-visible:not-data-popup-open:border-border-hover
+              focus-visible:border-primary focus-visible:ring-primary-focus
+              data-popup-open:border-primary data-popup-open:ring-primary-focus
+              disabled:border-border disabled:bg-bg-sunken w-full min-w-fit
+              rounded-lg border py-2 pr-2 pl-3 text-left outline-hidden
+              transition-[border-color,box-shadow] duration-150
+              focus-visible:ring-3 data-popup-open:ring-3 md:text-sm`}
             type="button"
             ref={containerRef}
             disabled={disabled}
@@ -149,8 +153,8 @@ export default function MultiSelect({
               </div>
               <Icon
                 icon={ArrowLeft01Icon}
-                styles={`text-gray-700 dark:text-gray-300 transition-transform
-                  -rotate-90 shrink-0 ${isOpen ? "rotate-90" : ""} size-5`}
+                styles={`text-fg-muted transition-transform -rotate-90 shrink-0
+                  ${isOpen ? "rotate-90" : ""} size-5`}
               />
             </div>
           </button>
@@ -180,10 +184,7 @@ export default function MultiSelect({
           }}
         >
           {options.length === 0 ? (
-            <li
-              className="px-4 py-6 text-center text-gray-500 select-none
-                dark:text-gray-400"
-            >
+            <li className="text-fg-muted px-4 py-6 text-center select-none">
               {emptyText || "No results found"}
             </li>
           ) : (
@@ -191,10 +192,10 @@ export default function MultiSelect({
               <li
                 onClick={handleToggleAll}
                 className={`${
-                  highlightedIndex === 0 ? "bg-hvr_gray" : "hover:bg-hvr_gray"
+                  highlightedIndex === 0 ? "bg-hover" : "hover:bg-hover"
                 }
-                  dark:text-text_color mb-1 cursor-pointer rounded-sm py-2
-                  pr-0.5 pl-2 text-gray-700 select-none`}
+                  text-fg mb-1 cursor-pointer rounded-sm py-2 pr-1 pl-2
+                  select-none`}
                 role="option"
                 aria-selected={allSelected}
               >
@@ -219,9 +220,9 @@ export default function MultiSelect({
                   <li
                     key={option.value}
                     onClick={() => handleToggleOption(option.value)}
-                    className={`${isHighlighted ? "bg-hvr_gray" : isUsingKeyboard ? "" : "hover:bg-hvr_gray"}
-                      dark:text-text_color cursor-pointer rounded-sm py-2 pr-0.5
-                      pl-2 text-gray-700 select-none`}
+                    className={`${isHighlighted ? "bg-hover" : isUsingKeyboard ? "" : "hover:bg-hover"}
+                      text-fg cursor-pointer rounded-sm py-2 pr-0.5 pl-2
+                      select-none`}
                     role="option"
                     aria-selected={isSelected}
                   >
@@ -239,7 +240,7 @@ export default function MultiSelect({
                           initials={
                             option.initials || option.label?.substring(0, 2)
                           }
-                          styles="size-6! text-[10px]! shrink-0 rounded-full!"
+                          styles="size-6! text-[10px]! shrink-0"
                         />
                         <span className="mb-0.5 truncate text-sm">
                           {option.label}
@@ -272,7 +273,7 @@ function TriggerContent({
   if (selectedOptions.length === 0) {
     return (
       <span
-        className={`${disabled ? "text-gray-500/70" : "text-gray-500"} min-h-6
+        className={`${disabled ? "text-fg-disabled" : "text-fg-muted"} min-h-6
           flex-1 truncate`}
       >
         {placeholder}
@@ -298,14 +299,14 @@ function TriggerContent({
             key={option.value}
             img={option.img}
             initials={option.initials || option.label?.substring(0, 2)}
-            styles="size-6! text-[10px]! rounded-full! border border-layer_bg"
+            styles="size-6! text-[10px]! border border-bg-raised"
           />
         ))}
         {remainingCount > 0 && (
           <div
-            className="border-layer_bg flex size-6 items-center justify-center
-              rounded-full border-2 bg-gray-300 text-[10px] font-semibold
-              text-white dark:bg-gray-600"
+            className="border-bg-raised bg-bg-sunken text-fg-muted flex size-6
+              items-center justify-center rounded-full border-2 text-[10px]
+              font-semibold"
           >
             +{remainingCount}
           </div>
@@ -313,7 +314,7 @@ function TriggerContent({
       </div>
       <span
         className={`truncate text-sm ${
-          disabled ? "text-text_color/70" : "text-text_color"
+          disabled ? "text-fg-disabled" : "text-fg"
         }`}
       >
         {text}

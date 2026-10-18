@@ -109,43 +109,36 @@ export default function BookingSummary({
     return (
       <Card
         styles="sticky top-24 flex h-[calc(100vh-8rem)] w-full flex-col
-          justify-between p-8 animate-pulse"
+          justify-between p-6 animate-pulse"
       >
         <div>
           <div className="flex items-start gap-3">
-            <div
-              className="size-18 shrink-0 rounded-lg bg-gray-200
-                dark:bg-gray-800"
-            ></div>
+            <div className="bg-bg-sunken size-18 shrink-0 rounded-lg"></div>
             <div className="flex w-full flex-col gap-2 py-1">
-              <div className="h-5 w-3/4 rounded bg-gray-200 dark:bg-gray-800"></div>
-              <div className="h-4 w-1/2 rounded bg-gray-100 dark:bg-gray-800"></div>
-              <div className="h-3 w-full rounded bg-gray-100 dark:bg-gray-800"></div>
+              <div className="bg-bg-sunken h-5 w-3/4 rounded"></div>
+              <div className="bg-bg-sunken h-4 w-1/2 rounded"></div>
+              <div className="bg-bg-sunken h-3 w-full rounded"></div>
             </div>
           </div>
-          <hr className="border-border_color my-5" />
+          <hr className="border-border-subtle my-5" />
           <div className="flex items-start justify-between">
             <div className="flex w-full flex-col gap-2">
-              <div className="h-5 w-2/3 rounded bg-gray-200 dark:bg-gray-800"></div>
-              <div className="h-4 w-1/3 rounded bg-gray-100 dark:bg-gray-800"></div>
-              <div className="h-4 w-1/2 rounded bg-gray-100 dark:bg-gray-800"></div>
+              <div className="bg-bg-sunken h-5 w-2/3 rounded"></div>
+              <div className="bg-bg-sunken h-4 w-1/3 rounded"></div>
+              <div className="bg-bg-sunken h-4 w-1/2 rounded"></div>
             </div>
-            <div
-              className="h-5 w-16 shrink-0 rounded bg-gray-200 dark:bg-gray-800"
-            ></div>
+            <div className="bg-bg-sunken h-5 w-16 shrink-0 rounded"></div>
           </div>
         </div>
-        <div
-          className="mt-8 h-10 w-full rounded-md bg-gray-200 dark:bg-gray-800"
-        ></div>
+        <div className="bg-bg-sunken mt-8 h-10 w-full rounded-md"></div>
       </Card>
     );
   }
 
   return (
     <Card
-      styles="flex flex-col justify-between max-w-110 p-8 sticky top-24
-        h-[calc(100vh-8rem)]"
+      styles="flex flex-col justify-between max-w-110 p-6 sticky top-24
+        h-[calc(100vh-8rem)] rounded-2xl!"
     >
       <div>
         <div className="flex items-start gap-3">
@@ -157,57 +150,55 @@ export default function BookingSummary({
             />
           </div>
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-lg font-medium">
+            <h2 className="text-lg font-semibold">
               {fetchedSummary?.merchant_name}
             </h2>
             <div className="flex items-center gap-1 text-sm">
               <Icon
                 icon={StarIcon}
-                styles="size-5 text-yellow-500 fill-yellow-500"
+                styles="size-4 text-fg-warning fill-warning"
               />
               <span className="font-medium">4.6</span>
-              <span className="ml-1 cursor-pointer text-gray-500">
+              <span className="text-fg-muted ml-1 cursor-pointer">
                 (9 reviews)
               </span>
             </div>
-            <p className="dark:text-text_color/80 line-clamp-1 w-full text-sm">
+            <p className="text-fg-muted line-clamp-1 w-full text-sm">
               {fetchedSummary?.formatted_location}
             </p>
           </div>
         </div>
 
-        <hr className="border-border_color my-5" />
+        <hr className="border-border-subtle my-5" />
         {selectedSummary.time?.date && selectedSummary.time?.time && (
           <>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-2 text-sm">
               <div className="flex items-center gap-2">
-                <Icon icon={Calendar} styles="size-5" />
+                <Icon icon={Calendar} styles="size-4 text-fg-muted" />
                 <span className="">
                   {formatDate(selectedSummary.time.date)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Icon icon={Clock} styles="size-5" />
+                <Icon icon={Clock} styles="size-4 text-fg-muted" />
                 <span className="">
                   {formatTimeRange(selectedSummary.time.time, totalDuration)}
                 </span>
               </div>
             </div>
-            <hr className="border-border_color my-5" />
+            <hr className="border-border-subtle my-5" />
           </>
         )}
 
         {serviceName ? (
           <div className="flex justify-between">
             <div className="flex flex-col gap-1">
-              <span className="text-[17px] font-medium">{serviceName}</span>
+              <span className="font-semibold">{serviceName}</span>
               {durationDisplay && (
-                <span className="text-gray-600 dark:text-gray-300">
-                  {durationDisplay}
-                </span>
+                <span className="text-fg-muted text-sm">{durationDisplay}</span>
               )}
               {employeeName && (
-                <span className="text-gray-600 dark:text-gray-300">
+                <span className="text-fg-muted text-sm">
                   With: {employeeName}
                 </span>
               )}
@@ -217,17 +208,16 @@ export default function BookingSummary({
             )}
           </div>
         ) : (
-          <p className="text-gray-400">Select a service to continue...</p>
+          <p className="text-fg-muted text-sm">
+            Select a service to continue...
+          </p>
         )}
         {selectedSummary.time?.customer_note && (
           <>
-            <hr className="border-border_color my-5" />
-            <div
-              className="flex items-start justify-start gap-2 text-gray-600
-                dark:text-gray-300"
-            >
-              <Icon icon={Note01Icon} styles="size-5 shrink-0 mt-0.5" />
-              <p className="line-clamp-3 font-medium">
+            <hr className="border-border-subtle my-5" />
+            <div className="text-fg-muted flex items-start justify-start gap-2">
+              <Icon icon={Note01Icon} styles="size-4 shrink-0 mt-0.5" />
+              <p className="line-clamp-3 text-sm font-medium">
                 Your Note:{" "}
                 <span className="text-sm font-normal">
                   {selectedSummary.time?.customer_note}
@@ -239,7 +229,7 @@ export default function BookingSummary({
       </div>
 
       <Button
-        styles="w-full py-2 gap-2"
+        styles="w-full py-2.5 gap-1.5"
         buttonText={currentStep === "time" ? "Book" : "Continue"}
         variant="primary"
         disabled={!canContinue}

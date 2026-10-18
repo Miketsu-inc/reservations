@@ -125,7 +125,7 @@ function BlacklistPage() {
   return (
     <div className="flex h-full min-h-0 flex-col justify-center">
       <div className="flex flex-row items-center justify-between">
-        <p className="pb-6 text-xl">Blacklisted customers</p>
+        <h1 className="pb-4 text-xl font-semibold">Blacklisted customers</h1>
       </div>
       <BlacklistModal
         key={blacklistModalData?.id || "new"}
@@ -162,13 +162,10 @@ function BlacklistPage() {
 
 function NoRowsComponent() {
   return (
-    <div
-      className="mb-16 flex flex-col items-center gap-4 px-2 text-gray-600
-        dark:text-gray-300"
-    >
+    <div className="text-fg-muted mb-16 flex flex-col items-center gap-4 px-2">
       <Icon icon={User03Icon} styles="size-16" />
       <div className="flex flex-col items-center gap-2">
-        <p className="text-text_color text-base font-medium">
+        <p className="text-fg text-base font-medium">
           No blacklisted customers
         </p>
         <p className="text-sm md:w-2/3">

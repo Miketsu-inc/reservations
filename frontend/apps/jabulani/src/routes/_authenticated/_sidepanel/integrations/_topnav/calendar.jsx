@@ -15,12 +15,12 @@ function RouteComponent() {
 
   return (
     <div className="flex h-full flex-col px-4 pt-4">
-      <p className="pb-6 text-xl">Calendar</p>
+      <h1 className="pb-4 text-xl font-semibold">Calendar</h1>
       <div className="flex flex-col gap-4">
         <Card styles="flex flex-row justify-between items-center gap-2">
-          <div className="flex flex-col gap-2">
-            <span className="text-lg">Two-way calendar sync</span>
-            <p className="text-sm">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold">Two-way calendar sync</span>
+            <p className="text-fg-muted text-sm">
               Events will be automatically synced between your Google calendar
               and our system
             </p>
@@ -28,8 +28,13 @@ function RouteComponent() {
           <a
             href={`${JABULANI_URL}/api/v1/merchants/${merchantId}/integrations/google/calendar`}
           >
-            <Button styles="py-2 px-4" buttonText="Sync" onClick={() => {}}>
-              <GoogleIcon styles="size-5 fill-text_color mr-3" />
+            <Button
+              variant="secondary"
+              styles="py-2 pr-3.5 pl-3 text-sm"
+              buttonText="Sync"
+              onClick={() => {}}
+            >
+              <GoogleIcon styles="size-4 fill-fg mr-2" />
             </Button>
           </a>
         </Card>

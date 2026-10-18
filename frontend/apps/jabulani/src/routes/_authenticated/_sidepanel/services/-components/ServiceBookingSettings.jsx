@@ -77,12 +77,12 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               Override booking scheduling settings
             </span>
           </div>
-          <div className="text-text_color/70 text-sm">
+          <div className="text-fg-muted text-sm">
             Create custom scheduling rules for this service. These settings will
             override your{" "}
             <Link
               to="/settings/scheduling"
-              className="text-primary hover:text-primary/80 font-medium
+              className="text-fg-primary hover:text-fg-primary font-medium
                 hover:underline"
             >
               global settings
@@ -112,7 +112,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               styles="w-full"
               placeholder="Select cancel deadline"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Required notice time for cancellations
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               styles="w-full"
               placeholder="Select buffer time"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Break time added between consecutive bookings
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               styles="w-full"
               placeholder="Select minimum time"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Earliest time customers can book ahead
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               styles="w-full"
               placeholder="Select maximum time"
             />
-            <p className="text-text_color/70 text-sm">
+            <p className="text-fg-muted text-sm">
               Latest time customers can book ahead
             </p>
           </div>
@@ -206,20 +206,15 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
                   className={`flex flex-col gap-1 rounded-md border p-4
                   text-left transition-colors duration-150 ${
                     active
-                      ? "border-primary bg-primary/5"
-                      : `bg-layer_bg border-gray-300 hover:border-gray-300
-                        hover:bg-gray-100 dark:border-gray-500
-                        dark:hover:border-gray-400 dark:hover:bg-gray-600/5`
+                      ? "border-primary bg-primary-subtle"
+                      : `bg-bg-raised border-border hover:border-border
+                        hover:bg-hover `
                   }`}
                 >
-                  <span className={"text-text_color text-sm font-medium"}>
+                  <span className={"text-fg text-sm font-medium"}>
                     {option.name}
                   </span>
-                  <span
-                    className={
-                      "text-xs leading-relaxed text-gray-500 dark:text-gray-400"
-                    }
-                  >
+                  <span className={"text-fg-muted text-xs leading-relaxed"}>
                     {option.desc}
                   </span>
                 </button>

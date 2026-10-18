@@ -124,26 +124,26 @@ function RouteComponent() {
 
               <div className="flex flex-col gap-1">
                 <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-                  <h2 className="text-text_color text-lg font-bold">
+                  <h2 className="text-fg text-lg font-bold">
                     {employee.first_name} {employee.last_name}
                   </h2>
                 </div>
                 <div
-                  className="text-text_color/70 flex flex-row items-center gap-2
+                  className="text-fg-muted flex flex-row items-center gap-2
                     text-sm"
                 >
                   <p>{employee.role}</p>
                   {employee.is_active ? (
                     <p
-                      className="rounded-lg bg-green-400/30 p-1 text-sm
-                        text-green-700 dark:bg-green-700/30 dark:text-green-400"
+                      className="bg-success-subtle text-fg-success rounded-lg
+                        p-1 text-sm"
                     >
                       active
                     </p>
                   ) : (
                     <p
-                      className="rounded-lg bg-red-400/30 p-1 text-sm
-                        text-red-700 dark:bg-red-700/30 dark:text-red-400"
+                      className="bg-danger-subtle text-fg-danger rounded-lg p-1
+                        text-sm"
                     >
                       inactive
                     </p>
@@ -155,12 +155,12 @@ function RouteComponent() {
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="hover:bg-hvr_gray hover:*:stroke-text_color h-fit
+                    className="hover:bg-hover hover:*:stroke-fg h-fit
                       cursor-pointer rounded-lg p-1"
                   >
                     <Icon
                       icon={MoreVerticalIcon}
-                      styles="size-6 rotate-90 text-gray-400 dark:text-gray-500"
+                      styles="size-6 rotate-90 text-fg-muted"
                     />
                   </button>
                 </PopoverTrigger>
@@ -171,7 +171,7 @@ function RouteComponent() {
                   >
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        className="hover:bg-hover cursor-pointer gap-3"
                         onClick={() => {
                           router.navigate({
                             from: Route.fullPath,
@@ -187,16 +187,13 @@ function RouteComponent() {
                       <PopoverClose asChild>
                         <button
                           onClick={() => setShowDeleteModal(true)}
-                          className="hover:bg-hvr_gray cursor-pointer gap-3"
+                          className="hover:bg-hover cursor-pointer gap-3"
                         >
                           <Icon
                             icon={Delete02Icon}
-                            styles="text-red-600 dark:text-red-500 size-5
-                              mb-0.5"
+                            styles="text-fg-danger size-5 mb-0.5"
                           />
-                          <p className="text-red-600 dark:text-red-500">
-                            Delete team member
-                          </p>
+                          <p className="text-fg-danger">Delete team member</p>
                         </button>
                       </PopoverClose>
                     )}
@@ -207,12 +204,12 @@ function RouteComponent() {
           </div>
 
           <div
-            className="text-text_color/70 flex flex-col items-start gap-3
-              text-sm sm:flex-row sm:items-center sm:gap-6"
+            className="text-fg-muted flex flex-col items-start gap-3 text-sm
+              sm:flex-row sm:items-center sm:gap-6"
           >
             {employee.email && (
               <div className="flex items-center gap-2">
-                <Icon icon={Mail01Icon} styles="size-5 text-text_color/70" />
+                <Icon icon={Mail01Icon} styles="size-5 text-fg-muted" />
                 {employee.email}
               </div>
             )}
@@ -221,7 +218,7 @@ function RouteComponent() {
                 <div className="flex items-center gap-2">
                   <Icon
                     icon={Call02Icon}
-                    styles="size-4 mb-0.5 text-text_color/70"
+                    styles="size-4 mb-0.5 text-fg-muted"
                   />
                   {employee.phone_number}
                 </div>

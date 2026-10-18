@@ -283,30 +283,27 @@ function BookingFLow() {
   });
 
   return (
-    <div
-      className="bg-bg_color relative flex min-h-screen w-full flex-col gap-6"
-    >
+    <div className="bg-bg relative flex min-h-screen w-full flex-col gap-6">
       <div
-        className={`bg-bg_color sticky top-0 z-50 flex items-center
-          justify-between py-3 ${
-            isScrolled ? "border-border_color border-b shadow-sm" : "border-0"
-          }`}
+        className={`bg-bg sticky top-0 z-50 flex items-center justify-between
+          py-3 ${isScrolled ? "border-border border-b" : "border-0"}`}
       >
         <div
           className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4
             md:px-8"
         >
           <button
-            className="hover:bg-hvr_gray/20 md:bg-layer_bg border-border_color
-              flex h-fit w-fit rounded-full p-1 md:border md:p-2 md:shadow-sm"
+            className="hover:bg-hover md:bg-bg-raised border-border
+              md:shadow-card flex h-fit w-fit cursor-pointer rounded-full p-1
+              md:border md:p-2.5"
             onClick={handleBack}
           >
-            <Icon icon={ArrowLeft01Icon} styles="text-text_color size-7" />
+            <Icon icon={ArrowLeft01Icon} styles="text-fg size-5" />
           </button>
           <div
-            className={`text-2xl font-semibold ${
+            className={`text-xl font-semibold ${
               isScrolled ? "block" : "hidden"
-            }`}
+              }`}
           >
             {stepTitles[currentStep]}
           </div>
@@ -395,32 +392,30 @@ function BookingFLow() {
       </div>
       {isWindowSmall && (
         <div
-          className={`bg-layer_bg border-border_color fixed bottom-0 z-20 flex
-          w-full items-center justify-between border-t-2 px-6 py-3
+          className={`bg-bg-overlay border-border fixed bottom-0 z-20 flex
+          w-full items-center justify-between border-t px-6 py-3
           transition-transform duration-300 ease-in-out
           ${canContinue ? "translate-y-0" : "translate-y-full"}`}
         >
           <div className="flex flex-col">
             {summaryInfo.priceDisplay && (
-              <span className="text-lg font-medium">
-                {summaryInfo.priceDisplay}
-              </span>
+              <span className="font-semibold">{summaryInfo.priceDisplay}</span>
             )}
             {selectedSummary.time?.time ? (
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-fg-muted text-sm">
                 {formatTimeRange(
                   selectedSummary.time?.time,
                   summaryInfo.totalDuration
                 )}
               </span>
             ) : (
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-fg-muted text-sm">
                 {summaryInfo.durationDisplay}
               </span>
             )}
           </div>
           <Button
-            styles="w-fit px-4 py-2 gap-2"
+            styles="w-fit px-4 py-2 gap-1.5 text-sm"
             buttonText={currentStep === "time" ? "Book" : "Continue"}
             variant="primary"
             onClick={handleContinue}
@@ -428,7 +423,7 @@ function BookingFLow() {
             isLoading={isSubmitting}
             childSide="right"
           >
-            <Icon icon={ArrowRight02Icon} styles="size-5" />
+            <Icon icon={ArrowRight02Icon} styles="size-4.5" />
           </Button>
         </div>
       )}

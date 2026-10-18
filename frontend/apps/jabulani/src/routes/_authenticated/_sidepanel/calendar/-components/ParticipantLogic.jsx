@@ -48,16 +48,16 @@ export function ParticipantSideBar({
             opacity-70"
         >
           <div
-            className="flex size-16 items-center justify-center rounded-full
-              bg-gray-200 dark:bg-gray-400/20"
+            className="bg-bg-sunken flex size-16 items-center justify-center
+              rounded-full"
           >
-            <Icon icon={WalkingIcon} styles="fill-gray-300 size-6" />
+            <Icon icon={WalkingIcon} styles="fill-fg-muted size-6" />
           </div>
           <div className="text-center">
             <p className="font-semibold">Walk-in Customer</p>
             <button
-              className="border-primary hover:bg-primary/10 mt-2 rounded-md p-2
-                text-xs"
+              className="border-primary hover:bg-primary-subtle mt-2 rounded-md
+                p-2 text-xs"
             >
               Assign Customer
             </button>
@@ -90,21 +90,22 @@ export function ParticipantSideBar({
 
     return (
       <button
-        className="flex h-full w-full cursor-pointer flex-col items-start px-3
-          py-10 hover:bg-gray-200/40 dark:hover:bg-gray-700/10"
+        className="hover:bg-hover flex h-full w-full cursor-pointer flex-col
+          items-center px-3 pt-10"
         onClick={() => setIsExpanded(true)}
       >
         <div className="flex flex-col items-center justify-center gap-3">
           <div
-            className="bg-primary/20 text-primary flex size-14 items-center
-              justify-center rounded-full"
+            className="bg-primary-subtle text-fg-primary flex size-14
+              items-center justify-center rounded-full"
           >
             <Icon icon={PlusSignIcon} styles="size-6" />
           </div>
-          <div>
-            <p className="font-semibold">Add customer</p>
-            <span className="text-gray-400 dark:text-gray-500">
-              Or leave empty for walk-ins
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-semibold">Add customer</p>
+            <span className="text-fg-muted text-xs text-balance">
+              Or leave empty for{" "}
+              <span className="whitespace-nowrap">walk-ins</span>
             </span>
           </div>
         </div>
@@ -115,7 +116,7 @@ export function ParticipantSideBar({
   if (!isWindowSmall) {
     return (
       <div
-        className={`border-border_color overflow-hidden border-r transition-all
+        className={`border-border overflow-hidden border-r transition-all
           duration-300 ease-in-out
           ${isExpanded || hasSelection || isGroupBooking ? "w-80" : "w-40"}`}
       >
@@ -140,17 +141,17 @@ export function MobileParticipantSection({
 
   if (isWindowSmall) {
     return (
-      <div className="flex flex-col gap-1">
-        <span>{isGroupBooking ? "Participants" : "Participant"}</span>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-fg text-sm">
+          {isGroupBooking ? "Participants" : "Customer"}
+        </span>
         {isGroupBooking ? (
           isPastBooking && !hasSelection ? (
             <div
-              className="border-input_border_color/70 flex items-center gap-3
-                rounded-md border p-4"
+              className="border-border bg-bg-sunken text-fg-muted flex
+                items-center gap-3 rounded-lg border px-3 py-2 text-sm"
             >
-              <span className="text-gray-800 dark:text-gray-300">
-                No participants attended
-              </span>
+              <span>No participants attended</span>
             </div>
           ) : (
             <ParticipantsCard
@@ -171,18 +172,16 @@ export function MobileParticipantSection({
               />
             ) : isPastBooking ? (
               <div
-                className="border-input_border_color/70 flex items-center gap-6
-                  rounded-md border p-4 px-6"
+                className="border-border bg-bg-sunken flex items-center gap-3
+                  rounded-lg border px-3 py-2"
               >
                 <div
-                  className="flex size-12 items-center justify-center
-                    rounded-full bg-gray-200 dark:bg-gray-400/20"
+                  className="bg-bg-inactive flex size-8 items-center
+                    justify-center rounded-full"
                 >
-                  <Icon icon={WalkingIcon} styles="fill-gray-300 size-6" />
+                  <Icon icon={WalkingIcon} styles="text-fg-muted size-4" />
                 </div>
-                <span className="text-gray-800 dark:text-gray-300">
-                  Walk-in Customer
-                </span>
+                <span className="text-fg-muted text-sm">Walk-in customer</span>
               </div>
             ) : (
               <AddCustomerCard onClick={onOpenCustomerSelector} />

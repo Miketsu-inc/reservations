@@ -135,7 +135,7 @@ export default function BlockedTypesModal({
           onSubmit={handleSubmit}
         >
           <div className="flex items-center justify-between">
-            <div className="text-text_color text-lg font-semibold">
+            <div className="text-fg text-lg font-semibold">
               {editData ? "Edit Blocked Time Type" : "New Blocked Time Type"}
             </div>
             <ResponsiveDialogClose asChild>
@@ -145,7 +145,7 @@ export default function BlockedTypesModal({
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-text_color font-medium">Icon</label>
+              <label className="text-fg font-medium">Icon</label>
               <div className="flex flex-wrap justify-center gap-2">
                 {commonEmojis.map((icon) => (
                   <button
@@ -156,7 +156,7 @@ export default function BlockedTypesModal({
                     transition-all ${
                       formData.icon === icon
                         ? "border-primary"
-                        : "border-border_color hover:border-gray-400"
+                        : "border-border hover:border-border-strong"
                     }`}
                   >
                     {icon}
@@ -208,7 +208,7 @@ export default function BlockedTypesModal({
                 <Button
                   styles="px-4 py-2 flex-1 hidden lg:block"
                   buttonText="Cancel"
-                  variant="tertiary"
+                  variant="secondary"
                   type="button"
                 />
               </ResponsiveDialogClose>

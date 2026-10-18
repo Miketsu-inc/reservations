@@ -1,2 +1,59 @@
 @import "../../input.css";
 @source "../../packages";
+
+/*
+  FullCalendar (breezy theme) palette, mapped to the design tokens so the
+  calendar follows the app in both light and dark mode.
+*/
+:root {
+  --fc-breezy-primary: var(--primary);
+  --fc-breezy-primary-over: var(--primary-hover);
+  --fc-breezy-primary-foreground: var(--fg-on-primary);
+
+  --fc-breezy-secondary: var(--bg-input);
+  --fc-breezy-secondary-over: var(--hover);
+  --fc-breezy-secondary-border: var(--border-strong);
+  --fc-breezy-secondary-foreground: var(--fg);
+  --fc-breezy-secondary-icon: var(--fg-muted);
+  --fc-breezy-secondary-icon-over: var(--fg-muted);
+
+  --fc-breezy-event: var(--primary);
+  --fc-breezy-event-contrast: var(--fg-on-primary);
+  --fc-breezy-background-event: var(--primary);
+  --fc-breezy-highlight: var(--primary-subtle);
+  --fc-breezy-now: var(--danger);
+
+  --fc-breezy-selected: var(--active);
+
+  --fc-breezy-popover: var(--bg-overlay);
+  --fc-breezy-popover-border: var(--border);
+
+  --fc-breezy-background: var(--bg-raised);
+  --fc-breezy-faint: color-mix(in srgb, var(--hover) 55%, transparent);
+  --fc-breezy-muted: var(--hover);
+  --fc-breezy-strong: var(--active);
+  --fc-breezy-stronger: var(--active);
+  --fc-breezy-strongest: var(--bg-inactive);
+
+  --fc-breezy-foreground: var(--fg-muted);
+  --fc-breezy-faint-foreground: var(--fg-muted);
+  --fc-breezy-muted-foreground: var(--fg-muted);
+  --fc-breezy-strong-foreground: var(--fg);
+
+  --fc-breezy-border: var(--border);
+  --fc-breezy-muted-border: var(--border-subtle);
+  --fc-breezy-strong-border: var(--border-strong);
+}
+
+/*
+  remove focus outline which appears when clicking on a chart
+*/
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+}
+
+.recharts-wrapper svg:focus {
+  outline: none;
+  stroke: none;
+}

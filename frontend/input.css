@@ -2,61 +2,224 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --font-family-sans: "Onest", sans-serif;
+@theme inline {
+  /* backgrounds */
+  --color-canvas: var(--canvas);
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-overlay: var(--bg-overlay);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-bg-input: var(--bg-input);
+  --color-bg-backdrop: var(--bg-backdrop);
+  --color-bg-inactive: var(--bg-inactive);
 
-  --color-primary: rgba(var(--primary));
-  --color-hvr_primary: rgba(var(--hvr-primary));
-  --color-secondary: rgba(var(--secondary));
-  --color-hvr_secondary: rgba(var(--hvr-secondary));
-  --color-accent: rgba(var(--accent));
-  --color-bg_color: rgba(var(--bg-color));
-  --color-layer_bg: rgba(var(--layer-bg));
-  --color-text_color: rgba(var(--text-color));
-  --color-hvr_gray: rgba(var(--hvr-gray));
-  --color-border_color: rgba(var(--border-color));
-  --color-input_border_color: rgba(var(--input-border-color));
+  /* interactive fills */
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+
+  /* text */
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-disabled: var(--fg-disabled);
+  --color-fg-on-primary: var(--fg-on-primary);
+  --color-fg-primary: var(--fg-primary);
+  --color-fg-success: var(--fg-success);
+  --color-fg-warning: var(--fg-warning);
+  --color-fg-danger: var(--fg-danger);
+  --color-fg-info: var(--fg-info);
+
+  /* borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-hover: var(--border-hover);
+  --color-border-primary: var(--border-primary);
+  --color-border-success: var(--border-success);
+  --color-border-warning: var(--border-warning);
+  --color-border-danger: var(--border-danger);
+  --color-border-info: var(--border-info);
+
+  /* brand */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-hover: var(--primary-subtle-hover);
+  --color-primary-focus: var(--primary-focus);
+
+  /* status */
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+
+  /* shadow */
+  --shadow-card: var(--shadow-card);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-modal: var(--shadow-modal);
 }
 
 :root {
-  --primary: 66, 90, 190;
-  --hvr-primary: 56, 77, 163;
-  --secondary: 210, 151, 190;
-  --hvr-secondary: 189, 136, 171;
-  --accent: 226, 201, 102;
-  --bg-color: 236, 238, 248;
-  --layer-bg: 245, 246, 251;
-  --text-color: 12, 14, 28;
-  --hvr-gray: 209, 213, 219;
-  --border-color: 209, 213, 219;
-  --input-border-color: 168, 162, 158;
+  --canvas: oklch(0.959 0.004 286.3);
+  --bg: oklch(0.983 0.003 286.4);
+  --bg-raised: oklch(1 0 0);
+  --bg-overlay: oklch(1 0 0);
+  --bg-sunken: oklch(0.959 0.004 286.3);
+  --bg-input: oklch(1 0 0);
+  --bg-backdrop: oklch(0.182 0.018 284.4 / 0.4);
+  --bg-inactive: oklch(0.915 0.008 286.2);
+
+  --hover: oklch(0.203 0.039 282.3 / 0.05);
+  --active: oklch(0.203 0.039 282.3 / 0.09);
+
+  --fg: oklch(0.198 0.01 285.5);
+  --fg-muted: oklch(0.472 0.019 285.6);
+  --fg-disabled: oklch(0.77 0.014 286.1);
+
+  --border: oklch(0.918 0.008 286.2);
+  --border-subtle: oklch(0.944 0.005 286.3);
+  --border-strong: oklch(0.857 0.012 286.1);
+  --border-hover: oklch(0.74 0.016 286);
+
+  --primary: oklch(0.54 0.184 278.3);
+  --primary-hover: oklch(0.496 0.182 277.5);
+  --primary-active: oklch(0.453 0.173 277);
+  --fg-primary: oklch(0.484 0.185 277);
+  --primary-subtle: oklch(0.54 0.184 278.3 / 0.1);
+  --primary-subtle-hover: oklch(0.54 0.184 278.3 / 0.16);
+  --border-primary: oklch(0.54 0.184 278.3 / 0.35);
+  --fg-on-primary: oklch(1 0 0);
+  --primary-focus: oklch(0.54 0.184 278.3 / 0.28);
+
+  --success: oklch(0.615 0.145 154.2);
+  --fg-success: oklch(0.51 0.114 156.5);
+  --success-subtle: oklch(0.615 0.145 154.2 / 0.12);
+  --border-success: oklch(0.615 0.145 154.2 / 0.3);
+
+  --warning: oklch(0.718 0.154 70);
+  --fg-warning: oklch(0.521 0.115 67.4);
+  --warning-subtle: oklch(0.766 0.16 72.6 / 0.16);
+  --border-warning: oklch(0.718 0.154 70 / 0.38);
+
+  --danger: oklch(0.586 0.199 21);
+  --danger-hover: oklch(0.532 0.19 21.9);
+  --fg-danger: oklch(0.527 0.189 21.6);
+  --danger-subtle: oklch(0.586 0.199 21 / 0.09);
+  --border-danger: oklch(0.586 0.199 21 / 0.3);
+
+  --info: oklch(0.597 0.167 254.9);
+  --fg-info: oklch(0.5 0.148 255.5);
+  --info-subtle: oklch(0.597 0.167 254.9 / 0.11);
+  --border-info: oklch(0.597 0.167 254.9 / 0.3);
+
+  --shadow-card: 0 1px 2px oklch(0.182 0.018 284.4 / 0.04);
+  --shadow-overlay:
+    0 0 0 1px oklch(0.182 0.018 284.4 / 0.02),
+    0 2px 4px -1px oklch(0.182 0.018 284.4 / 0.06),
+    0 10px 24px -6px oklch(0.182 0.018 284.4 / 0.14);
+  --shadow-modal:
+    0 4px 8px -2px oklch(0.182 0.018 284.4 / 0.06),
+    0 28px 56px -16px oklch(0.182 0.018 284.4 / 0.3);
 }
 
 .dark {
-  --primary: 99, 84, 176;
-  --hvr-primary: 109, 95, 179;
-  --secondary: 137, 57, 134;
-  --hvr-secondary: 179, 71, 175;
-  --accent: 206, 199, 64;
-  --bg-color: 19, 18, 23;
-  --layer-bg: 25, 25, 26;
-  --text-color: 236, 236, 238;
-  --hvr-gray: 31, 41, 55;
-  --border-color: 38, 38, 38;
-  --input-border-color: 82, 82, 91;
+  --canvas: oklch(0.16 0.006 285.7);
+  --bg: oklch(0.189 0.008 285.6);
+  --bg-raised: oklch(0.22 0.01 285.6);
+  --bg-overlay: oklch(0.255 0.011 285.6);
+  --bg-sunken: oklch(0.17 0.006 285.7);
+  --bg-input: oklch(1 0 0 / 0.035);
+  --bg-backdrop: oklch(0 0 0 / 0.62);
+  --bg-inactive: oklch(0.312 0.014 285.5);
+
+  --hover: oklch(1 0 0 / 0.06);
+  --active: oklch(1 0 0 / 0.1);
+
+  --fg: oklch(0.947 0.005 286.3);
+  --fg-muted: oklch(0.726 0.017 286);
+  --fg-disabled: oklch(0.446 0.016 285.7);
+
+  --border: oklch(0.288 0.013 285.6);
+  --border-subtle: oklch(0.255 0.011 285.6);
+  --border-strong: oklch(0.356 0.017 285.5);
+  --border-hover: oklch(0.48 0.018 286);
+
+  --primary: oklch(0.54 0.184 278.3);
+  --primary-hover: oklch(0.585 0.175 279.5);
+  --primary-active: oklch(0.626 0.165 280.5);
+  --fg-primary: oklch(0.768 0.122 283.1);
+  --primary-subtle: oklch(0.646 0.193 279.6 / 0.15);
+  --primary-subtle-hover: oklch(0.646 0.193 279.6 / 0.23);
+  --border-primary: oklch(0.646 0.193 279.6 / 0.4);
+  --fg-on-primary: oklch(1 0 0);
+  --primary-focus: oklch(0.646 0.193 279.6 / 0.35);
+
+  --success: oklch(0.641 0.133 157.7);
+  --fg-success: oklch(0.735 0.136 159.3);
+  --success-subtle: oklch(0.641 0.133 157.7 / 0.15);
+  --border-success: oklch(0.641 0.133 157.7 / 0.35);
+
+  --warning: oklch(0.772 0.159 73.9);
+  --fg-warning: oklch(0.803 0.146 77);
+  --warning-subtle: oklch(0.772 0.159 73.9 / 0.14);
+  --border-warning: oklch(0.772 0.159 73.9 / 0.35);
+
+  --danger: oklch(0.6 0.195 20);
+  --danger-hover: oklch(0.644 0.185 19);
+  --fg-danger: oklch(0.764 0.141 18.7);
+  --danger-subtle: oklch(0.626 0.193 23 / 0.15);
+  --border-danger: oklch(0.626 0.193 23 / 0.38);
+
+  --info: oklch(0.647 0.166 254.3);
+  --fg-info: oklch(0.769 0.123 250.3);
+  --info-subtle: oklch(0.647 0.166 254.3 / 0.15);
+  --border-info: oklch(0.647 0.166 254.3 / 0.36);
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.24);
+  --shadow-overlay:
+    0 0 0 1px oklch(0 0 0 / 0.3), 0 12px 28px -6px oklch(0 0 0 / 0.6);
+  --shadow-modal:
+    0 0 0 1px oklch(0 0 0 / 0.3), 0 32px 64px -16px oklch(0 0 0 / 0.75);
 }
 
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+
+  ::placeholder {
+    color: var(--fg-muted);
+  }
+
   .autofill:-webkit-autofill,
   .autofill:-webkit-autofill:hover,
   .autofill:-webkit-autofill:focus,
   .autofill-styles select:-webkit-autofill,
   .autofill-styles select:-webkit-autofill:hover,
   .autofill-styles select:-webkit-autofill:focus {
-    -webkit-text-fill-color: rgb(var(--text-color));
+    -webkit-text-fill-color: var(--fg);
     -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0) inset;
     transition: background-color 5000s ease-in-out 0s;
   }
+}
+
+/*
+  Used in theme.js for disabling transitions during theme switching
+*/
+.disable-transitions,
+.disable-transitions *,
+.disable-transitions *::before,
+.disable-transitions *::after {
+  transition: none !important;
 }
 
 @keyframes slideUp {
@@ -98,28 +261,6 @@
   animation: slideDown 0.5s ease-out forwards;
 }
 
-/*
-  remove focus outline which appears when clicking on a chart
-*/
-.recharts-wrapper:focus,
-.recharts-wrapper *:focus {
-  outline: none !important;
-}
-
-.recharts-wrapper svg:focus {
-  outline: none;
-  stroke: none;
-}
-
 .ag-header-hidden .ag-header {
   display: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }

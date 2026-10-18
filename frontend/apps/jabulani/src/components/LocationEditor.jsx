@@ -18,12 +18,12 @@ const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const LocationMap = lazy(() => import("./LocationMap.jsx"));
 const searchBoxTheme = {
   variables: {
-    colorText: "var(--color-text_color)",
-    colorSecondary: "rgba(var(--text-color), 0.6)",
-    colorBackground: "var(--color-layer_bg)",
-    colorBackgroundHover: "rgba(var(--text-color), 0.08)",
-    colorBackgroundActive: "rgba(var(--text-color), 0.12)",
-    border: "1px solid var(--color-input_border_color)",
+    colorText: "var(--fg)",
+    colorSecondary: "var(--fg-muted)",
+    colorBackground: "var(--bg-overlay)",
+    colorBackgroundHover: "var(--hover)",
+    colorBackgroundActive: "var(--active)",
+    border: "1px solid var(--border-strong)",
     borderRadius: "0.5rem",
     boxShadow: "none",
   },
@@ -115,7 +115,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
   return (
     <div className={`flex flex-col ${compact ? "gap-3 lg:gap-4" : "gap-4"}`}>
       <div>
-        <label className="text-text_color mb-1 block text-sm font-medium">
+        <label className="text-fg mb-1 block text-sm font-medium">
           Address
         </label>
         <SearchBox
@@ -128,7 +128,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
           onRetrieve={handleRetrieve}
           placeholder="Type your address..."
         />
-        <p className="text-text_color/60 mt-2 text-xs leading-5">
+        <p className="text-fg-muted mt-2 text-xs leading-5">
           {compact && (
             <span className="lg:hidden">
               Shown exactly as typed. Select a suggestion to place the pin.
@@ -145,7 +145,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
       {!showMap && address.trim() && (
         <Button
           type="button"
-          variant="tertiary"
+          variant="secondary"
           styles="w-fit px-3 py-2"
           buttonText="Set pin manually"
           onClick={handleManualPin}
@@ -156,9 +156,8 @@ export default function LocationEditor({ value, onChange, compact = false }) {
         <Suspense
           fallback={
             <div
-              className={`border-border_color animate-pulse rounded-lg border
-                bg-gray-100 dark:bg-gray-800
-                ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
+              className={`border-border bg-bg-sunken animate-pulse rounded-lg
+                border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
             />
           }
         >
@@ -170,19 +169,18 @@ export default function LocationEditor({ value, onChange, compact = false }) {
         </Suspense>
       ) : (
         <div
-          className={`border-border_color relative overflow-hidden rounded-lg
-            border ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
+          className={`border-border relative overflow-hidden rounded-lg border
+            ${compact ? "h-52 lg:h-72" : "h-72 sm:h-96"}`}
         >
           <div
-            className="flex h-full items-center justify-center bg-gray-100 p-6
-              dark:bg-gray-800"
+            className="bg-bg-sunken flex h-full items-center justify-center p-6"
           >
             <div className="text-center">
               <Icon
                 icon={Location01Icon}
-                styles="mx-auto mb-3 size-14 text-gray-400"
+                styles="mx-auto mb-3 size-14 text-fg-muted"
               />
-              <p className="text-text_color font-medium">
+              <p className="text-fg font-medium">
                 {compact ? (
                   <span className="lg:hidden">
                     Choose an address to place the pin
@@ -196,7 +194,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
                   </span>
                 )}
               </p>
-              <p className="text-text_color/60 mt-1 text-sm">
+              <p className="text-fg-muted mt-1 text-sm">
                 {compact ? (
                   <span className="lg:hidden">
                     No matching result? Set the pin manually.

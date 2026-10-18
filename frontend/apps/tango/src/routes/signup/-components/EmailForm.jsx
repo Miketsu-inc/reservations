@@ -49,7 +49,7 @@ export default function EmailForm({ isCompleted, sendInputData }) {
   return (
     <>
       <h2 className="mt-2 text-center text-xl font-semibold">Email</h2>
-      <p className="mb-8 py-2 text-center text-gray-600 dark:text-gray-300">
+      <p className="text-fg-muted mt-1 mb-6 text-center text-sm">
         Enter your email to get started with creating your account
       </p>
       <FloatingLabelInput
@@ -63,10 +63,10 @@ export default function EmailForm({ isCompleted, sendInputData }) {
         inputValidation={emailValidation}
         inputData={handleInputData}
       />
-      <div className="mt-10 flex items-center justify-center">
+      <div className="mt-6 flex items-center justify-center">
         <Button
           variant="primary"
-          styles="w-full py-2"
+          styles="w-full py-2.5"
           type="button"
           onClick={handleClick}
           buttonText="Continue"

@@ -66,9 +66,7 @@ export default function CalendarEventContent({ eventInfo }) {
     return (
       <div className="flex size-full min-w-0 items-center gap-4">
         {timeText && (
-          <span
-            className="w-28 shrink-0 text-sm text-gray-500 dark:text-gray-400"
-          >
+          <span className="text-fg-muted w-28 shrink-0 text-sm">
             {timeText}
           </span>
         )}

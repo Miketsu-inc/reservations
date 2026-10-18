@@ -375,7 +375,7 @@ export default function EditBookingPanel({
           )}
         </NestedSidePanel>
         <div
-          className="no-scrollbar relative flex h-full w-full flex-col
+          className="relative flex h-full w-full scrollbar-none flex-col
             overflow-y-auto"
         >
           <BookingHeader
@@ -388,9 +388,9 @@ export default function EditBookingPanel({
             onCancel={() => setIsCancelModalOpen(true)}
             onClose={onClose}
           />
-          <div className="flex w-full flex-col gap-8 px-6 pt-9 pb-28">
-            <label className="flex flex-col gap-1">
-              <span>Service</span>
+          <div className="flex w-full flex-col gap-5 px-6 pt-8 pb-28">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-fg text-sm">Service</span>
               <ServiceCard
                 service={resolveServiceData(
                   selectedService,
@@ -428,15 +428,16 @@ export default function EditBookingPanel({
             />
             {isPastBooking ? (
               <div
-                className="border-input_border_color flex items-center
-                  justify-between rounded-lg border px-4 py-3"
+                className="border-border bg-bg-sunken text-fg-muted flex
+                  items-center justify-between rounded-lg border px-3 py-2
+                  text-sm"
               >
                 <div className="flex items-center gap-2">
-                  <Icon icon={Calendar02Icon} styles="size-5" />
+                  <Icon icon={Calendar02Icon} styles="size-4" />
                   <span>{monthDateFormat(originalBookingData.start)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Icon icon={Clock01Icon} styles="size-5" />
+                  <Icon icon={Clock01Icon} styles="size-4" />
                   <span>{`${timeStringFromDate(originalBookingData.start, preferences?.time_format)} - ${timeStringFromDate(originalBookingData.end, preferences?.time_format)}`}</span>{" "}
                 </div>
               </div>
@@ -444,19 +445,20 @@ export default function EditBookingPanel({
               <div className="flex flex-row items-end gap-2">
                 <DatePicker
                   styles=""
-                  labelText="Date"
+                  labelText="Date & time"
                   value={bookingData.date}
                   disabledBefore={new Date()}
                   onSelect={(date) => updateBookingData({ date: date })}
                 />
                 <input
-                  className="bg-layer_bg border-input_border_color
-                    focus:border-primary focus:ring-primary/30
-                    disabled:text-text_color/70
-                    disabled:border-input_border_color/60 w-32 resize-none
-                    rounded-lg border px-2 py-1.5 placeholder-stone-500
-                    outline-hidden transition-[border-color,box-shadow]
-                    duration-150 ease-in-out focus:ring-4 dark:scheme-dark"
+                  className="bg-bg-input border-border-strong
+                    hover:not-disabled:not-focus:border-border-hover
+                    focus:border-primary focus:ring-primary-focus
+                    disabled:text-fg-disabled disabled:border-border w-32
+                    rounded-lg border px-3 py-1.5 outline-hidden
+                    transition-[border-color,box-shadow] duration-150
+                    ease-in-out focus:ring-3 md:py-2 md:text-sm
+                    dark:scheme-dark"
                   type="time"
                   value={bookingData.time}
                   onChange={(e) => {
@@ -474,12 +476,15 @@ export default function EditBookingPanel({
               disabled={isPastBooking || isBookingCompleted}
             />
             {isRecurring && (
-              <div
-                className="border-input_border_color flex items-center gap-2
-                  rounded-lg border p-3"
-              >
-                <Icon icon={ArrowReloadHorizontalIcon} styles="size-5" />
-                <span>Part of repeating series</span>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-fg text-sm">Repeat</span>
+                <div
+                  className="border-border-strong bg-bg-raised flex items-center
+                    gap-2 rounded-lg border px-3 py-2"
+                >
+                  <Icon icon={ArrowReloadHorizontalIcon} styles="size-4.5" />
+                  <span className="text-[15px]">Part of repeating series</span>
+                </div>
               </div>
             )}
             {!isPastBooking ? (
@@ -497,7 +502,7 @@ export default function EditBookingPanel({
             ) : bookingData.merchantNote ? (
               <div className="flex flex-col gap-3">
                 <span className="text-sm font-medium">Your Note</span>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-fg-muted text-sm">
                   {bookingData.merchantNote}
                 </div>
               </div>
@@ -508,8 +513,8 @@ export default function EditBookingPanel({
         </div>
         {!isBookingCompleted && (
           <div
-            className="border-border_color bg-layer_bg items center fixed
-              bottom-0 flex w-full border-t px-6 py-4 lg:w-110"
+            className="border-border bg-bg items center fixed bottom-0 flex
+              w-full border-t px-6 py-4 lg:w-110"
           >
             <Button
               styles="py-2 px-4 w-full"
@@ -598,12 +603,12 @@ function BookingHeader({
                 {isPastBooking && bookingData.bookingStatus !== "completed" && (
                   <PopoverClose asChild>
                     <button
-                      className="hover:bg-hvr_gray gap-2"
+                      className="hover:bg-hover gap-2"
                       onClick={() =>
                         updateBookingData({ bookingStatus: "completed" })
                       }
                     >
-                      <Icon icon={Tick02Icon} styles="size-6 fill-text_color" />
+                      <Icon icon={Tick02Icon} styles="size-6 fill-fg" />
                       Completed
                     </button>
                   </PopoverClose>
@@ -614,8 +619,7 @@ function BookingHeader({
                   bookingData.bookingStatus !== "no-show" && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray gap-3 text-red-600
-                          dark:text-red-800"
+                        className="hover:bg-hover text-fg-danger gap-3"
                         onClick={() =>
                           updateBookingData({ bookingStatus: "no-show" })
                         }
@@ -629,7 +633,7 @@ function BookingHeader({
                   !isPastBooking && (
                     <PopoverClose asChild>
                       <button
-                        className="hover:bg-hvr_gray cursor-pointer gap-3"
+                        className="hover:bg-hover cursor-pointer gap-3"
                         onClick={() =>
                           updateBookingData({ bookingStatus: "confirmed" })
                         }
@@ -640,14 +644,13 @@ function BookingHeader({
                   )}
                 {!isPastBooking && (
                   <PopoverClose asChild>
-                    <button className="hover:bg-hvr_gray">Reschedule</button>
+                    <button className="hover:bg-hover">Reschedule</button>
                   </PopoverClose>
                 )}
                 {!isPastBooking && (
                   <PopoverClose asChild>
                     <button
-                      className="hover:bg-hvr_gray text-red-600
-                        dark:text-red-800"
+                      className="hover:bg-hover text-fg-danger"
                       onClick={onCancel}
                     >
                       Cancel

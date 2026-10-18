@@ -13,14 +13,14 @@ export default function DangerZoneItem({
         sm:items-center sm:gap-6"
     >
       <div className="flex flex-col">
-        <span className="font-medium">{title}</span>
-        <span className="text-text_color/65 mt-1 text-sm">{description}</span>
+        <span className="text-sm font-medium">{title}</span>
+        <span className="text-fg-muted mt-0.5 text-sm">{description}</span>
       </div>
       {action ?? (
         <Button
           onClick={onClick}
           variant="danger"
-          styles="w-fit px-3 py-2 text-nowrap"
+          styles="w-fit px-3 py-2 text-sm text-nowrap"
           buttonText={buttonText}
         />
       )}

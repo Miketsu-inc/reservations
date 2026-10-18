@@ -85,7 +85,7 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
 
   return (
     <>
-      <h2 className="mb-8 text-center text-xl font-semibold">Password</h2>
+      <h2 className="mb-6 text-center text-xl font-semibold">Password</h2>
       <FloatingLabelInput
         ref={passwordRef}
         type="password"
@@ -108,10 +108,10 @@ export default function PasswordForm({ isCompleted, sendInputData }) {
         errorText={errorMessage.confirmPassword}
         inputData={handleInputData}
       />
-      <div className="mt-10 flex items-center justify-center">
+      <div className="mt-6 flex items-center justify-center">
         <Button
           variant="primary"
-          styles="w-full py-2"
+          styles="w-full py-2.5"
           type="button"
           onClick={handleClick}
           buttonText="Continue"

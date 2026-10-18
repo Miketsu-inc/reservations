@@ -6,7 +6,6 @@ import {
   Icon,
   SearchInput,
 } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
 import { useState } from "react";
 import NewCustomerOverlay from "./NewCutomerForm";
 
@@ -19,8 +18,6 @@ export default function CustomerSelector({
 }) {
   const [searchText, setSearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState(selected);
-
-  const { isWindowSmall: isInDrawer } = useWindowSize();
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -52,13 +49,10 @@ export default function CustomerSelector({
   }
 
   return (
-    <div
-      className={`relative flex h-full flex-col
-        ${isInDrawer ? "w-full px-0" : "px-4"} `}
-    >
-      <div className={`flex flex-col gap-5 pt-6 pb-2 ${styles}`}>
+    <div className={"relative flex h-full w-full flex-col px-4"}>
+      <div className={`flex flex-col gap-5 pt-6 pb-3 ${styles}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-text_color text-xl font-semibold">
+          <h2 className="text-fg text-lg font-semibold">
             {isGroupMode ? "Select clients" : "Select a client"}
           </h2>
         </div>
@@ -67,12 +61,12 @@ export default function CustomerSelector({
           searchText={searchText}
           onChange={(text) => setSearchText(text)}
           placeholder="Search client..."
-          styles="w-full p-2"
+          styles="w-full"
         />
       </div>
 
       {!isGroupMode && (
-        <ul className="border-border_color flex flex-col gap-3 border-b pb-2">
+        <ul className="border-border flex flex-col gap-1 border-b pb-2">
           <NewCustomerOverlay
             onSave={handleNewCustomer}
             trigger={
@@ -95,7 +89,7 @@ export default function CustomerSelector({
       <div
         className="min-h-0 flex-1 overflow-y-auto pt-4 pb-24 dark:scheme-dark"
       >
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-1">
           {filteredCustomers?.map((customer) => {
             const isSelected = selectedCustomers.some(
               (c) => c.customer_id === customer.customer_id
@@ -117,13 +111,13 @@ export default function CustomerSelector({
 
       {isGroupMode && (
         <div
-          className="bg-layer_bg border-border_color absolute right-0 bottom-0
-            left-0 border-t px-4 py-2"
+          className="bg-bg border-border absolute right-0 bottom-0 left-0
+            border-t px-4 py-2"
         >
           <Button
             buttonText="Save"
             onClick={() => onSave(selectedCustomers)}
-            styles="w-full p-2"
+            styles="w-full py-2 text-sm"
           />
         </div>
       )}
@@ -146,21 +140,20 @@ function CustomerRow({
   return (
     <button
       onClick={onSelect ? () => onSelect(customer) : undefined}
-      className="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3
-        py-2 text-left transition-all hover:bg-gray-200/40
-        dark:hover:bg-gray-700/10"
+      className="hover:bg-hover flex w-full cursor-pointer items-center gap-3
+        rounded-lg px-2 py-2 text-left"
       {...props}
     >
       {isAction ? (
         <div
-          className="text-primary bg-primary/20 flex size-14 shrink-0
+          className="text-fg-primary bg-primary-subtle flex size-12 shrink-0
             items-center justify-center rounded-full"
         >
           {icon}
         </div>
       ) : (
         <Avatar
-          styles="size-14! text-[16px]! shrink-0 rounded-full!"
+          styles="size-12! text-sm! shrink-0"
           img={customer?.avatar_url}
           initials={
             customer?.first_name && customer?.last_name
@@ -171,12 +164,12 @@ function CustomerRow({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-text_color truncate font-semibold">
+        <span className="text-fg truncate text-sm">
           {isAction ? label : `${customer?.first_name} ${customer?.last_name}`}
         </span>
 
         {!isAction && customer?.phone_number && (
-          <span className="text-sm text-gray-500">{customer.phone_number}</span>
+          <span className="text-fg-muted text-xs">{customer.phone_number}</span>
         )}
       </div>
 
