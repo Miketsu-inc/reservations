@@ -332,7 +332,7 @@ export default function BlockedTimePanel({
       )}
 
       <div className="flex flex-col gap-5 px-6 pb-6">
-        <p className="text-2xl font-semibold">
+        <p className="text-xl font-semibold">
           {isEditing ? "Edit Blocked Time" : "Add Blocked Time"}
         </p>
         <BlockedTypeSection
@@ -415,8 +415,8 @@ export default function BlockedTimePanel({
       </div>
 
       <div
-        className="border-border bg-bg-overlay fixed bottom-0 flex w-full
-          items-center gap-2 border-t px-6 py-4"
+        className="border-border bg-bg fixed bottom-0 flex w-full items-center
+          gap-2 border-t px-6 py-4"
       >
         {isEditing && (
           <Button

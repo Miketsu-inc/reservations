@@ -31,22 +31,22 @@ export default function CustomerProfile({
         className="border-border flex w-full flex-col items-center gap-3
           border-b"
       >
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-4">
           <Avatar
-            styles="size-28! text-[24px]! shrink-0"
+            styles="size-24! text-xl! shrink-0"
             img={customer?.avatar_url}
             initials={`${customer?.first_name?.[0] || "?"}${customer?.last_name?.[0] || ""}`}
           />
-          <div className="text-fg text-center text-xl font-bold">
+          <div className="text-fg text-center text-lg font-bold">
             {customer?.first_name} {customer?.last_name}
           </div>
         </div>
 
-        <div className="flex w-full flex-col items-center gap-8">
+        <div className="flex w-full flex-col items-center gap-6">
           <div className="flex w-full flex-col items-center gap-2">
             {customer.email && (
               <div className="flex items-center gap-3 text-sm">
-                <Icon icon={Mail01Icon} styles="size-5 text-fg-muted" />
+                <Icon icon={Mail01Icon} styles="size-4 text-fg-muted" />
                 <span className="truncate">{customer.email}</span>
               </div>
             )}
@@ -59,18 +59,18 @@ export default function CustomerProfile({
             )}
           </div>
 
-          <div className="flex w-full items-center justify-center gap-5 pb-5">
+          <div className="flex w-full items-center justify-center gap-2 pb-5">
             {!disabled && (
               <Button
                 variant="tertiary"
                 buttonText="Remove"
                 onClick={onRemove}
-                styles="px-2 py-1.5 w-28"
+                styles="px-3 py-1.5 w-28 text-sm"
               />
             )}
             <Link
-              className="text-fg border-border hover:bg-hover w-28 rounded-lg
-                border-2 bg-transparent px-2 py-1.5 text-center shadow-none"
+              className="text-fg border-border-strong bg-bg-input hover:bg-hover
+                w-28 rounded-lg border px-3 py-1.5 text-center text-sm"
               to={`/customers/${customer?.customer_id}`}
               from=""
             >
@@ -79,35 +79,27 @@ export default function CustomerProfile({
           </div>
         </div>
       </div>
-      <div className="flex w-full flex-col justify-start gap-3 px-8">
-        {customer.birthday && (
-          <div className="flex items-center gap-3 text-sm">
-            <Icon icon={BirthdayCakeIcon} styles="size-5 text-fg-muted" />
-            <span>{formatBirthday(customer.birthday)}</span>
-          </div>
-        )}
-        {customer.last_visited && (
-          <div className="flex items-center gap-3 text-sm">
-            <Icon icon={User03Icon} styles="size-5 text-fg-muted" />
+      {customer.birthday && (
+        <div className="flex items-center gap-3 px-6 pb-3 text-sm">
+          <Icon icon={BirthdayCakeIcon} styles="size-4 text-fg-muted" />
+          <span>{formatBirthday(customer.birthday)}</span>
+        </div>
+      )}
+      {customer.last_visited && (
+        <div className="flex items-center gap-3 px-6 pb-3 text-sm">
+          <Icon icon={User03Icon} styles="size-4 text-fg-muted" />
 
-            <span className="">
-              Last visited: {formatBirthday(customer.last_visited)}
-            </span>
-          </div>
-        )}
-      </div>
+          <span>Last visited: {formatBirthday(customer.last_visited)}</span>
+        </div>
+      )}
       {customer.customer_note && (
         <div className="w-full px-4 pb-4">
-          <div className="bg-hover rounded-md px-4 py-4">
-            <div className="mb-2 flex items-center gap-3">
-              <Icon icon={Message01Icon} styles="size-4 mt-1 fill-fg" />
-              <span className="text-sm font-medium">
-                Note from {customer.first_name}
-              </span>
+          <div className="bg-bg-sunken rounded-lg px-4 py-3">
+            <div className="mb-2 flex items-center gap-2">
+              <Icon icon={Message01Icon} styles="size-4.5" />
+              <span className="text-sm">Note from {customer.first_name}</span>
             </div>
-            <p className="text-fg-muted text-sm leading-relaxed">
-              {customer.customer_note}
-            </p>
+            <p className="text-fg-muted text-sm">{customer.customer_note}</p>
           </div>
         </div>
       )}

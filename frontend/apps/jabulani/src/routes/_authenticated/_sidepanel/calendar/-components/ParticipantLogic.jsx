@@ -91,7 +91,7 @@ export function ParticipantSideBar({
     return (
       <button
         className="hover:bg-hover flex h-full w-full cursor-pointer flex-col
-          items-start px-3 py-10"
+          items-center px-3 pt-10"
         onClick={() => setIsExpanded(true)}
       >
         <div className="flex flex-col items-center justify-center gap-3">
@@ -101,9 +101,12 @@ export function ParticipantSideBar({
           >
             <Icon icon={PlusSignIcon} styles="size-6" />
           </div>
-          <div>
-            <p className="font-semibold">Add customer</p>
-            <span className="text-fg-muted">Or leave empty for walk-ins</span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-semibold">Add customer</p>
+            <span className="text-fg-muted text-xs text-balance">
+              Or leave empty for{" "}
+              <span className="whitespace-nowrap">walk-ins</span>
+            </span>
           </div>
         </div>
       </button>
@@ -138,15 +141,17 @@ export function MobileParticipantSection({
 
   if (isWindowSmall) {
     return (
-      <div className="flex flex-col gap-1">
-        <span>{isGroupBooking ? "Participants" : "Participant"}</span>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-fg text-sm">
+          {isGroupBooking ? "Participants" : "Customer"}
+        </span>
         {isGroupBooking ? (
           isPastBooking && !hasSelection ? (
             <div
-              className="border-border flex items-center gap-3 rounded-md border
-                p-4"
+              className="border-border bg-bg-sunken text-fg-muted flex
+                items-center gap-3 rounded-lg border px-3 py-2 text-sm"
             >
-              <span className="text-fg">No participants attended</span>
+              <span>No participants attended</span>
             </div>
           ) : (
             <ParticipantsCard
@@ -167,16 +172,16 @@ export function MobileParticipantSection({
               />
             ) : isPastBooking ? (
               <div
-                className="border-border flex items-center gap-6 rounded-md
-                  border p-4 px-6"
+                className="border-border bg-bg-sunken flex items-center gap-3
+                  rounded-lg border px-3 py-2"
               >
                 <div
-                  className="bg-bg-sunken flex size-12 items-center
+                  className="bg-bg-inactive flex size-8 items-center
                     justify-center rounded-full"
                 >
-                  <Icon icon={WalkingIcon} styles="fill-fg-muted size-6" />
+                  <Icon icon={WalkingIcon} styles="text-fg-muted size-4" />
                 </div>
-                <span className="text-fg">Walk-in Customer</span>
+                <span className="text-fg-muted text-sm">Walk-in customer</span>
               </div>
             ) : (
               <AddCustomerCard onClick={onOpenCustomerSelector} />

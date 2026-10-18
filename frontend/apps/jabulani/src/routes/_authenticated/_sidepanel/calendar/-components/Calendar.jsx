@@ -502,7 +502,7 @@ export default function Calendar({ router, route, search }) {
       )}
       <div className="relative flex shrink-0 flex-col pb-4 md:flex-row md:gap-2">
         <div
-          className="flex w-full flex-col justify-between md:flex-row
+          className="flex w-full flex-col justify-between gap-2 md:flex-row
             md:items-center"
         >
           <p className="text-xl font-semibold whitespace-nowrap md:text-2xl">

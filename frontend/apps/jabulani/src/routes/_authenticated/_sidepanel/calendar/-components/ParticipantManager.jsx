@@ -106,7 +106,7 @@ export default function ParticipantManager({
   );
 
   return (
-    <div className="bg-bg-overlay relative flex h-full w-full flex-col">
+    <div className="bg-bg relative flex h-full w-full flex-col">
       {isWindowSmall ? (
         <Drawer
           open={nestedPageState.isOpen}
@@ -139,50 +139,48 @@ export default function ParticipantManager({
       >
         <div className="border-border flex flex-col gap-5 border-b pb-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-fg text-xl font-semibold">Participants</p>
+            <p className="text-fg text-lg font-semibold">Participants</p>
             <span
-              className="bg-primary-subtle text-fg-primary rounded-md px-2.5
-                py-0.5 text-sm font-semibold"
+              className="bg-primary-subtle text-fg-primary rounded-full px-2
+                py-0.5 text-xs font-semibold"
             >
               {participants.length} / {maxParticipants}
             </span>
           </div>
           {!disabled ? (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <NewCustomerOverlay
                 onSave={handleSaveNewCustomer}
                 trigger={
                   <button
                     className="hover:bg-hover flex w-full cursor-pointer
-                      items-center gap-4 rounded-lg px-3 py-2"
+                      items-center gap-3 rounded-lg px-2 py-1.5"
                   >
                     <div
-                      className="bg-primary-subtle text-fg-primary flex size-14
+                      className="bg-primary-subtle text-fg-primary flex size-12
                         shrink-0 items-center justify-center rounded-full"
                     >
                       <Icon icon={PlusSignIcon} styles="size-6" />
                     </div>
                     <div className="flex flex-col items-start">
-                      <span className="text-fg font-medium">
-                        Add New Customer
-                      </span>
+                      <span className="text-fg text-sm">Add new customer</span>
                     </div>
                   </button>
                 }
               />
               <button
                 className="hover:bg-hover flex w-full cursor-pointer
-                  items-center gap-4 rounded-lg px-3 py-2"
+                  items-center gap-3 rounded-lg px-2 py-1.5"
                 onClick={handleOpenAdd}
               >
                 <div
-                  className="bg-primary-subtle text-fg-primary flex size-14
+                  className="bg-primary-subtle text-fg-primary flex size-12
                     shrink-0 items-center justify-center rounded-full"
                 >
-                  <Icon icon={User03Icon} styles="size-7 text-fg-primary" />
+                  <Icon icon={User03Icon} styles="size-6 text-fg-primary" />
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-fg font-medium">Select Customers</span>
+                  <span className="text-fg text-sm">Select customers</span>
                 </div>
               </button>
             </div>
@@ -193,20 +191,20 @@ export default function ParticipantManager({
           )}
         </div>
 
-        <div className="no-scrollbar flex-1 overflow-y-auto pt-6">
+        <div className="no-scrollbar flex-1 overflow-y-auto pt-4">
           {participants.length === 0 ? (
             <div
-              className="flex h-full flex-col items-center justify-start gap-4
-                pt-5 text-center opacity-60"
+              className="flex h-full flex-col items-center justify-start gap-3
+                pt-6 text-center"
             >
               <div
-                className="bg-hover flex size-18 items-center justify-center
-                  rounded-full"
+                className="bg-bg-inactive flex size-14 items-center
+                  justify-center rounded-full"
               >
-                <Icon icon={UserGroupIcon} styles="size-12 text-fg-muted" />
+                <Icon icon={UserGroupIcon} styles="size-7 text-fg-muted" />
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-lg font-medium">No participants yet</p>
+                <p className="text-sm font-semibold">No participants yet</p>
                 <p className="text-fg-muted text-sm">
                   Add customers to this group booking.
                 </p>
@@ -244,45 +242,50 @@ function ParticipantItem({
   return (
     <div
       className="group hover:bg-hover relative flex w-full items-center
-        justify-between gap-2 rounded-xl px-3 py-2"
+        justify-between gap-2 rounded-lg px-2 py-1.5"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <Avatar
-          styles="size-14! text-[16px]! shrink-0"
-          img={customer?.avatar_url}
-          initials={
-            customer?.first_name && customer?.last_name
-              ? `${customer.first_name[0]}${customer.last_name[0]}`
-              : "?"
-          }
-        />
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="relative shrink-0">
+          <Avatar
+            styles="size-12! text-sm!"
+            img={customer?.avatar_url}
+            initials={
+              customer?.first_name && customer?.last_name
+                ? `${customer.first_name[0]}${customer.last_name[0]}`
+                : "?"
+            }
+          />
+          {customer.participant_id && (
+            <div
+              className={`ring-bg absolute -right-1 -bottom-1 inline-flex
+              size-4.5 items-center justify-center rounded-full ring-2
+              ${status.bgColor}`}
+              title={customer.status} // couldnt do with tooltip
+            >
+              {status.icon}
+            </div>
+          )}
+        </div>
         <div className="flex min-w-0 flex-col">
-          <span className="text-fg truncate font-semibold">
+          <span className="text-fg truncate text-sm font-medium">
             {customer.first_name} {customer.last_name}
           </span>
 
           {customer.phone_number && (
-            <span className="text-fg-muted text-sm">
+            <span className="text-fg-muted text-xs">
               {customer.phone_number}
             </span>
           )}
         </div>
       </div>
-      {customer.participant_id && (
-        <div
-          className={`ring-bg-raised absolute top-12 left-13 inline-flex size-5
-          items-center justify-center gap-2 rounded-full text-xs ring-2
-          ${status.bgColor}`}
-          title={customer.status} // couldnt do with tooltip
-        >
-          {status.icon}
-        </div>
-      )}
 
       <Popover>
         <PopoverTrigger asChild>
-          <button className="cursor-pointer rounded-lg p-0.5">
-            <Icon icon={MoreVerticalIcon} styles="size-6 text-fg-muted" />
+          <button
+            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
+              rounded-lg p-1.5"
+          >
+            <Icon icon={MoreVerticalIcon} styles="size-4.5" />
           </button>
         </PopoverTrigger>
         <PopoverContent side="left" styles="w-auto">
