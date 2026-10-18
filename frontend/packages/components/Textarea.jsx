@@ -29,7 +29,7 @@ export default function Textarea({
         id={id}
         name={name}
         className={`${styles} bg-bg-input border-border-strong
-          hover:not-disabled:not-focus:border-fg-muted focus:border-primary
+          hover:not-disabled:not-focus:border-border-hover focus:border-primary
           focus:ring-primary-focus disabled:text-fg-disabled
           disabled:border-border disabled:bg-bg-sunken resize-none rounded-lg
           border outline-hidden transition-[border-color,box-shadow]

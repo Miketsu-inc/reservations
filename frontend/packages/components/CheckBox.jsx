@@ -9,7 +9,7 @@ export default function CheckBox({ checked, styles, onChange, ...props }) {
         checked={checked}
         onChange={onChange}
         className={`${styles} checked:border-primary checked:bg-primary
-          bg-bg-input hover:not-checked:border-fg-muted
+          bg-bg-input hover:not-checked:border-border-hover
           focus-visible:ring-primary-focus border-border-strong size-5
           cursor-pointer appearance-none rounded-md border outline-hidden
           transition-colors focus-visible:ring-2`}

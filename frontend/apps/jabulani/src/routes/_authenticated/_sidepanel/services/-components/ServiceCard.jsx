@@ -61,7 +61,7 @@ export default function ServiceCard({
   return (
     <div
       className={`shadow-card relative flex h-fit max-w-full flex-row
-        overflow-hidden ${service.is_active ? "" : "opacity-60"}`}
+        overflow-hidden rounded-xl ${service.is_active ? "" : "opacity-60"}`}
     >
       <div
         style={{

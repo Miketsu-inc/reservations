@@ -65,7 +65,7 @@ export default forwardRef(function FloatingLabelInput(
               ? "border-danger ring-danger-subtle ring-3"
               : isInputFocused
                 ? "border-primary ring-primary-focus ring-3"
-                : "border-border-strong hover:border-fg-muted"
+                : "border-border-strong hover:border-border-hover"
           } `}
       >
         <InputBase

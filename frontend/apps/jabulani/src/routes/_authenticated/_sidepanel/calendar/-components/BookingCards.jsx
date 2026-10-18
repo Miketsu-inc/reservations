@@ -35,7 +35,7 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
   return (
     <button
       onClick={onClick}
-      className="bg-bg-input border-border-strong hover:border-fg-muted flex
+      className="bg-bg-input border-border-strong hover:border-border-hover flex
         w-full items-center justify-between rounded-lg border px-3 py-2.5
         text-sm"
     >
@@ -255,7 +255,7 @@ export function ServiceCard({ service, onClick, disabled, styles }) {
 export function AddCustomerCard({ onClick }) {
   return (
     <button
-      className="bg-bg-input border-border-strong hover:border-fg-muted flex
+      className="bg-bg-input border-border-strong hover:border-border-hover flex
         w-full items-center justify-between rounded-lg border px-3 py-2.5
         text-left text-sm"
       onClick={onClick}
@@ -294,7 +294,7 @@ export function RecurSummaryCard({ recurData, booking, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="bg-bg-input border-border-strong hover:border-fg-muted flex
+      className="bg-bg-input border-border-strong hover:border-border-hover flex
         w-full cursor-pointer items-center justify-between rounded-lg border
         px-3 py-2 text-left text-sm"
     >

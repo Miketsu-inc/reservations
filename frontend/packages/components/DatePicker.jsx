@@ -75,7 +75,7 @@ export default function DatePicker({
               <button
                 className={`${styles} ${disabled ? "outline-none" : ""}
                   bg-bg-input border-border-strong
-                  hover:not-disabled:border-fg-muted
+                  hover:not-disabled:not-focus-visible:not-data-popup-open:border-border-hover
                   focus-visible:border-primary focus-visible:ring-primary-focus
                   w-full rounded-lg border px-3 py-2 text-left outline-hidden
                   focus-visible:ring-2 md:text-sm`}

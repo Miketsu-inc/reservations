@@ -404,7 +404,7 @@ export default function NewBookingPanel({
                     />
                     <input
                       className="bg-bg-input border-border-strong
-                        hover:not-disabled:not-focus:border-fg-muted
+                        hover:not-disabled:not-focus:border-border-hover
                         focus:border-primary focus:ring-primary-focus
                         disabled:text-fg-disabled disabled:border-border w-32
                         rounded-lg border px-3 py-1.5 outline-hidden

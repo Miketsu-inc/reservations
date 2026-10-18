@@ -32,6 +32,7 @@
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
   --color-border-strong: var(--border-strong);
+  --color-border-hover: var(--border-hover);
   --color-border-primary: var(--border-primary);
   --color-border-success: var(--border-success);
   --color-border-warning: var(--border-warning);
@@ -64,122 +65,126 @@
 }
 
 :root {
-  --canvas: #f1f1f4;
-  --bg: #f9f9fb;
-  --bg-raised: #ffffff;
-  --bg-overlay: #ffffff;
-  --bg-sunken: #f1f1f4;
-  --bg-input: #ffffff;
-  --bg-backdrop: rgb(17 17 26 / 0.4);
-  --bg-inactive: #e2e2e8;
+  --canvas: oklch(0.959 0.004 286.3);
+  --bg: oklch(0.983 0.003 286.4);
+  --bg-raised: oklch(1 0 0);
+  --bg-overlay: oklch(1 0 0);
+  --bg-sunken: oklch(0.959 0.004 286.3);
+  --bg-input: oklch(1 0 0);
+  --bg-backdrop: oklch(0.182 0.018 284.4 / 0.4);
+  --bg-inactive: oklch(0.915 0.008 286.2);
 
-  --hover: rgb(20 20 40 / 0.05);
-  --active: rgb(20 20 40 / 0.09);
+  --hover: oklch(0.203 0.039 282.3 / 0.05);
+  --active: oklch(0.203 0.039 282.3 / 0.09);
 
-  --fg: #15151a;
-  --fg-muted: #5a5a66;
-  --fg-disabled: #b3b3bd;
+  --fg: oklch(0.198 0.01 285.5);
+  --fg-muted: oklch(0.472 0.019 285.6);
+  --fg-disabled: oklch(0.77 0.014 286.1);
 
-  --border: #e3e3e9;
-  --border-subtle: #ececf0;
-  --border-strong: #cfcfd8;
+  --border: oklch(0.918 0.008 286.2);
+  --border-subtle: oklch(0.944 0.005 286.3);
+  --border-strong: oklch(0.857 0.012 286.1);
+  --border-hover: oklch(0.74 0.016 286);
 
-  --primary: #5b5bd6;
-  --primary-hover: #4e4ec6;
-  --primary-active: #4343b3;
-  --fg-primary: #4a4ac4;
-  --primary-subtle: rgb(91 91 214 / 0.1);
-  --primary-subtle-hover: rgb(91 91 214 / 0.16);
-  --border-primary: rgb(91 91 214 / 0.35);
-  --fg-on-primary: #ffffff;
-  --primary-focus: rgb(91 91 214 / 0.28);
+  --primary: oklch(0.54 0.184 278.3);
+  --primary-hover: oklch(0.496 0.182 277.5);
+  --primary-active: oklch(0.453 0.173 277);
+  --fg-primary: oklch(0.484 0.185 277);
+  --primary-subtle: oklch(0.54 0.184 278.3 / 0.1);
+  --primary-subtle-hover: oklch(0.54 0.184 278.3 / 0.16);
+  --border-primary: oklch(0.54 0.184 278.3 / 0.35);
+  --fg-on-primary: oklch(1 0 0);
+  --primary-focus: oklch(0.54 0.184 278.3 / 0.28);
 
-  --success: #1f9d5b;
-  --fg-success: #17794a;
-  --success-subtle: rgb(31 157 91 / 0.12);
-  --border-success: rgb(31 157 91 / 0.3);
+  --success: oklch(0.615 0.145 154.2);
+  --fg-success: oklch(0.51 0.114 156.5);
+  --success-subtle: oklch(0.615 0.145 154.2 / 0.12);
+  --border-success: oklch(0.615 0.145 154.2 / 0.3);
 
-  --warning: #e0900b;
-  --fg-warning: #945a00;
-  --warning-subtle: rgb(240 160 20 / 0.16);
-  --border-warning: rgb(224 144 11 / 0.38);
+  --warning: oklch(0.718 0.154 70);
+  --fg-warning: oklch(0.521 0.115 67.4);
+  --warning-subtle: oklch(0.766 0.16 72.6 / 0.16);
+  --border-warning: oklch(0.718 0.154 70 / 0.38);
 
-  --danger: #d93545;
-  --danger-hover: #c22636;
-  --fg-danger: #c02536;
-  --danger-subtle: rgb(217 53 69 / 0.09);
-  --border-danger: rgb(217 53 69 / 0.3);
+  --danger: oklch(0.586 0.199 21);
+  --danger-hover: oklch(0.532 0.19 21.9);
+  --fg-danger: oklch(0.527 0.189 21.6);
+  --danger-subtle: oklch(0.586 0.199 21 / 0.09);
+  --border-danger: oklch(0.586 0.199 21 / 0.3);
 
-  --info: #2b7fe0;
-  --fg-info: #1b62b5;
-  --info-subtle: rgb(43 127 224 / 0.11);
-  --border-info: rgb(43 127 224 / 0.3);
+  --info: oklch(0.597 0.167 254.9);
+  --fg-info: oklch(0.5 0.148 255.5);
+  --info-subtle: oklch(0.597 0.167 254.9 / 0.11);
+  --border-info: oklch(0.597 0.167 254.9 / 0.3);
 
-  --shadow-card: 0 1px 2px rgb(17 17 26 / 0.04);
+  --shadow-card: 0 1px 2px oklch(0.182 0.018 284.4 / 0.04);
   --shadow-overlay:
-    0 0 0 1px rgb(17 17 26 / 0.02), 0 2px 4px -1px rgb(17 17 26 / 0.06),
-    0 10px 24px -6px rgb(17 17 26 / 0.14);
+    0 0 0 1px oklch(0.182 0.018 284.4 / 0.02),
+    0 2px 4px -1px oklch(0.182 0.018 284.4 / 0.06),
+    0 10px 24px -6px oklch(0.182 0.018 284.4 / 0.14);
   --shadow-modal:
-    0 4px 8px -2px rgb(17 17 26 / 0.06), 0 28px 56px -16px rgb(17 17 26 / 0.3);
+    0 4px 8px -2px oklch(0.182 0.018 284.4 / 0.06),
+    0 28px 56px -16px oklch(0.182 0.018 284.4 / 0.3);
 }
 
 .dark {
-  --canvas: #0d0d10;
-  --bg: #131317;
-  --bg-raised: #1a1a1f;
-  --bg-overlay: #222228;
-  --bg-sunken: #0f0f12;
-  --bg-input: rgb(255 255 255 / 0.035);
-  --bg-backdrop: rgb(0 0 0 / 0.62);
-  --bg-inactive: #303038;
+  --canvas: oklch(0.16 0.006 285.7);
+  --bg: oklch(0.189 0.008 285.6);
+  --bg-raised: oklch(0.22 0.01 285.6);
+  --bg-overlay: oklch(0.255 0.011 285.6);
+  --bg-sunken: oklch(0.17 0.006 285.7);
+  --bg-input: oklch(1 0 0 / 0.035);
+  --bg-backdrop: oklch(0 0 0 / 0.62);
+  --bg-inactive: oklch(0.312 0.014 285.5);
 
-  --hover: rgb(255 255 255 / 0.06);
-  --active: rgb(255 255 255 / 0.1);
+  --hover: oklch(1 0 0 / 0.06);
+  --active: oklch(1 0 0 / 0.1);
 
-  --fg: #ededf1;
-  --fg-muted: #a5a5b1;
-  --fg-disabled: #53535d;
+  --fg: oklch(0.947 0.005 286.3);
+  --fg-muted: oklch(0.726 0.017 286);
+  --fg-disabled: oklch(0.446 0.016 285.7);
 
-  --border: #2a2a31;
-  --border-subtle: #222228;
-  --border-strong: #3b3b45;
+  --border: oklch(0.288 0.013 285.6);
+  --border-subtle: oklch(0.255 0.011 285.6);
+  --border-strong: oklch(0.356 0.017 285.5);
+  --border-hover: oklch(0.48 0.018 286);
 
-  --primary: #5b5bd6;
-  --primary-hover: #6a6ae0;
-  --primary-active: #7878e8;
-  --fg-primary: #a9a9ff;
-  --primary-subtle: rgb(122 122 255 / 0.15);
-  --primary-subtle-hover: rgb(122 122 255 / 0.23);
-  --border-primary: rgb(122 122 255 / 0.4);
-  --fg-on-primary: #ffffff;
-  --primary-focus: rgb(122 122 255 / 0.35);
+  --primary: oklch(0.54 0.184 278.3);
+  --primary-hover: oklch(0.585 0.175 279.5);
+  --primary-active: oklch(0.626 0.165 280.5);
+  --fg-primary: oklch(0.768 0.122 283.1);
+  --primary-subtle: oklch(0.646 0.193 279.6 / 0.15);
+  --primary-subtle-hover: oklch(0.646 0.193 279.6 / 0.23);
+  --border-primary: oklch(0.646 0.193 279.6 / 0.4);
+  --fg-on-primary: oklch(1 0 0);
+  --primary-focus: oklch(0.646 0.193 279.6 / 0.35);
 
-  --success: #30a46c;
-  --fg-success: #4cc38a;
-  --success-subtle: rgb(48 164 108 / 0.15);
-  --border-success: rgb(48 164 108 / 0.35);
+  --success: oklch(0.641 0.133 157.7);
+  --fg-success: oklch(0.735 0.136 159.3);
+  --success-subtle: oklch(0.641 0.133 157.7 / 0.15);
+  --border-success: oklch(0.641 0.133 157.7 / 0.35);
 
-  --warning: #f0a31a;
-  --fg-warning: #f3b13f;
-  --warning-subtle: rgb(240 163 26 / 0.14);
-  --border-warning: rgb(240 163 26 / 0.35);
+  --warning: oklch(0.772 0.159 73.9);
+  --fg-warning: oklch(0.803 0.146 77);
+  --warning-subtle: oklch(0.772 0.159 73.9 / 0.14);
+  --border-warning: oklch(0.772 0.159 73.9 / 0.35);
 
-  --danger: #dc3d4d;
-  --danger-hover: #e8525f;
-  --fg-danger: #ff8b8f;
-  --danger-subtle: rgb(229 72 77 / 0.15);
-  --border-danger: rgb(229 72 77 / 0.38);
+  --danger: oklch(0.6 0.195 20);
+  --danger-hover: oklch(0.644 0.185 19);
+  --fg-danger: oklch(0.764 0.141 18.7);
+  --danger-subtle: oklch(0.626 0.193 23 / 0.15);
+  --border-danger: oklch(0.626 0.193 23 / 0.38);
 
-  --info: #3b8ff0;
-  --fg-info: #75b9ff;
-  --info-subtle: rgb(59 143 240 / 0.15);
-  --border-info: rgb(59 143 240 / 0.36);
+  --info: oklch(0.647 0.166 254.3);
+  --fg-info: oklch(0.769 0.123 250.3);
+  --info-subtle: oklch(0.647 0.166 254.3 / 0.15);
+  --border-info: oklch(0.647 0.166 254.3 / 0.36);
 
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.24);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.24);
   --shadow-overlay:
-    0 0 0 1px rgb(0 0 0 / 0.3), 0 12px 28px -6px rgb(0 0 0 / 0.6);
+    0 0 0 1px oklch(0 0 0 / 0.3), 0 12px 28px -6px oklch(0 0 0 / 0.6);
   --shadow-modal:
-    0 0 0 1px rgb(0 0 0 / 0.3), 0 32px 64px -16px rgb(0 0 0 / 0.75);
+    0 0 0 1px oklch(0 0 0 / 0.3), 0 32px 64px -16px oklch(0 0 0 / 0.75);
 }
 
 @layer base {
@@ -205,6 +210,16 @@
     -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0) inset;
     transition: background-color 5000s ease-in-out 0s;
   }
+}
+
+/*
+  Used in theme.js for disabling transitions during theme switching
+*/
+.disable-transitions,
+.disable-transitions *,
+.disable-transitions *::before,
+.disable-transitions *::after {
+  transition: none !important;
 }
 
 @keyframes slideUp {

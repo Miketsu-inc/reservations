@@ -74,7 +74,7 @@ export function StyledInputBase({ styles = "", ...props }) {
       {...props}
       styles={`${styles} peer border bg-bg-input md:text-sm border-border-strong
         outline-hidden transition-[border-color,box-shadow] ease-in-out
-        duration-150 hover:not-disabled:not-focus:border-fg-muted
+        duration-150 hover:not-disabled:not-focus:border-border-hover
         focus:border-primary focus:ring-3 focus:ring-primary-focus
         disabled:text-fg-disabled disabled:border-border disabled:bg-bg-sunken
         p-2`}

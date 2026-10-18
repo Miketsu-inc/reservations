@@ -250,7 +250,7 @@ function ServiceItem({ service, isSelected, onSelect }) {
           rounded-full border transition-colors ${
             isSelected
               ? "border-primary bg-primary"
-              : "border-border-strong group-hover:border-fg-muted"
+              : "border-border-strong group-hover:border-border-hover"
           } `}
       >
         <Icon
