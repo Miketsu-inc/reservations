@@ -98,7 +98,7 @@ function RouteComponent() {
               trigger={
                 <Button
                   styles="mt-4 px-3 py-2 text-sm"
-                  variant="tertiary"
+                  variant="secondary"
                   buttonText="Update password"
                 />
               }
@@ -134,7 +134,7 @@ function RouteComponent() {
             </p>
             <Button
               styles="mt-4 shrink-0 px-3 py-2 text-sm"
-              variant="tertiary"
+              variant="secondary"
               buttonText="Sign out"
               onClick={() => logoutHandler(false)}
             >
@@ -148,7 +148,7 @@ function RouteComponent() {
             </p>
             <Button
               styles="mt-4 shrink-0 px-3 py-2 text-sm"
-              variant="tertiary"
+              variant="secondary"
               buttonText="Sign out everywhere"
               onClick={() => logoutHandler(true)}
             >

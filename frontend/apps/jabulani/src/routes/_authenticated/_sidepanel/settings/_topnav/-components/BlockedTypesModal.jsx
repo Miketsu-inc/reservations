@@ -208,7 +208,7 @@ export default function BlockedTypesModal({
                 <Button
                   styles="px-4 py-2 flex-1 hidden lg:block"
                   buttonText="Cancel"
-                  variant="tertiary"
+                  variant="secondary"
                   type="button"
                 />
               </ResponsiveDialogClose>

@@ -364,7 +364,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
             />
             <Button
               type="button"
-              variant="tertiary"
+              variant="secondary"
               styles="px-4 py-2 w-full sm:w-auto"
               buttonText="Reset all"
               disabled={!hasOverrides}

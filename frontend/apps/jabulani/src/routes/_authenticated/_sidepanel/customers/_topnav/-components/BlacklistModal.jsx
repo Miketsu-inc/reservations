@@ -62,7 +62,7 @@ export default function BlacklistModal({ data, isOpen, onClose, onSubmit }) {
           <div className="flex flex-row items-center justify-end gap-4">
             <ResponsiveDialogClose asChild>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 name="cancel"
                 styles="py-2 px-3 hidden lg:block"
                 buttonText="Cancel"

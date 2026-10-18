@@ -62,7 +62,7 @@ export default function CustomerProfile({
           <div className="flex w-full items-center justify-center gap-2 pb-5">
             {!disabled && (
               <Button
-                variant="tertiary"
+                variant="secondary"
                 buttonText="Remove"
                 onClick={onRemove}
                 styles="px-3 py-1.5 w-28 text-sm"

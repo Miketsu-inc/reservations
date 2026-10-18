@@ -4,9 +4,7 @@ import { forwardRef } from "react";
 const variants = {
   primary: `bg-primary text-fg-on-primary shadow-card border-transparent
     hover:not-disabled:bg-primary-hover active:not-disabled:bg-primary-active`,
-  secondary: `bg-primary-subtle text-fg-primary border-transparent
-    hover:not-disabled:bg-primary-subtle-hover`,
-  tertiary: `bg-bg-input text-fg border-border-strong shadow-card
+  secondary: `bg-bg-input text-fg border-border-strong shadow-card
     hover:not-disabled:bg-hover`,
   danger: `bg-danger text-white shadow-card border-transparent
     hover:not-disabled:bg-danger-hover`,

@@ -240,7 +240,7 @@ function ProductForm({
             {isWindowSmall && (
               <Button
                 styles="py-2 px-4 text-sm"
-                variant="tertiary"
+                variant="secondary"
                 buttonText="Cancel"
                 type="button"
                 onClick={() => {

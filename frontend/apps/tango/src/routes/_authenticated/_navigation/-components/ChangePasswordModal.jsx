@@ -88,7 +88,7 @@ export default function ChangePasswordModal({ trigger }) {
             <div className="flex flex-row items-center justify-end gap-2 pt-4">
               <ResponsiveDialogClose asChild>
                 <Button
-                  variant="tertiary"
+                  variant="secondary"
                   styles="px-4 py-2 hidden lg:block"
                   buttonText="Close"
                   type="button"

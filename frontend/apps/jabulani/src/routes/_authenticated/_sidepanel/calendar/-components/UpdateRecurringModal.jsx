@@ -71,7 +71,7 @@ export default function UpdateRecurringModal({ onClose, isOpen, onSave }) {
         <div className="flex w-full justify-end gap-2">
           <ResponsiveDialogClose asChild>
             <Button
-              variant="tertiary"
+              variant="secondary"
               styles="py-1 px-3 hidden lg:block"
               buttonText="Cancel"
             />

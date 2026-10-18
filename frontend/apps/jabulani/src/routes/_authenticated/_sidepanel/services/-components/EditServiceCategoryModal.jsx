@@ -87,7 +87,7 @@ export default function EditServiceCategoryModal({
                 <Button
                   styles="py-2 px-4 hidden lg:block"
                   buttonText="Cancel"
-                  variant="tertiary"
+                  variant="secondary"
                   type="button"
                 />
               </ResponsiveDialogClose>

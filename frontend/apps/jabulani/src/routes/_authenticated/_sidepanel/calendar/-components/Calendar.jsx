@@ -531,7 +531,7 @@ export default function Calendar({ router, route, search }) {
                 <Icon icon={ArrowLeft01Icon} styles="size-5" />
               </button>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 styles="px-3 py-2 text-sm"
                 buttonText="Today"
                 onClick={todayButtonHandler}

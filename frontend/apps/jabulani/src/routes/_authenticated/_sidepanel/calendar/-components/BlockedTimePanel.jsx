@@ -421,7 +421,7 @@ export default function BlockedTimePanel({
         {isEditing && (
           <Button
             styles="p-2 w-fit"
-            variant="tertiary"
+            variant="secondary"
             type="button"
             onClick={() => handleDelete(formData)}
           >

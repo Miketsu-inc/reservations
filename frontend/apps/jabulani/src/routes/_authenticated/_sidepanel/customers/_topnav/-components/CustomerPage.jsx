@@ -200,7 +200,7 @@ export default function CustomerPage({ customer, onSave }) {
             <div className="flex w-full justify-end gap-2">
               <Link from={router.fullPath}>
                 <Button
-                  variant="tertiary"
+                  variant="secondary"
                   styles="sm:py-2 sm:px-4 w-fit p-2"
                   buttonText="Cancel"
                   type="button"

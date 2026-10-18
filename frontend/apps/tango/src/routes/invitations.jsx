@@ -159,7 +159,7 @@ function RouteComponent() {
         <div className="flex h-full flex-row items-center justify-end gap-4">
           <Button
             styles="py-2 px-4 text-sm"
-            variant="tertiary"
+            variant="secondary"
             type="button"
             buttonText="Decline"
             onClick={declineHandler}

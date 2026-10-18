@@ -81,7 +81,7 @@ export default function Table({
             />
           </div>
           <Button
-            variant="tertiary"
+            variant="secondary"
             styles="p-2 md:py-2 md:pr-3 md:pl-2.5 text-sm w-fit text-nowrap"
             buttonText={windowSize !== "sm" ? "Export" : ""}
             onClick={onBtnExport}

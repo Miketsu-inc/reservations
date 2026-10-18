@@ -160,7 +160,7 @@ function LocationCard({ location, onEdit }) {
 
         <Button
           type="button"
-          variant="tertiary"
+          variant="secondary"
           styles="shrink-0 px-2.5 py-2 text-sm sm:px-3
             [&>span:last-child]:hidden sm:[&>span:last-child]:inline"
           buttonText="Edit"
@@ -425,7 +425,7 @@ function LocationPage() {
                 <ResponsiveDialogClose asChild>
                   <Button
                     type="button"
-                    variant="tertiary"
+                    variant="secondary"
                     styles="hidden px-4 py-2 lg:flex"
                     buttonText="Cancel"
                     disabled={updateMutation.isPending}

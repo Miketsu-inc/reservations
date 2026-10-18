@@ -159,7 +159,7 @@ export default function ServicePhases({ service, setService }) {
       )}
       {!isGroupService && (
         <Button
-          variant="tertiary"
+          variant="secondary"
           buttonText="Add extra time"
           styles="w-fit px-4 py-2"
           type="button"

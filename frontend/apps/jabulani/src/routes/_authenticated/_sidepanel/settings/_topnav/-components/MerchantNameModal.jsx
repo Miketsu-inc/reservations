@@ -129,7 +129,7 @@ export default function MerchantNameModal({ trigger, onSubmit }) {
           <div className="mt-1 flex justify-end gap-3">
             <ResponsiveDialogClose asChild>
               <Button
-                variant="tertiary"
+                variant="secondary"
                 styles="p-2 hidden lg:block"
                 buttonText="Cancel"
                 type="button"

@@ -145,7 +145,7 @@ export default function LocationEditor({ value, onChange, compact = false }) {
       {!showMap && address.trim() && (
         <Button
           type="button"
-          variant="tertiary"
+          variant="secondary"
           styles="w-fit px-3 py-2"
           buttonText="Set pin manually"
           onClick={handleManualPin}

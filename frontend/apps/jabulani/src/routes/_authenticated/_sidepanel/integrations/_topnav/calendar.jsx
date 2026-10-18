@@ -29,7 +29,7 @@ function RouteComponent() {
             href={`${JABULANI_URL}/api/v1/merchants/${merchantId}/integrations/google/calendar`}
           >
             <Button
-              variant="tertiary"
+              variant="secondary"
               styles="py-2 pr-3.5 pl-3 text-sm"
               buttonText="Sync"
               onClick={() => {}}
