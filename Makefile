@@ -3,7 +3,7 @@ include .env
 MAKEFLAGS += --no-print-directory
 
 run:
-	@make -j 6 vite-jabulani vite-tango air db kv caddy
+	@make -j 7 vite-jabulani vite-tango air db kv imgproxy caddy
 
 build:
 	@npm run build-jabulani
@@ -61,6 +61,12 @@ create-kv:
 
 connect-kv:
 	@docker exec -it redis redis-cli
+
+imgproxy:
+	@docker start imgproxy
+
+create-imgproxy:
+	@docker run --name imgproxy -p ${IMGPROXY_PORT}:8080 -d -e IMGPROXY_KEY=${IMGPROXY_KEY} -e IMGPROXY_SALT=${IMGPROXY_SALT} -e IMGPROXY_USE_S3=true -e IMGPROXY_S3_ENDPOINT=${R2_ENDPOINT} -e IMGPROXY_S3_REGION=auto -e AWS_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY} -e IMGPROXY_ALLOWED_SOURCES=s3://${R2_UPLOADS_BUCKET}/ -e IMGPROXY_MAX_SRC_FILE_SIZE=10485760 -e IMGPROXY_MAX_SRC_RESOLUTION=50 ghcr.io/imgproxy/imgproxy:v4
 
 connect-river:
 	@DATABASE_URL="postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}" PORT="2020" ~/go/bin/riverui

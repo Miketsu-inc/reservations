@@ -33,7 +33,7 @@ func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc Register
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
 			"email":            {MaxWorkers: 100},
-			// image processing decodes full size images in memory, so concurrency is kept low
+			// limits how many images are sent to imgproxy at the same time, the rest wait in the queue
 			"media": {MaxWorkers: 4},
 		},
 		Workers:      riverWorkers,

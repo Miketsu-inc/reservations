@@ -23,7 +23,6 @@ func NewHandler(s *mediaServ.Service, m *middleware.Manager) *Handler {
 	return &Handler{service: s, middleware: m}
 }
 
-// Routes of the authenticated user
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
@@ -31,7 +30,7 @@ func (h *Handler) Routes() *httputil.Router {
 		r.UseFunc(h.middleware.JwtAuthentication)
 		r.UseFunc(h.middleware.Language)
 
-		r.Post("/avatar", h.CreateUserAvatarUpload)
+		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/avatar", h.CreateUserAvatarUpload)
 		r.Delete("/avatar", h.RemoveUserAvatar)
 
 		r.Get("/uploads/{imageId}", h.GetUpload)
@@ -46,7 +45,7 @@ func (h *Handler) MerchantRoutes() *httputil.Router {
 	r := httputil.NewRouter()
 
 	// staff members can only change their own picture, checked in the service
-	r.Post("/team/{employeeId}/avatar", h.CreateEmployeeAvatarUpload)
+	r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/team/{employeeId}/avatar", h.CreateEmployeeAvatarUpload)
 	r.Delete("/team/{employeeId}/avatar", h.RemoveEmployeeAvatar)
 
 	r.Get("/locations/{locationId}/images", h.GetLocationImages)
@@ -54,10 +53,10 @@ func (h *Handler) MerchantRoutes() *httputil.Router {
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
 
-		r.Post("/logo", h.CreateMerchantLogoUpload)
+		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.CreateMerchantLogoUpload)
 		r.Delete("/logo", h.RemoveMerchantLogo)
 
-		r.Post("/locations/{locationId}/images", h.CreateLocationImageUpload)
+		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/locations/{locationId}/images", h.CreateLocationImageUpload)
 		r.Put("/locations/{locationId}/images/order", h.ReorderLocationImages)
 		r.Patch("/locations/{locationId}/images/{imageId}", h.UpdateLocationImage)
 		r.Delete("/locations/{locationId}/images/{imageId}", h.DeleteLocationImage)
@@ -67,8 +66,8 @@ func (h *Handler) MerchantRoutes() *httputil.Router {
 }
 
 type createUploadReq struct {
-	ContentType types.ImageContentType `json:"content_type" validate:"required"`
-	Size        int64                  `json:"size" validate:"required,min=1"`
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png"`
+	Size        int64  `json:"size" validate:"required,min=1"`
 }
 
 type uploadResp struct {
@@ -139,7 +138,6 @@ type cropReq struct {
 }
 
 type completeUploadReq struct {
-	// relative to the image as it is displayed, in pixels
 	Crop *cropReq `json:"crop"`
 }
 

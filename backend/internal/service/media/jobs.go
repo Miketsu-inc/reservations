@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +18,6 @@ import (
 
 const (
 	variantCacheControl = "public, max-age=31536000, immutable"
-	variantContentType  = "image/jpeg"
 
 	// Images that never became ready or are no longer used are deleted after this
 	unusedImageRetention = 24 * time.Hour
@@ -30,7 +28,6 @@ const (
 // and the previous image of the target which should be deleted
 type attachFunc func(ctx context.Context, tx pgx.Tx, image domain.Image) (bool, *uuid.UUID, error)
 
-// Process an uploaded image and attach it to it's target. Returns ErrUnprocessable if the image is invalid
 func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *domain.ImageCrop) error {
 	image, err := s.imageRepo.GetImage(ctx, imageId)
 	if err != nil {
@@ -45,15 +42,7 @@ func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *dom
 		return nil
 	}
 
-	data, err := s.readUpload(ctx, imageId)
-	if err != nil {
-		if errors.Is(err, ErrUnprocessable) {
-			return s.failImage(ctx, imageId, err)
-		}
-		return err
-	}
-
-	variants, err := processImage(data, image.Purpose, crop)
+	variants, err := s.processImage(ctx, image, crop)
 	if err != nil {
 		if errors.Is(err, errInvalidImage) {
 			return s.failImage(ctx, imageId, err)
@@ -72,34 +61,6 @@ func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *dom
 	return nil
 }
 
-func (s *Service) readUpload(ctx context.Context, imageId uuid.UUID) ([]byte, error) {
-	body, info, err := s.uploads.Get(ctx, uploadKey(imageId))
-	if err != nil {
-		if errors.Is(err, objectstore.ErrNotFound) {
-			return nil, fmt.Errorf("%w: upload not found", ErrUnprocessable)
-		}
-		return nil, err
-	}
-	// nolint:errcheck
-	defer body.Close()
-
-	if info.Size > MaxUploadSize {
-		return nil, fmt.Errorf("%w: upload is too large (%d bytes)", ErrUnprocessable, info.Size)
-	}
-
-	data, err := io.ReadAll(io.LimitReader(body, MaxUploadSize+1))
-	if err != nil {
-		return nil, fmt.Errorf("error reading upload: %w", err)
-	}
-
-	if len(data) > MaxUploadSize {
-		return nil, fmt.Errorf("%w: upload is too large", ErrUnprocessable)
-	}
-
-	return data, nil
-}
-
-// Marks the image as failed, it gets deleted by the cleanup job. Returns the reason wrapped in ErrUnprocessable
 func (s *Service) failImage(ctx context.Context, imageId uuid.UUID, reason error) error {
 	err := s.imageRepo.UpdateImageStatus(ctx, imageId, types.ImageStatusFailed)
 	if err != nil {
@@ -113,7 +74,6 @@ func (s *Service) failImage(ctx context.Context, imageId uuid.UUID, reason error
 	return fmt.Errorf("%w: %w", ErrUnprocessable, reason)
 }
 
-// Upload the variants to the public bucket, then mark the image as ready and attach it to it's target
 func (s *Service) storeImage(ctx context.Context, image domain.Image, variants []processedVariant, attach attachFunc) error {
 	var width, height int
 
@@ -122,7 +82,7 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 			Key:          objectKey(image.Id, v.variant),
 			Body:         bytes.NewReader(v.data),
 			Size:         int64(len(v.data)),
-			ContentType:  variantContentType,
+			ContentType:  contentTypeJPEG,
 			CacheControl: variantCacheControl,
 		})
 		if err != nil {
@@ -249,7 +209,6 @@ func (s *Service) attachLocationImage(ctx context.Context, tx pgx.Tx, image doma
 	return true, nil, nil
 }
 
-// Delete the image's objects and database row, if it is not referenced anymore
 func (s *Service) DeleteImage(ctx context.Context, imageId uuid.UUID) error {
 	referenced, err := s.imageRepo.IsImageReferenced(ctx, imageId)
 	if err != nil {
@@ -274,8 +233,6 @@ func (s *Service) DeleteImage(ctx context.Context, imageId uuid.UUID) error {
 	return s.imageRepo.DeleteImage(ctx, imageId)
 }
 
-// Schedule the deletion of images which never became ready (abandoned uploads, failed processing) or are no longer used
-// (e.g. the user, employee, location or merchant was deleted)
 func (s *Service) CleanupImages(ctx context.Context) error {
 	imageIds, err := s.imageRepo.GetUnusedImageIds(ctx, time.Now().UTC().Add(-unusedImageRetention), cleanupBatchSize)
 	if err != nil {

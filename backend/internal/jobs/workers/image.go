@@ -10,7 +10,6 @@ import (
 	"github.com/riverqueue/river"
 )
 
-// Images that can not be processed are cancelled instead of retried
 func cancelIfUnprocessable(err error) error {
 	if errors.Is(err, media.ErrUnprocessable) {
 		return river.JobCancel(err)
@@ -63,22 +62,4 @@ func NewCleanupImages(mediaService *media.Service) *CleanupImages {
 
 func (w *CleanupImages) Work(ctx context.Context, job *river.Job[args.CleanupImages]) error {
 	return w.mediaService.CleanupImages(ctx)
-}
-
-type ImportOauthAvatar struct {
-	river.WorkerDefaults[args.ImportOauthAvatar]
-
-	mediaService *media.Service
-}
-
-func NewImportOauthAvatar(mediaService *media.Service) *ImportOauthAvatar {
-	return &ImportOauthAvatar{mediaService: mediaService}
-}
-
-func (w *ImportOauthAvatar) Timeout(*river.Job[args.ImportOauthAvatar]) time.Duration {
-	return 2 * time.Minute
-}
-
-func (w *ImportOauthAvatar) Work(ctx context.Context, job *river.Job[args.ImportOauthAvatar]) error {
-	return cancelIfUnprocessable(w.mediaService.ImportOauthAvatar(ctx, job.Args.UserId, job.Args.Url))
 }

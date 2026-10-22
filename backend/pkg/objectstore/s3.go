@@ -18,7 +18,6 @@ import (
 // S3 API allows deleting at most 1000 objects in a single request
 const maxDeleteBatch = 1000
 
-// Creates a client for any S3 compatible object storage
 func NewS3Client(endpoint string, accessKeyId string, secretAccessKey string) *s3.Client {
 	return s3.New(s3.Options{
 		// required by the SDK, S3 compatible providers like R2 ignore it
@@ -29,11 +28,6 @@ func NewS3Client(endpoint string, accessKeyId string, secretAccessKey string) *s
 		RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired,
 		ResponseChecksumValidation: aws.ResponseChecksumValidationWhenRequired,
 	})
-}
-
-// Creates a client for Cloudflare R2
-func NewR2Client(accountId string, accessKeyId string, secretAccessKey string) *s3.Client {
-	return NewS3Client(fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountId), accessKeyId, secretAccessKey)
 }
 
 type S3Bucket struct {
@@ -48,6 +42,10 @@ func NewS3Bucket(client *s3.Client, name string) *S3Bucket {
 		presign: s3.NewPresignClient(client),
 		name:    name,
 	}
+}
+
+func (b *S3Bucket) Name() string {
+	return b.name
 }
 
 func (b *S3Bucket) PresignPut(ctx context.Context, key string, contentType string, size int64, expires time.Duration) (PresignedRequest, error) {

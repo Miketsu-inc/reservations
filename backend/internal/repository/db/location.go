@@ -57,7 +57,6 @@ func (r *locationRepository) GetLocation(ctx context.Context, locationId int, me
 	return location, nil
 }
 
-// Locks the location row until the end of the transaction, returns pgx.ErrNoRows if it does not exist.
 // "for no key update" does not block inserts referencing the location (e.g. bookings)
 func (r *locationRepository) LockLocation(ctx context.Context, locationId int, merchantId uuid.UUID) error {
 	query := `

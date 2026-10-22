@@ -7,8 +7,7 @@ import {
   ResponsiveDialogContent,
 } from "./ResponsiveDialog.jsx";
 
-// Lets the user select the part of the image to keep. The crop passed to onSave
-// is in pixels, relative to the image as it is displayed (EXIF orientation applied)
+// The crop passed to onSave is in pixels, relative to the image as it is displayed (EXIF orientation applied)
 export default function ImageCropDialog({
   imageSrc,
   title = "Crop image",

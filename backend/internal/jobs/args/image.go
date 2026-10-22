@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river"
 )
 
-// Image processing is memory heavy, so it runs on it's own queue with limited workers
+// Image processing runs on it's own queue with limited workers, see the queue config
 const MediaQueue = "media"
 
 type ProcessImage struct {
@@ -49,22 +49,6 @@ func (CleanupImages) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
 		UniqueOpts: river.UniqueOpts{
 			ByPeriod: time.Hour,
-		},
-	}
-}
-
-type ImportOauthAvatar struct {
-	UserId uuid.UUID `json:"user_id"`
-	Url    string    `json:"url"`
-}
-
-func (ImportOauthAvatar) Kind() string { return "import_oauth_avatar" }
-
-func (ImportOauthAvatar) InsertOpts() river.InsertOpts {
-	return river.InsertOpts{
-		Queue: MediaQueue,
-		UniqueOpts: river.UniqueOpts{
-			ByArgs: true,
 		},
 	}
 }

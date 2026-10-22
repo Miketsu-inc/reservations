@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,23 +13,18 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
-	"github.com/miketsu-inc/reservations/backend/internal/keys"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/imgproxy"
 	"github.com/miketsu-inc/reservations/backend/pkg/objectstore"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
-	"github.com/redis/go-redis/v9"
 )
 
 const (
 	uploadURLExpiry = 10 * time.Minute
-
-	uploadRateLimit  = 30
-	uploadRateWindow = time.Hour
 )
 
-// Maximum number of images per location
 var locationImageLimits = map[types.SubTier]int{
 	types.SubTierFree:       3,
 	types.SubTierPro:        15,
@@ -44,15 +39,14 @@ type Service struct {
 	// private bucket, the clients upload the original files here
 	uploads objectstore.Bucket
 	// public bucket containing the processed variants
-	media      objectstore.Bucket
-	kv         *redis.Client
-	httpClient *http.Client
-	enqueuer   queue.Enqueuer
-	txManager  db.TransactionManager
+	media     objectstore.Bucket
+	imgproxy  *imgproxy.Client
+	enqueuer  queue.Enqueuer
+	txManager db.TransactionManager
 }
 
 func NewService(image domain.ImageRepository, team domain.TeamRepository, location domain.LocationRepository, merchant domain.MerchantRepository,
-	uploads objectstore.Bucket, media objectstore.Bucket, kv *redis.Client, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
+	uploads objectstore.Bucket, media objectstore.Bucket, imgproxy *imgproxy.Client, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		imageRepo:    image,
 		teamRepo:     team,
@@ -60,8 +54,7 @@ func NewService(image domain.ImageRepository, team domain.TeamRepository, locati
 		merchantRepo: merchant,
 		uploads:      uploads,
 		media:        media,
-		kv:           kv,
-		httpClient:   newAvatarHTTPClient(),
+		imgproxy:     imgproxy,
 		enqueuer:     enqueuer,
 		txManager:    txManager,
 	}
@@ -72,7 +65,7 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 }
 
 type UploadInput struct {
-	ContentType types.ImageContentType
+	ContentType string
 	Size        int64
 }
 
@@ -155,10 +148,6 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 		return Upload{}, ErrInvalidUploadSize
 	}
 
-	if err := s.checkUploadRateLimit(ctx, *image.CreatedBy); err != nil {
-		return Upload{}, err
-	}
-
 	imageId, err := uuid.NewV7()
 	if err != nil {
 		return Upload{}, fmt.Errorf("error creating image id: %w", err)
@@ -173,7 +162,7 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 		return Upload{}, err
 	}
 
-	req, err := s.uploads.PresignPut(ctx, uploadKey(imageId), input.ContentType.String(), input.Size, uploadURLExpiry)
+	req, err := s.uploads.PresignPut(ctx, uploadKey(imageId), input.ContentType, input.Size, uploadURLExpiry)
 	if err != nil {
 		return Upload{}, err
 	}
@@ -184,27 +173,6 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 	}, nil
 }
 
-// Fixed window rate limit on the number of uploads a user can start
-func (s *Service) checkUploadRateLimit(ctx context.Context, userId uuid.UUID) error {
-	key := keys.ImageUploadRate{UserId: userId}.String()
-
-	pipe := s.kv.TxPipeline()
-	incr := pipe.Incr(ctx, key)
-	pipe.ExpireNX(ctx, key, uploadRateWindow)
-
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("error incrementing upload rate limit: %w", err)
-	}
-
-	if incr.Val() > uploadRateLimit {
-		return ErrUploadRateLimited
-	}
-
-	return nil
-}
-
-// Owners and admins can change anyone's profile picture, staff members only their own
 func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.EmployeeContext, employeeId int) error {
 	if actor.Role == types.EmployeeRoleStaff && actor.EmployeeId != employeeId {
 		return ErrEmployeeAvatarForbidden
@@ -230,7 +198,6 @@ func (s *Service) locationImageLimit(ctx context.Context, merchantId uuid.UUID) 
 	return locationImageLimits[tier], nil
 }
 
-// Returns the image if it was created by the current user
 func (s *Service) getOwnImage(ctx context.Context, imageId uuid.UUID) (domain.Image, error) {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
@@ -249,7 +216,6 @@ func (s *Service) getOwnImage(ctx context.Context, imageId uuid.UUID) (domain.Im
 	return image, nil
 }
 
-// Called by the client after the file was uploaded with the presigned request, starts the processing of the image
 func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *domain.ImageCrop) error {
 	image, err := s.getOwnImage(ctx, imageId)
 	if err != nil {
@@ -268,8 +234,8 @@ func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *d
 		return err
 	}
 
-	_, contentTypeErr := types.NewImageContentType(info.ContentType)
-	if info.Size != image.ByteSize || info.Size > MaxUploadSize || contentTypeErr != nil {
+	isAllowedType := slices.Contains(allowedContentTypes, info.ContentType)
+	if info.Size != image.ByteSize || info.Size > MaxUploadSize || !isAllowedType {
 		err = s.imageRepo.UpdateImageStatus(ctx, imageId, types.ImageStatusFailed)
 		if err != nil {
 			return err
@@ -300,7 +266,6 @@ func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *d
 	})
 }
 
-// Get an image created by the current user, used to poll the processing status
 func (s *Service) GetUpload(ctx context.Context, imageId uuid.UUID) (domain.Image, error) {
 	return s.getOwnImage(ctx, imageId)
 }

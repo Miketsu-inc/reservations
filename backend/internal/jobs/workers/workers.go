@@ -58,7 +58,6 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewProcessImage(deps.MediaService))
 	river.AddWorker(workers, NewDeleteImage(deps.MediaService))
 	river.AddWorker(workers, NewCleanupImages(deps.MediaService))
-	river.AddWorker(workers, NewImportOauthAvatar(deps.MediaService))
 }
 
 func GetPeriodicJobs() []*river.PeriodicJob {

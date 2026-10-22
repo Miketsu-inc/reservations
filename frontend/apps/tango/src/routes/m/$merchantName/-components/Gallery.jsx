@@ -1,7 +1,6 @@
 // has to match the backend's small variant size
 const THUMBNAIL_MAX_SIZE = 640;
 
-// Width of the thumbnail variant, the backend scales the longest side down to THUMBNAIL_MAX_SIZE
 function thumbnailWidth(image) {
   const scale = Math.min(
     1,

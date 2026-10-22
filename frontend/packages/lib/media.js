@@ -5,7 +5,6 @@ export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 const POLL_INTERVAL_MS = 1000;
 const POLL_TIMEOUT_MS = 60 * 1000;
 
-// Returns an error message if the file can not be uploaded as an image
 export function validateImageFile(file) {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
     return "Only JPEG and PNG images are supported";
@@ -45,14 +44,6 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Upload an image file:
-//  1. request a presigned upload url from the given endpoint
-//  2. upload the file directly to the storage
-//  3. start the processing of the image, optionally cropped
-//  4. wait until the processing is done
-//
-// crop is relative to the image as it is displayed in the browser, in pixels.
-// Returns the processed image ({ image_id, status, url, thumbnail_url }) or throws an error.
 export async function uploadImage(uploadUrl, file, crop) {
   const validationError = validateImageFile(file);
   if (validationError) {
@@ -102,7 +93,6 @@ export async function uploadImage(uploadUrl, file, crop) {
   throw new Error("Processing the image is taking longer than expected");
 }
 
-// Delete an image through the given endpoint
 export async function deleteImage(url) {
   await jsonRequest(url, "DELETE");
 }

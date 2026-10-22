@@ -49,6 +49,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
+	"github.com/miketsu-inc/reservations/backend/pkg/imgproxy"
 	"github.com/miketsu-inc/reservations/backend/pkg/kv"
 	"github.com/miketsu-inc/reservations/backend/pkg/objectstore"
 	"github.com/miketsu-inc/reservations/backend/pkg/queue"
@@ -83,9 +84,11 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	kvClient := kv.NewClient()
 
-	r2Client := objectstore.NewR2Client(cfg.R2_ACCOUNT_ID, cfg.R2_ACCESS_KEY_ID, cfg.R2_SECRET_ACCESS_KEY)
+	r2Client := objectstore.NewS3Client(cfg.R2_ENDPOINT, cfg.R2_ACCESS_KEY_ID, cfg.R2_SECRET_ACCESS_KEY)
 	uploadsBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_UPLOADS_BUCKET)
 	mediaBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_MEDIA_BUCKET)
+
+	imgproxyClient := imgproxy.NewClient(fmt.Sprintf("http://localhost:%s", cfg.IMGPROXY_PORT), cfg.IMGPROXY_KEY, cfg.IMGPROXY_SALT)
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
@@ -100,7 +103,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	favoriteService := favoriteSrv.NewService(favoriteRepo)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
-	mediaService := mediaSrv.NewService(imageRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, kvClient, nil, transactionManager)
+	mediaService := mediaSrv.NewService(imageRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,

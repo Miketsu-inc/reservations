@@ -16,7 +16,6 @@ import Icon from "./Icon.jsx";
 import ImageCropDialog from "./ImageCropDialog.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover.jsx";
 
-// Avatar (or logo with shape="square") that can be changed by uploading a new image
 export default function AvatarUpload({
   img,
   initials,

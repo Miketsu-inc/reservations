@@ -15,38 +15,23 @@ type ImageRepository interface {
 	NewImage(ctx context.Context, image Image) error
 	GetImage(ctx context.Context, imageId uuid.UUID) (Image, error)
 	UpdateImageStatus(ctx context.Context, imageId uuid.UUID, status types.ImageStatus) error
-	// Update the image status only if it is currently in the from status. Returns false if the status was not updated
 	TransitionImageStatus(ctx context.Context, imageId uuid.UUID, from types.ImageStatus, to types.ImageStatus) (bool, error)
-	// Set the image status to ready together with the dimensions of the largest variant
 	SetImageReady(ctx context.Context, imageId uuid.UUID, width int, height int) error
 	DeleteImage(ctx context.Context, imageId uuid.UUID) error
 
-	// Wether the image is used as an avatar, logo or location image
 	IsImageReferenced(ctx context.Context, imageId uuid.UUID) (bool, error)
-	// Get images created before the given time that never became ready or are no longer referenced
 	GetUnusedImageIds(ctx context.Context, createdBefore time.Time, limit int) ([]uuid.UUID, error)
 
-	// Set the User's avatar, returns the previous avatar. Returns pgx.ErrNoRows if the User does not exist
 	SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
-	// Set the User's avatar only if they do not have one yet. Returns false if the avatar was not set
-	SetUserAvatarIfEmpty(ctx context.Context, userId uuid.UUID, imageId uuid.UUID) (bool, error)
-	// Set the Employee's own avatar, returns the previous avatar. Returns pgx.ErrNoRows if the Employee does not exist
 	SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error)
-	// Set the Merchant's logo, returns the previous logo. Returns pgx.ErrNoRows if the Merchant does not exist
 	SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
 
-	// Insert the image as the last image of the location
 	NewLocationImage(ctx context.Context, locationId int, imageId uuid.UUID) error
 	GetLocationImages(ctx context.Context, merchantId uuid.UUID, locationId int) ([]LocationImage, error)
-	// Number of images of the location, including the ones which are uploading or being processed
-	// (pending images only count if they were created after pendingCreatedAfter)
 	CountLocationImages(ctx context.Context, locationId int, pendingCreatedAfter time.Time) (int, error)
-	// Number of ready images of the location
 	CountReadyLocationImages(ctx context.Context, locationId int) (int, error)
 	UpdateLocationImageAltText(ctx context.Context, merchantId uuid.UUID, locationId int, imageId uuid.UUID, altText string) error
-	// Returns pgx.ErrNoRows if the image does not belong to the location
 	DeleteLocationImage(ctx context.Context, merchantId uuid.UUID, locationId int, imageId uuid.UUID) error
-	// Set the sequence of the location images in the order of the given ids
 	ReorderLocationImages(ctx context.Context, merchantId uuid.UUID, locationId int, imageIds []uuid.UUID) error
 }
 

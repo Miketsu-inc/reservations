@@ -37,7 +37,6 @@ func NewImagePurpose(purposeStr string) (ImagePurpose, error) {
 	}
 }
 
-// Wether the image is cropped to a square
 func (p ImagePurpose) IsSquare() bool {
 	return p != ImagePurposeLocationImage
 }
@@ -155,48 +154,5 @@ func (s *ImageStatus) UnmarshalJSON(data []byte) error {
 	}
 
 	*s = status
-	return nil
-}
-
-type ImageContentType struct {
-	contentType string
-}
-
-func (c ImageContentType) String() string {
-	return c.contentType
-}
-
-var (
-	ImageContentTypeJPEG = ImageContentType{"image/jpeg"}
-	ImageContentTypePNG  = ImageContentType{"image/png"}
-)
-
-func NewImageContentType(contentTypeStr string) (ImageContentType, error) {
-	switch strings.ToLower(contentTypeStr) {
-	case "image/jpeg":
-		return ImageContentTypeJPEG, nil
-	case "image/png":
-		return ImageContentTypePNG, nil
-	default:
-		return ImageContentType{}, fmt.Errorf("invalid image content type: %s", contentTypeStr)
-	}
-}
-
-func (c ImageContentType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.contentType)
-}
-
-func (c *ImageContentType) UnmarshalJSON(data []byte) error {
-	var contentTypeStr string
-	if err := json.Unmarshal(data, &contentTypeStr); err != nil {
-		return err
-	}
-
-	contentType, err := NewImageContentType(contentTypeStr)
-	if err != nil {
-		return err
-	}
-
-	*c = contentType
 	return nil
 }

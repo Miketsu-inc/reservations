@@ -10,7 +10,6 @@ import (
 var ErrStatus = apperr.StatusMap{
 	ErrImageNotFound:             http.StatusNotFound,
 	ErrInvalidUploadSize:         http.StatusBadRequest,
-	ErrUploadRateLimited:         http.StatusTooManyRequests,
 	ErrUploadMissing:             http.StatusConflict,
 	ErrUploadAlreadyCompleted:    http.StatusConflict,
 	ErrUploadInvalid:             http.StatusBadRequest,
@@ -23,7 +22,6 @@ var ErrStatus = apperr.StatusMap{
 
 var ErrImageNotFound = &apperr.Error{Code: "image_not_found", Message: "image not found for this id"}
 var ErrInvalidUploadSize = &apperr.Error{Code: "invalid_upload_size", Message: "the image must be smaller than 10 MB"}
-var ErrUploadRateLimited = &apperr.Error{Code: "upload_rate_limited", Message: "too many uploads, please try again later"}
 var ErrUploadMissing = &apperr.Error{Code: "upload_missing", Message: "the image has not been uploaded yet"}
 var ErrUploadAlreadyCompleted = &apperr.Error{Code: "upload_already_completed", Message: "the upload has already been completed"}
 var ErrUploadInvalid = &apperr.Error{Code: "upload_invalid", Message: "the uploaded file does not match the requested upload"}
@@ -33,5 +31,4 @@ var ErrLocationNotFound = &apperr.Error{Code: "location_not_found", Message: "lo
 var ErrLocationImageNotFound = &apperr.Error{Code: "location_image_not_found", Message: "location image not found for this id"}
 var ErrLocationImageLimitReached = &apperr.Error{Code: "location_image_limit_reached", Message: "the location has reached the maximum number of images for your subscription"}
 
-// The image can not be processed, retrying will not help
 var ErrUnprocessable = errors.New("image can not be processed")

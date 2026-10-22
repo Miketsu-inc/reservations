@@ -86,17 +86,16 @@ type MerchantInfo struct {
 	Timezone     string     `json:"timezone"`
 	LogoImageId  *uuid.UUID `json:"logo_image_id"`
 
-	LocationId        int            `json:"location_id"`
-	Country           *string        `json:"country"`
-	CountryCode       *string        `json:"country_code"`
-	Region            *string        `json:"region"`
-	City              *string        `json:"city"`
-	PostalCode        *string        `json:"postal_code"`
-	Address           *string        `json:"address"`
-	FormattedLocation string         `json:"formatted_location"`
-	GeoPoint          types.GeoPoint `json:"geo_point"`
-	// Images of the location ordered by their sequence
-	Images []LocationImage `json:"images"`
+	LocationId        int             `json:"location_id"`
+	Country           *string         `json:"country"`
+	CountryCode       *string         `json:"country_code"`
+	Region            *string         `json:"region"`
+	City              *string         `json:"city"`
+	PostalCode        *string         `json:"postal_code"`
+	Address           *string         `json:"address"`
+	FormattedLocation string          `json:"formatted_location"`
+	GeoPoint          types.GeoPoint  `json:"geo_point"`
+	Images            []LocationImage `json:"images"`
 
 	BusinessHours       BusinessHours       `json:"business_hours"`
 	BusinessHoursStatus BusinessHoursStatus `json:"business_hours_status"`

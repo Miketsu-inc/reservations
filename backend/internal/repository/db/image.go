@@ -171,20 +171,6 @@ func (r *imageRepository) SetUserAvatar(ctx context.Context, userId uuid.UUID, i
 	return previous, nil
 }
 
-func (r *imageRepository) SetUserAvatarIfEmpty(ctx context.Context, userId uuid.UUID, imageId uuid.UUID) (bool, error) {
-	query := `
-	update "User" set avatar_image_id = $2
-	where id = $1 and avatar_image_id is null
-	`
-
-	tag, err := r.db.Exec(ctx, query, userId, imageId)
-	if err != nil {
-		return false, fmt.Errorf("SetUserAvatarIfEmpty: %w", err)
-	}
-
-	return tag.RowsAffected() == 1, nil
-}
-
 func (r *imageRepository) SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error) {
 	query := `
 	update "Employee" e set avatar_image_id = $3

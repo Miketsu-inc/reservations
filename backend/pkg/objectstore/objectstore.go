@@ -10,14 +10,12 @@ import (
 
 var ErrNotFound = errors.New("object not found")
 
-// Bucket is a single bucket of an object storage
 type Bucket interface {
+	Name() string
 	// Create a presigned PUT request which can be used to upload an object directly.
 	// The content type and size are part of the signature, the upload fails if the client sends different values
 	PresignPut(ctx context.Context, key string, contentType string, size int64, expires time.Duration) (PresignedRequest, error)
-	// Returns ErrNotFound if the object does not exist
 	Head(ctx context.Context, key string) (ObjectInfo, error)
-	// Returns ErrNotFound if the object does not exist. The caller must close the returned body
 	Get(ctx context.Context, key string) (io.ReadCloser, ObjectInfo, error)
 	Put(ctx context.Context, input PutInput) error
 	// Deleting objects that do not exist is not an error
