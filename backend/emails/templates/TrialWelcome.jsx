@@ -12,6 +12,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { t } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -22,7 +23,7 @@ export default function TrialWelcome() {
   return (
     <Html lang="hu" dir="ltr">
       <Head />
-      <Preview>{"{{ T .Lang `TrialWelcome.preview` . }}"}</Preview>
+      <Preview>{t("TrialWelcome.preview")}</Preview>
       <EmailTailwind>
         <Body className="bg-canvas font-sans text-fg">
           <Container
@@ -32,11 +33,11 @@ export default function TrialWelcome() {
             <LogoHeader />
             <Section>
               <Heading className="my-6 text-[22px] font-bold">
-                {"{{ T .Lang `TrialWelcome.heading` . }}"}
+                {t("TrialWelcome.heading")}
               </Heading>
 
               <Text className="mb-6 text-[16px] text-fg-muted">
-                {"{{ T .Lang `TrialWelcome.main_text` . }}"}
+                {t("TrialWelcome.main_text")}
               </Text>
 
               <Section className="my-8 text-center">
@@ -45,19 +46,19 @@ export default function TrialWelcome() {
                   href="https://app.example.com/dashboard"
                   style={{ boxSizing: "border-box", borderRadius: "6px" }}
                 >
-                  {"{{ T .Lang `TrialWelcome.primary_button` . }}"}
+                  {t("TrialWelcome.primary_button")}
                 </Button>
               </Section>
 
               <Text className="mb-6 text-fg-muted">
-                {"{{ T .Lang `TrialWelcome.contact_us_note` . }}"}
+                {t("TrialWelcome.contact_us_note")}
                 <Link
                   href="https://app.example.com/tutorials"
                   className="font-medium text-fg-primary"
                 >
-                  {"{{ T .Lang `TrialWelcome.contact_us_note2` . }}"}
+                  {t("TrialWelcome.contact_us_note2")}
                 </Link>
-                {"{{ T .Lang `TrialWelcome.contact_us_note3` . }}"}
+                {t("TrialWelcome.contact_us_note3")}
               </Text>
 
               <Hr className="my-6 border-border" />

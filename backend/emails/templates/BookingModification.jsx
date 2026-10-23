@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { t, v } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -24,7 +25,7 @@ export default function BookingModification() {
     <EmailTailwind>
       <Html>
         <Head />
-        <Preview>{"{{ T .Lang `BookingModification.preview` . }}"}</Preview>
+        <Preview>{t("BookingModification.preview")}</Preview>
         <Body className="bg-canvas font-sans text-fg">
           <Container
             className="mx-auto max-w-md bg-bg-raised p-4"
@@ -32,11 +33,11 @@ export default function BookingModification() {
           >
             <LogoHeader />
             <Heading as="h1" className="mb-4 text-2xl font-bold text-fg">
-              {"{{ T .Lang `BookingModification.heading` . }}"}
+              {t("BookingModification.heading")}
             </Heading>
 
             <Text className="mb-5 text-[16px] text-fg-muted">
-              {"{{ T .Lang `BookingModification.main_text` . }}"}
+              {t("BookingModification.main_text")}
             </Text>
 
             <Section className="mb-6">
@@ -49,9 +50,7 @@ export default function BookingModification() {
               >
                 <Column>
                   <Text className="m-0 text-[16px] font-semibold text-fg">
-                    {
-                      "{{ T .Lang `BookingModification.modification_details` . }}"
-                    }
+                    {t("BookingModification.modification_details")}
                   </Text>
                 </Column>
               </Row>
@@ -59,7 +58,7 @@ export default function BookingModification() {
               <Row className="p-3 border-b-2 border-b-border-strong">
                 <Column className="w-[120px]">
                   <Text className="m-0 font-semibold text-fg-muted">
-                    {"{{ T .Lang `BookingModification.original_text` . }}"}
+                    {t("BookingModification.original_text")}
                   </Text>
                 </Column>
                 <Column>
@@ -67,8 +66,8 @@ export default function BookingModification() {
                     className="m-0 text-fg"
                     style={{ textDecoration: "line-through" }}
                   >
-                    <span className="font-medium">{"{{ .OldDate }}"}</span>,{" "}
-                    {"{{ .OldTime }}"}
+                    <span className="font-medium">{v("OldDate")}</span>,{" "}
+                    {v("OldTime")}
                   </Text>
                 </Column>
               </Row>
@@ -82,13 +81,13 @@ export default function BookingModification() {
               >
                 <Column className="w-[120px]">
                   <Text className="m-0 font-semibold text-fg-muted">
-                    {"{{ T .Lang `BookingModification.new_text` . }}"}
+                    {t("BookingModification.new_text")}
                   </Text>
                 </Column>
                 <Column>
                   <Text className="m-0 text-fg">
-                    <span className="font-medium">{"{{ .Date }}"}</span>,{" "}
-                    {"{{ .Time }}"}
+                    <span className="font-medium">{v("Date")}</span>,{" "}
+                    {v("Time")}
                   </Text>
                 </Column>
               </Row>
@@ -99,35 +98,35 @@ export default function BookingModification() {
               style={{ borderRadius: "6px" }}
             >
               <Text className="mt-0 text-[16px] font-semibold text-fg">
-                {"{{ T .Lang `BookingModification.unmodified_details` . }}"}
+                {t("BookingModification.unmodified_details")}
               </Text>
               <Text className="mt-0 mb-1 text-fg-muted">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingModification.timezone` . }}"}
+                  {t("BookingModification.timezone")}
                 </span>{" "}
-                {"{{ .TimeZone }}"}
+                {v("TimeZone")}
               </Text>
               <Text className="mt-0 mb-1 text-fg-muted">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingModification.service_name` . }}"}
+                  {t("BookingModification.service_name")}
                 </span>{" "}
-                {"{{ .ServiceName }}"}
+                {v("ServiceName")}
               </Text>
               <Text className="m-0 text-fg-muted">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingModification.location` . }}"}
+                  {t("BookingModification.location")}
                 </span>{" "}
-                {"{{ .Location }}"}
+                {v("Location")}
               </Text>
             </Section>
 
             <Text className="mb-6 text-[16px] text-fg-muted">
-              {"{{ T .Lang `BookingModification.modification_note` . }}"}
+              {t("BookingModification.modification_note")}
             </Text>
 
             <Section className="mb-8 text-center">
               <Button
-                href="{{ .ModifyLink }}"
+                href={v("ModifyLink")}
                 className="bg-primary px-6 py-3 text-center font-medium
                   text-fg-on-primary"
                 style={{
@@ -135,16 +134,16 @@ export default function BookingModification() {
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `BookingModification.primary_button` . }}"}
+                {t("BookingModification.primary_button")}
               </Button>
             </Section>
 
             <Text className="mb-2 text-fg-muted">
-              {"{{ T .Lang `BookingModification.extra_info` . }}"}
+              {t("BookingModification.extra_info")}
             </Text>
 
             <Text className="mb-6 text-fg-muted">
-              {"{{ T .Lang `BookingModification.contact_us_note` . }}"}
+              {t("BookingModification.contact_us_note")}
             </Text>
 
             <Hr className="my-6 border-border" />

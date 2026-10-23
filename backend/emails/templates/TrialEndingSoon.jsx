@@ -12,6 +12,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { t, v } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -22,7 +23,7 @@ export default function TrialEndingSoon() {
   return (
     <Html lang="hu" dir="ltr">
       <Head />
-      <Preview>{"{{ T .Lang `TrialEndingSoon.preview` . }}"}</Preview>
+      <Preview>{t("TrialEndingSoon.preview")}</Preview>
       <EmailTailwind>
         <Body className="bg-canvas font-sans text-fg">
           <Container
@@ -32,36 +33,36 @@ export default function TrialEndingSoon() {
             <LogoHeader />
             <Section>
               <Heading className="my-6 text-left text-[22px] font-bold text-fg">
-                ⏰ {"{{ T .Lang `TrialEndingSoon.heading` . }}"}
+                ⏰ {t("TrialEndingSoon.heading")}
               </Heading>
 
               <Text className="mb-6 text-[16px] text-fg-muted">
-                {"{{ T .Lang `TrialEndingSoon.main_text` . }}"}
+                {t("TrialEndingSoon.main_text")}
                 <strong className="text-fg-primary">
-                  {"{{ T .Lang `TrialEndingSoon.days_left` . }}"}
+                  {t("TrialEndingSoon.days_left")}
                 </strong>
-                {"{{ T .Lang `TrialEndingSoon.main_text2` . }}"}
+                {t("TrialEndingSoon.main_text2")}
               </Text>
 
               <Section className="my-8 text-center">
                 <Button
                   className="bg-primary px-6 py-3 text-center font-medium text-fg-on-primary"
-                  href="{{ .ManageLink }}"
+                  href={v("ManageLink")}
                   style={{ boxSizing: "border-box", borderRadius: "6px" }}
                 >
-                  {"{{ T .Lang `TrialEndingSoon.primary_button` . }}"}
+                  {t("TrialEndingSoon.primary_button")}
                 </Button>
               </Section>
 
               <Text className="mb-6 text-fg-muted">
-                {"{{ T .Lang `TrialEndingSoon.contact_us_note` . }}"}
+                {t("TrialEndingSoon.contact_us_note")}
                 <Link
                   href="mailto:support@example.com"
                   className="font-medium text-fg-primary"
                 >
                   support@example.com
                 </Link>
-                {"{{ T .Lang `TrialEndingSoon.contact_us_note2` . }}"}
+                {t("TrialEndingSoon.contact_us_note2")}
               </Text>
 
               <Hr className="my-6 border-border" />

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, Section, Text } from "react-email";
+import { t } from "../template";
 
 void React;
 
@@ -16,15 +17,15 @@ export default function Footer() {
       </Text>
       <Text className="mt-2 text-center text-[12px]">
         <Link href={`${TANGO_URL}/privacy`} className="text-fg-muted">
-          <u>{"{{ T .Lang `Footer.privacy_policy` }}"}</u>
+          <u>{t("Footer.privacy_policy")}</u>
         </Link>
         {" • "}
         <Link href={`${TANGO_URL}/terms`} className="text-fg-muted">
-          <u>{"{{ T .Lang `Footer.terms_of_service` }}"}</u>
+          <u>{t("Footer.terms_of_service")}</u>
         </Link>
         {" • "}
         <Link href={`${TANGO_URL}/unsubscribe`} className="text-fg-muted">
-          <u>{"{{ T .Lang `Footer.unsubscribe` }}"}</u>
+          <u>{t("Footer.unsubscribe")}</u>
         </Link>
       </Text>
     </Section>

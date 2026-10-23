@@ -36,7 +36,7 @@ go-build:
 endif
 
 email:
-	@npx email dev --dir "backend/emails/templates"
+	@npx dotenv -e .env -v EMAIL_PREVIEW=1 -- npx email dev --dir "backend/emails/templates"
 
 email-build:
 	@npx dotenv -e .env -- npx email export --dir "backend/emails/templates" --outDir "backend/emails/out" --pretty

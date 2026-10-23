@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { t, v } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -24,7 +25,7 @@ export default function EmailVerification() {
     <EmailTailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>{"{{ T .Lang `EmailVerification.preview` . }}"}</Preview>
+        <Preview>{t("EmailVerification.preview")}</Preview>
         <Body className="bg-canvas font-sans text-fg">
           <Container
             className="mx-auto max-w-md bg-bg-raised p-4"
@@ -33,11 +34,11 @@ export default function EmailVerification() {
             <LogoHeader />
             <Section className="py-4">
               <Heading className="mb-2 text-center text-2xl font-bold text-fg">
-                {"{{ T .Lang `EmailVerification.heading` . }}"}
+                {t("EmailVerification.heading")}
               </Heading>
 
               <Text className="mb-6 text-center text-[16px] text-fg-muted">
-                {"{{ T .Lang `EmailVerification.main_text` . }}"}
+                {t("EmailVerification.main_text")}
               </Text>
 
               <Section className="mb-6 w-auto text-center">
@@ -50,7 +51,7 @@ export default function EmailVerification() {
                           borderRadius: "5px",
                         }}
                       >
-                        {"{{ .Code }}"}
+                        {v("Code")}
                       </Text>
                     </Section>
                   </Column>
@@ -58,21 +59,21 @@ export default function EmailVerification() {
               </Section>
 
               <Text className="mb-16 text-center text-fg-muted">
-                {"{{ T .Lang `EmailVerification.expiration_note` . }}"}
+                {t("EmailVerification.expiration_note")}
                 <strong className="text-fg-primary">
-                  {"{{ T .Lang `EmailVerification.expiration_note2` . }}"}
+                  {t("EmailVerification.expiration_note2")}
                 </strong>
-                {"{{ T .Lang `EmailVerification.expiration_note3` . }}"}
+                {t("EmailVerification.expiration_note3")}
               </Text>
               <Text className="text-center text-[14px] text-fg-muted">
-                {"{{ T .Lang `EmailVerification.contact_us_note` . }}"}
+                {t("EmailVerification.contact_us_note")}
                 <Link
                   href="mailto:support@company.com"
                   className="text-fg-primary"
                 >
                   <u>support@company.com</u>
                 </Link>
-                {"{{ T .Lang `EmailVerification.contact_us_note2` . }}"}
+                {t("EmailVerification.contact_us_note2")}
               </Text>
               <Hr className="mt-2 border-border" />
             </Section>

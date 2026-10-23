@@ -11,6 +11,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { t, v } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -24,7 +25,7 @@ export default function BookingConfirmation() {
     <EmailTailwind>
       <Html lang="hu" dir="ltr">
         <Head />
-        <Preview>{"{{ T .Lang `BookingConfirmation.preview` . }}"}</Preview>
+        <Preview>{t("BookingConfirmation.preview")}</Preview>
         <Body className="bg-canvas font-sans text-fg">
           <Container
             className="mx-auto max-w-md bg-bg-raised p-4"
@@ -35,10 +36,10 @@ export default function BookingConfirmation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-fg"
             >
-              {"{{ T .Lang `BookingConfirmation.heading` . }}"}
+              {t("BookingConfirmation.heading")}
             </Heading>
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `BookingConfirmation.main_text` . }}"}
+              {t("BookingConfirmation.main_text")}
             </Text>
 
             <Section
@@ -51,30 +52,30 @@ export default function BookingConfirmation() {
                 className="text-xs font-medium tracking-wide text-fg
                   uppercase"
               >
-                {"{{ .Date }}"}
+                {v("Date")}
               </Text>
               <Text className="mb-4 text-2xl font-bold text-fg">
-                {"{{ .Time }}"}
+                {v("Time")}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingConfirmation.timezone` . }}"}
+                  {t("BookingConfirmation.timezone")}
                 </span>
-                {"{{ .TimeZone }}"}
+                {v("TimeZone")}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingConfirmation.service_name` . }}"}
+                  {t("BookingConfirmation.service_name")}
                 </span>
-                {"{{ .ServiceName }}"}
+                {v("ServiceName")}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingConfirmation.location` . }}"}
+                  {t("BookingConfirmation.location")}
                 </span>
-                {"{{ .Location }}"}
+                {v("Location")}
               </Text>
             </Section>
 
@@ -88,10 +89,10 @@ export default function BookingConfirmation() {
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `BookingConfirmation.primary_button` . }}"}
+                {t("BookingConfirmation.primary_button")}
               </Button>
               <Button
-                href="{{ .ModifyLink }}"
+                href={v("ModifyLink")}
                 className="ml-2 inline-block w-fit bg-primary-subtle px-4 py-3
                   text-[14px] font-semibold text-fg-primary"
                 style={{
@@ -99,12 +100,12 @@ export default function BookingConfirmation() {
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `BookingConfirmation.secondary_button` . }}"}
+                {t("BookingConfirmation.secondary_button")}
               </Button>
             </Section>
 
             <Text className="mb-6 text-xs text-fg-muted">
-              {"{{ T .Lang `BookingConfirmation.modification_note` . }}"}
+              {t("BookingConfirmation.modification_note")}
             </Text>
 
             <Hr className="mt-4 border-border" />

@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from "react-email";
+import { If, t, v } from "../template";
 import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
@@ -24,7 +25,7 @@ export default function BookingCancellation() {
     <EmailTailwind>
       <Html>
         <Head />
-        <Preview>{"{{ T .Lang `BookingCancellation.preview` . }}"}</Preview>
+        <Preview>{t("BookingCancellation.preview")}</Preview>
         <Body className="bg-canvas font-sans text-fg">
           <Container
             className="mx-auto max-w-md bg-bg-raised p-4"
@@ -35,11 +36,11 @@ export default function BookingCancellation() {
               as="h1"
               className="mb-[16px] text-[22px] font-bold text-fg"
             >
-              {"{{ T .Lang `BookingCancellation.heading` . }}"}
+              {t("BookingCancellation.heading")}
             </Heading>
 
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `BookingCancellation.main_text` . }}"}
+              {t("BookingCancellation.main_text")}
             </Text>
 
             <Section
@@ -54,7 +55,7 @@ export default function BookingCancellation() {
                     className="m-0 text-xs font-medium tracking-wide
                       text-fg-muted uppercase"
                   >
-                    {"{{ .Date }}"}
+                    {v("Date")}
                   </Text>
                 </Column>
                 <Column className="w-[100px]" align="right">
@@ -63,57 +64,57 @@ export default function BookingCancellation() {
                       py-0.5 text-[14px] font-medium text-fg-danger"
                     style={{ borderRadius: "6px" }}
                   >
-                    {"{{ T .Lang `BookingCancellation.cancelled` . }}"}
+                    {t("BookingCancellation.cancelled")}
                   </Text>
                 </Column>
               </Row>
 
               <Text className="mb-4 text-2xl font-bold text-fg">
-                {"{{ .Time }}"}
+                {v("Time")}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingCancellation.timezone` . }}"}
+                  {t("BookingCancellation.timezone")}
                 </span>
-                {"{{ .TimeZone }}"}
+                {v("TimeZone")}
               </Text>
 
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingCancellation.service_name` . }}"}
+                  {t("BookingCancellation.service_name")}
                 </span>
-                {"{{ .ServiceName }}"}
+                {v("ServiceName")}
               </Text>
               <Text className="text-sm">
                 <span className="font-semibold">
-                  {"{{ T .Lang `BookingCancellation.location` . }}"}
+                  {t("BookingCancellation.location")}
                 </span>
-                {"{{ .Location }}"}
+                {v("Location")}
               </Text>
             </Section>
 
-            {"{{ if .Reason}}"}
-            {/* Cancellation reason section */}
-            <Section
-              className="mb-6 bg-bg-sunken p-[16px]"
-              style={{
-                borderRadius: "6px",
-              }}
-            >
-              <Text className="m-0 mb-[8px] text-sm font-semibold">
-                {"{{ T .Lang `BookingCancellation.cancellation_reason` . }}"}
-              </Text>
-              <Text className="m-0 text-sm">{"{{ .Reason }}"}</Text>
-            </Section>
-            {"{{ end }}"}
+            <If field="Reason">
+              {/* Cancellation reason section */}
+              <Section
+                className="mb-6 bg-bg-sunken p-[16px]"
+                style={{
+                  borderRadius: "6px",
+                }}
+              >
+                <Text className="m-0 mb-[8px] text-sm font-semibold">
+                  {t("BookingCancellation.cancellation_reason")}
+                </Text>
+                <Text className="m-0 text-sm">{v("Reason")}</Text>
+              </Section>
+            </If>
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `BookingCancellation.cancellation_reason_note` . }}"}
+              {t("BookingCancellation.cancellation_reason_note")}
             </Text>
 
             <Section className="my-8 text-center">
               <Button
-                href="{{ .NewBookingLink }}"
+                href={v("NewBookingLink")}
                 className="bg-primary px-4 py-3 text-center text-[14px]
                   font-medium text-fg-on-primary"
                 style={{
@@ -121,16 +122,16 @@ export default function BookingCancellation() {
                   borderRadius: "6px",
                 }}
               >
-                {"{{ T .Lang `BookingCancellation.primary_button` . }}"}
+                {t("BookingCancellation.primary_button")}
               </Button>
             </Section>
 
             <Text className="mb-6 text-sm">
-              {"{{ T .Lang `BookingCancellation.contact_us_note` . }}"}
+              {t("BookingCancellation.contact_us_note")}
             </Text>
 
             <Text className="mb-6 text-xs text-fg-muted">
-              {"{{ T .Lang `BookingCancellation.apology` . }}"}
+              {t("BookingCancellation.apology")}
             </Text>
 
             <Hr className="mt-4 border-border" />
