@@ -82,7 +82,7 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 			Key:          objectKey(image.Id, v.variant),
 			Body:         bytes.NewReader(v.data),
 			Size:         int64(len(v.data)),
-			ContentType:  contentTypeJPEG,
+			ContentType:  v.contentType,
 			CacheControl: variantCacheControl,
 		})
 		if err != nil {

@@ -132,7 +132,7 @@ export const Route = createFileRoute(
 
 function LocationCard({ location, merchantId, canEditPhotos, onEdit }) {
   return (
-    <Card styles="h-auto! p-0! overflow-hidden">
+    <Card styles="h-auto! p-0! overflow-hidden w-fit">
       <div className="flex min-w-0 items-start justify-between gap-4 p-4 sm:p-6">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           <div
@@ -156,7 +156,7 @@ function LocationCard({ location, merchantId, canEditPhotos, onEdit }) {
                 {location.is_active ? "Active" : "Inactive"}
               </span>
             </div>
-            <p className="text-fg-muted mt-1 text-sm leading-6">
+            <p className="text-fg-muted text-sm">
               {location.formatted_location}
             </p>
             {(location.contact_email || location.phone_number) && (

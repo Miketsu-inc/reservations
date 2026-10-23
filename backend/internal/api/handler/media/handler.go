@@ -312,6 +312,8 @@ func (h *Handler) UpdateLocationImage(w http.ResponseWriter, r *http.Request) er
 		return mediaServ.ErrStatus.Resolve(err, "UpdateLocationImage")
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+
 	return nil
 }
 
@@ -356,6 +358,8 @@ func (h *Handler) ReorderLocationImages(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return mediaServ.ErrStatus.Resolve(err, "ReorderLocationImages")
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

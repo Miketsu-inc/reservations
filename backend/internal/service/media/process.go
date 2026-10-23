@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -45,22 +46,24 @@ func variantSizes(purpose types.ImagePurpose) (int, int) {
 var errInvalidImage = errors.New("invalid image")
 
 type processedVariant struct {
-	variant Variant
-	data    []byte
-	width   int
-	height  int
+	variant     Variant
+	contentType string
+	data        []byte
+	width       int
+	height      int
 }
 
 func (s *Service) processImage(ctx context.Context, image domain.Image, crop *domain.ImageCrop) ([]processedVariant, error) {
 	source := fmt.Sprintf("s3://%s/%s", s.uploads.Name(), uploadKey(image.Id))
 	smallSize, largeSize := variantSizes(image.Purpose)
+	format, contentType := outputFormat(image.Purpose)
 
 	variants := make([]processedVariant, 0, 2)
 	for _, v := range []struct {
 		variant Variant
 		size    int
 	}{{VariantSmall, smallSize}, {VariantLarge, largeSize}} {
-		data, err := s.imgproxy.Process(ctx, source, processingOptions(image.Purpose, crop, v.size), "jpg")
+		data, err := s.imgproxy.Process(ctx, source, processingOptions(image.Purpose, crop, v.size), format)
 		if err != nil {
 			if errors.Is(err, imgproxy.ErrInvalidSource) {
 				return nil, fmt.Errorf("%w: %w", errInvalidImage, err)
@@ -74,14 +77,24 @@ func (s *Service) processImage(ctx context.Context, image domain.Image, crop *do
 		}
 
 		variants = append(variants, processedVariant{
-			variant: v.variant,
-			data:    data,
-			width:   width,
-			height:  height,
+			variant:     v.variant,
+			contentType: contentType,
+			data:        data,
+			width:       width,
+			height:      height,
 		})
 	}
 
 	return variants, nil
+}
+
+// Logos often have a transparent background. The rest are photos, where JPEG is a lot smaller
+func outputFormat(purpose types.ImagePurpose) (string, string) {
+	if purpose == types.ImagePurposeMerchantLogo {
+		return "png", contentTypePNG
+	}
+
+	return "jpg", contentTypeJPEG
 }
 
 // See https://docs.imgproxy.net/usage/processing
@@ -98,6 +111,10 @@ func processingOptions(purpose types.ImagePurpose, crop *domain.ImageCrop, size 
 		options = append(options, fmt.Sprintf("rs:fill-down:%d:%d", size, size))
 	} else {
 		options = append(options, fmt.Sprintf("rs:fit:%d:%d:0", size, size))
+	}
+
+	if purpose == types.ImagePurposeMerchantLogo {
+		return options
 	}
 
 	// JPEG has no transparency, so transparent PNG pixels become white

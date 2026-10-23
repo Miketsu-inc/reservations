@@ -70,22 +70,23 @@ export default function AvatarUpload({
         if (file && !isSaving) selectFile(file);
       }}
     >
-      {img || initials ? (
-        <Avatar
-          styles={`${styles} ${rounding}`}
-          img={img}
-          initials={initials}
-          alt={alt}
-        />
-      ) : (
-        <div
-          className={`${styles} ${rounding} border-border-strong bg-bg-sunken
-            text-fg-muted flex size-16 items-center justify-center border
-            border-dashed`}
-        >
-          <Icon icon={ImageAdd01Icon} styles="size-6" />
-        </div>
-      )}
+      <Avatar
+        styles={`${styles} ${rounding}`}
+        img={img}
+        initials={initials}
+        alt={alt}
+        fallback={
+          initials ? undefined : (
+            <div
+              className={`${styles} ${rounding} border-border-strong
+                bg-bg-sunken text-fg-muted flex size-16 items-center
+                justify-center border border-dashed`}
+            >
+              <Icon icon={ImageAdd01Icon} styles="size-6" />
+            </div>
+          )
+        }
+      />
       {(isSaving || isDragging) && (
         <span
           className={`${rounding} bg-bg-backdrop ring-primary absolute inset-0

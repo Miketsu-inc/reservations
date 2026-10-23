@@ -5,7 +5,7 @@ import {
   Note01Icon,
   StarIcon,
 } from "@hugeicons/core-free-icons";
-import { Button, Card, Icon } from "@reservations/components";
+import { Avatar, Button, Card, Icon } from "@reservations/components";
 import {
   dateStringToLocalDate,
   formatDuration,
@@ -146,17 +146,16 @@ export default function BookingSummary({
             className="bg-bg-sunken flex size-18 shrink-0 items-center
               justify-center overflow-hidden rounded-lg"
           >
-            {fetchedSummary?.logo_url ? (
-              <img
-                className="size-full object-cover"
-                src={fetchedSummary.logo_url}
-                alt={`${fetchedSummary.merchant_name} logo`}
-              />
-            ) : (
-              <span className="text-fg-muted text-xl font-semibold">
-                {fetchedSummary?.merchant_name?.slice(0, 2).toUpperCase()}
-              </span>
-            )}
+            <Avatar
+              styles="size-full! rounded-none!"
+              img={fetchedSummary?.logo_url}
+              alt={`${fetchedSummary?.merchant_name} logo`}
+              fallback={
+                <span className="text-fg-muted text-xl font-semibold">
+                  {fetchedSummary?.merchant_name?.slice(0, 2).toUpperCase()}
+                </span>
+              }
+            />
           </div>
           <div className="flex flex-col gap-0.5">
             <h2 className="text-lg font-semibold">

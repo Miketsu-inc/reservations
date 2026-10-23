@@ -1,6 +1,6 @@
 import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
+  ArrowLeft02Icon,
+  ArrowRight02Icon,
   Delete02Icon,
   ImageAdd01Icon,
   MoreHorizontalIcon,
@@ -409,7 +409,7 @@ function PhotoTile({
                   type="button"
                   onClick={() => select(() => onMove(index - 1))}
                 >
-                  <Icon icon={ArrowLeft01Icon} styles="size-4 text-fg-muted" />
+                  <Icon icon={ArrowLeft02Icon} styles="size-4 text-fg-muted" />
                   Move earlier
                 </button>
               )}
@@ -418,7 +418,7 @@ function PhotoTile({
                   type="button"
                   onClick={() => select(() => onMove(index + 1))}
                 >
-                  <Icon icon={ArrowRight01Icon} styles="size-4 text-fg-muted" />
+                  <Icon icon={ArrowRight02Icon} styles="size-4 text-fg-muted" />
                   Move later
                 </button>
               )}
@@ -508,14 +508,14 @@ function DescriptionDialog({ image, onClose, onSave }) {
                 <Button
                   type="button"
                   variant="secondary"
-                  styles="py-2 px-3"
+                  styles="py-2 px-3 hidden lg:block"
                   buttonText="Cancel"
                   disabled={isSaving}
                 />
               </ResponsiveDialogClose>
               <Button
                 type="submit"
-                styles="py-2 px-3"
+                styles="py-2 px-3 w-full lg:w-auto"
                 buttonText="Save"
                 isLoading={isSaving}
                 disabled={altText.trim() === image.alt_text}

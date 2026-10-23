@@ -10,7 +10,13 @@ import {
   TiktokIcon,
   Youtube,
 } from "@hugeicons/core-free-icons";
-import { Button, Icon, Loading, ServerError } from "@reservations/components";
+import {
+  Avatar,
+  Button,
+  Icon,
+  Loading,
+  ServerError,
+} from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -126,10 +132,11 @@ function MerchantPage() {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-4">
                   {merchantInfo.logo_url && (
-                    <img
-                      className="size-14 shrink-0 rounded-xl object-cover"
-                      src={merchantInfo.logo_url}
+                    <Avatar
+                      styles="size-14! shrink-0 rounded-xl!"
+                      img={merchantInfo.logo_url}
                       alt={`${merchantInfo.merchant_name} logo`}
+                      fallback={null}
                     />
                   )}
                   <h1 className="text-4xl font-semibold">
@@ -206,10 +213,11 @@ function MerchantPage() {
             <div className="flex flex-col gap-3.5 lg:hidden">
               <div className="flex items-center gap-3">
                 {merchantInfo.logo_url && (
-                  <img
-                    className="size-12 shrink-0 rounded-xl object-cover"
-                    src={merchantInfo.logo_url}
+                  <Avatar
+                    styles="size-12! shrink-0 rounded-xl!"
+                    img={merchantInfo.logo_url}
                     alt={`${merchantInfo.merchant_name} logo`}
+                    fallback={null}
                   />
                 )}
                 <h1 className="text-3xl font-bold">

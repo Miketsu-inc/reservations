@@ -9,9 +9,10 @@ import (
 )
 
 // Object key of a processed image variant in the media bucket. Every upload gets a new image id,
-// so the content behind a key never changes and can be cached forever
+// so the content behind a key never changes and can be cached forever. There is no extension, the
+// format depends on the purpose and is served from the stored content type
 func objectKey(imageId uuid.UUID, variant Variant) string {
-	return fmt.Sprintf("images/%s/%s.jpg", imageId, variant)
+	return fmt.Sprintf("images/%s/%s", imageId, variant)
 }
 
 func uploadKey(imageId uuid.UUID) string {
