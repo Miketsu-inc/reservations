@@ -9,9 +9,9 @@ import {
   Html,
   Preview,
   Section,
-  Tailwind,
   Text,
 } from "react-email";
+import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
 
@@ -21,19 +21,19 @@ const JABULANI_URL = process.env.JABULANI_URL;
 
 export default function BookingConfirmation() {
   return (
-    <Tailwind>
+    <EmailTailwind>
       <Html lang="hu" dir="ltr">
         <Head />
         <Preview>{"{{ T .Lang `BookingConfirmation.preview` . }}"}</Preview>
-        <Body className="bg-gray-100 font-sans text-black">
+        <Body className="bg-canvas font-sans text-fg">
           <Container
-            className="mx-auto max-w-md bg-white p-4"
+            className="mx-auto max-w-md bg-bg-raised p-4"
             style={{ borderRadius: "6px" }}
           >
             <LogoHeader />
             <Heading
               as="h1"
-              className="mb-[16px] text-[22px] font-bold text-[#111111]"
+              className="mb-[16px] text-[22px] font-bold text-fg"
             >
               {"{{ T .Lang `BookingConfirmation.heading` . }}"}
             </Heading>
@@ -42,19 +42,18 @@ export default function BookingConfirmation() {
             </Text>
 
             <Section
-              className="mb-6 bg-gray-50 pl-4 text-black"
+              className="mb-6 bg-bg-sunken pl-4 text-fg border-l-2 border-l-fg"
               style={{
-                borderLeft: "solid 2px #000000",
                 borderRadius: "6px",
               }}
             >
               <Text
-                className="text-xs font-medium tracking-wide text-black
+                className="text-xs font-medium tracking-wide text-fg
                   uppercase"
               >
                 {"{{ .Date }}"}
               </Text>
-              <Text className="mb-4 text-2xl font-bold text-black">
+              <Text className="mb-4 text-2xl font-bold text-fg">
                 {"{{ .Time }}"}
               </Text>
 
@@ -82,8 +81,8 @@ export default function BookingConfirmation() {
             <Section className="mb-8 text-left">
               <Button
                 href={`${JABULANI_URL}/calendar`}
-                className="mr-2 inline-block w-fit bg-blue-600 px-4 py-3
-                  text-[14px] font-medium text-white"
+                className="mr-2 inline-block w-fit bg-primary px-4 py-3
+                  text-[14px] font-medium text-fg-on-primary"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
@@ -93,8 +92,8 @@ export default function BookingConfirmation() {
               </Button>
               <Button
                 href="{{ .ModifyLink }}"
-                className="ml-2 inline-block w-fit bg-blue-50 px-4 py-3
-                  text-[14px] font-semibold text-blue-700"
+                className="ml-2 inline-block w-fit bg-primary-subtle px-4 py-3
+                  text-[14px] font-semibold text-fg-primary"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
@@ -104,16 +103,16 @@ export default function BookingConfirmation() {
               </Button>
             </Section>
 
-            <Text className="mb-6 text-xs text-gray-600">
+            <Text className="mb-6 text-xs text-fg-muted">
               {"{{ T .Lang `BookingConfirmation.modification_note` . }}"}
             </Text>
 
-            <Hr className="mt-4" style={{ border: "1px solid #e5e7b" }} />
+            <Hr className="mt-4 border-border" />
 
             <Footer />
           </Container>
         </Body>
       </Html>
-    </Tailwind>
+    </EmailTailwind>
   );
 }

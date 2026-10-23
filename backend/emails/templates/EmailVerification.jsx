@@ -11,9 +11,9 @@ import {
   Preview,
   Row,
   Section,
-  Tailwind,
   Text,
 } from "react-email";
+import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
 
@@ -21,22 +21,22 @@ void React;
 
 export default function EmailVerification() {
   return (
-    <Tailwind>
+    <EmailTailwind>
       <Html lang="hu" dir="ltr">
         <Head />
         <Preview>{"{{ T .Lang `EmailVerification.preview` . }}"}</Preview>
-        <Body className="bg-gray-100 font-sans text-black">
+        <Body className="bg-canvas font-sans text-fg">
           <Container
-            className="mx-auto max-w-md bg-white p-4"
+            className="mx-auto max-w-md bg-bg-raised p-4"
             style={{ borderRadius: "6px" }}
           >
             <LogoHeader />
             <Section className="py-4">
-              <Heading className="mb-2 text-center text-2xl font-bold text-gray-800">
+              <Heading className="mb-2 text-center text-2xl font-bold text-fg">
                 {"{{ T .Lang `EmailVerification.heading` . }}"}
               </Heading>
 
-              <Text className="mb-6 text-center text-[16px] text-gray-700">
+              <Text className="mb-6 text-center text-[16px] text-fg-muted">
                 {"{{ T .Lang `EmailVerification.main_text` . }}"}
               </Text>
 
@@ -45,9 +45,8 @@ export default function EmailVerification() {
                   <Column align="center">
                     <Section className="mx-auto">
                       <Text
-                        className="bg-blue-50 px-14 py-2 font-mono text-2xl font-bold tracking-widest text-blue-700"
+                        className="bg-primary-subtle px-14 py-2 font-mono text-2xl font-bold tracking-widest text-fg-primary border border-border-primary"
                         style={{
-                          border: "solid 1px #1447e6",
                           borderRadius: "5px",
                         }}
                       >
@@ -58,29 +57,29 @@ export default function EmailVerification() {
                 </Row>
               </Section>
 
-              <Text className="mb-16 text-center text-gray-600">
+              <Text className="mb-16 text-center text-fg-muted">
                 {"{{ T .Lang `EmailVerification.expiration_note` . }}"}
-                <strong className="text-blue-600">
+                <strong className="text-fg-primary">
                   {"{{ T .Lang `EmailVerification.expiration_note2` . }}"}
                 </strong>
                 {"{{ T .Lang `EmailVerification.expiration_note3` . }}"}
               </Text>
-              <Text className="text-center text-[14px] text-gray-600">
+              <Text className="text-center text-[14px] text-fg-muted">
                 {"{{ T .Lang `EmailVerification.contact_us_note` . }}"}
                 <Link
                   href="mailto:support@company.com"
-                  className="text-blue-600"
+                  className="text-fg-primary"
                 >
                   <u>support@company.com</u>
                 </Link>
                 {"{{ T .Lang `EmailVerification.contact_us_note2` . }}"}
               </Text>
-              <Hr className="mt-2" style={{ border: "1px solid #e5e7b" }} />
+              <Hr className="mt-2 border-border" />
             </Section>
             <Footer />
           </Container>
         </Body>
       </Html>
-    </Tailwind>
+    </EmailTailwind>
   );
 }

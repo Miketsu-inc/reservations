@@ -9,9 +9,9 @@ import {
   Html,
   Preview,
   Section,
-  Tailwind,
   Text,
 } from "react-email";
+import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
 
@@ -19,40 +19,36 @@ void React;
 
 export default function BookingReminder() {
   return (
-    <Tailwind>
+    <EmailTailwind>
       <Html lang="hu" dir="ltr">
         <Head />
         <Preview>{"{{ T .Lang `BookingReminder.preview` . }}"}</Preview>
-        <Body className="bg-gray-100 font-sans text-black">
+        <Body className="bg-canvas font-sans text-fg">
           <Container
-            className="mx-auto max-w-md bg-white p-4"
+            className="mx-auto max-w-md bg-bg-raised p-4"
             style={{ borderRadius: "6px" }}
           >
             <LogoHeader />
-            <Heading
-              as="h1"
-              className="mb-4 text-[22px] font-bold text-[#111111]"
-            >
+            <Heading as="h1" className="mb-4 text-[22px] font-bold text-fg">
               {"{{ T .Lang `BookingReminder.heading` . }}"}
             </Heading>
-            <Text className="mb-6 text-sm text-black">
+            <Text className="mb-6 text-sm text-fg">
               {"{{ T .Lang `BookingReminder.main_text` . }}"}
             </Text>
 
             <Section
-              className="mb-6 bg-gray-50 pl-4 text-black"
+              className="mb-6 bg-bg-sunken pl-4 text-fg border-l-2 border-l-fg"
               style={{
-                borderLeft: "solid 2px #000000",
                 borderRadius: "6px",
               }}
             >
               <Text
-                className="text-xs font-medium tracking-wide text-black
+                className="text-xs font-medium tracking-wide text-fg
                   uppercase"
               >
                 {"{{ .Date }}"}
               </Text>
-              <Text className="mb-4 text-2xl font-bold text-black">
+              <Text className="mb-4 text-2xl font-bold text-fg">
                 {"{{ .Time }}"}
               </Text>
 
@@ -80,8 +76,8 @@ export default function BookingReminder() {
             <Section className="mb-8 text-center">
               <Button
                 href="{{ .ModifyLink }}"
-                className="bg-blue-600 px-4 py-3 text-center text-[14px]
-                  font-medium text-white"
+                className="bg-primary px-4 py-3 text-center text-[14px]
+                  font-medium text-fg-on-primary"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
@@ -95,16 +91,16 @@ export default function BookingReminder() {
               {"{{ T .Lang `BookingReminder.arrive_on_time_note` . }}"}
             </Text>
 
-            <Text className="mb-6 text-xs text-gray-600">
+            <Text className="mb-6 text-xs text-fg-muted">
               {"{{ T .Lang `BookingReminder.contact_us_note` . }}"}
             </Text>
 
-            <Hr className="mt-4" style={{ border: "1px solid #e5e7eb" }} />
+            <Hr className="mt-4 border-border" />
 
             <Footer />
           </Container>
         </Body>
       </Html>
-    </Tailwind>
+    </EmailTailwind>
   );
 }

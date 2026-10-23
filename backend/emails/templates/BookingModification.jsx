@@ -11,9 +11,9 @@ import {
   Preview,
   Row,
   Section,
-  Tailwind,
   Text,
 } from "react-email";
+import EmailTailwind from "../components/EmailTailwind";
 import Footer from "../components/Footer";
 import LogoHeader from "../components/LogoHeader";
 
@@ -21,35 +21,34 @@ void React;
 
 export default function BookingModification() {
   return (
-    <Tailwind>
+    <EmailTailwind>
       <Html>
         <Head />
         <Preview>{"{{ T .Lang `BookingModification.preview` . }}"}</Preview>
-        <Body className="bg-gray-100 font-sans text-black">
+        <Body className="bg-canvas font-sans text-fg">
           <Container
-            className="mx-auto max-w-md bg-white p-4"
+            className="mx-auto max-w-md bg-bg-raised p-4"
             style={{ borderRadius: "6px" }}
           >
             <LogoHeader />
-            <Heading as="h1" className="mb-4 text-2xl font-bold text-[#111111]">
+            <Heading as="h1" className="mb-4 text-2xl font-bold text-fg">
               {"{{ T .Lang `BookingModification.heading` . }}"}
             </Heading>
 
-            <Text className="mb-5 text-[16px] text-gray-700">
+            <Text className="mb-5 text-[16px] text-fg-muted">
               {"{{ T .Lang `BookingModification.main_text` . }}"}
             </Text>
 
             <Section className="mb-6">
               <Row
-                className="bg-gray-50 p-3"
+                className="bg-bg-sunken p-3 border-b-2 border-b-border-strong"
                 style={{
-                  borderBottom: "solid 2px #d1d5dc",
                   borderTopLeftRadius: "6px",
                   borderTopRightRadius: "6px",
                 }}
               >
                 <Column>
-                  <Text className="m-0 text-[16px] font-semibold text-black">
+                  <Text className="m-0 text-[16px] font-semibold text-fg">
                     {
                       "{{ T .Lang `BookingModification.modification_details` . }}"
                     }
@@ -57,18 +56,15 @@ export default function BookingModification() {
                 </Column>
               </Row>
 
-              <Row
-                className="p-3"
-                style={{ borderBottom: "solid 2px #d1d5dc" }}
-              >
+              <Row className="p-3 border-b-2 border-b-border-strong">
                 <Column className="w-[120px]">
-                  <Text className="m-0 font-semibold text-gray-600">
+                  <Text className="m-0 font-semibold text-fg-muted">
                     {"{{ T .Lang `BookingModification.original_text` . }}"}
                   </Text>
                 </Column>
                 <Column>
                   <Text
-                    className="m-0 text-gray-800"
+                    className="m-0 text-fg"
                     style={{ textDecoration: "line-through" }}
                   >
                     <span className="font-medium">{"{{ .OldDate }}"}</span>,{" "}
@@ -78,19 +74,19 @@ export default function BookingModification() {
               </Row>
 
               <Row
-                className="bg-green-100 p-3"
+                className="bg-success-subtle p-3"
                 style={{
                   borderBottomLeftRadius: "6px",
                   borderBottomRightRadius: "6px",
                 }}
               >
                 <Column className="w-[120px]">
-                  <Text className="m-0 font-semibold text-gray-600">
+                  <Text className="m-0 font-semibold text-fg-muted">
                     {"{{ T .Lang `BookingModification.new_text` . }}"}
                   </Text>
                 </Column>
                 <Column>
-                  <Text className="m-0 text-gray-800">
+                  <Text className="m-0 text-fg">
                     <span className="font-medium">{"{{ .Date }}"}</span>,{" "}
                     {"{{ .Time }}"}
                   </Text>
@@ -99,25 +95,25 @@ export default function BookingModification() {
             </Section>
 
             <Section
-              className="mb-6 bg-gray-50 px-4 py-2"
-              style={{ borderLeft: "solid 2px #000000", borderRadius: "6px" }}
+              className="mb-6 bg-bg-sunken px-4 py-2 border-l-2 border-l-fg"
+              style={{ borderRadius: "6px" }}
             >
-              <Text className="mt-0 text-[16px] font-semibold text-black">
+              <Text className="mt-0 text-[16px] font-semibold text-fg">
                 {"{{ T .Lang `BookingModification.unmodified_details` . }}"}
               </Text>
-              <Text className="mt-0 mb-1 text-gray-700">
+              <Text className="mt-0 mb-1 text-fg-muted">
                 <span className="font-semibold">
                   {"{{ T .Lang `BookingModification.timezone` . }}"}
                 </span>{" "}
                 {"{{ .TimeZone }}"}
               </Text>
-              <Text className="mt-0 mb-1 text-gray-700">
+              <Text className="mt-0 mb-1 text-fg-muted">
                 <span className="font-semibold">
                   {"{{ T .Lang `BookingModification.service_name` . }}"}
                 </span>{" "}
                 {"{{ .ServiceName }}"}
               </Text>
-              <Text className="m-0 text-gray-700">
+              <Text className="m-0 text-fg-muted">
                 <span className="font-semibold">
                   {"{{ T .Lang `BookingModification.location` . }}"}
                 </span>{" "}
@@ -125,15 +121,15 @@ export default function BookingModification() {
               </Text>
             </Section>
 
-            <Text className="mb-6 text-[16px] text-gray-700">
+            <Text className="mb-6 text-[16px] text-fg-muted">
               {"{{ T .Lang `BookingModification.modification_note` . }}"}
             </Text>
 
             <Section className="mb-8 text-center">
               <Button
                 href="{{ .ModifyLink }}"
-                className="bg-blue-600 px-6 py-3 text-center font-medium
-                  text-white"
+                className="bg-primary px-6 py-3 text-center font-medium
+                  text-fg-on-primary"
                 style={{
                   boxSizing: "border-box",
                   borderRadius: "6px",
@@ -143,20 +139,20 @@ export default function BookingModification() {
               </Button>
             </Section>
 
-            <Text className="mb-2 text-gray-700">
+            <Text className="mb-2 text-fg-muted">
               {"{{ T .Lang `BookingModification.extra_info` . }}"}
             </Text>
 
-            <Text className="mb-6 text-gray-700">
+            <Text className="mb-6 text-fg-muted">
               {"{{ T .Lang `BookingModification.contact_us_note` . }}"}
             </Text>
 
-            <Hr className="my-6" style={{ border: "1px solid #e5e7eb" }} />
+            <Hr className="my-6 border-border" />
 
             <Footer />
           </Container>
         </Body>
       </Html>
-    </Tailwind>
+    </EmailTailwind>
   );
 }

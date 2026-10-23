@@ -16,7 +16,7 @@ export default function LogoHeader() {
           />
         </Column>
         <Column align="left" className="pl-3">
-          <Text className="m-0 text-[16px] font-medium text-[#333333]">
+          <Text className="m-0 text-[16px] font-medium text-fg">
             Company Name
           </Text>
         </Column>
