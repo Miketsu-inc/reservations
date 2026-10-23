@@ -66,4 +66,5 @@ type EmployeeAuthInfo struct {
 	MerchantName    string             `db:"merchant_name"`
 	MerchantUrlName string             `db:"merchant_url_name"`
 	Role            types.EmployeeRole `db:"role"`
+	AvatarImageId   *uuid.UUID         `db:"avatar_image_id"`
 }

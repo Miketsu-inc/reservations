@@ -189,6 +189,7 @@ type membershipsResp struct {
 	MerchantUrlName string             `json:"merchant_url_name"`
 	EmployeeId      int                `json:"employee_id"`
 	Role            types.EmployeeRole `json:"role"`
+	AvatarUrl       *string            `json:"avatar_url"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {

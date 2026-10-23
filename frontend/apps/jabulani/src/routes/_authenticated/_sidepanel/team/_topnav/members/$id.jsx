@@ -19,8 +19,10 @@ import {
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
+  calendarTeamMembersQueryOptions,
   employeeQueryOptions,
   invalidateLocalStorageAuth,
+  meQueryOptions,
   useToast,
 } from "@reservations/lib";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,7 +55,7 @@ function RouteComponent() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, employeeId } = useAuth();
   const queryClient = useQueryClient();
 
   const {
@@ -69,6 +71,20 @@ function RouteComponent() {
 
   if (isError) {
     return <ServerError error={error.message} />;
+  }
+
+  async function refreshAvatar() {
+    await Promise.all([
+      queryClient.invalidateQueries(employeeQueryOptions(merchantId, id)),
+      queryClient.invalidateQueries(
+        calendarTeamMembersQueryOptions(merchantId)
+      ),
+    ]);
+
+    if (employee.id === employeeId) {
+      await queryClient.invalidateQueries(meQueryOptions());
+      await router.invalidate();
+    }
   }
 
   async function deleteHandler() {
@@ -125,11 +141,7 @@ function RouteComponent() {
                 alt={`${employee.first_name} ${employee.last_name}`}
                 url={`/api/v1/merchants/${merchantId}/media/team/${employee.id}/avatar`}
                 canRemove={employee.has_own_avatar}
-                onChange={() =>
-                  queryClient.invalidateQueries(
-                    employeeQueryOptions(merchantId, id)
-                  )
-                }
+                onChange={refreshAvatar}
               />
 
               <div className="flex flex-col gap-1">

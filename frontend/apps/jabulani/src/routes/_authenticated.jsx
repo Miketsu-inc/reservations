@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
           merchantName: membership?.merchant_name,
           merchantUrlName: membership?.merchant_url_name,
           employeeId: membership?.employee_id,
+          employeeAvatarUrl: membership?.avatar_url,
           role: membership?.role,
         };
 

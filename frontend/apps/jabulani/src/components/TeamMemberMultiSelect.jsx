@@ -33,6 +33,7 @@ export default function TeamMemberMultiSelect({
   const options = team.map((member) => ({
     value: member.id,
     label: `${member.first_name} ${member.last_name}`,
+    img: member.avatar_url,
     initials: `${member.first_name[0]}${member.last_name[0]}`,
   }));
 

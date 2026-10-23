@@ -54,6 +54,7 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 			MerchantUrlName: e.MerchantUrlName,
 			EmployeeId:      e.Id,
 			Role:            e.Role,
+			AvatarUrl:       mediaServ.URL(e.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
