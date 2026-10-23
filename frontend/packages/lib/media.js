@@ -1,3 +1,5 @@
+import { invalidateLocalStorageAuth } from "./lib.js";
+
 // 10 MB, has to match the backend limit
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
@@ -17,7 +19,7 @@ export function validateImageFile(file) {
   return null;
 }
 
-async function jsonRequest(url, method, body) {
+export async function jsonRequest(url, method, body) {
   const response = await fetch(url, {
     method: method,
     headers: {
@@ -28,6 +30,7 @@ async function jsonRequest(url, method, body) {
   });
 
   if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
     const result = await response.json();
     throw new Error(result.error.message);
   }

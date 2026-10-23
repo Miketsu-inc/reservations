@@ -24,6 +24,7 @@ import {
   ACCEPTED_IMAGE_TYPES,
   deleteImage,
   invalidateLocalStorageAuth,
+  jsonRequest,
   uploadImage,
   useToast,
   validateImageFile,
@@ -52,23 +53,6 @@ function locationImagesQueryOptions(merchantId, locationId) {
     queryKey: [merchantId, "location-images", locationId],
     queryFn: () => fetchLocationImages(merchantId, locationId),
   });
-}
-
-async function sendJson(url, method, body) {
-  const response = await fetch(url, {
-    method: method,
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
-    const result = await response.json();
-    throw result.error;
-  }
 }
 
 export default function LocationGallery({ merchantId, locationId, canEdit }) {
@@ -174,7 +158,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     queryClient.setQueryData(queryKey, { ...data, images: reordered });
 
     try {
-      await sendJson(`${imagesUrl}/order`, "PUT", {
+      await jsonRequest(`${imagesUrl}/order`, "PUT", {
         image_ids: reordered.map((image) => image.image_id),
       });
     } catch (error) {
@@ -184,7 +168,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
   }
 
   async function saveAltText(image, altText) {
-    await sendJson(`${imagesUrl}/${image.image_id}`, "PATCH", {
+    await jsonRequest(`${imagesUrl}/${image.image_id}`, "PATCH", {
       alt_text: altText,
     });
 
@@ -242,10 +226,11 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
             className={`${
               isDragging
                 ? "border-border-primary bg-primary-subtle"
-                : "border-border-strong bg-bg-sunken hover:border-border-primary hover:bg-primary-subtle"
-            } flex h-48 w-full cursor-pointer flex-col items-center
-            justify-center gap-2 rounded-xl border border-dashed px-4
-            text-center transition-colors`}
+                : `border-border-strong bg-bg-sunken hover:border-border-primary
+                  hover:bg-primary-subtle`
+              } flex h-48 w-full cursor-pointer flex-col items-center
+              justify-center gap-2 rounded-xl border border-dashed px-4
+              text-center transition-colors`}
           >
             <span className="bg-bg-raised shadow-card rounded-full p-2.5">
               <Icon icon={ImageAdd01Icon} styles="size-5 text-fg-primary" />
@@ -263,7 +248,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
       ) : (
         <div
           className={`${isDragging ? "outline-primary outline-2 outline-offset-4 outline-dashed" : ""}
-          grid max-w-3xl grid-cols-2 gap-3 rounded-xl sm:grid-cols-3`}
+            grid max-w-3xl grid-cols-2 gap-3 rounded-xl sm:grid-cols-3`}
         >
           {images.map((image, index) => (
             <PhotoTile
@@ -282,8 +267,8 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
             <div
               key={`uploading-${i}`}
               className={`${tileStyles(images.length + i)} bg-bg-sunken
-              text-fg-muted flex flex-col items-center justify-center gap-2
-              rounded-xl text-xs`}
+                text-fg-muted flex flex-col items-center justify-center gap-2
+                rounded-xl text-xs`}
             >
               <LoaderIcon styles="size-5 text-fg-primary" />
               Uploading…
@@ -294,10 +279,11 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
               type="button"
               onClick={openFilePicker}
               className={`${tileStyles(tileCount - 1)} border-border-strong
-              text-fg-muted hover:border-border-primary hover:bg-primary-subtle
-              hover:text-fg-primary flex cursor-pointer flex-col items-center
-              justify-center gap-1.5 rounded-xl border border-dashed text-xs
-              font-medium transition-colors`}
+                text-fg-muted hover:border-border-primary
+                hover:bg-primary-subtle hover:text-fg-primary flex
+                cursor-pointer flex-col items-center justify-center gap-1.5
+                rounded-xl border border-dashed text-xs font-medium
+                transition-colors`}
             >
               <Icon icon={ImageAdd01Icon} styles="size-5" />
               Add photos
@@ -364,7 +350,8 @@ function PhotoTile({
 
   return (
     <figure
-      className={`${styles} group bg-bg-sunken relative overflow-hidden rounded-xl`}
+      className={`${styles} group bg-bg-sunken relative overflow-hidden
+        rounded-xl`}
     >
       <img
         src={isCover ? image.url : image.thumbnail_url}
@@ -398,17 +385,18 @@ function PhotoTile({
           <PopoverTrigger
             aria-label="Photo options"
             className="bg-bg-overlay text-fg shadow-card hover:text-fg-primary
-              data-popup-open:opacity-100 absolute top-2 right-2 cursor-pointer
-              rounded-full p-1.5 transition-opacity group-hover:opacity-100
-              focus-visible:opacity-100 lg:opacity-0"
+              absolute top-2 right-2 cursor-pointer rounded-full p-1.5
+              transition-opacity group-hover:opacity-100
+              focus-visible:opacity-100 data-popup-open:opacity-100
+              lg:opacity-0"
           >
             <Icon icon={MoreHorizontalIcon} styles="size-4" />
           </PopoverTrigger>
           <PopoverContent align="end">
             <div
               className="*:hover:bg-hover space-y-0.5 *:flex *:w-full
-                *:cursor-pointer *:flex-row *:items-center *:gap-2
-                *:rounded-lg *:p-2"
+                *:cursor-pointer *:flex-row *:items-center *:gap-2 *:rounded-lg
+                *:p-2"
             >
               {!isCover && (
                 <button type="button" onClick={() => select(() => onMove(0))}>

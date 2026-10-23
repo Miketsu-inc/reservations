@@ -55,8 +55,7 @@ function RouteComponent() {
               img={user.avatar_url}
               initials={`${user.first_name[0]}${user.last_name[0]}`}
               alt={`${user.first_name} ${user.last_name}`}
-              uploadUrl="/api/v1/media/avatar"
-              deleteUrl="/api/v1/media/avatar"
+              url="/api/v1/media/avatar"
               canRemove={!!user.avatar_url}
               onChange={() => queryClient.invalidateQueries(meQueryOptions())}
             />

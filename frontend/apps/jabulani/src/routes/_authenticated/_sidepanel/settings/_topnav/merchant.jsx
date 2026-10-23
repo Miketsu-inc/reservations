@@ -1,21 +1,15 @@
 import {
-  ImageCropDialog,
+  AvatarUpload,
   Loading,
   ServerError,
   Textarea,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import {
-  deleteImage,
-  invalidateLocalStorageAuth,
-  uploadImage,
-  useToast,
-} from "@reservations/lib";
+import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import DangerZone from "./-components/DangerZone";
-import LogoUploader from "./-components/LogoUploader";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
@@ -107,10 +101,6 @@ function MerchantPage() {
     },
   });
 
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
-
   const canEditLogo = role === "owner" || role === "admin";
   const logoUrl = `/api/v1/merchants/${merchantId}/media/logo`;
 
@@ -118,45 +108,11 @@ function MerchantPage() {
     setChanges((current) => ({ ...current, [name]: value }));
   }
 
-  function selectLogo(file) {
-    setLogoFile(file);
-    setLogoPreviewUrl(URL.createObjectURL(file));
-  }
-
-  function closeLogoCropDialog() {
-    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
-    setLogoFile(null);
-    setLogoPreviewUrl(null);
-  }
-
   async function refreshLogo() {
     // only the logo is refetched, unsaved text changes are kept
     await queryClient.invalidateQueries(
       merchantProfileSettingsQueryOptions(merchantId)
     );
-  }
-
-  async function saveLogo(crop) {
-    setIsLogoUploading(true);
-
-    try {
-      await uploadImage(logoUrl, logoFile, crop);
-      await refreshLogo();
-      closeLogoCropDialog();
-    } catch (error) {
-      showToast({ message: error.message, variant: "error" });
-    } finally {
-      setIsLogoUploading(false);
-    }
-  }
-
-  async function removeLogo() {
-    try {
-      await deleteImage(logoUrl);
-      await refreshLogo();
-    } catch (error) {
-      showToast({ message: error.message, variant: "error" });
-    }
   }
 
   if (isLoading) return <Loading />;
@@ -195,24 +151,21 @@ function MerchantPage() {
             </>
           }
         >
-          <LogoUploader
-            logoUrl={profileSettings.logo_url}
-            isUploading={isLogoUploading}
-            onFileSelected={selectLogo}
-            onRemove={removeLogo}
-          />
-          <ImageCropDialog
-            key={logoPreviewUrl}
-            open={logoPreviewUrl !== null}
-            onOpenChange={(open) =>
-              !open && !isLogoUploading && closeLogoCropDialog()
-            }
-            imageSrc={logoPreviewUrl}
-            title="Crop logo"
-            cropShape="rect"
-            isSaving={isLogoUploading}
-            onSave={saveLogo}
-          />
+          <div className="flex flex-row items-center gap-5">
+            <AvatarUpload
+              styles="size-24"
+              shape="square"
+              label="logo"
+              img={profileSettings.logo_url}
+              alt="Logo"
+              url={logoUrl}
+              onChange={refreshLogo}
+            />
+            <p className="text-fg-muted max-w-sm text-sm">
+              A square image works best, at least 512 × 512 px. JPG or PNG, up
+              to 10 MB.
+            </p>
+          </div>
         </SettingsSection>
       )}
 
