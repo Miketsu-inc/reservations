@@ -33,7 +33,7 @@ func (w *ProcessImage) Timeout(*river.Job[args.ProcessImage]) time.Duration {
 }
 
 func (w *ProcessImage) Work(ctx context.Context, job *river.Job[args.ProcessImage]) error {
-	return cancelIfUnprocessable(w.mediaService.ProcessImage(ctx, job.Args.ImageId, job.Args.Crop))
+	return cancelIfUnprocessable(w.mediaService.ProcessImage(ctx, job.Args.ImageId, job.Args.Crop, job.Args.ContentType))
 }
 
 type DeleteImage struct {

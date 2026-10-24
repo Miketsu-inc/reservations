@@ -88,7 +88,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	uploadsBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_UPLOADS_BUCKET)
 	mediaBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_MEDIA_BUCKET)
 
-	imgproxyClient := imgproxy.NewClient(fmt.Sprintf("http://localhost:%s", cfg.IMGPROXY_PORT), cfg.IMGPROXY_KEY, cfg.IMGPROXY_SALT)
+	imgproxyClient := imgproxy.NewClient(cfg.IMGPROXY_URL, cfg.IMGPROXY_KEY, cfg.IMGPROXY_SALT)
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)

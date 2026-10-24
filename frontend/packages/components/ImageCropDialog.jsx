@@ -3,24 +3,22 @@ import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 import Button from "./Button.jsx";
 import Icon from "./Icon.jsx";
-import Slider from "./Slider.jsx";
 import {
   ResponsiveDialog,
   ResponsiveDialogClose,
   ResponsiveDialogContent,
 } from "./ResponsiveDialog.jsx";
+import Slider from "./Slider.jsx";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 // the crop area is smaller than the cropper, so the rest of the image stays visible around it
-const CROP_AREA_RATIO = 0.82;
+const CROP_AREA_RATIO = 0.9;
 
-// The crop passed to onSave is in pixels, relative to the image as it is displayed (EXIF orientation applied)
 export default function ImageCropDialog({
   imageSrc,
   title = "Crop image",
   cropShape = "round",
-  isSaving,
   onSave,
   ...dialogProps
 }) {
@@ -28,6 +26,7 @@ export default function ImageCropDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [cropPixels, setCropPixels] = useState(null);
+  const [cropArea, setCropArea] = useState(null);
 
   const containerRef = useCallback((container) => {
     if (!container) return;
@@ -79,14 +78,15 @@ export default function ImageCropDialog({
                 }}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
-                onCropComplete={(_, pixels) =>
+                onCropComplete={(area, pixels) => {
+                  setCropArea(area);
                   setCropPixels({
                     x: Math.round(pixels.x),
                     y: Math.round(pixels.y),
                     width: Math.round(pixels.width),
                     height: Math.round(pixels.height),
-                  })
-                }
+                  });
+                }}
               />
             )}
           </div>
@@ -110,16 +110,14 @@ export default function ImageCropDialog({
                 styles="py-2 px-3 hidden lg:block"
                 buttonText="Cancel"
                 type="button"
-                disabled={isSaving}
               />
             </ResponsiveDialogClose>
             <Button
               styles="py-2 px-3 w-full lg:w-auto"
               buttonText="Save"
               type="button"
-              isLoading={isSaving}
               disabled={!cropPixels}
-              onClick={() => onSave(cropPixels)}
+              onClick={() => onSave(cropPixels, cropArea)}
             />
           </div>
         </div>

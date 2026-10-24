@@ -255,8 +255,9 @@ func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *d
 		}
 
 		_, err = s.enqueuer.InsertTx(ctx, tx, args.ProcessImage{
-			ImageId: imageId,
-			Crop:    crop,
+			ImageId:     imageId,
+			Crop:        crop,
+			ContentType: info.ContentType,
 		}, nil)
 		if err != nil {
 			return fmt.Errorf("error scheduling image processing: %w", err)
@@ -381,7 +382,45 @@ func (s *Service) DeleteLocationImage(ctx context.Context, locationId int, image
 func (s *Service) ReorderLocationImages(ctx context.Context, locationId int, imageIds []uuid.UUID) error {
 	actor := actor.MustGetFromContext(ctx)
 
+	_, err := s.locationRepo.GetLocation(ctx, locationId, actor.MerchantId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrLocationNotFound
+		}
+		return err
+	}
+
+	images, err := s.imageRepo.GetLocationImages(ctx, actor.MerchantId, locationId)
+	if err != nil {
+		return err
+	}
+
+	// a partial order would give the left out images the same sequence as one of the listed ones
+	if !isSameImageSet(images, imageIds) {
+		return ErrInvalidImageOrder
+	}
+
 	return s.imageRepo.ReorderLocationImages(ctx, actor.MerchantId, locationId, imageIds)
+}
+
+func isSameImageSet(images []domain.LocationImage, imageIds []uuid.UUID) bool {
+	if len(images) != len(imageIds) {
+		return false
+	}
+
+	remaining := make(map[uuid.UUID]bool, len(images))
+	for _, img := range images {
+		remaining[img.ImageId] = true
+	}
+
+	for _, id := range imageIds {
+		if !remaining[id] {
+			return false
+		}
+		delete(remaining, id)
+	}
+
+	return true
 }
 
 func (s *Service) scheduleImageDeletion(ctx context.Context, tx pgx.Tx, imageId *uuid.UUID) error {

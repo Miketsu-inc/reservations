@@ -132,7 +132,7 @@ export const Route = createFileRoute(
 
 function LocationCard({ location, merchantId, canEditPhotos, onEdit }) {
   return (
-    <Card styles="h-auto! p-0! overflow-hidden w-fit">
+    <Card styles="h-auto! p-0! overflow-hidden">
       <div className="flex min-w-0 items-start justify-between gap-4 p-4 sm:p-6">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           <div

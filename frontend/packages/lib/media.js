@@ -2,14 +2,14 @@ import { invalidateLocalStorageAuth } from "./lib.js";
 
 // 10 MB, has to match the backend limit
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
+export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const POLL_INTERVAL_MS = 1000;
 const POLL_TIMEOUT_MS = 60 * 1000;
 
 export function validateImageFile(file) {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    return "Only JPEG and PNG images are supported";
+    return "Only JPG, PNG and WebP images are supported";
   }
 
   if (file.size > MAX_IMAGE_SIZE) {
@@ -116,5 +116,6 @@ export async function uploadImage(uploadUrl, file, crop) {
     }
   }
 
-  throw new Error("Processing the image is taking longer than expected");
+  // do not error on timeout
+  return null;
 }

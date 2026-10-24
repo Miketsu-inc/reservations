@@ -408,7 +408,16 @@ create table if not exists "Image" (
     width                    integer,
     height                   integer,
     created_by               uuid            references "User" (ID) on delete set null,
-    created_at               timestamptz     not null default now()
+    created_at               timestamptz     not null default now(),
+
+    constraint image_target_matches_purpose check (
+        case purpose
+            when 'user_avatar' then merchant_id is null and employee_id is null and location_id is null
+            when 'employee_avatar' then user_id is null and location_id is null
+            when 'merchant_logo' then user_id is null and employee_id is null and location_id is null
+            when 'location_image' then user_id is null and employee_id is null
+        end
+    )
 );
 
 create table if not exists "LocationImage" (

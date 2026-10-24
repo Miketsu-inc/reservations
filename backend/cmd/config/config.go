@@ -47,7 +47,7 @@ type Config struct {
 	R2_MEDIA_BUCKET      string
 	MEDIA_PUBLIC_URL     string
 
-	IMGPROXY_PORT string
+	IMGPROXY_URL  string
 	IMGPROXY_KEY  string
 	IMGPROXY_SALT string
 }
@@ -86,7 +86,7 @@ func LoadEnvVars() *Config {
 		r2_uploads_bucket := os.Getenv("R2_UPLOADS_BUCKET")
 		r2_media_bucket := os.Getenv("R2_MEDIA_BUCKET")
 		media_public_url := os.Getenv("MEDIA_PUBLIC_URL")
-		imgproxy_port := os.Getenv("IMGPROXY_PORT")
+		imgproxy_url := os.Getenv("IMGPROXY_URL")
 		imgproxy_key := os.Getenv("IMGPROXY_KEY")
 		imgproxy_salt := os.Getenv("IMGPROXY_SALT")
 
@@ -120,7 +120,7 @@ func LoadEnvVars() *Config {
 			R2_UPLOADS_BUCKET:            r2_uploads_bucket,
 			R2_MEDIA_BUCKET:              r2_media_bucket,
 			MEDIA_PUBLIC_URL:             media_public_url,
-			IMGPROXY_PORT:                imgproxy_port,
+			IMGPROXY_URL:                 imgproxy_url,
 			IMGPROXY_KEY:                 imgproxy_key,
 			IMGPROXY_SALT:                imgproxy_salt,
 		}
@@ -158,7 +158,7 @@ func (c *Config) Validate() {
 	assert.True(c.R2_UPLOADS_BUCKET != "", "R2_UPLOADS_BUCKET environment variable could not be found")
 	assert.True(c.R2_MEDIA_BUCKET != "", "R2_MEDIA_BUCKET environment variable could not be found")
 	assert.True(c.MEDIA_PUBLIC_URL != "", "MEDIA_PUBLIC_URL environment variable could not be found")
-	assert.True(c.IMGPROXY_PORT != "", "IMGPROXY_PORT environment variable could not be found")
+	assert.True(c.IMGPROXY_URL != "", "IMGPROXY_URL environment variable could not be found")
 	assert.True(c.IMGPROXY_KEY != "", "IMGPROXY_KEY environment variable could not be found")
 	assert.True(c.IMGPROXY_SALT != "", "IMGPROXY_SALT environment variable could not be found")
 }

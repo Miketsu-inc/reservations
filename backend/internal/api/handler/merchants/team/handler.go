@@ -302,7 +302,7 @@ func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) erro
 }
 
 type createUploadReq struct {
-	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png"`
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png|eq=image/webp"`
 	Size        int64  `json:"size" validate:"required,min=1"`
 }
 

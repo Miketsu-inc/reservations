@@ -23,9 +23,10 @@ const (
 const (
 	contentTypeJPEG = "image/jpeg"
 	contentTypePNG  = "image/png"
+	contentTypeWebP = "image/webp"
 )
 
-var allowedContentTypes = []string{contentTypeJPEG, contentTypePNG}
+var allowedContentTypes = []string{contentTypeJPEG, contentTypePNG, contentTypeWebP}
 
 type Variant string
 
@@ -53,10 +54,10 @@ type processedVariant struct {
 	height      int
 }
 
-func (s *Service) processImage(ctx context.Context, image domain.Image, crop *domain.ImageCrop) ([]processedVariant, error) {
+func (s *Service) processImage(ctx context.Context, image domain.Image, crop *domain.ImageCrop, sourceContentType string) ([]processedVariant, error) {
 	source := fmt.Sprintf("s3://%s/%s", s.uploads.Name(), uploadKey(image.Id))
 	smallSize, largeSize := variantSizes(image.Purpose)
-	format, contentType := outputFormat(image.Purpose)
+	format, contentType := outputFormat(image.Purpose, sourceContentType)
 
 	variants := make([]processedVariant, 0, 2)
 	for _, v := range []struct {
@@ -88,9 +89,11 @@ func (s *Service) processImage(ctx context.Context, image domain.Image, crop *do
 	return variants, nil
 }
 
-// Logos often have a transparent background. The rest are photos, where JPEG is a lot smaller
-func outputFormat(purpose types.ImagePurpose) (string, string) {
-	if purpose == types.ImagePurposeMerchantLogo {
+// Logos stay PNG when the upload can have a transparent background. The rest are photos, where JPEG
+// is a lot smaller
+func outputFormat(purpose types.ImagePurpose, sourceContentType string) (string, string) {
+	canBeTransparent := sourceContentType == contentTypePNG || sourceContentType == contentTypeWebP
+	if purpose == types.ImagePurposeMerchantLogo && canBeTransparent {
 		return "png", contentTypePNG
 	}
 
@@ -113,12 +116,8 @@ func processingOptions(purpose types.ImagePurpose, crop *domain.ImageCrop, size 
 		options = append(options, fmt.Sprintf("rs:fit:%d:%d:0", size, size))
 	}
 
-	if purpose == types.ImagePurposeMerchantLogo {
-		return options
-	}
-
-	// JPEG has no transparency, so transparent PNG pixels become white
-	return append(options, "bg:FFFFFF", fmt.Sprintf("q:%d", jpegQuality))
+	// only used by JPEG, PNG is lossless
+	return append(options, fmt.Sprintf("q:%d", jpegQuality))
 }
 
 func imageSize(data []byte) (int, int, error) {

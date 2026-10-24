@@ -62,6 +62,7 @@ R2_MEDIA_BUCKET
 MEDIA_PUBLIC_URL
 
 IMGPROXY_PORT
+IMGPROXY_URL
 IMGPROXY_KEY
 IMGPROXY_SALT
 
@@ -78,7 +79,7 @@ Images are stored in two Cloudflare R2 buckets.
 
 The API token only needs Object Read & Write permission for these two buckets.
 
-Uploaded images are processed by [imgproxy](https://docs.imgproxy.net), which reads the originals from the uploads bucket. `IMGPROXY_KEY` and `IMGPROXY_SALT` are two random hex strings (e.g. 64 characters each), the backend signs the imgproxy requests with them so only it can use imgproxy. Any random generator works, for example `openssl rand -hex 32`. Create the imgproxy container in docker using the create-imgproxy command, it has to be recreated if any of these environment variables change.
+Uploaded images are processed by [imgproxy](https://docs.imgproxy.net), which reads the originals from the uploads bucket. `IMGPROXY_PORT` is the port of the local docker container, `IMGPROXY_URL` is the url the backend reaches imgproxy at (`http://localhost:${IMGPROXY_PORT}` locally). `IMGPROXY_KEY` and `IMGPROXY_SALT` are two random hex strings (e.g. 64 characters each), the backend signs the imgproxy requests with them so only it can use imgproxy. Any random generator works, for example `openssl rand -hex 32`. Create the imgproxy container in docker using the create-imgproxy command, it has to be recreated if any of these environment variables change.
 
 ```
 make create-imgproxy

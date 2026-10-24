@@ -162,8 +162,8 @@ function MerchantPage() {
               onChange={refreshLogo}
             />
             <p className="text-fg-muted max-w-sm text-sm">
-              A square image works best, at least 512 × 512 px. JPG or PNG, up
-              to 10 MB.
+              A square image works best, at least 512 × 512 px. JPG, PNG or
+              WebP, up to 10 MB.
             </p>
           </div>
         </SettingsSection>

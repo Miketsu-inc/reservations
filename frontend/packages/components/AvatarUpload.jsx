@@ -12,7 +12,7 @@ import {
   useToast,
   validateImageFile,
 } from "@reservations/lib";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar.jsx";
 import DeleteModal from "./DeleteModal.jsx";
 import Icon from "./Icon.jsx";
@@ -35,10 +35,20 @@ export default function AvatarUpload({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [cropping, setCropping] = useState(null);
+  const [pending, setPending] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
+
+  if (pending && img !== pending.replacedImg) {
+    setPending(null);
+  }
+
+  useEffect(() => {
+    if (!pending) return;
+
+    return () => URL.revokeObjectURL(pending.url);
+  }, [pending]);
 
   function openFilePicker() {
     inputRef.current?.click();
@@ -51,28 +61,31 @@ export default function AvatarUpload({
       return;
     }
 
-    setFile(selected);
-    setPreviewUrl(URL.createObjectURL(selected));
+    setCropping({ file: selected, url: URL.createObjectURL(selected) });
   }
 
-  function closeCropDialog() {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setFile(null);
-    setPreviewUrl(null);
+  function cancelCrop() {
+    URL.revokeObjectURL(cropping.url);
+    setCropping(null);
   }
 
-  async function save(crop) {
+  async function save(crop, area) {
+    setCropping(null);
+    setPending({ url: cropping.url, area, replacedImg: img });
     setIsSaving(true);
 
     try {
-      await uploadImage(url, file, crop);
+      const image = await uploadImage(url, cropping.file, crop);
+      if (!image) {
+        showToast({
+          message: `Your ${label} is still processing, it will show up shortly`,
+          variant: "info",
+        });
+      }
       await onChange?.();
-      closeCropDialog();
     } catch (error) {
       showToast({ message: error.message, variant: "error" });
+      setPending(null);
     } finally {
       setIsSaving(false);
     }
@@ -116,23 +129,32 @@ export default function AvatarUpload({
         if (file && !isSaving) selectFile(file);
       }}
     >
-      <Avatar
-        styles={`${styles} ${rounding}`}
-        img={img}
-        initials={initials}
-        alt={alt}
-        fallback={
-          initials ? undefined : (
-            <div
-              className={`${styles} ${rounding} border-border-strong
-                bg-bg-sunken text-fg-muted flex size-16 items-center
-                justify-center border border-dashed`}
-            >
-              <Icon icon={ImageAdd01Icon} styles="size-6" />
-            </div>
-          )
-        }
-      />
+      {pending ? (
+        <div
+          role="img"
+          aria-label={alt}
+          className={`${styles} ${rounding} size-16 bg-no-repeat`}
+          style={cropPreviewStyle(pending.url, pending.area)}
+        />
+      ) : (
+        <Avatar
+          styles={`${styles} ${rounding}`}
+          img={img}
+          initials={initials}
+          alt={alt}
+          fallback={
+            initials ? undefined : (
+              <div
+                className={`${styles} ${rounding} border-border-strong
+                  bg-bg-sunken text-fg-muted flex size-16 items-center
+                  justify-center border border-dashed`}
+              >
+                <Icon icon={ImageAdd01Icon} styles="size-6" />
+              </div>
+            )
+          }
+        />
+      )}
       {(isSaving || isDragging) && (
         <span
           className={`${rounding} bg-bg-backdrop ring-primary absolute inset-0
@@ -204,17 +226,28 @@ export default function AvatarUpload({
         }}
       />
       <ImageCropDialog
-        key={previewUrl}
-        open={previewUrl !== null}
-        onOpenChange={(open) => !open && !isSaving && closeCropDialog()}
-        imageSrc={previewUrl}
+        key={cropping?.url}
+        open={cropping !== null}
+        onOpenChange={(open) => !open && cancelCrop()}
+        imageSrc={cropping?.url}
         cropShape={shape === "square" ? "rect" : "round"}
         title={`Crop ${label}`}
-        isSaving={isSaving}
         onSave={save}
       />
     </div>
   );
+}
+
+// Shows the crop area of the image without processing it, the area is in percentages of the image
+function cropPreviewStyle(url, area) {
+  const position = (offset, size) =>
+    size < 100 ? (offset / (100 - size)) * 100 : 0;
+
+  return {
+    backgroundImage: `url(${url})`,
+    backgroundSize: `${10000 / area.width}% ${10000 / area.height}%`,
+    backgroundPosition: `${position(area.x, area.width)}% ${position(area.y, area.height)}%`,
+  };
 }
 
 function CameraBadge() {

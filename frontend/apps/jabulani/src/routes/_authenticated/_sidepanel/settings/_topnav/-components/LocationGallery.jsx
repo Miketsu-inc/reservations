@@ -31,6 +31,7 @@ import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
 const ALT_TEXT_MAX_LENGTH = 150;
+const STILL_PROCESSING_REFRESH_MS = 30 * 1000;
 
 async function fetchLocationImages(merchantId, locationId) {
   const response = await fetch(
@@ -60,7 +61,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     locationImagesQueryOptions(merchantId, locationId)
   );
   const inputRef = useRef(null);
-  const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploads, setUploads] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [editingImage, setEditingImage] = useState(null);
   const [deletingImage, setDeletingImage] = useState(null);
@@ -73,6 +74,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
   }
 
   const images = data.images;
+  const uploadingCount = uploads.length;
   const remaining = data.limit - images.length - uploadingCount;
   const canAdd = canEdit && remaining > 0;
   const isEmpty = images.length === 0 && uploadingCount === 0;
@@ -120,20 +122,35 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
       }
     }
 
-    setUploadingCount((count) => count + validFiles.length);
+    const newUploads = validFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setUploads((current) => [...current, ...newUploads]);
 
     await Promise.all(
-      validFiles.map(async (file) => {
+      newUploads.map(async (upload) => {
         try {
-          await uploadImage(imagesUrl, file);
+          const image = await uploadImage(imagesUrl, upload.file);
+          if (image) {
+            await preloadImages(image.url, image.thumbnail_url);
+          } else {
+            showToast({
+              message: `${upload.file.name} is still processing, it will show up shortly`,
+              variant: "info",
+            });
+            setTimeout(refresh, STILL_PROCESSING_REFRESH_MS);
+          }
           await refresh();
         } catch (error) {
           showToast({
-            message: `${file.name}: ${error.message}`,
+            message: `${upload.file.name}: ${error.message}`,
             variant: "error",
           });
         } finally {
-          setUploadingCount((count) => count - 1);
+          URL.revokeObjectURL(upload.previewUrl);
+          setUploads((current) => current.filter((u) => u.id !== upload.id));
         }
       })
     );
@@ -216,11 +233,12 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     }));
   }
 
-  const dropHandlers = canAdd
+  // also active at the limit, otherwise the browser would open the dropped file instead
+  const dropHandlers = canEdit
     ? {
         onDragOver: (event) => {
           event.preventDefault();
-          setIsDragging(true);
+          setIsDragging(canAdd);
         },
         onDragLeave: (event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -275,7 +293,8 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
               Add photos of this location
             </span>
             <span className="text-fg-muted text-xs">
-              Drag and drop or click to upload. JPG or PNG, up to 10 MB each.
+              Drag and drop or click to upload. JPG, PNG or WebP, up to 10 MB
+              each.
             </span>
           </button>
         ) : (
@@ -284,7 +303,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
       ) : (
         <div
           className={`${isDragging ? "outline-primary outline-2 outline-offset-4 outline-dashed" : ""}
-            grid max-w-3xl grid-cols-2 gap-3 rounded-xl sm:grid-cols-3`}
+            grid grid-cols-2 gap-3 rounded-xl sm:grid-cols-3`}
         >
           {images.map((image, index) => (
             <PhotoTile
@@ -299,15 +318,25 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
               onDelete={() => setDeletingImage(image)}
             />
           ))}
-          {Array.from({ length: uploadingCount }, (_, i) => (
+          {uploads.map((upload, i) => (
             <div
-              key={`uploading-${i}`}
-              className={`${tileStyles(images.length + i)} bg-bg-sunken
-                text-fg-muted flex flex-col items-center justify-center gap-2
-                rounded-xl text-xs`}
+              key={upload.id}
+              className={`${tileStyles(images.length + i)} bg-bg-sunken relative
+                overflow-hidden rounded-xl`}
             >
-              <LoaderIcon styles="size-5 text-fg-primary" />
-              Uploading…
+              <img
+                src={upload.previewUrl}
+                alt=""
+                className="size-full object-cover opacity-50"
+              />
+              <span
+                className="bg-bg-overlay text-fg shadow-card absolute top-1/2
+                  left-1/2 flex -translate-1/2 items-center gap-2 rounded-full
+                  px-3 py-1.5 text-xs font-medium"
+              >
+                <LoaderIcon styles="size-4 text-fg-primary" />
+                Uploading…
+              </span>
             </div>
           ))}
           {canAdd && (
@@ -366,6 +395,18 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
   );
 }
 
+// Loads the processed image before the upload tile is replaced by it, otherwise the new tile would
+// be empty until it loads
+function preloadImages(...urls) {
+  return Promise.all(
+    urls.map((url) => {
+      const img = new Image();
+      img.src = url;
+      return img.decode().catch(() => {});
+    })
+  );
+}
+
 function PhotoTile({
   styles,
   image,
@@ -405,15 +446,6 @@ function PhotoTile({
           <Icon icon={StarIcon} styles="size-3.5 text-fg-warning" />
           Cover
         </span>
-      )}
-
-      {image.alt_text && (
-        <figcaption
-          className="absolute inset-x-0 bottom-0 truncate bg-linear-to-t
-            from-black/70 to-transparent px-3 pt-6 pb-2 text-xs text-white"
-        >
-          {image.alt_text}
-        </figcaption>
       )}
 
       {canEdit && (

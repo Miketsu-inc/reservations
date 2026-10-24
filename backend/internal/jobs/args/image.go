@@ -8,12 +8,12 @@ import (
 	"github.com/riverqueue/river"
 )
 
-// Image processing runs on it's own queue with limited workers, see the queue config
 const MediaQueue = "media"
 
 type ProcessImage struct {
-	ImageId uuid.UUID         `json:"image_id"`
-	Crop    *domain.ImageCrop `json:"crop"`
+	ImageId     uuid.UUID         `json:"image_id"`
+	Crop        *domain.ImageCrop `json:"crop"`
+	ContentType string            `json:"content_type"`
 }
 
 func (ProcessImage) Kind() string { return "process_image" }

@@ -24,11 +24,7 @@ const (
 	cleanupBatchSize     = 1000
 )
 
-// attaches the ready image to it's target, returns false if the target no longer exists
-// and the previous image of the target which should be deleted
-type attachFunc func(ctx context.Context, tx pgx.Tx, image domain.Image) (bool, *uuid.UUID, error)
-
-func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *domain.ImageCrop) error {
+func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *domain.ImageCrop, sourceContentType string) error {
 	image, err := s.imageRepo.GetImage(ctx, imageId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -42,7 +38,7 @@ func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *dom
 		return nil
 	}
 
-	variants, err := s.processImage(ctx, image, crop)
+	variants, err := s.processImage(ctx, image, crop, sourceContentType)
 	if err != nil {
 		if errors.Is(err, errInvalidImage) {
 			return s.failImage(ctx, imageId, err)
@@ -50,7 +46,7 @@ func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *dom
 		return err
 	}
 
-	err = s.storeImage(ctx, image, variants, s.attachImage)
+	err = s.storeImage(ctx, image, variants)
 	if err != nil {
 		return err
 	}
@@ -74,7 +70,7 @@ func (s *Service) failImage(ctx context.Context, imageId uuid.UUID, reason error
 	return fmt.Errorf("%w: %w", ErrUnprocessable, reason)
 }
 
-func (s *Service) storeImage(ctx context.Context, image domain.Image, variants []processedVariant, attach attachFunc) error {
+func (s *Service) storeImage(ctx context.Context, image domain.Image, variants []processedVariant) error {
 	var width, height int
 
 	for _, v := range variants {
@@ -97,7 +93,7 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		imageRepo := s.imageRepo.WithTx(tx)
 
-		attached, previous, err := attach(ctx, tx, image)
+		attached, previous, err := s.attachImage(ctx, tx, image)
 		if err != nil {
 			return err
 		}
@@ -124,6 +120,8 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 	})
 }
 
+// Attaches the ready image to it's target, returns false if the target no longer exists
+// and the previous image of the target which should be deleted
 func (s *Service) attachImage(ctx context.Context, tx pgx.Tx, image domain.Image) (bool, *uuid.UUID, error) {
 	imageRepo := s.imageRepo.WithTx(tx)
 
