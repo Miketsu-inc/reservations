@@ -5,10 +5,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -19,11 +21,12 @@ type Handler struct {
 	service     *userServ.Service
 	bookingServ *bookingServ.Service
 	authServ    *authServ.Service
+	mediaServ   *mediaServ.Service
 	middleware  *middleware.Manager
 }
 
-func NewHandler(s *userServ.Service, b *bookingServ.Service, a *authServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, bookingServ: b, authServ: a, middleware: m}
+func NewHandler(s *userServ.Service, b *bookingServ.Service, a *authServ.Service, ms *mediaServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, bookingServ: b, authServ: a, mediaServ: ms, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -39,6 +42,9 @@ func (h *Handler) Routes() *httputil.Router {
 		r.Get("/bookings", h.GetBookings)
 		r.Get("/bookings/counts", h.GetBookingCounts)
 		r.Put("/password", h.UpdatePassword)
+
+		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/avatar", h.CreateAvatarUpload)
+		r.Delete("/avatar", h.RemoveAvatar)
 	})
 
 	return r
@@ -163,6 +169,47 @@ func (h *Handler) UpdatePassword(w http.ResponseWriter, r *http.Request) error {
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
+
+	return nil
+}
+
+type createUploadReq struct {
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png"`
+	Size        int64  `json:"size" validate:"required,min=1"`
+}
+
+type uploadResp struct {
+	ImageId   uuid.UUID         `json:"image_id"`
+	UploadUrl string            `json:"upload_url"`
+	Method    string            `json:"method"`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+func (h *Handler) CreateAvatarUpload(w http.ResponseWriter, r *http.Request) error {
+	var req createUploadReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	upload, err := h.mediaServ.CreateUserAvatarUpload(r.Context(), mapToUploadInput(req))
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "CreateAvatarUpload")
+	}
+
+	httputil.Success(w, http.StatusCreated, mapToUploadResp(upload))
+
+	return nil
+}
+
+func (h *Handler) RemoveAvatar(w http.ResponseWriter, r *http.Request) error {
+	err := h.mediaServ.RemoveUserAvatar(r.Context())
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "RemoveAvatar")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

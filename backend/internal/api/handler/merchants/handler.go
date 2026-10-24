@@ -12,6 +12,7 @@ import (
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -30,12 +31,14 @@ type Handler struct {
 	catalogServ     *catalogServ.Service
 	customerServ    *customerServ.Service
 	extcalendarServ *externalcalendarServ.Service
+	mediaServ       *mediaServ.Service
 }
 
 func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamServ *teamServ.Service,
-	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service,
+	mediaServ *mediaServ.Service) *Handler {
 	return &Handler{service: s, bookingServ: bookingServ, teamServ: teamServ, catalogServ: catalogServ, customerServ: customerServ,
-		extcalendarServ: extcalendarServ}
+		extcalendarServ: extcalendarServ, mediaServ: mediaServ}
 }
 
 type meResp struct {
@@ -536,6 +539,47 @@ func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	return nil
+}
+
+type createUploadReq struct {
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png"`
+	Size        int64  `json:"size" validate:"required,min=1"`
+}
+
+type uploadResp struct {
+	ImageId   uuid.UUID         `json:"image_id"`
+	UploadUrl string            `json:"upload_url"`
+	Method    string            `json:"method"`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+func (h *Handler) CreateLogoUpload(w http.ResponseWriter, r *http.Request) error {
+	var req createUploadReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	upload, err := h.mediaServ.CreateMerchantLogoUpload(r.Context(), mapToUploadInput(req))
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "CreateLogoUpload")
+	}
+
+	httputil.Success(w, http.StatusCreated, mapToUploadResp(upload))
+
+	return nil
+}
+
+func (h *Handler) RemoveLogo(w http.ResponseWriter, r *http.Request) error {
+	err := h.mediaServ.RemoveMerchantLogo(r.Context())
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "RemoveLogo")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

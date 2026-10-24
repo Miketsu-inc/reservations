@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -69,7 +70,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 		r.Mount("/invitations", h.Invitations.Routes())
 		r.Mount("/users", h.Users.Routes())
 		r.Mount("/favorites", h.Favorites.Routes())
-		r.Mount("/media", h.Media.Routes())
+		r.Mount("/images", h.Media.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
 		r.Route("/merchants", func(r *httputil.Router) {
@@ -90,6 +91,13 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 				r.Delete("/", h.Merchants.Delete)
 				r.Patch("/name", h.Merchants.UpdateName)
+			})
+
+			r.Group(func(r *httputil.Router) {
+				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+
+				r.WithFunc(h.Middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.Merchants.CreateLogoUpload)
+				r.Delete("/logo", h.Merchants.RemoveLogo)
 			})
 
 			r.Group(func(r *httputil.Router) {
@@ -125,7 +133,6 @@ func NewRouter(h *Handlers) *httputil.Router {
 			r.Mount("/services", h.Services.Routes())
 			r.Mount("/service-categories", h.ServiceCategories.Routes())
 			r.Mount("/team", h.Team.Routes())
-			r.Mount("/media", h.Media.MerchantRoutes())
 		})
 	})
 

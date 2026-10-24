@@ -346,3 +346,25 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		Phases:          phases,
 	}
 }
+
+func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
+	return mediaServ.UploadInput{
+		ContentType: in.ContentType,
+		Size:        in.Size,
+	}
+}
+
+func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
+	headers := make(map[string]string, len(in.Request.Headers))
+	for key := range in.Request.Headers {
+		headers[key] = in.Request.Headers.Get(key)
+	}
+
+	return uploadResp{
+		ImageId:   in.ImageId,
+		UploadUrl: in.Request.URL,
+		Method:    in.Request.Method,
+		Headers:   headers,
+		ExpiresAt: in.Request.ExpiresAt,
+	}
+}

@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -15,11 +17,12 @@ import (
 
 type Handler struct {
 	service    *teamServ.Service
+	mediaServ  *mediaServ.Service
 	middleware *middleware.Manager
 }
 
-func NewHandler(s *teamServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, middleware: m}
+func NewHandler(s *teamServ.Service, ms *mediaServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, mediaServ: ms, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -27,6 +30,10 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Get("/{id}/preferences", h.GetPreferences)
 	r.Patch("/{id}/preferences", h.UpdatePreferences)
+
+	// staff members can only change their own picture, checked in the service
+	r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/avatar", h.CreateAvatarUpload)
+	r.Delete("/{id}/avatar", h.RemoveAvatar)
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
@@ -290,6 +297,57 @@ func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return teamServ.ErrStatus.Resolve(err, "UpdatePreferences")
 	}
+
+	return nil
+}
+
+type createUploadReq struct {
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png"`
+	Size        int64  `json:"size" validate:"required,min=1"`
+}
+
+type uploadResp struct {
+	ImageId   uuid.UUID         `json:"image_id"`
+	UploadUrl string            `json:"upload_url"`
+	Method    string            `json:"method"`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+func (h *Handler) CreateAvatarUpload(w http.ResponseWriter, r *http.Request) error {
+	var req createUploadReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	employeeId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid team member id")
+	}
+
+	upload, err := h.mediaServ.CreateEmployeeAvatarUpload(r.Context(), employeeId, mapToUploadInput(req))
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "CreateAvatarUpload")
+	}
+
+	httputil.Success(w, http.StatusCreated, mapToUploadResp(upload))
+
+	return nil
+}
+
+func (h *Handler) RemoveAvatar(w http.ResponseWriter, r *http.Request) error {
+	employeeId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid team member id")
+	}
+
+	err = h.mediaServ.RemoveEmployeeAvatar(r.Context(), employeeId)
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "RemoveAvatar")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

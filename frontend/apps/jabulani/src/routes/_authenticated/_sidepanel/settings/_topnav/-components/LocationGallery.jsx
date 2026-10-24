@@ -36,7 +36,7 @@ const ALT_TEXT_MAX_LENGTH = 150;
 
 async function fetchLocationImages(merchantId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/media/locations/${locationId}/images`
+    `/api/v1/merchants/${merchantId}/locations/${locationId}/images`
   );
   const result = await response.json();
 
@@ -67,7 +67,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
   const [editingImage, setEditingImage] = useState(null);
   const [deletingImage, setDeletingImage] = useState(null);
 
-  const imagesUrl = `/api/v1/merchants/${merchantId}/media/locations/${locationId}/images`;
+  const imagesUrl = `/api/v1/merchants/${merchantId}/locations/${locationId}/images`;
   const queryKey = locationImagesQueryOptions(merchantId, locationId).queryKey;
 
   if (isLoading || !data) {

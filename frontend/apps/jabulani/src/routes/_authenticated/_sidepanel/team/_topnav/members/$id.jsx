@@ -139,7 +139,7 @@ function RouteComponent() {
                 img={employee.avatar_url}
                 initials={`${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`}
                 alt={`${employee.first_name} ${employee.last_name}`}
-                url={`/api/v1/merchants/${merchantId}/media/team/${employee.id}/avatar`}
+                url={`/api/v1/merchants/${merchantId}/team/${employee.id}/avatar`}
                 canRemove={employee.has_own_avatar}
                 onChange={refreshAvatar}
               />

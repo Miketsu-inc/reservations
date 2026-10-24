@@ -69,12 +69,12 @@ type UploadInput struct {
 	Size        int64
 }
 
-type Upload struct {
+type UploadResult struct {
 	ImageId uuid.UUID
 	Request objectstore.PresignedRequest
 }
 
-func (s *Service) CreateUserAvatarUpload(ctx context.Context, input UploadInput) (Upload, error) {
+func (s *Service) CreateUserAvatarUpload(ctx context.Context, input UploadInput) (UploadResult, error) {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	return s.createUpload(ctx, domain.Image{
@@ -84,11 +84,11 @@ func (s *Service) CreateUserAvatarUpload(ctx context.Context, input UploadInput)
 	}, input)
 }
 
-func (s *Service) CreateEmployeeAvatarUpload(ctx context.Context, employeeId int, input UploadInput) (Upload, error) {
+func (s *Service) CreateEmployeeAvatarUpload(ctx context.Context, employeeId int, input UploadInput) (UploadResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	if err := s.checkEmployeeAvatarAccess(ctx, actor, employeeId); err != nil {
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
 	return s.createUpload(ctx, domain.Image{
@@ -99,7 +99,7 @@ func (s *Service) CreateEmployeeAvatarUpload(ctx context.Context, employeeId int
 	}, input)
 }
 
-func (s *Service) CreateMerchantLogoUpload(ctx context.Context, input UploadInput) (Upload, error) {
+func (s *Service) CreateMerchantLogoUpload(ctx context.Context, input UploadInput) (UploadResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	return s.createUpload(ctx, domain.Image{
@@ -109,30 +109,30 @@ func (s *Service) CreateMerchantLogoUpload(ctx context.Context, input UploadInpu
 	}, input)
 }
 
-func (s *Service) CreateLocationImageUpload(ctx context.Context, locationId int, input UploadInput) (Upload, error) {
+func (s *Service) CreateLocationImageUpload(ctx context.Context, locationId int, input UploadInput) (UploadResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	_, err := s.locationRepo.GetLocation(ctx, locationId, actor.MerchantId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return Upload{}, ErrLocationNotFound
+			return UploadResult{}, ErrLocationNotFound
 		}
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
 	limit, err := s.locationImageLimit(ctx, actor.MerchantId)
 	if err != nil {
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
 	// pending uploads which can not be completed anymore are not counted
 	count, err := s.imageRepo.CountLocationImages(ctx, locationId, time.Now().UTC().Add(-uploadURLExpiry))
 	if err != nil {
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
 	if count >= limit {
-		return Upload{}, apperr.Wrap(ErrLocationImageLimitReached, nil).With("limit", limit)
+		return UploadResult{}, apperr.Wrap(ErrLocationImageLimitReached, nil).With("limit", limit)
 	}
 
 	return s.createUpload(ctx, domain.Image{
@@ -143,14 +143,14 @@ func (s *Service) CreateLocationImageUpload(ctx context.Context, locationId int,
 	}, input)
 }
 
-func (s *Service) createUpload(ctx context.Context, image domain.Image, input UploadInput) (Upload, error) {
+func (s *Service) createUpload(ctx context.Context, image domain.Image, input UploadInput) (UploadResult, error) {
 	if input.Size <= 0 || input.Size > MaxUploadSize {
-		return Upload{}, ErrInvalidUploadSize
+		return UploadResult{}, ErrInvalidUploadSize
 	}
 
 	imageId, err := uuid.NewV7()
 	if err != nil {
-		return Upload{}, fmt.Errorf("error creating image id: %w", err)
+		return UploadResult{}, fmt.Errorf("error creating image id: %w", err)
 	}
 
 	image.Id = imageId
@@ -159,15 +159,15 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 
 	err = s.imageRepo.NewImage(ctx, image)
 	if err != nil {
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
 	req, err := s.uploads.PresignPut(ctx, uploadKey(imageId), input.ContentType, input.Size, uploadURLExpiry)
 	if err != nil {
-		return Upload{}, err
+		return UploadResult{}, err
 	}
 
-	return Upload{
+	return UploadResult{
 		ImageId: imageId,
 		Request: req,
 	}, nil
@@ -316,33 +316,33 @@ func (s *Service) RemoveMerchantLogo(ctx context.Context) error {
 	})
 }
 
-type LocationImages struct {
+type GetLocationImagesResult struct {
 	Images []domain.LocationImage
 	Limit  int
 }
 
-func (s *Service) GetLocationImages(ctx context.Context, locationId int) (LocationImages, error) {
+func (s *Service) GetLocationImages(ctx context.Context, locationId int) (GetLocationImagesResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	_, err := s.locationRepo.GetLocation(ctx, locationId, actor.MerchantId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return LocationImages{}, ErrLocationNotFound
+			return GetLocationImagesResult{}, ErrLocationNotFound
 		}
-		return LocationImages{}, err
+		return GetLocationImagesResult{}, err
 	}
 
 	images, err := s.imageRepo.GetLocationImages(ctx, actor.MerchantId, locationId)
 	if err != nil {
-		return LocationImages{}, err
+		return GetLocationImagesResult{}, err
 	}
 
 	limit, err := s.locationImageLimit(ctx, actor.MerchantId)
 	if err != nil {
-		return LocationImages{}, err
+		return GetLocationImagesResult{}, err
 	}
 
-	return LocationImages{
+	return GetLocationImagesResult{
 		Images: images,
 		Limit:  limit,
 	}, nil

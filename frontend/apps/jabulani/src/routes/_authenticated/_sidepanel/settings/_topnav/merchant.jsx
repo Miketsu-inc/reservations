@@ -102,7 +102,7 @@ function MerchantPage() {
   });
 
   const canEditLogo = role === "owner" || role === "admin";
-  const logoUrl = `/api/v1/merchants/${merchantId}/media/logo`;
+  const logoUrl = `/api/v1/merchants/${merchantId}/logo`;
 
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));

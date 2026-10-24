@@ -6,28 +6,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 )
 
-func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
-	return mediaServ.UploadInput{
-		ContentType: in.ContentType,
-		Size:        in.Size,
-	}
-}
-
-func mapToUploadResp(in mediaServ.Upload) uploadResp {
-	headers := make(map[string]string, len(in.Request.Headers))
-	for key := range in.Request.Headers {
-		headers[key] = in.Request.Headers.Get(key)
-	}
-
-	return uploadResp{
-		ImageId:   in.ImageId,
-		UploadUrl: in.Request.URL,
-		Method:    in.Request.Method,
-		Headers:   headers,
-		ExpiresAt: in.Request.ExpiresAt,
-	}
-}
-
 func mapToImageCrop(in *cropReq) *domain.ImageCrop {
 	if in == nil {
 		return nil
@@ -54,25 +32,4 @@ func mapToUploadStatusResp(in domain.Image) uploadStatusResp {
 	}
 
 	return resp
-}
-
-func mapToLocationImagesResp(in mediaServ.LocationImages) locationImagesResp {
-	images := make([]locationImageResp, len(in.Images))
-
-	for i, img := range in.Images {
-		images[i] = locationImageResp{
-			ImageId:      img.ImageId,
-			Sequence:     img.Sequence,
-			AltText:      img.AltText,
-			Width:        img.Width,
-			Height:       img.Height,
-			Url:          mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge),
-			ThumbnailUrl: mediaServ.VariantURL(img.ImageId, mediaServ.VariantSmall),
-		}
-	}
-
-	return locationImagesResp{
-		Images: images,
-		Limit:  in.Limit,
-	}
 }

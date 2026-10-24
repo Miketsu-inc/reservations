@@ -69,7 +69,7 @@ export async function uploadImage(uploadUrl, file, crop) {
   }
 
   await jsonRequest(
-    `/api/v1/media/uploads/${upload.image_id}/complete`,
+    `/api/v1/images/uploads/${upload.image_id}/complete`,
     "POST",
     { crop: crop ?? null }
   );
@@ -80,7 +80,7 @@ export async function uploadImage(uploadUrl, file, crop) {
     await wait(POLL_INTERVAL_MS);
 
     const image = await jsonRequest(
-      `/api/v1/media/uploads/${upload.image_id}`,
+      `/api/v1/images/uploads/${upload.image_id}`,
       "GET"
     );
 
