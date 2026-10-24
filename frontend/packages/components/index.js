@@ -54,4 +54,3 @@ export { default as Textarea } from "./Textarea.jsx";
 export { ToastContext, default as ToastProvider } from "./ToastProvider.jsx";
 export { Toggle, ToggleGroup } from "./Toggle.jsx";
 export { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip.jsx";
-export { default as useImageUpload } from "./useImageUpload.jsx";

@@ -22,9 +22,7 @@ import {
 } from "@reservations/components";
 import {
   ACCEPTED_IMAGE_TYPES,
-  deleteImage,
   invalidateLocalStorageAuth,
-  jsonRequest,
   uploadImage,
   useToast,
   validateImageFile,
@@ -143,8 +141,20 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
 
   async function removeImage(image) {
     try {
-      await deleteImage(`${imagesUrl}/${image.image_id}`);
-      await refresh();
+      const response = await fetch(`${imagesUrl}/${image.image_id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        invalidateLocalStorageAuth(response.status);
+        showToast({ message: result.error.message, variant: "error" });
+      } else {
+        await refresh();
+      }
     } catch (error) {
       showToast({ message: error.message, variant: "error" });
     }
@@ -158,19 +168,45 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     queryClient.setQueryData(queryKey, { ...data, images: reordered });
 
     try {
-      await jsonRequest(`${imagesUrl}/order`, "PUT", {
-        image_ids: reordered.map((image) => image.image_id),
+      const response = await fetch(`${imagesUrl}/order`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          image_ids: reordered.map((image) => image.image_id),
+        }),
       });
+
+      if (!response.ok) {
+        const result = await response.json();
+        invalidateLocalStorageAuth(response.status);
+        showToast({ message: result.error.message, variant: "error" });
+        await refresh();
+      }
     } catch (error) {
       showToast({ message: error.message, variant: "error" });
       await refresh();
     }
   }
 
+  // throws so the description dialog stays open and shows the error
   async function saveAltText(image, altText) {
-    await jsonRequest(`${imagesUrl}/${image.image_id}`, "PATCH", {
-      alt_text: altText,
+    const response = await fetch(`${imagesUrl}/${image.image_id}`, {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ alt_text: altText }),
     });
+
+    if (!response.ok) {
+      const result = await response.json();
+      invalidateLocalStorageAuth(response.status);
+      throw new Error(result.error.message);
+    }
 
     queryClient.setQueryData(queryKey, (current) => ({
       ...current,

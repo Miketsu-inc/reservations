@@ -5,12 +5,19 @@ import {
   ImageUploadIcon,
 } from "@hugeicons/core-free-icons";
 import { LoaderIcon } from "@reservations/assets";
-import { useState } from "react";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  invalidateLocalStorageAuth,
+  uploadImage,
+  useToast,
+  validateImageFile,
+} from "@reservations/lib";
+import { useRef, useState } from "react";
 import Avatar from "./Avatar.jsx";
 import DeleteModal from "./DeleteModal.jsx";
 import Icon from "./Icon.jsx";
+import ImageCropDialog from "./ImageCropDialog.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover.jsx";
-import useImageUpload from "./useImageUpload.jsx";
 
 // Used for every single square image (user and team avatars, merchant logo), the shape only changes the look
 export default function AvatarUpload({
@@ -27,33 +34,72 @@ export default function AvatarUpload({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const {
-    openFilePicker,
-    selectFile,
-    remove,
-    isSaving,
-    fileInput,
-    cropDialog,
-  } = useImageUpload({
-    url,
-    cropShape: shape === "square" ? "rect" : "round",
-    cropTitle: `Crop ${label}`,
-    onChange,
-  });
+  const inputRef = useRef(null);
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
+
+  function openFilePicker() {
+    inputRef.current?.click();
+  }
+
+  function selectFile(selected) {
+    const error = validateImageFile(selected);
+    if (error) {
+      showToast({ message: error, variant: "error" });
+      return;
+    }
+
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
+  }
+
+  function closeCropDialog() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setFile(null);
+    setPreviewUrl(null);
+  }
+
+  async function save(crop) {
+    setIsSaving(true);
+
+    try {
+      await uploadImage(url, file, crop);
+      await onChange?.();
+      closeCropDialog();
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function remove() {
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        invalidateLocalStorageAuth(response.status);
+        showToast({ message: result.error.message, variant: "error" });
+      } else {
+        await onChange?.();
+      }
+    } catch (error) {
+      showToast({ message: error.message, variant: "error" });
+    }
+  }
 
   const rounding = shape === "square" ? "rounded-2xl!" : "rounded-full!";
-
-  const badge = (
-    // the hover color is translucent, so it is layered on top of the opaque background
-    <span
-      className="bg-bg-raised border-border shadow-card absolute -right-1
-        -bottom-1 cursor-pointer overflow-hidden rounded-full border"
-    >
-      <span className="hover:bg-hover flex items-center justify-center p-1.5">
-        <Icon icon={Camera01Icon} styles="size-4 text-fg" />
-      </span>
-    </span>
-  );
 
   return (
     <div
@@ -98,7 +144,7 @@ export default function AvatarUpload({
       {canRemove ? (
         <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <PopoverTrigger aria-label={`Change ${label}`}>
-            {badge}
+            <CameraBadge />
           </PopoverTrigger>
           <PopoverContent align="start">
             <div
@@ -136,7 +182,7 @@ export default function AvatarUpload({
           aria-label={`Upload ${label}`}
           onClick={openFilePicker}
         >
-          {badge}
+          <CameraBadge />
         </button>
       )}
       <DeleteModal
@@ -145,8 +191,41 @@ export default function AvatarUpload({
         itemName={`the ${label}`}
         onDelete={remove}
       />
-      {fileInput}
-      {cropDialog}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_IMAGE_TYPES.join(",")}
+        className="hidden"
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          // allows selecting the same file again
+          e.target.value = "";
+          if (selected) selectFile(selected);
+        }}
+      />
+      <ImageCropDialog
+        key={previewUrl}
+        open={previewUrl !== null}
+        onOpenChange={(open) => !open && !isSaving && closeCropDialog()}
+        imageSrc={previewUrl}
+        cropShape={shape === "square" ? "rect" : "round"}
+        title={`Crop ${label}`}
+        isSaving={isSaving}
+        onSave={save}
+      />
     </div>
+  );
+}
+
+function CameraBadge() {
+  return (
+    <span
+      className="bg-bg-raised border-border shadow-card absolute -right-1
+        -bottom-1 cursor-pointer overflow-hidden rounded-full border"
+    >
+      <span className="hover:bg-hover flex items-center justify-center p-1.5">
+        <Icon icon={Camera01Icon} styles="size-4 text-fg" />
+      </span>
+    </span>
   );
 }

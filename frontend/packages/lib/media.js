@@ -19,32 +19,75 @@ export function validateImageFile(file) {
   return null;
 }
 
-export async function jsonRequest(url, method, body) {
-  const response = await fetch(url, {
-    method: method,
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function createUpload(uploadUrl, file) {
+  const response = await fetch(uploadUrl, {
+    method: "POST",
     headers: {
       Accept: "application/json",
       "content-type": "application/json",
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify({ content_type: file.type, size: file.size }),
   });
+
+  const result = await response.json();
 
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
-    const result = await response.json();
-    throw new Error(result.error.message);
+    throw result.error;
   }
 
-  if (response.status === 204 || response.status === 202) {
-    return null;
-  }
-
-  const result = await response.json();
   return result.data;
 }
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function sendToStorage(upload, file) {
+  const response = await fetch(upload.upload_url, {
+    method: upload.method,
+    headers: upload.headers,
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload the image, please try again");
+  }
+}
+
+async function completeUpload(imageId, crop) {
+  const response = await fetch(`/api/v1/images/uploads/${imageId}/complete`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ crop: crop ?? null }),
+  });
+
+  if (!response.ok) {
+    const result = await response.json();
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+}
+
+async function fetchUpload(imageId) {
+  const response = await fetch(`/api/v1/images/uploads/${imageId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  }
+
+  return result.data;
 }
 
 export async function uploadImage(uploadUrl, file, crop) {
@@ -53,36 +96,16 @@ export async function uploadImage(uploadUrl, file, crop) {
     throw new Error(validationError);
   }
 
-  const upload = await jsonRequest(uploadUrl, "POST", {
-    content_type: file.type,
-    size: file.size,
-  });
-
-  const storageResponse = await fetch(upload.upload_url, {
-    method: upload.method,
-    headers: upload.headers,
-    body: file,
-  });
-
-  if (!storageResponse.ok) {
-    throw new Error("Failed to upload the image, please try again");
-  }
-
-  await jsonRequest(
-    `/api/v1/images/uploads/${upload.image_id}/complete`,
-    "POST",
-    { crop: crop ?? null }
-  );
+  const upload = await createUpload(uploadUrl, file);
+  await sendToStorage(upload, file);
+  await completeUpload(upload.image_id, crop);
 
   const deadline = Date.now() + POLL_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
     await wait(POLL_INTERVAL_MS);
 
-    const image = await jsonRequest(
-      `/api/v1/images/uploads/${upload.image_id}`,
-      "GET"
-    );
+    const image = await fetchUpload(upload.image_id);
 
     if (image.status === "ready") {
       return image;
@@ -94,8 +117,4 @@ export async function uploadImage(uploadUrl, file, crop) {
   }
 
   throw new Error("Processing the image is taking longer than expected");
-}
-
-export async function deleteImage(url) {
-  await jsonRequest(url, "DELETE");
 }
