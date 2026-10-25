@@ -237,6 +237,14 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 
 	isGroupBooking := input.BookingId != nil
 
+	if !isGroupBooking && service.IsGroupService() {
+		return validate.NewError("group services require a booking id")
+	}
+
+	if isGroupBooking && !service.IsGroupService() {
+		return validate.NewError("appointments cannot have a booking id")
+	}
+
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		customerId, isBlacklisted, isNewCustomer, err := s.customerRepo.WithTx(tx).NewCustomerFromUser(ctx, customerId, merchantId, userId)
 		if err != nil {
@@ -495,6 +503,10 @@ func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, 
 		return nil, fmt.Errorf("recurring rule frequency is invalid")
 	}
 
+	if rruleInput.Interval < 1 {
+		return nil, fmt.Errorf("recurring rule interval must be positive")
+	}
+
 	untilDate, err := time.ParseInLocation(time.DateOnly, rruleInput.UntilDate, dStart.Location())
 	if err != nil {
 		return nil, fmt.Errorf("until date could not be converted to time: %s", err.Error())
@@ -510,6 +522,9 @@ func parseRrule(rruleInput RecurringRuleInput, dStart time.Time) (*rrule.RRule, 
 		0,
 		dStart.Location(),
 	)
+	if until.Before(dStart) {
+		return nil, fmt.Errorf("recurring rule must end on or after the first booking")
+	}
 
 	var weekdays []rrule.Weekday
 
@@ -638,6 +653,15 @@ type RecurringRuleInput struct {
 
 func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
+
+	if input.IsRecurring && input.Rrule == nil {
+		return validate.NewError("recurrence_rule is required for recurring bookings")
+	}
+
+	// check if employee belongs to merchant
+	if _, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId); err != nil {
+		return err
+	}
 
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
 	if err != nil {
@@ -1161,6 +1185,13 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		participantBookingStatus = types.BookingStatusConfirmed
 	}
 
+	if employeeChanged {
+		// check if employee belongs to merchant
+		if _, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId); err != nil {
+			return err
+		}
+	}
+
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		if input.UpdateAllFuture && booking.IsRecurring {
 			bookingSeries, err := s.bookingRepo.WithTx(tx).GetBookingSeries(ctx, *booking.BookingSeriesId)
@@ -1170,6 +1201,12 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 			if !priceChanged {
 				seriesTotalPrice = bookingSeries.TotalPrice.Amount
+			}
+
+			if employeeChanged {
+				if err := s.bookingRepo.WithTx(tx).UpdateBookingSeriesEmployee(ctx, bookingSeries.Id, &input.EmployeeId); err != nil {
+					return err
+				}
 			}
 
 			if timeStampChanged {

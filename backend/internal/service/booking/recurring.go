@@ -755,22 +755,22 @@ func (s *Service) UpdateFutureBookingOccurrences(ctx context.Context, series dom
 						return err
 					}
 				}
+			}
 
-				if timestampChanged || priceChanged {
-					modificationParams := buildModificationEmailParams(seriesParticipantsMap, futureBookings, customerIdsByBooking)
-					if len(modificationParams) > 0 {
-						_, err = s.enqueuer.InsertManyFastTx(ctx, tx, modificationParams)
-						if err != nil {
-							return fmt.Errorf("failed to schedule booking modification emails: %w", err)
-						}
+			if timestampChanged || priceChanged {
+				modificationParams := buildModificationEmailParams(seriesParticipantsMap, futureBookings, customerIdsByBooking)
+				if len(modificationParams) > 0 {
+					_, err = s.enqueuer.InsertManyFastTx(ctx, tx, modificationParams)
+					if err != nil {
+						return fmt.Errorf("failed to schedule booking modification emails: %w", err)
 					}
 				}
+			}
 
-				if employeeChanged {
-					err = s.bookingRepo.WithTx(tx).UpdateBookingEmployeeBatch(ctx, futureBookingIds, series.EmployeeId)
-					if err != nil {
-						return err
-					}
+			if employeeChanged {
+				err = s.bookingRepo.WithTx(tx).UpdateBookingEmployeeBatch(ctx, futureBookingIds, series.EmployeeId)
+				if err != nil {
+					return err
 				}
 			}
 

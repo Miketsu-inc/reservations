@@ -441,8 +441,8 @@ type availableGroupBookingResp struct {
 	Price               *currencyx.FormattedPrice `json:"price"`
 	PriceType           types.PriceType           `json:"price_type"`
 	EmployeeId          int                       `json:"employee_id"`
-	EmployeeFirstName   string                    `json:"employee_first_name"`
-	EmployeeLastName    string                    `json:"employee_last_name"`
+	EmployeeFirstName   *string                   `json:"employee_first_name"`
+	EmployeeLastName    *string                   `json:"employee_last_name"`
 	EmployeeAvatarUrl   *string                   `json:"employee_avatar_url"`
 }
 

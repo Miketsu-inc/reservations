@@ -78,6 +78,7 @@ type BookingRepository interface {
 	UpdateBookingSeriesGeneratedUntil(ctx context.Context, seriesId int, generatedUntil time.Time) error
 	DeactivateBookingSeries(ctx context.Context, seriesId int) error
 	UpdateBookingSeriesDetails(ctx context.Context, seriesId int, details BookingDetails) error
+	UpdateBookingSeriesEmployee(ctx context.Context, seriesId int, employeeId *int) error
 
 	DeleteBookingSeriesParticipants(ctx context.Context, seriesId int, customerIds []uuid.UUID) error
 
@@ -488,8 +489,8 @@ type AvailableGroupBooking struct {
 	Price                 currencyx.Price `db:"price"`
 	PriceType             types.PriceType `db:"price_type"`
 	EmployeeId            int             `db:"employee_id"`
-	EmployeeFirstName     string          `db:"employee_first_name"`
-	EmployeeLastName      string          `db:"employee_last_name"`
+	EmployeeFirstName     *string         `db:"employee_first_name"`
+	EmployeeLastName      *string         `db:"employee_last_name"`
 	EmployeeAvatarImageId *uuid.UUID      `db:"employee_avatar_image_id"`
 }
 
