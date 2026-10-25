@@ -120,10 +120,7 @@ func (s *Service) CreateLocationImageUpload(ctx context.Context, locationId int,
 		return UploadResult{}, err
 	}
 
-	limit, err := s.locationImageLimit(ctx, actor.MerchantId)
-	if err != nil {
-		return UploadResult{}, err
-	}
+	limit := locationImageLimits[actor.SubTier]
 
 	// pending uploads which can not be completed anymore are not counted
 	count, err := s.imageRepo.CountLocationImages(ctx, locationId, time.Now().UTC().Add(-uploadURLExpiry))
@@ -339,10 +336,7 @@ func (s *Service) GetLocationImages(ctx context.Context, locationId int) (GetLoc
 		return GetLocationImagesResult{}, err
 	}
 
-	limit, err := s.locationImageLimit(ctx, actor.MerchantId)
-	if err != nil {
-		return GetLocationImagesResult{}, err
-	}
+	limit := locationImageLimits[actor.SubTier]
 
 	return GetLocationImagesResult{
 		Images: images,

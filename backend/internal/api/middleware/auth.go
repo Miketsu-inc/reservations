@@ -116,7 +116,7 @@ func (m *Manager) EmployeeAuthentication(next http.Handler) httputil.HandlerFunc
 
 		userId := jwt.MustGetUserIDFromContext(r.Context())
 
-		authInfo, err := m.userRepo.GetEmployeeByUser(ctx, merchantId, userId)
+		info, err := m.userRepo.GetEmployeeActorInfo(ctx, merchantId, userId)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return &apperr.APIError{
@@ -128,9 +128,15 @@ func (m *Manager) EmployeeAuthentication(next http.Handler) httputil.HandlerFunc
 			return err
 		}
 
-		ctx = actor.SetMerchantIdInContext(ctx, merchantId)
-		ctx = actor.SetEmployeeIdInContext(ctx, authInfo.Id)
-		ctx = actor.SetEmployeeRoleInContext(ctx, authInfo.Role)
+		ctx = actor.SetInContext(ctx, actor.EmployeeContext{
+			UserId:       userId,
+			MerchantId:   merchantId,
+			EmployeeId:   info.Id,
+			Role:         info.Role,
+			SubTier:      info.SubTier,
+			Timezone:     info.Timezone,
+			CurrencyCode: info.CurrencyCode,
+		})
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 

@@ -10,14 +10,12 @@ import (
 )
 
 type Service struct {
-	productRepo  domain.ProductRepository
-	merchantRepo domain.MerchantRepository
+	productRepo domain.ProductRepository
 }
 
-func NewService(product domain.ProductRepository, merchant domain.MerchantRepository) *Service {
+func NewService(product domain.ProductRepository) *Service {
 	return &Service{
-		productRepo:  product,
-		merchantRepo: merchant,
+		productRepo: product,
 	}
 }
 
@@ -33,13 +31,8 @@ type NewInput struct {
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
-		return err
-	}
-
 	if input.Price != nil {
-		if input.Price.CurrencyCode() != curr {
+		if input.Price.CurrencyCode() != actor.CurrencyCode {
 			return fmt.Errorf("new product price's currency does not match merchant's currency")
 		}
 	}
@@ -77,16 +70,11 @@ func (s *Service) Update(ctx context.Context, productId int, input UpdateInput) 
 
 	actor := actor.MustGetFromContext(ctx)
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
-		return err
-	}
-
-	if input.Price != nil && input.Price.CurrencyCode() != curr {
+	if input.Price != nil && input.Price.CurrencyCode() != actor.CurrencyCode {
 		return fmt.Errorf("product price's currency does not match merchant's currency")
 	}
 
-	err = s.productRepo.UpdateProduct(ctx, domain.Product{
+	err := s.productRepo.UpdateProduct(ctx, domain.Product{
 		Id:            input.Id,
 		MerchantId:    actor.MerchantId,
 		Name:          input.Name,

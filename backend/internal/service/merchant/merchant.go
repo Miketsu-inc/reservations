@@ -165,13 +165,8 @@ func (s *Service) GetDashboardRevenue(ctx context.Context, period int, timezone 
 		return domain.DashboardRevenue{}, err
 	}
 
-	currencyCode := ""
-	if len(revenue) == 0 {
-		currencyCode, err = s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-		if err != nil {
-			return domain.DashboardRevenue{}, err
-		}
-	} else {
+	currencyCode := actor.CurrencyCode
+	if len(revenue) != 0 {
 		currencyCode = revenue[0].Value.CurrencyCode()
 	}
 
