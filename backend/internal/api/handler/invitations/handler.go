@@ -27,7 +27,6 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Post("/{token}/accept", h.AcceptInvitation)
 		r.Post("/{token}/decline", h.DeclineInvitation)

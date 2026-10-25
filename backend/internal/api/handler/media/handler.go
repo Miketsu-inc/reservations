@@ -26,7 +26,6 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Get("/uploads/{imageId}", h.GetUpload)
 		r.Post("/uploads/{imageId}/complete", h.CompleteUpload)

@@ -79,9 +79,8 @@ func (BookingModificationEmail) InsertOpts() river.InsertOpts {
 }
 
 type ForgotPasswordEmail struct {
-	Language language.Tag `json:"language"`
-	UserId   uuid.UUID    `json:"user_id"`
-	Token    string       `json:"token"`
+	UserId uuid.UUID `json:"user_id"`
+	Token  string    `json:"token"`
 }
 
 func (ForgotPasswordEmail) Kind() string { return "forgot_password_email" }

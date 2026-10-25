@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
+	"golang.org/x/text/language"
 )
 
 func canUpdateInvitation(inv domain.EmployeeInvitation) error {
@@ -43,6 +44,21 @@ func canRespondToInvitation(inv domain.EmployeeInvitation) error {
 	}
 
 	return nil
+}
+
+// Prefers the invitee's language if they already have an account, otherwise
+// assumes they speak the same language as the inviter.
+func (s *Service) invitationLanguage(ctx context.Context, tx pgx.Tx, inviteeEmail string, inviterId uuid.UUID) (language.Tag, error) {
+	invitee, err := s.userRepo.WithTx(tx).GetUserByEmail(ctx, inviteeEmail)
+	if err == nil {
+		return language.Parse(invitee.Language)
+	}
+
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return language.Tag{}, err
+	}
+
+	return s.userRepo.WithTx(tx).GetUserLanguage(ctx, inviterId)
 }
 
 func (s *Service) InviteMember(ctx context.Context, email string, role types.EmployeeInvitationRole) error {
@@ -101,11 +117,12 @@ func (s *Service) InviteMember(ctx context.Context, email string, role types.Emp
 			}
 		}
 
-		lang := lang.LangFromContext(ctx)
+		lang, err := s.invitationLanguage(ctx, tx, email, actor.UserId)
+		if err != nil {
+			return err
+		}
 
 		_, err = s.enqueuer.InsertTx(ctx, tx, args.EmployeeInvitationEmail{
-			// assume that the invitor and invitee speaks the same language
-			// as this is probably better than defaulting to english
 			Language:     lang,
 			InvitationId: invitationId,
 			Token:        token,
@@ -159,11 +176,12 @@ func (s *Service) ResendInvitation(ctx context.Context, invitationId int) error 
 			return err
 		}
 
-		lang := lang.LangFromContext(ctx)
+		lang, err := s.invitationLanguage(ctx, tx, invitation.Email, actor.UserId)
+		if err != nil {
+			return err
+		}
 
 		_, err = s.enqueuer.InsertTx(ctx, tx, args.EmployeeInvitationEmail{
-			// assume that the invitor and invitee speaks the same language
-			// as this is probably better than defaulting to english
 			Language:     lang,
 			InvitationId: invitation.Id,
 			Token:        token,

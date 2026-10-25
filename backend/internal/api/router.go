@@ -75,14 +75,12 @@ func NewRouter(h *Handlers) *httputil.Router {
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
 		r.Route("/merchants", func(r *httputil.Router) {
 			r.UseFunc(h.Middleware.JwtAuthentication)
-			r.UseFunc(h.Middleware.Language)
 
 			r.Post("/check-url", h.Merchants.CheckUrl)
 		})
 		r.Route("/merchants/{merchantId}", func(r *httputil.Router) {
 			r.UseFunc(h.Middleware.JwtAuthentication)
 			r.UseFunc(h.Middleware.EmployeeAuthentication)
-			r.UseFunc(h.Middleware.Language)
 
 			r.Get("/me", h.Merchants.Me)
 

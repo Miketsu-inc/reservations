@@ -25,7 +25,6 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Get("/", h.GetFavorites)
 		r.Get("/{merchantId}", h.IsFavorite)

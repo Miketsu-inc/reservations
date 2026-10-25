@@ -9,11 +9,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/lang"
 	"github.com/riverqueue/river"
 	"golang.org/x/text/language"
 )
@@ -384,7 +384,12 @@ func (w *ForgotPasswordEmail) Work(ctx context.Context, job *river.Job[args.Forg
 		return nil
 	}
 
-	return w.emailService.ForgotPassword(ctx, job.Args.Language, user.Email, email.ForgotPasswordData{
+	lang, err := language.Parse(user.Language)
+	if err != nil {
+		return err
+	}
+
+	return w.emailService.ForgotPassword(ctx, lang, user.Email, email.ForgotPasswordData{
 		PasswordLink: fmt.Sprintf("%s/reset-password?token=%s", config.LoadEnvVars().TANGO_URL, job.Args.Token),
 	})
 }

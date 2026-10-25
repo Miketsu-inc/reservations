@@ -28,7 +28,6 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
 		r.UseFunc(h.middleware.EmployeeAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Get("/", h.GetBookings)
 		r.Post("/", h.CreateByMerchant)

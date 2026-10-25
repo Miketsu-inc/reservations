@@ -34,7 +34,6 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Put("/", h.Edit)
 		r.Delete("/", h.Delete)

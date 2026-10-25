@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
 	"github.com/miketsu-inc/reservations/backend/internal/keys"
@@ -26,6 +25,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/text/language"
 )
 
 type Service struct {
@@ -129,7 +129,7 @@ type UserSignupInput struct {
 	Password    string
 }
 
-func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.TokenPair, error) {
+func (s *Service) UserSignup(ctx context.Context, lang language.Tag, input UserSignupInput) (jwt.TokenPair, error) {
 	unique, err := s.userRepo.IsEmailUnique(ctx, input.Email)
 	if err != nil {
 		return jwt.TokenPair{}, err
@@ -166,7 +166,7 @@ func (s *Service) UserSignup(ctx context.Context, input UserSignupInput) (jwt.To
 		PhoneNumber:       &input.PhoneNumber,
 		PasswordHash:      &hashedPassword,
 		JwtRefreshVersion: 0,
-		Language:          lang.LangFromContext(ctx).String(),
+		Language:          lang.String(),
 	})
 	if err != nil {
 		if db.IsUniqueConstraintViolation(err, repository.UserEmailLowerUniqueConstraint) {
@@ -213,8 +213,12 @@ func (s *Service) MerchantSignup(ctx context.Context, input MerchantSignupInput)
 		return fmt.Errorf("unexpected error during creating merchant id: %s", err.Error())
 	}
 
-	language := lang.LangFromContext(ctx)
-	curr := currencyx.FindBest(language)
+	userLang, err := s.userRepo.GetUserLanguage(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	curr := currencyx.FindBest(userLang)
 
 	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.merchantRepo.WithTx(tx).NewMerchant(ctx, userID, domain.Merchant{
@@ -345,9 +349,8 @@ func (s *Service) ForgotPassword(ctx context.Context, in ForgotPasswordInput) er
 	}
 
 	_, err = s.enqueuer.Insert(ctx, args.ForgotPasswordEmail{
-		Language: lang.LangFromContext(ctx),
-		UserId:   user.Id,
-		Token:    token,
+		UserId: user.Id,
+		Token:  token,
 	}, &river.InsertOpts{})
 	if err != nil {
 		return fmt.Errorf("error scheduling forgot password email: %w", err)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
@@ -21,45 +20,38 @@ type Handler struct {
 	merchantServ *merchantServ.Service
 	catalogServ  *catalogServ.Service
 	teamServ     *teamServ.Service
-	middleware   *middleware.Manager
 }
 
 func NewHandler(
 	merchant *merchantServ.Service,
 	catalog *catalogServ.Service,
 	team *teamServ.Service,
-	m *middleware.Manager,
 ) *Handler {
 	return &Handler{
 		merchantServ: merchant,
 		catalogServ:  catalog,
 		teamServ:     team,
-		middleware:   m,
 	}
 }
 
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.Language)
+	r.Get("/", h.GetInfo)
+	r.Get("/services", h.GetServices)
+	r.Get("/team", h.GetTeam)
 
-		r.Get("/", h.GetInfo)
-		r.Get("/services", h.GetServices)
-		r.Get("/team", h.GetTeam)
+	r.Get("/locations/{locationId}/business-hours/normalized", h.GetNormalizedBusinessHours)
 
-		r.Get("/locations/{locationId}/business-hours/normalized", h.GetNormalizedBusinessHours)
+	r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
+	r.Get("/locations/{locationId}/summary", h.GetSummary)
 
-		r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
-		r.Get("/locations/{locationId}/summary", h.GetSummary)
-
-		r.Route("/locations/{locationId}/services/{serviceId}/availability", func(r *httputil.Router) {
-			r.Get("/", h.GetAvailability)
-			r.Get("/next", h.GetNextAvailability)
-			r.Get("/disabled-days", h.GetDisabledDays)
-			r.Get("/available-days", h.GetDayAvailability)
-			r.Get("/group", h.GetGroupAvailability)
-		})
+	r.Route("/locations/{locationId}/services/{serviceId}/availability", func(r *httputil.Router) {
+		r.Get("/", h.GetAvailability)
+		r.Get("/next", h.GetNextAvailability)
+		r.Get("/disabled-days", h.GetDisabledDays)
+		r.Get("/available-days", h.GetDayAvailability)
+		r.Get("/group", h.GetGroupAvailability)
 	})
 
 	return r

@@ -10,6 +10,7 @@ import (
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/lang"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -27,24 +28,19 @@ func NewHandler(s *authServ.Service, ts *teamServ.Service, m *middleware.Manager
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.Language)
+	r.Post("/login", h.Login)
+	r.Post("/forgot-password", h.ForgotPassword)
+	r.Post("/reset-password", h.ResetPassword)
 
-		r.Post("/login", h.Login)
-		r.Post("/forgot-password", h.ForgotPassword)
-		r.Post("/reset-password", h.ResetPassword)
+	r.Post("/users", h.UserSignup)
 
-		r.Post("/users", h.UserSignup)
-
-		r.Get("/oauth/google", h.GoogleLogin)
-		r.Get("/oauth/google/callback", h.GoogleCallback)
-		r.Get("/oauth/facebook", h.FacebookLogin)
-		r.Get("/oauth/facebook/callback", h.FacebookCallback)
-	})
+	r.Get("/oauth/google", h.GoogleLogin)
+	r.Get("/oauth/google/callback", h.GoogleCallback)
+	r.Get("/oauth/facebook", h.FacebookLogin)
+	r.Get("/oauth/facebook/callback", h.FacebookCallback)
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Get("/me", h.Me)
 
@@ -137,7 +133,7 @@ func (h *Handler) UserSignup(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tokens, err := h.service.UserSignup(r.Context(), mapToUserSignupInput(req))
+	tokens, err := h.service.UserSignup(r.Context(), lang.GetLangFromHeader(r), mapToUserSignupInput(req))
 	if err != nil {
 		return authServ.ErrStatus.Resolve(err, "UserSignup")
 	}
@@ -241,7 +237,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) error {
 	}
 	oauthutil.DeleteOauthStateCookie(w)
 
-	tokens, err := h.service.GoogleCallback(r.Context(), code)
+	tokens, err := h.service.GoogleCallback(r.Context(), lang.GetLangFromHeader(r), code)
 	if err != nil {
 		return authServ.ErrStatus.Resolve(err, "GoogleCallback")
 	}
@@ -275,7 +271,7 @@ func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error
 	}
 	oauthutil.DeleteOauthStateCookie(w)
 
-	tokens, err := h.service.FacebookCallback(r.Context(), code)
+	tokens, err := h.service.FacebookCallback(r.Context(), lang.GetLangFromHeader(r), code)
 	if err != nil {
 		return authServ.ErrStatus.Resolve(err, "FacebookCallback")
 	}

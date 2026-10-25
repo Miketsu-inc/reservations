@@ -28,7 +28,6 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Group(func(r *httputil.Router) {
 		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.Language)
 
 		r.Post("/", h.CreateByCustomer)
 		r.Delete("/{id}", h.CancelByCustomer)

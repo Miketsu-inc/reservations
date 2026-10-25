@@ -13,7 +13,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/lang"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -22,6 +21,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/text/language"
 )
 
 type oauthProfile struct {
@@ -79,8 +79,8 @@ func (s *Service) GoogleLogin(ctx context.Context) (string, string, error) {
 	return oauthLogin(googleProvider)
 }
 
-func (s *Service) GoogleCallback(ctx context.Context, code string) (jwt.TokenPair, error) {
-	return s.oauthCallback(ctx, code, googleProvider)
+func (s *Service) GoogleCallback(ctx context.Context, lang language.Tag, code string) (jwt.TokenPair, error) {
+	return s.oauthCallback(ctx, lang, code, googleProvider)
 }
 
 var facebookProvider = oauthProvider{
@@ -119,8 +119,8 @@ func (s *Service) FacebookLogin(ctx context.Context) (string, string, error) {
 	return oauthLogin(facebookProvider)
 }
 
-func (s *Service) FacebookCallback(ctx context.Context, code string) (jwt.TokenPair, error) {
-	return s.oauthCallback(ctx, code, facebookProvider)
+func (s *Service) FacebookCallback(ctx context.Context, lang language.Tag, code string) (jwt.TokenPair, error) {
+	return s.oauthCallback(ctx, lang, code, facebookProvider)
 }
 
 func oauthLogin(provider oauthProvider) (string, string, error) {
@@ -132,13 +132,13 @@ func oauthLogin(provider oauthProvider) (string, string, error) {
 	return provider.config.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
 }
 
-func (s *Service) oauthCallback(ctx context.Context, code string, provider oauthProvider) (jwt.TokenPair, error) {
+func (s *Service) oauthCallback(ctx context.Context, lang language.Tag, code string, provider oauthProvider) (jwt.TokenPair, error) {
 	profile, err := fetchOauthProfile(ctx, code, provider)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
 
-	userId, refreshVersion, err := s.findOrCreateOauthUser(ctx, provider.authProvider, profile)
+	userId, refreshVersion, err := s.findOrCreateOauthUser(ctx, lang, provider.authProvider, profile)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
@@ -182,7 +182,7 @@ func fetchOauthProfile(ctx context.Context, code string, provider oauthProvider)
 	return profile, nil
 }
 
-func (s *Service) findOrCreateOauthUser(ctx context.Context, provider types.AuthProviderType, profile oauthProfile) (uuid.UUID, int, error) {
+func (s *Service) findOrCreateOauthUser(ctx context.Context, lang language.Tag, provider types.AuthProviderType, profile oauthProfile) (uuid.UUID, int, error) {
 	userId, err := s.userRepo.FindOauthUser(ctx, provider, profile.ProviderId)
 	if err == nil {
 		refreshVersion, err := s.userRepo.GetUserJwtRefreshVersion(ctx, userId)
@@ -220,7 +220,7 @@ func (s *Service) findOrCreateOauthUser(ctx context.Context, provider types.Auth
 		PhoneNumber:       nil,
 		PasswordHash:      nil,
 		JwtRefreshVersion: 0,
-		Language:          lang.LangFromContext(ctx).String(),
+		Language:          lang.String(),
 		AuthProvider:      &provider,
 		ProviderId:        &profile.ProviderId,
 	})
