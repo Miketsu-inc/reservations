@@ -37,8 +37,8 @@ func NewImagePurpose(purposeStr string) (ImagePurpose, error) {
 	}
 }
 
-func (p ImagePurpose) IsSquare() bool {
-	return p != ImagePurposeLocationImage
+func (p ImagePurpose) IsLocationImage() bool {
+	return p == ImagePurposeLocationImage
 }
 
 func (p ImagePurpose) Value() (driver.Value, error) {

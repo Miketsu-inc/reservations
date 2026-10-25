@@ -1,6 +1,5 @@
 import { Button, ServerError } from "@reservations/components";
-import { isLocationComplete } from "@reservations/jabulani/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { isLocationComplete, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 

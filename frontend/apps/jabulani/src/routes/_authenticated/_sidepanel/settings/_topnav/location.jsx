@@ -16,8 +16,7 @@ import {
   ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
-import { isLocationComplete } from "@reservations/jabulani/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { isLocationComplete, useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   useToast,

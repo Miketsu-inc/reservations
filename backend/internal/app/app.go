@@ -84,7 +84,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	kvClient := kv.NewClient()
 
-	r2Client := objectstore.NewS3Client(cfg.R2_ENDPOINT, cfg.R2_ACCESS_KEY_ID, cfg.R2_SECRET_ACCESS_KEY)
+	r2Client := objectstore.NewS3Client(cfg.R2_ENDPOINT, cfg.R2_API_ACCESS_KEY_ID, cfg.R2_API_SECRET_ACCESS_KEY)
 	uploadsBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_UPLOADS_BUCKET)
 	mediaBucket := objectstore.NewS3Bucket(r2Client, cfg.R2_MEDIA_BUCKET)
 
@@ -103,7 +103,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	favoriteService := favoriteSrv.NewService(favoriteRepo)
 	productService := productSrv.NewService(productRepo, merchantRepo)
 	userService := userSrv.NewService(userRepo)
-	mediaService := mediaSrv.NewService(imageRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)
+	mediaService := mediaSrv.NewService(imageRepo, userRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,

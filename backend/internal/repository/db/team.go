@@ -395,3 +395,21 @@ func (r *teamRepository) GetEmployeePreferences(ctx context.Context, employeeId 
 
 	return p, nil
 }
+
+func (r *teamRepository) SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error) {
+	query := `
+	update "Employee" e set avatar_image_id = $3
+	from (select id, avatar_image_id from "Employee" where merchant_id = $1 and id = $2 for update) old
+	where e.id = old.id
+	returning old.avatar_image_id
+	`
+
+	var previous *uuid.UUID
+
+	err := r.db.QueryRow(ctx, query, merchantId, employeeId, imageId).Scan(&previous)
+	if err != nil {
+		return nil, fmt.Errorf("SetEmployeeAvatar: %w", err)
+	}
+
+	return previous, nil
+}

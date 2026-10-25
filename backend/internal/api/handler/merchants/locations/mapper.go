@@ -78,8 +78,8 @@ func mapToImagesResp(in mediaServ.GetLocationImagesResult) imagesResp {
 			AltText:      img.AltText,
 			Width:        img.Width,
 			Height:       img.Height,
-			Url:          mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge),
-			ThumbnailUrl: mediaServ.VariantURL(img.ImageId, mediaServ.VariantSmall),
+			Url:          mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
+			ThumbnailUrl: mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantSmall),
 		}
 	}
 

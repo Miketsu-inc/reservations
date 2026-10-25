@@ -37,7 +37,7 @@ const (
 
 // Returns the maximum size of the longest side of the small and large variant
 func variantSizes(purpose types.ImagePurpose) (int, int) {
-	if purpose.IsSquare() {
+	if !purpose.IsLocationImage() {
 		return 256, 512
 	}
 
@@ -55,7 +55,7 @@ type processedVariant struct {
 }
 
 func (s *Service) processImage(ctx context.Context, image domain.Image, crop *domain.ImageCrop, sourceContentType string) ([]processedVariant, error) {
-	source := fmt.Sprintf("s3://%s/%s", s.uploads.Name(), uploadKey(image.Id))
+	source := fmt.Sprintf("s3://%s/%s", s.uploadsBucket.Name(), image.Id.String())
 	smallSize, largeSize := variantSizes(image.Purpose)
 	format, contentType := outputFormat(image.Purpose, sourceContentType)
 
@@ -89,8 +89,9 @@ func (s *Service) processImage(ctx context.Context, image domain.Image, crop *do
 	return variants, nil
 }
 
-// Logos stay PNG when the upload can have a transparent background. The rest are photos, where JPEG
-// is a lot smaller
+// Logos stay PNG when the upload can have a transparent background.
+// The rest photos are JPEG because it is a lot smaller.
+// We do not store in webp because email and preview link support is missing for it
 func outputFormat(purpose types.ImagePurpose, sourceContentType string) (string, string) {
 	canBeTransparent := sourceContentType == contentTypePNG || sourceContentType == contentTypeWebP
 	if purpose == types.ImagePurposeMerchantLogo && canBeTransparent {
@@ -100,7 +101,7 @@ func outputFormat(purpose types.ImagePurpose, sourceContentType string) (string,
 	return "jpg", contentTypeJPEG
 }
 
-// See https://docs.imgproxy.net/usage/processing
+// https://docs.imgproxy.net/usage/processing
 func processingOptions(purpose types.ImagePurpose, crop *domain.ImageCrop, size int) []string {
 	// the orientation is applied first, the crop is relative to the oriented image just like on the client
 	options := []string{"ar:1", "sm:1"}
@@ -109,11 +110,11 @@ func processingOptions(purpose types.ImagePurpose, crop *domain.ImageCrop, size 
 		options = append(options, fmt.Sprintf("c:%d:%d:nowe:%d:%d", crop.Width, crop.Height, max(crop.X, 0), max(crop.Y, 0)))
 	}
 
-	if purpose.IsSquare() {
-		// crops the center to a square, then downscales it. Smaller images are not enlarged
-		options = append(options, fmt.Sprintf("rs:fill-down:%d:%d", size, size))
-	} else {
+	if purpose.IsLocationImage() {
 		options = append(options, fmt.Sprintf("rs:fit:%d:%d:0", size, size))
+	} else {
+		// crops the center to a square, then downscales it.
+		options = append(options, fmt.Sprintf("rs:fill-down:%d:%d", size, size))
 	}
 
 	// only used by JPEG, PNG is lossless

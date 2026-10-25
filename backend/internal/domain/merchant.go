@@ -20,6 +20,7 @@ type MerchantRepository interface {
 	ChangeMerchantNameAndURL(ctx context.Context, merchantId uuid.UUID, name string, urlName string) error
 	UpdateMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID, settings MerchantProfileSettings) error
 	UpdateSchedulingSettings(ctx context.Context, merchantId uuid.UUID, settings SchedulingSettings) error
+	SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
 
 	IsMerchantUrlUnique(ctx context.Context, urlName string) (bool, error)
 	GetMerchant(ctx context.Context, merchantId uuid.UUID) (Merchant, error)

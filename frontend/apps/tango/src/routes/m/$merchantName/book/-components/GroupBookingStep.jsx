@@ -342,7 +342,6 @@ function SessionCard({ session, isSelected, onSelect }) {
           <Avatar
             styles="size-7! text-[10px] shrink-0"
             img={session.employee_avatar_url}
-            alt={`${session.employee_first_name} ${session.employee_last_name}`}
             initials={`${session.employee_first_name[0]}${session.employee_last_name[0]}`}
           />
           <span className="text-fg-muted truncate text-sm">

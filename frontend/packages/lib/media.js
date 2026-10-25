@@ -119,3 +119,15 @@ export async function uploadImage(uploadUrl, file, crop) {
   // do not error on timeout
   return null;
 }
+
+// Loads the processed image before it replaces the local preview, otherwise it would be empty
+// until it loads
+export function preloadImages(...urls) {
+  return Promise.all(
+    urls.map((url) => {
+      const img = new Image();
+      img.src = url;
+      return img.decode().catch(() => {});
+    })
+  );
+}

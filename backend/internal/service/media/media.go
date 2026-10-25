@@ -32,31 +32,31 @@ var locationImageLimits = map[types.SubTier]int{
 }
 
 type Service struct {
-	imageRepo    domain.ImageRepository
-	teamRepo     domain.TeamRepository
-	locationRepo domain.LocationRepository
-	merchantRepo domain.MerchantRepository
-	// private bucket, the clients upload the original files here
-	uploads objectstore.Bucket
-	// public bucket containing the processed variants
-	media     objectstore.Bucket
-	imgproxy  *imgproxy.Client
-	enqueuer  queue.Enqueuer
-	txManager db.TransactionManager
+	imageRepo     domain.ImageRepository
+	userRepo      domain.UserRepository
+	teamRepo      domain.TeamRepository
+	locationRepo  domain.LocationRepository
+	merchantRepo  domain.MerchantRepository
+	uploadsBucket objectstore.Bucket
+	mediaBucket   objectstore.Bucket
+	imgproxy      *imgproxy.Client
+	enqueuer      queue.Enqueuer
+	txManager     db.TransactionManager
 }
 
-func NewService(image domain.ImageRepository, team domain.TeamRepository, location domain.LocationRepository, merchant domain.MerchantRepository,
-	uploads objectstore.Bucket, media objectstore.Bucket, imgproxy *imgproxy.Client, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
+func NewService(image domain.ImageRepository, user domain.UserRepository, team domain.TeamRepository, location domain.LocationRepository, merchant domain.MerchantRepository,
+	uploadsBucket objectstore.Bucket, mediaBucket objectstore.Bucket, imgproxy *imgproxy.Client, enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
-		imageRepo:    image,
-		teamRepo:     team,
-		locationRepo: location,
-		merchantRepo: merchant,
-		uploads:      uploads,
-		media:        media,
-		imgproxy:     imgproxy,
-		enqueuer:     enqueuer,
-		txManager:    txManager,
+		imageRepo:     image,
+		userRepo:      user,
+		teamRepo:      team,
+		locationRepo:  location,
+		merchantRepo:  merchant,
+		uploadsBucket: uploadsBucket,
+		mediaBucket:   mediaBucket,
+		imgproxy:      imgproxy,
+		enqueuer:      enqueuer,
+		txManager:     txManager,
 	}
 }
 
@@ -162,7 +162,7 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 		return UploadResult{}, err
 	}
 
-	req, err := s.uploads.PresignPut(ctx, uploadKey(imageId), input.ContentType, input.Size, uploadURLExpiry)
+	req, err := s.uploadsBucket.PresignPut(ctx, imageId.String(), input.ContentType, input.Size, uploadURLExpiry)
 	if err != nil {
 		return UploadResult{}, err
 	}
@@ -216,6 +216,7 @@ func (s *Service) getOwnImage(ctx context.Context, imageId uuid.UUID) (domain.Im
 	return image, nil
 }
 
+// the browser calls this after it uploaded the image through the presigned url
 func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *domain.ImageCrop) error {
 	image, err := s.getOwnImage(ctx, imageId)
 	if err != nil {
@@ -226,7 +227,7 @@ func (s *Service) CompleteUpload(ctx context.Context, imageId uuid.UUID, crop *d
 		return ErrUploadAlreadyCompleted
 	}
 
-	info, err := s.uploads.Head(ctx, uploadKey(imageId))
+	info, err := s.uploadsBucket.Head(ctx, imageId.String())
 	if err != nil {
 		if errors.Is(err, objectstore.ErrNotFound) {
 			return ErrUploadMissing
@@ -275,7 +276,7 @@ func (s *Service) RemoveUserAvatar(ctx context.Context) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		previous, err := s.imageRepo.WithTx(tx).SetUserAvatar(ctx, userId, nil)
+		previous, err := s.userRepo.WithTx(tx).SetUserAvatar(ctx, userId, nil)
 		if err != nil {
 			return err
 		}
@@ -292,7 +293,7 @@ func (s *Service) RemoveEmployeeAvatar(ctx context.Context, employeeId int) erro
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		previous, err := s.imageRepo.WithTx(tx).SetEmployeeAvatar(ctx, actor.MerchantId, employeeId, nil)
+		previous, err := s.teamRepo.WithTx(tx).SetEmployeeAvatar(ctx, actor.MerchantId, employeeId, nil)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return ErrEmployeeNotFound
@@ -308,7 +309,7 @@ func (s *Service) RemoveMerchantLogo(ctx context.Context) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		previous, err := s.imageRepo.WithTx(tx).SetMerchantLogo(ctx, actor.MerchantId, nil)
+		previous, err := s.merchantRepo.WithTx(tx).SetMerchantLogo(ctx, actor.MerchantId, nil)
 		if err != nil {
 			return err
 		}
@@ -395,7 +396,6 @@ func (s *Service) ReorderLocationImages(ctx context.Context, locationId int, ima
 		return err
 	}
 
-	// a partial order would give the left out images the same sequence as one of the listed ones
 	if !isSameImageSet(images, imageIds) {
 		return ErrInvalidImageOrder
 	}

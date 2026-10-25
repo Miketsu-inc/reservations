@@ -34,8 +34,8 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 	images := make([]imageResp, len(in.Images))
 	for i, img := range in.Images {
 		images[i] = imageResp{
-			Url:          mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge),
-			ThumbnailUrl: mediaServ.VariantURL(img.ImageId, mediaServ.VariantSmall),
+			Url:          mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
+			ThumbnailUrl: mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantSmall),
 			AltText:      img.AltText,
 			Width:        img.Width,
 			Height:       img.Height,
@@ -54,7 +54,7 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 		ParkingInfo:             in.ParkingInfo,
 		PaymentInfo:             in.PaymentInfo,
 		Timezone:                in.Timezone,
-		LogoUrl:                 mediaServ.URL(in.LogoImageId, mediaServ.VariantSmall),
+		LogoUrl:                 mediaServ.NewURL(in.LogoImageId, mediaServ.VariantSmall),
 		LocationId:              in.LocationId,
 		Country:                 in.Country,
 		CountryCode:             in.CountryCode,
@@ -115,7 +115,7 @@ func mapToGetTeam(in []domain.EmployeeWithServiceOverrides) []teamResponse {
 			LastName:        *emp.LastName,
 			Email:           emp.Email,
 			PhoneNumber:     emp.PhoneNumber,
-			AvatarUrl:       mediaServ.URL(emp.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl:       mediaServ.NewURL(emp.AvatarImageId, mediaServ.VariantSmall),
 			TotalDuration:   emp.TotalDuration,
 			Price:           currencyx.FormatPrice(emp.Price),
 			PriceType:       emp.PriceType,
@@ -169,7 +169,7 @@ func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
 	resp := getSummaryResp{
 		MerchantName:      in.MerchantName,
 		FormattedLocation: in.Location,
-		LogoUrl:           mediaServ.URL(in.LogoImageId, mediaServ.VariantSmall),
+		LogoUrl:           mediaServ.NewURL(in.LogoImageId, mediaServ.VariantSmall),
 	}
 
 	if in.Service != nil {
@@ -280,7 +280,7 @@ func mapToGetGroupAvailabilityResp(in merchantServ.GroupAvailabilityResult) getG
 			EmployeeId:          booking.EmployeeId,
 			EmployeeFirstName:   booking.EmployeeFirstName,
 			EmployeeLastName:    booking.EmployeeLastName,
-			EmployeeAvatarUrl:   mediaServ.URL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			EmployeeAvatarUrl:   mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

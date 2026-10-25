@@ -25,7 +25,7 @@ import {
   meQueryOptions,
   useToast,
 } from "@reservations/lib";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -56,7 +56,7 @@ function RouteComponent() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
   const { merchantId, employeeId } = useAuth();
-  const queryClient = useQueryClient();
+  const { queryClient } = Route.useRouteContext({ from: Route.id });
 
   const {
     data: employee,

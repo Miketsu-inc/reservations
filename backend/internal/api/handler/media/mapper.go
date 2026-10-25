@@ -27,8 +27,8 @@ func mapToUploadStatusResp(in domain.Image) uploadStatusResp {
 	}
 
 	if in.Status == types.ImageStatusReady {
-		resp.Url = mediaServ.URL(&in.Id, mediaServ.VariantLarge)
-		resp.ThumbnailUrl = mediaServ.URL(&in.Id, mediaServ.VariantSmall)
+		resp.Url = mediaServ.NewURL(&in.Id, mediaServ.VariantLarge)
+		resp.ThumbnailUrl = mediaServ.NewURL(&in.Id, mediaServ.VariantSmall)
 	}
 
 	return resp

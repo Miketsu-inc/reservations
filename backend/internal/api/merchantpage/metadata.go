@@ -21,12 +21,10 @@ type pageMetadata struct {
 }
 
 type pageImage struct {
-	URL string
-	Alt string
-	// zero if unknown
-	Width  int
-	Height int
-	// wether the image is a photo which should be shown in large link previews
+	URL     string
+	Alt     string
+	Width   int
+	Height  int
 	IsLarge bool
 }
 
@@ -129,7 +127,7 @@ func buildPageImage(info domain.MerchantInfo) *pageImage {
 		}
 
 		return &pageImage{
-			URL:     mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge),
+			URL:     mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
 			Alt:     alt,
 			Width:   img.Width,
 			Height:  img.Height,
@@ -139,7 +137,7 @@ func buildPageImage(info domain.MerchantInfo) *pageImage {
 
 	if info.LogoImageId != nil {
 		return &pageImage{
-			URL: mediaServ.VariantURL(*info.LogoImageId, mediaServ.VariantLarge),
+			URL: mediaServ.NewVariantURL(*info.LogoImageId, mediaServ.VariantLarge),
 			Alt: info.Name,
 		}
 	}
@@ -161,11 +159,11 @@ func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageURL, descrip
 	}
 
 	for _, img := range info.Images {
-		schema.Image = append(schema.Image, mediaServ.VariantURL(img.ImageId, mediaServ.VariantLarge))
+		schema.Image = append(schema.Image, mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge))
 	}
 
 	if info.LogoImageId != nil {
-		schema.Logo = mediaServ.VariantURL(*info.LogoImageId, mediaServ.VariantLarge)
+		schema.Logo = mediaServ.NewVariantURL(*info.LogoImageId, mediaServ.VariantLarge)
 	}
 
 	return schema

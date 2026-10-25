@@ -1,13 +1,6 @@
 import { useState } from "react";
 
-// Falls back to the initials, or to the fallback when given (null renders nothing), if the image fails to load
-export default function Avatar({
-  styles = "",
-  img,
-  initials,
-  alt = "",
-  fallback,
-}) {
+export default function Avatar({ styles = "", img, initials, alt = "" }) {
   // stores the url instead of a flag, so a new image is tried again
   const [failedImg, setFailedImg] = useState(null);
 
@@ -20,10 +13,6 @@ export default function Avatar({
         onError={() => setFailedImg(img)}
       />
     );
-  }
-
-  if (fallback !== undefined) {
-    return fallback;
   }
 
   return (

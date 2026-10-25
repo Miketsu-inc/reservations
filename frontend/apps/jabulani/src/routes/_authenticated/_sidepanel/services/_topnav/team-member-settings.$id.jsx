@@ -506,7 +506,6 @@ function EmployeeSettingsRow({
               employee.is_assigned ? "" : "opacity-50"
             }`}
             img={employee.avatar_url}
-            alt={name}
             initials={initials}
           />
           <div

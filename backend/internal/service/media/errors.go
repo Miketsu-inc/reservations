@@ -1,7 +1,6 @@
 package media
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
@@ -32,5 +31,3 @@ var ErrLocationNotFound = &apperr.Error{Code: "location_not_found", Message: "lo
 var ErrLocationImageNotFound = &apperr.Error{Code: "location_image_not_found", Message: "location image not found for this id"}
 var ErrLocationImageLimitReached = &apperr.Error{Code: "location_image_limit_reached", Message: "the location has reached the maximum number of images for your subscription"}
 var ErrInvalidImageOrder = &apperr.Error{Code: "invalid_image_order", Message: "the order must contain every image of the location exactly once"}
-
-var ErrUnprocessable = errors.New("image can not be processed")

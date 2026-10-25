@@ -157,7 +157,7 @@ func mapToGetTeamMemberSettingsResp(in catalogServ.GetTeamMemberSettingsResult) 
 			FirstName:       employee.FirstName,
 			LastName:        employee.LastName,
 			Role:            employee.Role,
-			AvatarUrl:       mediaServ.URL(employee.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl:       mediaServ.NewURL(employee.AvatarImageId, mediaServ.VariantSmall),
 			IsAssigned:      employee.IsAssigned,
 			Price:           employee.PricePerPerson,
 			PriceType:       employee.PriceType,

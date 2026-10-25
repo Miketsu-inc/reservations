@@ -31,7 +31,7 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 			Price:             b.PricePerPerson.ToFormatted(),
 			MerchantName:      b.MerchantName,
 			MerchantUrl:       b.MerchantUrl,
-			MerchantLogoUrl:   mediaServ.URL(b.MerchantLogoImageId, mediaServ.VariantSmall),
+			MerchantLogoUrl:   mediaServ.NewURL(b.MerchantLogoImageId, mediaServ.VariantSmall),
 			FormattedLocation: b.FormattedLocation,
 			ServiceName:       b.ServiceName,
 			EmployeeFirstName: b.EmployeeFirstName,

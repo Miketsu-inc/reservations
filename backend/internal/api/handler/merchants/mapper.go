@@ -49,8 +49,8 @@ func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboar
 			CustomerLastName:    booking.CustomerLastName,
 			EmployeeFirstName:   booking.EmployeeFirstName,
 			EmployeeLastName:    booking.EmployeeLastName,
-			CustomerAvatarUrl:   mediaServ.URL(booking.CustomerAvatarImageId, mediaServ.VariantSmall),
-			EmployeeAvatarUrl:   mediaServ.URL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			CustomerAvatarUrl:   mediaServ.NewURL(booking.CustomerAvatarImageId, mediaServ.VariantSmall),
+			EmployeeAvatarUrl:   mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -120,7 +120,7 @@ func mapToMerchantProfileSettingsResp(in domain.MerchantProfileSettings) merchan
 		AboutUs:      in.AboutUs,
 		ParkingInfo:  in.ParkingInfo,
 		PaymentInfo:  in.PaymentInfo,
-		LogoUrl:      mediaServ.URL(in.LogoImageId, mediaServ.VariantSmall),
+		LogoUrl:      mediaServ.NewURL(in.LogoImageId, mediaServ.VariantSmall),
 	}
 }
 
@@ -213,7 +213,7 @@ func mapToGetTeamMembersForCalendarResp(in []domain.Employee) []getTeamMembersFo
 			Id:        m.Id,
 			FirstName: *m.FirstName,
 			LastName:  *m.LastName,
-			AvatarUrl: mediaServ.URL(m.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl: mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -262,7 +262,7 @@ func mapToGetCustomersForCalendarResp(in []domain.CustomerForCalendar) []getCust
 			BirthDay:    m.BirthDay,
 			IsDummy:     m.IsDummy,
 			LastVisited: m.LastVisited,
-			AvatarUrl:   mediaServ.URL(m.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl:   mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -314,7 +314,7 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 			LastName:     p.LastName,
 			CustomerNote: p.CustomerNote,
 			Status:       p.Status,
-			AvatarUrl:    mediaServ.URL(p.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl:    mediaServ.NewURL(p.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

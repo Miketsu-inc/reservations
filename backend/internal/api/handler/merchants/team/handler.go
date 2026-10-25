@@ -31,7 +31,6 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Get("/{id}/preferences", h.GetPreferences)
 	r.Patch("/{id}/preferences", h.UpdatePreferences)
 
-	// staff members can only change their own picture, checked in the service
 	r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/avatar", h.CreateAvatarUpload)
 	r.Delete("/{id}/avatar", h.RemoveAvatar)
 

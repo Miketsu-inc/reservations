@@ -40,7 +40,7 @@ func mapToGetMemberResp(in domain.Employee) getMemberResp {
 		Email:        in.Email,
 		PhoneNumber:  in.PhoneNumber,
 		IsActive:     in.IsActive,
-		AvatarUrl:    mediaServ.URL(in.AvatarImageId, mediaServ.VariantSmall),
+		AvatarUrl:    mediaServ.NewURL(in.AvatarImageId, mediaServ.VariantSmall),
 		HasOwnAvatar: in.HasOwnAvatar,
 	}
 }

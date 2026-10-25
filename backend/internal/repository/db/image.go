@@ -153,60 +153,6 @@ func (r *imageRepository) GetUnusedImageIds(ctx context.Context, createdBefore t
 	return imageIds, nil
 }
 
-func (r *imageRepository) SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
-	query := `
-	update "User" u set avatar_image_id = $2
-	from (select id, avatar_image_id from "User" where id = $1 for update) old
-	where u.id = old.id
-	returning old.avatar_image_id
-	`
-
-	var previous *uuid.UUID
-
-	err := r.db.QueryRow(ctx, query, userId, imageId).Scan(&previous)
-	if err != nil {
-		return nil, fmt.Errorf("SetUserAvatar: %w", err)
-	}
-
-	return previous, nil
-}
-
-func (r *imageRepository) SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error) {
-	query := `
-	update "Employee" e set avatar_image_id = $3
-	from (select id, avatar_image_id from "Employee" where merchant_id = $1 and id = $2 for update) old
-	where e.id = old.id
-	returning old.avatar_image_id
-	`
-
-	var previous *uuid.UUID
-
-	err := r.db.QueryRow(ctx, query, merchantId, employeeId, imageId).Scan(&previous)
-	if err != nil {
-		return nil, fmt.Errorf("SetEmployeeAvatar: %w", err)
-	}
-
-	return previous, nil
-}
-
-func (r *imageRepository) SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
-	query := `
-	update "Merchant" m set logo_image_id = $2
-	from (select id, logo_image_id from "Merchant" where id = $1 for update) old
-	where m.id = old.id
-	returning old.logo_image_id
-	`
-
-	var previous *uuid.UUID
-
-	err := r.db.QueryRow(ctx, query, merchantId, imageId).Scan(&previous)
-	if err != nil {
-		return nil, fmt.Errorf("SetMerchantLogo: %w", err)
-	}
-
-	return previous, nil
-}
-
 func (r *imageRepository) NewLocationImage(ctx context.Context, locationId int, imageId uuid.UUID) error {
 	query := `
 	insert into "LocationImage" (image_id, location_id, sequence)

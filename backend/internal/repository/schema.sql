@@ -426,7 +426,6 @@ create table if not exists "LocationImage" (
     sequence                 integer         not null default 0,
     alt_text                 text            not null default '',
 
-    -- deferred because reordering updates the sequences of every image in one statement
     constraint unique_location_image_sequence unique (location_id, sequence) deferrable initially deferred,
     constraint location_image_alt_text_length check (char_length(alt_text) <= 150)
 );

@@ -20,7 +20,7 @@ const maxDeleteBatch = 1000
 
 func NewS3Client(endpoint string, accessKeyId string, secretAccessKey string) *s3.Client {
 	return s3.New(s3.Options{
-		// required by the SDK, S3 compatible providers like R2 ignore it
+		// required by the SDK, R2 ignores it
 		Region:       "auto",
 		BaseEndpoint: aws.String(endpoint),
 		Credentials:  credentials.NewStaticCredentialsProvider(accessKeyId, secretAccessKey, ""),

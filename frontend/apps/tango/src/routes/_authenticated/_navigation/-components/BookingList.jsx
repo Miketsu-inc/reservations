@@ -159,7 +159,6 @@ function BookingCard({ booking }) {
           <Avatar
             styles="size-6! text-[10px]! rounded-md!"
             img={booking.merchant_logo_url}
-            alt={booking.merchant_name}
             initials={booking.merchant_name.slice(0, 2)}
           />
           <p className="text-fg-muted truncate text-sm">

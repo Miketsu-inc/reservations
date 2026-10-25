@@ -259,3 +259,21 @@ func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthP
 
 	return id, nil
 }
+
+func (r *userRepository) SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
+	query := `
+	update "User" u set avatar_image_id = $2
+	from (select id, avatar_image_id from "User" where id = $1 for update) old
+	where u.id = old.id
+	returning old.avatar_image_id
+	`
+
+	var previous *uuid.UUID
+
+	err := r.db.QueryRow(ctx, query, userId, imageId).Scan(&previous)
+	if err != nil {
+		return nil, fmt.Errorf("SetUserAvatar: %w", err)
+	}
+
+	return previous, nil
+}

@@ -42,7 +42,7 @@ func mapToGetResp(in domain.CustomerInfo) getResp {
 		IsDummy:         in.IsDummy,
 		IsBlacklisted:   in.IsBlacklisted,
 		BlacklistReason: in.BlacklistReason,
-		AvatarUrl:       mediaServ.URL(in.AvatarImageId, mediaServ.VariantSmall),
+		AvatarUrl:       mediaServ.NewURL(in.AvatarImageId, mediaServ.VariantSmall),
 	}
 }
 
@@ -95,7 +95,7 @@ func mapToGetAllResp(in []domain.PublicCustomer) []getAllResp {
 			BlacklistReason: c.BlacklistReason,
 			TimesBooked:     c.TimesBooked,
 			TimesCancelled:  c.TimesCancelled,
-			AvatarUrl:       mediaServ.URL(c.AvatarImageId, mediaServ.VariantSmall),
+			AvatarUrl:       mediaServ.NewURL(c.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

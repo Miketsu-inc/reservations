@@ -1,4 +1,4 @@
-import { Avatar } from "@reservations/components";
+import MerchantLogo from "./MerchantLogo";
 
 // has to match the backend's small variant size
 const THUMBNAIL_MAX_SIZE = 640;
@@ -34,9 +34,9 @@ export default function Gallery({ images, merchantName, logoUrl }) {
         className="bg-bg-sunken flex h-62.5 w-full items-center justify-center
           lg:h-125 lg:rounded-2xl"
       >
-        <Avatar
-          styles="size-28! rounded-2xl! lg:size-40!"
-          img={logoUrl}
+        <MerchantLogo
+          styles="size-28 rounded-2xl! lg:size-40"
+          src={logoUrl}
           alt={`${merchantName} logo`}
           fallback={
             <span className="text-fg-muted text-5xl font-semibold lg:text-7xl">

@@ -4,4 +4,9 @@ export {
   getBookingStatusColorStyles,
   getBookingStatusStyles,
 } from "./bookings";
+export {
+  coordinatesFromLocation,
+  isLocationComplete,
+  locationFromMapboxFeature,
+} from "./location";
 export { getDefaultRecurrenceEnd } from "./recurrence";

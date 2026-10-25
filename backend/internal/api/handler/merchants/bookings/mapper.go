@@ -26,7 +26,7 @@ func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
 			ParticipantStatus: booking.ParticipantStatus,
 			EmployeeFirstName: booking.EmployeeFirstName,
 			EmployeeLastName:  booking.EmployeeLastName,
-			EmployeeAvatarUrl: mediaServ.URL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			EmployeeAvatarUrl: mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 

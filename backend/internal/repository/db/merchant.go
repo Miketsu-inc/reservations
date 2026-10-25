@@ -611,3 +611,21 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 
 	return result, nil
 }
+
+func (r *merchantRepository) SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
+	query := `
+	update "Merchant" m set logo_image_id = $2
+	from (select id, logo_image_id from "Merchant" where id = $1 for update) old
+	where m.id = old.id
+	returning old.logo_image_id
+	`
+
+	var previous *uuid.UUID
+
+	err := r.db.QueryRow(ctx, query, merchantId, imageId).Scan(&previous)
+	if err != nil {
+		return nil, fmt.Errorf("SetMerchantLogo: %w", err)
+	}
+
+	return previous, nil
+}

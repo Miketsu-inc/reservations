@@ -54,9 +54,12 @@ TANGO_URL
 JABULANI_URL
 DOMAIN
 
+VITE_TANGO_URL=$TANGO_URL
+VITE_JABULANI_URL=$JABULANI_URL
+
 R2_ENDPOINT
-R2_ACCESS_KEY_ID
-R2_SECRET_ACCESS_KEY
+R2_API_ACCESS_KEY_ID
+R2_API_SECRET_ACCESS_KEY
 R2_UPLOADS_BUCKET
 R2_MEDIA_BUCKET
 MEDIA_PUBLIC_URL
@@ -65,33 +68,40 @@ IMGPROXY_PORT
 IMGPROXY_URL
 IMGPROXY_KEY
 IMGPROXY_SALT
-
-VITE_TANGO_URL=$TANGO_URL
-VITE_JABULANI_URL=$JABULANI_URL
 ```
 
-Images are stored in two Cloudflare R2 buckets.
+Images are stored using [Cloudflare R2](https://developers.cloudflare.com/r2/) buckets. You need the following setup.
 
-`R2_ENDPOINT` is the S3 API url of the account, `https://<account id>.r2.cloudflarestorage.com` (without a bucket name).
+- `R2_UPLOADS_BUCKET` should be private, have a lifecycle rule deleting objects after 1 day and a CORS rule allowing `PUT` requests with the `Content-Type` header from the `TANGO_URL` and `JABULANI_URL` origins.
+- `R2_MEDIA_BUCKET` should be public, `MEDIA_PUBLIC_URL` being the public url
+- An API token with Object Read & Write permission for these two buckets.
 
-- `R2_UPLOADS_BUCKET` is private, clients upload the original files to it with presigned urls. It needs a lifecycle rule deleting objects after 1 day and a CORS rule allowing `PUT` requests with the `Content-Type` header from the `TANGO_URL` and `JABULANI_URL` origins.
-- `R2_MEDIA_BUCKET` is public and contains the processed images. `MEDIA_PUBLIC_URL` is it's public url (the `r2.dev` url or a custom domain).
-
-The API token only needs Object Read & Write permission for these two buckets.
-
-Uploaded images are processed by [imgproxy](https://docs.imgproxy.net), which reads the originals from the uploads bucket. `IMGPROXY_PORT` is the port of the local docker container, `IMGPROXY_URL` is the url the backend reaches imgproxy at (`http://localhost:${IMGPROXY_PORT}` locally). `IMGPROXY_KEY` and `IMGPROXY_SALT` are two random hex strings (e.g. 64 characters each), the backend signs the imgproxy requests with them so only it can use imgproxy. Any random generator works, for example `openssl rand -hex 32`. Create the imgproxy container in docker using the create-imgproxy command, it has to be recreated if any of these environment variables change.
+Uploaded images are processed by [imgproxy](https://docs.imgproxy.net), create a client using the `create-imgproxy` command.
 
 ```
 make create-imgproxy
 ```
 
-Create a PostgreSQL database in docker using the create-db command.
+Create a Redis client in docker using the `create-kv` command.
+
+```
+make create-kv
+```
+
+Create a PostgreSQL database in docker using the `create-db` command.
 
 ```
 make create-db
 ```
 
-Use the make run command to run the application in development mode.
+Install [riverqueue](https://riverqueue.com/docs) (make sure it's the correct version) and run the migrations.
+
+```
+go install github.com/riverqueue/river/cmd/river
+make migrate-river
+```
+
+Use the `make run` command to run the application in development mode.
 
 ```
 make run

@@ -23,6 +23,7 @@ type UserRepository interface {
 
 	UpdateUser(ctx context.Context, user UserCore) error
 	UpdatePassword(ctx context.Context, userId uuid.UUID, passwordHash string) error
+	SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
 	DeleteUser(ctx context.Context, userId uuid.UUID) error
 
 	IsEmailUnique(ctx context.Context, email string) (bool, error)
@@ -35,17 +36,17 @@ type UserRepository interface {
 }
 
 type User struct {
-	Id                uuid.UUID               `json:"ID" db:"id"`
-	FirstName         string                  `json:"first_name" db:"first_name"`
-	LastName          string                  `json:"last_name" db:"last_name"`
-	Email             string                  `json:"email" db:"email"`
-	PhoneNumber       *string                 `json:"phone_number" db:"phone_number"`
-	PasswordHash      *string                 `json:"password_hash" db:"password_hash"`
-	JwtRefreshVersion int                     `json:"jwt_refresh_version" db:"jwt_refresh_version"`
-	Language          string                  `json:"language" db:"language"`
-	AuthProvider      *types.AuthProviderType `json:"auth_provider" db:"auth_provider"`
-	ProviderId        *string                 `json:"provider_id" db:"provider_id"`
-	AvatarImageId     *uuid.UUID              `json:"avatar_image_id" db:"avatar_image_id"`
+	Id                uuid.UUID               `db:"id"`
+	FirstName         string                  `db:"first_name"`
+	LastName          string                  `db:"last_name"`
+	Email             string                  `db:"email"`
+	PhoneNumber       *string                 `db:"phone_number"`
+	PasswordHash      *string                 `db:"password_hash"`
+	JwtRefreshVersion int                     `db:"jwt_refresh_version"`
+	Language          string                  `db:"language"`
+	AuthProvider      *types.AuthProviderType `db:"auth_provider"`
+	ProviderId        *string                 `db:"provider_id"`
+	AvatarImageId     *uuid.UUID              `db:"avatar_image_id"`
 }
 
 func (u User) IsOauthUser() bool {

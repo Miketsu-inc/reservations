@@ -22,10 +22,6 @@ type ImageRepository interface {
 	IsImageReferenced(ctx context.Context, imageId uuid.UUID) (bool, error)
 	GetUnusedImageIds(ctx context.Context, createdBefore time.Time, limit int) ([]uuid.UUID, error)
 
-	SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
-	SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error)
-	SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error)
-
 	NewLocationImage(ctx context.Context, locationId int, imageId uuid.UUID) error
 	GetLocationImages(ctx context.Context, merchantId uuid.UUID, locationId int) ([]LocationImage, error)
 	CountLocationImages(ctx context.Context, locationId int, pendingCreatedAfter time.Time) (int, error)
@@ -50,7 +46,6 @@ type Image struct {
 	CreatedAt  time.Time          `db:"created_at"`
 }
 
-// Crop rectangle in pixels, relative to the image as it is displayed (after applying it's EXIF orientation)
 type ImageCrop struct {
 	X      int `json:"x"`
 	Y      int `json:"y"`

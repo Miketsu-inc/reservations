@@ -18,7 +18,6 @@ import (
 
 var ErrInvalidSource = errors.New("invalid source image")
 
-// Client of an imgproxy server, see https://docs.imgproxy.net
 type Client struct {
 	baseURL    string
 	key        []byte
@@ -26,7 +25,6 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// The key and salt are hex encoded, they are used to sign the urls
 func NewClient(baseURL string, key string, salt string) *Client {
 	keyBytes, err := hex.DecodeString(key)
 	assert.Nil(err, "imgproxy key is not hex encoded", err)
@@ -68,7 +66,7 @@ func (c *Client) Process(ctx context.Context, source string, options []string, f
 	case http.StatusNotFound, http.StatusUnprocessableEntity:
 		return nil, fmt.Errorf("%w: %s", ErrInvalidSource, body)
 	default:
-		return nil, fmt.Errorf("imgproxy returned status %s: %s", resp.Status, body)
+		return nil, fmt.Errorf("imgproxy status %s: %s", resp.Status, body)
 	}
 }
 

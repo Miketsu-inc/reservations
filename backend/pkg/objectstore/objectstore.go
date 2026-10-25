@@ -18,7 +18,6 @@ type Bucket interface {
 	Head(ctx context.Context, key string) (ObjectInfo, error)
 	Get(ctx context.Context, key string) (io.ReadCloser, ObjectInfo, error)
 	Put(ctx context.Context, input PutInput) error
-	// Deleting objects that do not exist is not an error
 	Delete(ctx context.Context, keys ...string) error
 }
 
@@ -30,7 +29,7 @@ type ObjectInfo struct {
 type PresignedRequest struct {
 	URL    string
 	Method string
-	// Headers that must be sent with the request, excluding the ones set by http clients automatically (Host, Content-Length)
+	// Headers that must be sent with the request, excluding the ones set by http clients automatically
 	Headers   http.Header
 	ExpiresAt time.Time
 }

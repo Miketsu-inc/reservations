@@ -19,7 +19,6 @@ import (
 const (
 	variantCacheControl = "public, max-age=31536000, immutable"
 
-	// Images that never became ready or are no longer used are deleted after this
 	unusedImageRetention = 24 * time.Hour
 	cleanupBatchSize     = 1000
 )
@@ -52,10 +51,12 @@ func (s *Service) ProcessImage(ctx context.Context, imageId uuid.UUID, crop *dom
 	}
 
 	// the lifecycle rule of the uploads bucket deletes it anyway if this fails
-	_ = s.uploads.Delete(ctx, uploadKey(imageId))
+	_ = s.uploadsBucket.Delete(ctx, imageId.String())
 
 	return nil
 }
+
+var ErrUnprocessable = errors.New("image can not be processed")
 
 func (s *Service) failImage(ctx context.Context, imageId uuid.UUID, reason error) error {
 	err := s.imageRepo.UpdateImageStatus(ctx, imageId, types.ImageStatusFailed)
@@ -74,7 +75,7 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 	var width, height int
 
 	for _, v := range variants {
-		err := s.media.Put(ctx, objectstore.PutInput{
+		err := s.mediaBucket.Put(ctx, objectstore.PutInput{
 			Key:          objectKey(image.Id, v.variant),
 			Body:         bytes.NewReader(v.data),
 			Size:         int64(len(v.data)),
@@ -91,15 +92,13 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
-		imageRepo := s.imageRepo.WithTx(tx)
-
 		attached, previous, err := s.attachImage(ctx, tx, image)
 		if err != nil {
 			return err
 		}
 
 		if !attached {
-			err = imageRepo.UpdateImageStatus(ctx, image.Id, types.ImageStatusFailed)
+			err = s.imageRepo.WithTx(tx).UpdateImageStatus(ctx, image.Id, types.ImageStatusFailed)
 			if err != nil {
 				return err
 			}
@@ -107,7 +106,7 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 			return s.scheduleImageDeletion(ctx, tx, &image.Id)
 		}
 
-		err = imageRepo.SetImageReady(ctx, image.Id, width, height)
+		err = s.imageRepo.WithTx(tx).SetImageReady(ctx, image.Id, width, height)
 		if err != nil {
 			return err
 		}
@@ -121,10 +120,8 @@ func (s *Service) storeImage(ctx context.Context, image domain.Image, variants [
 }
 
 // Attaches the ready image to it's target, returns false if the target no longer exists
-// and the previous image of the target which should be deleted
+// and returns the previous image of the target which should be deleted
 func (s *Service) attachImage(ctx context.Context, tx pgx.Tx, image domain.Image) (bool, *uuid.UUID, error) {
-	imageRepo := s.imageRepo.WithTx(tx)
-
 	var previous *uuid.UUID
 	var err error
 
@@ -134,21 +131,21 @@ func (s *Service) attachImage(ctx context.Context, tx pgx.Tx, image domain.Image
 			return false, nil, nil
 		}
 
-		previous, err = imageRepo.SetUserAvatar(ctx, *image.UserId, &image.Id)
+		previous, err = s.userRepo.WithTx(tx).SetUserAvatar(ctx, *image.UserId, &image.Id)
 
 	case types.ImagePurposeEmployeeAvatar:
 		if image.MerchantId == nil || image.EmployeeId == nil {
 			return false, nil, nil
 		}
 
-		previous, err = imageRepo.SetEmployeeAvatar(ctx, *image.MerchantId, *image.EmployeeId, &image.Id)
+		previous, err = s.teamRepo.WithTx(tx).SetEmployeeAvatar(ctx, *image.MerchantId, *image.EmployeeId, &image.Id)
 
 	case types.ImagePurposeMerchantLogo:
 		if image.MerchantId == nil {
 			return false, nil, nil
 		}
 
-		previous, err = imageRepo.SetMerchantLogo(ctx, *image.MerchantId, &image.Id)
+		previous, err = s.merchantRepo.WithTx(tx).SetMerchantLogo(ctx, *image.MerchantId, &image.Id)
 
 	case types.ImagePurposeLocationImage:
 		return s.attachLocationImage(ctx, tx, image)
@@ -172,8 +169,6 @@ func (s *Service) attachLocationImage(ctx context.Context, tx pgx.Tx, image doma
 		return false, nil, nil
 	}
 
-	// serializes attaching images to the same location, so concurrent jobs can not exceed the limit
-	// or get the same sequence
 	err := s.locationRepo.WithTx(tx).LockLocation(ctx, *image.LocationId, *image.MerchantId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -187,9 +182,7 @@ func (s *Service) attachLocationImage(ctx context.Context, tx pgx.Tx, image doma
 		return false, nil, err
 	}
 
-	imageRepo := s.imageRepo.WithTx(tx)
-
-	count, err := imageRepo.CountReadyLocationImages(ctx, *image.LocationId)
+	count, err := s.imageRepo.WithTx(tx).CountReadyLocationImages(ctx, *image.LocationId)
 	if err != nil {
 		return false, nil, err
 	}
@@ -199,7 +192,7 @@ func (s *Service) attachLocationImage(ctx context.Context, tx pgx.Tx, image doma
 		return false, nil, nil
 	}
 
-	err = imageRepo.NewLocationImage(ctx, *image.LocationId, image.Id)
+	err = s.imageRepo.WithTx(tx).NewLocationImage(ctx, *image.LocationId, image.Id)
 	if err != nil {
 		return false, nil, err
 	}
@@ -218,12 +211,12 @@ func (s *Service) DeleteImage(ctx context.Context, imageId uuid.UUID) error {
 		return nil
 	}
 
-	err = s.media.Delete(ctx, objectKey(imageId, VariantSmall), objectKey(imageId, VariantLarge))
+	err = s.mediaBucket.Delete(ctx, objectKey(imageId, VariantSmall), objectKey(imageId, VariantLarge))
 	if err != nil {
 		return err
 	}
 
-	err = s.uploads.Delete(ctx, uploadKey(imageId))
+	err = s.uploadsBucket.Delete(ctx, imageId.String())
 	if err != nil {
 		return err
 	}

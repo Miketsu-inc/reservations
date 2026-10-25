@@ -10,13 +10,7 @@ import {
   TiktokIcon,
   Youtube,
 } from "@hugeicons/core-free-icons";
-import {
-  Avatar,
-  Button,
-  Icon,
-  Loading,
-  ServerError,
-} from "@reservations/components";
+import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import { useWindowSize } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -24,6 +18,7 @@ import BusinessHoursSection from "./-components/BusinessHoursSection";
 import FavoriteButton from "./-components/FavoriteButton";
 import Gallery from "./-components/Gallery";
 import MapboxMap from "./-components/MapboxMap";
+import MerchantLogo from "./-components/MerchantLogo";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceSection from "./-components/ServiceSection";
 import TeamSection from "./-components/TeamSection";
@@ -130,19 +125,9 @@ function MerchantPage() {
             </Link>
             <div className="flex w-full items-start justify-between pb-4">
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-4">
-                  {merchantInfo.logo_url && (
-                    <Avatar
-                      styles="size-14! shrink-0 rounded-xl!"
-                      img={merchantInfo.logo_url}
-                      alt={`${merchantInfo.merchant_name} logo`}
-                      fallback={null}
-                    />
-                  )}
-                  <h1 className="text-4xl font-semibold">
-                    {merchantInfo.merchant_name}
-                  </h1>
-                </div>
+                <h1 className="text-4xl font-semibold">
+                  {merchantInfo.merchant_name}
+                </h1>
                 <div className="text-fg-muted flex items-center gap-3">
                   <div className="text-fg-warning flex items-center gap-1">
                     <Icon icon={StarIcon} styles="size-5 fill-warning" />
@@ -212,14 +197,11 @@ function MerchantPage() {
           >
             <div className="flex flex-col gap-3.5 lg:hidden">
               <div className="flex items-center gap-3">
-                {merchantInfo.logo_url && (
-                  <Avatar
-                    styles="size-12! shrink-0 rounded-xl!"
-                    img={merchantInfo.logo_url}
-                    alt={`${merchantInfo.merchant_name} logo`}
-                    fallback={null}
-                  />
-                )}
+                <MerchantLogo
+                  styles="size-12 shrink-0"
+                  src={merchantInfo.logo_url}
+                  alt={`${merchantInfo.merchant_name} logo`}
+                />
                 <h1 className="text-3xl font-bold">
                   {merchantInfo.merchant_name}
                 </h1>
@@ -327,7 +309,7 @@ function MerchantPage() {
 
             <div
               className="border-border bg-bg sticky bottom-0 z-10 flex w-full
-                items-center justify-between border-y py-3 lg:hidden"
+                items-center justify-between py-3 lg:hidden"
             >
               <span>{merchantName}</span>
               <Link
@@ -407,19 +389,28 @@ function MerchantPage() {
                 flex flex-col gap-5 rounded-2xl border p-6"
             >
               <div className="flex items-start justify-between gap-2 pb-4">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    {merchantInfo.merchant_name}
-                  </h2>
-                  <div className="flex items-center gap-1.5 text-sm font-medium">
-                    <Icon
-                      icon={StarIcon}
-                      styles="size-4 fill-warning text-fg-warning"
-                    />
-                    <span>4.6</span>
-                    <span className="text-fg-primary ml-1 font-normal">
-                      (9 reviews)
-                    </span>
+                <div className="flex items-center gap-4">
+                  <MerchantLogo
+                    styles="size-14 shrink-0"
+                    src={merchantInfo.logo_url}
+                    alt={`${merchantInfo.merchant_name} logo`}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      {merchantInfo.merchant_name}
+                    </h2>
+                    <div
+                      className="flex items-center gap-1.5 text-sm font-medium"
+                    >
+                      <Icon
+                        icon={StarIcon}
+                        styles="size-4 fill-warning text-fg-warning"
+                      />
+                      <span>4.6</span>
+                      <span className="text-fg-primary ml-1 font-normal">
+                        (9 reviews)
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <FavoriteButton

@@ -23,6 +23,7 @@ import {
 import {
   ACCEPTED_IMAGE_TYPES,
   invalidateLocalStorageAuth,
+  preloadImages,
   uploadImage,
   useToast,
   validateImageFile,
@@ -35,7 +36,14 @@ const STILL_PROCESSING_REFRESH_MS = 30 * 1000;
 
 async function fetchLocationImages(merchantId, locationId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/locations/${locationId}/images`
+    `/api/v1/merchants/${merchantId}/locations/${locationId}/images`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
   );
   const result = await response.json();
 
@@ -57,17 +65,13 @@ function locationImagesQueryOptions(merchantId, locationId) {
 export default function LocationGallery({ merchantId, locationId, canEdit }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const { data, isLoading } = useQuery(
-    locationImagesQueryOptions(merchantId, locationId)
-  );
+  const imagesQuery = locationImagesQueryOptions(merchantId, locationId);
+  const { data, isLoading } = useQuery(imagesQuery);
   const inputRef = useRef(null);
   const [uploads, setUploads] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [editingImage, setEditingImage] = useState(null);
   const [deletingImage, setDeletingImage] = useState(null);
-
-  const imagesUrl = `/api/v1/merchants/${merchantId}/locations/${locationId}/images`;
-  const queryKey = locationImagesQueryOptions(merchantId, locationId).queryKey;
 
   if (isLoading || !data) {
     return <div className="bg-bg-sunken h-40 animate-pulse rounded-xl" />;
@@ -95,7 +99,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
   }
 
   function refresh() {
-    return queryClient.invalidateQueries({ queryKey });
+    return queryClient.invalidateQueries(imagesQuery);
   }
 
   function openFilePicker() {
@@ -132,7 +136,10 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     await Promise.all(
       newUploads.map(async (upload) => {
         try {
-          const image = await uploadImage(imagesUrl, upload.file);
+          const image = await uploadImage(
+            `/api/v1/merchants/${merchantId}/locations/${locationId}/images`,
+            upload.file
+          );
           if (image) {
             await preloadImages(image.url, image.thumbnail_url);
           } else {
@@ -158,12 +165,15 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
 
   async function removeImage(image) {
     try {
-      const response = await fetch(`${imagesUrl}/${image.image_id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/locations/${locationId}/images/${image.image_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();
@@ -182,19 +192,25 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
     const [moved] = reordered.splice(index, 1);
     reordered.splice(newIndex, 0, moved);
 
-    queryClient.setQueryData(queryKey, { ...data, images: reordered });
+    queryClient.setQueryData(imagesQuery.queryKey, {
+      ...data,
+      images: reordered,
+    });
 
     try {
-      const response = await fetch(`${imagesUrl}/order`, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          image_ids: reordered.map((image) => image.image_id),
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/merchants/${merchantId}/locations/${locationId}/images/order`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            image_ids: reordered.map((image) => image.image_id),
+          }),
+        }
+      );
 
       if (!response.ok) {
         const result = await response.json();
@@ -210,14 +226,17 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
 
   // throws so the description dialog stays open and shows the error
   async function saveAltText(image, altText) {
-    const response = await fetch(`${imagesUrl}/${image.image_id}`, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ alt_text: altText }),
-    });
+    const response = await fetch(
+      `/api/v1/merchants/${merchantId}/locations/${locationId}/images/${image.image_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ alt_text: altText }),
+      }
+    );
 
     if (!response.ok) {
       const result = await response.json();
@@ -225,7 +244,7 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
       throw new Error(result.error.message);
     }
 
-    queryClient.setQueryData(queryKey, (current) => ({
+    queryClient.setQueryData(imagesQuery.queryKey, (current) => ({
       ...current,
       images: current.images.map((img) =>
         img.image_id === image.image_id ? { ...img, alt_text: altText } : img
@@ -392,18 +411,6 @@ export default function LocationGallery({ merchantId, locationId, canEdit }) {
         onDelete={() => removeImage(deletingImage)}
       />
     </div>
-  );
-}
-
-// Loads the processed image before the upload tile is replaced by it, otherwise the new tile would
-// be empty until it loads
-function preloadImages(...urls) {
-  return Promise.all(
-    urls.map((url) => {
-      const img = new Image();
-      img.src = url;
-      return img.decode().catch(() => {});
-    })
   );
 }
 
