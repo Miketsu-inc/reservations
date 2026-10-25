@@ -1,0 +1,131 @@
+package media
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/imgproxy"
+)
+
+const (
+	// 10 MB
+	MaxUploadSize = 10 << 20
+	jpegQuality   = 82
+)
+
+const (
+	contentTypeJPEG = "image/jpeg"
+	contentTypePNG  = "image/png"
+	contentTypeWebP = "image/webp"
+)
+
+var allowedContentTypes = []string{contentTypeJPEG, contentTypePNG, contentTypeWebP}
+
+type Variant string
+
+const (
+	VariantSmall Variant = "sm"
+	VariantLarge Variant = "lg"
+)
+
+// Returns the maximum size of the longest side of the small and large variant
+func variantSizes(purpose types.ImagePurpose) (int, int) {
+	if !purpose.IsLocationImage() {
+		return 256, 512
+	}
+
+	return 640, 1920
+}
+
+var errInvalidImage = errors.New("invalid image")
+
+type processedVariant struct {
+	variant     Variant
+	contentType string
+	data        []byte
+	width       int
+	height      int
+}
+
+func (s *Service) processImage(ctx context.Context, image domain.Image, crop *domain.ImageCrop, sourceContentType string) ([]processedVariant, error) {
+	source := fmt.Sprintf("s3://%s/%s", s.uploadsBucket.Name(), image.Id.String())
+	smallSize, largeSize := variantSizes(image.Purpose)
+	format, contentType := outputFormat(image.Purpose, sourceContentType)
+
+	variants := make([]processedVariant, 0, 2)
+	for _, v := range []struct {
+		variant Variant
+		size    int
+	}{{VariantSmall, smallSize}, {VariantLarge, largeSize}} {
+		data, err := s.imgproxy.Process(ctx, source, processingOptions(image.Purpose, crop, v.size), format)
+		if err != nil {
+			if errors.Is(err, imgproxy.ErrInvalidSource) {
+				return nil, fmt.Errorf("%w: %w", errInvalidImage, err)
+			}
+			return nil, fmt.Errorf("error processing %s variant: %w", v.variant, err)
+		}
+
+		width, height, err := imageSize(data)
+		if err != nil {
+			return nil, fmt.Errorf("error reading %s variant size: %w", v.variant, err)
+		}
+
+		variants = append(variants, processedVariant{
+			variant:     v.variant,
+			contentType: contentType,
+			data:        data,
+			width:       width,
+			height:      height,
+		})
+	}
+
+	return variants, nil
+}
+
+// Logos stay PNG when the upload can have a transparent background.
+// The rest photos are JPEG because it is a lot smaller.
+// We do not store in webp because email and preview link support is missing for it
+func outputFormat(purpose types.ImagePurpose, sourceContentType string) (string, string) {
+	canBeTransparent := sourceContentType == contentTypePNG || sourceContentType == contentTypeWebP
+	if purpose == types.ImagePurposeMerchantLogo && canBeTransparent {
+		return "png", contentTypePNG
+	}
+
+	return "jpg", contentTypeJPEG
+}
+
+// https://docs.imgproxy.net/usage/processing
+func processingOptions(purpose types.ImagePurpose, crop *domain.ImageCrop, size int) []string {
+	// the orientation is applied first, the crop is relative to the oriented image just like on the client
+	options := []string{"ar:1", "sm:1"}
+
+	if crop != nil && crop.Width > 0 && crop.Height > 0 {
+		options = append(options, fmt.Sprintf("c:%d:%d:nowe:%d:%d", crop.Width, crop.Height, max(crop.X, 0), max(crop.Y, 0)))
+	}
+
+	if purpose.IsLocationImage() {
+		options = append(options, fmt.Sprintf("rs:fit:%d:%d:0", size, size))
+	} else {
+		// crops the center to a square, then downscales it.
+		options = append(options, fmt.Sprintf("rs:fill-down:%d:%d", size, size))
+	}
+
+	// only used by JPEG, PNG is lossless
+	return append(options, fmt.Sprintf("q:%d", jpegQuality))
+}
+
+func imageSize(data []byte) (int, int, error) {
+	config, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return config.Width, config.Height, nil
+}

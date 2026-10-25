@@ -4,6 +4,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
 )
 
@@ -30,6 +31,7 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 			Price:             b.PricePerPerson.ToFormatted(),
 			MerchantName:      b.MerchantName,
 			MerchantUrl:       b.MerchantUrl,
+			MerchantLogoUrl:   mediaServ.NewURL(b.MerchantLogoImageId, mediaServ.VariantSmall),
 			FormattedLocation: b.FormattedLocation,
 			ServiceName:       b.ServiceName,
 			EmployeeFirstName: b.EmployeeFirstName,
@@ -56,5 +58,27 @@ func mapToUpdatePasswordInput(in updatePasswordReq) authServ.UpdatePasswordInput
 	return authServ.UpdatePasswordInput{
 		OldPassword: in.OldPassword,
 		NewPassword: in.NewPassword,
+	}
+}
+
+func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
+	return mediaServ.UploadInput{
+		ContentType: in.ContentType,
+		Size:        in.Size,
+	}
+}
+
+func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
+	headers := make(map[string]string, len(in.Request.Headers))
+	for key := range in.Request.Headers {
+		headers[key] = in.Request.Headers.Get(key)
+	}
+
+	return uploadResp{
+		ImageId:   in.ImageId,
+		UploadUrl: in.Request.URL,
+		Method:    in.Request.Method,
+		Headers:   headers,
+		ExpiresAt: in.Request.ExpiresAt,
 	}
 }

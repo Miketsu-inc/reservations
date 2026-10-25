@@ -21,6 +21,7 @@ create table if not exists "User" (
     language                 varchar(10)     not null,
     auth_provider            text            check (auth_provider in ('facebook', 'google')),
     provider_id              text,
+    avatar_image_id          uuid,
     constraint user_auth_provider_complete check ((auth_provider is null) = (provider_id is null))
 );
 
@@ -44,7 +45,8 @@ create table if not exists "Merchant" (
     approval_policy          text            default 'auto' check (approval_policy in ('auto', 'manual', 'manual_for_new')) not null,
     timezone                 text,
     currency_code            char(3)         not null,
-    subscription_tier        text            check (subscription_tier in ('free', 'pro', 'enterprise')) not null
+    subscription_tier        text            check (subscription_tier in ('free', 'pro', 'enterprise')) not null,
+    logo_image_id            uuid
 );
 
 create table if not exists "Location" (
@@ -86,6 +88,7 @@ create table if not exists "Employee" (
     email                    varchar(320),
     phone_number             varchar(30),
     is_active                boolean         not null default true,
+    avatar_image_id          uuid,
 
     constraint unique_merchant_user_employee unique (merchant_id, user_id)
 );
@@ -392,3 +395,42 @@ create table if not exists "Favorite" (
     created_at               timestamptz         not null default now(),
     primary key (user_id, merchant_id)
 );
+
+create table if not exists "Image" (
+    ID                       uuid            primary key unique not null,
+    purpose                  text            check (purpose in ('user_avatar', 'employee_avatar', 'merchant_logo', 'location_image')) not null,
+    status                   text            check (status in ('pending', 'processing', 'ready', 'failed')) not null,
+    user_id                  uuid            references "User" (ID) on delete set null,
+    merchant_id              uuid            references "Merchant" (ID) on delete set null,
+    employee_id              integer         references "Employee" (ID) on delete set null,
+    location_id              integer         references "Location" (ID) on delete set null,
+    byte_size                bigint          not null,
+    width                    integer,
+    height                   integer,
+    created_by               uuid            references "User" (ID) on delete set null,
+    created_at               timestamptz     not null default now(),
+
+    constraint image_target_matches_purpose check (
+        case purpose
+            when 'user_avatar' then merchant_id is null and employee_id is null and location_id is null
+            when 'employee_avatar' then user_id is null and location_id is null
+            when 'merchant_logo' then user_id is null and employee_id is null and location_id is null
+            when 'location_image' then user_id is null and employee_id is null
+        end
+    )
+);
+
+create table if not exists "LocationImage" (
+    image_id                 uuid            primary key references "Image" (ID) on delete cascade not null,
+    location_id              integer         references "Location" (ID) on delete cascade not null,
+    sequence                 integer         not null default 0,
+    alt_text                 text            not null default '',
+
+    constraint unique_location_image_sequence unique (location_id, sequence) deferrable initially deferred,
+    constraint location_image_alt_text_length check (char_length(alt_text) <= 150)
+);
+
+-- added after "Image" is created because of the circular references
+alter table "User" add constraint user_avatar_image_fk foreign key (avatar_image_id) references "Image" (ID) on delete set null;
+alter table "Merchant" add constraint merchant_logo_image_fk foreign key (logo_image_id) references "Image" (ID) on delete set null;
+alter table "Employee" add constraint employee_avatar_image_fk foreign key (avatar_image_id) references "Image" (ID) on delete set null;

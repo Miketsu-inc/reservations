@@ -3,6 +3,7 @@ package locations
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	locationServ "github.com/miketsu-inc/reservations/backend/internal/service/location"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 )
 
 func mapToNewInput(in newReq) locationServ.NewInput {
@@ -65,4 +66,47 @@ func mapToGetResp(in []domain.Location) []getResp {
 	}
 
 	return out
+}
+
+func mapToImagesResp(in mediaServ.GetLocationImagesResult) imagesResp {
+	images := make([]imageResp, len(in.Images))
+
+	for i, img := range in.Images {
+		images[i] = imageResp{
+			ImageId:      img.ImageId,
+			Sequence:     img.Sequence,
+			AltText:      img.AltText,
+			Width:        img.Width,
+			Height:       img.Height,
+			Url:          mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
+			ThumbnailUrl: mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantSmall),
+		}
+	}
+
+	return imagesResp{
+		Images: images,
+		Limit:  in.Limit,
+	}
+}
+
+func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
+	return mediaServ.UploadInput{
+		ContentType: in.ContentType,
+		Size:        in.Size,
+	}
+}
+
+func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
+	headers := make(map[string]string, len(in.Request.Headers))
+	for key := range in.Request.Headers {
+		headers[key] = in.Request.Headers.Get(key)
+	}
+
+	return uploadResp{
+		ImageId:   in.ImageId,
+		UploadUrl: in.Request.URL,
+		Method:    in.Request.Method,
+		Headers:   headers,
+		ExpiresAt: in.Request.ExpiresAt,
+	}
 }

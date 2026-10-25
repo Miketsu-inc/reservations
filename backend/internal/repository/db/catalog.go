@@ -780,6 +780,7 @@ func (r *catalogRepository) GetEmployeeServiceSettings(ctx context.Context, merc
 		coalesce(e.first_name, u.first_name) as first_name,
 		coalesce(e.last_name, u.last_name) as last_name,
 		e.role,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id,
 		(es.employee_id is not null) as is_assigned,
 		es.total_duration,
 		es.price_per_person,

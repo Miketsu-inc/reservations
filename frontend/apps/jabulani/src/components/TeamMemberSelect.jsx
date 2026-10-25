@@ -34,6 +34,7 @@ export default function TeamMemberSelect({
     icon: (
       <Avatar
         styles="size-6! text-[10px]!"
+        img={member.avatar_url}
         initials={`${member.first_name[0]}${member.last_name[0]}`}
       />
     ),

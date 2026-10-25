@@ -2,17 +2,24 @@ import { Loading, ServerError, Textarea } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import DangerZone from "./-components/DangerZone";
-import ImageUploader from "./-components/ImageUploader";
+import LogoUpload from "./-components/LogoUpload";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
 
 async function fetchMerchantProfileSettings(merchantId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/settings/merchant-profile`
+    `/api/v1/merchants/${merchantId}/settings/merchant-profile`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
   );
   const result = await response.json();
 
@@ -97,8 +104,17 @@ function MerchantPage() {
     },
   });
 
+  const canEditLogo = role === "owner" || role === "admin";
+
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));
+  }
+
+  async function refreshLogo() {
+    // only the logo is refetched, unsaved text changes are kept
+    await queryClient.invalidateQueries(
+      merchantProfileSettingsQueryOptions(merchantId)
+    );
   }
 
   if (isLoading) return <Loading />;
@@ -118,6 +134,38 @@ function MerchantPage() {
           />
         }
       />
+
+      {canEditLogo && (
+        <SettingsSection
+          title="Logo"
+          description={
+            <>
+              Shown on your booking page and in link previews. Photos of your
+              business are managed in the{" "}
+              <Link
+                from={Route.fullPath}
+                to="/settings/location"
+                className="text-fg-primary font-medium hover:underline"
+              >
+                location settings
+              </Link>
+              .
+            </>
+          }
+        >
+          <LogoUpload
+            img={profileSettings.logo_url}
+            alt="Logo"
+            url={`/api/v1/merchants/${merchantId}/logo`}
+            onChange={refreshLogo}
+          >
+            <p className="text-fg-muted max-w-sm text-sm">
+              A square image works best, at least 512 × 512 px. JPG, PNG or
+              WebP, up to 10 MB.
+            </p>
+          </LogoUpload>
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="About your business"
@@ -184,24 +232,6 @@ function MerchantPage() {
           />
         </div>
       </SettingsSection>
-
-      <SettingsSection
-        title="Media"
-        description="Add a profile image and gallery images for your public booking page. Uploads are preview-only until media storage is connected."
-      >
-        <div className="flex flex-col items-center gap-8 md:flex-row">
-          <ImageUploader
-            text="Profile picture"
-            styles="h-48! w-48! shrink-0 rounded-3xl"
-            imageStyles="overflow-hidden rounded-3xl object-cover!"
-          />
-          <div className="grid w-full gap-4 sm:grid-cols-2">
-            <ImageUploader text="Gallery image 1" styles="h-48! rounded-lg" />
-            <ImageUploader text="Gallery image 2" styles="h-48! rounded-lg" />
-          </div>
-        </div>
-      </SettingsSection>
-
       {role === "owner" && <DangerZone />}
     </div>
   );

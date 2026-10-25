@@ -221,7 +221,7 @@ func (r *merchantRepository) GetMerchantSubscriptionTier(ctx context.Context, me
 
 func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId uuid.UUID) (domain.MerchantInfo, error) {
 	query := `
-	select m.id, m.name, m.url_name, coalesce(l.contact_email, m.contact_email), l.phone_number, m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.timezone,
+	select m.id, m.name, m.url_name, coalesce(l.contact_email, m.contact_email), l.phone_number, m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.timezone, m.logo_image_id,
 	l.id as location_id, l.country, l.country_code, l.region, l.city, l.postal_code, l.address, l.formatted_location, l.geo_point from "Merchant" m
 	inner join lateral (
 		select * from "Location"
@@ -234,7 +234,7 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 
 	var mi domain.MerchantInfo
 	err := r.db.QueryRow(ctx, query, merchantId).Scan(&mi.Id, &mi.Name, &mi.UrlName, &mi.ContactEmail, &mi.PhoneNumber, &mi.Introduction, &mi.Announcement,
-		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LocationId, &mi.Country, &mi.CountryCode, &mi.Region,
+		&mi.AboutUs, &mi.ParkingInfo, &mi.PaymentInfo, &mi.Timezone, &mi.LogoImageId, &mi.LocationId, &mi.Country, &mi.CountryCode, &mi.Region,
 		&mi.City, &mi.PostalCode, &mi.Address,
 		&mi.FormattedLocation, &mi.GeoPoint)
 	if err != nil {
@@ -253,7 +253,7 @@ func (r *merchantRepository) GetAllMerchantInfo(ctx context.Context, merchantId 
 
 func (r *merchantRepository) GetMerchantProfileSettings(ctx context.Context, merchantId uuid.UUID) (domain.MerchantProfileSettings, error) {
 	query := `
-	select m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info
+	select m.introduction, m.announcement, m.about_us, l.parking_info, m.payment_info, m.logo_image_id
 	from "Merchant" m
 	inner join lateral (
 		select parking_info from "Location"
@@ -308,18 +308,18 @@ func (r *merchantRepository) GetBookingSettingsByMerchantAndService(ctx context.
 	return mbs, nil
 }
 
-func (r *merchantRepository) GetMerchantNameAndLocation(ctx context.Context, merchantId uuid.UUID, locationId int) (string, string, error) {
-	query := `select m.name, l.formatted_location from "Merchant" m
+func (r *merchantRepository) GetMerchantSummary(ctx context.Context, merchantId uuid.UUID, locationId int) (domain.MerchantSummary, error) {
+	query := `select m.name, l.formatted_location, m.logo_image_id from "Merchant" m
 	inner join "Location" l on l.merchant_id = m.id and l.id = $2
 	where m.id = $1`
 
-	var name, loc string
-	err := r.db.QueryRow(ctx, query, merchantId, locationId).Scan(&name, &loc)
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
+	summary, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.MerchantSummary])
 	if err != nil {
-		return "", "", fmt.Errorf("GetMerchantNameAndLocation: %w", err)
+		return domain.MerchantSummary{}, fmt.Errorf("GetMerchantSummary: %w", err)
 	}
 
-	return name, loc, nil
+	return summary, nil
 }
 
 func (r *merchantRepository) GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate, endDate, prevStartDate time.Time) (domain.DashboardStatistics, error) {
@@ -610,4 +610,22 @@ func (r *merchantRepository) GetNormalizedBusinessHours(ctx context.Context, mer
 	}
 
 	return result, nil
+}
+
+func (r *merchantRepository) SetMerchantLogo(ctx context.Context, merchantId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
+	query := `
+	update "Merchant" m set logo_image_id = $2
+	from (select id, logo_image_id from "Merchant" where id = $1 for update) old
+	where m.id = old.id
+	returning old.logo_image_id
+	`
+
+	var previous *uuid.UUID
+
+	err := r.db.QueryRow(ctx, query, merchantId, imageId).Scan(&previous)
+	if err != nil {
+		return nil, fmt.Errorf("SetMerchantLogo: %w", err)
+	}
+
+	return previous, nil
 }

@@ -5,7 +5,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   coordinatesFromLocation,
   locationFromMapboxFeature,
-} from "./locationUtils.js";
+} from "@reservations/jabulani/lib";
 
 const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const fallbackCenter = [0, 20];

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 )
 
@@ -31,14 +32,16 @@ func mapToUpdateMemberInput(in updateMemberReq) teamServ.UpdateMemberInput {
 
 func mapToGetMemberResp(in domain.Employee) getMemberResp {
 	return getMemberResp{
-		Id:          in.Id,
-		Role:        in.Role,
-		IsUser:      in.UserId != nil,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
-		Email:       in.Email,
-		PhoneNumber: in.PhoneNumber,
-		IsActive:    in.IsActive,
+		Id:           in.Id,
+		Role:         in.Role,
+		IsUser:       in.UserId != nil,
+		FirstName:    in.FirstName,
+		LastName:     in.LastName,
+		Email:        in.Email,
+		PhoneNumber:  in.PhoneNumber,
+		IsActive:     in.IsActive,
+		AvatarUrl:    mediaServ.NewURL(in.AvatarImageId, mediaServ.VariantSmall),
+		HasOwnAvatar: in.HasOwnAvatar,
 	}
 }
 
@@ -85,4 +88,26 @@ func mapToUpdatePreferencesInput(in updatePreferencesReq) (teamServ.UpdatePrefer
 		CalendarViewMobile: in.CalendarViewMobile,
 		TimeFrequency:      timeFreq,
 	}, nil
+}
+
+func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
+	return mediaServ.UploadInput{
+		ContentType: in.ContentType,
+		Size:        in.Size,
+	}
+}
+
+func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
+	headers := make(map[string]string, len(in.Request.Headers))
+	for key := range in.Request.Headers {
+		headers[key] = in.Request.Headers.Get(key)
+	}
+
+	return uploadResp{
+		ImageId:   in.ImageId,
+		UploadUrl: in.Request.URL,
+		Method:    in.Request.Method,
+		Headers:   headers,
+		ExpiresAt: in.Request.ExpiresAt,
+	}
 }

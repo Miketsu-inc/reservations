@@ -179,6 +179,7 @@ type meResp struct {
 	LastName    string            `json:"last_name"`
 	Email       string            `json:"email"`
 	PhoneNumber *string           `json:"phone_number"`
+	AvatarUrl   *string           `json:"avatar_url"`
 	Memberships []membershipsResp `json:"memberships"`
 }
 
@@ -188,6 +189,7 @@ type membershipsResp struct {
 	MerchantUrlName string             `json:"merchant_url_name"`
 	EmployeeId      int                `json:"employee_id"`
 	Role            types.EmployeeRole `json:"role"`
+	AvatarUrl       *string            `json:"avatar_url"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {

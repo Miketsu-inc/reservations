@@ -56,15 +56,52 @@ DOMAIN
 
 VITE_TANGO_URL=$TANGO_URL
 VITE_JABULANI_URL=$JABULANI_URL
+
+R2_ENDPOINT
+R2_API_ACCESS_KEY_ID
+R2_API_SECRET_ACCESS_KEY
+R2_UPLOADS_BUCKET
+R2_MEDIA_BUCKET
+MEDIA_PUBLIC_URL
+
+IMGPROXY_PORT
+IMGPROXY_URL
+IMGPROXY_KEY
+IMGPROXY_SALT
 ```
 
-Create a PostgreSQL database in docker using the create-db command.
+Images are stored using [Cloudflare R2](https://developers.cloudflare.com/r2/) buckets. You need the following setup.
+
+- `R2_UPLOADS_BUCKET` should be private, have a lifecycle rule deleting objects after 1 day and a CORS rule allowing `PUT` requests with the `Content-Type` header from the `TANGO_URL` and `JABULANI_URL` origins.
+- `R2_MEDIA_BUCKET` should be public, `MEDIA_PUBLIC_URL` being the public url
+- An API token with Object Read & Write permission for these two buckets.
+
+Uploaded images are processed by [imgproxy](https://docs.imgproxy.net), create a client using the `create-imgproxy` command.
+
+```
+make create-imgproxy
+```
+
+Create a Redis client in docker using the `create-kv` command.
+
+```
+make create-kv
+```
+
+Create a PostgreSQL database in docker using the `create-db` command.
 
 ```
 make create-db
 ```
 
-Use the make run command to run the application in development mode.
+Install [riverqueue](https://riverqueue.com/docs) (make sure it's the correct version) and run the migrations.
+
+```
+go install github.com/riverqueue/river/cmd/river
+make migrate-river
+```
+
+Use the `make run` command to run the application in development mode.
 
 ```
 make run

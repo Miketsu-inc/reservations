@@ -46,6 +46,7 @@ export default function CustomersTable({
           <div className="flex h-full flex-row items-center gap-3">
             <Avatar
               styles="size-9! text-xs! shrink-0"
+              img={params.data.avatar_url}
               initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
             />
             <div className="flex flex-col justify-center">

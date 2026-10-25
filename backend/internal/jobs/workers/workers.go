@@ -9,6 +9,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
+	"github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 	"github.com/riverqueue/river"
 )
@@ -17,6 +18,7 @@ type Deps struct {
 	BookingService     *booking.Service
 	EmailService       *email.Service
 	ExtCalendarService *externalcalendar.Service
+	MediaService       *media.Service
 	BookingRepo        domain.BookingRepository
 	CatalogRepo        domain.CatalogRepository
 	UserRepo           domain.UserRepository
@@ -52,6 +54,10 @@ func RegisterWorkers(workers *river.Workers, deps Deps) {
 	river.AddWorker(workers, NewUpdateFutureBookingOccurrences(deps.BookingService, deps.BookingRepo, deps.CatalogRepo))
 
 	river.AddWorker(workers, NewHandleInvitationExpiration(deps.TeamRepo))
+
+	river.AddWorker(workers, NewProcessImage(deps.MediaService))
+	river.AddWorker(workers, NewDeleteImage(deps.MediaService))
+	river.AddWorker(workers, NewCleanupImages(deps.MediaService))
 }
 
 func GetPeriodicJobs() []*river.PeriodicJob {
@@ -69,6 +75,10 @@ func GetPeriodicJobs() []*river.PeriodicJob {
 		river.NewPeriodicJob(schedule.NewDailyMidnight(time.UTC),
 			func() (river.JobArgs, *river.InsertOpts) {
 				return args.HandleInvitationExpiration{}, nil
+			}, &river.PeriodicJobOpts{RunOnStart: true}),
+		river.NewPeriodicJob(river.PeriodicInterval(time.Hour),
+			func() (river.JobArgs, *river.InsertOpts) {
+				return args.CleanupImages{}, nil
 			}, &river.PeriodicJobOpts{RunOnStart: true}),
 	}
 }

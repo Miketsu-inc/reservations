@@ -33,6 +33,7 @@ func NewClient[T any](dbConn *pgxpool.Pool, deps T, registerWorkersFunc Register
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
 			"email":            {MaxWorkers: 100},
+			"media":            {MaxWorkers: 5},
 		},
 		Workers:      riverWorkers,
 		PeriodicJobs: periodicJobs,

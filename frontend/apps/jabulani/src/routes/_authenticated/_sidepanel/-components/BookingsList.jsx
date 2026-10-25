@@ -172,6 +172,8 @@ function BookingCard({
               {!isWalkIn && (
                 <Avatar
                   styles="size-6! text-[10px]!"
+                  img={booking.customer_avatar_url}
+                  alt={customerName}
                   initials={`${booking.customer_first_name?.[0]}${booking.customer_last_name?.[0]}`}
                 />
               )}
@@ -183,6 +185,8 @@ function BookingCard({
             <>
               <Avatar
                 styles="size-6! text-[10px]!"
+                img={booking.employee_avatar_url}
+                alt={employeeName}
                 initials={`${booking.employee_first_name?.[0]}${booking.employee_last_name?.[0]}`}
               />
               <p className="text-fg-muted truncate text-sm">{employeeName}</p>

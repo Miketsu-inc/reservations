@@ -15,6 +15,7 @@ type TeamRepository interface {
 
 	NewEmployee(ctx context.Context, employee Employee) (int, error)
 	UpdateEmployee(ctx context.Context, employee Employee) error
+	SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error)
 	DeleteEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) error
 	GetEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) (Employee, error)
 
@@ -53,6 +54,9 @@ type Employee struct {
 	Email       *string            `db:"email"`
 	PhoneNumber *string            `db:"phone_number"`
 	IsActive    bool               `db:"is_active"`
+	// The employee's own picture, or the underlying user's picture
+	AvatarImageId *uuid.UUID `db:"avatar_image_id"`
+	HasOwnAvatar  bool       `db:"has_own_avatar"`
 }
 
 type EmployeeInvitation struct {
@@ -94,6 +98,7 @@ type EmployeeWithServiceOverrides struct {
 	LastName        *string            `db:"last_name"`
 	Email           *string            `db:"email"`
 	PhoneNumber     *string            `db:"phone_number"`
+	AvatarImageId   *uuid.UUID         `db:"avatar_image_id"`
 	TotalDuration   *int               `db:"total_duration"`
 	Price           *currencyx.Price   `db:"price_per_person"`
 	PriceType       *types.PriceType   `db:"price_type"`

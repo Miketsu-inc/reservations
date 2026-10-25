@@ -36,6 +36,7 @@ export default function TeamSection({ merchantName }) {
             <Avatar
               styles={`shrink-0 font-semibold
               ${isWindowSmall ? "size-20 text-lg!" : "size-22 text-xl!"}`}
+              img={employee.avatar_url}
               initials={`${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`}
             />
 

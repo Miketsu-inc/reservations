@@ -319,25 +319,27 @@ type PublicBooking struct {
 }
 
 type PublicBookingDetails struct {
-	ID                  int                  `db:"id"`
-	BookingType         types.BookingType    `db:"booking_type"`
-	BookingStatus       types.BookingStatus  `db:"booking_status"`
-	ParticipantStatus   *types.BookingStatus `db:"participant_status"`
-	IsRecurring         bool                 `db:"is_recurring"`
-	FromDate            time.Time            `db:"from_date"`
-	ToDate              time.Time            `db:"to_date"`
-	CustomerNote        *string              `db:"customer_note"`
-	MerchantNote        *string              `db:"merchant_note"`
-	ServiceName         string               `db:"service_name"`
-	ServiceColor        *string              `db:"service_color"`
-	Price               currencyx.Price      `db:"price_per_person"`
-	PriceType           types.PriceType      `db:"price_type"`
-	CurrentParticipants int                  `db:"current_participants"`
-	MaxParticipants     int                  `db:"max_participants"`
-	CustomerFirstName   *string              `db:"customer_first_name"`
-	CustomerLastName    *string              `db:"customer_last_name"`
-	EmployeeFirstName   *string              `db:"employee_first_name"`
-	EmployeeLastName    *string              `db:"employee_last_name"`
+	ID                    int                  `db:"id"`
+	BookingType           types.BookingType    `db:"booking_type"`
+	BookingStatus         types.BookingStatus  `db:"booking_status"`
+	ParticipantStatus     *types.BookingStatus `db:"participant_status"`
+	IsRecurring           bool                 `db:"is_recurring"`
+	FromDate              time.Time            `db:"from_date"`
+	ToDate                time.Time            `db:"to_date"`
+	CustomerNote          *string              `db:"customer_note"`
+	MerchantNote          *string              `db:"merchant_note"`
+	ServiceName           string               `db:"service_name"`
+	ServiceColor          *string              `db:"service_color"`
+	Price                 currencyx.Price      `db:"price_per_person"`
+	PriceType             types.PriceType      `db:"price_type"`
+	CurrentParticipants   int                  `db:"current_participants"`
+	MaxParticipants       int                  `db:"max_participants"`
+	CustomerFirstName     *string              `db:"customer_first_name"`
+	CustomerLastName      *string              `db:"customer_last_name"`
+	EmployeeFirstName     *string              `db:"employee_first_name"`
+	EmployeeLastName      *string              `db:"employee_last_name"`
+	CustomerAvatarImageId *uuid.UUID           `db:"customer_avatar_image_id"`
+	EmployeeAvatarImageId *uuid.UUID           `db:"employee_avatar_image_id"`
 }
 
 type BookingForCalendar struct {
@@ -366,12 +368,13 @@ type BookingPhaseForCalendar struct {
 }
 
 type BookingParticipantForCalendar struct {
-	Id           int                 `json:"id" db:"id"`
-	CustomerId   uuid.UUID           `json:"customer_id" db:"customer_id"`
-	FirstName    *string             `json:"first_name" db:"first_name"`
-	LastName     *string             `json:"last_name" db:"last_name"`
-	CustomerNote *string             `json:"customer_note" db:"customer_note"`
-	Status       types.BookingStatus `json:"participant_status" db:"participant_status"`
+	Id            int                 `json:"id" db:"id"`
+	CustomerId    uuid.UUID           `json:"customer_id" db:"customer_id"`
+	FirstName     *string             `json:"first_name" db:"first_name"`
+	LastName      *string             `json:"last_name" db:"last_name"`
+	CustomerNote  *string             `json:"customer_note" db:"customer_note"`
+	Status        types.BookingStatus `json:"participant_status" db:"participant_status"`
+	AvatarImageId *uuid.UUID          `json:"avatar_image_id" db:"avatar_image_id"`
 }
 
 type CalendarEvents struct {
@@ -460,32 +463,34 @@ type BookingForExternalCalendar struct {
 }
 
 type BookingForUser struct {
-	Id                int                 `db:"id"`
-	Status            types.BookingStatus `db:"status"`
-	BookingType       types.BookingType   `db:"booking_type"`
-	IsRecurring       bool                `db:"is_recurring"`
-	FromDate          time.Time           `db:"from_date"`
-	ToDate            time.Time           `db:"to_date"`
-	PricePerPerson    currencyx.Price     `db:"price_per_person"`
-	MerchantName      string              `db:"merchant_name"`
-	MerchantUrl       string              `db:"merchant_url"`
-	FormattedLocation string              `db:"formatted_location"`
-	ServiceName       string              `db:"service_name"`
-	EmployeeFirstName *string             `db:"employee_first_name"`
-	EmployeeLastName  *string             `db:"employee_last_name"`
+	Id                  int                 `db:"id"`
+	Status              types.BookingStatus `db:"status"`
+	BookingType         types.BookingType   `db:"booking_type"`
+	IsRecurring         bool                `db:"is_recurring"`
+	FromDate            time.Time           `db:"from_date"`
+	ToDate              time.Time           `db:"to_date"`
+	PricePerPerson      currencyx.Price     `db:"price_per_person"`
+	MerchantName        string              `db:"merchant_name"`
+	MerchantUrl         string              `db:"merchant_url"`
+	MerchantLogoImageId *uuid.UUID          `db:"merchant_logo_image_id"`
+	FormattedLocation   string              `db:"formatted_location"`
+	ServiceName         string              `db:"service_name"`
+	EmployeeFirstName   *string             `db:"employee_first_name"`
+	EmployeeLastName    *string             `db:"employee_last_name"`
 }
 
 type AvailableGroupBooking struct {
-	Id                  int             `db:"id"`
-	FromDate            time.Time       `db:"from_date"`
-	ToDate              time.Time       `db:"to_date"`
-	CurrentParticipants int             `db:"current_participants"`
-	MaxParticipants     int             `db:"max_participants"`
-	Price               currencyx.Price `db:"price"`
-	PriceType           types.PriceType `db:"price_type"`
-	EmployeeId          int             `db:"employee_id"`
-	EmployeeFirstName   string          `db:"employee_first_name"`
-	EmployeeLastName    string          `db:"employee_last_name"`
+	Id                    int             `db:"id"`
+	FromDate              time.Time       `db:"from_date"`
+	ToDate                time.Time       `db:"to_date"`
+	CurrentParticipants   int             `db:"current_participants"`
+	MaxParticipants       int             `db:"max_participants"`
+	Price                 currencyx.Price `db:"price"`
+	PriceType             types.PriceType `db:"price_type"`
+	EmployeeId            int             `db:"employee_id"`
+	EmployeeFirstName     string          `db:"employee_first_name"`
+	EmployeeLastName      string          `db:"employee_last_name"`
+	EmployeeAvatarImageId *uuid.UUID      `db:"employee_avatar_image_id"`
 }
 
 type BookingCountsForUser struct {
@@ -495,18 +500,19 @@ type BookingCountsForUser struct {
 }
 
 type BookingListItem struct {
-	Id                int                  `db:"id"`
-	BookingType       types.BookingType    `db:"booking_type"`
-	IsRecurring       bool                 `db:"is_recurring"`
-	FromDate          time.Time            `db:"from_date"`
-	ToDate            time.Time            `db:"to_date"`
-	ServiceName       string               `db:"service_name"`
-	ServiceColor      *string              `db:"service_color"`
-	FormattedLocation string               `db:"formatted_location"`
-	Price             currencyx.Price      `db:"price"`
-	PriceType         types.PriceType      `db:"price_type"`
-	BookingStatus     types.BookingStatus  `db:"booking_status"`
-	ParticipantStatus *types.BookingStatus `db:"participant_status"`
-	EmployeeFirstName *string              `db:"employee_first_name"`
-	EmployeeLastName  *string              `db:"employee_last_name"`
+	Id                    int                  `db:"id"`
+	BookingType           types.BookingType    `db:"booking_type"`
+	IsRecurring           bool                 `db:"is_recurring"`
+	FromDate              time.Time            `db:"from_date"`
+	ToDate                time.Time            `db:"to_date"`
+	ServiceName           string               `db:"service_name"`
+	ServiceColor          *string              `db:"service_color"`
+	FormattedLocation     string               `db:"formatted_location"`
+	Price                 currencyx.Price      `db:"price"`
+	PriceType             types.PriceType      `db:"price_type"`
+	BookingStatus         types.BookingStatus  `db:"booking_status"`
+	ParticipantStatus     *types.BookingStatus `db:"participant_status"`
+	EmployeeFirstName     *string              `db:"employee_first_name"`
+	EmployeeLastName      *string              `db:"employee_last_name"`
+	EmployeeAvatarImageId *uuid.UUID           `db:"employee_avatar_image_id"`
 }

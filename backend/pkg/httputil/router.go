@@ -58,6 +58,12 @@ func (r *Router) UseFunc(m MiddlewareFunc) {
 	})
 }
 
+func (r *Router) WithFunc(m MiddlewareFunc) *Router {
+	return &Router{r.With(func(next http.Handler) http.Handler {
+		return Handle(m(next))
+	})}
+}
+
 func (r *Router) NotFound(h HandlerFunc) {
 	r.Router.NotFound(Handle(h))
 }

@@ -30,9 +30,21 @@ var merchantHeadTemplate = template.Must(template.New("merchant-head").Parse(`<t
 <meta property="og:title" content="{{.Title}}" />
 <meta property="og:description" content="{{.Description}}" />
 <meta property="og:url" content="{{.CanonicalURL}}" />
-<meta name="twitter:card" content="summary" />
+{{- with .Image}}
+<meta property="og:image" content="{{.URL}}" />
+<meta property="og:image:alt" content="{{.Alt}}" />
+{{- if .Width}}
+<meta property="og:image:width" content="{{.Width}}" />
+<meta property="og:image:height" content="{{.Height}}" />
+{{- end}}
+{{- end}}
+<meta name="twitter:card" content="{{if and .Image .Image.IsLarge}}summary_large_image{{else}}summary{{end}}" />
 <meta name="twitter:title" content="{{.Title}}" />
 <meta name="twitter:description" content="{{.Description}}" />
+{{- with .Image}}
+<meta name="twitter:image" content="{{.URL}}" />
+<meta name="twitter:image:alt" content="{{.Alt}}" />
+{{- end}}
 <script type="application/ld+json">{{.StructuredData}}</script>`))
 
 type pageRenderer struct {

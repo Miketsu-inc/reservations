@@ -111,9 +111,11 @@ func (r *userRepository) GetUserLanguage(ctx context.Context, userId uuid.UUID) 
 
 func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeAuthInfo, error) {
 	query := `
-	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
+	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id
 	from "Employee" e
 	join "Merchant" m on m.id = e.merchant_id
+	join "User" u on u.id = e.user_id
 	where e.merchant_id = $1 and e.user_id = $2
 	`
 
@@ -128,9 +130,11 @@ func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.
 
 func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {
 	query := `
-	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role
+	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role,
+		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id
 	from "Employee" e
 	join "Merchant" m on m.id = e.merchant_id
+	join "User" u on u.id = e.user_id
 	where e.user_id = $1
 	`
 
@@ -254,4 +258,22 @@ func (r *userRepository) FindOauthUser(ctx context.Context, provider types.AuthP
 	}
 
 	return id, nil
+}
+
+func (r *userRepository) SetUserAvatar(ctx context.Context, userId uuid.UUID, imageId *uuid.UUID) (*uuid.UUID, error) {
+	query := `
+	update "User" u set avatar_image_id = $2
+	from (select id, avatar_image_id from "User" where id = $1 for update) old
+	where u.id = old.id
+	returning old.avatar_image_id
+	`
+
+	var previous *uuid.UUID
+
+	err := r.db.QueryRow(ctx, query, userId, imageId).Scan(&previous)
+	if err != nil {
+		return nil, fmt.Errorf("SetUserAvatar: %w", err)
+	}
+
+	return previous, nil
 }

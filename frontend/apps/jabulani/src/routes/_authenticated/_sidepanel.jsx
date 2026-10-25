@@ -59,7 +59,7 @@ function SidePanelLayout() {
   );
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
-  const { role, merchantUrlName } = useAuth();
+  const { role, merchantUrlName, employeeAvatarUrl } = useAuth();
 
   const isOpen = isWindowSmall ? isOpenend : true;
 
@@ -331,6 +331,7 @@ function SidePanelLayout() {
                 >
                   <Avatar
                     styles="size-9! text-xs! shrink-0"
+                    img={employeeAvatarUrl}
                     initials={`${user?.first_name.charAt(0)}${user?.last_name.charAt(0)}`}
                   />
                   <div

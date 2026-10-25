@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -156,6 +157,7 @@ func mapToGetTeamMemberSettingsResp(in catalogServ.GetTeamMemberSettingsResult) 
 			FirstName:       employee.FirstName,
 			LastName:        employee.LastName,
 			Role:            employee.Role,
+			AvatarUrl:       mediaServ.NewURL(employee.AvatarImageId, mediaServ.VariantSmall),
 			IsAssigned:      employee.IsAssigned,
 			Price:           employee.PricePerPerson,
 			PriceType:       employee.PriceType,

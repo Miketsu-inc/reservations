@@ -12,6 +12,7 @@ import (
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -30,12 +31,14 @@ type Handler struct {
 	catalogServ     *catalogServ.Service
 	customerServ    *customerServ.Service
 	extcalendarServ *externalcalendarServ.Service
+	mediaServ       *mediaServ.Service
 }
 
 func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamServ *teamServ.Service,
-	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service) *Handler {
+	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service,
+	mediaServ *mediaServ.Service) *Handler {
 	return &Handler{service: s, bookingServ: bookingServ, teamServ: teamServ, catalogServ: catalogServ, customerServ: customerServ,
-		extcalendarServ: extcalendarServ}
+		extcalendarServ: extcalendarServ, mediaServ: mediaServ}
 }
 
 type meResp struct {
@@ -105,6 +108,8 @@ type dashboardBookingResp struct {
 	CustomerLastName    *string                  `json:"customer_last_name"`
 	EmployeeFirstName   *string                  `json:"employee_first_name"`
 	EmployeeLastName    *string                  `json:"employee_last_name"`
+	CustomerAvatarUrl   *string                  `json:"customer_avatar_url"`
+	EmployeeAvatarUrl   *string                  `json:"employee_avatar_url"`
 }
 
 func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) error {
@@ -225,11 +230,12 @@ func (h *Handler) CheckUrl(w http.ResponseWriter, r *http.Request) error {
 }
 
 type merchantProfileSettingsResp struct {
-	Introduction string `json:"introduction"`
-	Announcement string `json:"announcement"`
-	AboutUs      string `json:"about_us"`
-	ParkingInfo  string `json:"parking_info"`
-	PaymentInfo  string `json:"payment_info"`
+	Introduction string  `json:"introduction"`
+	Announcement string  `json:"announcement"`
+	AboutUs      string  `json:"about_us"`
+	ParkingInfo  string  `json:"parking_info"`
+	PaymentInfo  string  `json:"payment_info"`
+	LogoUrl      *string `json:"logo_url"`
 }
 
 func (h *Handler) GetMerchantProfileSettings(w http.ResponseWriter, r *http.Request) error {
@@ -360,9 +366,10 @@ func (h *Handler) GetNormalizedBusinessHours(w http.ResponseWriter, r *http.Requ
 }
 
 type getTeamMembersForCalendarResp struct {
-	Id        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	Id        int     `json:"id"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (h *Handler) GetTeamForCalendar(w http.ResponseWriter, r *http.Request) error {
@@ -413,6 +420,7 @@ type getCustomersForCalendarResp struct {
 	BirthDay    *time.Time `json:"birthday"`
 	IsDummy     bool       `json:"is_dummy"`
 	LastVisited *time.Time `json:"last_visited"`
+	AvatarUrl   *string    `json:"avatar_url"`
 }
 
 func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) error {
@@ -463,6 +471,7 @@ type bookingParticipantForCalendar struct {
 	LastName     *string             `json:"last_name"`
 	CustomerNote *string             `json:"customer_note"`
 	Status       types.BookingStatus `json:"status"`
+	AvatarUrl    *string             `json:"avatar_url"`
 }
 
 type blockedTime struct {
@@ -530,6 +539,47 @@ func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	return nil
+}
+
+type createUploadReq struct {
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png|eq=image/webp"`
+	Size        int64  `json:"size" validate:"required,min=1"`
+}
+
+type uploadResp struct {
+	ImageId   uuid.UUID         `json:"image_id"`
+	UploadUrl string            `json:"upload_url"`
+	Method    string            `json:"method"`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+func (h *Handler) CreateLogoUpload(w http.ResponseWriter, r *http.Request) error {
+	var req createUploadReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	upload, err := h.mediaServ.CreateMerchantLogoUpload(r.Context(), mapToUploadInput(req))
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "CreateLogoUpload")
+	}
+
+	httputil.Success(w, http.StatusCreated, mapToUploadResp(upload))
+
+	return nil
+}
+
+func (h *Handler) RemoveLogo(w http.ResponseWriter, r *http.Request) error {
+	err := h.mediaServ.RemoveMerchantLogo(r.Context())
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "RemoveLogo")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

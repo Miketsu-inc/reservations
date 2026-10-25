@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -10,6 +11,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/favorites"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/integrations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/invitations"
+	"github.com/miketsu-inc/reservations/backend/internal/api/handler/media"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimes"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/blockedtimetypes"
@@ -44,6 +46,7 @@ type Handlers struct {
 	Favorites         *favorites.Handler
 	Integrations      *integrations.Handler
 	Invitations       *invitations.Handler
+	Media             *media.Handler
 	Users             *users.Handler
 	Locations         *locations.Handler
 	Products          *products.Handler
@@ -67,6 +70,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 		r.Mount("/invitations", h.Invitations.Routes())
 		r.Mount("/users", h.Users.Routes())
 		r.Mount("/favorites", h.Favorites.Routes())
+		r.Mount("/images", h.Media.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
 		r.Route("/merchants", func(r *httputil.Router) {
@@ -87,6 +91,13 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 				r.Delete("/", h.Merchants.Delete)
 				r.Patch("/name", h.Merchants.UpdateName)
+			})
+
+			r.Group(func(r *httputil.Router) {
+				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+
+				r.WithFunc(h.Middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.Merchants.CreateLogoUpload)
+				r.Delete("/logo", h.Merchants.RemoveLogo)
 			})
 
 			r.Group(func(r *httputil.Router) {

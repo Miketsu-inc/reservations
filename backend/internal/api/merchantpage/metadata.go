@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 )
 
@@ -15,7 +16,16 @@ type pageMetadata struct {
 	Title          string
 	Description    string
 	CanonicalURL   template.URL
+	Image          *pageImage
 	StructuredData template.JS
+}
+
+type pageImage struct {
+	URL     string
+	Alt     string
+	Width   int
+	Height  int
+	IsLarge bool
 }
 
 // Structured data references:
@@ -31,6 +41,8 @@ type localBusinessSchema struct {
 	Name         string                      `json:"name"`
 	Description  string                      `json:"description"`
 	URL          string                      `json:"url"`
+	Image        []string                    `json:"image,omitempty"`
+	Logo         string                      `json:"logo,omitempty"`
 	Email        string                      `json:"email,omitempty"`
 	Address      *postalAddressSchema        `json:"address,omitempty"`
 	Geo          *geoCoordinatesSchema       `json:"geo,omitempty"`
@@ -76,6 +88,7 @@ func newMerchantPageMetadata(info domain.MerchantInfo, baseURL string) (pageMeta
 		Title:        fmt.Sprintf("%s | Book online | Reservations", info.Name),
 		Description:  description,
 		CanonicalURL: template.URL(merchantPageURL),
+		Image:        buildPageImage(info),
 		// json.Marshal escapes HTML-significant characters before this value is
 		// embedded as JSON in a script element.
 		StructuredData: template.JS(structuredData),
@@ -103,6 +116,35 @@ func normalizeWhitespace(value string) string {
 	return strings.Join(strings.Fields(value), " ")
 }
 
+// The first location image is preferred for link previews, the logo is used as a fallback
+func buildPageImage(info domain.MerchantInfo) *pageImage {
+	if len(info.Images) > 0 {
+		img := info.Images[0]
+
+		alt := img.AltText
+		if alt == "" {
+			alt = info.Name
+		}
+
+		return &pageImage{
+			URL:     mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
+			Alt:     alt,
+			Width:   img.Width,
+			Height:  img.Height,
+			IsLarge: true,
+		}
+	}
+
+	if info.LogoImageId != nil {
+		return &pageImage{
+			URL: mediaServ.NewVariantURL(*info.LogoImageId, mediaServ.VariantLarge),
+			Alt: info.Name,
+		}
+	}
+
+	return nil
+}
+
 func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageURL, description string) localBusinessSchema {
 	schema := localBusinessSchema{
 		Context:      "https://schema.org",
@@ -114,6 +156,14 @@ func buildLocalBusinessSchema(info domain.MerchantInfo, merchantPageURL, descrip
 		Address:      buildAddress(info),
 		Geo:          buildGeo(info),
 		OpeningHours: buildOpeningHours(info),
+	}
+
+	for _, img := range info.Images {
+		schema.Image = append(schema.Image, mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge))
+	}
+
+	if info.LogoImageId != nil {
+		schema.Logo = mediaServ.NewVariantURL(*info.LogoImageId, mediaServ.VariantLarge)
 	}
 
 	return schema

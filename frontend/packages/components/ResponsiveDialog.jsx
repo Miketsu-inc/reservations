@@ -1,4 +1,5 @@
 import { useWindowSize } from "@reservations/lib";
+import { createContext, useContext } from "react";
 import {
   Drawer,
   DrawerClose,
@@ -7,20 +8,26 @@ import {
 } from "./Drawer.jsx";
 import { Modal, ModalClose, ModalContent, ModalTrigger } from "./Modal.jsx";
 
+// Only the root reads the window size, the parts follow it. Otherwise a resize can re-render
+// a part before the root and render a drawer part inside a modal root, which crashes
+const IsDrawerContext = createContext(false);
+
 export function ResponsiveDialog({ actionsRef, ...props }) {
   const { isWindowSmall } = useWindowSize();
 
-  if (isWindowSmall) {
-    return <Drawer actionsRef={actionsRef} {...props} />;
-  }
-
-  return <Modal actionsRef={actionsRef} {...props} />;
+  return (
+    <IsDrawerContext.Provider value={isWindowSmall}>
+      {isWindowSmall ? (
+        <Drawer actionsRef={actionsRef} {...props} />
+      ) : (
+        <Modal actionsRef={actionsRef} {...props} />
+      )}
+    </IsDrawerContext.Provider>
+  );
 }
 
 export function ResponsiveDialogTrigger({ asChild, ...props }) {
-  const { isWindowSmall } = useWindowSize();
-
-  if (isWindowSmall) {
+  if (useContext(IsDrawerContext)) {
     return <DrawerTrigger asChild={asChild} {...props} />;
   }
 
@@ -28,9 +35,7 @@ export function ResponsiveDialogTrigger({ asChild, ...props }) {
 }
 
 export function ResponsiveDialogContent({ styles, ...props }) {
-  const { isWindowSmall } = useWindowSize();
-
-  if (isWindowSmall) {
+  if (useContext(IsDrawerContext)) {
     return <DrawerContent styles={styles} {...props} />;
   }
 
@@ -38,9 +43,7 @@ export function ResponsiveDialogContent({ styles, ...props }) {
 }
 
 export function ResponsiveDialogClose({ asChild, ...props }) {
-  const { isWindowSmall } = useWindowSize();
-
-  if (isWindowSmall) {
+  if (useContext(IsDrawerContext)) {
     return <DrawerClose asChild={asChild} {...props} />;
   }
 

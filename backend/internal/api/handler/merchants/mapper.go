@@ -5,6 +5,7 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
@@ -48,6 +49,8 @@ func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboar
 			CustomerLastName:    booking.CustomerLastName,
 			EmployeeFirstName:   booking.EmployeeFirstName,
 			EmployeeLastName:    booking.EmployeeLastName,
+			CustomerAvatarUrl:   mediaServ.NewURL(booking.CustomerAvatarImageId, mediaServ.VariantSmall),
+			EmployeeAvatarUrl:   mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -117,6 +120,7 @@ func mapToMerchantProfileSettingsResp(in domain.MerchantProfileSettings) merchan
 		AboutUs:      in.AboutUs,
 		ParkingInfo:  in.ParkingInfo,
 		PaymentInfo:  in.PaymentInfo,
+		LogoUrl:      mediaServ.NewURL(in.LogoImageId, mediaServ.VariantSmall),
 	}
 }
 
@@ -209,6 +213,7 @@ func mapToGetTeamMembersForCalendarResp(in []domain.Employee) []getTeamMembersFo
 			Id:        m.Id,
 			FirstName: *m.FirstName,
 			LastName:  *m.LastName,
+			AvatarUrl: mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -257,6 +262,7 @@ func mapToGetCustomersForCalendarResp(in []domain.CustomerForCalendar) []getCust
 			BirthDay:    m.BirthDay,
 			IsDummy:     m.IsDummy,
 			LastVisited: m.LastVisited,
+			AvatarUrl:   mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -308,6 +314,7 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 			LastName:     p.LastName,
 			CustomerNote: p.CustomerNote,
 			Status:       p.Status,
+			AvatarUrl:    mediaServ.NewURL(p.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
 
@@ -337,5 +344,27 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		PriceType:       in.PriceType,
 		Participants:    participants,
 		Phases:          phases,
+	}
+}
+
+func mapToUploadInput(in createUploadReq) mediaServ.UploadInput {
+	return mediaServ.UploadInput{
+		ContentType: in.ContentType,
+		Size:        in.Size,
+	}
+}
+
+func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
+	headers := make(map[string]string, len(in.Request.Headers))
+	for key := range in.Request.Headers {
+		headers[key] = in.Request.Headers.Get(key)
+	}
+
+	return uploadResp{
+		ImageId:   in.ImageId,
+		UploadUrl: in.Request.URL,
+		Method:    in.Request.Method,
+		Headers:   headers,
+		ExpiresAt: in.Request.ExpiresAt,
 	}
 }

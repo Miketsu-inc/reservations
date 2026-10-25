@@ -3,20 +3,26 @@ package locations
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	locationServ "github.com/miketsu-inc/reservations/backend/internal/service/location"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Handler struct {
-	service *locationServ.Service
+	service    *locationServ.Service
+	mediaServ  *mediaServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *locationServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *locationServ.Service, ms *mediaServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, mediaServ: ms, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -26,6 +32,17 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Post("/", h.New)
 	r.Get("/", h.GetAll)
 	r.Patch("/{id}", h.Update)
+
+	r.Get("/{id}/images", h.GetImages)
+
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+
+		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/images", h.CreateImageUpload)
+		r.Put("/{id}/images/order", h.ReorderImages)
+		r.Patch("/{id}/images/{imageId}", h.UpdateImage)
+		r.Delete("/{id}/images/{imageId}", h.DeleteImage)
+	})
 
 	return r
 }
@@ -141,6 +158,150 @@ func validateGeoPoint(point types.GeoPoint) error {
 	if point.Lat < -90 || point.Lat > 90 || point.Lon < -180 || point.Lon > 180 {
 		return validate.NewError("geo_point is outside the valid coordinate range")
 	}
+
+	return nil
+}
+
+type imagesResp struct {
+	Images []imageResp `json:"images"`
+	Limit  int         `json:"limit"`
+}
+
+type imageResp struct {
+	ImageId      uuid.UUID `json:"image_id"`
+	Sequence     int       `json:"sequence"`
+	AltText      string    `json:"alt_text"`
+	Width        int       `json:"width"`
+	Height       int       `json:"height"`
+	Url          string    `json:"url"`
+	ThumbnailUrl string    `json:"thumbnail_url"`
+}
+
+func (h *Handler) GetImages(w http.ResponseWriter, r *http.Request) error {
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	images, err := h.mediaServ.GetLocationImages(r.Context(), locationId)
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "GetImages")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToImagesResp(images))
+
+	return nil
+}
+
+type createUploadReq struct {
+	ContentType string `json:"content_type" validate:"required,eq=image/jpeg|eq=image/png|eq=image/webp"`
+	Size        int64  `json:"size" validate:"required,min=1"`
+}
+
+type uploadResp struct {
+	ImageId   uuid.UUID         `json:"image_id"`
+	UploadUrl string            `json:"upload_url"`
+	Method    string            `json:"method"`
+	Headers   map[string]string `json:"headers"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+func (h *Handler) CreateImageUpload(w http.ResponseWriter, r *http.Request) error {
+	var req createUploadReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	upload, err := h.mediaServ.CreateLocationImageUpload(r.Context(), locationId, mapToUploadInput(req))
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "CreateImageUpload")
+	}
+
+	httputil.Success(w, http.StatusCreated, mapToUploadResp(upload))
+
+	return nil
+}
+
+type updateImageReq struct {
+	AltText string `json:"alt_text" validate:"max=150"`
+}
+
+func (h *Handler) UpdateImage(w http.ResponseWriter, r *http.Request) error {
+	var req updateImageReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	imageId, err := uuid.Parse(chi.URLParam(r, "imageId"))
+	if err != nil {
+		return validate.NewError("invalid image id")
+	}
+
+	err = h.mediaServ.UpdateLocationImage(r.Context(), locationId, imageId, req.AltText)
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "UpdateImage")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+	return nil
+}
+
+func (h *Handler) DeleteImage(w http.ResponseWriter, r *http.Request) error {
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	imageId, err := uuid.Parse(chi.URLParam(r, "imageId"))
+	if err != nil {
+		return validate.NewError("invalid image id")
+	}
+
+	err = h.mediaServ.DeleteLocationImage(r.Context(), locationId, imageId)
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "DeleteImage")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+	return nil
+}
+
+type reorderImagesReq struct {
+	ImageIds []uuid.UUID `json:"image_ids" validate:"required"`
+}
+
+func (h *Handler) ReorderImages(w http.ResponseWriter, r *http.Request) error {
+	var req reorderImagesReq
+
+	if err := validate.ParseStruct(r, &req); err != nil {
+		return err
+	}
+
+	locationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	err = h.mediaServ.ReorderLocationImages(r.Context(), locationId, req.ImageIds)
+	if err != nil {
+		return mediaServ.ErrStatus.Resolve(err, "ReorderImages")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }
