@@ -85,7 +85,6 @@ export default function CancelBooking({ booking, isUpcoming }) {
           <button
             type="button"
             onClick={() => setIsCancelModalOpen(true)}
-            disabled={isCancelling}
             className="hover:bg-hover border-border group flex w-full
               cursor-pointer items-center justify-between border-t px-4 py-3
               text-left transition-colors sm:px-5 sm:py-3.5"
