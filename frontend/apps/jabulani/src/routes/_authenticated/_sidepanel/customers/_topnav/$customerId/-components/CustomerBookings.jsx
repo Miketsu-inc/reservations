@@ -7,7 +7,8 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
-import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
+import { useAuth } from "@reservations/jabulani/lib";
+import { BOOKING_STATUS_OPTIONS } from "@reservations/lib";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import BookingsList from "../../../../-components/BookingsList";

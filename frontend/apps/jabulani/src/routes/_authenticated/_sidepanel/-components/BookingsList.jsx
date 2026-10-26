@@ -7,9 +7,10 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon } from "@reservations/components";
-import { getBookingStatusStyles, useAuth } from "@reservations/jabulani/lib";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
+  getBookingStatusStyles,
   preferencesQueryOptions,
   timeStringFromDate,
   useWindowSize,

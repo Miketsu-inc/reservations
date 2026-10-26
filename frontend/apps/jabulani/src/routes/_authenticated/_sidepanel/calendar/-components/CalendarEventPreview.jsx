@@ -11,9 +11,10 @@ import {
   PreviewCardContent,
   PreviewCardTrigger,
 } from "@reservations/components";
-import { getBookingStatusStyles, useAuth } from "@reservations/jabulani/lib";
+import { useAuth } from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
+  getBookingStatusStyles,
   formatDuration,
   getDisplayPrice,
   timeStringFromDate,

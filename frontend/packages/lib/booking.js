@@ -6,7 +6,7 @@ export const BOOKING_STATUS_OPTIONS = [
   { value: "no-show", label: "No-show" },
 ];
 
-const BOOKING_STATUS_STYLES = {
+export const BOOKING_STATUS_STYLES = {
   booked: {
     badge: "bg-warning-subtle text-fg-warning",
     color: "text-fg-warning",

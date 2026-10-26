@@ -106,7 +106,7 @@ export default function FavoriteButton({ merchantId, styles }) {
         icon={FavouriteIcon}
         styles={`size-5 transition-all duration-200 group-hover:scale-105 ${
           isFavourite
-            ? "text-fg-danger fill-danger "
+            ? "text-danger fill-danger "
             : "text-fg group-hover:text-fg-danger "
           }`}
       />

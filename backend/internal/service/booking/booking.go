@@ -37,6 +37,7 @@ type Service struct {
 	userRepo        domain.UserRepository
 	customerRepo    domain.CustomerRepository
 	blockedTimeRepo domain.BlockedTimeRepository
+	imageRepo       domain.ImageRepository
 	mailer          *email.Service
 	enqueuer        queue.Enqueuer
 	txManager       db.TransactionManager
@@ -44,7 +45,7 @@ type Service struct {
 
 func NewService(booking domain.BookingRepository, catalog domain.CatalogRepository, merchant domain.MerchantRepository,
 	location domain.LocationRepository, team domain.TeamRepository, user domain.UserRepository, customer domain.CustomerRepository,
-	blockedTime domain.BlockedTimeRepository, mailer *email.Service, enqueuer queue.Enqueuer,
+	blockedTime domain.BlockedTimeRepository, image domain.ImageRepository, mailer *email.Service, enqueuer queue.Enqueuer,
 	txManager db.TransactionManager) *Service {
 	return &Service{
 		bookingRepo:     booking,
@@ -55,6 +56,7 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 		userRepo:        user,
 		customerRepo:    customer,
 		blockedTimeRepo: blockedTime,
+		imageRepo:       image,
 		mailer:          mailer,
 		enqueuer:        enqueuer,
 		txManager:       txManager,

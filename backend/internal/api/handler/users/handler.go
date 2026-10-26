@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
@@ -40,6 +41,8 @@ func (h *Handler) Routes() *httputil.Router {
 
 		r.Get("/bookings", h.GetBookings)
 		r.Get("/bookings/counts", h.GetBookingCounts)
+		r.Get("/bookings/{bookingId}", h.GetBookingById)
+
 		r.Put("/password", h.UpdatePassword)
 
 		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/avatar", h.CreateAvatarUpload)
@@ -145,6 +148,52 @@ func (h *Handler) GetBookingCounts(w http.ResponseWriter, r *http.Request) error
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetBookingCountsResp(counts))
+	return nil
+}
+
+type bookingDetailsResp struct {
+	Id                int                      `json:"id"`
+	Status            string                   `json:"status"`
+	ParticipantStatus string                   `json:"participant_status"`
+	BookingType       string                   `json:"booking_type"`
+	IsRecurring       bool                     `json:"is_recurring"`
+	FromDate          time.Time                `json:"from_date"`
+	ToDate            time.Time                `json:"to_date"`
+	Price             currencyx.FormattedPrice `json:"price"`
+	PriceType         string                   `json:"price_type"`
+	ServiceName       string                   `json:"service_name"`
+	MerchantName      string                   `json:"merchant_name"`
+	MerchantUrl       string                   `json:"merchant_url"`
+	CancelDeadline    int                      `json:"cancel_deadline"`
+	FormattedLocation string                   `json:"formatted_location"`
+	Longitude         float64                  `json:"longitude"`
+	Latitude          float64                  `json:"latitude"`
+	EmployeeFirstName *string                  `json:"employee_first_name"`
+	EmployeeLastName  *string                  `json:"employee_last_name"`
+	EmployeeAvatarUrl *string                  `json:"employee_avatar_url"`
+	Images            []imageResp              `json:"images"`
+}
+
+type imageResp struct {
+	Url          string `json:"url"`
+	ThumbnailUrl string `json:"thumbnail_url"`
+	AltText      string `json:"alt_text"`
+	Width        int    `json:"width"`
+	Height       int    `json:"height"`
+}
+
+func (h *Handler) GetBookingById(w http.ResponseWriter, r *http.Request) error {
+	bookingId, err := strconv.Atoi(chi.URLParam(r, "bookingId"))
+	if err != nil {
+		return validate.NewError("invalid booking id")
+	}
+
+	booking, err := h.bookingServ.GetForUserById(r.Context(), bookingId)
+	if err != nil {
+		return bookingServ.ErrStatus.Resolve(err, "GetForUserById")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetBookingDetailsResp(booking))
 
 	return nil
 }

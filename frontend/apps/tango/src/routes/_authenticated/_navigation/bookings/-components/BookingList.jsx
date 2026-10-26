@@ -12,6 +12,7 @@ import {
 } from "@reservations/components";
 import { timeStringFromDate } from "@reservations/lib";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 async function fetchBookings(status, limit, cursor) {
   const response = await fetch(
@@ -84,7 +85,14 @@ export default function BookingList({ statusFilter, searchText }) {
       ) : (
         <>
           {filteredBookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
+            <Link
+              key={booking.id}
+              to="/bookings/$bookingId"
+              params={{ bookingId: String(booking.id) }}
+              className="block text-inherit no-underline"
+            >
+              <BookingCard booking={booking} />
+            </Link>
           ))}
         </>
       )}
@@ -110,7 +118,7 @@ function BookingCard({ booking }) {
 
   const isGroupBooking = booking.booking_type !== "appointment";
   const isRecurring = booking.is_recurring;
-  const isPending = booking.booking_status === "booked";
+  const isBooked = booking.status === "booked";
 
   return (
     <div
@@ -144,12 +152,12 @@ function BookingCard({ booking }) {
         </div>
         <div className="flex flex-col items-end gap-1">
           <p className="text-sm">{booking.price}</p>
-          {isPending && (
+          {isBooked && (
             <p
               className="bg-warning-subtle text-fg-warning rounded-full px-2
                 py-0.5 text-xs"
             >
-              pending
+              booked
             </p>
           )}
         </div>

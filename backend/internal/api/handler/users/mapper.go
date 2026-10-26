@@ -46,6 +46,42 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 	}
 }
 
+func mapToGetBookingDetailsResp(in domain.BookingDetailsForUser) bookingDetailsResp {
+	images := make([]imageResp, len(in.Images))
+	for i, img := range in.Images {
+		images[i] = imageResp{
+			Url:          mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantLarge),
+			ThumbnailUrl: mediaServ.NewVariantURL(img.ImageId, mediaServ.VariantSmall),
+			AltText:      img.AltText,
+			Width:        img.Width,
+			Height:       img.Height,
+		}
+	}
+
+	return bookingDetailsResp{
+		Id:                in.Id,
+		Status:            in.Status.String(),
+		ParticipantStatus: in.ParticipantStatus.String(),
+		BookingType:       in.BookingType.String(),
+		IsRecurring:       in.IsRecurring,
+		FromDate:          in.FromDate,
+		ToDate:            in.ToDate,
+		Price:             in.PricePerPerson.ToFormatted(),
+		PriceType:         in.PriceType.String(),
+		ServiceName:       in.ServiceName,
+		MerchantName:      in.MerchantName,
+		MerchantUrl:       in.MerchantUrl,
+		CancelDeadline:    in.CancelDeadline,
+		FormattedLocation: in.FormattedLocation,
+		Longitude:         in.Longitude,
+		Latitude:          in.Latitude,
+		EmployeeFirstName: in.EmployeeFirstName,
+		EmployeeLastName:  in.EmployeeLastName,
+		EmployeeAvatarUrl: mediaServ.NewURL(in.EmployeeAvatarImageId, mediaServ.VariantSmall),
+		Images:            images,
+	}
+}
+
 func mapToGetBookingCountsResp(in domain.BookingCountsForUser) getBookingCountsResp {
 	return getBookingCountsResp{
 		Upcoming:  in.Upcoming,

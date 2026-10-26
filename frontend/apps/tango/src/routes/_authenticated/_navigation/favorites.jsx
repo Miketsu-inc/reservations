@@ -165,14 +165,14 @@ function FavoriteMerchantCard({ merchant, onRemove, isRemoving }) {
           <button
             className="group bg-bg-overlay border-border shadow-overlay absolute
               top-2 right-2 h-fit cursor-pointer rounded-full border p-1.5
-              transition-transform duration-200 hover:scale-105 active:scale-95
+              transition-transform duration-200 hover:scale-105
               disabled:pointer-events-none disabled:opacity-50"
             onClick={onRemove}
             disabled={isRemoving}
           >
             <Icon
               icon={FavouriteIcon}
-              styles="size-5 text-fg-danger fill-danger group-hover:scale-105"
+              styles="size-5 text-danger fill-danger group-hover:scale-105"
             />
           </button>
         </div>

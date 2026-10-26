@@ -1,5 +1,6 @@
 import { Loading, ServerError } from "@reservations/components";
-import { BOOKING_STATUS_OPTIONS, useAuth } from "@reservations/jabulani/lib";
+import { useAuth } from "@reservations/jabulani/lib";
+import { BOOKING_STATUS_OPTIONS } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import BookingDonutChart from "./BookingDonutChart";
 import { customerStatsQueryOptions } from "./customerQueries";

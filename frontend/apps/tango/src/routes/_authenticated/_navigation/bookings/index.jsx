@@ -34,7 +34,7 @@ function bookingCountsQueryOptions() {
   });
 }
 
-export const Route = createFileRoute("/_authenticated/_navigation/bookings")({
+export const Route = createFileRoute("/_authenticated/_navigation/bookings/")({
   validateSearch: (search) => {
     let status;
 

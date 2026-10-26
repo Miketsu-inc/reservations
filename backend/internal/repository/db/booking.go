@@ -1019,6 +1019,37 @@ func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, use
 	return bookings, nil
 }
 
+func (r *bookingRepository) GetBookingDetailsForUser(ctx context.Context, bookingId int, userId uuid.UUID) (domain.BookingDetailsForUser, error) {
+	query := `
+	select b.id, b.status, bp.status as participant_status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, b.price_type,
+		b.service_name, b.merchant_id, m.name as merchant_name, m.url_name as merchant_url,
+		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline,
+		b.location_id, coalesce(l.formatted_location, b.formatted_location) as formatted_location,
+		coalesce(st_x(l.geo_point::geometry), 0) as longitude, coalesce(st_y(l.geo_point::geometry), 0) as latitude,
+		e.first_name as employee_first_name, e.last_name as employee_last_name,
+		e.avatar_image_id as employee_avatar_image_id
+	from "Booking" b
+	join "BookingParticipant" bp on bp.booking_id = b.id
+	join "Customer" c on c.id = bp.customer_id
+	join "User" u on c.user_id = u.id
+	join "Merchant" m on b.merchant_id = m.id
+	left join "Service" s on b.service_id = s.id
+	left join "Location" l on b.location_id = l.id
+	left join "Employee" e on b.employee_id = e.id
+	where b.id = $1 and u.id = $2
+	limit 1
+	`
+
+	rows, _ := r.db.Query(ctx, query, bookingId, userId)
+	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingDetailsForUser])
+	if err != nil {
+		return domain.BookingDetailsForUser{}, fmt.Errorf("GetBookingDetailsForUser: %w", err)
+	}
+
+
+	return booking, nil
+}
+
 func (r *bookingRepository) GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (domain.BookingCountsForUser, error) {
 	query := `
 	select

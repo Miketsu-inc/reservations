@@ -1,5 +1,8 @@
-import { BOOKING_STATUS_OPTIONS } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth } from "@reservations/lib";
+import {
+  BOOKING_STATUS_OPTIONS,
+  invalidateLocalStorageAuth,
+} from "@reservations/lib";
+
 import {
   infiniteQueryOptions,
   keepPreviousData,

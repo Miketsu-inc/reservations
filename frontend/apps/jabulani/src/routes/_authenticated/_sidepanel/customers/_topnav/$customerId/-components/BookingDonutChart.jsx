@@ -1,4 +1,4 @@
-import { getBookingStatusColorStyles } from "@reservations/jabulani/lib";
+import { getBookingStatusColorStyles } from "@reservations/lib";
 import { Pie, PieChart, Sector, Tooltip } from "recharts";
 
 function BookingStatusSector({ isActive, payload, ...props }) {

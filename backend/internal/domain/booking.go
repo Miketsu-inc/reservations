@@ -60,6 +60,7 @@ type BookingRepository interface {
 	GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
 	GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]BookingForUser, error)
+	GetBookingDetailsForUser(ctx context.Context, bookingId int, userId uuid.UUID) (BookingDetailsForUser, error)
 	GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (BookingCountsForUser, error)
 	GetBookingPhases(ctx context.Context, bookingId int) ([]BookingPhase, error)
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
@@ -478,6 +479,31 @@ type BookingForUser struct {
 	ServiceName         string              `db:"service_name"`
 	EmployeeFirstName   *string             `db:"employee_first_name"`
 	EmployeeLastName    *string             `db:"employee_last_name"`
+}
+
+type BookingDetailsForUser struct {
+	Id                    int                 `db:"id"`
+	Status                types.BookingStatus `db:"status"`
+	ParticipantStatus     types.BookingStatus `db:"participant_status"`
+	BookingType           types.BookingType   `db:"booking_type"`
+	IsRecurring           bool                `db:"is_recurring"`
+	FromDate              time.Time           `db:"from_date"`
+	ToDate                time.Time           `db:"to_date"`
+	PricePerPerson        currencyx.Price     `db:"price_per_person"`
+	PriceType             types.PriceType     `db:"price_type"`
+	ServiceName           string              `db:"service_name"`
+	MerchantId            uuid.UUID           `db:"merchant_id"`
+	MerchantName          string              `db:"merchant_name"`
+	MerchantUrl           string              `db:"merchant_url"`
+	CancelDeadline        int                 `db:"cancel_deadline"`
+	LocationId            int                 `db:"location_id"`
+	FormattedLocation     string              `db:"formatted_location"`
+	Longitude             float64             `db:"longitude"`
+	Latitude              float64             `db:"latitude"`
+	EmployeeFirstName     *string             `db:"employee_first_name"`
+	EmployeeLastName      *string             `db:"employee_last_name"`
+	EmployeeAvatarImageId *uuid.UUID          `db:"employee_avatar_image_id"`
+	Images                []LocationImage     `db:"-"`
 }
 
 type AvailableGroupBooking struct {

@@ -2,10 +2,12 @@ package booking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
@@ -87,4 +89,26 @@ func (s *Service) GetCountsForUser(ctx context.Context) (domain.BookingCountsFor
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
 	return s.bookingRepo.GetBookingCountsForUser(ctx, userId)
+}
+
+func (s *Service) GetForUserById(ctx context.Context, bookingId int) (domain.BookingDetailsForUser, error) {
+	userId := jwt.MustGetUserIDFromContext(ctx)
+
+	booking, err := s.bookingRepo.GetBookingDetailsForUser(ctx, bookingId, userId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BookingDetailsForUser{}, ErrBookingNotFound
+		}
+
+		return domain.BookingDetailsForUser{}, err
+	}
+
+	images, err := s.imageRepo.GetLocationImages(ctx, booking.MerchantId, booking.LocationId)
+	if err != nil {
+		return domain.BookingDetailsForUser{}, err
+	}
+
+	booking.Images = images
+
+	return booking, nil
 }
