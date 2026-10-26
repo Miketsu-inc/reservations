@@ -635,28 +635,6 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 	return booking, nil
 }
 
-func (r *bookingRepository) GetPublicBooking(ctx context.Context, bookingId int, userId uuid.UUID) (domain.PublicBooking, error) {
-	query := `
-	select b.from_date, b.to_date, b.price_per_person as price, m.name as merchant_name, b.service_name, coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline,
-		b.price_type, b.status, b.formatted_location
-	from "BookingParticipant" bp
-	join "Customer" c on c.id = bp.customer_id
-	join "Booking" b on b.id = bp.booking_id
-	join "Merchant" m on m.id = b.merchant_id
-	left join "Service" s on s.id = b.service_id
-	where bp.booking_id = $1 and c.user_id = $2
-	`
-
-	var data domain.PublicBooking
-	err := r.db.QueryRow(ctx, query, bookingId, userId).Scan(&data.FromDate, &data.ToDate, &data.Price, &data.MerchantName,
-		&data.ServiceName, &data.CancelDeadline, &data.PriceType, &data.Status, &data.FormattedLocation)
-	if err != nil {
-		return domain.PublicBooking{}, fmt.Errorf("GetPublicBooking: %w", err)
-	}
-
-	return data, nil
-}
-
 func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
 	query := `
 	select b.id, b.booking_type, b.status as booking_status, bp.status as participant_status, b.is_recurring, b.from_date, b.to_date, bp.customer_note, b.merchant_note,
@@ -841,12 +819,11 @@ func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, b
 
 func (r *bookingRepository) GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (domain.BookingForEmail, error) {
 	query := `
-	select b.id, b.status, b.from_date, b.to_date, b.service_name, b.service_id, m.name as merchant_name, m.url_name as merchant_url, m.timezone,
-		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline, b.formatted_location, c.id as customer_id, coalesce(c.email, u.email) as customer_email,
+	select b.id, b.status, b.from_date, b.to_date, b.service_name, m.url_name as merchant_url, m.timezone,
+		b.formatted_location, coalesce(c.email, u.email) as customer_email,
 		bp.status as participant_status, u.language
 	from "Booking" b
 	join "Merchant" m on m.id = b.merchant_id
-	left join "Service" s on s.id = b.service_id
 	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.customer_id = $2
 	left join "Customer" c on c.id = bp.customer_id
 	left join "User" u on u.id = c.user_id

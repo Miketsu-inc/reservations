@@ -221,14 +221,13 @@ func tangoRouter(merchantPage *merchantpage.Handler) chi.Router {
 		"/invitations/calendar",
 		"/home",
 		"/bookings",
+		"/bookings/{bookingId}",
 		"/settings",
 		"/favorites",
 		"/profile",
 		"/profile/edit",
 		"/m/{merchant_url}/book",
 		"/m/{merchant_url}/book/completed",
-		"/m/{merchant_url}/cancel/{bookingId}",
-		"/m/{merchant_url}/cancel/{bookingId}/completed",
 	}
 
 	dist, assets := tango.StaticFilesPath()

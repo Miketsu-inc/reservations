@@ -1,9 +1,7 @@
 import {
   ArrowLeft02Icon,
   ArrowReloadHorizontalIcon,
-  ArrowRight01Icon,
   ArrowUpRight01Icon,
-  CalendarRemove01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import {
@@ -15,7 +13,6 @@ import {
   ServerError,
 } from "@reservations/components";
 import {
-  CANCEL_DEADLINE_OPTIONS,
   dayNameFromDate,
   formatDuration,
   getBookingStatusStyles,
@@ -26,6 +23,7 @@ import {
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import MapboxMap from "../../../m/$merchantName/-components/MapboxMap";
+import CancelBooking from "./-components/CancelBooking";
 
 // has to match the backend's small variant size
 const THUMBNAIL_MAX_SIZE = 640;
@@ -106,17 +104,6 @@ function BookingDetailsPage() {
   const isConfirmed = booking.participant_status === "confirmed";
   const isBooked = booking.participant_status === "booked";
   const isUpcoming = isBooked || isConfirmed;
-
-  const cancelDeadline = booking.cancel_deadline || 0;
-  const cancelDeadlineTime = new Date(
-    fromDate.getTime() - cancelDeadline * 60000
-  );
-
-  const canCancel = isUpcoming && now < cancelDeadlineTime;
-
-  const cancelDeadlineLabel =
-    CANCEL_DEADLINE_OPTIONS.find((opt) => opt.value === booking.cancel_deadline)
-      ?.label ?? formatDuration(booking.cancel_deadline);
 
   const displayStatus = isCancelled
     ? "cancelled"
@@ -271,51 +258,7 @@ function BookingDetailsPage() {
         </div>
 
         {!isCancelled && !isCompleted && (
-          <div className="flex flex-col gap-2 pt-2">
-            <h3 className="text-fg text-sm sm:text-base">
-              Cancellation Policy
-            </h3>
-            <Card styles="p-0! flex flex-col overflow-hidden">
-              <div className="flex flex-col gap-1.5 p-4 sm:p-5">
-                <p className="text-fg-muted text-sm leading-relaxed">
-                  {canCancel
-                    ? booking.cancel_deadline > 0
-                      ? `Please cancel at least ${cancelDeadlineLabel} before your appointment.`
-                      : "Free cancellation anytime before your appointment begins."
-                    : "The cancellation deadline has passed. This booking can no longer be cancelled."}
-                </p>
-              </div>
-
-              {canCancel && (
-                <Link
-                  to="/m/$merchantName/cancel/$bookingId"
-                  params={{
-                    merchantName: booking.merchant_url,
-                    bookingId: String(booking.id),
-                  }}
-                  className="hover:bg-hover border-border group flex
-                    items-center justify-between border-t px-4 py-3
-                    transition-colors sm:px-5 sm:py-3.5"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      icon={CalendarRemove01Icon}
-                      styles="size-5.5 text-fg-danger"
-                    />
-
-                    <span className="text-fg-danger text-sm">
-                      Cancel booking
-                    </span>
-                  </div>
-                  <Icon
-                    icon={ArrowRight01Icon}
-                    styles="size-4 text-fg-muted group-hover:text-fg
-                      transition-colors"
-                  />
-                </Link>
-              )}
-            </Card>
-          </div>
+          <CancelBooking booking={booking} isUpcoming={isUpcoming} />
         )}
 
         <div className="flex flex-col gap-2 pt-2">

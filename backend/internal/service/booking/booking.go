@@ -378,15 +378,10 @@ func (s *Service) CreateByCustomer(ctx context.Context, input CreateByCustomerIn
 	return nil
 }
 
-type CancelByCustomerInput struct {
-	BookingId    int
-	MerchantName string
-}
-
-func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerInput) error {
+func (s *Service) CancelByCustomer(ctx context.Context, bookingId int) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, input.BookingId)
+	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
 		return err
 	}
@@ -400,7 +395,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 
 	err = booking.CanCancelWithDeadline(latestCancelTime)
 	if err != nil {
-		return err
+		return ErrBookingCancelDeadlinePassed
 	}
 
 	bookingParticipant, err := s.bookingRepo.GetBookingParticipantByUser(ctx, booking.Id, userId)
@@ -410,7 +405,7 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 
 	err = bookingParticipant.CanModify()
 	if err != nil {
-		return err
+		return ErrBookingCannotBeModified
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -457,16 +452,6 @@ func (s *Service) CancelByCustomer(ctx context.Context, input CancelByCustomerIn
 	})
 }
 
-func (s *Service) GetByCustomer(ctx context.Context, bookingId int) (domain.PublicBooking, error) {
-	userId := jwt.MustGetUserIDFromContext(ctx)
-
-	publicBooking, err := s.bookingRepo.GetPublicBooking(ctx, bookingId, userId)
-	if err != nil {
-		return domain.PublicBooking{}, err
-	}
-
-	return publicBooking, nil
-}
 
 // prevent null booking price to avoid a lot of headaches
 func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UUID, price *currencyx.Price) (currencyx.Price, error) {

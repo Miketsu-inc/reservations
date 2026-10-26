@@ -42,6 +42,7 @@ func (h *Handler) Routes() *httputil.Router {
 		r.Get("/bookings", h.GetBookings)
 		r.Get("/bookings/counts", h.GetBookingCounts)
 		r.Get("/bookings/{bookingId}", h.GetBookingById)
+		r.Delete("/bookings/{bookingId}", h.CancelBooking)
 
 		r.Put("/password", h.UpdatePassword)
 
@@ -195,6 +196,21 @@ func (h *Handler) GetBookingById(w http.ResponseWriter, r *http.Request) error {
 
 	httputil.Success(w, http.StatusOK, mapToGetBookingDetailsResp(booking))
 
+	return nil
+}
+
+func (h *Handler) CancelBooking(w http.ResponseWriter, r *http.Request) error {
+	bookingId, err := strconv.Atoi(chi.URLParam(r, "bookingId"))
+	if err != nil {
+		return validate.NewError("invalid booking id")
+	}
+
+	err = h.bookingServ.CancelByCustomer(r.Context(), bookingId)
+	if err != nil {
+		return bookingServ.ErrStatus.Resolve(err, "CancelBooking")
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
 

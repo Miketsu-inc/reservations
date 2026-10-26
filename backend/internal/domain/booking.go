@@ -46,7 +46,6 @@ type BookingRepository interface {
 	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
 	GetBooking(ctx context.Context, bookingId int) (Booking, error)
-	GetPublicBooking(ctx context.Context, bookingId int, userId uuid.UUID) (PublicBooking, error)
 	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime time.Time) ([]BookingForCalendar, error)
@@ -308,18 +307,6 @@ func (bp BookingParticipant) CanTransition(status types.BookingStatus) error {
 	return nil
 }
 
-type PublicBooking struct {
-	FromDate          time.Time           `json:"from_date" db:"from_date"`
-	ToDate            time.Time           `json:"to_date" db:"to_date"`
-	ServiceName       string              `json:"service_name" db:"service_name"`
-	CancelDeadline    int                 `json:"cancel_deadline" db:"cancel_deadline"`
-	FormattedLocation string              `json:"formatted_location" db:"formatted_location"`
-	Price             currencyx.Price     `json:"price" db:"price"`
-	PriceType         types.PriceType     `json:"price_type"`
-	MerchantName      string              `json:"merchant_name" db:"merchant_name"`
-	Status            types.BookingStatus `json:"status" db:"status"`
-}
-
 type PublicBookingDetails struct {
 	ID                    int                  `db:"id"`
 	BookingType           types.BookingType    `db:"booking_type"`
@@ -395,13 +382,9 @@ type BookingForEmail struct {
 	FromDate          time.Time            `db:"from_date"`
 	ToDate            time.Time            `db:"to_date"`
 	ServiceName       string               `db:"service_name"`
-	ServiceId         *int                 `db:"service_id"`
-	MerchantName      string               `db:"merchant_name"`
 	MerchantUrl       string               `db:"merchant_url"`
 	Timezone          string               `db:"timezone"`
-	CancelDeadline    int                  `db:"cancel_deadline"`
 	FormattedLocation string               `db:"formatted_location"`
-	CustomerId        *uuid.UUID           `db:"customer_id"`
 	CustomerEmail     *string              `db:"customer_email"`
 	ParticipantStatus *types.BookingStatus `db:"participant_status"`
 	UserLanguage      *string              `db:"language"`

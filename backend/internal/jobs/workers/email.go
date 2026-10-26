@@ -80,7 +80,7 @@ func (w *BookingConfirmationEmail) Work(ctx context.Context, job *river.Job[args
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/bookings/%d", config.LoadEnvVars().TANGO_URL, booking.Id),
 	})
 }
 
@@ -150,7 +150,7 @@ func (w *BookingStatusConfirmedEmail) Work(ctx context.Context, job *river.Job[a
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/bookings/%d", config.LoadEnvVars().TANGO_URL, booking.Id),
 	})
 }
 
@@ -218,7 +218,7 @@ func (w *BookingReminderEmail) Work(ctx context.Context, job *river.Job[args.Boo
 		Location:    booking.FormattedLocation,
 		ServiceName: booking.ServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/bookings/%d", config.LoadEnvVars().TANGO_URL, booking.Id),
 	})
 }
 
@@ -353,7 +353,7 @@ func (w *BookingModificationEmail) Work(ctx context.Context, job *river.Job[args
 		Location:    booking.FormattedLocation,
 		ServiceName: job.Args.OldServiceName,
 		TimeZone:    merchantTz.String(),
-		ModifyLink:  fmt.Sprintf("%s/m/%s/cancel/%d", config.LoadEnvVars().TANGO_URL, booking.MerchantUrl, booking.Id),
+		ModifyLink:  fmt.Sprintf("%s/bookings/%d", config.LoadEnvVars().TANGO_URL, booking.Id),
 		OldTime:     fmt.Sprintf("%s - %s", oldFromDateMerchantTz.Format("15:04"), oldToDateMerchantTz.Format("15:04")),
 		OldDate:     oldFromDateMerchantTz.Format("Monday, January 2"),
 	})
