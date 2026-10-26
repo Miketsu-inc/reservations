@@ -85,6 +85,7 @@ export default function BlockedTimePanel({
   onClose,
   blockedTime,
   initialStart,
+  initialEmployeeId,
   preferences,
   onDeleted,
   onSubmitted,
@@ -124,7 +125,7 @@ export default function BlockedTimePanel({
 
   const initialEmployees = isEditing
     ? blockedTime?.extendedProps?.employee_ids || []
-    : [employeeId];
+    : [initialEmployeeId ?? employeeId];
 
   const [formData, setFormData] = useState({
     id: blockedTime?.extendedProps?.id || null,

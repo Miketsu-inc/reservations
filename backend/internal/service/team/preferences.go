@@ -24,11 +24,10 @@ func (s *Service) GetPreferences(ctx context.Context, employeeId int) (domain.Em
 }
 
 type UpdatePreferencesInput struct {
-	FirstDayOfWeek     string
-	TimeFormat         string
-	CalendarView       string
-	CalendarViewMobile string
-	TimeFrequency      time.Time
+	FirstDayOfWeek string
+	TimeFormat     string
+	CalendarView   string
+	TimeFrequency  time.Time
 }
 
 func (s *Service) UpdatePreferences(ctx context.Context, employeeId int, input UpdatePreferencesInput) error {
@@ -39,11 +38,10 @@ func (s *Service) UpdatePreferences(ctx context.Context, employeeId int, input U
 	}
 
 	err := s.teamRepo.UpdateEmployeePreferences(ctx, employeeId, domain.EmployeePreferences{
-		FirstDayOfWeek:     input.FirstDayOfWeek,
-		TimeFormat:         input.TimeFormat,
-		CalendarView:       input.CalendarView,
-		CalendarViewMobile: input.CalendarViewMobile,
-		TimeFrequency:      input.TimeFrequency,
+		FirstDayOfWeek: input.FirstDayOfWeek,
+		TimeFormat:     input.TimeFormat,
+		CalendarView:   input.CalendarView,
+		TimeFrequency:  input.TimeFrequency,
 	})
 	if err != nil {
 		return err

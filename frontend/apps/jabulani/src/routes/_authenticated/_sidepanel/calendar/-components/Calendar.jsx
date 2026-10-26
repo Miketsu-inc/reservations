@@ -1,25 +1,27 @@
 import { Calendar as FullCalendar } from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
 import themePlugin from "@fullcalendar/react/themes/breezy";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
+  Avatar,
   Button,
   DatePicker,
   Icon,
   Select,
   ServerError,
 } from "@reservations/components";
+import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
+  calendarTeamMembersQueryOptions,
   dateStringToLocalDate,
   DEFAULT_SERVICE_COLOR,
   formatToDateString,
-  getMonthFromCalendarStart,
   preferencesQueryOptions,
+  SCREEN_SM,
   useWindowSize,
 } from "@reservations/lib";
 import {
@@ -28,25 +30,40 @@ import {
   useSuspenseQueries,
 } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import CalendarEventContent from "./CalendarEventContent";
 import CalendarEventPreview from "./CalendarEventPreview";
 import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
+import {
+  canViewTeamCalendar,
+  getCalendarRange,
+  getCalendarRanges,
+  resolveCalendarView,
+} from "./calendarViews";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
+import resourceTimeGridPlugin from "./resourceTimeGridPlugin";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
-const calendarViewOptions = [
-  { value: "dayGridMonth", label: "Month" },
-  { value: "timeGridWeek", label: "Week" },
-  { value: "timeGridDay", label: "Day" },
-  { value: "listWeek", label: "List" },
-];
+const timeGridViews = new Set([
+  "timeGridWeek",
+  "timeGridDay",
+  "timeGrid2Day",
+  "resourceTimeGridDay",
+  "resourceTimeGrid2Day",
+]);
 
 function getContrastColor(color) {
   const hex = color.replace("#", "");
@@ -91,6 +108,7 @@ function formatBookings(data) {
 
     return {
       id: booking.id,
+      resourceId: booking.employee_id,
       title: title,
       start: booking.from_date,
       end: booking.to_date,
@@ -135,6 +153,7 @@ function formatBlockedTimes(data) {
 
     return {
       id: blockedTime.id,
+      resourceIds: blockedTime.employee_ids,
       title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
       start: start,
       end: end,
@@ -156,11 +175,65 @@ function formatBlockedTimes(data) {
   });
 }
 
+function formatResources(teamMembers) {
+  return teamMembers.map((member) => ({
+    id: member.id,
+    title: `${member.first_name} ${member.last_name}`,
+    avatarUrl: member.avatar_url,
+    initials: `${member.first_name[0]}${member.last_name[0]}`,
+  }));
+}
+
+/**
+ * Returns null when every booking should show, including unassigned ones.
+ */
+function getEmployeeFilter(canViewTeam, searchEmployees, selectedEmployeeIds) {
+  if (canViewTeam && !searchEmployees) return null;
+
+  return new Set(selectedEmployeeIds);
+}
+
+function ResourceHeader({ resource }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1">
+      <Avatar
+        styles="size-8! text-[11px]!"
+        img={resource.extendedProps.avatarUrl}
+        initials={resource.extendedProps.initials}
+        alt={resource.title}
+      />
+      <span className="text-fg max-w-full truncate">{resource.title}</span>
+    </div>
+  );
+}
+
+/**
+ * Dropping an event into another employee's column only moves its resource,
+ * so mirror the change into the employee fields the side panels read.
+ */
+function applyDroppedEmployee({ event, oldResource, newResource }) {
+  if (!newResource) return;
+
+  const oldEmployeeId = Number(oldResource.id);
+  const newEmployeeId = Number(newResource.id);
+
+  if (event.extendedProps.type === "blocked") {
+    const employeeIds = event.extendedProps.employee_ids.map((employeeId) =>
+      employeeId === oldEmployeeId ? newEmployeeId : employeeId
+    );
+    event.setExtendedProp("employee_ids", [...new Set(employeeIds)]);
+    return;
+  }
+
+  event.setExtendedProp("employee_id", newEmployeeId);
+}
+
 const defaultSidePanelState = {
   isOpen: false,
   type: null,
   data: null,
   initialStart: null,
+  initialEmployeeId: null,
   bookingId: null,
   panelKey: null,
 };
@@ -171,6 +244,7 @@ function createBookingPanelState(bookingId, event = null) {
     type: "edit-booking",
     data: event,
     initialStart: null,
+    initialEmployeeId: null,
     bookingId,
     panelKey: `edit-booking:${bookingId}`,
   };
@@ -185,12 +259,7 @@ function getCalendarCreateStart(calendarApi) {
 }
 
 function getInitialCalendarDate(search) {
-  const initialDate =
-    search.view === "dayGridMonth"
-      ? getMonthFromCalendarStart(search.start)
-      : search.start;
-
-  return dateStringToLocalDate(initialDate) ?? new Date();
+  return dateStringToLocalDate(search.start) ?? new Date();
 }
 
 /**
@@ -199,7 +268,7 @@ function getInitialCalendarDate(search) {
  * Returns methods to recenter on date changes and clean up when the view unmounts.
  */
 function observeCurrentTime({ el, view }) {
-  if (view.type !== "timeGridWeek" && view.type !== "timeGridDay") return;
+  if (!timeGridViews.has(view.type)) return;
 
   let scroller = el.querySelector("[data-time]");
   while (scroller && scroller !== el) {
@@ -258,7 +327,8 @@ export default function Calendar({ router, route, search }) {
     setSidePanelState(createBookingPanelState(bookingId));
   }
 
-  const { merchantId, employeeId } = useAuth();
+  const { merchantId, employeeId, role } = useAuth();
+  const canViewTeam = canViewTeamCalendar(role);
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },
@@ -272,6 +342,10 @@ export default function Calendar({ router, route, search }) {
     ...calendarBookingQueryOptions(merchantId, sidePanelState.bookingId),
     enabled: Boolean(sidePanelState.bookingId),
   });
+  const { data: teamMembers = [] } = useQuery({
+    ...calendarTeamMembersQueryOptions(merchantId),
+    enabled: canViewTeam,
+  });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
     queries: [
       preferencesQueryOptions(merchantId, employeeId),
@@ -280,18 +354,58 @@ export default function Calendar({ router, route, search }) {
   });
   const [calendarView, setCalendarView] = useState(search.view);
 
-  const { isWindowSmall } = useWindowSize();
+  const { width, isWindowSmall } = useWindowSize();
+  const calendarRanges = getCalendarRanges(role, width < SCREEN_SM);
   const calendarRef = useRef();
   const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
   const isDraggingRef = useRef(false);
 
+  const selectedEmployeeIds = useMemo(() => {
+    if (!canViewTeam) return [employeeId];
+
+    return search.employees ?? teamMembers.map((member) => member.id);
+  }, [canViewTeam, employeeId, search.employees, teamMembers]);
+
   const calendarEvents = useMemo(() => {
-    return [
-      ...formatBookings(events.bookings),
-      ...formatBlockedTimes(events.blocked_times),
-    ];
-  }, [events.bookings, events.blocked_times]);
+    const filter = getEmployeeFilter(
+      canViewTeam,
+      search.employees,
+      selectedEmployeeIds
+    );
+    const bookings = filter
+      ? events.bookings.filter((booking) => filter.has(booking.employee_id))
+      : events.bookings;
+    const blockedTimes = filter
+      ? events.blocked_times.filter((blockedTime) =>
+          blockedTime.employee_ids.some((id) => filter.has(id))
+        )
+      : events.blocked_times;
+
+    return [...formatBookings(bookings), ...formatBlockedTimes(blockedTimes)];
+  }, [
+    canViewTeam,
+    search.employees,
+    selectedEmployeeIds,
+    events.bookings,
+    events.blocked_times,
+  ]);
+
+  const resources = useMemo(() => {
+    const selected = new Set(selectedEmployeeIds);
+
+    return formatResources(
+      teamMembers.filter((member) => selected.has(member.id))
+    );
+  }, [teamMembers, selectedEmployeeIds]);
+
+  // Changing the selected team members or crossing the mobile breakpoint can
+  // switch between the single person, team and agenda views.
+  const resolvedView = resolveCalendarView(
+    calendarRanges,
+    getCalendarRange(calendarView),
+    selectedEmployeeIds.length > 1
+  );
 
   const selectedBookingEvent = useMemo(() => {
     if (!selectedBooking) return null;
@@ -335,7 +449,14 @@ export default function Calendar({ router, route, search }) {
     setCreateSelection(null);
   }, []);
 
-  function openSidePanel(type, data, id, revert = null, initialStart = null) {
+  function openSidePanel(
+    type,
+    data,
+    id,
+    revert = null,
+    initialStart = null,
+    initialEmployeeId = null
+  ) {
     dragRevertRef.current = revert;
     setCreateSelection(null);
 
@@ -344,6 +465,7 @@ export default function Calendar({ router, route, search }) {
       type,
       data,
       initialStart,
+      initialEmployeeId,
       bookingId: null,
       panelKey: `${type}:${id}`,
     });
@@ -364,9 +486,10 @@ export default function Calendar({ router, route, search }) {
 
   function openSidePanelAtTime(
     type,
-    start = getCalendarCreateStart(calendarRef.current.getApi())
+    start = getCalendarCreateStart(calendarRef.current.getApi()),
+    employeeId = null
   ) {
-    openSidePanel(type, null, start.toISOString(), null, start);
+    openSidePanel(type, null, start.toISOString(), null, start, employeeId);
   }
 
   function closeSidePanel() {
@@ -416,7 +539,12 @@ export default function Calendar({ router, route, search }) {
 
       router.navigate({
         to: "/calendar",
-        search: () => ({ view: api.view.type, start: start, end: end }),
+        search: (prev) => ({
+          ...prev,
+          view: api.view.type,
+          start: start,
+          end: end,
+        }),
         replace: true,
       });
     },
@@ -461,6 +589,33 @@ export default function Calendar({ router, route, search }) {
     setCalendarView(view);
   }
 
+  const syncCalendarView = useEffectEvent(() => {
+    changeViewHandler(resolvedView);
+  });
+
+  useEffect(() => {
+    syncCalendarView();
+  }, [resolvedView]);
+
+  function changeRangeHandler(range) {
+    changeViewHandler(
+      resolveCalendarView(calendarRanges, range, selectedEmployeeIds.length > 1)
+    );
+  }
+
+  function changeEmployeesHandler(employeeIds) {
+    router.navigate({
+      to: "/calendar",
+      search: (prev) => ({
+        ...prev,
+        // Leaving "all" out of the URL keeps new team members visible.
+        employees:
+          employeeIds.length === teamMembers.length ? undefined : employeeIds,
+      }),
+      replace: true,
+    });
+  }
+
   function changeDateHandler(date) {
     const api = calendarRef.current.getApi();
     const dateStr = formatToDateString(date);
@@ -480,6 +635,7 @@ export default function Calendar({ router, route, search }) {
         type={panelType}
         data={panelData}
         initialStart={sidePanelState.initialStart}
+        initialEmployeeId={sidePanelState.initialEmployeeId}
         panelKey={sidePanelState.panelKey}
         onClose={closeSidePanel}
         onTransitionEnd={finishSidePanelClose}
@@ -495,63 +651,86 @@ export default function Calendar({ router, route, search }) {
           selection={createSelection}
           onClose={closeCreateMenu}
           onCreateBlockedTime={(start) =>
-            openSidePanelAtTime("blocked-time", start)
+            openSidePanelAtTime(
+              "blocked-time",
+              start,
+              createSelection.employeeId
+            )
           }
-          onCreateBooking={(start) => openSidePanelAtTime("new-booking", start)}
+          onCreateBooking={(start) =>
+            openSidePanelAtTime(
+              "new-booking",
+              start,
+              createSelection.employeeId
+            )
+          }
         />
       )}
-      <div className="relative flex shrink-0 flex-col pb-4 md:flex-row md:gap-2">
-        <div
-          className="flex w-full flex-col justify-between gap-2 md:flex-row
-            md:items-center"
+      {/* Mobile puts the title on its own row above the controls. */}
+      <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pb-4">
+        <p
+          className="w-full text-xl font-semibold whitespace-nowrap md:order-2
+            md:w-auto md:text-2xl"
         >
-          <p className="text-xl font-semibold whitespace-nowrap md:text-2xl">
-            {calendarTitle}
-          </p>
-          <div className="flex flex-row items-center justify-between gap-2">
-            <div className="flex flex-row items-center gap-1">
-              <CreateMenu
-                isFloating={isWindowSmall}
-                onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
-                onCreateBooking={() => openSidePanelAtTime("new-booking")}
-              />
-              <DatePicker
-                styles="w-fit"
-                value={calendarDate}
-                hideText={true}
-                firstDayOfWeek={preferences.first_day_of_week}
-                onSelect={changeDateHandler}
-              />
-              <button
-                className="text-fg-muted hover:bg-hover hover:text-fg
-                  cursor-pointer rounded-lg p-2"
-                type="button"
-                onClick={() => navButtonHandler("prev")}
-              >
-                <Icon icon={ArrowLeft01Icon} styles="size-5" />
-              </button>
-              <Button
-                variant="secondary"
-                styles="px-3 py-2 text-sm"
-                buttonText="Today"
-                onClick={todayButtonHandler}
-              />
-              <button
-                className="text-fg-muted hover:bg-hover hover:text-fg
-                  cursor-pointer rounded-lg p-2"
-                type="button"
-                onClick={() => navButtonHandler("next")}
-              >
-                <Icon icon={ArrowLeft01Icon} styles="size-5 rotate-180" />
-              </button>
-            </div>
+          {calendarTitle}
+        </p>
+        <div className="flex flex-row items-center gap-1 md:order-1">
+          <DatePicker
+            styles="w-fit"
+            value={calendarDate}
+            hideText={true}
+            firstDayOfWeek={preferences.first_day_of_week}
+            onSelect={changeDateHandler}
+          />
+          <button
+            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
+              rounded-lg p-2"
+            type="button"
+            onClick={() => navButtonHandler("prev")}
+          >
+            <Icon icon={ArrowLeft01Icon} styles="size-5" />
+          </button>
+          <Button
+            variant="secondary"
+            styles="px-3 py-2 text-sm"
+            buttonText="Today"
+            onClick={todayButtonHandler}
+          />
+          <button
+            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
+              rounded-lg p-2"
+            type="button"
+            onClick={() => navButtonHandler("next")}
+          >
+            <Icon icon={ArrowLeft01Icon} styles="size-5 rotate-180" />
+          </button>
+        </div>
+        <div
+          className="ml-auto flex min-w-0 flex-1 flex-row items-center
+            justify-end gap-2 md:order-3 md:flex-none"
+        >
+          {canViewTeam && (
+            <TeamMemberMultiSelect
+              values={selectedEmployeeIds}
+              onSelect={changeEmployeesHandler}
+              labelText={null}
+              placeholder="No members selected"
+              styles="w-full! min-w-0! sm:w-48!"
+            />
+          )}
+          {calendarRanges.length > 1 && (
             <Select
-              options={calendarViewOptions}
-              value={calendarView}
-              onSelect={(option) => changeViewHandler(option.value)}
+              options={calendarRanges}
+              value={getCalendarRange(calendarView)}
+              onSelect={(option) => changeRangeHandler(option.value)}
               styles="w-28!"
             />
-          </div>
+          )}
+          <CreateMenu
+            isFloating={isWindowSmall}
+            onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
+            onCreateBooking={() => openSidePanelAtTime("new-booking")}
+          />
         </div>
       </div>
       <div className="min-h-0 w-full flex-1 overflow-hidden">
@@ -559,17 +738,21 @@ export default function Calendar({ router, route, search }) {
           ref={calendarRef}
           plugins={[
             themePlugin,
-            dayGridPlugin,
             interactionPlugin,
             timeGridPlugin,
+            resourceTimeGridPlugin,
             listPlugin,
           ]}
+          resources={resources}
+          resourceOrder="title"
+          resourceDayHeaderContent={(info) => (
+            <ResourceHeader resource={info.resource} />
+          )}
           locale="hu"
           editable={true}
           eventDurationEditable={true}
           selectable={true}
           initialView={search.view ? search.view : "timeGridWeek"}
-          // dayGridMonth dates do not start or end with the current month's dates
           initialDate={getInitialCalendarDate(search)}
           height="100%"
           headerToolbar={false}
@@ -618,12 +801,8 @@ export default function Calendar({ router, route, search }) {
             openBookingSidePanel(e.event);
           }}
           dateClick={(info) => {
-            const supportsSlotCreation =
-              info.view.type === "timeGridWeek" ||
-              info.view.type === "timeGridDay";
-
             if (
-              !supportsSlotCreation ||
+              !timeGridViews.has(info.view.type) ||
               info.date.getTime() < Date.now() ||
               info.jsEvent.target.closest(".fc-event")
             ) {
@@ -632,6 +811,7 @@ export default function Calendar({ router, route, search }) {
 
             setCreateSelection({
               start: info.date,
+              employeeId: info.resource ? Number(info.resource.id) : null,
               x: info.jsEvent.clientX,
               y: info.jsEvent.clientY,
             });
@@ -650,7 +830,6 @@ export default function Calendar({ router, route, search }) {
             month: "long",
             day: "numeric",
           }}
-          fixedWeekCount={false}
           allDaySlot={true}
           displayEventEnd={false}
           snapDuration={{ minutes: 5 }}
@@ -661,6 +840,7 @@ export default function Calendar({ router, route, search }) {
             isDraggingRef.current = false;
           }}
           eventDrop={(e) => {
+            applyDroppedEmployee(e);
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
@@ -688,12 +868,13 @@ export default function Calendar({ router, route, search }) {
             hour12: preferences.time_format === "12-hour",
           }}
           views={{
-            dayGridMonth: {
-              titleFormat: {
-                year: "numeric",
-                month: "long",
-              },
-              displayEventEnd: false,
+            timeGrid2Day: {
+              type: "timeGrid",
+              duration: { days: 2 },
+            },
+            resourceTimeGrid2Day: {
+              type: "resourceTimeGrid",
+              duration: { days: 2 },
             },
             timeGridDay: {
               dayHeaderFormat: {
@@ -703,6 +884,9 @@ export default function Calendar({ router, route, search }) {
             },
             listWeek: {
               displayEventEnd: true,
+            },
+            resourceTimeGrid: {
+              dayMinWidth: 120,
             },
           }}
           businessHours={transformBusinessHours(businessHours)}

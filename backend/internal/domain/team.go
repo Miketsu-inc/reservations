@@ -83,12 +83,11 @@ func (e EmployeeInvitation) IsPending() bool {
 }
 
 type EmployeePreferences struct {
-	EmployeeId         int       `db:"employee_id"`
-	FirstDayOfWeek     string    `db:"first_day_of_week"`
-	TimeFormat         string    `db:"time_format"`
-	CalendarView       string    `db:"calendar_view"`
-	CalendarViewMobile string    `db:"calendar_view_mobile"`
-	TimeFrequency      time.Time `db:"time_frequency"`
+	EmployeeId     int       `db:"employee_id"`
+	FirstDayOfWeek string    `db:"first_day_of_week"`
+	TimeFormat     string    `db:"time_format"`
+	CalendarView   string    `db:"calendar_view"`
+	TimeFrequency  time.Time `db:"time_frequency"`
 }
 
 type EmployeeWithServiceOverrides struct {

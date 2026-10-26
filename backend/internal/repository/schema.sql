@@ -288,8 +288,7 @@ create table if not exists "EmployeePreferences" (
     employee_id              integer          primary key unique references "Employee" (ID) on delete cascade not null,
     first_day_of_week        varchar(10)      default 'Monday' check (first_day_of_week in ('Monday', 'Sunday')) not null,
     time_format              varchar(10)      default '24-hour' check (time_format in ('12-hour', '24-hour')) not null,
-    calendar_view            varchar(10)      default 'week' check (calendar_view in ('month', 'week', 'day', 'list')) not null,
-    calendar_view_mobile     varchar(10)      default 'day' check (calendar_view_mobile in ('month', 'week', 'day', 'list')) not null,
+    calendar_view            varchar(10)      default 'week' check (calendar_view in ('day', '2day', 'week')) not null,
     time_frequency           time(0)          default '00:15:00' not null
 );
 

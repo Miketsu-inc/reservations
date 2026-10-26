@@ -2,6 +2,7 @@ import { Loading, ServerError } from "@reservations/components";
 import {
   businessHoursQueryOptions,
   calculateStartEndTime,
+  calendarTeamMembersQueryOptions,
   dateStringToLocalDate,
   isDurationValid,
   preferencesQueryOptions,
@@ -15,6 +16,12 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { calendarBookingsQueryOptions } from "../-components/calendarQueries";
+import {
+  canViewTeamCalendar,
+  getCalendarRange,
+  getCalendarRanges,
+  resolveCalendarView,
+} from "../-components/calendarViews";
 
 const Calendar = lazy(() => import("../-components/Calendar"));
 
@@ -22,17 +29,15 @@ function validateDateString(dateStr) {
   return dateStringToLocalDate(dateStr) ? dateStr : undefined;
 }
 
-function mapCalendarView(view, mobileView) {
-  const viewMapping = {
-    month: "dayGridMonth",
-    week: "timeGridWeek",
-    day: "timeGridDay",
-    list: "listWeek",
-  };
+// Keeps the original array when nothing is dropped, so the loader can tell
+// whether the search needs rewriting.
+function validateEmployeeIds(employeeIds, teamMembers) {
+  if (!Array.isArray(employeeIds)) return;
 
-  const preferredView = window.innerWidth < SCREEN_SM ? mobileView : view;
+  const memberIds = new Set(teamMembers.map((member) => member.id));
+  const validIds = employeeIds.filter((id) => memberIds.has(id));
 
-  return viewMapping[preferredView] ?? "timeGridWeek";
+  return validIds.length === employeeIds.length ? employeeIds : validIds;
 }
 
 export const Route = createFileRoute(
@@ -45,28 +50,28 @@ export const Route = createFileRoute(
     location,
     context: {
       queryClient,
-      authContext: { merchantId, employeeId },
+      authContext: { merchantId, employeeId, role },
     },
   }) => {
     const preferences = await queryClient.ensureQueryData(
       preferencesQueryOptions(merchantId, employeeId)
     );
 
-    const defaultView = preferences?.calendar_view
-      ? mapCalendarView(
-          preferences.calendar_view,
-          preferences.calendar_view_mobile
+    const canViewTeam = canViewTeamCalendar(role);
+    const teamMembers = canViewTeam
+      ? await queryClient.ensureQueryData(
+          calendarTeamMembersQueryOptions(merchantId)
         )
-      : "timeGridWeek";
+      : [];
+    const employees = canViewTeam
+      ? validateEmployeeIds(search.employees, teamMembers)
+      : undefined;
 
-    const view = [
-      "dayGridMonth",
-      "timeGridWeek",
-      "timeGridDay",
-      "listWeek",
-    ].includes(search.view)
-      ? search.view
-      : defaultView;
+    const view = resolveCalendarView(
+      getCalendarRanges(role, window.innerWidth < SCREEN_SM),
+      getCalendarRange(search.view) ?? preferences?.calendar_view,
+      (employees?.length ?? teamMembers.length) > 1
+    );
 
     let start = validateDateString(search.start);
     let end = validateDateString(search.end);
@@ -81,11 +86,16 @@ export const Route = createFileRoute(
       end = calculated.end;
     }
 
-    if (view !== search.view || start !== search.start || end !== search.end) {
+    if (
+      view !== search.view ||
+      start !== search.start ||
+      end !== search.end ||
+      employees !== search.employees
+    ) {
       throw redirect({
         to: location.pathname,
         replace: true,
-        search: { view, start, end },
+        search: { view, start, end, employees },
       });
     }
 

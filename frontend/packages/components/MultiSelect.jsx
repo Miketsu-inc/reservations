@@ -284,9 +284,9 @@ function TriggerContent({
   const displayedOptions = selectedOptions.slice(0, 2);
   const remainingCount = selectedOptions.length - 2;
 
-  let text = `${selectedOptions.length} ${displayText} selected`;
+  let text = `${selectedOptions.length} ${displayText}s selected`;
   if (allSelected) {
-    text = `All ${displayText}`;
+    text = `All ${displayText}s`;
   } else if (selectedOptions.length === 1) {
     text = selectedOptions[0].label;
   }

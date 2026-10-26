@@ -28,14 +28,12 @@ export default function CalendarEventContent({ eventInfo }) {
   const { event, timeText, view } = eventInfo;
   const viewType = view.type;
   const isListView = viewType.startsWith("list");
-  const isMonthView = viewType === "dayGridMonth";
   const setBackground = useCallback(
     (label) => {
       const phases = event.extendedProps.phases;
       if (
         !label ||
         event.allDay ||
-        !viewType.startsWith("timeGrid") ||
         !phases?.some((phase) => phase.phase_type === "wait")
       )
         return;
@@ -59,7 +57,7 @@ export default function CalendarEventContent({ eventInfo }) {
       );
       return () => element.style.removeProperty("background");
     },
-    [event, viewType]
+    [event]
   );
 
   if (isListView) {
@@ -78,8 +76,7 @@ export default function CalendarEventContent({ eventInfo }) {
   return (
     <div
       ref={setBackground}
-      className={`flex size-full min-w-0 overflow-hidden
-        ${isMonthView ? "flex-row items-center gap-1" : "flex-col"}`}
+      className="flex size-full min-w-0 flex-col overflow-hidden"
     >
       {timeText && (
         <span className="shrink-0 text-xs leading-tight font-medium">

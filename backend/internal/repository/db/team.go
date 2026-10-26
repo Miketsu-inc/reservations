@@ -368,11 +368,11 @@ func (r *teamRepository) NewEmployeePreferences(ctx context.Context, employeeId 
 func (r *teamRepository) UpdateEmployeePreferences(ctx context.Context, employeeId int, p domain.EmployeePreferences) error {
 	query := `
 	update "EmployeePreferences"
-	set first_day_of_week = $2, time_format = $3, calendar_view = $4, calendar_view_mobile = $5, time_frequency = $6
+	set first_day_of_week = $2, time_format = $3, calendar_view = $4, time_frequency = $5
 	where employee_id = $1
 	`
 
-	_, err := r.db.Exec(ctx, query, employeeId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.CalendarViewMobile, p.TimeFrequency)
+	_, err := r.db.Exec(ctx, query, employeeId, p.FirstDayOfWeek, p.TimeFormat, p.CalendarView, p.TimeFrequency)
 	if err != nil {
 		return fmt.Errorf("UpdateEmployeePreferences: %w", err)
 	}
@@ -382,13 +382,13 @@ func (r *teamRepository) UpdateEmployeePreferences(ctx context.Context, employee
 
 func (r *teamRepository) GetEmployeePreferences(ctx context.Context, employeeId int) (domain.EmployeePreferences, error) {
 	query := `
-	select first_day_of_week, time_format, calendar_view, calendar_view_mobile, time_frequency
+	select first_day_of_week, time_format, calendar_view, time_frequency
 	from "EmployeePreferences"
 	where employee_id = $1
 	`
 
 	var p domain.EmployeePreferences
-	err := r.db.QueryRow(ctx, query, employeeId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.CalendarViewMobile, &p.TimeFrequency)
+	err := r.db.QueryRow(ctx, query, employeeId).Scan(&p.FirstDayOfWeek, &p.TimeFormat, &p.CalendarView, &p.TimeFrequency)
 	if err != nil {
 		return domain.EmployeePreferences{}, fmt.Errorf("GetEmployeePreferences: %w", err)
 	}

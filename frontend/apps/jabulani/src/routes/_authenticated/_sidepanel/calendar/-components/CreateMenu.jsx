@@ -39,7 +39,7 @@ export default function CreateMenu({
           styles={` ${
             isFloating
               ? "fixed bottom-10 right-5 z-10 p-3 shadow-xl"
-              : "py-2 pr-3 pl-2.5 text-sm mr-2"
+              : "py-2 pr-3 pl-2.5 text-sm shrink-0"
             } `}
           buttonText={isFloating ? "" : "Create"}
         >

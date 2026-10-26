@@ -3,8 +3,6 @@ import {
   dateAndTimeStringsToLocalDate,
   dateStringToLocalDate,
   formatDuration,
-  formatToDateString,
-  getMonthFromCalendarStart,
   isDurationValid,
 } from "@reservations/lib/datetime";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -71,24 +69,6 @@ describe("isDurationValid", () => {
     expect(isDurationValid("timeGridDay", start, end)).toBe(false);
   });
 
-  it("dayGridMonth a month", () => {
-    expect(isDurationValid("dayGridMonth", "2025-01-01", "2025-02-01")).toBe(
-      true
-    );
-  });
-
-  it("dayGridMonth more than a month", () => {
-    expect(isDurationValid("dayGridMonth", "2025-01-01", "2025-02-20")).toBe(
-      false
-    );
-  });
-
-  it("dayGridMonth less than a month", () => {
-    expect(isDurationValid("dayGridMonth", "2025-01-18", "2025-02-01")).toBe(
-      false
-    );
-  });
-
   it("timeGridWeek a week", () => {
     expect(isDurationValid("timeGridWeek", "2025-01-27", "2025-02-03")).toBe(
       true
@@ -124,39 +104,36 @@ describe("isDurationValid", () => {
       false
     );
   });
+
+  it("resourceTimeGrid2Day two days", () => {
+    expect(
+      isDurationValid("resourceTimeGrid2Day", "2025-01-31", "2025-02-02")
+    ).toBe(true);
+  });
+
+  it("timeGrid2Day a single day", () => {
+    expect(isDurationValid("timeGrid2Day", "2025-01-31", "2025-02-01")).toBe(
+      false
+    );
+  });
 });
 
 describe("calculateStartEndTime", () => {
   it("calculates a week containing a supplied date", () => {
     expect(
-      calculateStartEndTime(
-        "timeGridWeek",
-        "Monday",
-        new Date(2026, 8, 24)
-      )
+      calculateStartEndTime("timeGridWeek", "Monday", new Date(2026, 8, 24))
     ).toEqual({
       start: "2026-09-21",
       end: "2026-09-28",
     });
   });
 
-  it("handles a month that starts on Sunday when weeks start on Monday", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 1, 15));
-
-    expect(calculateStartEndTime("dayGridMonth", "Monday")).toEqual({
-      start: "2026-01-26",
-      end: "2026-03-02",
-    });
-  });
-
-  it("handles a month that ends on Sunday when weeks start on Monday", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2025, 7, 15));
-
-    expect(calculateStartEndTime("dayGridMonth", "Monday")).toEqual({
-      start: "2025-07-28",
-      end: "2025-09-01",
+  it("starts two day views on the supplied date", () => {
+    expect(
+      calculateStartEndTime("timeGrid2Day", "Monday", new Date(2026, 9, 31))
+    ).toEqual({
+      start: "2026-10-31",
+      end: "2026-11-02",
     });
   });
 
@@ -172,32 +149,5 @@ describe("formatDuration", () => {
 
   it("does not leave trailing whitespace for whole hours", () => {
     expect(formatDuration(60)).toBe("1h");
-  });
-});
-
-describe("getMonthFromCalendarStart", () => {
-  // months indexing starts with 0 in js 0 ---> January
-  it("date before start", () => {
-    expect(getMonthFromCalendarStart("2025-01-27")).toBe(
-      formatToDateString(new Date(2025, 1, 1))
-    );
-    expect(getMonthFromCalendarStart("2025-03-31")).toBe(
-      formatToDateString(new Date(2025, 3, 1))
-    );
-    expect(getMonthFromCalendarStart("2025-05-26")).toBe(
-      formatToDateString(new Date(2025, 5, 1))
-    );
-  });
-
-  it("date at start", () => {
-    expect(getMonthFromCalendarStart("2025-03-01")).toBe(
-      formatToDateString(new Date(2025, 2, 1))
-    );
-    expect(getMonthFromCalendarStart("2025-09-01")).toBe(
-      formatToDateString(new Date(2025, 8, 1))
-    );
-    expect(getMonthFromCalendarStart("2025-12-01")).toBe(
-      formatToDateString(new Date(2025, 11, 1))
-    );
   });
 });
