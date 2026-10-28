@@ -1,4 +1,8 @@
-import { CalendarAdd01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import {
+  CalendarAdd01Icon,
+  CalendarBlock02Icon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Icon,
@@ -15,9 +19,11 @@ function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
         *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
     >
       <button onClick={onCreateBooking} className="flex items-center gap-2">
-        <Icon icon={CalendarAdd01Icon} styles="size-5 text-fg-muted" /> Booking
+        <Icon icon={CalendarAdd01Icon} styles="size-5 text-fg-muted" />
+        Booking
       </button>
-      <button className="text-left" onClick={onCreateBlockedTime}>
+      <button onClick={onCreateBlockedTime} className="flex items-center gap-2">
+        <Icon icon={CalendarBlock02Icon} styles="size-5 text-fg-muted" />
         Blocked Time
       </button>
     </div>
@@ -94,8 +100,8 @@ export function CalendarCreateMenu({
       />
       <PopoverContent side="right" align="start">
         <CreateOptions
-          onCreateBooking={() => onCreateBooking(selection.start)}
-          onCreateBlockedTime={() => onCreateBlockedTime(selection.start)}
+          onCreateBooking={onCreateBooking}
+          onCreateBlockedTime={onCreateBlockedTime}
         />
       </PopoverContent>
     </Popover>

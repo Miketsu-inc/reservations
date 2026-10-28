@@ -55,7 +55,7 @@ export function dateAndTimeStringsToLocalDate(dateStr, timeStr) {
 }
 
 export function calculateStartEndTime(
-  view,
+  range,
   firstDayOfWeek,
   referenceDate = new Date()
 ) {
@@ -69,9 +69,9 @@ export function calculateStartEndTime(
   );
   let start, end;
 
-  switch (view) {
-    case "timeGridWeek":
-    case "listWeek":
+  switch (range) {
+    case "week":
+    case "agenda":
       if (now.getDay() === 0) {
         if (weekStartsOn === 1) {
           end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -101,8 +101,7 @@ export function calculateStartEndTime(
         );
       }
       break;
-    case "timeGridDay":
-    case "resourceTimeGridDay":
+    case "day":
       start = now;
       end = new Date(
         start.getFullYear(),
@@ -110,8 +109,7 @@ export function calculateStartEndTime(
         start.getDate() + 1
       );
       break;
-    case "timeGrid2Day":
-    case "resourceTimeGrid2Day":
+    case "2day":
       start = now;
       end = new Date(
         start.getFullYear(),
@@ -129,7 +127,7 @@ export function calculateStartEndTime(
   };
 }
 
-export function isDurationValid(view, startStr, endStr) {
+export function isDurationValid(range, startStr, endStr) {
   const start = dateStringToLocalDate(startStr);
   const end = dateStringToLocalDate(endStr);
 
@@ -142,15 +140,13 @@ export function isDurationValid(view, startStr, endStr) {
 
   const days = diff / (1000 * 60 * 60 * 24);
 
-  switch (view) {
-    case "timeGridWeek":
-    case "listWeek":
+  switch (range) {
+    case "week":
+    case "agenda":
       return days === 7;
-    case "timeGridDay":
-    case "resourceTimeGridDay":
+    case "day":
       return days === 1;
-    case "timeGrid2Day":
-    case "resourceTimeGrid2Day":
+    case "2day":
       return days === 2;
     default:
       return false;

@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -340,19 +341,11 @@ function BlockedTimePreview({ event, isOpen, timeFormat }) {
 
   return (
     <div className="w-72 max-w-[calc(100vw-2rem)] overflow-hidden">
-      <div className="flex items-center gap-3 p-4">
-        {extendedProps.icon && (
-          <div
-            className="bg-hover flex size-10 shrink-0 items-center
-              justify-center rounded-full text-lg"
-          >
-            {extendedProps.icon}
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="truncate font-semibold">{extendedProps.name}</p>
-          <p className="text-fg-muted mt-0.5 text-xs">Blocked time</p>
-        </div>
+      <div className="p-4">
+        <p className="truncate font-semibold">
+          {extendedProps.name} {extendedProps.icon}
+        </p>
+        <p className="text-fg-muted mt-0.5 text-xs">Blocked time</p>
       </div>
 
       <div className="border-border flex flex-col gap-2.5 border-t p-4">
@@ -379,7 +372,9 @@ export default function CalendarEventPreview({
   canOpen,
 }) {
   const isBlockedTime = event.extendedProps.type === "blocked";
-  const previewId = `${isBlockedTime ? "blocked" : "booking"}:${event.id}`;
+  // An event renders one segment per team member column and day, so the id
+  // has to be per segment or hovering one opens all of them.
+  const previewId = useId();
   const isOpen = usePreviewOpen(previewId);
   const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);
   const suppressOpenRef = useRef(false);

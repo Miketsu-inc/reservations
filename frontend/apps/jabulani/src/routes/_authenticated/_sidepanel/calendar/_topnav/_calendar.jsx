@@ -6,7 +6,7 @@ import {
   dateStringToLocalDate,
   isDurationValid,
   preferencesQueryOptions,
-  SCREEN_SM,
+  SCREEN_LG,
 } from "@reservations/lib";
 import {
   createFileRoute,
@@ -18,26 +18,14 @@ import { lazy, Suspense } from "react";
 import { calendarBookingsQueryOptions } from "../-components/calendarQueries";
 import {
   canViewTeamCalendar,
-  getCalendarRange,
   getCalendarRanges,
-  resolveCalendarView,
+  resolveCalendarRange,
 } from "../-components/calendarViews";
 
 const Calendar = lazy(() => import("../-components/Calendar"));
 
 function validateDateString(dateStr) {
   return dateStringToLocalDate(dateStr) ? dateStr : undefined;
-}
-
-// Keeps the original array when nothing is dropped, so the loader can tell
-// whether the search needs rewriting.
-function validateEmployeeIds(employeeIds, teamMembers) {
-  if (!Array.isArray(employeeIds)) return;
-
-  const memberIds = new Set(teamMembers.map((member) => member.id));
-  const validIds = employeeIds.filter((id) => memberIds.has(id));
-
-  return validIds.length === employeeIds.length ? employeeIds : validIds;
 }
 
 export const Route = createFileRoute(
@@ -57,20 +45,17 @@ export const Route = createFileRoute(
       preferencesQueryOptions(merchantId, employeeId)
     );
 
-    const canViewTeam = canViewTeamCalendar(role);
-    const teamMembers = canViewTeam
-      ? await queryClient.ensureQueryData(
-          calendarTeamMembersQueryOptions(merchantId)
-        )
-      : [];
-    const employees = canViewTeam
-      ? validateEmployeeIds(search.employees, teamMembers)
-      : undefined;
+    // Load the team before the first render, so the team columns don't pop in.
+    if (canViewTeamCalendar(role)) {
+      await queryClient.ensureQueryData(
+        calendarTeamMembersQueryOptions(merchantId)
+      );
+    }
 
-    const view = resolveCalendarView(
-      getCalendarRanges(role, window.innerWidth < SCREEN_SM),
-      getCalendarRange(search.view) ?? preferences?.calendar_view,
-      (employees?.length ?? teamMembers.length) > 1
+    const view = resolveCalendarRange(
+      getCalendarRanges(role, window.innerWidth < SCREEN_LG),
+      search.view,
+      preferences?.calendar_view
     );
 
     let start = validateDateString(search.start);
@@ -86,16 +71,11 @@ export const Route = createFileRoute(
       end = calculated.end;
     }
 
-    if (
-      view !== search.view ||
-      start !== search.start ||
-      end !== search.end ||
-      employees !== search.employees
-    ) {
+    if (view !== search.view || start !== search.start || end !== search.end) {
       throw redirect({
         to: location.pathname,
         replace: true,
-        search: { view, start, end, employees },
+        search: { view, start, end },
       });
     }
 

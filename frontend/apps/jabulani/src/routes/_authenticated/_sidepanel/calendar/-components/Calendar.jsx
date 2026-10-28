@@ -2,7 +2,6 @@ import { Calendar as FullCalendar } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
 import themePlugin from "@fullcalendar/react/themes/breezy";
-import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
@@ -12,7 +11,6 @@ import {
   Select,
   ServerError,
 } from "@reservations/components";
-import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
@@ -21,7 +19,6 @@ import {
   DEFAULT_SERVICE_COLOR,
   formatToDateString,
   preferencesQueryOptions,
-  SCREEN_SM,
   useWindowSize,
 } from "@reservations/lib";
 import {
@@ -40,6 +37,7 @@ import {
 } from "react";
 import CalendarEventContent from "./CalendarEventContent";
 import CalendarEventPreview from "./CalendarEventPreview";
+import CalendarMemberFilter from "./CalendarMemberFilter";
 import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
@@ -48,7 +46,9 @@ import {
   canViewTeamCalendar,
   getCalendarRange,
   getCalendarRanges,
-  resolveCalendarView,
+  getCalendarView,
+  hasTeamColumns,
+  resolveCalendarRange,
 } from "./calendarViews";
 import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
@@ -58,11 +58,9 @@ import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
 const timeGridViews = new Set([
-  "timeGridWeek",
-  "timeGridDay",
-  "timeGrid2Day",
   "resourceTimeGridDay",
   "resourceTimeGrid2Day",
+  "resourceTimeGridWeek",
 ]);
 
 function getContrastColor(color) {
@@ -175,6 +173,16 @@ function formatBlockedTimes(data) {
   });
 }
 
+// Matches the column order of the team views. Defined once, so the query keeps
+// returning the same array between renders.
+function sortMembersByName(members) {
+  return members.toSorted((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(
+      `${b.first_name} ${b.last_name}`
+    )
+  );
+}
+
 function formatResources(teamMembers) {
   return teamMembers.map((member) => ({
     id: member.id,
@@ -182,15 +190,6 @@ function formatResources(teamMembers) {
     avatarUrl: member.avatar_url,
     initials: `${member.first_name[0]}${member.last_name[0]}`,
   }));
-}
-
-/**
- * Returns null when every booking should show, including unassigned ones.
- */
-function getEmployeeFilter(canViewTeam, searchEmployees, selectedEmployeeIds) {
-  if (canViewTeam && !searchEmployees) return null;
-
-  return new Set(selectedEmployeeIds);
 }
 
 function ResourceHeader({ resource }) {
@@ -234,6 +233,7 @@ const defaultSidePanelState = {
   data: null,
   initialStart: null,
   initialEmployeeId: null,
+  initialAllDay: false,
   bookingId: null,
   panelKey: null,
 };
@@ -245,14 +245,15 @@ function createBookingPanelState(bookingId, event = null) {
     data: event,
     initialStart: null,
     initialEmployeeId: null,
+    initialAllDay: false,
     bookingId,
     panelKey: `edit-booking:${bookingId}`,
   };
 }
 
-function getCalendarCreateStart(calendarApi) {
+function getCalendarCreateStart(date) {
   const now = new Date();
-  const calendarDate = new Date(calendarApi.getDate());
+  const calendarDate = new Date(date);
 
   calendarDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
   return calendarDate < now ? now : calendarDate;
@@ -278,22 +279,20 @@ function observeCurrentTime({ el, view }) {
   }
   if (!scroller || scroller === el) return;
 
-  let frame;
+  // Runs synchronously, since a view switch paints the new view before the
+  // next animation frame. FullCalendar keeps the requested time and reapplies
+  // it once the slot heights are measured.
   function center() {
-    cancelAnimationFrame(frame);
-    // Wait for FullCalendar to finish applying the measured slot heights.
-    frame = requestAnimationFrame(() => {
-      if (!scroller.clientHeight || !scroller.scrollHeight) return;
+    if (!scroller.clientHeight || !scroller.scrollHeight) return;
 
-      const now = new Date();
-      const currentMinutes =
-        now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-      const visibleMinutes =
-        (scroller.clientHeight / scroller.scrollHeight) * 24 * 60;
+    const now = new Date();
+    const currentMinutes =
+      now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    const visibleMinutes =
+      (scroller.clientHeight / scroller.scrollHeight) * 24 * 60;
 
-      view.calendar.scrollToTime({
-        minutes: Math.max(0, currentMinutes - visibleMinutes / 2),
-      });
+    view.calendar.scrollToTime({
+      minutes: Math.max(0, currentMinutes - visibleMinutes / 2),
     });
   }
 
@@ -305,7 +304,6 @@ function observeCurrentTime({ el, view }) {
     center,
     disconnect() {
       observer.disconnect();
-      cancelAnimationFrame(frame);
     },
   };
 }
@@ -345,6 +343,7 @@ export default function Calendar({ router, route, search }) {
   const { data: teamMembers = [] } = useQuery({
     ...calendarTeamMembersQueryOptions(merchantId),
     enabled: canViewTeam,
+    select: sortMembersByName,
   });
   const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
     queries: [
@@ -352,27 +351,38 @@ export default function Calendar({ router, route, search }) {
       businessHoursQueryOptions(merchantId),
     ],
   });
-  const [calendarView, setCalendarView] = useState(search.view);
+  // null shows everyone, so new team members and unassigned bookings show up.
+  const [memberFilter, setMemberFilter] = useState(null);
+  // Kept in state rather than read from the URL, so the resources update in
+  // the same render as the view instead of after the navigation.
+  const [selectedRange, setSelectedRange] = useState(search.view);
 
-  const { width, isWindowSmall } = useWindowSize();
-  const calendarRanges = getCalendarRanges(role, width < SCREEN_SM);
+  // The agenda takes over where the side navigation collapses.
+  const { isWindowSmall } = useWindowSize();
+  const calendarRanges = getCalendarRanges(role, isWindowSmall);
   const calendarRef = useRef();
   const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
   const isDraggingRef = useRef(false);
 
-  const selectedEmployeeIds = useMemo(() => {
+  // Drops members that have since left the team.
+  const filteredEmployeeIds = useMemo(() => {
     if (!canViewTeam) return [employeeId];
+    if (!memberFilter) return null;
 
-    return search.employees ?? teamMembers.map((member) => member.id);
-  }, [canViewTeam, employeeId, search.employees, teamMembers]);
+    const ids = teamMembers
+      .map((member) => member.id)
+      .filter((id) => memberFilter.includes(id));
+    return ids.length > 0 ? ids : null;
+  }, [canViewTeam, employeeId, memberFilter, teamMembers]);
+
+  const selectedEmployeeIds = useMemo(
+    () => filteredEmployeeIds ?? teamMembers.map((member) => member.id),
+    [filteredEmployeeIds, teamMembers]
+  );
 
   const calendarEvents = useMemo(() => {
-    const filter = getEmployeeFilter(
-      canViewTeam,
-      search.employees,
-      selectedEmployeeIds
-    );
+    const filter = filteredEmployeeIds && new Set(filteredEmployeeIds);
     const bookings = filter
       ? events.bookings.filter((booking) => filter.has(booking.employee_id))
       : events.bookings;
@@ -383,29 +393,27 @@ export default function Calendar({ router, route, search }) {
       : events.blocked_times;
 
     return [...formatBookings(bookings), ...formatBlockedTimes(blockedTimes)];
-  }, [
-    canViewTeam,
-    search.employees,
-    selectedEmployeeIds,
-    events.bookings,
-    events.blocked_times,
-  ]);
+  }, [filteredEmployeeIds, events.bookings, events.blocked_times]);
 
+  const calendarRange = resolveCalendarRange(
+    calendarRanges,
+    selectedRange,
+    preferences.calendar_view
+  );
+  // Crossing the mobile breakpoint can switch to the agenda.
+  const resolvedView = getCalendarView(calendarRange);
+  const showTeamColumns =
+    hasTeamColumns(calendarRange) && selectedEmployeeIds.length > 1;
+
+  // Without resources the time grid merges everyone into one column per day.
   const resources = useMemo(() => {
-    const selected = new Set(selectedEmployeeIds);
+    if (!showTeamColumns) return [];
 
+    const selected = new Set(selectedEmployeeIds);
     return formatResources(
       teamMembers.filter((member) => selected.has(member.id))
     );
-  }, [teamMembers, selectedEmployeeIds]);
-
-  // Changing the selected team members or crossing the mobile breakpoint can
-  // switch between the single person, team and agenda views.
-  const resolvedView = resolveCalendarView(
-    calendarRanges,
-    getCalendarRange(calendarView),
-    selectedEmployeeIds.length > 1
-  );
+  }, [showTeamColumns, teamMembers, selectedEmployeeIds]);
 
   const selectedBookingEvent = useMemo(() => {
     if (!selectedBooking) return null;
@@ -453,9 +461,12 @@ export default function Calendar({ router, route, search }) {
     type,
     data,
     id,
-    revert = null,
-    initialStart = null,
-    initialEmployeeId = null
+    {
+      revert = null,
+      initialStart = null,
+      initialEmployeeId = null,
+      initialAllDay = false,
+    } = {}
   ) {
     dragRevertRef.current = revert;
     setCreateSelection(null);
@@ -466,6 +477,7 @@ export default function Calendar({ router, route, search }) {
       data,
       initialStart,
       initialEmployeeId,
+      initialAllDay,
       bookingId: null,
       panelKey: `${type}:${id}`,
     });
@@ -486,10 +498,17 @@ export default function Calendar({ router, route, search }) {
 
   function openSidePanelAtTime(
     type,
-    start = getCalendarCreateStart(calendarRef.current.getApi()),
-    employeeId = null
+    {
+      start = getCalendarCreateStart(calendarRef.current.getApi().getDate()),
+      employeeId = null,
+      allDay = false,
+    } = {}
   ) {
-    openSidePanel(type, null, start.toISOString(), null, start, employeeId);
+    openSidePanel(type, null, start.toISOString(), {
+      initialStart: start,
+      initialEmployeeId: employeeId,
+      initialAllDay: allDay,
+    });
   }
 
   function closeSidePanel() {
@@ -541,7 +560,7 @@ export default function Calendar({ router, route, search }) {
         to: "/calendar",
         search: (prev) => ({
           ...prev,
-          view: api.view.type,
+          view: getCalendarRange(api.view.type),
           start: start,
           end: end,
         }),
@@ -583,10 +602,13 @@ export default function Calendar({ router, route, search }) {
     const api = calendarRef.current.getApi();
 
     if (view === api.view.type) return;
-    api.changeView(view);
+
+    // Otherwise switching from a week to a shorter range lands on its first day.
+    const now = new Date();
+    const showsToday = api.view.activeStart <= now && now < api.view.activeEnd;
+    api.changeView(view, showsToday ? now : api.view.currentStart);
 
     datesChanged(api);
-    setCalendarView(view);
   }
 
   const syncCalendarView = useEffectEvent(() => {
@@ -598,22 +620,14 @@ export default function Calendar({ router, route, search }) {
   }, [resolvedView]);
 
   function changeRangeHandler(range) {
-    changeViewHandler(
-      resolveCalendarView(calendarRanges, range, selectedEmployeeIds.length > 1)
-    );
+    setSelectedRange(range);
+    changeViewHandler(getCalendarView(range));
   }
 
-  function changeEmployeesHandler(employeeIds) {
-    router.navigate({
-      to: "/calendar",
-      search: (prev) => ({
-        ...prev,
-        // Leaving "all" out of the URL keeps new team members visible.
-        employees:
-          employeeIds.length === teamMembers.length ? undefined : employeeIds,
-      }),
-      replace: true,
-    });
+  function changeMembersHandler(employeeIds) {
+    setMemberFilter(
+      employeeIds.length === teamMembers.length ? null : employeeIds
+    );
   }
 
   function changeDateHandler(date) {
@@ -636,6 +650,7 @@ export default function Calendar({ router, route, search }) {
         data={panelData}
         initialStart={sidePanelState.initialStart}
         initialEmployeeId={sidePanelState.initialEmployeeId}
+        initialAllDay={sidePanelState.initialAllDay}
         panelKey={sidePanelState.panelKey}
         onClose={closeSidePanel}
         onTransitionEnd={finishSidePanelClose}
@@ -650,19 +665,17 @@ export default function Calendar({ router, route, search }) {
         <CalendarCreateMenu
           selection={createSelection}
           onClose={closeCreateMenu}
-          onCreateBlockedTime={(start) =>
-            openSidePanelAtTime(
-              "blocked-time",
-              start,
-              createSelection.employeeId
-            )
+          onCreateBlockedTime={() =>
+            openSidePanelAtTime("blocked-time", createSelection)
           }
-          onCreateBooking={(start) =>
-            openSidePanelAtTime(
-              "new-booking",
-              start,
-              createSelection.employeeId
-            )
+          onCreateBooking={() =>
+            openSidePanelAtTime("new-booking", {
+              ...createSelection,
+              // A booking needs a time, so the all-day row starts it now.
+              start: createSelection.allDay
+                ? getCalendarCreateStart(createSelection.start)
+                : createSelection.start,
+            })
           }
         />
       )}
@@ -710,18 +723,17 @@ export default function Calendar({ router, route, search }) {
             justify-end gap-2 md:order-3 md:flex-none"
         >
           {canViewTeam && (
-            <TeamMemberMultiSelect
-              values={selectedEmployeeIds}
-              onSelect={changeEmployeesHandler}
-              labelText={null}
-              placeholder="No members selected"
-              styles="w-full! min-w-0! sm:w-48!"
+            <CalendarMemberFilter
+              members={teamMembers}
+              selectedIds={selectedEmployeeIds}
+              onChange={changeMembersHandler}
+              currentEmployeeId={employeeId}
             />
           )}
           {calendarRanges.length > 1 && (
             <Select
               options={calendarRanges}
-              value={getCalendarRange(calendarView)}
+              value={calendarRange}
               onSelect={(option) => changeRangeHandler(option.value)}
               styles="w-28!"
             />
@@ -739,7 +751,6 @@ export default function Calendar({ router, route, search }) {
           plugins={[
             themePlugin,
             interactionPlugin,
-            timeGridPlugin,
             resourceTimeGridPlugin,
             listPlugin,
           ]}
@@ -752,7 +763,7 @@ export default function Calendar({ router, route, search }) {
           editable={true}
           eventDurationEditable={true}
           selectable={true}
-          initialView={search.view ? search.view : "timeGridWeek"}
+          initialView={resolvedView}
           initialDate={getInitialCalendarDate(search)}
           height="100%"
           headerToolbar={false}
@@ -801,9 +812,13 @@ export default function Calendar({ router, route, search }) {
             openBookingSidePanel(e.event);
           }}
           dateClick={(info) => {
+            // The all-day row stays clickable until the day is over.
+            const end = new Date(info.date);
+            if (info.allDay) end.setDate(end.getDate() + 1);
+
             if (
               !timeGridViews.has(info.view.type) ||
-              info.date.getTime() < Date.now() ||
+              end.getTime() < Date.now() ||
               info.jsEvent.target.closest(".fc-event")
             ) {
               return;
@@ -811,6 +826,7 @@ export default function Calendar({ router, route, search }) {
 
             setCreateSelection({
               start: info.date,
+              allDay: info.allDay,
               employeeId: info.resource ? Number(info.resource.id) : null,
               x: info.jsEvent.clientX,
               y: info.jsEvent.clientY,
@@ -844,7 +860,9 @@ export default function Calendar({ router, route, search }) {
             const type = e.event.extendedProps.type;
 
             if (type === "blocked") {
-              openSidePanel("blocked-time", e.event, e.event.id, e.revert);
+              openSidePanel("blocked-time", e.event, e.event.id, {
+                revert: e.revert,
+              });
               return;
             }
 
@@ -868,19 +886,9 @@ export default function Calendar({ router, route, search }) {
             hour12: preferences.time_format === "12-hour",
           }}
           views={{
-            timeGrid2Day: {
-              type: "timeGrid",
-              duration: { days: 2 },
-            },
             resourceTimeGrid2Day: {
               type: "resourceTimeGrid",
               duration: { days: 2 },
-            },
-            timeGridDay: {
-              dayHeaderFormat: {
-                weekday: "long",
-              },
-              displayEventTime: false,
             },
             listWeek: {
               displayEventEnd: true,

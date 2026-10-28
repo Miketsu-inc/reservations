@@ -12,6 +12,9 @@
  * - event props: resourceId, resourceIds, resourceEditable
  * - `resource` on dateClick/select info, `oldResource`/`newResource` on eventDrop
  * - `dayMinWidth`, which otherwise needs the premium scrollgrid plugin
+ *
+ * Without resources it renders a plain time grid with every event merged, so
+ * switching between team and plain grids keeps the same mounted view.
  */
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import {
@@ -42,6 +45,10 @@ import {
 
 const EMPTY_SEGS = [];
 const EMPTY_RESOURCES = { list: [], byId: new Map() };
+const EMPTY_SLICED = {
+  allDay: { bgEventSegs: EMPTY_SEGS },
+  timed: { bgEventSegs: EMPTY_SEGS },
+};
 
 // Resources
 
@@ -178,7 +185,8 @@ function getAppliedResourceMutation(mutation, eventDef, context) {
 
 /**
  * Splits view props into one bucket per resource. Events and selections
- * without a resource land in the "" bucket.
+ * without a resource land in the "" bucket, as does everything when there are
+ * no resources.
  */
 class ResourceSplitter extends Splitter {
   constructor(resources) {
@@ -202,7 +210,9 @@ class ResourceSplitter extends Splitter {
   }
 
   getKeysForEventDef(eventDef) {
-    return eventDef.resourceIds?.length ? eventDef.resourceIds : [""];
+    return this.resources.length && eventDef.resourceIds?.length
+      ? eventDef.resourceIds
+      : [""];
   }
 }
 
@@ -369,11 +379,7 @@ class ResourceSegJoiner {
 }
 
 function buildCells(dayCols, resources, datesAboveResources, colMapper) {
-  // TimeGridLayout can't render zero columns (e.g. while resources are still
-  // loading), so show the bare days without accepting clicks or drops.
-  if (!resources.length) {
-    return dayCols.map((dayCol) => ({ ...dayCol, isInert: true }));
-  }
+  if (!resources.length) return dayCols;
 
   const cells = [];
 
@@ -459,19 +465,6 @@ function buildHeaderTiers(
           todayRange,
           dayHeaderFormat,
           context
-        ),
-      },
-    ];
-  }
-
-  // A single day is already named by the title, matching the premium view.
-  if (dayCnt === 1) {
-    return [
-      {
-        isDateRow: false,
-        renderConfig: resourceRenderConfig,
-        dataConfigs: resources.map((resource) =>
-          buildResourceDataConfig(resource, { isMajor: true, context })
         ),
       },
     ];
@@ -768,7 +761,7 @@ class ResourceTimeGridView extends DateComponent {
     const dayDates = this.extractColDates(dayCols);
     const dayRanges = this.extractColRanges(dayCols);
     const colMapper = this.buildColMapper(
-      resources.length,
+      Math.max(resources.length, 1),
       dayCols.length,
       datesAboveResources
     );
@@ -786,24 +779,30 @@ class ResourceTimeGridView extends DateComponent {
       daySeries,
       dayRanges
     );
-    const slicedByResource = resources.map((resource) =>
-      this.sliceResourceProps(
-        resource.id,
-        splitProps[resource.id],
-        daySeries,
-        dayRanges
-      )
-    );
+    // Without resources the unassigned bucket is the only column group.
+    const slicedByResource = resources.length
+      ? resources.map((resource) =>
+          this.sliceResourceProps(
+            resource.id,
+            splitProps[resource.id],
+            daySeries,
+            dayRanges
+          )
+        )
+      : [unassignedSliced];
+    // Unassigned background events repeat in every resource, which would
+    // duplicate them when that bucket is already the only column group.
+    const unassignedBg = resources.length ? unassignedSliced : EMPTY_SLICED;
 
     const allDayProps = this.allDayJoiner.join(
       colMapper,
       slicedByResource.map((sliced) => sliced.allDay),
-      unassignedSliced.allDay
+      unassignedBg.allDay
     );
     const timedProps = this.timedJoiner.join(
       colMapper,
       slicedByResource.map((sliced) => sliced.timed),
-      unassignedSliced.timed
+      unassignedBg.timed
     );
 
     const dayHeaderFormat = this.createDayHeaderFormatter(
@@ -828,7 +827,7 @@ class ResourceTimeGridView extends DateComponent {
                     context,
                     dayRanges
                   ),
-                  ...resources.map(() => EMPTY_SEGS)
+                  ...slicedByResource.map(() => EMPTY_SEGS)
                 )
               : null;
 

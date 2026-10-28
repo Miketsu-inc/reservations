@@ -55,11 +55,11 @@ const defaultFormData = {
   is_all_day: false,
 };
 
-function getInitialDateRange(blockedTime, initialStart) {
+function getInitialDateRange(blockedTime, initialStart, initialAllDay) {
   const start = blockedTime?.start ?? initialStart;
   const date = start ? new Date(start) : new Date();
 
-  if (!start || blockedTime?.extendedProps?.allDay) {
+  if (!start || blockedTime?.extendedProps?.allDay || initialAllDay) {
     return { date, fromTime: "09:00", toTime: "17:00" };
   }
 
@@ -86,6 +86,7 @@ export default function BlockedTimePanel({
   blockedTime,
   initialStart,
   initialEmployeeId,
+  initialAllDay = false,
   preferences,
   onDeleted,
   onSubmitted,
@@ -101,7 +102,7 @@ export default function BlockedTimePanel({
     date: initialDate,
     fromTime: initialFromTime,
     toTime: initialToTime,
-  } = getInitialDateRange(blockedTime, initialStart);
+  } = getInitialDateRange(blockedTime, initialStart, initialAllDay);
 
   const [timeOptions, setTimeOptions] = useState(() => {
     const options = originalTimeOptions;
@@ -135,7 +136,7 @@ export default function BlockedTimePanel({
     date: initialDate,
     from_time: initialFromTime,
     to_time: initialToTime,
-    is_all_day: blockedTime?.extendedProps?.allDay ?? false,
+    is_all_day: blockedTime?.extendedProps?.allDay ?? initialAllDay,
   });
 
   const [activeType, setActiveType] = useState(formData.blocked_type_id);

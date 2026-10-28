@@ -50,6 +50,7 @@ export default function CalendarSidePanel({
   data,
   initialStart,
   initialEmployeeId,
+  initialAllDay,
   panelKey,
   onSave,
   onSoftUpdate,
@@ -132,6 +133,7 @@ export default function CalendarSidePanel({
               blockedTime={data}
               initialStart={initialStart}
               initialEmployeeId={initialEmployeeId}
+              initialAllDay={initialAllDay}
               preferences={preferences}
               onClose={onClose}
               onSubmitted={onSave}
