@@ -131,18 +131,13 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		})
 	}
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
-		return err
-	}
-
 	if input.Price != nil {
-		if input.Price.CurrencyCode() != curr {
+		if input.Price.CurrencyCode() != actor.CurrencyCode {
 			return ErrServicePriceCurrencyMismatch
 		}
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		serviceId, err := s.catalogRepo.WithTx(tx).NewService(ctx, domain.Service{
 			Id:            0,
 			MerchantId:    actor.MerchantId,
@@ -375,18 +370,13 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		totalDuration += phase.Duration
 	}
 
-	curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
-		return err
-	}
-
 	if input.Price != nil {
-		if input.Price.CurrencyCode() != curr {
+		if input.Price.CurrencyCode() != actor.CurrencyCode {
 			return ErrServicePriceCurrencyMismatch
 		}
 	}
 
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		existingPhases, err := s.catalogRepo.WithTx(tx).GetServicePhases(ctx, input.Id)
 		if err != nil {
 			return err
@@ -564,17 +554,9 @@ func (s *Service) GetTeamMemberSettings(ctx context.Context, serviceId int) (Get
 		return GetTeamMemberSettingsResult{}, err
 	}
 
-	var currencyCode string
-
+	currencyCode := actor.CurrencyCode
 	if service.Price != nil {
 		currencyCode = service.Price.CurrencyCode()
-	} else {
-		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-		if err != nil {
-			return GetTeamMemberSettingsResult{}, err
-		}
-
-		currencyCode = curr
 	}
 
 	settings, err := s.catalogRepo.GetEmployeeServiceSettings(ctx, actor.MerchantId, serviceId)
@@ -797,16 +779,11 @@ func buildTeamMemberSettingsChanges(service domain.Service, settings []domain.Em
 func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, inputs []UpdateTeamMemberSettingsInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	currencyCode, err := s.merchantRepo.GetMerchantCurrency(ctx, actor.MerchantId)
-	if err != nil {
+	if err := validateTeamMemberSettingsInputs(inputs, actor.CurrencyCode); err != nil {
 		return err
 	}
 
-	if err := validateTeamMemberSettingsInputs(inputs, currencyCode); err != nil {
-		return err
-	}
-
-	err = s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		service, err := s.catalogRepo.WithTx(tx).GetServiceWithPhases(ctx, serviceId, actor.MerchantId)
 		if err != nil {
 			return err

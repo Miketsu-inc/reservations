@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -18,7 +19,7 @@ type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserJwtRefreshVersion(ctx context.Context, userId uuid.UUID) (int, error)
 	GetUserLanguage(ctx context.Context, userId uuid.UUID) (language.Tag, error)
-	GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeAuthInfo, error)
+	GetEmployeeActorInfo(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (EmployeeActorInfo, error)
 	GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]EmployeeAuthInfo, error)
 
 	UpdateUser(ctx context.Context, user UserCore) error
@@ -68,4 +69,12 @@ type EmployeeAuthInfo struct {
 	MerchantUrlName string             `db:"merchant_url_name"`
 	Role            types.EmployeeRole `db:"role"`
 	AvatarImageId   *uuid.UUID         `db:"avatar_image_id"`
+}
+
+type EmployeeActorInfo struct {
+	Id           int
+	Role         types.EmployeeRole
+	SubTier      types.SubTier
+	Timezone     *time.Location
+	CurrencyCode string
 }

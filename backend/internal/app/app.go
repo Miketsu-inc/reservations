@@ -101,7 +101,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, locationRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, imageRepo, transactionManager)
 	locationService := locationSrv.NewService(locationRepo, merchantRepo, transactionManager)
 	favoriteService := favoriteSrv.NewService(favoriteRepo)
-	productService := productSrv.NewService(productRepo, merchantRepo)
+	productService := productSrv.NewService(productRepo)
 	userService := userSrv.NewService(userRepo)
 	mediaService := mediaSrv.NewService(imageRepo, userRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)
 
@@ -127,11 +127,11 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	blockedTimeService.SetEnqueuer(enqueuer)
 	mediaService.SetEnqueuer(enqueuer)
 
-	middlewareManager := middleware.NewManager(merchantRepo, userRepo)
+	middlewareManager := middleware.NewManager(userRepo)
 
 	router := api.NewRouter(&api.Handlers{
 		Auth:              auth.NewHandler(authService, teamService, middlewareManager),
-		Bookings:          bookings.NewHandler(bookingService, middlewareManager),
+		Bookings:          bookings.NewHandler(bookingService),
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
 		PublicMerchants:   publicMerchants.NewHandler(merchantService, catalogService, teamService),
 		MerchantPage:      merchantpage.NewHandler(merchantService),

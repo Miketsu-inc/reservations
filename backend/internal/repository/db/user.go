@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -109,23 +110,27 @@ func (r *userRepository) GetUserLanguage(ctx context.Context, userId uuid.UUID) 
 	return tag, nil
 }
 
-func (r *userRepository) GetEmployeeByUser(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeAuthInfo, error) {
+func (r *userRepository) GetEmployeeActorInfo(ctx context.Context, merchantId uuid.UUID, userId uuid.UUID) (domain.EmployeeActorInfo, error) {
 	query := `
-	select e.id, e.merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, e.role,
-		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id
+	select e.id, e.role, m.subscription_tier, m.timezone, m.currency_code
 	from "Employee" e
 	join "Merchant" m on m.id = e.merchant_id
-	join "User" u on u.id = e.user_id
 	where e.merchant_id = $1 and e.user_id = $2
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, userId)
-	employeeAuthInfo, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.EmployeeAuthInfo])
+	var info domain.EmployeeActorInfo
+	var timezone string
+	err := r.db.QueryRow(ctx, query, merchantId, userId).Scan(&info.Id, &info.Role, &info.SubTier, &timezone, &info.CurrencyCode)
 	if err != nil {
-		return domain.EmployeeAuthInfo{}, fmt.Errorf("GetEmployeeByUser: %w", err)
+		return domain.EmployeeActorInfo{}, fmt.Errorf("GetEmployeeActorInfo: %w", err)
 	}
 
-	return employeeAuthInfo, nil
+	info.Timezone, err = time.LoadLocation(timezone)
+	if err != nil {
+		return domain.EmployeeActorInfo{}, fmt.Errorf("GetEmployeeActorInfo: %w", err)
+	}
+
+	return info, nil
 }
 
 func (r *userRepository) GetEmployeesByUser(ctx context.Context, userId uuid.UUID) ([]domain.EmployeeAuthInfo, error) {

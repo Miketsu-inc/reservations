@@ -458,9 +458,15 @@ func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UU
 	var outPrice currencyx.Price
 
 	if price == nil {
-		curr, err := s.merchantRepo.GetMerchantCurrency(ctx, merchantId)
-		if err != nil {
-			return currencyx.Price{}, err
+		var curr string
+		if actor, ok := actor.GetFromContext(ctx); ok && actor.MerchantId == merchantId {
+			curr = actor.CurrencyCode
+		} else {
+			var err error
+			curr, err = s.merchantRepo.GetMerchantCurrency(ctx, merchantId)
+			if err != nil {
+				return currencyx.Price{}, err
+			}
 		}
 
 		zeroAmount, err := currency.NewAmount("0", curr)
@@ -726,10 +732,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		var seriesVersion *int
 
 		if input.IsRecurring && input.Rrule != nil {
-			merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
-			if err != nil {
-				return err
-			}
+			merchantTz := actor.Timezone
 
 			// recurring bookings have to be stored in local time and converted to UTC during generation
 			fromDateMerchantTz := fromDate.In(merchantTz)
@@ -1011,10 +1014,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return err
 	}
 
-	merchantTz, err := s.merchantRepo.GetMerchantTimezone(ctx, actor.MerchantId)
-	if err != nil {
-		return err
-	}
+	merchantTz := actor.Timezone
 
 	isGroupBooking := booking.IsGroupBooking()
 

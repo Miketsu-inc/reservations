@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -14,28 +13,22 @@ import (
 )
 
 type Handler struct {
-	service    *bookingServ.Service
-	middleware *middleware.Manager
+	service *bookingServ.Service
 }
 
-func NewHandler(s *bookingServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, middleware: m}
+func NewHandler(s *bookingServ.Service) *Handler {
+	return &Handler{service: s}
 }
 
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.JwtAuthentication)
-		r.UseFunc(h.middleware.EmployeeAuthentication)
+	r.Get("/", h.GetBookings)
+	r.Post("/", h.CreateByMerchant)
+	r.Patch("/{id}", h.UpdateByMerchant)
+	r.Delete("/{id}", h.CancelByMerchant)
 
-		r.Get("/", h.GetBookings)
-		r.Post("/", h.CreateByMerchant)
-		r.Patch("/{id}", h.UpdateByMerchant)
-		r.Delete("/{id}", h.CancelByMerchant)
-
-		r.Patch("/{b_id}/participant/{p_id}", h.UpdateParticipantStatus)
-	})
+	r.Patch("/{b_id}/participant/{p_id}", h.UpdateParticipantStatus)
 
 	return r
 }

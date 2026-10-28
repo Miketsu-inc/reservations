@@ -20,12 +20,7 @@ func (m *Manager) Subscription(tiers ...types.SubTier) func(next http.Handler) h
 
 			actor := actor.MustGetFromContext(r.Context())
 
-			tier, err := m.merchantRepo.GetMerchantSubscriptionTier(r.Context(), actor.MerchantId)
-			if err != nil {
-				return err
-			}
-
-			if !slices.Contains(tiers, tier) {
+			if !slices.Contains(tiers, actor.SubTier) {
 				return &apperr.APIError{
 					Status: http.StatusForbidden,
 					Err:    ErrSubscriptionAccessDenied,
