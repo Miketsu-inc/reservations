@@ -34,3 +34,15 @@ export function getSafeRedirectUrl(value) {
     return null;
   }
 }
+
+// A deleted person comes back without a name, so the tooltip needs a fallback.
+export function toAvatar(person, fallbackName = "") {
+  const name = [person.first_name, person.last_name].filter(Boolean).join(" ");
+
+  return {
+    id: person.id,
+    img: person.avatar_url,
+    initials: `${person.first_name?.[0] ?? ""}${person.last_name?.[0] ?? ""}`,
+    name: name || fallbackName,
+  };
+}

@@ -1,12 +1,14 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
+  AvatarStack,
   CheckBox,
   Icon,
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
+import { toAvatar } from "@reservations/lib";
 import { useRef, useState } from "react";
 
 function getName(member) {
@@ -92,15 +94,9 @@ export default function CalendarMemberFilter({
             transition-[border-color,box-shadow] duration-150
             focus-visible:ring-3 data-popup-open:ring-3 sm:w-48"
         >
-          <div className="flex shrink-0 -space-x-2">
-            {selectedMembers.slice(0, 3).map((member) => (
-              <MemberAvatar
-                key={member.id}
-                member={member}
-                styles="size-6! text-[10px]! border border-bg-raised"
-              />
-            ))}
-          </div>
+          <AvatarStack
+            avatars={selectedMembers.map((member) => toAvatar(member))}
+          />
           <span className="text-fg min-w-0 flex-1 truncate">
             {getTriggerText(selectedMembers, isEveryone, currentEmployeeId)}
           </span>

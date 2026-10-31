@@ -25,9 +25,7 @@ function getPhaseBackground(phases, start, end) {
 }
 
 export default function CalendarEventContent({ eventInfo }) {
-  const { event, timeText, view } = eventInfo;
-  const viewType = view.type;
-  const isListView = viewType.startsWith("list");
+  const { event, timeText } = eventInfo;
   const setBackground = useCallback(
     (label) => {
       const phases = event.extendedProps.phases;
@@ -59,19 +57,6 @@ export default function CalendarEventContent({ eventInfo }) {
     },
     [event]
   );
-
-  if (isListView) {
-    return (
-      <div className="flex size-full min-w-0 items-center gap-4">
-        {timeText && (
-          <span className="text-fg-muted w-28 shrink-0 text-sm">
-            {timeText}
-          </span>
-        )}
-        <span className="min-w-0 truncate font-medium">{event.title}</span>
-      </div>
-    );
-  }
 
   return (
     <div

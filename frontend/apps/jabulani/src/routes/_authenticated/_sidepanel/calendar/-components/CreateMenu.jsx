@@ -42,16 +42,17 @@ export default function CreateMenu({
       <PopoverTrigger asChild>
         <Button
           variant="primary"
-          styles={` ${
+          styles={
             isFloating
-              ? "fixed bottom-10 right-5 z-10 p-3 shadow-xl"
-              : "py-2 pr-3 pl-2.5 text-sm shrink-0"
-            } `}
+              ? "fixed right-4 bottom-6 z-10 size-14 rounded-full! shadow-lg"
+              : "shrink-0 py-2 pr-3 pl-2.5 text-sm"
+          }
           buttonText={isFloating ? "" : "Create"}
+          aria-label={isFloating ? "Create" : undefined}
         >
           <Icon
             icon={PlusSignIcon}
-            styles={isFloating ? "size-7" : "size-4 mr-1.5"}
+            styles={isFloating ? "size-6" : "size-4 mr-1.5"}
           />
         </Button>
       </PopoverTrigger>

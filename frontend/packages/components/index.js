@@ -1,4 +1,5 @@
 export { default as Avatar } from "./Avatar.jsx";
+export { default as AvatarStack } from "./AvatarStack.jsx";
 export { default as AvatarUpload } from "./AvatarUpload.jsx";
 export { default as Breadcrumbs } from "./Breadcrumbs.jsx";
 export { default as Button } from "./Button.jsx";

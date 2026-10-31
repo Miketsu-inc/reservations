@@ -1,7 +1,6 @@
 import { Calendar as FullCalendar } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
-import themePlugin from "@fullcalendar/react/themes/breezy";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   Avatar,
@@ -35,6 +34,7 @@ import {
   useRef,
   useState,
 } from "react";
+import AgendaEventContent from "./AgendaEventContent";
 import CalendarEventContent from "./CalendarEventContent";
 import CalendarEventPreview from "./CalendarEventPreview";
 import CalendarMemberFilter from "./CalendarMemberFilter";
@@ -42,6 +42,8 @@ import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
+import CalendarSidePanel from "./CalendarSidePanel";
+import calendarTheme from "./calendarTheme";
 import {
   canViewTeamCalendar,
   getCalendarRange,
@@ -50,7 +52,6 @@ import {
   hasTeamColumns,
   resolveCalendarRange,
 } from "./calendarViews";
-import CalendarSidePanel from "./CalendarSidePanel";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 import resourceTimeGridPlugin from "./resourceTimeGridPlugin";
 
@@ -206,6 +207,28 @@ function ResourceHeader({ resource }) {
   );
 }
 
+function ListDayHeader({ info }) {
+  const month = info.textParts.find((part) => part.type === "month")?.value;
+
+  return (
+    <>
+      <span
+        className={`shrink-0 pr-1 text-xl font-semibold tabular-nums
+          ${info.isToday ? "text-fg-primary" : ""}`}
+      >
+        {info.date.getDate()}
+      </span>
+      <span
+        className={`font-semibold capitalize
+          ${info.isToday ? "text-fg-primary" : ""}`}
+      >
+        {info.weekdayText}
+      </span>
+      <span className="text-fg-muted text-sm">{month}</span>
+    </>
+  );
+}
+
 /**
  * Dropping an event into another employee's column only moves its resource,
  * so mirror the change into the employee fields the side panels read.
@@ -263,6 +286,26 @@ function getInitialCalendarDate(search) {
   return dateStringToLocalDate(search.start) ?? new Date();
 }
 
+function findScroller(el, child) {
+  let scroller = child;
+  while (scroller && scroller !== el) {
+    if (["auto", "scroll"].includes(getComputedStyle(scroller).overflowY))
+      return scroller;
+    scroller = scroller.parentElement;
+  }
+  return null;
+}
+
+// The header is sticky, so measure its day instead.
+function scrollToDay(header) {
+  const day = header.parentElement;
+  const scroller = findScroller(document.body, day);
+  if (!scroller) return;
+
+  scroller.scrollTop +=
+    day.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+}
+
 /**
  * Centers the current time in day/week views on mount and when the grid resizes.
  * Measures the visible grid height to offset FullCalendar's top-aligned scrolling.
@@ -271,13 +314,8 @@ function getInitialCalendarDate(search) {
 function observeCurrentTime({ el, view }) {
   if (!timeGridViews.has(view.type)) return;
 
-  let scroller = el.querySelector("[data-time]");
-  while (scroller && scroller !== el) {
-    if (["auto", "scroll"].includes(getComputedStyle(scroller).overflowY))
-      break;
-    scroller = scroller.parentElement;
-  }
-  if (!scroller || scroller === el) return;
+  const scroller = findScroller(el, el.querySelector("[data-time]"));
+  if (!scroller) return;
 
   // Runs synchronously, since a view switch paints the new view before the
   // next animation frame. FullCalendar keeps the requested time and reapplies
@@ -375,6 +413,14 @@ export default function Calendar({ router, route, search }) {
       .filter((id) => memberFilter.includes(id));
     return ids.length > 0 ? ids : null;
   }, [canViewTeam, employeeId, memberFilter, teamMembers]);
+
+  const membersById = useMemo(
+    () =>
+      canViewTeam
+        ? new Map(teamMembers.map((member) => [member.id, member]))
+        : null,
+    [canViewTeam, teamMembers]
+  );
 
   const selectedEmployeeIds = useMemo(
     () => filteredEmployeeIds ?? teamMembers.map((member) => member.id),
@@ -749,7 +795,7 @@ export default function Calendar({ router, route, search }) {
         <FullCalendar
           ref={calendarRef}
           plugins={[
-            themePlugin,
+            calendarTheme,
             interactionPlugin,
             resourceTimeGridPlugin,
             listPlugin,
@@ -766,6 +812,10 @@ export default function Calendar({ router, route, search }) {
           initialView={resolvedView}
           initialDate={getInitialCalendarDate(search)}
           height="100%"
+          // Lets the agenda sit on the page instead of a white card.
+          className={
+            resolvedView === "listWeek" ? "bg-transparent!" : undefined
+          }
           headerToolbar={false}
           viewDidMount={(info) => {
             calendarScrollRef.current = observeCurrentTime(info);
@@ -777,19 +827,28 @@ export default function Calendar({ router, route, search }) {
           events={calendarEvents}
           blockEventClass="calendar-event bg-(--fc-event-color)!"
           blockEventInnerClass="text-(--fc-event-contrast-color)!"
-          eventContent={(eventInfo) => (
-            <CalendarEventPreview
-              event={eventInfo.event}
-              timeFormat={preferences.time_format}
-              canOpen={() =>
-                !eventInfo.isMirror &&
-                !eventInfo.isDragging &&
-                !isDraggingRef.current
-              }
-            >
-              <CalendarEventContent eventInfo={eventInfo} />
-            </CalendarEventPreview>
-          )}
+          eventContent={(eventInfo) =>
+            eventInfo.view.type === "listWeek" ? (
+              // The agenda already shows everything the preview would.
+              <AgendaEventContent
+                eventInfo={eventInfo}
+                membersById={membersById}
+                timeFormat={preferences.time_format}
+              />
+            ) : (
+              <CalendarEventPreview
+                event={eventInfo.event}
+                timeFormat={preferences.time_format}
+                canOpen={() =>
+                  !eventInfo.isMirror &&
+                  !eventInfo.isDragging &&
+                  !isDraggingRef.current
+                }
+              >
+                <CalendarEventContent eventInfo={eventInfo} />
+              </CalendarEventPreview>
+            )
+          }
           datesSet={({ view }) => {
             calendarScrollRef.current?.center();
             setCalendarTitle(view.title);
@@ -891,7 +950,34 @@ export default function Calendar({ router, route, search }) {
               duration: { days: 2 },
             },
             listWeek: {
-              displayEventEnd: true,
+              borderless: true,
+              noEventsText: "Nothing scheduled this week",
+              noEventsClass: "flex flex-1 items-center justify-center",
+              noEventsInnerClass: "text-fg-muted text-sm",
+              listDayFormat: {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+              },
+              listDayHeaderContent: (info) => <ListDayHeader info={info} />,
+              listDayHeaderDidMount: ({ el, isToday }) => {
+                if (isToday) scrollToDay(el);
+              },
+              // Leaves room for the floating create button.
+              listDaysClass: "flex flex-col gap-3 pb-24",
+              listDayClass: "flex flex-col",
+              listDayHeaderClass: "bg-bg z-10 pt-1 pb-2",
+              // FullCalendar always renders a second date line, so hide it.
+              listDayHeaderInnerClass: (info) =>
+                info.level ? "hidden" : "flex items-baseline gap-2",
+              listDayBodyClass: "flex flex-col gap-2",
+              listItemEventClass: (info) =>
+                `relative flex cursor-pointer overflow-hidden rounded-xl border
+                border-border bg-bg-raised py-3 pr-4 pl-5 shadow-card
+                hover:bg-hover ${info.isPast ? "opacity-60" : ""}`,
+              listItemEventBeforeClass:
+                "absolute inset-y-0 left-0 w-1.5 bg-(--fc-event-color)",
+              listItemEventInnerClass: "min-w-0 flex-1",
             },
             resourceTimeGrid: {
               dayMinWidth: 120,
