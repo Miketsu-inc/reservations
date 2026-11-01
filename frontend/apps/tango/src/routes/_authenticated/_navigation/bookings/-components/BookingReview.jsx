@@ -31,7 +31,7 @@ export default function BookingReview({ booking }) {
 
   const toDate = booking?.to_date ? new Date(booking.to_date) : null;
   const isWithin15Days = toDate
-    ? Date.now() - toDate.getTime() <= FIFTEEN_DAYS_MS
+    ? new Date() - toDate <= FIFTEEN_DAYS_MS
     : false;
 
   const review = booking.review;
