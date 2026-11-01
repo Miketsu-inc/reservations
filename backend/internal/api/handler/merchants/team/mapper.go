@@ -67,11 +67,10 @@ func mapToGetInvitationsResp(in []domain.EmployeeInvitation) []getInvitationsRes
 
 func mapToGetPreferencesResp(in domain.EmployeePreferences) getPreferencesResp {
 	return getPreferencesResp{
-		FirstDayOfWeek:     in.FirstDayOfWeek,
-		TimeFormat:         in.TimeFormat,
-		CalendarView:       in.CalendarView,
-		CalendarViewMobile: in.CalendarViewMobile,
-		TimeFrequency:      in.TimeFrequency.Format("15:04"),
+		FirstDayOfWeek: in.FirstDayOfWeek,
+		TimeFormat:     in.TimeFormat,
+		CalendarView:   in.CalendarView,
+		TimeFrequency:  in.TimeFrequency.Format("15:04"),
 	}
 }
 
@@ -82,11 +81,10 @@ func mapToUpdatePreferencesInput(in updatePreferencesReq) (teamServ.UpdatePrefer
 	}
 
 	return teamServ.UpdatePreferencesInput{
-		FirstDayOfWeek:     in.FirstDayOfWeek,
-		TimeFormat:         in.TimeFormat,
-		CalendarView:       in.CalendarView,
-		CalendarViewMobile: in.CalendarViewMobile,
-		TimeFrequency:      timeFreq,
+		FirstDayOfWeek: in.FirstDayOfWeek,
+		TimeFormat:     in.TimeFormat,
+		CalendarView:   in.CalendarView,
+		TimeFrequency:  timeFreq,
 	}, nil
 }
 

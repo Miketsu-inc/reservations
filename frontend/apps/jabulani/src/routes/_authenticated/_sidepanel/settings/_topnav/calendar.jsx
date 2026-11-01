@@ -8,16 +8,16 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { canViewTeamCalendar } from "../../calendar/-components/calendarViews";
 import RadioInputGroup from "./-components/RadioInputGroup";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
 
 const calendarViewOptions = [
-  { value: "month", label: "Month View" },
-  { value: "week", label: "Week View" },
-  { value: "day", label: "Day View" },
-  { value: "list", label: "List View" },
+  { value: "day", label: "Day" },
+  { value: "2day", label: "2 Days" },
+  { value: "week", label: "Week" },
 ];
 
 const TimeFrequencyOptions = [
@@ -50,7 +50,6 @@ const defaultPreferences = {
   first_day_of_week: "",
   time_format: "",
   calendar_view: "",
-  calendar_view_mobile: "",
   time_frequency: "",
 };
 
@@ -73,7 +72,7 @@ export const Route = createFileRoute(
 function CalendarPage() {
   const [unsavedChanges, setUnsavedChanges] = useState({});
 
-  const { merchantId, employeeId } = useAuth();
+  const { merchantId, employeeId, role } = useAuth();
   const { showToast } = useToast();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
@@ -163,35 +162,26 @@ function CalendarPage() {
         </div>
       </SettingsSection>
 
-      <SettingsSection
-        title="Default views"
-        description="Set the view that opens first on each device."
-      >
-        <div className="grid gap-6 md:grid-cols-2">
-          <Select
-            options={calendarViewOptions}
-            value={preferences.calendar_view}
-            labelText="Desktop default view"
-            required={false}
-            onSelect={(option) =>
-              handleInputChange("calendar_view", option.value)
-            }
-            placeholder=""
-            styles="font-normal"
-          />
-          <Select
-            options={calendarViewOptions}
-            value={preferences.calendar_view_mobile}
-            labelText="Mobile default view"
-            required={false}
-            onSelect={(option) =>
-              handleInputChange("calendar_view_mobile", option.value)
-            }
-            placeholder=""
-            styles="font-normal"
-          />
-        </div>
-      </SettingsSection>
+      {canViewTeamCalendar(role) && (
+        <SettingsSection
+          title="Default view"
+          description="Set the view that opens first on desktop."
+        >
+          <div className="grid gap-6 md:grid-cols-2">
+            <Select
+              options={calendarViewOptions}
+              value={preferences.calendar_view}
+              labelText="Desktop default view"
+              required={false}
+              onSelect={(option) =>
+                handleInputChange("calendar_view", option.value)
+              }
+              placeholder=""
+              styles="font-normal"
+            />
+          </div>
+        </SettingsSection>
+      )}
 
       <SettingsSection
         title="Calendar grid"

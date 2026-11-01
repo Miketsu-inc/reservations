@@ -49,6 +49,8 @@ export default function CalendarSidePanel({
   type,
   data,
   initialStart,
+  initialEmployeeId,
+  initialAllDay,
   panelKey,
   onSave,
   onSoftUpdate,
@@ -123,12 +125,15 @@ export default function CalendarSidePanel({
               categories={services}
               customers={customers}
               initialStart={initialStart}
+              initialEmployeeId={initialEmployeeId}
             />
           )}
           {type === "blocked-time" && (
             <BlockedTimePanel
               blockedTime={data}
               initialStart={initialStart}
+              initialEmployeeId={initialEmployeeId}
+              initialAllDay={initialAllDay}
               preferences={preferences}
               onClose={onClose}
               onSubmitted={onSave}

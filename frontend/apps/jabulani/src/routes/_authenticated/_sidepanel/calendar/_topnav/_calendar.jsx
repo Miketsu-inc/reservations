@@ -2,10 +2,11 @@ import { Loading, ServerError } from "@reservations/components";
 import {
   businessHoursQueryOptions,
   calculateStartEndTime,
+  calendarTeamMembersQueryOptions,
   dateStringToLocalDate,
   isDurationValid,
   preferencesQueryOptions,
-  SCREEN_SM,
+  SCREEN_LG,
 } from "@reservations/lib";
 import {
   createFileRoute,
@@ -15,24 +16,17 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { calendarBookingsQueryOptions } from "../-components/calendarQueries";
+import {
+  canViewTeamCalendar,
+  getCalendarRanges,
+  resolveCalendarRange,
+} from "../-components/calendarViews";
 
-const Calendar = lazy(() => import("../-components/Calendar"));
+const importCalendar = () => import("../-components/Calendar");
+const Calendar = lazy(importCalendar);
 
 function validateDateString(dateStr) {
   return dateStringToLocalDate(dateStr) ? dateStr : undefined;
-}
-
-function mapCalendarView(view, mobileView) {
-  const viewMapping = {
-    month: "dayGridMonth",
-    week: "timeGridWeek",
-    day: "timeGridDay",
-    list: "listWeek",
-  };
-
-  const preferredView = window.innerWidth < SCREEN_SM ? mobileView : view;
-
-  return viewMapping[preferredView] ?? "timeGridWeek";
 }
 
 export const Route = createFileRoute(
@@ -45,28 +39,28 @@ export const Route = createFileRoute(
     location,
     context: {
       queryClient,
-      authContext: { merchantId, employeeId },
+      authContext: { merchantId, employeeId, role },
     },
   }) => {
-    const preferences = await queryClient.ensureQueryData(
-      preferencesQueryOptions(merchantId, employeeId)
+    // pre-import the calendar for faster loading
+    importCalendar();
+
+    const [preferences] = await Promise.all([
+      queryClient.ensureQueryData(
+        preferencesQueryOptions(merchantId, employeeId)
+      ),
+      canViewTeamCalendar(role) &&
+        queryClient.ensureQueryData(
+          calendarTeamMembersQueryOptions(merchantId)
+        ),
+      queryClient.ensureQueryData(businessHoursQueryOptions(merchantId)),
+    ]);
+
+    const view = resolveCalendarRange(
+      getCalendarRanges(role, window.innerWidth < SCREEN_LG),
+      search.view,
+      preferences?.calendar_view
     );
-
-    const defaultView = preferences?.calendar_view
-      ? mapCalendarView(
-          preferences.calendar_view,
-          preferences.calendar_view_mobile
-        )
-      : "timeGridWeek";
-
-    const view = [
-      "dayGridMonth",
-      "timeGridWeek",
-      "timeGridDay",
-      "listWeek",
-    ].includes(search.view)
-      ? search.view
-      : defaultView;
 
     let start = validateDateString(search.start);
     let end = validateDateString(search.end);
@@ -92,7 +86,6 @@ export const Route = createFileRoute(
     await queryClient.ensureQueryData(
       calendarBookingsQueryOptions(merchantId, start, end)
     );
-    await queryClient.ensureQueryData(businessHoursQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => <ServerError error={error.message} />,
 });

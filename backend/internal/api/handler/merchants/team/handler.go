@@ -244,11 +244,10 @@ func (h *Handler) RevokeInvitation(w http.ResponseWriter, r *http.Request) error
 }
 
 type getPreferencesResp struct {
-	FirstDayOfWeek     string `json:"first_day_of_week"`
-	TimeFormat         string `json:"time_format"`
-	CalendarView       string `json:"calendar_view"`
-	CalendarViewMobile string `json:"calendar_view_mobile"`
-	TimeFrequency      string `json:"time_frequency"`
+	FirstDayOfWeek string `json:"first_day_of_week"`
+	TimeFormat     string `json:"time_format"`
+	CalendarView   string `json:"calendar_view"`
+	TimeFrequency  string `json:"time_frequency"`
 }
 
 func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) error {
@@ -268,11 +267,10 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) error {
 }
 
 type updatePreferencesReq struct {
-	FirstDayOfWeek     string `json:"first_day_of_week"`
-	TimeFormat         string `json:"time_format"`
-	CalendarView       string `json:"calendar_view"`
-	CalendarViewMobile string `json:"calendar_view_mobile"`
-	TimeFrequency      string `json:"time_frequency"`
+	FirstDayOfWeek string `json:"first_day_of_week"`
+	TimeFormat     string `json:"time_format"`
+	CalendarView   string `json:"calendar_view"`
+	TimeFrequency  string `json:"time_frequency"`
 }
 
 func (h *Handler) UpdatePreferences(w http.ResponseWriter, r *http.Request) error {

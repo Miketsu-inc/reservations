@@ -25,17 +25,14 @@ function getPhaseBackground(phases, start, end) {
 }
 
 export default function CalendarEventContent({ eventInfo }) {
-  const { event, timeText, view } = eventInfo;
-  const viewType = view.type;
-  const isListView = viewType.startsWith("list");
-  const isMonthView = viewType === "dayGridMonth";
+  const { event, timeText } = eventInfo;
+
   const setBackground = useCallback(
     (label) => {
       const phases = event.extendedProps.phases;
       if (
         !label ||
         event.allDay ||
-        !viewType.startsWith("timeGrid") ||
         !phases?.some((phase) => phase.phase_type === "wait")
       )
         return;
@@ -59,27 +56,13 @@ export default function CalendarEventContent({ eventInfo }) {
       );
       return () => element.style.removeProperty("background");
     },
-    [event, viewType]
+    [event]
   );
-
-  if (isListView) {
-    return (
-      <div className="flex size-full min-w-0 items-center gap-4">
-        {timeText && (
-          <span className="text-fg-muted w-28 shrink-0 text-sm">
-            {timeText}
-          </span>
-        )}
-        <span className="min-w-0 truncate font-medium">{event.title}</span>
-      </div>
-    );
-  }
 
   return (
     <div
       ref={setBackground}
-      className={`flex size-full min-w-0 overflow-hidden
-        ${isMonthView ? "flex-row items-center gap-1" : "flex-col"}`}
+      className="flex size-full min-w-0 flex-col overflow-hidden"
     >
       {timeText && (
         <span className="shrink-0 text-xs leading-tight font-medium">

@@ -57,6 +57,7 @@ export default function NewBookingPanel({
   categories,
   customers,
   initialStart,
+  initialEmployeeId,
 }) {
   const [isCustomerSectionExpanded, setIsCustomerSectionExpanded] =
     useState(false);
@@ -68,7 +69,7 @@ export default function NewBookingPanel({
   const { merchantId, employeeId } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingData, setBookingData] = useState(() =>
-    createInitialBookingData(initialStart, employeeId)
+    createInitialBookingData(initialStart, initialEmployeeId ?? employeeId)
   );
   const [recurData, setRecurData] = useState(() =>
     createDefaultRecurrenceData(bookingData.date)

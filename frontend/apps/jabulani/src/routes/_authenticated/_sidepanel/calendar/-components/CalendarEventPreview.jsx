@@ -5,7 +5,7 @@ import {
   User03Icon,
 } from "@hugeicons/core-free-icons";
 import {
-  Avatar,
+  AvatarStack,
   Icon,
   PreviewCard,
   PreviewCardContent,
@@ -14,15 +14,17 @@ import {
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
-  getBookingStatusStyles,
   formatDuration,
+  getBookingStatusStyles,
   getDisplayPrice,
   timeStringFromDate,
+  toAvatar,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -117,55 +119,6 @@ function formatDate(date) {
   });
 }
 
-function getPersonName(person) {
-  return [person.first_name, person.last_name].filter(Boolean).join(" ");
-}
-
-function AvatarStack({
-  people,
-  limit,
-  styles,
-  avatarStyles,
-  overflowStyles,
-  fallbackTitle,
-}) {
-  const visiblePeople = people.slice(0, limit);
-  const remainingPeople = people.length - visiblePeople.length;
-
-  return (
-    <div className={`flex shrink-0 ${styles}`} role="list">
-      {visiblePeople.map((person) => {
-        const name = getPersonName(person);
-
-        return (
-          <span
-            key={person.id}
-            className="rounded-full"
-            role="listitem"
-            title={name || fallbackTitle}
-          >
-            <Avatar
-              img={person.avatar_url}
-              initials={`${person.first_name[0]}${person.last_name[0]}`}
-              alt={name}
-              styles={avatarStyles}
-            />
-          </span>
-        );
-      })}
-      {remainingPeople > 0 && (
-        <div
-          className={`${overflowStyles} border-bg-raised bg-hover flex
-          items-center justify-center rounded-full border-2 font-semibold`}
-          role="listitem"
-        >
-          +{remainingPeople}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ParticipantAvatars({ participants }) {
   if (participants.length === 0) {
     return (
@@ -180,12 +133,8 @@ function ParticipantAvatars({ participants }) {
 
   return (
     <AvatarStack
-      people={participants}
-      limit={3}
-      styles="-space-x-4"
-      avatarStyles="size-10! rounded-full! border-2 border-bg-raised text-xs!"
-      overflowStyles="size-10 text-xs"
-      fallbackTitle="Customer"
+      avatars={participants.map((person) => toAvatar(person, "Customer"))}
+      size="lg"
     />
   );
 }
@@ -238,13 +187,11 @@ function AssignedTeam({ employeeIds, isPending, teamMembers }) {
           <TeamMemberAvatarSkeleton count={employeeIds.length} />
         ) : (
           <AvatarStack
-            people={assignedMembers}
-            limit={4}
-            styles="-space-x-3"
-            avatarStyles="size-8! border-2 border-bg-raised
-              text-[11px]!"
-            overflowStyles="size-8 text-[11px]"
-            fallbackTitle="Team member"
+            avatars={assignedMembers.map((member) =>
+              toAvatar(member, "Team member")
+            )}
+            max={4}
+            size="md"
           />
         )}
         <span className="text-sm font-medium">Team members</span>
@@ -259,7 +206,7 @@ function BookingPreview({ event, timeFormat }) {
   const isGroupBooking = extendedProps.booking_type !== "appointment";
   const customerName =
     participants.length > 0
-      ? getPersonName(participants[0]) || "Customer"
+      ? toAvatar(participants[0], "Customer").name
       : "Walk-in";
   const additionalParticipants = participants.length - 1;
   const status = extendedProps.booking_status;
@@ -340,19 +287,11 @@ function BlockedTimePreview({ event, isOpen, timeFormat }) {
 
   return (
     <div className="w-72 max-w-[calc(100vw-2rem)] overflow-hidden">
-      <div className="flex items-center gap-3 p-4">
-        {extendedProps.icon && (
-          <div
-            className="bg-hover flex size-10 shrink-0 items-center
-              justify-center rounded-full text-lg"
-          >
-            {extendedProps.icon}
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="truncate font-semibold">{extendedProps.name}</p>
-          <p className="text-fg-muted mt-0.5 text-xs">Blocked time</p>
-        </div>
+      <div className="p-4">
+        <p className="truncate font-semibold">
+          {extendedProps.name} {extendedProps.icon}
+        </p>
+        <p className="text-fg-muted mt-0.5 text-xs">Blocked time</p>
       </div>
 
       <div className="border-border flex flex-col gap-2.5 border-t p-4">
@@ -379,7 +318,7 @@ export default function CalendarEventPreview({
   canOpen,
 }) {
   const isBlockedTime = event.extendedProps.type === "blocked";
-  const previewId = `${isBlockedTime ? "blocked" : "booking"}:${event.id}`;
+  const previewId = useId();
   const isOpen = usePreviewOpen(previewId);
   const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);
   const suppressOpenRef = useRef(false);

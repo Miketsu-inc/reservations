@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import {
   Avatar,
+  AvatarStack,
   Card,
   Icon,
   Popover,
@@ -25,12 +26,11 @@ import {
   getDaySuffix,
   getDisplayPrice,
   timeStringFromDate,
+  toAvatar,
 } from "@reservations/lib";
 
 export function ParticipantsCard({ participants, onClick, maxParticipants }) {
   const hasParticipants = participants.length > 0;
-  const displayedParticipants = participants.slice(0, 3);
-  const remainingParticipants = participants.length - 3;
 
   return (
     <button
@@ -41,25 +41,14 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
     >
       {hasParticipants ? (
         <div className="flex items-center gap-3">
-          <div className="flex -space-x-4">
-            {displayedParticipants.map((participant) => (
-              <Avatar
-                key={participant.customer_id}
-                img={participant.avatar_url}
-                initials={participant.first_name[0] + participant.last_name[0]}
-                styles="size-8! text-[11px]! border-2 border-bg"
-              />
-            ))}
-            {remainingParticipants > 0 && (
-              <div
-                className="border-bg bg-bg-inactive text-fg-muted flex size-8
-                  items-center justify-center rounded-full border-2 text-[11px]
-                  font-semibold"
-              >
-                +{remainingParticipants}
-              </div>
-            )}
-          </div>
+          <AvatarStack
+            avatars={participants.map((participant) => ({
+              ...toAvatar(participant, "Customer"),
+              id: participant.customer_id,
+            }))}
+            size="md"
+            borderColor="border-bg-input"
+          />
 
           <div className="flex flex-col items-start gap-0.5">
             <span className="text-fg font-medium">

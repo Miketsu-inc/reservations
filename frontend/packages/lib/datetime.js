@@ -55,7 +55,7 @@ export function dateAndTimeStringsToLocalDate(dateStr, timeStr) {
 }
 
 export function calculateStartEndTime(
-  view,
+  range,
   firstDayOfWeek,
   referenceDate = new Date()
 ) {
@@ -69,30 +69,9 @@ export function calculateStartEndTime(
   );
   let start, end;
 
-  switch (view) {
-    case "dayGridMonth": {
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOffset = (monthStart.getDay() - weekStartsOn + 7) % 7;
-      start = new Date(
-        monthStart.getFullYear(),
-        monthStart.getMonth(),
-        monthStart.getDate() - startOffset
-      );
-      const monthEnd = new Date(
-        monthStart.getFullYear(),
-        monthStart.getMonth() + 1,
-        0
-      );
-      const endOffset = (weekStartsOn + 6 - monthEnd.getDay() + 7) % 7;
-      end = new Date(
-        monthEnd.getFullYear(),
-        monthEnd.getMonth(),
-        monthEnd.getDate() + endOffset + 1
-      );
-      break;
-    }
-    case "timeGridWeek":
-    case "listWeek":
+  switch (range) {
+    case "week":
+    case "agenda":
       if (now.getDay() === 0) {
         if (weekStartsOn === 1) {
           end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -122,12 +101,20 @@ export function calculateStartEndTime(
         );
       }
       break;
-    case "timeGridDay":
+    case "day":
       start = now;
       end = new Date(
         start.getFullYear(),
         start.getMonth(),
         start.getDate() + 1
+      );
+      break;
+    case "2day":
+      start = now;
+      end = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + 2
       );
       break;
   }
@@ -140,7 +127,7 @@ export function calculateStartEndTime(
   };
 }
 
-export function isDurationValid(view, startStr, endStr) {
+export function isDurationValid(range, startStr, endStr) {
   const start = dateStringToLocalDate(startStr);
   const end = dateStringToLocalDate(endStr);
 
@@ -153,32 +140,17 @@ export function isDurationValid(view, startStr, endStr) {
 
   const days = diff / (1000 * 60 * 60 * 24);
 
-  switch (view) {
-    // The maximum number of weeks displayed in the calendar in a month is 6
-    case "dayGridMonth":
-      return days >= 28 && days <= 42;
-    case "timeGridWeek":
-    case "listWeek":
+  switch (range) {
+    case "week":
+    case "agenda":
       return days === 7;
-    case "timeGridDay":
+    case "day":
       return days === 1;
+    case "2day":
+      return days === 2;
     default:
       return false;
   }
-}
-
-export function getMonthFromCalendarStart(dateStr) {
-  const date = dateStringToLocalDate(dateStr);
-
-  if (!date) return undefined;
-
-  if (date.getDate() <= 7) {
-    return formatToDateString(date);
-  }
-
-  return formatToDateString(
-    new Date(date.getFullYear(), date.getMonth() + 1, 1)
-  );
 }
 
 export function getDaySuffix(day) {

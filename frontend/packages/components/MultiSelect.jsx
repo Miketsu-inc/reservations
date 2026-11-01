@@ -1,6 +1,7 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar.jsx";
+import AvatarStack from "./AvatarStack.jsx";
 import CheckBox from "./CheckBox.jsx";
 import Icon from "./Icon.jsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -281,37 +282,24 @@ function TriggerContent({
     );
   }
 
-  const displayedOptions = selectedOptions.slice(0, 2);
-  const remainingCount = selectedOptions.length - 2;
-
-  let text = `${selectedOptions.length} ${displayText} selected`;
+  let text = `${selectedOptions.length} ${displayText}s selected`;
   if (allSelected) {
-    text = `All ${displayText}`;
+    text = `All ${displayText}s`;
   } else if (selectedOptions.length === 1) {
     text = selectedOptions[0].label;
   }
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
-      <div className="flex shrink-0 -space-x-3">
-        {displayedOptions.map((option) => (
-          <Avatar
-            key={option.value}
-            img={option.img}
-            initials={option.initials || option.label?.substring(0, 2)}
-            styles="size-6! text-[10px]! border border-bg-raised"
-          />
-        ))}
-        {remainingCount > 0 && (
-          <div
-            className="border-bg-raised bg-bg-sunken text-fg-muted flex size-6
-              items-center justify-center rounded-full border-2 text-[10px]
-              font-semibold"
-          >
-            +{remainingCount}
-          </div>
-        )}
-      </div>
+      <AvatarStack
+        avatars={selectedOptions.map((option) => ({
+          id: option.value,
+          img: option.img,
+          initials: option.initials || option.label?.substring(0, 2),
+          name: option.label,
+        }))}
+        max={2}
+      />
       <span
         className={`truncate text-sm ${
           disabled ? "text-fg-disabled" : "text-fg"

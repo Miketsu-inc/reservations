@@ -1,4 +1,8 @@
-import { CalendarAdd01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import {
+  CalendarAdd01Icon,
+  CalendarBlock02Icon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Button,
   Icon,
@@ -15,9 +19,11 @@ function CreateOptions({ onCreateBlockedTime, onCreateBooking }) {
         *:cursor-pointer *:rounded-lg *:p-2 *:outline-hidden"
     >
       <button onClick={onCreateBooking} className="flex items-center gap-2">
-        <Icon icon={CalendarAdd01Icon} styles="size-5 text-fg-muted" /> Booking
+        <Icon icon={CalendarAdd01Icon} styles="size-5 text-fg-muted" />
+        Booking
       </button>
-      <button className="text-left" onClick={onCreateBlockedTime}>
+      <button onClick={onCreateBlockedTime} className="flex items-center gap-2">
+        <Icon icon={CalendarBlock02Icon} styles="size-5 text-fg-muted" />
         Blocked Time
       </button>
     </div>
@@ -36,16 +42,17 @@ export default function CreateMenu({
       <PopoverTrigger asChild>
         <Button
           variant="primary"
-          styles={` ${
+          styles={
             isFloating
-              ? "fixed bottom-10 right-5 z-10 p-3 shadow-xl"
-              : "py-2 pr-3 pl-2.5 text-sm mr-2"
-            } `}
+              ? "fixed right-4 bottom-6 z-10 size-14 rounded-full! shadow-lg"
+              : "shrink-0 py-2 pr-3 pl-2.5 text-sm"
+          }
           buttonText={isFloating ? "" : "Create"}
+          aria-label={isFloating ? "Create" : undefined}
         >
           <Icon
             icon={PlusSignIcon}
-            styles={isFloating ? "size-7" : "size-4 mr-1.5"}
+            styles={isFloating ? "size-6" : "size-4 mr-1.5"}
           />
         </Button>
       </PopoverTrigger>
@@ -94,8 +101,8 @@ export function CalendarCreateMenu({
       />
       <PopoverContent side="right" align="start">
         <CreateOptions
-          onCreateBooking={() => onCreateBooking(selection.start)}
-          onCreateBlockedTime={() => onCreateBlockedTime(selection.start)}
+          onCreateBooking={onCreateBooking}
+          onCreateBlockedTime={onCreateBlockedTime}
         />
       </PopoverContent>
     </Popover>

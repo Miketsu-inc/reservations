@@ -22,10 +22,10 @@ const variants = {
   },
   segmented: {
     // rings instead of borders so the pill's offsetLeft math stays unaffected
-    group: "bg-bg-sunken ring-border rounded-lg p-1 ring-1 ring-inset",
-    item: "min-w-0 flex-1 rounded-md px-3 py-1 ",
+    group: "bg-bg-sunken ring-border rounded-lg p-1.25 ring-1 ring-inset",
+    item: "min-w-0 flex-1 rounded-md px-2.5 py-1 ",
     // inset matches the group's padding so the pill sits inside the track
-    pill: "bg-bg-overlay shadow-card inset-y-1 rounded-md",
+    pill: "bg-bg-overlay shadow-card inset-y-1.25 rounded-md",
     pressedBg: "bg-bg-overlay shadow-card",
     pressedText: "text-fg font-medium",
     badge: "text-fg bg-bg-inactive",
@@ -42,6 +42,7 @@ export function Toggle({
   disabled = false,
   badgeText = null,
   children,
+  ...props
 }) {
   const group = useContext(ToggleGroupContext);
   const variant = variants[group?.variant ?? "pill"];
@@ -57,6 +58,7 @@ export function Toggle({
 
   return (
     <button
+      {...props}
       ref={(element) => {
         group?.registerRef(value, element);
       }}
