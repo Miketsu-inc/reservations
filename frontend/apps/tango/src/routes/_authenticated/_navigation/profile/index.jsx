@@ -10,7 +10,12 @@ import {
   Loading,
   ServerError,
 } from "@reservations/components";
-import { JABULANI_URL, meQueryOptions, useWindowSize } from "@reservations/lib";
+import {
+  JABULANI_URL,
+  meQueryOptions,
+  toAvatar,
+  useWindowSize,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 
@@ -33,6 +38,8 @@ function RouteComponent() {
     return <Loading />;
   }
 
+  const { img, initials, name } = toAvatar(user);
+
   return (
     <div className="flex justify-center">
       <div className="flex w-full max-w-sm flex-col justify-center gap-4">
@@ -52,14 +59,14 @@ function RouteComponent() {
           <div className="flex flex-col items-center gap-4">
             <AvatarUpload
               styles="size-20 text-2xl!"
-              img={user.avatar_url}
-              initials={`${user.first_name[0]}${user.last_name[0]}`}
-              alt={`${user.first_name} ${user.last_name}`}
+              img={img}
+              initials={initials}
+              alt={name}
               url="/api/v1/users/avatar"
-              canRemove={!!user.avatar_url}
+              canRemove={!!img}
               onChange={() => queryClient.invalidateQueries(meQueryOptions())}
             />
-            <p className="text-xl font-semibold">{`${user.first_name} ${user.last_name}`}</p>
+            <p className="text-xl font-semibold">{name}</p>
           </div>
           <hr className="border-border-subtle my-6" />
           <div className="flex flex-col gap-4">

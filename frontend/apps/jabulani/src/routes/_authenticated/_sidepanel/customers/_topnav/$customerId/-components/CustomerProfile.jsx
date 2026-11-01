@@ -26,6 +26,7 @@ import { useAuth } from "@reservations/jabulani/lib";
 import {
   customersQueryOptions,
   invalidateLocalStorageAuth,
+  toAvatar,
   useToast,
 } from "@reservations/lib";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,9 +75,7 @@ export default function CustomerProfile({ customerId }) {
   }
 
   const customer = profileQuery.data;
-  const fullName =
-    [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
-    "Unnamed customer";
+  const { img, initials, name: fullName } = toAvatar(customer);
 
   const hasContactDetails =
     customer.email || customer.phone_number || customer.birthday;
@@ -190,11 +189,7 @@ export default function CustomerProfile({ customerId }) {
       <Card styles="flex h-auto! flex-col gap-4 p-5! sm:p-6!">
         <div className="flex w-full justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
-            <Avatar
-              styles="size-14! text-lg!"
-              img={customer?.avatar_url}
-              initials={`${customer?.first_name[0]}${customer?.last_name[0]}`}
-            />
+            <Avatar styles="size-14! text-lg!" img={img} initials={initials} />
             <div className="flex min-w-0 flex-col gap-1">
               <h1 className="text-fg truncate text-2xl font-bold">
                 {fullName}

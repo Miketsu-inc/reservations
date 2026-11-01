@@ -15,6 +15,7 @@ type CustomerRepository interface {
 	NewCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
 	NewCustomerFromUser(ctx context.Context, customerId, merchantId, userId uuid.UUID) (uuid.UUID, bool, bool, error)
 	UpdateCustomer(ctx context.Context, merchantId uuid.UUID, customer Customer) error
+	CopyUserNameToCustomer(ctx context.Context, userId uuid.UUID) error
 	DeleteCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
 	GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error)

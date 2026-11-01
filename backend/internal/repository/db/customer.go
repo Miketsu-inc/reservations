@@ -104,6 +104,22 @@ func (r *customerRepository) UpdateCustomer(ctx context.Context, merchantId uuid
 	return nil
 }
 
+func (r *customerRepository) CopyUserNameToCustomer(ctx context.Context, userId uuid.UUID) error {
+	query := `
+	update "Customer" c
+	set first_name = coalesce(c.first_name, u.first_name), last_name = coalesce(c.last_name, u.last_name)
+	from "User" u
+	where u.id = c.user_id and c.user_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, userId)
+	if err != nil {
+		return fmt.Errorf("CopyUserNameToCustomer: %w", err)
+	}
+
+	return nil
+}
+
 func (r *customerRepository) DeleteCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error {
 	query := `
 	delete from "Customer"

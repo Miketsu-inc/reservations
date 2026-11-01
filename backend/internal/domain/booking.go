@@ -308,27 +308,32 @@ func (bp BookingParticipant) CanTransition(status types.BookingStatus) error {
 }
 
 type PublicBookingDetails struct {
-	ID                    int                  `db:"id"`
-	BookingType           types.BookingType    `db:"booking_type"`
-	BookingStatus         types.BookingStatus  `db:"booking_status"`
-	ParticipantStatus     *types.BookingStatus `db:"participant_status"`
-	IsRecurring           bool                 `db:"is_recurring"`
-	FromDate              time.Time            `db:"from_date"`
-	ToDate                time.Time            `db:"to_date"`
-	CustomerNote          *string              `db:"customer_note"`
-	MerchantNote          *string              `db:"merchant_note"`
-	ServiceName           string               `db:"service_name"`
-	ServiceColor          *string              `db:"service_color"`
-	Price                 currencyx.Price      `db:"price_per_person"`
-	PriceType             types.PriceType      `db:"price_type"`
-	CurrentParticipants   int                  `db:"current_participants"`
-	MaxParticipants       int                  `db:"max_participants"`
-	CustomerFirstName     *string              `db:"customer_first_name"`
-	CustomerLastName      *string              `db:"customer_last_name"`
-	EmployeeFirstName     *string              `db:"employee_first_name"`
-	EmployeeLastName      *string              `db:"employee_last_name"`
-	CustomerAvatarImageId *uuid.UUID           `db:"customer_avatar_image_id"`
-	EmployeeAvatarImageId *uuid.UUID           `db:"employee_avatar_image_id"`
+	ID                    int                        `db:"id"`
+	BookingType           types.BookingType          `db:"booking_type"`
+	BookingStatus         types.BookingStatus        `db:"booking_status"`
+	IsRecurring           bool                       `db:"is_recurring"`
+	FromDate              time.Time                  `db:"from_date"`
+	ToDate                time.Time                  `db:"to_date"`
+	HasCustomerNote       bool                       `db:"has_customer_note"`
+	MerchantNote          *string                    `db:"merchant_note"`
+	ServiceName           string                     `db:"service_name"`
+	ServiceColor          *string                    `db:"service_color"`
+	Price                 currencyx.Price            `db:"price_per_person"`
+	PriceType             types.PriceType            `db:"price_type"`
+	CurrentParticipants   int                        `db:"current_participants"`
+	MaxParticipants       int                        `db:"max_participants"`
+	Participants          []PublicBookingParticipant `db:"participants"`
+	EmployeeId            *int                       `db:"employee_id"`
+	EmployeeFirstName     *string                    `db:"employee_first_name"`
+	EmployeeLastName      *string                    `db:"employee_last_name"`
+	EmployeeAvatarImageId *uuid.UUID                 `db:"employee_avatar_image_id"`
+}
+
+type PublicBookingParticipant struct {
+	CustomerId    uuid.UUID  `json:"customer_id"`
+	FirstName     *string    `json:"first_name"`
+	LastName      *string    `json:"last_name"`
+	AvatarImageId *uuid.UUID `json:"avatar_image_id"`
 }
 
 type BookingForCalendar struct {
@@ -448,20 +453,22 @@ type BookingForExternalCalendar struct {
 }
 
 type BookingForUser struct {
-	Id                  int                 `db:"id"`
-	Status              types.BookingStatus `db:"status"`
-	BookingType         types.BookingType   `db:"booking_type"`
-	IsRecurring         bool                `db:"is_recurring"`
-	FromDate            time.Time           `db:"from_date"`
-	ToDate              time.Time           `db:"to_date"`
-	PricePerPerson      currencyx.Price     `db:"price_per_person"`
-	MerchantName        string              `db:"merchant_name"`
-	MerchantUrl         string              `db:"merchant_url"`
-	MerchantLogoImageId *uuid.UUID          `db:"merchant_logo_image_id"`
-	FormattedLocation   string              `db:"formatted_location"`
-	ServiceName         string              `db:"service_name"`
-	EmployeeFirstName   *string             `db:"employee_first_name"`
-	EmployeeLastName    *string             `db:"employee_last_name"`
+	Id                    int                 `db:"id"`
+	Status                types.BookingStatus `db:"status"`
+	BookingType           types.BookingType   `db:"booking_type"`
+	IsRecurring           bool                `db:"is_recurring"`
+	FromDate              time.Time           `db:"from_date"`
+	ToDate                time.Time           `db:"to_date"`
+	PricePerPerson        currencyx.Price     `db:"price_per_person"`
+	MerchantName          string              `db:"merchant_name"`
+	MerchantUrl           string              `db:"merchant_url"`
+	MerchantLogoImageId   *uuid.UUID          `db:"merchant_logo_image_id"`
+	FormattedLocation     string              `db:"formatted_location"`
+	ServiceName           string              `db:"service_name"`
+	EmployeeId            *int                `db:"employee_id"`
+	EmployeeFirstName     *string             `db:"employee_first_name"`
+	EmployeeLastName      *string             `db:"employee_last_name"`
+	EmployeeAvatarImageId *uuid.UUID          `db:"employee_avatar_image_id"`
 }
 
 type BookingDetailsForUser struct {
@@ -481,8 +488,8 @@ type BookingDetailsForUser struct {
 	CancelDeadline        int                 `db:"cancel_deadline"`
 	LocationId            int                 `db:"location_id"`
 	FormattedLocation     string              `db:"formatted_location"`
-	Longitude             float64             `db:"longitude"`
-	Latitude              float64             `db:"latitude"`
+	GeoPoint              types.GeoPoint      `db:"geo_point"`
+	EmployeeId            *int                `db:"employee_id"`
 	EmployeeFirstName     *string             `db:"employee_first_name"`
 	EmployeeLastName      *string             `db:"employee_last_name"`
 	EmployeeAvatarImageId *uuid.UUID          `db:"employee_avatar_image_id"`
@@ -523,6 +530,7 @@ type BookingListItem struct {
 	PriceType             types.PriceType      `db:"price_type"`
 	BookingStatus         types.BookingStatus  `db:"booking_status"`
 	ParticipantStatus     *types.BookingStatus `db:"participant_status"`
+	EmployeeId            *int                 `db:"employee_id"`
 	EmployeeFirstName     *string              `db:"employee_first_name"`
 	EmployeeLastName      *string              `db:"employee_last_name"`
 	EmployeeAvatarImageId *uuid.UUID           `db:"employee_avatar_image_id"`

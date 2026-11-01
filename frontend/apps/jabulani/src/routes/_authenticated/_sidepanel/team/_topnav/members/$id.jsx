@@ -23,6 +23,7 @@ import {
   employeeQueryOptions,
   invalidateLocalStorageAuth,
   meQueryOptions,
+  toAvatar,
   useToast,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
@@ -120,11 +121,13 @@ function RouteComponent() {
     }
   }
 
+  const { img, initials, name } = toAvatar(employee);
+
   return (
     <div className="flex justify-center">
       <ServerError error={serverError} />
       <DeleteModal
-        itemName={`${employee.first_name} ${employee.last_name}`}
+        itemName={name}
         open={showDeleteModal}
         onOpenChange={setShowDeleteModal}
         onDelete={deleteHandler}
@@ -136,9 +139,9 @@ function RouteComponent() {
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
               <AvatarUpload
-                img={employee.avatar_url}
-                initials={`${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}`}
-                alt={`${employee.first_name} ${employee.last_name}`}
+                img={img}
+                initials={initials}
+                alt={name}
                 url={`/api/v1/merchants/${merchantId}/team/${employee.id}/avatar`}
                 canRemove={employee.has_own_avatar}
                 onChange={refreshAvatar}
@@ -146,9 +149,7 @@ function RouteComponent() {
 
               <div className="flex flex-col gap-1">
                 <div className="flex flex-col gap-2 md:flex-row md:gap-4">
-                  <h2 className="text-fg text-lg font-bold">
-                    {employee.first_name} {employee.last_name}
-                  </h2>
+                  <h2 className="text-fg text-lg font-bold">{name}</h2>
                 </div>
                 <div
                   className="text-fg-muted flex flex-row items-center gap-2

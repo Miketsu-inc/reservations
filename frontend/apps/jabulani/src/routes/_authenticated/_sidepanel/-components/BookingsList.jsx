@@ -6,13 +6,14 @@ import {
   Tick02Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
-import { Avatar, Icon } from "@reservations/components";
+import { Avatar, AvatarStack, Icon } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   DEFAULT_SERVICE_COLOR,
   getBookingStatusStyles,
   preferencesQueryOptions,
   timeStringFromDate,
+  toAvatar,
   useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
@@ -36,9 +37,9 @@ export default function BookingsList({
     <div>
       {bookings.length > 0 ? (
         <div className="space-y-3">
-          {bookings.map((booking, index) => (
+          {bookings.map((booking) => (
             <BookingCard
-              key={`${booking.id}-${index}`}
+              key={booking.id}
               booking={booking}
               isWindowSmall={isWindowSmall}
               onAccept={onAccept}
@@ -81,13 +82,14 @@ function BookingCard({
 
   const isGroupBooking = booking.booking_type !== "appointment";
   const status = isGroupBooking
-    ? (booking.participant_status ?? booking.status)
-    : (booking.booking_status ?? booking.status);
+    ? (booking.participant_status ?? booking.booking_status)
+    : booking.booking_status;
   const isNotConfirmed = status === "booked";
 
-  const customerName = `${booking.customer_first_name} ${booking.customer_last_name}`;
-  const isWalkIn = !customerName;
-  const employeeName = `${booking.employee_first_name} ${booking.employee_last_name}`;
+  const participants =
+    booking.participants?.map((participant) => toAvatar(participant)) ?? [];
+  const customer = isGroupBooking ? null : participants[0];
+  const employee = booking.employee && toAvatar(booking.employee);
 
   return (
     <div
@@ -168,29 +170,35 @@ function BookingCard({
       </div>
       <div className="flex flex-row items-center justify-between px-3 py-2">
         <div className="flex min-w-0 flex-row items-center gap-2">
-          {showCustomer ? (
+          {showCustomer && isGroupBooking ? (
+            participants.length > 0 ? (
+              <AvatarStack avatars={participants} />
+            ) : (
+              <p className="text-fg-muted truncate text-sm">No participants</p>
+            )
+          ) : showCustomer ? (
             <>
-              {!isWalkIn && (
+              {customer && (
                 <Avatar
                   styles="size-6! text-[10px]!"
-                  img={booking.customer_avatar_url}
-                  alt={customerName}
-                  initials={`${booking.customer_first_name?.[0]}${booking.customer_last_name?.[0]}`}
+                  img={customer.img}
+                  alt={customer.name}
+                  initials={customer.initials}
                 />
               )}
               <p className="text-fg-muted truncate text-sm">
-                {isWalkIn ? "Walk-in" : customerName}
+                {customer ? customer.name : "Walk-in"}
               </p>
             </>
-          ) : employeeName ? (
+          ) : employee ? (
             <>
               <Avatar
                 styles="size-6! text-[10px]!"
-                img={booking.employee_avatar_url}
-                alt={employeeName}
-                initials={`${booking.employee_first_name?.[0]}${booking.employee_last_name?.[0]}`}
+                img={employee.img}
+                alt={employee.name}
+                initials={employee.initials}
               />
-              <p className="text-fg-muted truncate text-sm">{employeeName}</p>
+              <p className="text-fg-muted truncate text-sm">{employee.name}</p>
             </>
           ) : (
             <>
@@ -202,7 +210,7 @@ function BookingCard({
           )}
         </div>
         <div className="flex flex-row items-center gap-2">
-          {booking?.customer_note && (
+          {booking.has_customer_note && (
             <Pill>
               <Icon icon={Note01Icon} styles="size-3.5" />
               <p>Note</p>

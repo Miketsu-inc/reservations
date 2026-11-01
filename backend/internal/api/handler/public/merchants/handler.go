@@ -291,8 +291,14 @@ type getSummaryResp struct {
 	TotalDuration     *int                      `json:"total_duration"`
 	MinDuration       *int                      `json:"min_duration,omitempty"`
 	MaxDuration       *int                      `json:"max_duration,omitempty"`
-	EmployeeFirstName *string                   `json:"employee_first_name"`
-	EMployeeLastName  *string                   `json:"employee_last_name"`
+	Employee          *employeeResp             `json:"employee"`
+}
+
+type employeeResp struct {
+	Id        int     `json:"id"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) error {
@@ -440,10 +446,7 @@ type availableGroupBookingResp struct {
 	MaxParticipants     int                       `json:"max_participants"`
 	Price               *currencyx.FormattedPrice `json:"price"`
 	PriceType           types.PriceType           `json:"price_type"`
-	EmployeeId          int                       `json:"employee_id"`
-	EmployeeFirstName   *string                   `json:"employee_first_name"`
-	EmployeeLastName    *string                   `json:"employee_last_name"`
-	EmployeeAvatarUrl   *string                   `json:"employee_avatar_url"`
+	Employee            *employeeResp             `json:"employee"`
 }
 
 type getGroupAvailabilityResp struct {

@@ -6,6 +6,7 @@ import {
   Icon,
   SearchInput,
 } from "@reservations/components";
+import { toAvatar } from "@reservations/lib";
 import { useState } from "react";
 import NewCustomerOverlay from "./NewCutomerForm";
 
@@ -21,8 +22,12 @@ export default function CustomerSelector({
 
   const filteredCustomers = customers.filter(
     (customer) =>
-      customer.first_name.toLowerCase().includes(searchText.toLowerCase()) ||
-      customer.last_name.toLowerCase().includes(searchText.toLowerCase())
+      (customer.first_name ?? "")
+        .toLowerCase()
+        .includes(searchText.toLowerCase()) ||
+      (customer.last_name ?? "")
+        .toLowerCase()
+        .includes(searchText.toLowerCase())
   );
 
   const handleCustomerClick = (customer) => {
@@ -136,6 +141,7 @@ function CustomerRow({
   ...props
 }) {
   const isAction = variant === "action";
+  const { img, initials, name } = toAvatar(customer);
 
   return (
     <button
@@ -154,18 +160,14 @@ function CustomerRow({
       ) : (
         <Avatar
           styles="size-12! text-sm! shrink-0"
-          img={customer?.avatar_url}
-          initials={
-            customer?.first_name && customer?.last_name
-              ? `${customer.first_name[0]}${customer.last_name[0]}`
-              : "?"
-          }
+          img={img}
+          initials={initials}
         />
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-fg truncate text-sm">
-          {isAction ? label : `${customer?.first_name} ${customer?.last_name}`}
+          {isAction ? label : name}
         </span>
 
         {!isAction && customer?.phone_number && (

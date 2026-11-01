@@ -14,6 +14,7 @@ import (
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	reviewServ "github.com/miketsu-inc/reservations/backend/internal/service/review"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
+	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -109,8 +110,14 @@ type bookingForUser struct {
 	MerchantLogoUrl   *string                  `json:"merchant_logo_url"`
 	FormattedLocation string                   `json:"formatted_location"`
 	ServiceName       string                   `json:"service_name"`
-	EmployeeFirstName *string                  `json:"employee_first_name"`
-	EmployeeLastName  *string                  `json:"employee_last_name"`
+	Employee          *employeeResp            `json:"employee"`
+}
+
+type employeeResp struct {
+	Id        int     `json:"id"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (h *Handler) GetBookings(w http.ResponseWriter, r *http.Request) error {
@@ -171,11 +178,8 @@ type bookingDetailsResp struct {
 	MerchantUrl       string                   `json:"merchant_url"`
 	CancelDeadline    int                      `json:"cancel_deadline"`
 	FormattedLocation string                   `json:"formatted_location"`
-	Longitude         float64                  `json:"longitude"`
-	Latitude          float64                  `json:"latitude"`
-	EmployeeFirstName *string                  `json:"employee_first_name"`
-	EmployeeLastName  *string                  `json:"employee_last_name"`
-	EmployeeAvatarUrl *string                  `json:"employee_avatar_url"`
+	GeoPoint          types.GeoPoint           `json:"geo_point"`
+	Employee          *employeeResp            `json:"employee"`
 	Images            []imageResp              `json:"images"`
 	Review            *reviewResp              `json:"review"`
 }

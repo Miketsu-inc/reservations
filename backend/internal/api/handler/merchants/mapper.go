@@ -3,6 +3,7 @@ package merchants
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
@@ -29,15 +30,24 @@ func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboar
 	bookings := make([]dashboardBookingResp, len(in))
 
 	for i, booking := range in {
+		participants := make([]customerResp, len(booking.Participants))
+		for j, p := range booking.Participants {
+			participants[j] = customerResp{
+				Id:        p.CustomerId,
+				FirstName: p.FirstName,
+				LastName:  p.LastName,
+				AvatarUrl: mediaServ.NewURL(p.AvatarImageId, mediaServ.VariantSmall),
+			}
+		}
+
 		bookings[i] = dashboardBookingResp{
 			ID:                  booking.ID,
 			BookingType:         booking.BookingType,
 			BookingStatus:       booking.BookingStatus,
-			ParticipantStatus:   booking.ParticipantStatus,
 			IsRecurring:         booking.IsRecurring,
 			FromDate:            booking.FromDate,
 			ToDate:              booking.ToDate,
-			CustomerNote:        booking.CustomerNote,
+			HasCustomerNote:     booking.HasCustomerNote,
 			MerchantNote:        booking.MerchantNote,
 			ServiceName:         booking.ServiceName,
 			ServiceColor:        booking.ServiceColor,
@@ -45,17 +55,26 @@ func mapToGetDashboardBookingsResp(in []domain.PublicBookingDetails) getDashboar
 			PriceType:           booking.PriceType,
 			CurrentParticipants: booking.CurrentParticipants,
 			MaxParticipants:     booking.MaxParticipants,
-			CustomerFirstName:   booking.CustomerFirstName,
-			CustomerLastName:    booking.CustomerLastName,
-			EmployeeFirstName:   booking.EmployeeFirstName,
-			EmployeeLastName:    booking.EmployeeLastName,
-			CustomerAvatarUrl:   mediaServ.NewURL(booking.CustomerAvatarImageId, mediaServ.VariantSmall),
-			EmployeeAvatarUrl:   mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			Participants:        participants,
+			Employee:            mapToEmployeeResp(booking.EmployeeId, booking.EmployeeFirstName, booking.EmployeeLastName, booking.EmployeeAvatarImageId),
 		}
 	}
 
 	return getDashboardBookingsResp{
 		Bookings: bookings,
+	}
+}
+
+func mapToEmployeeResp(id *int, firstName, lastName *string, avatarImageId *uuid.UUID) *employeeResp {
+	if id == nil {
+		return nil
+	}
+
+	return &employeeResp{
+		Id:        *id,
+		FirstName: firstName,
+		LastName:  lastName,
+		AvatarUrl: mediaServ.NewURL(avatarImageId, mediaServ.VariantSmall),
 	}
 }
 

@@ -636,26 +636,7 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 }
 
 func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
-	query := `
-	select b.id, b.booking_type, b.status as booking_status, bp.status as participant_status, b.is_recurring, b.from_date, b.to_date, bp.customer_note, b.merchant_note,
-		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
-		coalesce(c.first_name, u.first_name) as customer_first_name, coalesce(c.last_name, u.last_name) as customer_last_name,
-		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
-		u.avatar_image_id as customer_avatar_image_id, coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
-	from "Booking" b
-	left join "Service" s on b.service_id = s.id
-	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
-	left join "Customer" c on bp.customer_id = c.id
-	left join "User" u on c.user_id = u.id
-	left join "Employee" e on b.employee_id = e.id
-	left join "User" eu on e.user_id = eu.id
-	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled')
-	order by b.id desc
-	limit $3
-	`
-
-	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
-	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
+	bookings, err := r.getDashboardBookings(ctx, merchantId, afterDate, rowLimit, "b.id desc")
 	if err != nil {
 		return []domain.PublicBookingDetails{}, fmt.Errorf("GetLatestBookings: %w", err)
 	}
@@ -664,31 +645,52 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 }
 
 func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
-	query := `
-	select b.id, b.booking_type, b.status as booking_status, bp.status as participant_status, b.is_recurring, b.from_date, b.to_date, bp.customer_note, b.merchant_note,
-		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
-		coalesce(c.first_name, u.first_name) as customer_first_name, coalesce(c.last_name, u.last_name) as customer_last_name,
-		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
-		u.avatar_image_id as customer_avatar_image_id, coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
-	from "Booking" b
-	left join "Service" s on b.service_id = s.id
-	left join "BookingParticipant" bp on bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
-	left join "Customer" c on bp.customer_id = c.id
-	left join "User" u on c.user_id = u.id
-	left join "Employee" e on b.employee_id = e.id
-	left join "User" eu on e.user_id = eu.id
-	where b.merchant_id = $1 and b.from_date >= $2 AND b.status not in ('completed', 'cancelled')
-	order by b.from_date
-	limit $3
-	`
-
-	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
-	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
+	bookings, err := r.getDashboardBookings(ctx, merchantId, afterDate, rowLimit, "b.from_date")
 	if err != nil {
 		return []domain.PublicBookingDetails{}, fmt.Errorf("GetUpcomingBookings: %w", err)
 	}
 
 	return bookings, nil
+}
+
+// the bookings are limited before the joins, so participants are only aggregated for the returned rows
+func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int, orderBy string) ([]domain.PublicBookingDetails, error) {
+	query := fmt.Sprintf(`
+	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note,
+		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
+		coalesce(p.participants, '[]'::jsonb) as participants, coalesce(p.has_customer_note, false) as has_customer_note,
+		b.employee_id, coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
+		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
+	from (
+		select * from "Booking" b
+		where b.merchant_id = $1 and b.from_date >= $2 and b.status not in ('completed', 'cancelled')
+		order by %[1]s
+		limit $3
+	) b
+	left join "Service" s on b.service_id = s.id
+	left join lateral (
+		select
+			jsonb_agg(
+				jsonb_build_object(
+					'customer_id', c.id,
+					'first_name', coalesce(c.first_name, u.first_name),
+					'last_name', coalesce(c.last_name, u.last_name),
+					'avatar_image_id', u.avatar_image_id
+				) order by bp.id
+			) as participants,
+			bool_or(coalesce(bp.customer_note, '') <> '') as has_customer_note
+		from "BookingParticipant" bp
+		join "Customer" c on bp.customer_id = c.id
+		left join "User" u on c.user_id = u.id
+		where bp.booking_id = b.id and bp.status not in ('completed', 'cancelled')
+	) p on true
+	left join "Employee" e on b.employee_id = e.id
+	left join "User" eu on e.user_id = eu.id
+	order by %[1]s
+	`, orderBy)
+
+	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
+	return pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
 }
 
 func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime time.Time) ([]domain.BookingForCalendar, error) {
@@ -918,8 +920,9 @@ func (r *bookingRepository) GetParticipantCustomerIdsForBookings(ctx context.Con
 func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
 	query := `
 	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
-		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name,
-		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name
+		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name, b.employee_id,
+		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
+		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on c.id = bp.customer_id
@@ -945,8 +948,9 @@ func (r *bookingRepository) GetUpcomingBookingsForUser(ctx context.Context, user
 func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
 	query := `
 	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
-		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name,
-		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name
+		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name, b.employee_id,
+		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
+		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on c.id = bp.customer_id
@@ -973,8 +977,9 @@ func (r *bookingRepository) GetCompletedBookingsForUser(ctx context.Context, use
 func (r *bookingRepository) GetCancelledBookingsForUser(ctx context.Context, userId uuid.UUID, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingForUser, error) {
 	query := `
 	select b.id, b.status, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.price_per_person, m.name as merchant_name,
-		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name,
-		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name
+		m.url_name as merchant_url, m.logo_image_id as merchant_logo_image_id, b.formatted_location, b.service_name, b.employee_id,
+		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
+		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on c.id = bp.customer_id
@@ -1002,9 +1007,9 @@ func (r *bookingRepository) GetBookingDetailsForUser(ctx context.Context, bookin
 		b.service_name, b.merchant_id, m.name as merchant_name, m.url_name as merchant_url,
 		coalesce(s.cancel_deadline, m.cancel_deadline) as cancel_deadline,
 		b.location_id, coalesce(l.formatted_location, b.formatted_location) as formatted_location,
-		coalesce(st_x(l.geo_point::geometry), 0) as longitude, coalesce(st_y(l.geo_point::geometry), 0) as latitude,
-		e.first_name as employee_first_name, e.last_name as employee_last_name,
-		e.avatar_image_id as employee_avatar_image_id
+		l.geo_point, b.employee_id,
+		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
+		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b
 	join "BookingParticipant" bp on bp.booking_id = b.id
 	join "Customer" c on c.id = bp.customer_id
@@ -1013,6 +1018,7 @@ func (r *bookingRepository) GetBookingDetailsForUser(ctx context.Context, bookin
 	left join "Service" s on b.service_id = s.id
 	left join "Location" l on b.location_id = l.id
 	left join "Employee" e on b.employee_id = e.id
+	left join "User" eu on eu.id = e.user_id
 	where b.id = $1 and u.id = $2
 	limit 1
 	`
@@ -1022,7 +1028,6 @@ func (r *bookingRepository) GetBookingDetailsForUser(ctx context.Context, bookin
 	if err != nil {
 		return domain.BookingDetailsForUser{}, fmt.Errorf("GetBookingDetailsForUser: %w", err)
 	}
-
 
 	return booking, nil
 }
@@ -1098,7 +1103,7 @@ func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchant
 	query := `
 	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
 		b.formatted_location, b.price_per_person as price, b.price_type,
-		b.status as booking_status, bp.status as participant_status,
+		b.status as booking_status, bp.status as participant_status, b.employee_id,
 		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
 		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b
@@ -1134,7 +1139,7 @@ func (r *bookingRepository) GetBookingsForEmployee(ctx context.Context, merchant
 	query := `
 	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
 		b.formatted_location, b.price_per_person as price, b.price_type,
-		b.status as booking_status, null::text as participant_status,
+		b.status as booking_status, null::text as participant_status, b.employee_id,
 		coalesce(e.first_name, eu.first_name) as employee_first_name, coalesce(e.last_name, eu.last_name) as employee_last_name,
 		coalesce(e.avatar_image_id, eu.avatar_image_id) as employee_avatar_image_id
 	from "Booking" b

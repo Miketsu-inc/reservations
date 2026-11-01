@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/repository"
@@ -11,12 +12,18 @@ import (
 )
 
 type Service struct {
-	userRepo domain.UserRepository
+	userRepo     domain.UserRepository
+	customerRepo domain.CustomerRepository
+	teamRepo     domain.TeamRepository
+	txManager    db.TransactionManager
 }
 
-func NewService(user domain.UserRepository) *Service {
+func NewService(user domain.UserRepository, customer domain.CustomerRepository, team domain.TeamRepository, txManager db.TransactionManager) *Service {
 	return &Service{
-		userRepo: user,
+		userRepo:     user,
+		customerRepo: customer,
+		teamRepo:     team,
+		txManager:    txManager,
 	}
 }
 
@@ -78,10 +85,17 @@ func (s *Service) Edit(ctx context.Context, input EditInput) error {
 func (s *Service) Delete(ctx context.Context) error {
 	userId := jwt.MustGetUserIDFromContext(ctx)
 
-	err := s.userRepo.DeleteUser(ctx, userId)
-	if err != nil {
-		return err
-	}
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		err := s.customerRepo.WithTx(tx).CopyUserNameToCustomer(ctx, userId)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		err = s.teamRepo.WithTx(tx).CopyUserNameToEmployee(ctx, userId)
+		if err != nil {
+			return err
+		}
+
+		return s.userRepo.WithTx(tx).DeleteUser(ctx, userId)
+	})
 }

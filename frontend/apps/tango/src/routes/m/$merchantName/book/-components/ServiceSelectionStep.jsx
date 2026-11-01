@@ -17,6 +17,7 @@ import {
   formatDuration,
   getDisplayPrice,
   merchantServicesQueryOptions,
+  toAvatar,
   useActiveSection,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
@@ -92,6 +93,8 @@ export default function ServiceSelectionStep({
     return <StepContentSkeleton />;
   }
 
+  const { img, initials, name } = toAvatar(employee);
+
   return (
     <div className="flex h-full w-full flex-col gap-6">
       <h1 className="text-2xl font-bold">Select a Service</h1>
@@ -102,12 +105,10 @@ export default function ServiceSelectionStep({
         >
           <Avatar
             styles="size-8! text-[12px]! shrink-0"
-            img={employee?.avatar_url}
-            initials={`${employee.first_name[0]}${employee.last_name[0]}`}
+            img={img}
+            initials={initials}
           />
-          <span className="text-sm font-medium">
-            {employee.first_name} {employee.last_name}
-          </span>
+          <span className="text-sm font-medium">{name}</span>
         </div>
       )}
       <div className="flex flex-1 flex-col">

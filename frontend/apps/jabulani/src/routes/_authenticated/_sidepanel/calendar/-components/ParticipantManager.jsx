@@ -19,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
+import { toAvatar, useWindowSize } from "@reservations/lib";
 import { useState } from "react";
 import CustomerProfile from "./CustomerProfile";
 import CustomerSelector from "./CustomerSelector";
@@ -238,6 +238,7 @@ function ParticipantItem({
   onStatusChange,
 }) {
   const status = statusMap[customer?.status];
+  const { img, initials, name } = toAvatar(customer);
 
   return (
     <div
@@ -246,15 +247,7 @@ function ParticipantItem({
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div className="relative shrink-0">
-          <Avatar
-            styles="size-12! text-sm!"
-            img={customer?.avatar_url}
-            initials={
-              customer?.first_name && customer?.last_name
-                ? `${customer.first_name[0]}${customer.last_name[0]}`
-                : "?"
-            }
-          />
+          <Avatar styles="size-12! text-sm!" img={img} initials={initials} />
           {customer.participant_id && (
             <div
               className={`ring-bg absolute -right-1 -bottom-1 inline-flex
@@ -267,9 +260,7 @@ function ParticipantItem({
           )}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="text-fg truncate text-sm font-medium">
-            {customer.first_name} {customer.last_name}
-          </span>
+          <span className="text-fg truncate text-sm font-medium">{name}</span>
 
           {customer.phone_number && (
             <span className="text-fg-muted text-xs">

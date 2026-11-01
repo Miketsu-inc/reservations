@@ -6,6 +6,7 @@ import {
   User03Icon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, Button, Icon } from "@reservations/components";
+import { toAvatar } from "@reservations/lib";
 import { Link } from "@tanstack/react-router";
 
 function formatBirthday(datestr) {
@@ -22,6 +23,8 @@ export default function CustomerProfile({
   styles,
   disabled,
 }) {
+  const { img, initials, name } = toAvatar(customer);
+
   return (
     <div
       className={`flex h-full w-full flex-col items-center gap-5 sm:py-10
@@ -34,12 +37,10 @@ export default function CustomerProfile({
         <div className="flex flex-col items-center gap-4">
           <Avatar
             styles="size-24! text-xl! shrink-0"
-            img={customer?.avatar_url}
-            initials={`${customer?.first_name?.[0] || "?"}${customer?.last_name?.[0] || ""}`}
+            img={img}
+            initials={initials}
           />
-          <div className="text-fg text-center text-lg font-bold">
-            {customer?.first_name} {customer?.last_name}
-          </div>
+          <div className="text-fg text-center text-lg font-bold">{name}</div>
         </div>
 
         <div className="flex w-full flex-col items-center gap-6">

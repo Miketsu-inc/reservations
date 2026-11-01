@@ -15,6 +15,7 @@ type TeamRepository interface {
 
 	NewEmployee(ctx context.Context, employee Employee) (int, error)
 	UpdateEmployee(ctx context.Context, employee Employee) error
+	CopyUserNameToEmployee(ctx context.Context, userId uuid.UUID) error
 	SetEmployeeAvatar(ctx context.Context, merchantId uuid.UUID, employeeId int, imageId *uuid.UUID) (*uuid.UUID, error)
 	DeleteEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) error
 	GetEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) (Employee, error)

@@ -19,6 +19,7 @@ import {
   getDisplayPrice,
   invalidateLocalStorageAuth,
   timeStringFromDate,
+  toAvatar,
 } from "@reservations/lib";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -81,6 +82,7 @@ function BookingDetailsPage() {
   );
 
   const coverImage = booking.images?.[0];
+  const employee = booking.employee && toAvatar(booking.employee);
 
   const fromDate = new Date(booking.from_date);
   const toDate = new Date(booking.to_date);
@@ -230,17 +232,21 @@ function BookingDetailsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Avatar
-                  styles="size-7! text-[10px]!"
-                  img={booking.employee_avatar_url}
-                  initials={`${booking.employee_first_name?.[0] ?? ""}${booking.employee_last_name?.[0] ?? ""}`}
-                />
+              {employee && (
+                <div className="flex items-center gap-3">
+                  <Avatar
+                    styles="size-7! text-[10px]!"
+                    img={employee.img}
+                    initials={employee.initials}
+                  />
 
-                <span className="text-fg text-sm">{`${booking.employee_first_name ?? ""} ${booking.employee_last_name ?? ""}`}</span>
-              </div>
+                  <span className="text-fg text-sm">{employee.name}</span>
+                </div>
+              )}
 
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+              <div
+                className="ml-auto flex shrink-0 flex-wrap items-center gap-1.5"
+              >
                 <Badge
                   show={booking.booking_type !== "appointment"}
                   icon={UserGroupIcon}
@@ -271,7 +277,10 @@ function BookingDetailsPage() {
           )}
 
           <MapboxMap
-            coordinates={[booking.longitude, booking.latitude]}
+            coordinates={[
+              booking.geo_point.longitude,
+              booking.geo_point.latitude,
+            ]}
             minHeight={220}
             zoom={15}
             styles="w-full h-56"

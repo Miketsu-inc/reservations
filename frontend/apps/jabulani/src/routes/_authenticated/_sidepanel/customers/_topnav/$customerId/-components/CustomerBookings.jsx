@@ -8,7 +8,7 @@ import {
   ToggleGroup,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { BOOKING_STATUS_OPTIONS } from "@reservations/lib";
+import { BOOKING_STATUS_OPTIONS, toAvatar } from "@reservations/lib";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import BookingsList from "../../../../-components/BookingsList";
@@ -164,11 +164,7 @@ function filterBookings(bookings, searchText) {
     [
       booking.service_name,
       booking.formatted_location,
-      booking.employee_first_name,
-      booking.employee_last_name,
-      [booking.employee_first_name, booking.employee_last_name]
-        .filter(Boolean)
-        .join(" "),
+      toAvatar(booking.employee).name,
       booking.booking_status,
       booking.participant_status,
     ].some((value) => value?.toLocaleLowerCase().includes(search))

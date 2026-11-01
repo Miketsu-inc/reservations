@@ -104,8 +104,8 @@ function ReviewForm({ booking, review, isUpdate, initialRating, onClose }) {
         <h3 className="text-fg text-xl font-semibold">
           {isUpdate ? "Update your review" : "Leave a review"}
         </h3>
-        {booking.service_name && booking.employee_first_name && (
-          <p className="text-fg-muted text-sm">{`${booking.service_name} with ${booking.employee_first_name}`}</p>
+        {booking.service_name && booking.employee?.first_name && (
+          <p className="text-fg-muted text-sm">{`${booking.service_name} with ${booking.employee.first_name}`}</p>
         )}
       </div>
 

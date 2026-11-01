@@ -92,11 +92,10 @@ type dashboardBookingResp struct {
 	ID                  int                      `json:"id"`
 	BookingType         types.BookingType        `json:"booking_type"`
 	BookingStatus       types.BookingStatus      `json:"booking_status"`
-	ParticipantStatus   *types.BookingStatus     `json:"participant_status"`
 	IsRecurring         bool                     `json:"is_recurring"`
 	FromDate            time.Time                `json:"from_date"`
 	ToDate              time.Time                `json:"to_date"`
-	CustomerNote        *string                  `json:"customer_note"`
+	HasCustomerNote     bool                     `json:"has_customer_note"`
 	MerchantNote        *string                  `json:"merchant_note"`
 	ServiceName         string                   `json:"service_name"`
 	ServiceColor        *string                  `json:"service_color"`
@@ -104,12 +103,22 @@ type dashboardBookingResp struct {
 	PriceType           types.PriceType          `json:"price_type"`
 	CurrentParticipants int                      `json:"current_participants"`
 	MaxParticipants     int                      `json:"max_participants"`
-	CustomerFirstName   *string                  `json:"customer_first_name"`
-	CustomerLastName    *string                  `json:"customer_last_name"`
-	EmployeeFirstName   *string                  `json:"employee_first_name"`
-	EmployeeLastName    *string                  `json:"employee_last_name"`
-	CustomerAvatarUrl   *string                  `json:"customer_avatar_url"`
-	EmployeeAvatarUrl   *string                  `json:"employee_avatar_url"`
+	Participants        []customerResp           `json:"participants"`
+	Employee            *employeeResp            `json:"employee"`
+}
+
+type customerResp struct {
+	Id        uuid.UUID `json:"id"`
+	FirstName *string   `json:"first_name"`
+	LastName  *string   `json:"last_name"`
+	AvatarUrl *string   `json:"avatar_url"`
+}
+
+type employeeResp struct {
+	Id        int     `json:"id"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 func (h *Handler) GetDashboardBookings(w http.ResponseWriter, r *http.Request) error {

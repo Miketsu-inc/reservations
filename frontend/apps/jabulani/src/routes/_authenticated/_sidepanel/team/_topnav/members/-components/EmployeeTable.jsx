@@ -1,6 +1,6 @@
 import { Delete02Icon, Edit03Icon } from "@hugeicons/core-free-icons";
 import { Avatar, DeleteModal, Icon, Loading } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
+import { toAvatar, useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 
 const Table = lazy(() => import("@reservations/components/Table"));
@@ -29,18 +29,19 @@ export default function EmployeeTable({
       flex: 1,
       resizable: false,
       ...(isWindowSmall ? { minWidth: 180 } : {}),
-      valueGetter: (params) =>
-        `${params.data.first_name} ${params.data.last_name}`.trim(),
+      valueGetter: (params) => toAvatar(params.data).name,
       cellRenderer: (params) => {
+        const { img, initials, name } = toAvatar(params.data);
+
         return (
           <div className="flex h-full flex-row items-center gap-3">
             <Avatar
               styles="size-9! text-xs! shrink-0"
-              img={params.data.avatar_url}
-              initials={`${params.data.first_name[0]}${params.data.last_name[0]}`}
+              img={img}
+              initials={initials}
             />
             <div className="flex flex-col justify-center">
-              <p className="text-sm">{`${params.data.first_name} ${params.data.last_name}`}</p>
+              <p className="text-sm">{name}</p>
               <p className="text-fg-muted text-xs">{params.data.email}</p>
             </div>
           </div>

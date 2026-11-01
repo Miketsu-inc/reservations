@@ -57,6 +57,22 @@ func (r *teamRepository) UpdateEmployee(ctx context.Context, employee domain.Emp
 	return nil
 }
 
+func (r *teamRepository) CopyUserNameToEmployee(ctx context.Context, userId uuid.UUID) error {
+	query := `
+	update "Employee" e
+	set first_name = coalesce(e.first_name, u.first_name), last_name = coalesce(e.last_name, u.last_name)
+	from "User" u
+	where u.id = e.user_id and e.user_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, userId)
+	if err != nil {
+		return fmt.Errorf("CopyUserNameToEmployee: %w", err)
+	}
+
+	return nil
+}
+
 func (r *teamRepository) DeleteEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int) error {
 	query := `
 	delete from "Employee"

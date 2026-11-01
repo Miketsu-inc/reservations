@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 )
@@ -24,9 +25,7 @@ func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
 			PriceType:         booking.PriceType,
 			BookingStatus:     booking.BookingStatus,
 			ParticipantStatus: booking.ParticipantStatus,
-			EmployeeFirstName: booking.EmployeeFirstName,
-			EmployeeLastName:  booking.EmployeeLastName,
-			EmployeeAvatarUrl: mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			Employee:          mapToEmployeeResp(booking.EmployeeId, booking.EmployeeFirstName, booking.EmployeeLastName, booking.EmployeeAvatarImageId),
 		}
 	}
 
@@ -34,6 +33,19 @@ func mapToGetBookingsResp(in bookingServ.GetBookingsResult) getBookingsResp {
 		Bookings:    bookings,
 		HasNextPage: in.HasNextPage,
 		NextCursor:  in.NextCursor,
+	}
+}
+
+func mapToEmployeeResp(id *int, firstName, lastName *string, avatarImageId *uuid.UUID) *employeeResp {
+	if id == nil {
+		return nil
+	}
+
+	return &employeeResp{
+		Id:        *id,
+		FirstName: firstName,
+		LastName:  lastName,
+		AvatarUrl: mediaServ.NewURL(avatarImageId, mediaServ.VariantSmall),
 	}
 }
 

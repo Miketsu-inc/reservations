@@ -1,6 +1,6 @@
 import { MultiSelect, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { calendarTeamMembersQueryOptions } from "@reservations/lib";
+import { calendarTeamMembersQueryOptions, toAvatar } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TeamMemberMultiSelect({
@@ -30,12 +30,10 @@ export default function TeamMemberMultiSelect({
     return null;
   }
 
-  const options = team.map((member) => ({
-    value: member.id,
-    label: `${member.first_name} ${member.last_name}`,
-    img: member.avatar_url,
-    initials: `${member.first_name[0]}${member.last_name[0]}`,
-  }));
+  const options = team.map((member) => {
+    const { img, initials, name } = toAvatar(member);
+    return { value: member.id, label: name, img, initials };
+  });
 
   return (
     <MultiSelect

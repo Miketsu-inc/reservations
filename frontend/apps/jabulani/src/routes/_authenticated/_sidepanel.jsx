@@ -32,6 +32,7 @@ import { useAuth } from "@reservations/jabulani/lib";
 import {
   meQueryOptions,
   TANGO_URL,
+  toAvatar,
   useTheme,
   useWindowSize,
 } from "@reservations/lib";
@@ -155,6 +156,8 @@ function SidePanelLayout() {
   if (isLoading) {
     return <Loading />;
   }
+
+  const { initials, name } = toAvatar(user);
 
   return (
     <div className="bg-canvas flex h-dvh flex-col overflow-hidden">
@@ -332,13 +335,13 @@ function SidePanelLayout() {
                   <Avatar
                     styles="size-9! text-xs! shrink-0"
                     img={employeeAvatarUrl}
-                    initials={`${user?.first_name.charAt(0)}${user?.last_name.charAt(0)}`}
+                    initials={initials}
                   />
                   <div
                     className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
                       flex flex-1 flex-col items-start whitespace-nowrap`}
                   >
-                    <span className="text-sm">{`${user?.first_name} ${user?.last_name}`}</span>
+                    <span className="text-sm">{name}</span>
                     <span className="text-fg-muted text-xs capitalize">
                       {role}
                     </span>

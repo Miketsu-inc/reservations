@@ -3,6 +3,7 @@ package merchants
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
@@ -182,8 +183,7 @@ func mapToGetSummaryResp(in merchantServ.BookingSummary) getSummaryResp {
 	}
 
 	if in.Employee != nil {
-		resp.EmployeeFirstName = in.Employee.FirstName
-		resp.EMployeeLastName = in.Employee.LastName
+		resp.Employee = mapToEmployeeResp(&in.Employee.Id, in.Employee.FirstName, in.Employee.LastName, in.Employee.AvatarImageId)
 	}
 
 	return resp
@@ -277,15 +277,25 @@ func mapToGetGroupAvailabilityResp(in merchantServ.GroupAvailabilityResult) getG
 			MaxParticipants:     booking.MaxParticipants,
 			Price:               currencyx.FormatPrice(&booking.Price),
 			PriceType:           booking.PriceType,
-			EmployeeId:          booking.EmployeeId,
-			EmployeeFirstName:   booking.EmployeeFirstName,
-			EmployeeLastName:    booking.EmployeeLastName,
-			EmployeeAvatarUrl:   mediaServ.NewURL(booking.EmployeeAvatarImageId, mediaServ.VariantSmall),
+			Employee:            mapToEmployeeResp(&booking.EmployeeId, booking.EmployeeFirstName, booking.EmployeeLastName, booking.EmployeeAvatarImageId),
 		}
 	}
 
 	return getGroupAvailabilityResp{
 		Bookings: bookings,
 		Timezone: in.Timezone.String(),
+	}
+}
+
+func mapToEmployeeResp(id *int, firstName, lastName *string, avatarImageId *uuid.UUID) *employeeResp {
+	if id == nil {
+		return nil
+	}
+
+	return &employeeResp{
+		Id:        *id,
+		FirstName: firstName,
+		LastName:  lastName,
+		AvatarUrl: mediaServ.NewURL(avatarImageId, mediaServ.VariantSmall),
 	}
 }

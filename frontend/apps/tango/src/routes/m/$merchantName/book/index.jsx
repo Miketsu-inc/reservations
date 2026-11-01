@@ -146,14 +146,7 @@ function BookingFLow() {
     )
   );
 
-  const employeeInfo = {
-    first_name:
-      selectedSummary.employee?.first_name ||
-      fetchedSummary?.employee_first_name,
-    last_name:
-      selectedSummary.employee?.last_name || fetchedSummary?.employee_last_name,
-    avatar_url: selectedSummary.employee?.avatar_url,
-  };
+  const employeeInfo = selectedSummary.employee ?? fetchedSummary?.employee;
 
   if (isError) {
     return <ServerError error={error.message} />;

@@ -19,7 +19,12 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
-import { meQueryOptions, useTheme, useWindowSize } from "@reservations/lib";
+import {
+  meQueryOptions,
+  toAvatar,
+  useTheme,
+  useWindowSize,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -112,6 +117,8 @@ function NavLayout() {
   if (isLoading) {
     return <Loading />;
   }
+
+  const { img, initials, name } = toAvatar(user);
 
   return (
     <div className="bg-canvas flex h-dvh flex-col overflow-hidden">
@@ -221,14 +228,14 @@ function NavLayout() {
                   >
                     <Avatar
                       styles="size-9! text-xs! shrink-0"
-                      img={user?.avatar_url}
-                      initials={`${user?.first_name.charAt(0)}${user?.last_name.charAt(0)}`}
+                      img={img}
+                      initials={initials}
                     />
                     <div
                       className={`flex flex-1 flex-col items-start gap-0.5
                       whitespace-nowrap`}
                     >
-                      <span className="text-sm">{`${user?.first_name} ${user?.last_name}`}</span>
+                      <span className="text-sm">{name}</span>
                     </div>
                   </div>
                 </PopoverTrigger>
@@ -306,8 +313,8 @@ function NavLayout() {
             <MobileNavLink from={Route.fullPath} to="/profile">
               <Avatar
                 styles="size-7! text-[10px]!"
-                img={user.avatar_url}
-                initials={`${user.first_name[0]}${user.last_name[0]}`}
+                img={img}
+                initials={initials}
               />
               <p className="text-xs">Profile</p>
             </MobileNavLink>

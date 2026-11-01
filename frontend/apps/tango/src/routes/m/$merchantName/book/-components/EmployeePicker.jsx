@@ -9,7 +9,11 @@ import {
   ResponsiveDialogContent,
   ServerError,
 } from "@reservations/components";
-import { activeTeamQueryOptions, useWindowSize } from "@reservations/lib";
+import {
+  activeTeamQueryOptions,
+  toAvatar,
+  useWindowSize,
+} from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { EmployeeItem } from "./EmployeeSelectionStep";
@@ -42,9 +46,7 @@ export default function EmployeePicker({
   );
 
   const isNoPref = employeeId === "no-pref";
-  const empFirstName = currentEmployee?.first_name ?? employee?.first_name;
-  const empLastName = currentEmployee?.last_name ?? employee?.last_name;
-  const avatarUrl = currentEmployee?.avatar_url ?? employee?.avatar_url;
+  const { img, initials, name } = toAvatar(currentEmployee ?? employee);
 
   function handleEmployeeSelect(emp) {
     if (String(employeeId) !== String(emp.id)) {
@@ -77,12 +79,10 @@ export default function EmployeePicker({
           <>
             <Avatar
               styles="size-8! text-[11px]! shrink-0"
-              img={avatarUrl}
-              initials={`${empFirstName?.[0]}${empLastName?.[0]}`}
+              img={img}
+              initials={initials}
             />
-            <span className="text-sm font-medium">
-              {`${empFirstName} ${empLastName}`}
-            </span>
+            <span className="text-sm font-medium">{name}</span>
           </>
         )}
         <Icon

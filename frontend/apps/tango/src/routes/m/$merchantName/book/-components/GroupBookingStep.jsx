@@ -15,6 +15,7 @@ import {
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  toAvatar,
 } from "@reservations/lib";
 import {
   keepPreviousData,
@@ -155,11 +156,7 @@ export default function GroupBookingStep({
         starts_at: session.from_date,
         bookingId: session.id,
         customer_note: customerNote,
-        employee: {
-          id: session.employee_id,
-          first_name: session.employee_first_name,
-          last_name: session.employee_last_name,
-        },
+        employee: session.employee,
       });
     }
   }
@@ -271,11 +268,7 @@ export default function GroupBookingStep({
                 starts_at: currentSession.from_date,
                 bookingId: currentSession.id,
                 customer_note: data.value,
-                employee: {
-                  id: currentSession.employee_id,
-                  first_name: currentSession.employee_first_name,
-                  last_name: currentSession.employee_last_name,
-                },
+                employee: currentSession.employee,
               });
             }
           }}
@@ -288,6 +281,7 @@ export default function GroupBookingStep({
 
 function SessionCard({ session, isSelected, onSelect }) {
   const spotsLeft = session.max_participants - session.current_participants;
+  const { img, initials, name } = toAvatar(session.employee);
 
   const durationMinutes = Math.max(
     0,
@@ -341,12 +335,10 @@ function SessionCard({ session, isSelected, onSelect }) {
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar
             styles="size-7! text-[10px] shrink-0"
-            img={session.employee_avatar_url}
-            initials={`${session.employee_first_name?.[0] ?? ""}${session.employee_last_name?.[0] ?? ""}`}
+            img={img}
+            initials={initials}
           />
-          <span className="text-fg-muted truncate text-sm">
-            {session.employee_first_name} {session.employee_last_name}
-          </span>
+          <span className="text-fg-muted truncate text-sm">{name}</span>
           <span className="text-fg-muted text-xs">•</span>
 
           <div

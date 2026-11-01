@@ -15,6 +15,7 @@ import {
   BUFFER_TIME_OPTIONS,
   formatDuration,
   invalidateLocalStorageAuth,
+  toAvatar,
   useToast,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
@@ -464,8 +465,7 @@ function EmployeeSettingsRow({
     employee.price?.currency ||
     data.default_price?.currency ||
     data.currency_code;
-  const initials = `${employee.first_name?.[0]}${employee.last_name?.[0]}`;
-  const name = `${employee.first_name} ${employee.last_name}`;
+  const { img, initials, name } = toAvatar(employee);
   const durationSum = getDurationSum(employee, data.phases);
   const isSingleDuration = isGroupService || data.phases.length === 1;
   const singlePhase = data.phases[0];
@@ -505,7 +505,7 @@ function EmployeeSettingsRow({
             styles={`size-11! shrink-0 text-sm ${
               employee.is_assigned ? "" : "opacity-50"
             }`}
-            img={employee.avatar_url}
+            img={img}
             initials={initials}
           />
           <div

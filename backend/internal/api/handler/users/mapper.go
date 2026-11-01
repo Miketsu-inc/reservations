@@ -1,6 +1,7 @@
 package users
 
 import (
+	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
@@ -34,8 +35,7 @@ func mapToGetBookingsResp(in bookingServ.GetForUserResult) getBookingsResp {
 			MerchantLogoUrl:   mediaServ.NewURL(b.MerchantLogoImageId, mediaServ.VariantSmall),
 			FormattedLocation: b.FormattedLocation,
 			ServiceName:       b.ServiceName,
-			EmployeeFirstName: b.EmployeeFirstName,
-			EmployeeLastName:  b.EmployeeLastName,
+			Employee:          mapToEmployeeResp(b.EmployeeId, b.EmployeeFirstName, b.EmployeeLastName, b.EmployeeAvatarImageId),
 		}
 	}
 
@@ -84,11 +84,8 @@ func mapToGetBookingDetailsResp(in domain.BookingDetailsForUser) bookingDetailsR
 		MerchantUrl:       in.MerchantUrl,
 		CancelDeadline:    in.CancelDeadline,
 		FormattedLocation: in.FormattedLocation,
-		Longitude:         in.Longitude,
-		Latitude:          in.Latitude,
-		EmployeeFirstName: in.EmployeeFirstName,
-		EmployeeLastName:  in.EmployeeLastName,
-		EmployeeAvatarUrl: mediaServ.NewURL(in.EmployeeAvatarImageId, mediaServ.VariantSmall),
+		GeoPoint:          in.GeoPoint,
+		Employee:          mapToEmployeeResp(in.EmployeeId, in.EmployeeFirstName, in.EmployeeLastName, in.EmployeeAvatarImageId),
 		Images:            images,
 		Review:            review,
 	}
@@ -128,5 +125,18 @@ func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
 		Method:    in.Request.Method,
 		Headers:   headers,
 		ExpiresAt: in.Request.ExpiresAt,
+	}
+}
+
+func mapToEmployeeResp(id *int, firstName, lastName *string, avatarImageId *uuid.UUID) *employeeResp {
+	if id == nil {
+		return nil
+	}
+
+	return &employeeResp{
+		Id:        *id,
+		FirstName: firstName,
+		LastName:  lastName,
+		AvatarUrl: mediaServ.NewURL(avatarImageId, mediaServ.VariantSmall),
 	}
 }

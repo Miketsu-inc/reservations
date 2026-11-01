@@ -9,6 +9,7 @@ import {
   activeTeamQueryOptions,
   formatDuration,
   getDisplayPrice,
+  toAvatar,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -92,6 +93,8 @@ export function EmployeeItem({
   onSelect,
   noPreference = false,
 }) {
+  const { img, initials } = toAvatar(employee);
+
   return (
     <li
       role="radio"
@@ -115,8 +118,8 @@ export function EmployeeItem({
         ) : (
           <Avatar
             styles="size-16! text-[16px]! shrink-0"
-            img={employee?.avatar_url}
-            initials={`${employee?.first_name?.[0] ?? ""}${employee?.last_name?.[0] ?? ""}`}
+            img={img}
+            initials={initials}
           />
         )}
         <div className="flex flex-col gap-1">

@@ -104,7 +104,7 @@ export default function BookingReview({ booking }) {
         {view === "previous" && (
           <PreviousReviewCard
             serviceName={booking.service_name}
-            employeeName={booking.employee_first_name}
+            employeeName={booking.employee?.first_name}
             onUpdate={() => openModal("edit", review?.rating || 5)}
           />
         )}

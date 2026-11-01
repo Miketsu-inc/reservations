@@ -18,6 +18,7 @@ import {
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  toAvatar,
   useWindowSize,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
@@ -131,6 +132,7 @@ function DetailsContent({
   const assignedEmployee = teamMembers?.find(
     (emp) => emp.id === nextAvailable?.employee
   );
+  const assignedAvatar = toAvatar(assignedEmployee);
 
   const fromDate = hasAvailable
     ? dateStringToLocalDate(nextAvailable.date)
@@ -224,10 +226,10 @@ function DetailsContent({
               <div className="flex flex-row items-center gap-2">
                 <Avatar
                   styles="size-7! text-xs!"
-                  img={assignedEmployee.avatar_url}
-                  initials={`${assignedEmployee.first_name[0]}${assignedEmployee.last_name[0]}`}
+                  img={assignedAvatar.img}
+                  initials={assignedAvatar.initials}
                 />
-                <p className="text-fg text-sm">{`${assignedEmployee.first_name} ${assignedEmployee.last_name}`}</p>
+                <p className="text-fg text-sm">{assignedAvatar.name}</p>
               </div>
 
               {isGroupService && (

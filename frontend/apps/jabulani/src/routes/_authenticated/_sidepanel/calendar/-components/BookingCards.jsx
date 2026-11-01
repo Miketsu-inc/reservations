@@ -78,21 +78,19 @@ export function ParticipantsCard({ participants, onClick, maxParticipants }) {
 }
 
 export function SelectedCustomerCard({ customer, onRemove, onView, disabled }) {
+  const { img, initials, name } = toAvatar(customer);
+
   return (
     <Card styles="flex justify-start relative p-3!">
       <div className="flex gap-3">
         <Avatar
           styles="size-10! text-xs! shrink-0"
-          img={customer?.avatar_url}
-          initials={
-            customer?.first_name && customer?.last_name
-              ? `${customer.first_name[0]}${customer.last_name[0]}`
-              : "?"
-          }
+          img={img}
+          initials={initials}
         />
         <div className="flex min-w-0 flex-col justify-center gap-1">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium">{`${customer?.first_name} ${customer?.last_name}`}</span>
+            <span className="text-sm font-medium">{name}</span>
           </div>
           <div className="flex w-full flex-col items-start gap-1">
             {customer.email && (

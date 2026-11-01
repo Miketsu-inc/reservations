@@ -36,6 +36,7 @@ export function getSafeRedirectUrl(value) {
 }
 
 export function toAvatar(person, fallbackName = "") {
+  person ??= {};
   const name = [person.first_name, person.last_name].filter(Boolean).join(" ");
 
   return {
