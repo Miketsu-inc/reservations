@@ -38,7 +38,7 @@ function getTriggerText(
   return member.id === currentEmployeeId ? "Only me" : toAvatar(member).name;
 }
 
-function FilterRow({ isSelected, onToggle, onOnly, children }) {
+function FilterRow({ name, isSelected, onToggle, onOnly, children }) {
   return (
     <li className="group relative flex items-center">
       <button
@@ -61,6 +61,7 @@ function FilterRow({ isSelected, onToggle, onOnly, children }) {
       {onOnly && (
         <button
           type="button"
+          aria-label={`Show only ${name}`}
           onClick={onOnly}
           className="text-fg-muted hover:text-fg focus-visible:bg-hover absolute
             right-2 cursor-pointer rounded-md px-2 py-1 text-xs font-medium
@@ -75,8 +76,6 @@ function FilterRow({ isSelected, onToggle, onOnly, children }) {
   );
 }
 
-// At least one option always stays selected, since an empty calendar has
-// nothing to show or create on.
 export default function CalendarMemberFilter({
   members,
   selectedIds,
@@ -159,7 +158,11 @@ export default function CalendarMemberFilter({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent styles="w-72! p-1!" align="end">
+      <PopoverContent
+        styles="w-72! p-1!"
+        align="end"
+        aria-label="Shown team members"
+      >
         <p className="text-fg-muted px-2 pt-1 pb-2 text-xs font-medium">
           Show bookings for
         </p>
@@ -181,6 +184,7 @@ export default function CalendarMemberFilter({
             return (
               <FilterRow
                 key={member.id}
+                name={name}
                 isSelected={isSelected}
                 onToggle={() => toggle(member.id)}
                 onOnly={() => onChange([member.id])}
@@ -206,6 +210,7 @@ export default function CalendarMemberFilter({
           })}
           {showUnassigned && (
             <FilterRow
+              name="Unassigned"
               isSelected={selected.has(UNASSIGNED_ID)}
               onToggle={() => toggle(UNASSIGNED_ID)}
               onOnly={() => onChange([UNASSIGNED_ID])}

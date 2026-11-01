@@ -14,8 +14,8 @@ import {
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
-  getBookingStatusStyles,
   formatDuration,
+  getBookingStatusStyles,
   getDisplayPrice,
   timeStringFromDate,
   toAvatar,
@@ -318,8 +318,6 @@ export default function CalendarEventPreview({
   canOpen,
 }) {
   const isBlockedTime = event.extendedProps.type === "blocked";
-  // An event renders one segment per team member column and day, so the id
-  // has to be per segment or hovering one opens all of them.
   const previewId = useId();
   const isOpen = usePreviewOpen(previewId);
   const [alignOffset, setAlignOffset] = useState(DEFAULT_PREVIEW_ALIGN_OFFSET);

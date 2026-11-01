@@ -48,7 +48,6 @@ export default function SmallCalendar({
       modifiersClassNames={{
         disabled_selected:
           "rounded-md bg-primary-hover focus:bg-primary-hover! hover:bg-primary-hover! hover:text-fg-on-primary text-fg-on-primary",
-        // Important, so they win over the today and hover styles.
         range_single:
           "rounded-md bg-primary-subtle! text-fg-primary! font-semibold",
         range_start:
@@ -75,7 +74,7 @@ export default function SmallCalendar({
         day_button: "size-full",
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-fg-on-primary text-fg-on-primary",
-        // The range band uses the usual today style, so today gets a dot.
+        // The range uses the usual today style, so today gets a dot.
         today: highlightedRange
           ? "relative text-fg-primary font-semibold after:absolute after:bottom-1 after:size-1 after:rounded-full after:bg-primary"
           : !disabledTodayStyling

@@ -7,7 +7,7 @@ function omitKeys(object, shouldOmit) {
 }
 
 // FullCalendar joins class options from every layer instead of replacing them,
-// so the agenda can only be restyled by dropping the theme's list classes.
+// so the listWeek view (agenda) can only be restyled by dropping the theme's list classes.
 export default {
   ...breezyTheme,
   optionDefaults: omitKeys(breezyTheme.optionDefaults, (name) =>

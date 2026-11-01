@@ -26,6 +26,7 @@ function getPhaseBackground(phases, start, end) {
 
 export default function CalendarEventContent({ eventInfo }) {
   const { event, timeText } = eventInfo;
+
   const setBackground = useCallback(
     (label) => {
       const phases = event.extendedProps.phases;

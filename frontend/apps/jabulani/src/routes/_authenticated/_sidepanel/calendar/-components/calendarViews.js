@@ -4,9 +4,6 @@ import {
   SquareIcon,
 } from "@hugeicons/core-free-icons";
 
-// Every time grid is a resource view, so switching between team columns and a
-// merged grid only changes the resources instead of remounting the view.
-// Week and agenda get too wide for columns, so they always merge everyone.
 const dayRange = {
   value: "day",
   label: "Day",

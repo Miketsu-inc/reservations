@@ -33,7 +33,6 @@ import {
   formatBlockedTimes,
   formatBookings,
   formatResources,
-  sortMembersByName,
   transformBusinessHours,
 } from "./calendarEvents";
 import { DayHeader, ListDayHeader, ResourceHeader } from "./CalendarHeaders";
@@ -56,12 +55,12 @@ import {
   timeGridViews,
 } from "./calendarViews";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
-import resourceTimeGridPlugin from "./resourceTimeGridPlugin";
+import ResourceTimeGridPlugin from "./ResourceTimeGridPlugin";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
-// Staff don't load the team, and a shared array keeps the useMemo's stable.
+// shared array keeps the useMemo's stable.
 const NO_TEAM_MEMBERS = [];
 
 const defaultSidePanelState = {
@@ -129,24 +128,16 @@ export default function Calendar({ router, route, search }) {
     ...calendarBookingQueryOptions(merchantId, sidePanelState.bookingId),
     enabled: Boolean(sidePanelState.bookingId),
   });
-  // The team loads with the rest, so the team columns don't pop in.
   const [{ data: preferences }, { data: businessHours }, teamQuery] =
     useSuspenseQueries({
       queries: [
         preferencesQueryOptions(merchantId, employeeId),
         businessHoursQueryOptions(merchantId),
-        ...(canViewTeam
-          ? [
-              {
-                ...calendarTeamMembersQueryOptions(merchantId),
-                select: sortMembersByName,
-              },
-            ]
-          : []),
+        ...(canViewTeam ? [calendarTeamMembersQueryOptions(merchantId)] : []),
       ],
     });
   const teamMembers = teamQuery?.data ?? NO_TEAM_MEMBERS;
-  // null shows everyone, so new team members and unassigned bookings show up.
+  // null shows everyone
   const [memberFilter, setMemberFilter] = useState(null);
   // Kept in state rather than read from the URL, so the resources update in
   // the same render as the view instead of after the navigation.
@@ -411,7 +402,6 @@ export default function Calendar({ router, route, search }) {
 
     if (view === api.view.type) return;
 
-    // Otherwise switching from a week to a shorter range lands on its first day.
     const now = new Date();
     const showsToday = api.view.activeStart <= now && now < api.view.activeEnd;
     api.changeView(view, showsToday ? now : api.view.currentStart);
@@ -471,7 +461,6 @@ export default function Calendar({ router, route, search }) {
           onCreateBooking={() =>
             openSidePanelAtTime("new-booking", {
               ...createSelection,
-              // A booking needs a time, so the all-day row starts it now.
               start: createSelection.allDay
                 ? getCalendarCreateStart(createSelection.start)
                 : createSelection.start,
@@ -511,7 +500,7 @@ export default function Calendar({ router, route, search }) {
           plugins={[
             calendarTheme,
             interactionPlugin,
-            resourceTimeGridPlugin,
+            ResourceTimeGridPlugin,
             listPlugin,
           ]}
           resources={resources}
@@ -530,7 +519,6 @@ export default function Calendar({ router, route, search }) {
             resolvedView === "listWeek" ? "bg-transparent!" : undefined
           }
           headerToolbar={false}
-          // The hints name the view's unit, which the 2 days view doesn't have.
           prevHint={(unit) => `Previous ${unit || "2 days"}`}
           nextHint={(unit) => `Next ${unit || "2 days"}`}
           viewDidMount={(info) => {
@@ -622,7 +610,7 @@ export default function Calendar({ router, route, search }) {
           }}
           eventAllow={(dropInfo, draggedEvent) =>
             dropInfo.start.getTime() >= Date.now() &&
-            // Bookings always need a team member, so nothing can be dropped on unassigned.
+            // Nothing can be dropped on to the unassigned column.
             (dropInfo.resource?.id !== UNASSIGNED_ID ||
               draggedEvent.extendedProps.is_unassigned)
           }
@@ -643,7 +631,6 @@ export default function Calendar({ router, route, search }) {
               duration: { days: 2 },
             },
             listWeek: {
-              // The agenda already shows everything the preview would.
               eventContent: (eventInfo) => (
                 <AgendaEventContent
                   eventInfo={eventInfo}
@@ -664,7 +651,6 @@ export default function Calendar({ router, route, search }) {
               listDayHeaderDidMount: ({ el, isToday }) => {
                 if (isToday) scrollToDay(el);
               },
-              // Leaves room for the floating create button.
               listDaysClass: "flex flex-col gap-3 pb-20",
               listDayClass: "flex flex-col",
               listDayHeaderClass: "bg-bg z-10 pt-1 pb-2",

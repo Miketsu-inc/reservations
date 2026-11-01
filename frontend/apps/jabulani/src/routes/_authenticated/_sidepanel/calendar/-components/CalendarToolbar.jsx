@@ -11,11 +11,9 @@ import {
 } from "@reservations/components";
 import { useState } from "react";
 
-// Intl joins ranges with an en dash, written as a spaced hyphen in the app.
+// Intl joins ranges with an en dash
 const RANGE_DASH = /\s*[–—]\s*/g;
 
-// Time grids show the day numbers in their header, so they only name the
-// month. The agenda lists only days with bookings, so it names the whole range.
 export function formatCalendarTitle(start, last, showDays) {
   let options;
   if (showDays) {
@@ -77,7 +75,11 @@ function CalendarTitle({ visibleDates, firstDayOfWeek, onSelect }) {
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent styles="w-fit p-0!" align="start">
+      <PopoverContent
+        styles="w-fit p-0!"
+        align="start"
+        aria-label="Pick a date"
+      >
         <SmallCalendar
           highlightedRange={visibleDates?.range}
           firstDayOfWeek={firstDayOfWeek}
@@ -91,7 +93,6 @@ function CalendarTitle({ visibleDates, firstDayOfWeek, onSelect }) {
   );
 }
 
-// Mobile puts the title on its own row above the controls.
 export default function CalendarToolbar({
   visibleDates,
   firstDayOfWeek,
@@ -106,14 +107,7 @@ export default function CalendarToolbar({
 }) {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pb-4">
-      <div className="w-full md:order-2 md:w-auto">
-        <CalendarTitle
-          visibleDates={visibleDates}
-          firstDayOfWeek={firstDayOfWeek}
-          onSelect={onSelectDate}
-        />
-      </div>
-      <div className="flex flex-row items-center gap-1 md:order-1">
+      <div className="flex flex-row items-center gap-1">
         <button
           className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
             rounded-lg p-2"
@@ -139,9 +133,16 @@ export default function CalendarToolbar({
           <Icon icon={ArrowLeft01Icon} styles="size-5 rotate-180" />
         </button>
       </div>
+      <div className="order-first w-full md:order-0 md:w-auto">
+        <CalendarTitle
+          visibleDates={visibleDates}
+          firstDayOfWeek={firstDayOfWeek}
+          onSelect={onSelectDate}
+        />
+      </div>
       <div
         className="ml-auto flex min-w-0 flex-1 flex-row items-center justify-end
-          gap-2 md:order-3 md:flex-none"
+          gap-2 md:flex-none"
       >
         {ranges.length > 1 && (
           <CalendarViewSwitcher

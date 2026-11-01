@@ -16,7 +16,6 @@
  * Without resources it renders a plain time grid with every event merged, so
  * switching between team and plain grids keeps the same mounted view.
  */
-import timeGridPlugin from "@fullcalendar/react/timegrid";
 import {
   AllDaySplitter,
   buildDateDataConfigs,
@@ -42,6 +41,7 @@ import {
   Splitter,
   TimeGridLayout,
 } from "@fullcalendar/react/protected-api";
+import timeGridPlugin from "@fullcalendar/react/timegrid";
 
 const EMPTY_SEGS = [];
 const EMPTY_RESOURCES = { list: [], byId: new Map() };

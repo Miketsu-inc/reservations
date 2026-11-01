@@ -18,10 +18,7 @@ const sizes = {
   },
 };
 
-/**
- * `avatars` are `{ id, img, initials, name }`. `borderColor` should match the
- * surface behind the stack, so the avatars look cut out of each other.
- */
+// `borderColor` should match the surface behind the stack, so the avatars look cut out of each other.
 export default function AvatarStack({
   avatars,
   max = 3,

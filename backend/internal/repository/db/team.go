@@ -115,7 +115,8 @@ func (r *teamRepository) GetActiveEmployees(ctx context.Context, merchantId uuid
 		coalesce(e.avatar_image_id, u.avatar_image_id) as avatar_image_id, e.avatar_image_id is not null as has_own_avatar
 	from "Employee" e
 	left join "User" u on u.id = e.user_id
-	where merchant_id = $1 and e.is_active is true`
+	where merchant_id = $1 and e.is_active is true
+	order by first_name, last_name, e.id`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
 	members, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.Employee])

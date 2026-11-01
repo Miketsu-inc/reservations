@@ -126,13 +126,6 @@ export function formatBlockedTimes(data, memberIds) {
   });
 }
 
-// Defined once, so the query keeps returning the same array between renders.
-export function sortMembersByName(members) {
-  return members.toSorted((a, b) =>
-    toAvatar(a).name.localeCompare(toAvatar(b).name)
-  );
-}
-
 export function formatResources(teamMembers, showUnassigned) {
   const resources = teamMembers.map((member) => {
     const { img, initials, name } = toAvatar(member);
@@ -155,10 +148,8 @@ export function formatResources(teamMembers, showUnassigned) {
   return resources;
 }
 
-/**
- * Dropping an event into another employee's column only moves its resource,
- * so mirror the change into the employee fields the side panels read.
- */
+// Dropping an event into another employee's column only moves its resource,
+// so mirror the change into the employee fields the side panels read.
 export function applyDroppedEmployee({ event, oldResource, newResource }) {
   if (!newResource) return;
 

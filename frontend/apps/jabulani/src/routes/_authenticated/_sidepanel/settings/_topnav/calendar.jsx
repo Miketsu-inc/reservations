@@ -14,12 +14,10 @@ import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
 import SettingsSection from "./-components/SettingsSection";
 
-// Mobile always opens the agenda and staff only have the week view, so only
-// owners and admins choose a default, for desktop.
 const calendarViewOptions = [
-  { value: "day", label: "Day View" },
-  { value: "2day", label: "2 Days View" },
-  { value: "week", label: "Week View" },
+  { value: "day", label: "Day" },
+  { value: "2day", label: "2 Days" },
+  { value: "week", label: "Week" },
 ];
 
 const TimeFrequencyOptions = [
