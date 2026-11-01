@@ -6,13 +6,9 @@ import globals from "globals";
 
 export default [
   {
-    ignores: [
-      "frontend/apps/jabulani/dist/**",
-      "frontend/apps/jabulani/src/routeTree.gen.*",
-      "frontend/apps/tango/dist/**",
-      "frontend/apps/tango/src/routeTree.gen.*",
-    ],
+    ignores: ["**/dist/**", "**/routeTree.gen.*"],
   },
+  { files: ["**/*.{js,jsx}"] },
   js.configs.recommended,
   react.configs.flat.recommended,
   react.configs.flat["jsx-runtime"],
