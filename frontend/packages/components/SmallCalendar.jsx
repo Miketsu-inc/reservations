@@ -1,5 +1,15 @@
 import { DayPicker } from "@daypicker/react";
 
+function getRangeModifiers({ from, to }) {
+  if (from.toDateString() === to.toDateString()) return { range_single: from };
+
+  return {
+    range_start: from,
+    range_middle: { after: from, before: to },
+    range_end: to,
+  };
+}
+
 export default function SmallCalendar({
   value,
   disabled,
@@ -12,6 +22,7 @@ export default function SmallCalendar({
   startMonth,
   endMonth,
   month,
+  highlightedRange,
 }) {
   return (
     <DayPicker
@@ -25,15 +36,28 @@ export default function SmallCalendar({
             ? 0
             : undefined
       }
-      selected={value}
-      defaultMonth={month === undefined ? value : undefined}
+      // A highlighted range replaces the single selected day.
+      selected={highlightedRange ? undefined : value}
+      defaultMonth={
+        month === undefined ? (highlightedRange?.from ?? value) : undefined
+      }
       disabled={disabled}
       modifiers={{
         disabled_selected: disabledSelectedModifier,
+        ...(highlightedRange && getRangeModifiers(highlightedRange)),
       }}
       modifiersClassNames={{
         disabled_selected:
           "rounded-md bg-primary-hover focus:bg-primary-hover! hover:bg-primary-hover! hover:text-fg-on-primary text-fg-on-primary",
+        // Important, so they win over the today and hover styles.
+        range_single:
+          "rounded-md bg-primary-subtle! text-fg-primary! font-semibold",
+        range_start:
+          "rounded-r-none! bg-primary-subtle! text-fg-primary! font-semibold",
+        range_middle:
+          "rounded-none! bg-primary-subtle! text-fg-primary! font-semibold",
+        range_end:
+          "rounded-l-none! bg-primary-subtle! text-fg-primary! font-semibold",
       }}
       onSelect={(date) => onSelect(date)}
       onMonthChange={onMonthChange}
@@ -52,9 +76,12 @@ export default function SmallCalendar({
         day_button: "size-full",
         selected:
           "rounded-md bg-primary focus:bg-primary hover:bg-primary hover:text-fg-on-primary text-fg-on-primary",
-        today: !disabledTodayStyling
-          ? "bg-primary-subtle text-fg-primary font-semibold"
-          : "",
+        // The range band uses the usual today style, so today gets a dot.
+        today: highlightedRange
+          ? "relative text-fg-primary font-semibold after:absolute after:bottom-1 after:size-1 after:rounded-full after:bg-primary"
+          : !disabledTodayStyling
+            ? "bg-primary-subtle text-fg-primary font-semibold"
+            : "",
         outside: "text-fg-muted",
         disabled: "hover:bg-transparent text-fg-disabled!",
         hidden: "invisible",
