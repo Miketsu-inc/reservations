@@ -1,4 +1,9 @@
-import { Card, Select, ServerError } from "@reservations/components";
+import {
+  Card,
+  ServerError,
+  Toggle,
+  ToggleGroup,
+} from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -24,19 +29,15 @@ function DashboardPage() {
     <div className="flex h-full flex-col px-4 pt-4 lg:h-[90svh]">
       <div className="flex flex-row items-center justify-between pb-3">
         <h1 className="text-xl font-semibold">Your dashboard</h1>
-        <Select
-          styles="w-38!"
-          options={[
-            { value: 7, label: "Last 7 days" },
-            { value: 30, label: "Last 30 days" },
-          ]}
+        <ToggleGroup
+          styles="text-sm"
+          variant="segmented"
           value={period}
-          onSelect={(option) => {
-            if (period !== option.value) {
-              setPeriod(option.value);
-            }
-          }}
-        />
+          onValueChange={setPeriod}
+        >
+          <Toggle value={7}>7 days</Toggle>
+          <Toggle value={30}>30 days</Toggle>
+        </ToggleGroup>
       </div>
       <div className="flex h-full w-full flex-col gap-4 lg:flex-row lg:gap-6">
         <div className="flex h-full flex-1 flex-col gap-4 lg:max-w-1/2">

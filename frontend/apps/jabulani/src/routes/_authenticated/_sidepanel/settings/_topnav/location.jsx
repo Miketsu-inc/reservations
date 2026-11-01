@@ -15,6 +15,8 @@ import {
   ResponsiveDialogClose,
   ResponsiveDialogContent,
   ServerError,
+  Toggle,
+  ToggleGroup,
 } from "@reservations/components";
 import { isLocationComplete, useAuth } from "@reservations/jabulani/lib";
 import {
@@ -316,28 +318,15 @@ function LocationPage() {
                 </ResponsiveDialogClose>
               </div>
 
-              <div
-                className="grid grid-cols-2 rounded-lg p-1 lg:hidden"
-                role="tablist"
-                aria-label="Location editor sections"
+              <ToggleGroup
+                variant="segmented"
+                styles="w-full lg:hidden"
+                value={editorSection}
+                onValueChange={setEditorSection}
               >
-                {[
-                  ["details", "Details"],
-                  ["address", "Address & pin"],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={editorSection === value}
-                    className={`${editorSection === value ? "bg-bg-raised text-fg shadow-sm" : "text-fg-muted"}
-                    rounded-md px-3 py-2 text-sm font-medium`}
-                    onClick={() => setEditorSection(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+                <Toggle value="details">Details</Toggle>
+                <Toggle value="address">Address & pin</Toggle>
+              </ToggleGroup>
 
               <div
                 className="min-h-0 flex-1 pt-4 lg:grid
@@ -348,7 +337,6 @@ function LocationPage() {
                   <section
                     className="lg:border-border flex min-h-0 flex-col gap-4
                       lg:border-r lg:pr-6"
-                    role="tabpanel"
                   >
                     <div className="hidden lg:block">
                       <h3 className="text-fg font-semibold">
@@ -400,10 +388,7 @@ function LocationPage() {
                 )}
 
                 {(!isWindowSmall || editorSection === "address") && (
-                  <section
-                    className="flex min-h-0 flex-col gap-4"
-                    role="tabpanel"
-                  >
+                  <section className="flex min-h-0 flex-col gap-4">
                     <div className="hidden lg:block">
                       <h3 className="text-fg font-semibold">Address</h3>
                     </div>

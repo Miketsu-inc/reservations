@@ -10,6 +10,29 @@ import {
 
 const ToggleGroupContext = createContext();
 
+const variants = {
+  pill: {
+    group: "scrollbar-thin overflow-x-auto",
+    item: "shrink-0 rounded-3xl px-4 py-2",
+    pill: "bg-fg inset-y-0 rounded-3xl",
+    pressedBg: "bg-fg",
+    pressedText: "text-bg delay-25",
+    badge: "text-fg bg-bg-inactive",
+    pressedBadge: "bg-bg/15 text-bg delay-25",
+  },
+  segmented: {
+    // rings instead of borders so the pill's offsetLeft math stays unaffected
+    group: "bg-bg-sunken ring-border rounded-lg p-1 ring-1 ring-inset",
+    item: "min-w-0 flex-1 rounded-md px-3 py-1 ",
+    // inset matches the group's padding so the pill sits inside the track
+    pill: "bg-bg-overlay shadow-card inset-y-1 rounded-md",
+    pressedBg: "bg-bg-overlay shadow-card",
+    pressedText: "text-fg font-medium",
+    badge: "text-fg bg-bg-inactive",
+    pressedBadge: "text-fg bg-bg-sunken",
+  },
+};
+
 export function Toggle({
   value,
   styles,
@@ -21,6 +44,7 @@ export function Toggle({
   children,
 }) {
   const group = useContext(ToggleGroupContext);
+  const variant = variants[group?.variant ?? "pill"];
   const [isPressedInternal, setIsPressedInternal] = useState(defaultPressed);
 
   const isPressed = group
@@ -40,9 +64,13 @@ export function Toggle({
       type="button"
       disabled={disabled}
       className={`${styles} ${
-        !group || group.multiple ? (isPressed ? "bg-fg" : "") : "relative z-10"
-        } ${isPressed ? "text-bg delay-25" : "text-fg-muted hover:text-fg"}
-        shrink-0 cursor-pointer rounded-3xl px-4 py-2 text-nowrap`}
+        !group || group.multiple
+          ? isPressed
+            ? variant.pressedBg
+            : ""
+          : "relative z-10"
+        } ${isPressed ? variant.pressedText : "text-fg-muted hover:text-fg"}
+        ${variant.item} cursor-pointer text-nowrap`}
       onClick={() => {
         if (group) {
           group.onToggle(value);
@@ -58,7 +86,7 @@ export function Toggle({
         <span
           className={`ml-2 inline-flex items-center justify-center rounded-full
           px-2 py-1 text-sm leading-none ${
-            isPressed ? "bg-bg/15 text-bg delay-25" : "text-fg bg-bg-inactive"
+            isPressed ? variant.pressedBadge : variant.badge
           }`}
         >
           {badgeText}
@@ -75,6 +103,7 @@ export function ToggleGroup({
   onValueChange,
   multiple = false,
   disableDeselect = true,
+  variant = "pill",
   children,
 }) {
   const initial = defaultValue ?? (multiple ? [] : null);
@@ -179,8 +208,9 @@ export function ToggleGroup({
       value: currentValue,
       registerRef,
       onToggle,
+      variant,
     }),
-    [currentValue, multiple, onToggle, registerRef]
+    [currentValue, multiple, onToggle, registerRef, variant]
   );
 
   return (
@@ -188,15 +218,14 @@ export function ToggleGroup({
       <div
         ref={groupRef}
         role="group"
-        className={`${styles} relative flex h-fit scrollbar-thin
-          overflow-x-auto`}
+        className={`${styles} ${variants[variant].group} relative flex h-fit`}
       >
         {!multiple && (
           <div
             aria-hidden="true"
             style={pillStyle}
-            className={`bg-fg pointer-events-none absolute inset-y-0 rounded-3xl
-            transition-[transform,width,opacity] duration-150`}
+            className={`${variants[variant].pill} pointer-events-none absolute
+            left-0 transition-[transform,width,opacity] duration-150`}
           ></div>
         )}
         {children}
