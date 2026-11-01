@@ -9,9 +9,10 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Select,
   ServerError,
   SmallCalendar,
+  Toggle,
+  ToggleGroup,
 } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
@@ -243,6 +244,23 @@ function ResourceHeader({ resource }) {
       )}
       <span className="text-fg max-w-full truncate">{resource.title}</span>
     </div>
+  );
+}
+
+function CalendarViewSwitcher({ ranges, value, onChange }) {
+  return (
+    <ToggleGroup variant="segmented" value={value} onValueChange={onChange}>
+      {ranges.map((range) => (
+        <Toggle
+          key={range.value}
+          value={range.value}
+          aria-label={range.label}
+          title={range.label}
+        >
+          <Icon icon={range.icon} styles="size-5" />
+        </Toggle>
+      ))}
+    </ToggleGroup>
   );
 }
 
@@ -908,6 +926,13 @@ export default function Calendar({ router, route, search }) {
           className="ml-auto flex min-w-0 flex-1 flex-row items-center
             justify-end gap-2 md:order-3 md:flex-none"
         >
+          {calendarRanges.length > 1 && (
+            <CalendarViewSwitcher
+              ranges={calendarRanges}
+              value={calendarRange}
+              onChange={changeRangeHandler}
+            />
+          )}
           {canViewTeam && (
             <CalendarMemberFilter
               members={teamMembers}
@@ -915,14 +940,6 @@ export default function Calendar({ router, route, search }) {
               showUnassigned={hasUnassigned}
               onChange={changeMembersHandler}
               currentEmployeeId={employeeId}
-            />
-          )}
-          {calendarRanges.length > 1 && (
-            <Select
-              options={calendarRanges}
-              value={calendarRange}
-              onSelect={(option) => changeRangeHandler(option.value)}
-              styles="w-28!"
             />
           )}
           <CreateMenu
@@ -1105,17 +1122,16 @@ export default function Calendar({ router, route, search }) {
                 if (isToday) scrollToDay(el);
               },
               // Leaves room for the floating create button.
-              listDaysClass: "flex flex-col gap-3 pb-24",
+              listDaysClass: "flex flex-col gap-3 pb-20",
               listDayClass: "flex flex-col",
               listDayHeaderClass: "bg-bg z-10 pt-1 pb-2",
               // FullCalendar always renders a second date line, so hide it.
               listDayHeaderInnerClass: (info) =>
                 info.level ? "hidden" : "flex items-baseline gap-2",
               listDayBodyClass: "flex flex-col gap-2",
-              listItemEventClass: (info) =>
-                `relative flex cursor-pointer overflow-hidden rounded-xl border
-                border-border bg-bg-raised py-3 pr-4 pl-5 shadow-card
-                hover:bg-hover ${info.isPast ? "opacity-60" : ""}`,
+              listItemEventClass: `relative flex cursor-pointer overflow-hidden
+                rounded-xl border border-border bg-bg-raised py-3 pr-4 pl-5
+                shadow-card hover:bg-hover`,
               listItemEventBeforeClass:
                 "absolute inset-y-0 left-0 w-1.5 bg-(--fc-event-color)",
               listItemEventInnerClass: "min-w-0 flex-1",

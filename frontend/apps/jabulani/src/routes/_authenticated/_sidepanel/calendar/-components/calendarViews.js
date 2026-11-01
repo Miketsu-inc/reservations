@@ -1,21 +1,31 @@
+import {
+  Layout2ColumnIcon,
+  Layout3ColumnIcon,
+  SquareIcon,
+} from "@hugeicons/core-free-icons";
+
 // Every time grid is a resource view, so switching between team columns and a
 // merged grid only changes the resources instead of remounting the view.
 // Week and agenda get too wide for columns, so they always merge everyone.
+// The icons show the number of day columns in the view switcher.
 const dayRange = {
   value: "day",
   label: "Day",
+  icon: SquareIcon,
   view: "resourceTimeGridDay",
   hasTeamColumns: true,
 };
 const twoDayRange = {
   value: "2day",
   label: "2 days",
+  icon: Layout2ColumnIcon,
   view: "resourceTimeGrid2Day",
   hasTeamColumns: true,
 };
 const weekRange = {
   value: "week",
   label: "Week",
+  icon: Layout3ColumnIcon,
   view: "resourceTimeGridWeek",
   hasTeamColumns: false,
 };
