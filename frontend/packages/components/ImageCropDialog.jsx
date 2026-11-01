@@ -53,6 +53,7 @@ export default function ImageCropDialog({
           </div>
           <div
             ref={containerRef}
+            data-base-ui-swipe-ignore="" // needed for cropping on mobile instead of dragging the drawer
             className="bg-bg-sunken relative aspect-square w-full
               overflow-hidden rounded-xl"
           >
