@@ -130,7 +130,10 @@ function MerchantPage() {
                 </h1>
                 <div className="text-fg-muted flex items-center gap-3">
                   <div className="text-fg-warning flex items-center gap-1">
-                    <Icon icon={StarIcon} styles="size-5 fill-warning" />
+                    <Icon
+                      icon={StarIcon}
+                      styles="size-5 fill-warning text-warning"
+                    />
                     <span className="font-medium">4.6</span>
                     <span className="text-fg-primary ml-1 cursor-pointer">
                       (9 reviews)
@@ -208,7 +211,10 @@ function MerchantPage() {
               </div>
               <div className="text-fg-muted flex flex-wrap items-center gap-3">
                 <div className="text-fg-warning flex items-center gap-2">
-                  <Icon icon={StarIcon} styles="size-5 fill-warning" />
+                  <Icon
+                    icon={StarIcon}
+                    styles="size-5 fill-warning text-warning"
+                  />
                   <div className="flex items-center gap-1">
                     <span>4.6</span>
                     <button className="text-fg-primary" onClick={() => {}}>
@@ -404,7 +410,7 @@ function MerchantPage() {
                     >
                       <Icon
                         icon={StarIcon}
-                        styles="size-4 fill-warning text-fg-warning"
+                        styles="size-4 fill-warning text-warning"
                       />
                       <span>4.6</span>
                       <span className="text-fg-primary ml-1 font-normal">

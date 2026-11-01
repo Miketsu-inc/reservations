@@ -6,6 +6,7 @@ export default function Textarea({
   inputData,
   value,
   required,
+  maxLength,
   ...props
 }) {
   function handleChange(e) {
@@ -28,6 +29,7 @@ export default function Textarea({
       <textarea
         id={id}
         name={name}
+        maxLength={maxLength}
         className={`${styles} bg-bg-input border-border-strong
           hover:not-disabled:not-focus:border-border-hover focus:border-primary
           focus:ring-primary-focus disabled:text-fg-disabled
@@ -39,6 +41,13 @@ export default function Textarea({
         value={value}
         {...props}
       />
+      {maxLength && (
+        <div className="flex justify-end pt-1">
+          <span className="text-fg-muted text-xs">
+            {value?.length || 0} / {maxLength}
+          </span>
+        </div>
+      )}
     </label>
   );
 }

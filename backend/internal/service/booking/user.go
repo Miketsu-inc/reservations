@@ -110,5 +110,15 @@ func (s *Service) GetForUserById(ctx context.Context, bookingId int) (domain.Boo
 
 	booking.Images = images
 
+	review, err := s.reviewRepo.GetReviewForBooking(ctx, userId, bookingId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return booking, nil
+		}
+		return domain.BookingDetailsForUser{}, err
+	}
+
+	booking.Review = review
+
 	return booking, nil
 }

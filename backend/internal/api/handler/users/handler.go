@@ -12,6 +12,7 @@ import (
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
+	reviewServ "github.com/miketsu-inc/reservations/backend/internal/service/review"
 	userServ "github.com/miketsu-inc/reservations/backend/internal/service/user"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -23,11 +24,12 @@ type Handler struct {
 	bookingServ *bookingServ.Service
 	authServ    *authServ.Service
 	mediaServ   *mediaServ.Service
+	reviewServ  *reviewServ.Service
 	middleware  *middleware.Manager
 }
 
-func NewHandler(s *userServ.Service, b *bookingServ.Service, a *authServ.Service, ms *mediaServ.Service, m *middleware.Manager) *Handler {
-	return &Handler{service: s, bookingServ: b, authServ: a, mediaServ: ms, middleware: m}
+func NewHandler(s *userServ.Service, b *bookingServ.Service, a *authServ.Service, ms *mediaServ.Service, rs *reviewServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, bookingServ: b, authServ: a, mediaServ: ms, reviewServ: rs, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -43,6 +45,8 @@ func (h *Handler) Routes() *httputil.Router {
 		r.Get("/bookings/counts", h.GetBookingCounts)
 		r.Get("/bookings/{bookingId}", h.GetBookingById)
 		r.Delete("/bookings/{bookingId}", h.CancelBooking)
+
+		h.reviewRoutes(r)
 
 		r.Put("/password", h.UpdatePassword)
 
@@ -173,6 +177,15 @@ type bookingDetailsResp struct {
 	EmployeeLastName  *string                  `json:"employee_last_name"`
 	EmployeeAvatarUrl *string                  `json:"employee_avatar_url"`
 	Images            []imageResp              `json:"images"`
+	Review            *reviewResp              `json:"review"`
+}
+
+type reviewResp struct {
+	Id        int     `json:"id"`
+	BookingId *int    `json:"booking_id"`
+	Rating    int16   `json:"rating"`
+	Comment   *string `json:"comment"`
+	Status    string  `json:"status"`
 }
 
 type imageResp struct {

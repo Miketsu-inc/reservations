@@ -433,3 +433,27 @@ create table if not exists "LocationImage" (
 alter table "User" add constraint user_avatar_image_fk foreign key (avatar_image_id) references "Image" (ID) on delete set null;
 alter table "Merchant" add constraint merchant_logo_image_fk foreign key (logo_image_id) references "Image" (ID) on delete set null;
 alter table "Employee" add constraint employee_avatar_image_fk foreign key (avatar_image_id) references "Image" (ID) on delete set null;
+
+create table if not exists "Review" (
+    ID                       serial          primary key unique not null,
+    booking_id               integer         references "Booking" (ID) on delete set null,
+    user_id                  uuid            references "User" (ID) on delete cascade not null,
+    merchant_id              uuid            references "Merchant" (ID) on delete cascade not null,
+    location_id              integer         references "Location" (ID) on delete cascade not null,
+    employee_id              integer         references "Employee" (ID) on delete set null,
+    service_id               integer         references "Service" (ID) on delete set null,
+    service_name             text            not null,
+    rating                   smallint        check (rating between 1 and 5) not null,
+    comment                  text,
+    status                   text            not null default 'published' check (status in ('published', 'reported', 'removed')),
+    report_reason            text,
+    moderated_at             timestamptz,
+    created_at               timestamptz     not null default now(),
+    updated_at               timestamptz     not null default now(),
+
+    check (status <> 'removed' or moderated_at is not null)
+);
+
+create unique index if not exists unique_review on "Review"
+    (user_id, merchant_id, location_id, employee_id, service_id)
+    where status <> 'removed';

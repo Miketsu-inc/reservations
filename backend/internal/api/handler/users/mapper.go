@@ -58,6 +58,17 @@ func mapToGetBookingDetailsResp(in domain.BookingDetailsForUser) bookingDetailsR
 		}
 	}
 
+	var review *reviewResp
+	if in.Review != nil {
+		review = &reviewResp{
+			Id:        in.Review.Id,
+			BookingId: in.Review.BookingId,
+			Rating:    in.Review.Rating,
+			Comment:   in.Review.Comment,
+			Status:    in.Review.Status,
+		}
+	}
+
 	return bookingDetailsResp{
 		Id:                in.Id,
 		Status:            in.Status.String(),
@@ -79,6 +90,7 @@ func mapToGetBookingDetailsResp(in domain.BookingDetailsForUser) bookingDetailsR
 		EmployeeLastName:  in.EmployeeLastName,
 		EmployeeAvatarUrl: mediaServ.NewURL(in.EmployeeAvatarImageId, mediaServ.VariantSmall),
 		Images:            images,
+		Review:            review,
 	}
 }
 

@@ -23,6 +23,7 @@ import {
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import MapboxMap from "../../../m/$merchantName/-components/MapboxMap";
+import BookingReview from "./-components/BookingReview";
 import CancelBooking from "./-components/CancelBooking";
 
 // has to match the backend's small variant size
@@ -202,7 +203,7 @@ function BookingDetailsPage() {
               <Link
                 to="/m/$merchantName"
                 params={{ merchantName: booking.merchant_url }}
-                className="w-full"
+                className="w-fit"
               >
                 <Button variant="primary" styles="w-fit text-sm px-3 py-2">
                   Book again
@@ -256,6 +257,8 @@ function BookingDetailsPage() {
             </div>
           </Card>
         </div>
+
+        {isCompleted && <BookingReview booking={booking} />}
 
         {!isCancelled && !isCompleted && (
           <CancelBooking booking={booking} isUpcoming={isUpcoming} />

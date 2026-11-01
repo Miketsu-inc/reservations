@@ -487,6 +487,7 @@ type BookingDetailsForUser struct {
 	EmployeeLastName      *string             `db:"employee_last_name"`
 	EmployeeAvatarImageId *uuid.UUID          `db:"employee_avatar_image_id"`
 	Images                []LocationImage     `db:"-"`
+	Review                *Review             `db:"-"`
 }
 
 type AvailableGroupBooking struct {

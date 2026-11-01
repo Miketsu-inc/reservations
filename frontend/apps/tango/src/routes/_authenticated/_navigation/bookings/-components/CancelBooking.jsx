@@ -69,7 +69,7 @@ export default function CancelBooking({ booking, isUpcoming }) {
 
   return (
     <div className="flex flex-col gap-2 pt-2">
-      <h3 className="text-fg text-sm sm:text-base">Cancellation</h3>
+      <h3 className="text-fg text-sm sm:text-base">Cancellation Policy</h3>
       <Card styles="p-0! flex flex-col overflow-hidden">
         <div className="flex flex-col gap-1.5 p-4 sm:p-5">
           <p className="text-fg-muted text-sm leading-relaxed">
