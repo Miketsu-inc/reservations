@@ -119,10 +119,6 @@ function formatDate(date) {
   });
 }
 
-function getPersonName(person) {
-  return [person.first_name, person.last_name].filter(Boolean).join(" ");
-}
-
 function ParticipantAvatars({ participants }) {
   if (participants.length === 0) {
     return (
@@ -210,7 +206,7 @@ function BookingPreview({ event, timeFormat }) {
   const isGroupBooking = extendedProps.booking_type !== "appointment";
   const customerName =
     participants.length > 0
-      ? getPersonName(participants[0]) || "Customer"
+      ? toAvatar(participants[0], "Customer").name
       : "Walk-in";
   const additionalParticipants = participants.length - 1;
   const status = extendedProps.booking_status;

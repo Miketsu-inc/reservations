@@ -25,8 +25,7 @@ function GroupParticipants({ extendedProps }) {
 function getCustomerName({ participants }) {
   if (participants.length === 0) return "Walk-in";
 
-  const [customer] = participants;
-  return `${customer.first_name} ${customer.last_name}`;
+  return toAvatar(participants[0]).name;
 }
 
 // Not FullCalendar's timeText, which joins the range with an en dash.

@@ -22,7 +22,8 @@ import {
   resolveCalendarRange,
 } from "../-components/calendarViews";
 
-const Calendar = lazy(() => import("../-components/Calendar"));
+const importCalendar = () => import("../-components/Calendar");
+const Calendar = lazy(importCalendar);
 
 function validateDateString(dateStr) {
   return dateStringToLocalDate(dateStr) ? dateStr : undefined;
@@ -41,16 +42,19 @@ export const Route = createFileRoute(
       authContext: { merchantId, employeeId, role },
     },
   }) => {
-    const preferences = await queryClient.ensureQueryData(
-      preferencesQueryOptions(merchantId, employeeId)
-    );
+    // pre-import the calendar for faster loading
+    importCalendar();
 
-    // Load the team before the first render, so the team columns don't pop in.
-    if (canViewTeamCalendar(role)) {
-      await queryClient.ensureQueryData(
-        calendarTeamMembersQueryOptions(merchantId)
-      );
-    }
+    const [preferences] = await Promise.all([
+      queryClient.ensureQueryData(
+        preferencesQueryOptions(merchantId, employeeId)
+      ),
+      canViewTeamCalendar(role) &&
+        queryClient.ensureQueryData(
+          calendarTeamMembersQueryOptions(merchantId)
+        ),
+      queryClient.ensureQueryData(businessHoursQueryOptions(merchantId)),
+    ]);
 
     const view = resolveCalendarRange(
       getCalendarRanges(role, window.innerWidth < SCREEN_LG),
@@ -82,7 +86,6 @@ export const Route = createFileRoute(
     await queryClient.ensureQueryData(
       calendarBookingsQueryOptions(merchantId, start, end)
     );
-    await queryClient.ensureQueryData(businessHoursQueryOptions(merchantId));
   },
   errorComponent: ({ error }) => <ServerError error={error.message} />,
 });

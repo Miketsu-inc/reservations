@@ -7,7 +7,6 @@ import {
 // Every time grid is a resource view, so switching between team columns and a
 // merged grid only changes the resources instead of remounting the view.
 // Week and agenda get too wide for columns, so they always merge everyone.
-// The icons show the number of day columns in the view switcher.
 const dayRange = {
   value: "day",
   label: "Day",
@@ -38,6 +37,12 @@ const agendaRange = {
 
 const allRanges = [dayRange, twoDayRange, weekRange, agendaRange];
 
+export const timeGridViews = new Set([
+  dayRange.view,
+  twoDayRange.view,
+  weekRange.view,
+]);
+
 export function canViewTeamCalendar(role) {
   return role === "owner" || role === "admin";
 }
@@ -53,10 +58,6 @@ export function getCalendarRange(view) {
   return allRanges.find((range) => range.view === view)?.value;
 }
 
-/**
- * Picks the first of the candidate range values that is available, falling
- * back to the first available range.
- */
 export function resolveCalendarRange(ranges, ...candidates) {
   for (const candidate of candidates) {
     const range = ranges.find(({ value }) => value === candidate);

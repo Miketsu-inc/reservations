@@ -36,7 +36,6 @@ export default function SmallCalendar({
             ? 0
             : undefined
       }
-      // A highlighted range replaces the single selected day.
       selected={highlightedRange ? undefined : value}
       defaultMonth={
         month === undefined ? (highlightedRange?.from ?? value) : undefined

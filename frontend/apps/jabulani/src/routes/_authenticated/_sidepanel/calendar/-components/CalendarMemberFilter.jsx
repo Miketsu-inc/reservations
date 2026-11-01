@@ -11,7 +11,6 @@ import {
 import { toAvatar } from "@reservations/lib";
 import { useRef, useState } from "react";
 
-// Stands in for bookings and blocked times without anyone on the team.
 export const UNASSIGNED_ID = "unassigned";
 
 export function UnassignedAvatar({ styles }) {
@@ -59,7 +58,6 @@ function FilterRow({ isSelected, onToggle, onOnly, children }) {
         />
         {children}
       </button>
-      {/* Shown on hover, and always on touch where there is no hover. */}
       {onOnly && (
         <button
           type="button"
@@ -77,10 +75,8 @@ function FilterRow({ isSelected, onToggle, onOnly, children }) {
   );
 }
 
-/**
- * Picks whose bookings the calendar shows. At least one option always stays
- * selected, since an empty calendar has nothing to show or create on.
- */
+// At least one option always stays selected, since an empty calendar has
+// nothing to show or create on.
 export default function CalendarMemberFilter({
   members,
   selectedIds,

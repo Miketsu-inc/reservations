@@ -1,25 +1,12 @@
 import { Calendar as FullCalendar } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
-import { ArrowDown01Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import {
-  Avatar,
-  Button,
-  Icon,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  ServerError,
-  SmallCalendar,
-  Toggle,
-  ToggleGroup,
-} from "@reservations/components";
+import { ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
   calendarTeamMembersQueryOptions,
   dateStringToLocalDate,
-  DEFAULT_SERVICE_COLOR,
   formatToDateString,
   preferencesQueryOptions,
   useWindowSize,
@@ -41,16 +28,24 @@ import {
 import AgendaEventContent from "./AgendaEventContent";
 import CalendarEventContent from "./CalendarEventContent";
 import CalendarEventPreview from "./CalendarEventPreview";
-import CalendarMemberFilter, {
-  UNASSIGNED_ID,
-  UnassignedAvatar,
-} from "./CalendarMemberFilter";
+import {
+  applyDroppedEmployee,
+  formatBlockedTimes,
+  formatBookings,
+  formatResources,
+  sortMembersByName,
+  transformBusinessHours,
+} from "./calendarEvents";
+import { DayHeader, ListDayHeader, ResourceHeader } from "./CalendarHeaders";
+import CalendarMemberFilter, { UNASSIGNED_ID } from "./CalendarMemberFilter";
 import {
   calendarBookingQueryOptions,
   calendarBookingsQueryOptions,
 } from "./calendarQueries";
+import { observeCurrentTime, scrollToDay } from "./calendarScroll";
 import CalendarSidePanel from "./CalendarSidePanel";
 import calendarTheme from "./calendarTheme";
+import CalendarToolbar, { formatCalendarTitle } from "./CalendarToolbar";
 import {
   canViewTeamCalendar,
   getCalendarRange,
@@ -58,6 +53,7 @@ import {
   getCalendarView,
   hasTeamColumns,
   resolveCalendarRange,
+  timeGridViews,
 } from "./calendarViews";
 import CreateMenu, { CalendarCreateMenu } from "./CreateMenu";
 import resourceTimeGridPlugin from "./resourceTimeGridPlugin";
@@ -65,308 +61,8 @@ import resourceTimeGridPlugin from "./resourceTimeGridPlugin";
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 
-const timeGridViews = new Set([
-  "resourceTimeGridDay",
-  "resourceTimeGrid2Day",
-  "resourceTimeGridWeek",
-]);
-
-function getContrastColor(color) {
-  const hex = color.replace("#", "");
-
-  const red = parseInt(hex.substring(0, 2), 16);
-  const green = parseInt(hex.substring(2, 4), 16);
-  const blue = parseInt(hex.substring(4, 6), 16);
-
-  const [r, g, b] = [red, green, blue].map((channel) => {
-    const value = channel / 255;
-    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
-  const luminance = r * 0.2126 + g * 0.7152 + b * 0.0722;
-  return luminance > 0.179 ? "#000000" : "#ffffff";
-}
-
-function transformBusinessHours(businessHours) {
-  if (!businessHours) return {};
-
-  return Object.entries(businessHours).map(([day, times]) => ({
-    daysOfWeek: [parseInt(day)],
-    startTime: times.start_time.slice(0, 5),
-    endTime: times.end_time.slice(0, 5),
-  }));
-}
-
-// Bookings and blocked times of deleted or deactivated members have nobody on
-// the team, so they go to the unassigned column instead of disappearing.
-function getAssignedIds(employeeIds, memberIds) {
-  return employeeIds.filter((id) => memberIds.has(id));
-}
-
-function getResourceIds(employeeIds, memberIds) {
-  const assignedIds = getAssignedIds(employeeIds, memberIds);
-  return assignedIds.length > 0 ? assignedIds : [UNASSIGNED_ID];
-}
-
-function isUnassignedEvent({ extendedProps }, memberIds) {
-  const employeeIds =
-    extendedProps.type === "blocked"
-      ? extendedProps.employee_ids
-      : [extendedProps.employee_id];
-  return getAssignedIds(employeeIds, memberIds).length === 0;
-}
-
-function formatBookings(data, memberIds) {
-  if (data === undefined) return;
-
-  return data.map((booking) => {
-    let title = "Walk-in";
-    const isGroup = booking.booking_type !== "appointment";
-
-    if (isGroup) {
-      title = `${booking.service_name} - ${booking.participants.length}/${booking.max_participants}`;
-    } else if (booking.participants.length > 0) {
-      const participant = booking.participants[0];
-      title = `${participant.first_name} ${participant.last_name}`;
-    }
-
-    const serviceColor = booking.service_color ?? DEFAULT_SERVICE_COLOR;
-
-    return {
-      id: booking.id,
-      resourceIds: getResourceIds([booking.employee_id], memberIds),
-      title: title,
-      start: booking.from_date,
-      end: booking.to_date,
-      color: serviceColor,
-      contrastColor: getContrastColor(serviceColor),
-      durationEditable: false,
-      startEditable: new Date(booking.to_date) > new Date() ? true : false,
-      extendedProps: {
-        // this is a number unlike the normal 'id' which get's converted to a string
-        id: booking.id,
-        event_type: "booking",
-        booking_type: booking.booking_type,
-        booking_status: booking.booking_status,
-        is_recurring: booking.is_recurring,
-        max_participants: booking.max_participants,
-        participants: booking.participants,
-        merchant_note: booking.merchant_note,
-        service_name: booking.service_name,
-        service_color: serviceColor,
-        service_id: booking.service_id,
-        employee_id: booking.employee_id,
-        duration: booking.duration,
-        phases: booking.phases ?? [],
-        price: booking.price,
-        price_type: booking.price_type,
-      },
-    };
-  });
-}
-
-function formatBlockedTimes(data, memberIds) {
-  if (data === undefined) return;
-
-  return data.map((blockedTime) => {
-    const start = blockedTime.is_all_day
-      ? blockedTime.blocked_day
-      : blockedTime.from_date;
-    const end = blockedTime.is_all_day ? undefined : blockedTime.to_date;
-    const editableUntil = blockedTime.is_all_day
-      ? new Date(`${blockedTime.blocked_day}T23:59:59`)
-      : new Date(blockedTime.to_date);
-
-    return {
-      id: blockedTime.id,
-      resourceIds: getResourceIds(blockedTime.employee_ids, memberIds),
-      title: `${blockedTime.name} ${blockedTime?.icon || ""}`,
-      start: start,
-      end: end,
-      color: "#6b6b78",
-      contrastColor: getContrastColor("#6b6b78"),
-      durationEditable: !blockedTime.is_all_day,
-      allDay: blockedTime.is_all_day,
-      startEditable: editableUntil > new Date(),
-      extendedProps: {
-        id: blockedTime.id,
-        type: "blocked",
-        name: blockedTime.name,
-        icon: blockedTime.icon,
-        blocked_type_id: blockedTime.blocked_type_id,
-        employee_ids: blockedTime.employee_ids,
-        allDay: blockedTime.is_all_day,
-      },
-    };
-  });
-}
-
-// Matches the column order of the team views. Defined once, so the query keeps
-// returning the same array between renders.
-function sortMembersByName(members) {
-  return members.toSorted((a, b) =>
-    `${a.first_name} ${a.last_name}`.localeCompare(
-      `${b.first_name} ${b.last_name}`
-    )
-  );
-}
-
-function formatResources(teamMembers, showUnassigned) {
-  const resources = teamMembers.map((member) => ({
-    id: member.id,
-    title: `${member.first_name} ${member.last_name}`,
-    avatarUrl: member.avatar_url,
-    initials: `${member.first_name[0]}${member.last_name[0]}`,
-    isUnassigned: false,
-  }));
-
-  if (showUnassigned) {
-    resources.push({
-      id: UNASSIGNED_ID,
-      title: "Unassigned",
-      isUnassigned: true,
-    });
-  }
-  return resources;
-}
-
-function ResourceHeader({ resource }) {
-  return (
-    <div className="flex min-w-0 flex-col items-center gap-1">
-      {resource.extendedProps.isUnassigned ? (
-        <UnassignedAvatar styles="size-8" />
-      ) : (
-        <Avatar
-          styles="size-8! text-[11px]!"
-          img={resource.extendedProps.avatarUrl}
-          initials={resource.extendedProps.initials}
-          alt={resource.title}
-        />
-      )}
-      <span className="text-fg max-w-full truncate">{resource.title}</span>
-    </div>
-  );
-}
-
-function CalendarViewSwitcher({ ranges, value, onChange }) {
-  return (
-    <ToggleGroup variant="segmented" value={value} onValueChange={onChange}>
-      {ranges.map((range) => (
-        <Toggle
-          key={range.value}
-          value={range.value}
-          aria-label={range.label}
-          title={range.label}
-        >
-          <Icon icon={range.icon} styles="size-5" />
-        </Toggle>
-      ))}
-    </ToggleGroup>
-  );
-}
-
-// The title doubles as the date picker, like mobile calendar apps.
-function CalendarTitle({ visibleDates, firstDayOfWeek, onSelect }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${visibleDates?.title}, pick a date`}
-          className="hover:bg-hover data-popup-open:bg-hover -mx-2 flex
-            cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-xl
-            font-semibold whitespace-nowrap md:text-2xl"
-        >
-          {visibleDates?.title}
-          <Icon
-            icon={ArrowDown01Icon}
-            styles={`text-fg-muted size-5 shrink-0 transition-transform
-              ${isOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent styles="w-fit p-0!" align="start">
-        <SmallCalendar
-          highlightedRange={visibleDates?.range}
-          firstDayOfWeek={firstDayOfWeek}
-          onSelect={(date) => {
-            onSelect(date);
-            setIsOpen(false);
-          }}
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function DayHeader({ info }) {
-  return info.textParts.map((part, index) =>
-    part.type === "day" ? (
-      <span
-        key={index}
-        className={`mx-0.5 flex items-center justify-center text-sm
-          font-semibold ${
-            info.isToday
-              ? "bg-primary text-fg-on-primary size-6 rounded-full"
-              : "text-fg "
-          }`}
-      >
-        {part.value}
-      </span>
-    ) : (
-      <span key={index} className="text-fg-muted text-sm whitespace-pre">
-        {part.value}
-      </span>
-    )
-  );
-}
-
-function ListDayHeader({ info }) {
-  const month = info.textParts.find((part) => part.type === "month")?.value;
-
-  return (
-    <>
-      <span
-        className={`shrink-0 pr-1 text-xl font-semibold tabular-nums
-          ${info.isToday ? "text-fg-primary" : ""}`}
-      >
-        {info.date.getDate()}
-      </span>
-      <span
-        className={`font-semibold capitalize
-          ${info.isToday ? "text-fg-primary" : ""}`}
-      >
-        {info.weekdayText}
-      </span>
-      <span className="text-fg-muted text-sm">{month}</span>
-    </>
-  );
-}
-
-/**
- * Dropping an event into another employee's column only moves its resource,
- * so mirror the change into the employee fields the side panels read.
- */
-function applyDroppedEmployee({ event, oldResource, newResource }) {
-  if (!newResource) return;
-
-  const oldEmployeeId = Number(oldResource.id);
-  const newEmployeeId = Number(newResource.id);
-
-  if (event.extendedProps.type === "blocked") {
-    // An unassigned blocked time has no old member to replace.
-    const employeeIds = event.extendedProps.employee_ids.filter(
-      (employeeId) => employeeId !== oldEmployeeId
-    );
-    event.setExtendedProp("employee_ids", [
-      ...new Set([...employeeIds, newEmployeeId]),
-    ]);
-    return;
-  }
-
-  event.setExtendedProp("employee_id", newEmployeeId);
-}
+// Staff don't load the team, and a shared array keeps the useMemo's stable.
+const NO_TEAM_MEMBERS = [];
 
 const defaultSidePanelState = {
   isOpen: false,
@@ -400,99 +96,8 @@ function getCalendarCreateStart(date) {
   return calendarDate < now ? now : calendarDate;
 }
 
-// Intl joins ranges with an en dash, written as a spaced hyphen in the app.
-const RANGE_DASH = /\s*[–—]\s*/g;
-
-/**
- * Titles the calendar in the browser's locale. Time grids show the day numbers
- * in their header, so they only name the month. The agenda lists only days with
- * bookings, so it names the whole range.
- */
-function formatCalendarTitle(start, last, showDays) {
-  let options;
-  if (showDays) {
-    const year = new Date().getFullYear();
-    const isThisYear =
-      start.getFullYear() === year && last.getFullYear() === year;
-    options = {
-      month: "short",
-      day: "numeric",
-      year: isThisYear ? undefined : "numeric",
-    };
-  } else {
-    const isSameMonth =
-      start.getMonth() === last.getMonth() &&
-      start.getFullYear() === last.getFullYear();
-    options = { month: isSameMonth ? "long" : "short", year: "numeric" };
-  }
-
-  return new Intl.DateTimeFormat(undefined, options)
-    .formatRange(start, last)
-    .replace(RANGE_DASH, " - ");
-}
-
 function getInitialCalendarDate(search) {
   return dateStringToLocalDate(search.start) ?? new Date();
-}
-
-function findScroller(el, child) {
-  let scroller = child;
-  while (scroller && scroller !== el) {
-    if (["auto", "scroll"].includes(getComputedStyle(scroller).overflowY))
-      return scroller;
-    scroller = scroller.parentElement;
-  }
-  return null;
-}
-
-// The header is sticky, so measure its day instead.
-function scrollToDay(header) {
-  const day = header.parentElement;
-  const scroller = findScroller(document.body, day);
-  if (!scroller) return;
-
-  scroller.scrollTop +=
-    day.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-}
-
-/**
- * Centers the current time in day/week views on mount and when the grid resizes.
- * Measures the visible grid height to offset FullCalendar's top-aligned scrolling.
- * Returns methods to recenter on date changes and clean up when the view unmounts.
- */
-function observeCurrentTime({ el, view }) {
-  if (!timeGridViews.has(view.type)) return;
-
-  const scroller = findScroller(el, el.querySelector("[data-time]"));
-  if (!scroller) return;
-
-  // Runs synchronously, since a view switch paints the new view before the
-  // next animation frame. FullCalendar keeps the requested time and reapplies
-  // it once the slot heights are measured.
-  function center() {
-    if (!scroller.clientHeight || !scroller.scrollHeight) return;
-
-    const now = new Date();
-    const currentMinutes =
-      now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-    const visibleMinutes =
-      (scroller.clientHeight / scroller.scrollHeight) * 24 * 60;
-
-    view.calendar.scrollToTime({
-      minutes: Math.max(0, currentMinutes - visibleMinutes / 2),
-    });
-  }
-
-  const observer = new ResizeObserver(center);
-  observer.observe(scroller);
-  observer.observe(scroller.firstElementChild);
-
-  return {
-    center,
-    disconnect() {
-      observer.disconnect();
-    },
-  };
 }
 
 export default function Calendar({ router, route, search }) {
@@ -500,7 +105,6 @@ export default function Calendar({ router, route, search }) {
   const [sidePanelState, setSidePanelState] = useState(() =>
     bookingId ? createBookingPanelState(bookingId) : defaultSidePanelState
   );
-  // The title and the days on screen, both set when the dates change.
   const [visibleDates, setVisibleDates] = useState(null);
   const [createSelection, setCreateSelection] = useState(null);
 
@@ -525,24 +129,29 @@ export default function Calendar({ router, route, search }) {
     ...calendarBookingQueryOptions(merchantId, sidePanelState.bookingId),
     enabled: Boolean(sidePanelState.bookingId),
   });
-  const { data: teamMembers = [] } = useQuery({
-    ...calendarTeamMembersQueryOptions(merchantId),
-    enabled: canViewTeam,
-    select: sortMembersByName,
-  });
-  const [{ data: preferences }, { data: businessHours }] = useSuspenseQueries({
-    queries: [
-      preferencesQueryOptions(merchantId, employeeId),
-      businessHoursQueryOptions(merchantId),
-    ],
-  });
+  // The team loads with the rest, so the team columns don't pop in.
+  const [{ data: preferences }, { data: businessHours }, teamQuery] =
+    useSuspenseQueries({
+      queries: [
+        preferencesQueryOptions(merchantId, employeeId),
+        businessHoursQueryOptions(merchantId),
+        ...(canViewTeam
+          ? [
+              {
+                ...calendarTeamMembersQueryOptions(merchantId),
+                select: sortMembersByName,
+              },
+            ]
+          : []),
+      ],
+    });
+  const teamMembers = teamQuery?.data ?? NO_TEAM_MEMBERS;
   // null shows everyone, so new team members and unassigned bookings show up.
   const [memberFilter, setMemberFilter] = useState(null);
   // Kept in state rather than read from the URL, so the resources update in
   // the same render as the view instead of after the navigation.
   const [selectedRange, setSelectedRange] = useState(search.view);
 
-  // The agenda takes over where the side navigation collapses.
   const { isWindowSmall } = useWindowSize();
   const calendarRanges = getCalendarRanges(role, isWindowSmall);
   const calendarRef = useRef();
@@ -558,19 +167,18 @@ export default function Calendar({ router, route, search }) {
     [canViewTeam, employeeId, teamMembers]
   );
 
-  const hasUnassigned = useMemo(
-    () =>
-      canViewTeam &&
-      (events.bookings.some((booking) => !memberIds.has(booking.employee_id)) ||
-        events.blocked_times.some(
-          (blockedTime) =>
-            getAssignedIds(blockedTime.employee_ids, memberIds).length === 0
-        )),
-    [canViewTeam, memberIds, events.bookings, events.blocked_times]
+  const allEvents = useMemo(
+    () => [
+      ...formatBookings(events.bookings, memberIds),
+      ...formatBlockedTimes(events.blocked_times, memberIds),
+    ],
+    [memberIds, events.bookings, events.blocked_times]
   );
 
-  // Everything the member filter can pick from.
-  const filterIds = useMemo(
+  const hasUnassigned =
+    canViewTeam && allEvents.some((event) => event.extendedProps.is_unassigned);
+
+  const filterOptionIds = useMemo(
     () => (hasUnassigned ? [...memberIds, UNASSIGNED_ID] : [...memberIds]),
     [hasUnassigned, memberIds]
   );
@@ -581,9 +189,9 @@ export default function Calendar({ router, route, search }) {
     if (!canViewTeam) return [employeeId];
     if (!memberFilter) return null;
 
-    const ids = filterIds.filter((id) => memberFilter.includes(id));
+    const ids = filterOptionIds.filter((id) => memberFilter.includes(id));
     return ids.length > 0 ? ids : null;
-  }, [canViewTeam, employeeId, memberFilter, filterIds]);
+  }, [canViewTeam, employeeId, memberFilter, filterOptionIds]);
 
   const membersById = useMemo(
     () =>
@@ -593,25 +201,22 @@ export default function Calendar({ router, route, search }) {
     [canViewTeam, teamMembers]
   );
 
-  const selectedIds = filteredIds ?? filterIds;
+  const selectedIds = filteredIds ?? filterOptionIds;
 
   const calendarEvents = useMemo(() => {
-    const bookings = formatBookings(events.bookings, memberIds);
-    const blockedTimes = formatBlockedTimes(events.blocked_times, memberIds);
-    if (!filteredIds) return [...bookings, ...blockedTimes];
+    if (!filteredIds) return allEvents;
 
     const filter = new Set(filteredIds);
-    return [...bookings, ...blockedTimes].filter((event) =>
+    return allEvents.filter((event) =>
       event.resourceIds.some((id) => filter.has(id))
     );
-  }, [filteredIds, memberIds, events.bookings, events.blocked_times]);
+  }, [filteredIds, allEvents]);
 
   const calendarRange = resolveCalendarRange(
     calendarRanges,
     selectedRange,
     preferences.calendar_view
   );
-  // Crossing the mobile breakpoint can switch to the agenda.
   const resolvedView = getCalendarView(calendarRange);
   const showTeamColumns =
     hasTeamColumns(calendarRange) && selectedIds.length > 1;
@@ -763,51 +368,42 @@ export default function Calendar({ router, route, search }) {
     setSidePanelState(defaultSidePanelState);
   }
 
-  const datesChanged = useCallback(
-    (api) => {
-      const start = formatToDateString(api.view.activeStart);
-      const end = formatToDateString(api.view.activeEnd);
+  function datesChangedHandler({ view }) {
+    calendarScrollRef.current?.center();
 
-      router.navigate({
-        to: "/calendar",
-        search: (prev) => ({
-          ...prev,
-          view: getCalendarRange(api.view.type),
-          start: start,
-          end: end,
-        }),
-        replace: true,
-      });
-    },
-    [router]
-  );
+    const lastDay = new Date(view.currentEnd);
+    lastDay.setDate(lastDay.getDate() - 1);
+    setVisibleDates({
+      title: formatCalendarTitle(
+        view.currentStart,
+        lastDay,
+        view.type === "listWeek"
+      ),
+      range: { from: view.currentStart, to: lastDay },
+      buttons: view.calendar.getButtonState(),
+    });
 
-  function navButtonHandler(dir) {
-    const api = calendarRef.current.getApi();
-
-    if (dir === "prev") {
-      api.prev();
-    } else if (dir === "next") {
-      api.next();
+    const range = getCalendarRange(view.type);
+    const start = formatToDateString(view.activeStart);
+    const end = formatToDateString(view.activeEnd);
+    if (range === search.view && start === search.start && end === search.end) {
+      return;
     }
 
-    datesChanged(api);
+    router.navigate({
+      to: "/calendar",
+      search: (prev) => ({ ...prev, view: range, start, end }),
+      replace: true,
+    });
   }
 
   function todayButtonHandler() {
     const api = calendarRef.current.getApi();
-
-    const today = new Date().getTime();
-    if (
-      api.view.currentStart.getTime() <= today &&
-      api.view.currentEnd.getTime() >= today
-    ) {
-      return;
-    }
+    // Keeps the current range when it already shows today, instead of moving
+    // the 2 days view to start today.
+    if (api.getButtonState().today.isDisabled) return;
 
     api.today();
-
-    datesChanged(api);
   }
 
   function changeViewHandler(view) {
@@ -819,8 +415,6 @@ export default function Calendar({ router, route, search }) {
     const now = new Date();
     const showsToday = api.view.activeStart <= now && now < api.view.activeEnd;
     api.changeView(view, showsToday ? now : api.view.currentStart);
-
-    datesChanged(api);
   }
 
   const syncCalendarView = useEffectEvent(() => {
@@ -837,15 +431,11 @@ export default function Calendar({ router, route, search }) {
   }
 
   function changeMembersHandler(ids) {
-    setMemberFilter(ids.length === filterIds.length ? null : ids);
+    setMemberFilter(ids.length === filterOptionIds.length ? null : ids);
   }
 
   function changeDateHandler(date) {
-    const api = calendarRef.current.getApi();
-    const dateStr = formatToDateString(date);
-
-    api.gotoDate(dateStr);
-    datesChanged(api);
+    calendarRef.current.getApi().gotoDate(formatToDateString(date));
   }
 
   if (isError) {
@@ -889,66 +479,32 @@ export default function Calendar({ router, route, search }) {
           }
         />
       )}
-      {/* Mobile puts the title on its own row above the controls. */}
-      <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 pb-4">
-        <div className="w-full md:order-2 md:w-auto">
-          <CalendarTitle
-            visibleDates={visibleDates}
-            firstDayOfWeek={preferences.first_day_of_week}
-            onSelect={changeDateHandler}
+      <CalendarToolbar
+        visibleDates={visibleDates}
+        firstDayOfWeek={preferences.first_day_of_week}
+        onSelectDate={changeDateHandler}
+        onPrev={() => calendarRef.current.getApi().prev()}
+        onToday={todayButtonHandler}
+        onNext={() => calendarRef.current.getApi().next()}
+        ranges={calendarRanges}
+        range={calendarRange}
+        onRangeChange={changeRangeHandler}
+      >
+        {canViewTeam && (
+          <CalendarMemberFilter
+            members={teamMembers}
+            selectedIds={selectedIds}
+            showUnassigned={hasUnassigned}
+            onChange={changeMembersHandler}
+            currentEmployeeId={employeeId}
           />
-        </div>
-        <div className="flex flex-row items-center gap-1 md:order-1">
-          <button
-            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
-              rounded-lg p-2"
-            type="button"
-            onClick={() => navButtonHandler("prev")}
-          >
-            <Icon icon={ArrowLeft01Icon} styles="size-5" />
-          </button>
-          <Button
-            variant="secondary"
-            styles="px-3 py-2 text-sm"
-            buttonText="Today"
-            onClick={todayButtonHandler}
-          />
-          <button
-            className="text-fg-muted hover:bg-hover hover:text-fg cursor-pointer
-              rounded-lg p-2"
-            type="button"
-            onClick={() => navButtonHandler("next")}
-          >
-            <Icon icon={ArrowLeft01Icon} styles="size-5 rotate-180" />
-          </button>
-        </div>
-        <div
-          className="ml-auto flex min-w-0 flex-1 flex-row items-center
-            justify-end gap-2 md:order-3 md:flex-none"
-        >
-          {calendarRanges.length > 1 && (
-            <CalendarViewSwitcher
-              ranges={calendarRanges}
-              value={calendarRange}
-              onChange={changeRangeHandler}
-            />
-          )}
-          {canViewTeam && (
-            <CalendarMemberFilter
-              members={teamMembers}
-              selectedIds={selectedIds}
-              showUnassigned={hasUnassigned}
-              onChange={changeMembersHandler}
-              currentEmployeeId={employeeId}
-            />
-          )}
-          <CreateMenu
-            isFloating={isWindowSmall}
-            onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
-            onCreateBooking={() => openSidePanelAtTime("new-booking")}
-          />
-        </div>
-      </div>
+        )}
+        <CreateMenu
+          isFloating={isWindowSmall}
+          onCreateBlockedTime={() => openSidePanelAtTime("blocked-time")}
+          onCreateBooking={() => openSidePanelAtTime("new-booking")}
+        />
+      </CalendarToolbar>
       <div className="min-h-0 w-full flex-1 overflow-hidden">
         <FullCalendar
           ref={calendarRef}
@@ -970,11 +526,13 @@ export default function Calendar({ router, route, search }) {
           initialView={resolvedView}
           initialDate={getInitialCalendarDate(search)}
           height="100%"
-          // Lets the agenda sit on the page instead of a white card.
           className={
             resolvedView === "listWeek" ? "bg-transparent!" : undefined
           }
           headerToolbar={false}
+          // The hints name the view's unit, which the 2 days view doesn't have.
+          prevHint={(unit) => `Previous ${unit || "2 days"}`}
+          nextHint={(unit) => `Next ${unit || "2 days"}`}
           viewDidMount={(info) => {
             calendarScrollRef.current = observeCurrentTime(info);
           }}
@@ -985,41 +543,20 @@ export default function Calendar({ router, route, search }) {
           events={calendarEvents}
           blockEventClass="calendar-event bg-(--fc-event-color)!"
           blockEventInnerClass="text-(--fc-event-contrast-color)!"
-          eventContent={(eventInfo) =>
-            eventInfo.view.type === "listWeek" ? (
-              // The agenda already shows everything the preview would.
-              <AgendaEventContent
-                eventInfo={eventInfo}
-                membersById={membersById}
-                timeFormat={preferences.time_format}
-              />
-            ) : (
-              <CalendarEventPreview
-                event={eventInfo.event}
-                timeFormat={preferences.time_format}
-                canOpen={() =>
-                  !eventInfo.isMirror &&
-                  !eventInfo.isDragging &&
-                  !isDraggingRef.current
-                }
-              >
-                <CalendarEventContent eventInfo={eventInfo} />
-              </CalendarEventPreview>
-            )
-          }
-          datesSet={({ view }) => {
-            calendarScrollRef.current?.center();
-            const lastDay = new Date(view.currentEnd);
-            lastDay.setDate(lastDay.getDate() - 1);
-            setVisibleDates({
-              title: formatCalendarTitle(
-                view.currentStart,
-                lastDay,
-                view.type === "listWeek"
-              ),
-              range: { from: view.currentStart, to: lastDay },
-            });
-          }}
+          eventContent={(eventInfo) => (
+            <CalendarEventPreview
+              event={eventInfo.event}
+              timeFormat={preferences.time_format}
+              canOpen={() =>
+                !eventInfo.isMirror &&
+                !eventInfo.isDragging &&
+                !isDraggingRef.current
+              }
+            >
+              <CalendarEventContent eventInfo={eventInfo} />
+            </CalendarEventPreview>
+          )}
+          datesSet={datesChangedHandler}
           eventClick={(e) => {
             const type = e.event.extendedProps.type;
 
@@ -1037,8 +574,7 @@ export default function Calendar({ router, route, search }) {
 
             if (
               !timeGridViews.has(info.view.type) ||
-              end.getTime() < Date.now() ||
-              info.jsEvent.target.closest(".fc-event")
+              end.getTime() < Date.now()
             ) {
               return;
             }
@@ -1055,7 +591,6 @@ export default function Calendar({ router, route, search }) {
             });
           }}
           firstDay={preferences.first_day_of_week === "Monday" ? "1" : "0"}
-          lazyFetching={true}
           slotHeaderFormat={{
             hour: "numeric",
             minute: "numeric",
@@ -1089,11 +624,11 @@ export default function Calendar({ router, route, search }) {
             dropInfo.start.getTime() >= Date.now() &&
             // Bookings always need a team member, so nothing can be dropped on unassigned.
             (dropInfo.resource?.id !== UNASSIGNED_ID ||
-              isUnassignedEvent(draggedEvent, memberIds))
+              draggedEvent.extendedProps.is_unassigned)
           }
           dayHeaderFormat={{
             weekday: "short",
-            day: isWindowSmall ? undefined : "numeric",
+            day: "numeric",
             omitCommas: true,
           }}
           dayHeaderContent={(info) => <DayHeader info={info} />}
@@ -1108,6 +643,14 @@ export default function Calendar({ router, route, search }) {
               duration: { days: 2 },
             },
             listWeek: {
+              // The agenda already shows everything the preview would.
+              eventContent: (eventInfo) => (
+                <AgendaEventContent
+                  eventInfo={eventInfo}
+                  membersById={membersById}
+                  timeFormat={preferences.time_format}
+                />
+              ),
               borderless: true,
               noEventsText: "Nothing scheduled this week",
               noEventsClass: "flex flex-1 items-center justify-center",
