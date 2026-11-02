@@ -10,6 +10,7 @@ import {
   Menu01Icon,
   Moon02Icon,
   Note01Icon,
+  RepeatIcon,
   Settings02Icon,
   ShoppingBag02Icon,
   Sun03Icon,
@@ -372,6 +373,15 @@ function SidePanelLayout() {
                           : "Collapse sidepanel"}
                       </button>
                     </PopoverClose>
+                  </div>
+                  <div>
+                    <a
+                      className="flex flex-row items-center gap-2"
+                      href={`${TANGO_URL}/home`}
+                    >
+                      <Icon icon={RepeatIcon} styles="size-5" />
+                      Switch to customer account
+                    </a>
                   </div>
                   <div>
                     <button

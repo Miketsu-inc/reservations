@@ -7,6 +7,7 @@ import {
   Moon02Icon,
   Search01Icon,
   Settings02Icon,
+  Store01Icon,
   Sun03Icon,
   UserCircleIcon,
 } from "@hugeicons/core-free-icons";
@@ -20,6 +21,7 @@ import {
   ServerError,
 } from "@reservations/components";
 import {
+  JABULANI_URL,
   meQueryOptions,
   toAvatar,
   useTheme,
@@ -244,6 +246,20 @@ function NavLayout() {
                     className="*:hover:bg-hover space-y-1 text-sm
                       *:cursor-pointer *:rounded-lg *:p-2"
                   >
+                    {user.memberships?.length > 0 && (
+                      <div>
+                        <a
+                          className="flex flex-row items-center gap-2"
+                          href={JABULANI_URL}
+                        >
+                          <Icon
+                            icon={Store01Icon}
+                            styles="size-4.5 text-fg-muted"
+                          />
+                          Business dashboard
+                        </a>
+                      </div>
+                    )}
                     <div>
                       <button
                         className="flex cursor-pointer flex-row items-center
