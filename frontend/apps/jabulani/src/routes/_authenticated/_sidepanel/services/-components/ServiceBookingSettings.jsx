@@ -27,9 +27,12 @@ const approvalOptions = [
 ];
 
 export default function ServiceBookingSettings({ onUpdate, settings }) {
-  const areSchedulingSettingsNull = Object.values(settings).every(
-    (value) => value === null
-  );
+  const areSchedulingSettingsNull = [
+    settings.cancel_deadline,
+    settings.buffer_time,
+    settings.booking_window_min,
+    settings.booking_window_max,
+  ].every((value) => value === null);
   const isApprovalPolicyNull = settings.approval_policy === null;
   const [showScheduling, setShowScheduling] = useState(
     !areSchedulingSettingsNull
@@ -182,7 +185,7 @@ export default function ServiceBookingSettings({ onUpdate, settings }) {
               defaultValue={!isApprovalPolicyNull}
               onSwitch={handleApprovalPolicySwitch}
             />
-            Override bookng approval policy
+            Override booking approval policy
           </div>
         </div>
         <div
