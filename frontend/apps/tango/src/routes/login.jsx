@@ -1,11 +1,8 @@
 import {
   AlertCircleIcon,
-  ArrowRight01Icon,
-  Calendar03Icon,
   CalendarCheckIn01Icon,
   Clock01Icon,
   Search01Icon,
-  Store01Icon,
 } from "@hugeicons/core-free-icons";
 import { FacebookIcon, GoogleIcon } from "@reservations/assets";
 import { Button, Icon, Input, ServerError } from "@reservations/components";
@@ -160,21 +157,6 @@ function LoginPage() {
   return (
     <div className="bg-bg flex min-h-dvh">
       <main className="flex flex-1 flex-col px-6 py-6 sm:px-10 sm:py-8">
-        <Link
-          to="/"
-          className="focus-visible:outline-primary flex w-fit items-center gap-2
-            rounded-lg font-semibold focus-visible:outline-2
-            focus-visible:outline-offset-4"
-        >
-          <span
-            className="bg-primary text-fg-on-primary flex size-8 items-center
-              justify-center rounded-lg"
-          >
-            <Icon icon={Calendar03Icon} styles="size-5" aria-hidden="true" />
-          </span>
-          Reservations
-        </Link>
-
         <div
           className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center
             py-12"
@@ -195,7 +177,7 @@ function LoginPage() {
                 focus-visible:outline-offset-2"
               href="/api/v1/auth/oauth/google"
             >
-              <GoogleIcon styles="fill-fg size-4" />
+              <GoogleIcon styles="fill-fg size-4.5" />
               Continue with Google
             </a>
             <a
@@ -206,7 +188,7 @@ function LoginPage() {
                 focus-visible:outline-offset-2"
               href="/api/v1/auth/oauth/facebook"
             >
-              <FacebookIcon styles="fill-fg size-5" />
+              <FacebookIcon styles="fill-fg size-4.5" />
               Continue with Facebook
             </a>
           </div>
@@ -319,32 +301,17 @@ function LoginPage() {
           </p>
         </div>
 
-        <a
-          href={`${JABULANI_URL}/login`}
-          className="border-border bg-bg-raised hover:bg-hover
-            focus-visible:outline-primary group mx-auto flex w-full max-w-sm
-            items-center gap-3 rounded-xl border p-3 transition-colors
-            focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <span
-            className="bg-primary-subtle text-fg-primary flex size-10 shrink-0
-              items-center justify-center rounded-lg"
+        <p className="text-fg-muted mx-auto text-center text-sm">
+          Own or work at a business?{" "}
+          <a
+            href={`${JABULANI_URL}/login`}
+            className="text-fg-primary focus-visible:outline-primary rounded
+              font-medium hover:underline focus-visible:outline-2
+              focus-visible:outline-offset-2"
           >
-            <Icon icon={Store01Icon} styles="size-5" aria-hidden="true" />
-          </span>
-          <span className="flex flex-1 flex-col text-sm">
-            <span className="font-medium">Own or work at a business?</span>
-            <span className="text-fg-muted">
-              Log in to Reservations for Business
-            </span>
-          </span>
-          <Icon
-            icon={ArrowRight01Icon}
-            styles="text-fg-muted size-5 transition-transform
-              group-hover:translate-x-0.5"
-            aria-hidden="true"
-          />
-        </a>
+            Business login
+          </a>
+        </p>
       </main>
 
       <aside
