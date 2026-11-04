@@ -87,7 +87,7 @@ export default function CancelBooking({ booking, isUpcoming }) {
             onClick={() => setIsCancelModalOpen(true)}
             className="hover:bg-hover border-border group flex w-full
               cursor-pointer items-center justify-between border-t px-4 py-3
-              text-left transition-colors sm:px-5 sm:py-3.5"
+              text-left transition-colors sm:py-3.5"
           >
             <div className="flex items-center gap-3">
               <Icon
