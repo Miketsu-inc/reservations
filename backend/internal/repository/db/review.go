@@ -298,7 +298,6 @@ func (r *reviewRepository) GetReviews(ctx context.Context, filter domain.ReviewF
 
 	offsetArg := argIdx
 	args = append(args, offset)
-	argIdx++
 
 	query := fmt.Sprintf(`
 	SELECT 
