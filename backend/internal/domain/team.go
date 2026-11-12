@@ -104,3 +104,10 @@ type EmployeeWithServiceOverrides struct {
 	PriceType       *types.PriceType   `db:"price_type"`
 	MaxParticipants *int               `db:"max_participants"`
 }
+
+type MinimalEmployeeInfo struct {
+	Id            *int       `json:"id,omitempty"`
+	FirstName     *string    `json:"first_name"`
+	LastName      *string    `json:"last_name"`
+	AvatarImageId *uuid.UUID `json:"avatar_image_id"`
+}

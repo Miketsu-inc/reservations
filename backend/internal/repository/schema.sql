@@ -457,3 +457,11 @@ create table if not exists "Review" (
 create unique index if not exists unique_review on "Review"
     (user_id, merchant_id, location_id, employee_id, service_id)
     where status <> 'removed';
+
+create table if not exists "ReviewReply" (
+    review_id           integer      primary key references "Review" (ID) on delete cascade,
+    employee_id         integer      references "Employee" (ID) on delete set null,
+    comment             text         not null,
+    created_at          timestamptz  not null default now(),
+    updated_at          timestamptz  not null default now()
+);

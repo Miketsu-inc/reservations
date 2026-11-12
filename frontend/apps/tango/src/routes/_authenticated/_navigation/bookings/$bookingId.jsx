@@ -189,9 +189,7 @@ function BookingDetailsPage() {
 
           <div className="flex items-center gap-4">
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                booking.formatted_location
-              )}`}
+              href={`https://www.google.com/maps/dir/?api=1&destination=${booking.geo_point.latitude},${booking.geo_point.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-bg-raised border-border hover:bg-hover text-fg flex

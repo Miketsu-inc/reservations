@@ -137,6 +137,34 @@ export function calendarTeamMembersQueryOptions(merchantId) {
   });
 }
 
+async function fetchCalendarServices(merchantId) {
+  const response = await fetch(
+    `/api/v1/merchants/${merchantId}/calendar/services`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    invalidateLocalStorageAuth(response.status);
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function calendarServicesQueryOptions(merchantId) {
+  return queryOptions({
+    queryKey: [merchantId, "services-calendar"],
+    queryFn: () => fetchCalendarServices(merchantId),
+  });
+}
+
 async function fetchServiceFormOptions(merchantId) {
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/services/form-options`,

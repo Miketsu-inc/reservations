@@ -22,6 +22,7 @@ export default function ReviewModal({
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
         styles="w-full lg:min-w-lg max-w-xl p-4 lg:p-6 flex flex-col gap-5"
+        popUpStyles="h-[calc(80vh+3rem)]!"
       >
         <ReviewForm
           booking={booking}
@@ -99,37 +100,41 @@ function ReviewForm({ booking, review, isUpdate, initialRating, onClose }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-fg text-xl font-semibold">
-          {isUpdate ? "Update your review" : "Leave a review"}
-        </h3>
-        {booking.service_name && booking.employee?.first_name && (
-          <p className="text-fg-muted text-sm">{`${booking.service_name} with ${booking.employee.first_name}`}</p>
-        )}
-      </div>
+    <form
+      onSubmit={handleSubmit}
+      className="flex h-full w-full flex-col justify-between"
+    >
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-fg text-xl font-semibold">
+            {isUpdate ? "Update your review" : "Leave a review"}
+          </h3>
+          {booking.service_name && booking.employee?.first_name && (
+            <p className="text-fg-muted text-sm">{`${booking.service_name} with ${booking.employee.first_name}`}</p>
+          )}
+        </div>
 
-      <div className="flex flex-col items-center gap-2 py-6">
-        <StarRating
-          value={rating}
-          onChange={setRating}
-          iconStyles="size-8 sm:size-9"
-          styles="gap-2"
+        <div className="flex flex-col items-center gap-2 py-6">
+          <StarRating
+            value={rating}
+            onChange={setRating}
+            iconStyles="size-8 sm:size-9"
+            styles="gap-2"
+          />
+        </div>
+
+        <Textarea
+          id="reviewComment"
+          name="comment"
+          rows={4}
+          maxLength={300}
+          value={comment}
+          inputData={(data) => setComment(data.value)}
+          placeholder="Share details of your experience (optional)"
+          styles="p-3.5"
+          required={false}
         />
       </div>
-
-      <Textarea
-        id="reviewComment"
-        name="comment"
-        rows={4}
-        maxLength={300}
-        value={comment}
-        inputData={(data) => setComment(data.value)}
-        placeholder="Share details of your experience (optional)"
-        styles="p-3.5"
-        required={false}
-      />
-
       <div className="flex items-center justify-end gap-3 pt-2">
         <ResponsiveDialogClose asChild>
           <Button

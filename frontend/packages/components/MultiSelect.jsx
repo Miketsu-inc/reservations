@@ -113,7 +113,7 @@ export default function MultiSelect({
         onOpenChange?.(open);
       }}
     >
-      <div className={`w-full ${styles}`}>
+      <div className={`w-full min-w-0 ${styles}`}>
         {labelText && (
           <span className="text-fg flex items-center gap-1 pb-1.5 text-sm">
             {labelText}
@@ -133,16 +133,18 @@ export default function MultiSelect({
               hover:not-disabled:not-focus-visible:not-data-popup-open:border-border-hover
               focus-visible:border-primary focus-visible:ring-primary-focus
               data-popup-open:border-primary data-popup-open:ring-primary-focus
-              disabled:border-border disabled:bg-bg-sunken w-full min-w-fit
-              rounded-lg border py-2 pr-2 pl-3 text-left outline-hidden
+              disabled:border-border disabled:bg-bg-sunken h-[38px] w-full
+              min-w-0 rounded-lg border px-3 text-left outline-hidden
               transition-[border-color,box-shadow] duration-150
               focus-visible:ring-3 data-popup-open:ring-3 md:text-sm`}
             type="button"
             ref={containerRef}
             disabled={disabled}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div
+              className="flex w-full min-w-0 items-center justify-between gap-2"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <TriggerContent
                   selectedValues={selectedValues}
                   options={options}
@@ -236,13 +238,13 @@ export default function MultiSelect({
                         styles="outline-none"
                       />
                       <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <Avatar
-                          img={option.img}
-                          initials={
-                            option.initials || option.label?.substring(0, 2)
-                          }
-                          styles="size-6! text-[10px]! shrink-0"
-                        />
+                        {(option.img || option.initials) && (
+                          <Avatar
+                            img={option.img}
+                            initials={option.initials}
+                            styles="size-6! text-[10px]! shrink-0"
+                          />
+                        )}
                         <span className="mb-0.5 truncate text-sm">
                           {option.label}
                         </span>
@@ -274,8 +276,8 @@ function TriggerContent({
   if (selectedOptions.length === 0) {
     return (
       <span
-        className={`${disabled ? "text-fg-disabled" : "text-fg-muted"} min-h-6
-          flex-1 truncate`}
+        className={`${disabled ? "text-fg-disabled" : "text-fg-muted"} flex-1
+          truncate text-sm`}
       >
         {placeholder}
       </span>
@@ -289,17 +291,18 @@ function TriggerContent({
     text = selectedOptions[0].label;
   }
 
+  const avatars = selectedOptions
+    .filter((option) => option.img || option.initials)
+    .map((option) => ({
+      id: option.value,
+      img: option.img,
+      initials: option.initials,
+      name: option.label,
+    }));
+
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
-      <AvatarStack
-        avatars={selectedOptions.map((option) => ({
-          id: option.value,
-          img: option.img,
-          initials: option.initials || option.label?.substring(0, 2),
-          name: option.label,
-        }))}
-        max={2}
-      />
+      {avatars.length > 0 && <AvatarStack avatars={avatars} max={2} />}
       <span
         className={`truncate text-sm ${
           disabled ? "text-fg-disabled" : "text-fg"

@@ -22,6 +22,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/customers"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/locations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/products"
+	merchantReviews "github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/reviews"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/servicecategories"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/services"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
@@ -106,7 +107,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	productService := productSrv.NewService(productRepo)
 	userService := userSrv.NewService(userRepo, customerRep, teamRepo, transactionManager)
 	mediaService := mediaSrv.NewService(imageRepo, userRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)
-	reviewService := reviewSrv.NewService(reviewRepo, bookingRepo)
+	reviewService := reviewSrv.NewService(reviewRepo, bookingRepo, locationRepo)
 
 	enqueuer, err := queue.NewClient(dbConn, workers.Deps{
 		BookingService:     bookingService,
@@ -149,6 +150,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Favorites:         favorites.NewHandler(favoriteService, middlewareManager),
 		Locations:         locations.NewHandler(locationService, mediaService, middlewareManager),
 		Products:          products.NewHandler(productService),
+		MerchantReviews:   merchantReviews.NewHandler(reviewService),
 		Services:          services.NewHandler(catalogService),
 		ServiceCategories: servicecategories.NewHandler(catalogService),
 		Team:              team.NewHandler(teamService, mediaService, middlewareManager),

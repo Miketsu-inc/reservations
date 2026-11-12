@@ -111,10 +111,7 @@ export default function Select({
     >
       <div className={`w-full ${styles}`}>
         {labelText && (
-          <span
-            className="text-fg flex items-center gap-1 pb-1.5 text-sm
-              font-medium"
-          >
+          <span className="text-fg flex items-center gap-1 pb-1.5 text-sm">
             {labelText}
             {required !== false && (
               <span

@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import ReviewModal from "./ReviewModal";
 
-const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+const FIFTEEN_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function getReviewView(review, bookingId, isWithin15Days) {
   if (!review) return isWithin15Days ? "none" : "hidden";

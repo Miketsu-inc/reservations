@@ -1,4 +1,8 @@
-import { UnavailableIcon, User03Icon } from "@hugeicons/core-free-icons";
+import {
+  StarIcon,
+  UnavailableIcon,
+  User03Icon,
+} from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
 import { TopNavBar, TopNavBarItem } from "@reservations/jabulani/components";
 import {
@@ -18,7 +22,8 @@ function CustomersLayout() {
   const isCustomersActive =
     pathName === "/customers" ||
     (pathName.startsWith("/customers/") &&
-      !pathName.startsWith("/customers/blacklist"));
+      !pathName.startsWith("/customers/blacklist") &&
+      !pathName.startsWith("/customers/reviews"));
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden pt-2">
@@ -39,6 +44,14 @@ function CustomersLayout() {
         >
           <Icon icon={UnavailableIcon} styles="size-4.5" />
           <span>Blacklisted</span>
+        </TopNavBarItem>
+        <TopNavBarItem
+          from={Route.fullPath}
+          to="/customers/reviews"
+          activeOptions={{ exact: true }}
+        >
+          <Icon icon={StarIcon} styles="size-4.5" />
+          <span>Reviews</span>
         </TopNavBarItem>
       </TopNavBar>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4">

@@ -3,23 +3,28 @@ package review
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
 )
 
 type Service struct {
-	reviewRepo  domain.ReviewRepository
-	bookingRepo domain.BookingRepository
+	reviewRepo   domain.ReviewRepository
+	bookingRepo  domain.BookingRepository
+	locationRepo domain.LocationRepository
 }
 
-func NewService(reviewRepo domain.ReviewRepository, bookingRepo domain.BookingRepository) *Service {
+func NewService(reviewRepo domain.ReviewRepository, bookingRepo domain.BookingRepository, locationRepo domain.LocationRepository) *Service {
 	return &Service{
-		reviewRepo:  reviewRepo,
-		bookingRepo: bookingRepo,
+		reviewRepo:   reviewRepo,
+		bookingRepo:  bookingRepo,
+		locationRepo: locationRepo,
 	}
 }
 
@@ -29,7 +34,7 @@ func CheckBookingEligibility(booking domain.Booking, participant domain.BookingP
 	}
 
 	// 15 days after completing the booking
-	if now.Sub(booking.ToDate) > 15*24*time.Hour {
+	if now.Sub(booking.ToDate) > 30*24*time.Hour {
 		return ErrBookingExpiredForReview
 	}
 
@@ -95,7 +100,6 @@ func (s *Service) GetReviewForBooking(ctx context.Context, bookingId int) (*doma
 	}
 
 	return review, nil
-
 }
 
 func (s *Service) CreateReview(ctx context.Context, bookingId int, rating int16, comment *string) error {
@@ -227,4 +231,101 @@ func (s *Service) DeleteReview(ctx context.Context, reviewId int) error {
 	}
 
 	return nil
+}
+
+func (s *Service) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (domain.ReviewStats, error) {
+	if locationId == nil {
+		defaultLoc, err := s.locationRepo.GetDefaultLocation(ctx, merchantId)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return domain.ReviewStats{}, fmt.Errorf("GetDefaultLocation: %w", err)
+		}
+		if err == nil {
+			locationId = &defaultLoc.Id
+		}
+	}
+
+	return s.reviewRepo.GetReviewStats(ctx, merchantId, locationId)
+}
+
+type reviewCursor struct {
+	Offset int `json:"offset"`
+}
+
+type GetReviewsInput struct {
+	MerchantId uuid.UUID
+	LocationId *int
+	ReviewQueryParams
+}
+
+type GetReviewsResult struct {
+	Reviews     []domain.ReviewDetails
+	NextCursor  *string
+	HasNextPage bool
+}
+
+func (s *Service) GetReviews(ctx context.Context, input GetReviewsInput) (GetReviewsResult, error) {
+	decodedCursor, err := cursor.Decode[reviewCursor](input.Cursor)
+	if err != nil {
+		return GetReviewsResult{}, fmt.Errorf("decode review cursor: %w", err)
+	}
+
+	locationId := input.LocationId
+	if locationId == nil {
+		defaultLoc, err := s.locationRepo.GetDefaultLocation(ctx, input.MerchantId)
+		if err != nil {
+			return GetReviewsResult{}, fmt.Errorf("GetDefaultLocation: %w", err)
+		} else {
+			locationId = &defaultLoc.Id
+		}
+	}
+
+	filter := domain.ReviewFilter{
+		MerchantId:  input.MerchantId,
+		LocationId:  locationId,
+		Rating:      input.Rating,
+		EmployeeIds: input.EmployeeIds,
+		ServiceIds:  input.ServiceIds,
+		HasReply:    input.HasReply,
+		Statuses:    []string{"published", "reported"},
+		Sort:        input.Sort,
+		Limit:       input.PageSize + 1,
+		Offset:      decodedCursor.Offset,
+	}
+
+	reviews, err := s.reviewRepo.GetReviews(ctx, filter)
+	if err != nil {
+		return GetReviewsResult{}, err
+	}
+
+	hasNextPage := len(reviews) > input.PageSize
+
+	var nextCursor *string
+	if hasNextPage {
+		encoded, err := cursor.Encode(reviewCursor{
+			Offset: decodedCursor.Offset + input.PageSize,
+		})
+		if err != nil {
+			return GetReviewsResult{}, fmt.Errorf("encode cursor: %w", err)
+		}
+		nextCursor = &encoded
+		reviews = reviews[:input.PageSize]
+	}
+
+	return GetReviewsResult{
+		Reviews:     reviews,
+		NextCursor:  nextCursor,
+		HasNextPage: hasNextPage,
+	}, nil
+}
+
+func (s *Service) ReplyReview(ctx context.Context, merchantId uuid.UUID, employeeId int, reviewId int, comment string) error {
+	return s.reviewRepo.UpsertReply(ctx, merchantId, reviewId, employeeId, comment)
+}
+
+func (s *Service) DeleteReviewReply(ctx context.Context, merchantId uuid.UUID, reviewId int) error {
+	return s.reviewRepo.DeleteReply(ctx, merchantId, reviewId)
+}
+
+func (s *Service) ReportReview(ctx context.Context, merchantId uuid.UUID, reviewId int, reason string) error {
+	return s.reviewRepo.ReportReview(ctx, reviewId, merchantId, reason)
 }

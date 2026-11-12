@@ -1,7 +1,11 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Icon, ServerError } from "@reservations/components";
 import { useAuth } from "@reservations/jabulani/lib";
-import { invalidateLocalStorageAuth, useWindowSize } from "@reservations/lib";
+import {
+  calendarServicesQueryOptions,
+  invalidateLocalStorageAuth,
+  useWindowSize,
+} from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import BlockedTimePanel from "./BlockedTimePanel";
 import EditBookingPanel from "./EditBookingPanel";
@@ -32,13 +36,6 @@ function customersForCalendarQueryOptions(merchantId) {
   return queryOptions({
     queryKey: [merchantId, "customers-calendar"],
     queryFn: () => fetchSidePanelResource(merchantId, "customers"),
-  });
-}
-
-function servicesForCalendarQueryOptions(merchantId) {
-  return queryOptions({
-    queryKey: [merchantId, "services-calendar"],
-    queryFn: () => fetchSidePanelResource(merchantId, "services"),
   });
 }
 
@@ -75,7 +72,7 @@ export default function CalendarSidePanel({
     isError: servicesIsError,
     error: servicesError,
   } = useQuery({
-    ...servicesForCalendarQueryOptions(merchantId),
+    ...calendarServicesQueryOptions(merchantId),
     enabled: shouldLoadBookingResources,
   });
 

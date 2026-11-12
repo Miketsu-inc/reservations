@@ -79,3 +79,10 @@ type CustomerForCalendar struct {
 	LastVisited   *time.Time `json:"last_visited" db:"last_visited"`
 	AvatarImageId *uuid.UUID `json:"avatar_image_id" db:"avatar_image_id"`
 }
+
+type MinimalCustomerInfo struct {
+	Id            uuid.UUID  `json:"id"`
+	FirstName     *string    `json:"first_name"`
+	LastName      *string    `json:"last_name"`
+	AvatarImageId *uuid.UUID `json:"avatar_image_id"`
+}

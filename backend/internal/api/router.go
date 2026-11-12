@@ -19,6 +19,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/customers"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/locations"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/products"
+	merchantReviews "github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/reviews"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/servicecategories"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/services"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
@@ -53,6 +54,7 @@ type Handlers struct {
 	Services          *services.Handler
 	ServiceCategories *servicecategories.Handler
 	Team              *team.Handler
+	MerchantReviews   *merchantReviews.Handler
 	Middleware        *middleware.Manager
 }
 
@@ -128,6 +130,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 			r.Mount("/customers", h.Customers.Routes())
 			r.Mount("/locations", h.Locations.Routes())
 			r.Mount("/products", h.Products.Routes())
+			r.Mount("/reviews", h.MerchantReviews.Routes())
 			r.Mount("/services", h.Services.Routes())
 			r.Mount("/service-categories", h.ServiceCategories.Routes())
 			r.Mount("/team", h.Team.Routes())
@@ -175,6 +178,7 @@ func jabulaniRouter() chi.Router {
 		"/services/team-member-settings/{id}",
 		"/customers",
 		"/customers/blacklist",
+		"/customers/reviews",
 		"/customers/new",
 		"/customers/edit/{id}",
 		"/customers/{customerId}",
