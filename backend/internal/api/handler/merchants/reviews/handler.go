@@ -140,8 +140,6 @@ func (h *Handler) Reply(w http.ResponseWriter, r *http.Request) error {
 		return reviewServ.ErrStatus.Resolve(err, "ReplyReview")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
-
 	return nil
 }
 
@@ -157,8 +155,6 @@ func (h *Handler) DeleteReply(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "DeleteReviewReply")
 	}
-
-	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }
@@ -184,8 +180,6 @@ func (h *Handler) Report(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "ReportReview")
 	}
-
-	w.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

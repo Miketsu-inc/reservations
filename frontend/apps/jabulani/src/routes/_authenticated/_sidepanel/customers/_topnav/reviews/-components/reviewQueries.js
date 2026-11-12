@@ -127,9 +127,9 @@ export async function replyToReview(merchantId, reviewId, comment) {
     }
   );
 
-  const result = await response.json();
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
     throw result.error;
   }
 }
@@ -146,9 +146,9 @@ export async function deleteReviewReply(merchantId, reviewId) {
     }
   );
 
-  const result = await response.json();
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
     throw result.error;
   }
 }
@@ -166,9 +166,9 @@ export async function reportReview(merchantId, reviewId, reason) {
     }
   );
 
-  const result = await response.json();
   if (!response.ok) {
     invalidateLocalStorageAuth(response.status);
+    const result = await response.json();
     throw result.error;
   }
 }
