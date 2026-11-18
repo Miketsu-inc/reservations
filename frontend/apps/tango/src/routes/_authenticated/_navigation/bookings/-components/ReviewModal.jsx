@@ -3,12 +3,12 @@ import {
   ResponsiveDialog,
   ResponsiveDialogClose,
   ResponsiveDialogContent,
+  StarRating,
   Textarea,
 } from "@reservations/components";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { StarRating } from "./BookingReview";
 
 export default function ReviewModal({
   open,

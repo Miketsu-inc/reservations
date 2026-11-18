@@ -2,7 +2,6 @@ import {
   Comment01Icon,
   Flag01Icon,
   MoreVerticalIcon,
-  StarIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Avatar,
@@ -13,6 +12,7 @@ import {
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
+  StarRating,
   Textarea,
 } from "@reservations/components";
 import { toAvatar } from "@reservations/lib";
@@ -101,19 +101,7 @@ export default function ReviewCard({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Icon
-                key={star}
-                icon={StarIcon}
-                styles={`size-4 sm:size-5 ${
-                  star <= review.rating
-                    ? "fill-warning text-warning"
-                    : "text-border-strong"
-                }`}
-              />
-            ))}
-          </div>
+          <StarRating value={review.rating} iconStyles="size-4 sm:size-5" />
 
           <Popover>
             <PopoverTrigger asChild>
