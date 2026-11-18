@@ -95,7 +95,7 @@ export default function ReviewCard({
               )}
             </div>
             <span className="text-fg-muted text-xs">
-              {formatReviewDate(review.created_at)}
+              {formatReviewDate(review.updated_at ?? review.created_at)}
             </span>
           </div>
         </div>

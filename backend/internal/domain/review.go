@@ -43,7 +43,7 @@ type Review struct {
 	ReportReason *string    `db:"report_reason"`
 	ModeratedAt  *time.Time `db:"moderated_at"`
 	CreatedAt    time.Time  `db:"created_at"`
-	UpdatedAt    time.Time  `db:"updated_at"`
+	UpdatedAt    *time.Time `db:"updated_at"`
 }
 
 type ReviewReply struct {

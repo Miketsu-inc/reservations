@@ -41,9 +41,13 @@ func (r *reviewRepository) NewReview(ctx context.Context, review domain.Review) 
 
 func (r *reviewRepository) UpdateReview(ctx context.Context, reviewId int, userId uuid.UUID, bookingId *int, rating int16, comment *string) error {
 	query := `
-	update "Review" 
-	set rating = $1, comment = $2, booking_id = coalesce($3, booking_id), updated_at = now()
-	where id = $4 and user_id = $5 and status = 'published'
+	with updated as (
+		update "Review"
+		set rating = $1, comment = $2, booking_id = coalesce($3, booking_id), updated_at = now()
+		where id = $4 and user_id = $5 and status = 'published'
+		returning id
+	)
+	delete from "ReviewReply" where review_id in (select id from updated)
 	`
 
 	_, err := r.db.Exec(ctx, query, rating, comment, bookingId, reviewId, userId)
@@ -69,7 +73,7 @@ func (r *reviewRepository) DeleteReview(ctx context.Context, reviewId int, userI
 
 func (r *reviewRepository) ReportReview(ctx context.Context, reviewId int, merchantId uuid.UUID, reportReason string) error {
 	query := `
-	update "Review" set status = 'reported', report_reason = $1, updated_at = now()
+	update "Review" set status = 'reported', report_reason = $1
 	where id = $2 and merchant_id = $3
 	`
 
@@ -83,7 +87,7 @@ func (r *reviewRepository) ReportReview(ctx context.Context, reviewId int, merch
 
 func (r *reviewRepository) RemoveReview(ctx context.Context, reviewId int, moderatedAt time.Time) error {
 	query := `
-	update "Review" set status = 'removed', moderated_at = $1, updated_at = now()
+	update "Review" set status = 'removed', moderated_at = $1
 	where id = $2
 	`
 
@@ -221,11 +225,11 @@ func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.U
 }
 
 var reviewOrderBy = map[string]string{
-	"newest":        "r.created_at desc, r.id desc",
-	"oldest":        "r.created_at asc, r.id asc",
-	"highest":       "r.rating desc, r.created_at DESC, r.id desc",
-	"lowest":        "r.rating asc, r.created_at DESC, r.id desc",
-	"most_relevant": "length(coalesce(r.comment, '')) desc, r.created_at desc, r.id desc",
+	"newest":        "coalesce(r.updated_at, r.created_at) desc, r.id desc",
+	"oldest":        "coalesce(r.updated_at, r.created_at) asc, r.id asc",
+	"highest":       "r.rating desc, coalesce(r.updated_at, r.created_at) desc, r.id desc",
+	"lowest":        "r.rating asc, coalesce(r.updated_at, r.created_at) desc, r.id desc",
+	"most_relevant": "length(coalesce(r.comment, '')) desc, coalesce(r.updated_at, r.created_at) desc, r.id desc",
 }
 
 func (r *reviewRepository) GetReviews(ctx context.Context, filter domain.ReviewFilter) ([]domain.ReviewDetails, error) {
