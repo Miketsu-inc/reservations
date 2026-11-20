@@ -34,7 +34,7 @@ function RouteComponent() {
               buttonText="Sync"
               onClick={() => {}}
             >
-              <GoogleIcon styles="size-4 fill-fg mr-2" />
+              <GoogleIcon styles="size-5 fill-fg mr-2" />
             </Button>
           </a>
         </Card>

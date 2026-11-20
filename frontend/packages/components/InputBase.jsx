@@ -76,6 +76,7 @@ export function StyledInputBase({ styles = "", ...props }) {
         outline-hidden transition-[border-color,box-shadow] ease-in-out
         duration-150 hover:not-disabled:not-focus:border-border-hover
         focus:border-primary focus:ring-3 focus:ring-primary-focus
+        aria-invalid:border-danger! aria-invalid:focus:ring-danger-subtle
         disabled:text-fg-disabled disabled:border-border disabled:bg-bg-sunken
         p-2`}
     />
