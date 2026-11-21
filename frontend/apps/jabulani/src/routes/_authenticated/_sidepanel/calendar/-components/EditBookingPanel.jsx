@@ -103,6 +103,7 @@ export default function EditBookingPanel({
         last_visited: customerData.last_visited || null,
         phone_number: customerData.phone_number || "",
         email: customerData.email || "",
+        avatar_url: customerData.avatar_url || participant.avatar_url,
         customer_id: participant.customer_id,
         participant_id: participant.id,
         status: participant.status,
