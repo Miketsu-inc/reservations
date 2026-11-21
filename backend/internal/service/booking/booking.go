@@ -2,6 +2,7 @@ package booking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -67,6 +68,43 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 
 func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 	s.enqueuer = client
+}
+
+// Bookings the actor is not allowed to see are reported as not found, so their existence is not revealed
+func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeContext, bookingId int) (domain.Booking, error) {
+	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Booking{}, ErrBookingNotFound
+		}
+
+		return domain.Booking{}, err
+	}
+
+	if !booking.IsOwnedByMerchant(actor.MerchantId) {
+		return domain.Booking{}, ErrBookingNotFound
+	}
+
+	if !actor.CanManageTeam() && (booking.EmployeeId == nil || *booking.EmployeeId != actor.EmployeeId) {
+		return domain.Booking{}, ErrBookingNotFound
+	}
+
+	return booking, nil
+}
+
+func (s *Service) GetByMerchant(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, actor.ScopedEmployeeId(), bookingId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BookingForCalendar{}, ErrBookingNotFound
+		}
+
+		return domain.BookingForCalendar{}, err
+	}
+
+	return booking, nil
 }
 
 func (s *Service) newBooking(ctx context.Context, tx pgx.Tx, booking domain.Booking, participants []domain.BookingParticipant,
@@ -653,6 +691,10 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return validate.NewError("recurrence_rule is required for recurring bookings")
 	}
 
+	if !actor.CanManageEmployees(input.EmployeeId) {
+		return domain.ErrEmployeeAccessDenied
+	}
+
 	// check if employee belongs to merchant
 	if _, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId); err != nil {
 		return err
@@ -993,13 +1035,13 @@ type UpdateByMerchantInput struct {
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
 	}
 
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking not found for this merchant")
+	if !actor.CanManageEmployees(input.EmployeeId) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if input.UpdateAllFuture && !booking.IsRecurring {
@@ -1458,17 +1500,13 @@ type CancelByMerchantInput struct {
 func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input CancelByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
 	}
 
 	if input.CancelFuture && !booking.IsRecurring {
 		return fmt.Errorf("cannot cancel future occurrences of non-recurring booking")
-	}
-
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking not found for this merchant")
 	}
 
 	err = booking.CanCancel()
@@ -1543,13 +1581,9 @@ type UpdatePaticipantStatusInput struct {
 func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, input UpdatePaticipantStatusInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
-	}
-
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking could not be found for this merchant")
 	}
 
 	if !booking.IsGroupBooking() {

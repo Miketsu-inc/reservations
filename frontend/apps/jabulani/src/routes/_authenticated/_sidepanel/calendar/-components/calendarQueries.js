@@ -35,7 +35,7 @@ export function calendarBookingsQueryOptions(merchantId, start, end) {
 
 async function fetchBooking(merchantId, bookingId) {
   const response = await fetch(
-    `/api/v1/merchants/${merchantId}/calendar/bookings/${bookingId}`,
+    `/api/v1/merchants/${merchantId}/bookings/${bookingId}`,
     { method: "GET" }
   );
   const result = await response.json();

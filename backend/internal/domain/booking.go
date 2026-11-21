@@ -48,8 +48,8 @@ type BookingRepository interface {
 	GetBooking(ctx context.Context, bookingId int) (Booking, error)
 	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
-	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime time.Time) ([]BookingForCalendar, error)
-	GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, bookingId int) (BookingForCalendar, error)
+	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, startTime, endTime time.Time) ([]BookingForCalendar, error)
+	GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, bookingId int) (BookingForCalendar, error)
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)
 	GetBookingForEmail(ctx context.Context, bookingId int, customerId uuid.UUID) (BookingForEmail, error)
 	GetBookingParticipantByUser(ctx context.Context, bookingId int, userId uuid.UUID) (BookingParticipant, error)
@@ -63,7 +63,7 @@ type BookingRepository interface {
 	GetBookingCountsForUser(ctx context.Context, userId uuid.UUID) (BookingCountsForUser, error)
 	GetBookingPhases(ctx context.Context, bookingId int) ([]BookingPhase, error)
 	GetBookingCancelDeadline(ctx context.Context, bookingId int) (int, error)
-	GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]BookingListItem, error)
+	GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, employeeId *int, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]BookingListItem, error)
 	GetBookingsForEmployee(ctx context.Context, merchantId uuid.UUID, employeeId int, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]BookingListItem, error)
 
 	GetReservedTimesByEmployees(ctx context.Context, merchantId uuid.UUID, locationId int, employeeIds []int, startDate time.Time, endDate time.Time) (map[int][]BookingSlot, error)
@@ -345,11 +345,12 @@ type BookingForCalendar struct {
 	IsRecurring     bool                            `db:"is_recurring"`
 	MerchantNote    *string                         `db:"merchant_note"`
 	EmployeeId      *int                            `db:"employee_id"`
+	IsUnassigned    bool                            `db:"is_unassigned"`
 	ServiceId       *int                            `db:"service_id"`
 	ServiceName     string                          `db:"service_name"`
 	ServiceColor    *string                         `db:"service_color"`
 	MaxParticipants int                             `db:"max_participants"`
-	Price           currencyx.Price                 `db:"price"`
+	PricePerPerson  currencyx.Price                 `db:"price_per_person"`
 	PriceType       types.PriceType                 `db:"price_type"`
 	Participants    []BookingParticipantForCalendar `db:"participants"`
 	Phases          []BookingPhaseForCalendar       `db:"phases"`

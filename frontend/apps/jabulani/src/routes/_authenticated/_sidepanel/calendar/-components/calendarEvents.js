@@ -26,22 +26,13 @@ export function transformBusinessHours(businessHours) {
   }));
 }
 
-// Bookings and blocked times of deleted or deactivated members have nobody on
-// the team, so they go to the unassigned column instead of disappearing.
-function getResourceIds(employeeIds, memberIds) {
-  const assignedIds = employeeIds.filter((id) => memberIds.has(id));
-  return assignedIds.length > 0 ? assignedIds : [UNASSIGNED_ID];
-}
-
-function isUnassigned(resourceIds) {
-  return resourceIds[0] === UNASSIGNED_ID;
-}
-
-export function formatBookings(data, memberIds) {
+export function formatBookings(data) {
   if (data === undefined) return;
 
   return data.map((booking) => {
-    const resourceIds = getResourceIds([booking.employee_id], memberIds);
+    const resourceIds = booking.is_unassigned
+      ? [UNASSIGNED_ID]
+      : [booking.employee_id];
     let title = "Walk-in";
     const isGroup = booking.booking_type !== "appointment";
 
@@ -67,7 +58,7 @@ export function formatBookings(data, memberIds) {
       extendedProps: {
         // this is a number unlike the normal 'id' which get's converted to a string
         id: booking.id,
-        event_type: "booking",
+        type: "booking",
         booking_type: booking.booking_type,
         booking_status: booking.booking_status,
         is_recurring: booking.is_recurring,
@@ -78,21 +69,29 @@ export function formatBookings(data, memberIds) {
         service_color: serviceColor,
         service_id: booking.service_id,
         employee_id: booking.employee_id,
-        is_unassigned: isUnassigned(resourceIds),
-        duration: booking.duration,
+        is_unassigned: booking.is_unassigned,
+        duration:
+          (new Date(booking.to_date) - new Date(booking.from_date)) / 60000,
         phases: booking.phases ?? [],
-        price: booking.price,
+        price: booking.price_per_person,
         price_type: booking.price_type,
       },
     };
   });
 }
 
-export function formatBlockedTimes(data, memberIds) {
+// Staff can only change blocked times nobody else is on, ownEmployeeId is
+// null for owners and admins who can change any.
+export function formatBlockedTimes(data, ownEmployeeId) {
   if (data === undefined) return;
 
   return data.map((blockedTime) => {
-    const resourceIds = getResourceIds(blockedTime.employee_ids, memberIds);
+    const resourceIds = blockedTime.is_unassigned
+      ? [UNASSIGNED_ID]
+      : blockedTime.employee_ids;
+    const canEdit =
+      ownEmployeeId === null ||
+      blockedTime.employee_ids.every((id) => id === ownEmployeeId);
     const start = blockedTime.is_all_day
       ? blockedTime.blocked_day
       : blockedTime.from_date;
@@ -109,9 +108,9 @@ export function formatBlockedTimes(data, memberIds) {
       end: end,
       color: "#6b6b78",
       contrastColor: getContrastColor("#6b6b78"),
-      durationEditable: !blockedTime.is_all_day,
+      durationEditable: canEdit && !blockedTime.is_all_day,
       allDay: blockedTime.is_all_day,
-      startEditable: editableUntil > new Date(),
+      startEditable: canEdit && editableUntil > new Date(),
       extendedProps: {
         id: blockedTime.id,
         type: "blocked",
@@ -119,7 +118,7 @@ export function formatBlockedTimes(data, memberIds) {
         icon: blockedTime.icon,
         blocked_type_id: blockedTime.blocked_type_id,
         employee_ids: blockedTime.employee_ids,
-        is_unassigned: isUnassigned(resourceIds),
+        is_unassigned: blockedTime.is_unassigned,
         allDay: blockedTime.is_all_day,
       },
     };

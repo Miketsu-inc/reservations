@@ -199,8 +199,18 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 	return teamMembers, nil
 }
 
+// Staff can only schedule for themselves, so they are the only member they get
 func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
+
+	if !actor.CanManageTeam() {
+		member, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, actor.EmployeeId)
+		if err != nil {
+			return []domain.Employee{}, err
+		}
+
+		return []domain.Employee{member}, nil
+	}
 
 	teamMembers, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
 	if err != nil {

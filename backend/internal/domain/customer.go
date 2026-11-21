@@ -21,7 +21,6 @@ type CustomerRepository interface {
 	GetCustomers(ctx context.Context, merchantId uuid.UUID, isBlacklisted bool) ([]PublicCustomer, error)
 	GetCustomerInfo(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerInfo, error)
 	GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (CustomerStatistics, error)
-	GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]CustomerForCalendar, error)
 
 	SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error
 
@@ -66,18 +65,6 @@ type CustomerStatistics struct {
 	CompletedValues []currencyx.Price
 	FavoriteService *string
 	NextBooking     *time.Time
-}
-
-type CustomerForCalendar struct {
-	CustomerId    uuid.UUID  `json:"customer_id" db:"customer_id"`
-	FirstName     string     `json:"first_name" db:"first_name"`
-	LastName      string     `json:"last_name" db:"last_name"`
-	Email         *string    `json:"email" db:"email"`
-	PhoneNumber   *string    `json:"phone_number" db:"phone_number"`
-	BirthDay      *time.Time `json:"birthday" db:"birthday"`
-	IsDummy       bool       `json:"is_dummy" db:"is_dummy"`
-	LastVisited   *time.Time `json:"last_visited" db:"last_visited"`
-	AvatarImageId *uuid.UUID `json:"avatar_image_id" db:"avatar_image_id"`
 }
 
 type MinimalCustomerInfo struct {

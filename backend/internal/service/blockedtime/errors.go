@@ -16,6 +16,7 @@ var ErrStatus = apperr.StatusMap{
 	domain.ErrEmployeesRequired:      http.StatusBadRequest,
 	domain.ErrDuplicateEmployee:      http.StatusBadRequest,
 	domain.ErrEmployeeNotActive:      http.StatusBadRequest,
+	domain.ErrEmployeeAccessDenied:   http.StatusForbidden,
 }
 
 var ErrBlockedTimeNotFound = &apperr.Error{Code: "blocked_time_not_found", Message: "blocked time not found"}

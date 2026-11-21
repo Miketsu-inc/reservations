@@ -3,6 +3,7 @@ package blockedtime
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -81,11 +82,41 @@ func optionalTimesEqual(a, b *time.Time) bool {
 	return a.Equal(*b)
 }
 
+// Staff only see blocked times they are on, and can only change the ones nobody else is on
+func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.EmployeeContext, blockedTimeId int) (domain.BlockedTimeEmployees, error) {
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, blockedTimeId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+		}
+
+		return domain.BlockedTimeEmployees{}, err
+	}
+
+	if blockedTime.MerchantId != actor.MerchantId {
+		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+	}
+
+	if !actor.CanManageTeam() && !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
+		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+	}
+
+	if !actor.CanManageEmployees(blockedTime.EmployeeIds...) {
+		return domain.BlockedTimeEmployees{}, domain.ErrEmployeeAccessDenied
+	}
+
+	return blockedTime, nil
+}
+
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
 		return err
+	}
+
+	if !actor.CanManageEmployees(input.EmployeeIds...) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
@@ -136,17 +167,13 @@ type UpdateInput struct {
 func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, input.BlockedTimeId)
+	blockedTime, err := s.getBlockedTimeForActor(ctx, actor, input.BlockedTimeId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrBlockedTimeNotFound
-		}
-
 		return err
 	}
 
-	if blockedTime.MerchantId != actor.MerchantId {
-		return ErrBlockedTimeNotFound
+	if !actor.CanManageEmployees(input.EmployeeIds...) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
@@ -215,18 +242,9 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	// TODO: if the actor is not on the block time this will give an error
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
+	blockedTime, err := s.getBlockedTimeForActor(ctx, actor, blockedTimeId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrBlockedTimeNotFound
-		}
-
 		return err
-	}
-
-	if blockedTime.MerchantId != actor.MerchantId {
-		return ErrBlockedTimeNotFound
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {

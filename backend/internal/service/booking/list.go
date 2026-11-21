@@ -35,6 +35,10 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 		return GetBookingsResult{}, fmt.Errorf("exactly one booking subject must be provided")
 	}
 
+	if input.EmployeeId != nil && !actor.CanManageEmployees(*input.EmployeeId) {
+		return GetBookingsResult{}, domain.ErrEmployeeAccessDenied
+	}
+
 	decodedCursor, err := cursor.Decode[bookingCursor](input.Cursor)
 	if err != nil {
 		return GetBookingsResult{}, fmt.Errorf("decode booking cursor: %w", err)
@@ -52,7 +56,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 
 	var bookings []domain.BookingListItem
 	if input.CustomerId != nil {
-		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
+		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, actor.ScopedEmployeeId(), input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	} else {
 		bookings, err = s.bookingRepo.GetBookingsForEmployee(ctx, actor.MerchantId, *input.EmployeeId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	}

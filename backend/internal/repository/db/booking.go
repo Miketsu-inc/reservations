@@ -693,53 +693,17 @@ func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId
 	return pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
 }
 
-func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, startTime, endTime time.Time) ([]domain.BookingForCalendar, error) {
+func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, startTime, endTime time.Time) ([]domain.BookingForCalendar, error) {
 	query := `
-	with participants as (
-		select
-			bp.booking_id,
-			jsonb_agg(
-				jsonb_build_object(
-					'id', bp.id,
-					'customer_id', c.id,
-					'first_name', coalesce(c.first_name, u.first_name),
-					'last_name', coalesce(c.last_name, u.last_name),
-					'customer_note', bp.customer_note,
-					'participant_status', bp.status,
-					'avatar_image_id', u.avatar_image_id
-				)
-			) as participants
-		from "BookingParticipant" bp
-		left join "Customer" c on bp.customer_id = c.id
-		left join "User" u on c.user_id = u.id
-		where bp.status not in ('cancelled')
-		group by bp.booking_id
-	), phases as (
-		select bp.booking_id, jsonb_agg(
-			jsonb_build_object(
-				'from_date', bp.from_date,
-				'to_date', bp.to_date,
-				'phase_type', bp.phase_type
-			) order by bp.from_date, bp.id
-		) as phases
-		from "BookingPhase" bp
-		join "Booking" b on bp.booking_id = b.id
-		where b.merchant_id = $1 and b.from_date < $3 and b.to_date > $2 and b.status not in ('cancelled')
-		group by bp.booking_id
-	)
-	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
-		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
-		coalesce(p.participants, '[]'::jsonb) as participants,
-		coalesce(ph.phases, '[]'::jsonb) as phases
+	select ` + bookingForCalendarColumns + `
 	from "Booking" b
-	left join "Service" s on b.service_id = s.id
-	left join participants p on p.booking_id = b.id
-	left join phases ph on ph.booking_id = b.id
+	` + bookingForCalendarJoins + `
 	where b.merchant_id = $1 and b.from_date < $3 and b.to_date > $2 and b.status not in ('cancelled')
+		and ($4::int is null or b.employee_id = $4)
 	order by b.id
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, employeeId)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingForCalendar])
 	if err != nil {
 		return []domain.BookingForCalendar{}, fmt.Errorf("GetBookingsForCalendar: %w", err)
@@ -748,51 +712,16 @@ func (r *bookingRepository) GetBookingsForCalendar(ctx context.Context, merchant
 	return bookings, nil
 }
 
-func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, bookingId int) (domain.BookingForCalendar, error) {
+func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, bookingId int) (domain.BookingForCalendar, error) {
 	query := `
-	with participants as (
-		select
-			bp.booking_id,
-			jsonb_agg(
-				jsonb_build_object(
-					'id', bp.id,
-					'customer_id', c.id,
-					'first_name', coalesce(c.first_name, u.first_name),
-					'last_name', coalesce(c.last_name, u.last_name),
-					'customer_note', bp.customer_note,
-					'participant_status', bp.status,
-					'avatar_image_id', u.avatar_image_id
-				)
-			) as participants
-		from "BookingParticipant" bp
-		left join "Customer" c on bp.customer_id = c.id
-		left join "User" u on c.user_id = u.id
-		where bp.status not in ('cancelled') and bp.booking_id = $2
-		group by bp.booking_id
-	), phases as (
-		select bp.booking_id, jsonb_agg(
-			jsonb_build_object(
-				'from_date', bp.from_date,
-				'to_date', bp.to_date,
-				'phase_type', bp.phase_type
-			) order by bp.from_date, bp.id
-		) as phases
-		from "BookingPhase" bp
-		where bp.booking_id = $2
-		group by bp.booking_id
-	)
-	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note, b.price_per_person as price, b.price_type,
-		b.employee_id, b.service_id, b.service_name, s.color as service_color, b.max_participants,
-		coalesce(p.participants, '[]'::jsonb) as participants,
-		coalesce(ph.phases, '[]'::jsonb) as phases
+	select ` + bookingForCalendarColumns + `
 	from "Booking" b
-	left join "Service" s on b.service_id = s.id
-	left join participants p on p.booking_id = b.id
-	left join phases ph on ph.booking_id = b.id
+	` + bookingForCalendarJoins + `
 	where b.merchant_id = $1 and b.id = $2 and b.status not in ('cancelled')
+		and ($3::int is null or b.employee_id = $3)
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, bookingId)
+	rows, _ := r.db.Query(ctx, query, merchantId, bookingId, employeeId)
 	booking, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[domain.BookingForCalendar])
 	if err != nil {
 		return domain.BookingForCalendar{}, fmt.Errorf("GetBookingForCalendar: %w", err)
@@ -800,6 +729,45 @@ func (r *bookingRepository) GetBookingForCalendar(ctx context.Context, merchantI
 
 	return booking, nil
 }
+
+// A booking whose employee was deleted or deactivated has nobody to show it under,
+// so it is reported as unassigned.
+const bookingForCalendarColumns = `b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note,
+		b.price_per_person, b.price_type, b.employee_id, coalesce(not e.is_active, true) as is_unassigned,
+		b.service_id, b.service_name, s.color as service_color, b.max_participants,
+		coalesce(p.participants, '[]'::jsonb) as participants,
+		coalesce(ph.phases, '[]'::jsonb) as phases`
+
+const bookingForCalendarJoins = `left join "Service" s on b.service_id = s.id
+	left join "Employee" e on e.id = b.employee_id
+	left join lateral (
+		select jsonb_agg(
+			jsonb_build_object(
+				'id', bp.id,
+				'customer_id', c.id,
+				'first_name', coalesce(c.first_name, u.first_name),
+				'last_name', coalesce(c.last_name, u.last_name),
+				'customer_note', bp.customer_note,
+				'participant_status', bp.status,
+				'avatar_image_id', u.avatar_image_id
+			) order by bp.id
+		) as participants
+		from "BookingParticipant" bp
+		left join "Customer" c on bp.customer_id = c.id
+		left join "User" u on c.user_id = u.id
+		where bp.booking_id = b.id and bp.status not in ('cancelled')
+	) p on true
+	left join lateral (
+		select jsonb_agg(
+			jsonb_build_object(
+				'from_date', bp.from_date,
+				'to_date', bp.to_date,
+				'phase_type', bp.phase_type
+			) order by bp.from_date, bp.id
+		) as phases
+		from "BookingPhase" bp
+		where bp.booking_id = b.id
+	) ph on true`
 
 func (r *bookingRepository) GetBookingForExternalCalendar(ctx context.Context, bookingId int) (domain.BookingForExternalCalendar, error) {
 	query := `
@@ -1099,7 +1067,7 @@ func (r *bookingRepository) GetBookingCancelDeadline(ctx context.Context, bookin
 	return cancelDeadline, nil
 }
 
-func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingListItem, error) {
+func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchantId, customerId uuid.UUID, employeeId *int, statuses []types.BookingStatus, limit int, cursorStart time.Time, cursorId int) ([]domain.BookingListItem, error) {
 	query := `
 	select b.id, b.booking_type, b.is_recurring, b.from_date, b.to_date, b.service_name, s.color as service_color,
 		b.formatted_location, b.price_per_person as price, b.price_type,
@@ -1117,6 +1085,7 @@ func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchant
 			or (b.booking_type != 'appointment' and bp.status = any($3::text[]))
 		)
 		and (b.from_date, b.id) < ($5, $6)
+		and ($7::int is null or b.employee_id = $7)
 	order by b.from_date desc, b.id desc
 	limit $4
 	`
@@ -1126,7 +1095,7 @@ func (r *bookingRepository) GetBookingsForCustomer(ctx context.Context, merchant
 		statusStrings[i] = status.String()
 	}
 
-	rows, _ := r.db.Query(ctx, query, merchantId, customerId, statusStrings, limit, cursorStart, cursorId)
+	rows, _ := r.db.Query(ctx, query, merchantId, customerId, statusStrings, limit, cursorStart, cursorId, employeeId)
 	bookings, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BookingListItem])
 	if err != nil {
 		return nil, fmt.Errorf("GetBookingsForCustomer: %w", err)

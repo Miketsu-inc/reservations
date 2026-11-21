@@ -160,10 +160,13 @@ export default function Calendar({ router, route, search }) {
 
   const allEvents = useMemo(
     () => [
-      ...formatBookings(events.bookings, memberIds),
-      ...formatBlockedTimes(events.blocked_times, memberIds),
+      ...formatBookings(events.bookings),
+      ...formatBlockedTimes(
+        events.blocked_times,
+        canViewTeam ? null : employeeId
+      ),
     ],
-    [memberIds, events.bookings, events.blocked_times]
+    [canViewTeam, employeeId, events.bookings, events.blocked_times]
   );
 
   const hasUnassigned =
@@ -177,12 +180,11 @@ export default function Calendar({ router, route, search }) {
   // Drops members that have since left the team, and unassigned once the
   // shown dates have none.
   const filteredIds = useMemo(() => {
-    if (!canViewTeam) return [employeeId];
     if (!memberFilter) return null;
 
     const ids = filterOptionIds.filter((id) => memberFilter.includes(id));
     return ids.length > 0 ? ids : null;
-  }, [canViewTeam, employeeId, memberFilter, filterOptionIds]);
+  }, [memberFilter, filterOptionIds]);
 
   const membersById = useMemo(
     () =>
@@ -226,13 +228,13 @@ export default function Calendar({ router, route, search }) {
   const selectedBookingEvent = useMemo(() => {
     if (!selectedBooking) return null;
 
-    const event = formatBookings([selectedBooking], memberIds)[0];
+    const event = formatBookings([selectedBooking])[0];
     return {
       ...event,
       start: new Date(event.start),
       end: new Date(event.end),
     };
-  }, [selectedBooking, memberIds]);
+  }, [selectedBooking]);
 
   const panelData = sidePanelState.bookingId
     ? (sidePanelState.data ?? selectedBookingEvent)

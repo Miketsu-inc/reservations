@@ -268,26 +268,6 @@ func mapToGetServicesForCalendarResp(in []domain.ServicesGroupedByCategoriesForC
 	return servicesGroupedByCategories
 }
 
-func mapToGetCustomersForCalendarResp(in []domain.CustomerForCalendar) []getCustomersForCalendarResp {
-	customers := make([]getCustomersForCalendarResp, len(in))
-
-	for i, m := range in {
-		customers[i] = getCustomersForCalendarResp{
-			CustomerId:  m.CustomerId,
-			FirstName:   m.FirstName,
-			LastName:    m.LastName,
-			Email:       m.Email,
-			PhoneNumber: m.PhoneNumber,
-			BirthDay:    m.BirthDay,
-			IsDummy:     m.IsDummy,
-			LastVisited: m.LastVisited,
-			AvatarUrl:   mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
-		}
-	}
-
-	return customers
-}
-
 func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp {
 	bookings := make([]bookingForCalendar, len(in.Bookings))
 
@@ -307,6 +287,7 @@ func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp 
 		blockedTimes[i] = blockedTime{
 			ID:            b.ID,
 			EmployeeIds:   b.EmployeeIds,
+			IsUnassigned:  len(b.EmployeeIds) == 0,
 			Name:          b.Name,
 			FromDate:      b.FromDate,
 			ToDate:        b.ToDate,
@@ -352,14 +333,14 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		FromDate:        in.FromDate,
 		ToDate:          in.ToDate,
 		IsRecurring:     in.IsRecurring,
-		Duration:        int(in.ToDate.Sub(in.FromDate).Minutes()),
 		MerchantNote:    in.MerchantNote,
 		EmployeeId:      in.EmployeeId,
+		IsUnassigned:    in.IsUnassigned,
 		ServiceId:       in.ServiceId,
 		ServiceName:     in.ServiceName,
 		ServiceColor:    in.ServiceColor,
 		MaxParticipants: in.MaxParticipants,
-		Price:           in.Price.ToFormatted(),
+		PricePerPerson:  in.PricePerPerson.ToFormatted(),
 		PriceType:       in.PriceType,
 		Participants:    participants,
 		Phases:          phases,
