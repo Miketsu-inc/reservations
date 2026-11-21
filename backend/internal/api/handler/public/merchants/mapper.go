@@ -7,6 +7,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
+	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
@@ -105,18 +106,38 @@ func mapToGetServicesGroupedByCategories(in []domain.MerchantPageServicesGrouped
 	return servicesGroupedByCategory
 }
 
-func mapToGetTeam(in []domain.EmployeeWithServiceOverrides) []teamResponse {
+func mapToGetTeam(in []teamServ.RatedEmployee) []teamResponse {
 	employees := make([]teamResponse, len(in))
 
 	for i, emp := range in {
 		employees[i] = teamResponse{
-			Id:              emp.Id,
-			Role:            emp.Role,
-			FirstName:       *emp.FirstName,
-			LastName:        *emp.LastName,
-			Email:           emp.Email,
-			PhoneNumber:     emp.PhoneNumber,
-			AvatarUrl:       mediaServ.NewURL(emp.AvatarImageId, mediaServ.VariantSmall),
+			Id:            emp.Id,
+			Role:          emp.Role,
+			FirstName:     *emp.FirstName,
+			LastName:      *emp.LastName,
+			AvatarUrl:     mediaServ.NewURL(emp.AvatarImageId, mediaServ.VariantSmall),
+			AverageRating: emp.Rating.AverageRating,
+			ReviewCount:   emp.Rating.ReviewCount,
+		}
+	}
+
+	return employees
+}
+
+func mapToGetServiceTeam(in []teamServ.RatedServiceEmployee) []serviceTeamResponse {
+	employees := make([]serviceTeamResponse, len(in))
+
+	for i, emp := range in {
+		employees[i] = serviceTeamResponse{
+			teamResponse: teamResponse{
+				Id:            emp.Id,
+				Role:          emp.Role,
+				FirstName:     *emp.FirstName,
+				LastName:      *emp.LastName,
+				AvatarUrl:     mediaServ.NewURL(emp.AvatarImageId, mediaServ.VariantSmall),
+				AverageRating: emp.Rating.AverageRating,
+				ReviewCount:   emp.Rating.ReviewCount,
+			},
 			TotalDuration:   emp.TotalDuration,
 			Price:           currencyx.FormatPrice(emp.Price),
 			PriceType:       emp.PriceType,

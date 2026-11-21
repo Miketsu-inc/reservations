@@ -10,7 +10,7 @@ import {
   ServerError,
 } from "@reservations/components";
 import {
-  activeTeamQueryOptions,
+  serviceTeamQueryOptions,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -20,6 +20,7 @@ import { EmployeeItem } from "./EmployeeSelectionStep";
 
 export default function EmployeePicker({
   merchantName,
+  locationId,
   serviceId,
   employeeId,
   employee,
@@ -34,8 +35,8 @@ export default function EmployeePicker({
     isError,
     error,
   } = useQuery({
-    ...activeTeamQueryOptions(merchantName, serviceId),
-    enabled: isOpen && Boolean(merchantName && serviceId),
+    ...serviceTeamQueryOptions(merchantName, locationId, serviceId),
+    enabled: isOpen && Boolean(merchantName && locationId && serviceId),
   });
 
   const noPrefEmployee = { id: "no-pref", first_name: "No preference" };

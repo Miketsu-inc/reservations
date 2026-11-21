@@ -7,7 +7,7 @@ import {
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 
-export default function TeamSection({ merchantName }) {
+export default function TeamSection({ merchantName, locationId }) {
   const { isWindowSmall } = useWindowSize();
 
   const {
@@ -15,7 +15,7 @@ export default function TeamSection({ merchantName }) {
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName) });
+  } = useQuery({ ...activeTeamQueryOptions(merchantName, locationId) });
 
   if (isError) {
     return <ServerError error={error.message} />;

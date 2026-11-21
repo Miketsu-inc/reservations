@@ -6,7 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, ServerError } from "@reservations/components";
 import {
-  activeTeamQueryOptions,
+  serviceTeamQueryOptions,
   formatDuration,
   getDisplayPrice,
   toAvatar,
@@ -17,7 +17,7 @@ import { StepContentSkeleton } from "./StepContentSkeleton";
 
 export default function EmployeeSelectionStep({
   merchantName,
-  _locationId,
+  locationId,
   serviceId,
   _serviceType,
   onSelect,
@@ -28,7 +28,9 @@ export default function EmployeeSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName, serviceId) });
+  } = useQuery({
+    ...serviceTeamQueryOptions(merchantName, locationId, serviceId),
+  });
 
   const [selectedEmployee, setSelectedEmployee] = useState();
 

@@ -39,8 +39,8 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Get("/", h.GetInfo)
 	r.Get("/services", h.GetServices)
-	r.Get("/team", h.GetTeam)
-
+	r.Get("/locations/{locationId}/team", h.GetTeam)
+	r.Get("/locations/{locationId}/services/{serviceId}/team", h.GetServiceTeam)
 	r.Get("/locations/{locationId}/business-hours/normalized", h.GetNormalizedBusinessHours)
 
 	r.Get("/locations/{locationId}/services/{serviceId}", h.GetServiceDetails)
@@ -170,17 +170,13 @@ func (h *Handler) GetServices(w http.ResponseWriter, r *http.Request) error {
 }
 
 type teamResponse struct {
-	Id              int                       `json:"id"`
-	Role            types.EmployeeRole        `json:"role"`
-	FirstName       string                    `json:"first_name"`
-	LastName        string                    `json:"last_name"`
-	Email           *string                   `json:"email"`
-	PhoneNumber     *string                   `json:"phone_number"`
-	AvatarUrl       *string                   `json:"avatar_url"`
-	TotalDuration   *int                      `json:"total_duration,omitempty"`
-	Price           *currencyx.FormattedPrice `json:"price,omitempty"`
-	PriceType       *types.PriceType          `json:"price_type,omitempty"`
-	MaxParticipants *int                      `json:"max_participants,omitempty"`
+	Id            int                `json:"id"`
+	Role          types.EmployeeRole `json:"role"`
+	FirstName     string             `json:"first_name"`
+	LastName      string             `json:"last_name"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	AverageRating float64            `json:"average_rating"`
+	ReviewCount   int                `json:"review_count"`
 }
 
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
@@ -189,21 +185,51 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) error {
 		return validate.NewError("invalid merchant name")
 	}
 
-	var serviceId *int
-	if sId := r.URL.Query().Get("serviceId"); sId != "" {
-		parsed, err := strconv.Atoi(sId)
-		if err != nil {
-			return validate.NewError("invalid service id")
-		}
-		serviceId = &parsed
+	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
+	if err != nil {
+		return validate.NewError("invalid location id")
 	}
 
-	team, err := h.teamServ.GetTeamByMerchantName(r.Context(), urlName, serviceId)
+	team, err := h.teamServ.GetTeamByMerchantName(r.Context(), urlName, urlLocationId)
 	if err != nil {
 		return merchantServ.ErrStatus.Resolve(err, "GetTeam")
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetTeam(team))
+
+	return nil
+}
+
+type serviceTeamResponse struct {
+	teamResponse
+	TotalDuration   *int                      `json:"total_duration"`
+	Price           *currencyx.FormattedPrice `json:"price"`
+	PriceType       *types.PriceType          `json:"price_type"`
+	MaxParticipants *int                      `json:"max_participants"`
+}
+
+func (h *Handler) GetServiceTeam(w http.ResponseWriter, r *http.Request) error {
+	urlName := chi.URLParam(r, "merchantName")
+	if urlName == "" {
+		return validate.NewError("invalid merchant name")
+	}
+
+	urlLocationId, err := strconv.Atoi(chi.URLParam(r, "locationId"))
+	if err != nil {
+		return validate.NewError("invalid location id")
+	}
+
+	urlServiceId, err := strconv.Atoi(chi.URLParam(r, "serviceId"))
+	if err != nil {
+		return validate.NewError("invalid service id")
+	}
+
+	team, err := h.teamServ.GetServiceTeamByMerchantName(r.Context(), urlName, urlLocationId, urlServiceId)
+	if err != nil {
+		return merchantServ.ErrStatus.Resolve(err, "GetServiceTeam")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetServiceTeam(team))
 
 	return nil
 }

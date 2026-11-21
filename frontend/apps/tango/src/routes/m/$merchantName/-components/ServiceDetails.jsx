@@ -74,7 +74,7 @@ export default function ServiceDetails({
   });
 
   const { data: teamMembers } = useQuery({
-    ...activeTeamQueryOptions(merchantName),
+    ...activeTeamQueryOptions(merchantName, locationId),
     enabled: isOpen && !!merchantName,
   });
 

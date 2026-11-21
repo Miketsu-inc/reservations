@@ -174,6 +174,7 @@ export default function GroupBookingStep({
       <div className="flex w-full items-center justify-between">
         <EmployeePicker
           merchantName={merchantName}
+          locationId={locationId}
           serviceId={serviceId}
           employeeId={employeeId}
           employee={employee}

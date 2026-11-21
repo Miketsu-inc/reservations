@@ -26,6 +26,7 @@ type ReviewRepository interface {
 
 	GetReviews(ctx context.Context, filter ReviewFilter) ([]ReviewDetails, error)
 	GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (ReviewStats, error)
+	GetEmployeeRatings(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]EmployeeRating, error)
 }
 
 type Review struct {
@@ -75,6 +76,11 @@ type ReviewStats struct {
 	Count3Star    int     `db:"count_3_star"`
 	Count2Star    int     `db:"count_2_star"`
 	Count1Star    int     `db:"count_1_star"`
+}
+
+type EmployeeRating struct {
+	AverageRating float64
+	ReviewCount   int
 }
 
 type ReviewReplyInfo struct {

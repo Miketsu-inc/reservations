@@ -95,7 +95,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
-	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, nil, transactionManager)
+	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, reviewRepo, nil, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, teamService, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, teamRepo, teamService, nil, transactionManager)
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, locationRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, imageRepo, reviewRepo, emailService, nil, transactionManager)

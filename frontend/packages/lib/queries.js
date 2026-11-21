@@ -218,19 +218,14 @@ export function meQueryOptions() {
   });
 }
 
-async function fetchActiveTeam(name, serviceId) {
-  const query = serviceId ? `?serviceId=${serviceId}` : "";
-
-  const response = await fetch(
-    `/api/v1/public/merchants/${name}/team${query}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
+async function fetchPublicTeam(path) {
+  const response = await fetch(`/api/v1/public/merchants/${path}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
   const result = await response.json();
   if (!response.ok) {
     throw result.error;
@@ -239,10 +234,21 @@ async function fetchActiveTeam(name, serviceId) {
   }
 }
 
-export function activeTeamQueryOptions(name, serviceId) {
+export function activeTeamQueryOptions(name, locationId) {
   return queryOptions({
-    queryKey: ["active-team", name, serviceId],
-    queryFn: () => fetchActiveTeam(name, serviceId),
+    queryKey: ["active-team", name, locationId],
+    queryFn: () => fetchPublicTeam(`${name}/locations/${locationId}/team`),
+  });
+}
+
+// employees who can do the service, with their price and duration for it
+export function serviceTeamQueryOptions(name, locationId, serviceId) {
+  return queryOptions({
+    queryKey: ["service-team", name, locationId, serviceId],
+    queryFn: () =>
+      fetchPublicTeam(
+        `${name}/locations/${locationId}/services/${serviceId}/team`
+      ),
   });
 }
 

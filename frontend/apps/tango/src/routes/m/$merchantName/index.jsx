@@ -272,7 +272,10 @@ function MerchantPage() {
             </ReservationSection>
 
             <ReservationSection name="Team" show={true}>
-              <TeamSection merchantName={merchantName} />
+              <TeamSection
+                merchantName={merchantName}
+                locationId={merchantInfo.location_id}
+              />
             </ReservationSection>
 
             <ReservationSection

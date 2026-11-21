@@ -224,6 +224,31 @@ func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.U
 	return stats, nil
 }
 
+func (r *reviewRepository) GetEmployeeRatings(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]domain.EmployeeRating, error) {
+	query := `
+	select employee_id, round(avg(rating), 1)::float8, count(*)::int
+	from "Review"
+	where merchant_id = $1 and status <> 'removed' and employee_id is not null
+	  and ($2::int is null or location_id = $2)
+	group by employee_id
+	`
+
+	ratings := make(map[int]domain.EmployeeRating)
+	var employeeId int
+	var rating domain.EmployeeRating
+
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
+	_, err := pgx.ForEachRow(rows, []any{&employeeId, &rating.AverageRating, &rating.ReviewCount}, func() error {
+		ratings[employeeId] = rating
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("GetEmployeeRatings: %w", err)
+	}
+
+	return ratings, nil
+}
+
 var reviewOrderBy = map[string]string{
 	"newest":        "coalesce(r.updated_at, r.created_at) desc, r.id desc",
 	"oldest":        "coalesce(r.updated_at, r.created_at) asc, r.id asc",
