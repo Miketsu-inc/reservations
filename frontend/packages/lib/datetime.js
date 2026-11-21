@@ -291,3 +291,33 @@ export function formatTimeInputValue(dateValue) {
 
   return `${hours}:${minutes}`;
 }
+
+function pluralizeUnit(count, unit) {
+  return `${count} ${count === 1 ? unit : `${unit}s`} ago`;
+}
+
+export function formatRelativeDate(dateValue) {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+
+  // accounting for daylight saving
+  const diffDays = Math.round((today - day) / (24 * 60 * 60 * 1000));
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return pluralizeUnit(Math.floor(diffDays / 7), "week");
+
+  const months = Math.floor(diffDays / 30);
+  if (months < 12) return pluralizeUnit(months, "month");
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}

@@ -11,8 +11,8 @@ import {
   Youtube,
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { merchantInfoQueryOptions, useWindowSize } from "@reservations/lib";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import BusinessHoursSection from "./-components/BusinessHoursSection";
 import FavoriteButton from "./-components/FavoriteButton";
@@ -22,26 +22,6 @@ import MerchantLogo from "./-components/MerchantLogo";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceSection from "./-components/ServiceSection";
 import TeamSection from "./-components/TeamSection";
-
-async function fetchMerchantInfo(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}`, {
-    method: "GET",
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function merchantInfoQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-info", name],
-    queryFn: () => fetchMerchantInfo(name),
-  });
-}
 
 export const Route = createFileRoute("/m/$merchantName/")({
   component: MerchantPage,

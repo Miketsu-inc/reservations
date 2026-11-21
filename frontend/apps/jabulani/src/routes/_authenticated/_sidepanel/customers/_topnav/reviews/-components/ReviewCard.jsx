@@ -15,24 +15,8 @@ import {
   StarRating,
   Textarea,
 } from "@reservations/components";
-import { toAvatar } from "@reservations/lib";
+import { formatRelativeDate, toAvatar } from "@reservations/lib";
 import { useState } from "react";
-
-function formatReviewDate(dateString) {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  }).format(date);
-}
 
 export default function ReviewCard({
   review,
@@ -95,7 +79,7 @@ export default function ReviewCard({
               )}
             </div>
             <span className="text-fg-muted text-xs">
-              {formatReviewDate(review.updated_at ?? review.created_at)}
+              {formatRelativeDate(review.updated_at ?? review.created_at)}
             </span>
           </div>
         </div>
@@ -190,7 +174,7 @@ export default function ReviewCard({
             />
             <span className="font-semibold">Your reply</span>
             <span className="text-fg-muted">
-              {formatReviewDate(review.reply.created_at)}
+              {formatRelativeDate(review.reply.created_at)}
             </span>
           </div>
           <p className="text-sm leading-relaxed whitespace-pre-wrap">

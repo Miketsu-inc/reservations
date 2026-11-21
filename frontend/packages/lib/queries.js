@@ -334,3 +334,25 @@ export async function removeFavorite(merchantId) {
     throw result.error;
   }
 }
+
+async function fetchMerchantInfo(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}`, {
+    method: "GET",
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function merchantInfoQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-info", name],
+    queryFn: () => fetchMerchantInfo(name),
+  });
+}
+
+
