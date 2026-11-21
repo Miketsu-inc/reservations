@@ -100,6 +100,20 @@ func (r *externalCalendarRepository) ResetExternalCalendarSyncState(ctx context.
 	return nil
 }
 
+func (r *externalCalendarRepository) DeleteExternalCalendar(ctx context.Context, extCalendarId int) error {
+	query := `
+	delete from "ExternalCalendar"
+	where id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, extCalendarId)
+	if err != nil {
+		return fmt.Errorf("DeleteExternalCalendar: %w", err)
+	}
+
+	return nil
+}
+
 func (r *externalCalendarRepository) GetExternalCalendar(ctx context.Context, calendarId int) (domain.ExternalCalendar, error) {
 	query := `
 	select *

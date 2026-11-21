@@ -2,7 +2,7 @@
 	auto_https disable_redirects
 }
 
-https://reservations.local:3000 {
+https://reservations.miketsu.com:3000 {
 	tls internal
 
 	handle /api/* {
@@ -14,7 +14,7 @@ https://reservations.local:3000 {
 	}
 }
 
-https://app.reservations.local:3000 {
+https://app.reservations.miketsu.com:3000 {
 	tls internal
 
 	handle /api/* {

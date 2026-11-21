@@ -1,18 +1,24 @@
 package auth
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/lang"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
+	"golang.org/x/text/language"
 )
 
 type Handler struct {
@@ -217,69 +223,118 @@ func (h *Handler) LogoutAllDevices(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *Handler) GoogleLogin(w http.ResponseWriter, r *http.Request) error {
-	url, state, err := h.service.GoogleLogin(r.Context())
-	if err != nil {
-		return authServ.ErrStatus.Resolve(err, "GoogleLogin")
-	}
-
-	oauthutil.SetOauthStateCookie(w, state)
-
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-
-	return nil
+	return startOauth(w, r, h.service.GoogleLogin, "GoogleLogin")
 }
 
 func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) error {
-	code := r.URL.Query().Get("code")
-
-	if err := oauthutil.ValidateOauthState(r); err != nil {
-		return err
-	}
-	oauthutil.DeleteOauthStateCookie(w)
-
-	tokens, err := h.service.GoogleCallback(r.Context(), lang.GetLangFromHeader(r), code)
-	if err != nil {
-		return authServ.ErrStatus.Resolve(err, "GoogleCallback")
-	}
-
-	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
-	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
-
-	http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
-
-	return nil
+	return finishOauth(w, r, h.service.GoogleCallback)
 }
 
 func (h *Handler) FacebookLogin(w http.ResponseWriter, r *http.Request) error {
-	url, state, err := h.service.FacebookLogin(r.Context())
+	return startOauth(w, r, h.service.FacebookLogin, "FacebookLogin")
+}
+
+func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error {
+	return finishOauth(w, r, h.service.FacebookCallback)
+}
+
+const (
+	oauthStateCookie    = "oauth-state"
+	oauthVerifierCookie = "oauth-verifier"
+	oauthRedirectCookie = "oauth-redirect"
+)
+
+func oauthCookieScope() oauthutil.CookieScope {
+	return oauthutil.CookieScope{
+		Path:   "/api/v1/auth/oauth",
+		Domain: fmt.Sprintf(".%s", config.LoadEnvVars().DOMAIN),
+	}
+}
+
+func startOauth(w http.ResponseWriter, r *http.Request, login func(context.Context) (authServ.OauthLoginResult, error), source string) error {
+	result, err := login(r.Context())
 	if err != nil {
-		return authServ.ErrStatus.Resolve(err, "FacebookLogin")
+		return authServ.ErrStatus.Resolve(err, source)
 	}
 
-	oauthutil.SetOauthStateCookie(w, state)
+	scope := oauthCookieScope()
+	oauthutil.SetCookie(w, scope, oauthStateCookie, result.State)
+	oauthutil.SetCookie(w, scope, oauthVerifierCookie, result.Verifier)
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	if redirect := safeRedirect(r.URL.Query().Get("redirect")); redirect != "" {
+		oauthutil.SetCookie(w, scope, oauthRedirectCookie, redirect)
+	} else {
+		oauthutil.DeleteCookies(w, scope, oauthRedirectCookie)
+	}
+
+	http.Redirect(w, r, result.Url, http.StatusTemporaryRedirect)
 
 	return nil
 }
 
-func (h *Handler) FacebookCallback(w http.ResponseWriter, r *http.Request) error {
-	code := r.URL.Query().Get("code")
+func finishOauth(w http.ResponseWriter, r *http.Request, callback func(context.Context, language.Tag, string, string) (jwt.TokenPair, error)) error {
+	// the cookie is validated again, a client can set it to anything
+	redirect := safeRedirect(oauthutil.CookieValue(r, oauthRedirectCookie))
+	verifier := oauthutil.CookieValue(r, oauthVerifierCookie)
+	oauthutil.DeleteCookies(w, oauthCookieScope(), oauthStateCookie, oauthVerifierCookie, oauthRedirectCookie)
 
-	if err := oauthutil.ValidateOauthState(r); err != nil {
-		return err
+	if err := oauthutil.ValidateState(r, oauthStateCookie); err != nil {
+		return &apperr.RedirectError{URL: loginURL(redirect), Err: err}
 	}
-	oauthutil.DeleteOauthStateCookie(w)
 
-	tokens, err := h.service.FacebookCallback(r.Context(), lang.GetLangFromHeader(r), code)
+	if providerErr := r.URL.Query().Get("error"); providerErr != "" {
+		// the user cancelled on the consent screen, nothing to show them
+		if providerErr == "access_denied" {
+			http.Redirect(w, r, loginURL(redirect), http.StatusSeeOther)
+			return nil
+		}
+
+		return &apperr.RedirectError{URL: loginURL(redirect), Err: fmt.Errorf("oauth provider returned an error: %s", providerErr)}
+	}
+
+	tokens, err := callback(r.Context(), lang.GetLangFromHeader(r), r.URL.Query().Get("code"), verifier)
 	if err != nil {
-		return authServ.ErrStatus.Resolve(err, "FacebookCallback")
+		return &apperr.RedirectError{URL: loginURL(redirect), Err: authServ.ErrStatus.Resolve(err, "finishOauth")}
 	}
 
 	jwt.SetJwtCookie(w, jwt.AccessToken, tokens.AccessToken)
 	jwt.SetJwtCookie(w, jwt.RefreshToken, tokens.RefreshToken)
 
-	http.Redirect(w, r, "http://localhost:8080/", http.StatusSeeOther)
+	if redirect == "" {
+		redirect = config.LoadEnvVars().TANGO_URL
+	}
+
+	http.Redirect(w, r, redirect, http.StatusSeeOther)
 
 	return nil
+}
+
+func safeRedirect(raw string) string {
+	cfg := config.LoadEnvVars()
+
+	target, err := url.Parse(raw)
+	if err != nil || target.User != nil {
+		return ""
+	}
+
+	for _, app := range []string{cfg.TANGO_URL, cfg.JABULANI_URL} {
+		allowed, err := url.Parse(app)
+		if err == nil && target.Scheme == allowed.Scheme && target.Host == allowed.Host {
+			return target.String()
+		}
+	}
+
+	return ""
+}
+
+// The login page of the app the user started from, keeping the redirect so a
+// retry still ends up in the same place
+func loginURL(redirect string) string {
+	if redirect == "" {
+		return config.LoadEnvVars().TANGO_URL + "/login"
+	}
+
+	target, _ := url.Parse(redirect)
+
+	return fmt.Sprintf("%s://%s/login?%s", target.Scheme, target.Host, url.Values{"redirect": {redirect}}.Encode())
 }

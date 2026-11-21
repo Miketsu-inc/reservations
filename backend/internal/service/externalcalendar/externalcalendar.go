@@ -129,23 +129,28 @@ func ParseState(encoded string) (*OAuthState, error) {
 var googleCalendarConf = &oauth2.Config{
 	ClientID:     config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_ID,
 	ClientSecret: config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_SECRET,
-	RedirectURL:  "http://localhost:8080/api/v1/integrations/google/calendar/callback",
+	RedirectURL:  config.LoadEnvVars().JABULANI_URL + "/api/v1/integrations/google/calendar/callback",
 	Scopes:       []string{"https://www.googleapis.com/auth/calendar"},
 	Endpoint:     google.Endpoint,
 }
 
-func (s *Service) GoogleCalendar(ctx context.Context) (string, error) {
+type GoogleCalendarResult struct {
+	Url   string
+	State string
+}
+
+func (s *Service) GoogleCalendar(ctx context.Context) (GoogleCalendarResult, error) {
 	actor := actor.MustGetFromContext(ctx)
 
 	state, err := GenerateState(actor)
 	if err != nil {
-		return "", err
+		return GoogleCalendarResult{}, err
 	}
 
 	// TODO: intelligent prompt consent if annoying
 	url := googleCalendarConf.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 
-	return url, nil
+	return GoogleCalendarResult{Url: url, State: state}, nil
 }
 
 func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlState string) error {
@@ -233,7 +238,11 @@ func (s *Service) GoogleCalendarCallback(ctx context.Context, code string, urlSt
 
 		err = s.initialCalendarSync(ctx, service, externalCalendar, calendarTz, merchantId)
 		if err != nil {
-			return fmt.Errorf("error during initial external calendar sync: %s", err.Error())
+			if removeErr := s.removeExternalCalendar(ctx, extCalendarId); removeErr != nil {
+				return fmt.Errorf("error during initial external calendar sync: %w, cleanup also failed: %w", err, removeErr)
+			}
+
+			return fmt.Errorf("error during initial external calendar sync: %w", err)
 		}
 	}
 

@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
@@ -18,15 +18,22 @@ func RandomString(n int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func ValidateOauthState(r *http.Request) error {
+type CookieScope struct {
+	Path   string
+	Domain string
+}
+
+const cookieMaxAge = 10 * 60
+
+func ValidateState(r *http.Request, cookieName string) error {
 	state := r.URL.Query().Get("state")
 	if state == "" {
 		return validate.NewError("oauth: missing state in callback")
 	}
 
-	stateCookie, err := r.Cookie("oauth-state")
+	stateCookie, err := r.Cookie(cookieName)
 	if err != nil {
-		return validate.NewError("oauth: missing oauth-sate cookie")
+		return validate.NewError(fmt.Sprintf("oauth: missing %s cookie", cookieName))
 	}
 
 	if subtle.ConstantTimeCompare([]byte(state), []byte(stateCookie.Value)) != 1 {
@@ -36,27 +43,33 @@ func ValidateOauthState(r *http.Request) error {
 	return nil
 }
 
-func SetOauthStateCookie(w http.ResponseWriter, state string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "oauth-state",
-		Value:    state,
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   5 * 60,
-		Expires:  time.Now().UTC().Add(time.Minute * 5),
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
+func CookieValue(r *http.Request, name string) string {
+	cookie, err := r.Cookie(name)
+	if err != nil {
+		return ""
+	}
+
+	return cookie.Value
 }
 
-func DeleteOauthStateCookie(w http.ResponseWriter) {
+func SetCookie(w http.ResponseWriter, scope CookieScope, name, value string) {
+	setCookie(w, scope, name, value, cookieMaxAge)
+}
+
+func DeleteCookies(w http.ResponseWriter, scope CookieScope, names ...string) {
+	for _, name := range names {
+		setCookie(w, scope, name, "", -1)
+	}
+}
+
+func setCookie(w http.ResponseWriter, scope CookieScope, name, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "oauth-state",
-		Value:    "",
-		Path:     "/",
+		Name:     name,
+		Value:    value,
+		Path:     scope.Path,
+		Domain:   scope.Domain,
 		HttpOnly: true,
-		MaxAge:   -1,
-		Expires:  time.Now().UTC(),
+		MaxAge:   maxAge,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})

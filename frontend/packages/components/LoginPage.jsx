@@ -14,9 +14,25 @@ import ServerError from "./ServerError.jsx";
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
+const OAUTH_ERRORS = {
+  oauth_account_already_exists:
+    "An account with this email already exists. Log in with your email and password instead.",
+  oauth_email_unavailable:
+    "We couldn't get an email address from that account. Try another way to log in.",
+};
+
+function getOauthErrorMessage(code) {
+  if (!code) return undefined;
+
+  return (
+    OAUTH_ERRORS[code] ?? "Something went wrong while logging in, try again."
+  );
+}
+
 export function validateLoginSearch(search) {
   return {
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
   };
 }
 
@@ -47,6 +63,16 @@ function getRedirectHref(redirectParam, fallbackHref) {
     : url.href;
 }
 
+function getOauthHref(provider, redirectParam, fallbackHref) {
+  const redirectUrl =
+    getSafeRedirectUrl(redirectParam) ??
+    new URL(fallbackHref, window.location.origin).href;
+
+  return `/api/v1/auth/oauth/${provider}?${new URLSearchParams({
+    redirect: redirectUrl,
+  })}`;
+}
+
 function TextLink({ link, styles = "", children }) {
   const className = `${styles} text-fg-primary focus-visible:outline-primary
     rounded font-medium hover:underline focus-visible:outline-2
@@ -64,6 +90,22 @@ function TextLink({ link, styles = "", children }) {
     <Link to={link.to} search={link.search} className={className}>
       {children}
     </Link>
+  );
+}
+
+function OauthButton({ href, icon: ProviderIcon, label }) {
+  return (
+    <a
+      href={href}
+      className="border-border-strong bg-bg-input text-fg hover:bg-hover
+        focus-visible:outline-primary shadow-card flex items-center
+        justify-center gap-2.5 rounded-lg border py-2.5 text-sm font-medium
+        transition-colors focus-visible:outline-2
+        focus-visible:outline-offset-2"
+    >
+      <ProviderIcon styles="fill-fg size-4.5" />
+      {label}
+    </a>
   );
 }
 
@@ -85,6 +127,7 @@ function validate({ email, password }) {
 
 export default function LoginPage({
   redirect: redirectParam,
+  oauthError,
   fallbackHref,
   homeLink,
   switchLink,
@@ -132,6 +175,15 @@ export default function LoginPage({
 
     setIsLoading(true);
     setServerError();
+
+    // The oauth error is no longer relevant once the user tries again
+    if (oauthError) {
+      navigate({
+        to: ".",
+        search: (prev) => ({ ...prev, error: undefined }),
+        replace: true,
+      });
+    }
 
     try {
       const response = await fetch("/api/v1/auth/login", {
@@ -211,28 +263,16 @@ export default function LoginPage({
           <p className="text-fg-muted mt-2">{description}</p>
 
           <div className="mt-8 flex flex-col gap-3">
-            <a
-              className="border-border-strong bg-bg-input text-fg hover:bg-hover
-                focus-visible:outline-primary shadow-card flex items-center
-                justify-center gap-2.5 rounded-lg border py-2.5 text-sm
-                font-medium transition-colors focus-visible:outline-2
-                focus-visible:outline-offset-2"
-              href="/api/v1/auth/oauth/google"
-            >
-              <GoogleIcon styles="fill-fg size-4.5" />
-              Continue with Google
-            </a>
-            <a
-              className="border-border-strong bg-bg-input text-fg hover:bg-hover
-                focus-visible:outline-primary shadow-card flex items-center
-                justify-center gap-2.5 rounded-lg border py-2.5 text-sm
-                font-medium transition-colors focus-visible:outline-2
-                focus-visible:outline-offset-2"
-              href="/api/v1/auth/oauth/facebook"
-            >
-              <FacebookIcon styles="fill-fg size-4.5" />
-              Continue with Facebook
-            </a>
+            <OauthButton
+              href={getOauthHref("google", redirectParam, fallbackHref)}
+              icon={GoogleIcon}
+              label="Continue with Google"
+            />
+            <OauthButton
+              href={getOauthHref("facebook", redirectParam, fallbackHref)}
+              icon={FacebookIcon}
+              label="Continue with Facebook"
+            />
           </div>
 
           <div className="my-6 flex items-center gap-3">
@@ -247,7 +287,9 @@ export default function LoginPage({
             className="flex flex-col gap-5"
             aria-label="Log in with email"
           >
-            <ServerError error={serverError} />
+            <ServerError
+              error={serverError ?? getOauthErrorMessage(oauthError)}
+            />
 
             <div>
               <Input

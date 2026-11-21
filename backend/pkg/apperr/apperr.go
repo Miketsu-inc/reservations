@@ -60,6 +60,17 @@ func (e *APIError) Error() string {
 }
 func (e *APIError) Unwrap() error { return e.Cause }
 
+// For endpoints the user reaches with a full page navigation, where a json
+// error would be shown as is. The user is redirected to URL instead, with the
+// error code in the error query param
+type RedirectError struct {
+	URL string
+	Err error
+}
+
+func (e *RedirectError) Error() string { return e.Err.Error() }
+func (e *RedirectError) Unwrap() error { return e.Err }
+
 // StatusMap maps errors to HTTP status codes. Define one per service covering all domain errors
 type StatusMap map[*Error]int
 

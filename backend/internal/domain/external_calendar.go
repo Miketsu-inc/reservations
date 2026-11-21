@@ -16,6 +16,7 @@ type ExternalCalendarRepository interface {
 	UpdateExternalCalendarAuthTokens(ctx context.Context, extCalendarId int, accessToken string, refreshToken string, tokenExpiry time.Time) error
 	UpdateExternalCalendarChannel(ctx context.Context, calendarId int, channelId string, resourceId string, channelExpiry time.Time) error
 	ResetExternalCalendarSyncState(ctx context.Context, extCalendarId int) error
+	DeleteExternalCalendar(ctx context.Context, extCalendarId int) error
 
 	GetExternalCalendar(ctx context.Context, extCalendarId int) (ExternalCalendar, error)
 	GetExternalCalendarByChannel(ctx context.Context, channelId string, resourceId string) (ExternalCalendar, error)

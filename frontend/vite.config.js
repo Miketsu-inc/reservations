@@ -37,7 +37,7 @@ const createBaseConfig = (additionalConfig) =>
                   secure: false,
                 },
               },
-              allowedHosts: [".reservations.local"],
+              allowedHosts: [".reservations.miketsu.com"],
             },
       ...additionalConfig,
       // Keeping for debug purposes

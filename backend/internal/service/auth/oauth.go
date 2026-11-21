@@ -45,7 +45,7 @@ var googleProvider = oauthProvider{
 	config: &oauth2.Config{
 		ClientID:     config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_ID,
 		ClientSecret: config.LoadEnvVars().GOOGLE_OAUTH_CLIENT_SECRET,
-		RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/google/callback",
+		RedirectURL:  config.LoadEnvVars().TANGO_URL + "/api/v1/auth/oauth/google/callback",
 		Scopes:       []string{"email", "profile"},
 		Endpoint:     google.Endpoint,
 	},
@@ -75,12 +75,12 @@ func decodeGoogleProfile(r io.Reader) (oauthProfile, error) {
 	}, nil
 }
 
-func (s *Service) GoogleLogin(ctx context.Context) (string, string, error) {
+func (s *Service) GoogleLogin(ctx context.Context) (OauthLoginResult, error) {
 	return oauthLogin(googleProvider)
 }
 
-func (s *Service) GoogleCallback(ctx context.Context, lang language.Tag, code string) (jwt.TokenPair, error) {
-	return s.oauthCallback(ctx, lang, code, googleProvider)
+func (s *Service) GoogleCallback(ctx context.Context, lang language.Tag, code, verifier string) (jwt.TokenPair, error) {
+	return s.oauthCallback(ctx, lang, code, verifier, googleProvider)
 }
 
 var facebookProvider = oauthProvider{
@@ -88,7 +88,7 @@ var facebookProvider = oauthProvider{
 	config: &oauth2.Config{
 		ClientID:     config.LoadEnvVars().FACEBOOK_OAUTH_CLIENT_ID,
 		ClientSecret: config.LoadEnvVars().FACEBOOK_OAUTH_CLIENT_SECRET,
-		RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/facebook/callback",
+		RedirectURL:  config.LoadEnvVars().TANGO_URL + "/api/v1/auth/oauth/facebook/callback",
 		Scopes:       []string{"email", "public_profile"},
 		Endpoint:     facebook.Endpoint,
 	},
@@ -115,25 +115,39 @@ func decodeFacebookProfile(r io.Reader) (oauthProfile, error) {
 	}, nil
 }
 
-func (s *Service) FacebookLogin(ctx context.Context) (string, string, error) {
+func (s *Service) FacebookLogin(ctx context.Context) (OauthLoginResult, error) {
 	return oauthLogin(facebookProvider)
 }
 
-func (s *Service) FacebookCallback(ctx context.Context, lang language.Tag, code string) (jwt.TokenPair, error) {
-	return s.oauthCallback(ctx, lang, code, facebookProvider)
+func (s *Service) FacebookCallback(ctx context.Context, lang language.Tag, code, verifier string) (jwt.TokenPair, error) {
+	return s.oauthCallback(ctx, lang, code, verifier, facebookProvider)
 }
 
-func oauthLogin(provider oauthProvider) (string, string, error) {
+type OauthLoginResult struct {
+	Url      string
+	State    string
+	Verifier string
+}
+
+func oauthLogin(provider oauthProvider) (OauthLoginResult, error) {
 	state, err := oauthutil.RandomString(32)
 	if err != nil {
-		return "", "", err
+		return OauthLoginResult{}, err
 	}
 
-	return provider.config.AuthCodeURL(state, oauth2.AccessTypeOffline), state, nil
+	// PKCE, a leaked authorization code can't be exchanged without the
+	// verifier that is kept in an HttpOnly cookie
+	verifier := oauth2.GenerateVerifier()
+
+	return OauthLoginResult{
+		Url:      provider.config.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier)),
+		State:    state,
+		Verifier: verifier,
+	}, nil
 }
 
-func (s *Service) oauthCallback(ctx context.Context, lang language.Tag, code string, provider oauthProvider) (jwt.TokenPair, error) {
-	profile, err := fetchOauthProfile(ctx, code, provider)
+func (s *Service) oauthCallback(ctx context.Context, lang language.Tag, code, verifier string, provider oauthProvider) (jwt.TokenPair, error) {
+	profile, err := fetchOauthProfile(ctx, code, verifier, provider)
 	if err != nil {
 		return jwt.TokenPair{}, err
 	}
@@ -146,8 +160,8 @@ func (s *Service) oauthCallback(ctx context.Context, lang language.Tag, code str
 	return newJwtTokens(userId, refreshVersion)
 }
 
-func fetchOauthProfile(ctx context.Context, code string, provider oauthProvider) (oauthProfile, error) {
-	token, err := provider.config.Exchange(ctx, code)
+func fetchOauthProfile(ctx context.Context, code, verifier string, provider oauthProvider) (oauthProfile, error) {
+	token, err := provider.config.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
 		return oauthProfile{}, fmt.Errorf("error during %s oauth exchange: %w", provider.authProvider, err)
 	}

@@ -41,11 +41,12 @@ export const Route = createFileRoute("/login")({
 });
 
 function RouteComponent() {
-  const { redirect } = Route.useSearch();
+  const { redirect, error } = Route.useSearch();
 
   return (
     <LoginPage
       redirect={redirect}
+      oauthError={error}
       fallbackHref={FALLBACK_HREF}
       switchLink={{ href: `${TANGO_URL}/login`, label: "For customers" }}
       title="Log in to your business"

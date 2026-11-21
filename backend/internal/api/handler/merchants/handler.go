@@ -18,6 +18,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
@@ -541,13 +542,19 @@ func (h *Handler) GetBookingForCalendar(w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
+const calendarStateCookie = "calendar-oauth-state"
+
+var calendarCookieScope = oauthutil.CookieScope{Path: "/api/v1/integrations/google/calendar/callback"}
+
 func (h *Handler) GoogleCalendar(w http.ResponseWriter, r *http.Request) error {
-	url, err := h.extcalendarServ.GoogleCalendar(r.Context())
+	result, err := h.extcalendarServ.GoogleCalendar(r.Context())
 	if err != nil {
 		return externalcalendarServ.ErrStatus.Resolve(err, "GoogleCalendar")
 	}
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	oauthutil.SetCookie(w, calendarCookieScope, calendarStateCookie, result.State)
+
+	http.Redirect(w, r, result.Url, http.StatusTemporaryRedirect)
 
 	return nil
 }

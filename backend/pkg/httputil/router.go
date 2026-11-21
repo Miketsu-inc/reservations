@@ -3,6 +3,7 @@ package httputil
 import (
 	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/logger"
@@ -82,6 +83,12 @@ type errorResp struct {
 func renderError(w http.ResponseWriter, r *http.Request, err error) {
 	logger := logger.FromContext(r.Context())
 
+	var redirectErr *apperr.RedirectError
+	if errors.As(err, &redirectErr) {
+		renderRedirectError(w, r, redirectErr)
+		return
+	}
+
 	var apiErr *apperr.APIError
 	if !errors.As(err, &apiErr) {
 		logger.Error("unexpected error", "error", err.Error())
@@ -116,4 +123,41 @@ func renderError(w http.ResponseWriter, r *http.Request, err error) {
 			Meta:    apiErr.Meta,
 		},
 	})
+}
+
+func renderRedirectError(w http.ResponseWriter, r *http.Request, redirectErr *apperr.RedirectError) {
+	logger := logger.FromContext(r.Context())
+
+	code := "internal_server_error"
+	attrs := []any{"error", redirectErr.Error()}
+
+	var apiErr *apperr.APIError
+	if errors.As(redirectErr.Err, &apiErr) {
+		code = apiErr.Err.Code
+		if apiErr.Cause != nil {
+			attrs = append(attrs, "cause", apiErr.Cause.Error())
+		}
+	}
+
+	target, err := url.Parse(redirectErr.URL)
+	if err != nil {
+		logger.Error("invalid error redirect url", "url", redirectErr.URL, "error", err.Error())
+		WriteJSON(w, http.StatusInternalServerError, map[string]errorResp{
+			"error": {
+				Status:  http.StatusInternalServerError,
+				Code:    "internal_server_error",
+				Message: "An unexpected error occurred",
+			},
+		})
+		return
+	}
+
+	query := target.Query()
+	query.Set("error", code)
+	target.RawQuery = query.Encode()
+
+	attrs = append(attrs, "code", code, "redirect", target.String())
+	logger.Error("redirected after error", attrs...)
+
+	http.Redirect(w, r, target.String(), http.StatusSeeOther)
 }

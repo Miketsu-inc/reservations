@@ -7,6 +7,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
+	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 )
 
 type Handler struct {
@@ -26,9 +27,18 @@ func (h *Handler) Routes() *httputil.Router {
 	return r
 }
 
+const calendarStateCookie = "calendar-oauth-state"
+
+var calendarCookieScope = oauthutil.CookieScope{Path: "/api/v1/integrations/google/calendar/callback"}
+
 func (h *Handler) GoogleCalendarCallback(w http.ResponseWriter, r *http.Request) error {
 	code := r.URL.Query().Get("code")
 	stateStr := r.URL.Query().Get("state")
+
+	if err := oauthutil.ValidateState(r, calendarStateCookie); err != nil {
+		return err
+	}
+	oauthutil.DeleteCookies(w, calendarCookieScope, calendarStateCookie)
 
 	err := h.service.GoogleCalendarCallback(r.Context(), code, stateStr)
 	if err != nil {

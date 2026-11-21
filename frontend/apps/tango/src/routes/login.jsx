@@ -35,11 +35,12 @@ export const Route = createFileRoute("/login")({
 });
 
 function RouteComponent() {
-  const { redirect } = Route.useSearch();
+  const { redirect, error } = Route.useSearch();
 
   return (
     <LoginPage
       redirect={redirect}
+      oauthError={error}
       fallbackHref={FALLBACK_HREF}
       homeLink={{ to: "/" }}
       switchLink={{ href: `${JABULANI_URL}/login`, label: "For businesses" }}

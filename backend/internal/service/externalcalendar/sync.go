@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -259,11 +260,17 @@ func (s *Service) initialCalendarSync(ctx context.Context, service *calendar.Ser
 		return err
 	}
 
+	webhookUrl := config.LoadEnvVars().GOOGLE_CALENDAR_WEBHOOK_URL
+	if webhookUrl == "" {
+		slog.WarnContext(ctx, "GOOGLE_CALENDAR_WEBHOOK_URL is not set, changes in the google calendar won't be synced", "external_calendar_id", extCalendar.Id)
+		return nil
+	}
+
 	channelId := uuid.NewString()
 	googleChannel, err := service.Events.Watch(extCalendar.CalendarId, &calendar.Channel{
 		Id:      channelId,
 		Type:    "web_hook",
-		Address: "http://localhost:8080/api/v1/integrations/google/calendar/watch",
+		Address: webhookUrl,
 	}).Do()
 	if err != nil {
 		return err
@@ -364,6 +371,18 @@ func (s *Service) resetExternalCalendar(ctx context.Context, extCalendarId int) 
 		}
 
 		return nil
+	})
+}
+
+func (s *Service) removeExternalCalendar(ctx context.Context, extCalendarId int) error {
+	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
+		err := s.blockedTimeRepo.WithTx(tx).DeleteExternalCalendarBlockedTimes(ctx, extCalendarId)
+		if err != nil {
+			return err
+		}
+
+		// events are deleted by the cascade
+		return s.externalCalendarRepo.WithTx(tx).DeleteExternalCalendar(ctx, extCalendarId)
 	})
 }
 
@@ -1135,6 +1154,12 @@ func (s *Service) SyncDeleteBlockedTime(ctx context.Context, blockedTimeId int, 
 }
 
 func (s *Service) HandleChannelExpiration(ctx context.Context) error {
+	webhookUrl := config.LoadEnvVars().GOOGLE_CALENDAR_WEBHOOK_URL
+	if webhookUrl == "" {
+		slog.WarnContext(ctx, "GOOGLE_CALENDAR_WEBHOOK_URL is not set, expiring google calendar channels are not renewed")
+		return nil
+	}
+
 	extCalendars, err := s.externalCalendarRepo.GetExpiringExternalCalendars(ctx, time.Now().UTC().Add(time.Hour*24))
 	if err != nil {
 		return err
@@ -1164,7 +1189,7 @@ func (s *Service) HandleChannelExpiration(ctx context.Context) error {
 		googleChannel, err := service.Events.Watch(extCal.CalendarId, &calendar.Channel{
 			Id:      channelId,
 			Type:    "web_hook",
-			Address: "http://localhost:8080/api/v1/integrations/google/calendar/watch",
+			Address: webhookUrl,
 		}).Do()
 		if err != nil {
 			return err

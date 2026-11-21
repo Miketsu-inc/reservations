@@ -36,6 +36,9 @@ type Config struct {
 	FACEBOOK_OAUTH_CLIENT_ID     string
 	FACEBOOK_OAUTH_CLIENT_SECRET string
 
+	// Optional
+	GOOGLE_CALENDAR_WEBHOOK_URL string
+
 	TANGO_URL    string
 	JABULANI_URL string
 	DOMAIN       string
@@ -77,6 +80,7 @@ func LoadEnvVars() *Config {
 		google_oauth_client_secret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 		facebook_oauth_client_id := os.Getenv("FACEBOOK_OAUTH_CLIENT_ID")
 		facebook_oauth_client_secret := os.Getenv("FACEBOOK_OAUTH_CLIENT_SECRET")
+		google_calendar_webhook_url := os.Getenv("GOOGLE_CALENDAR_WEBHOOK_URL")
 		tango_url := os.Getenv("TANGO_URL")
 		jabulani_url := os.Getenv("JABULANI_URL")
 		domain := os.Getenv("DOMAIN")
@@ -111,6 +115,7 @@ func LoadEnvVars() *Config {
 			GOOGLE_OAUTH_CLIENT_SECRET:   google_oauth_client_secret,
 			FACEBOOK_OAUTH_CLIENT_ID:     facebook_oauth_client_id,
 			FACEBOOK_OAUTH_CLIENT_SECRET: facebook_oauth_client_secret,
+			GOOGLE_CALENDAR_WEBHOOK_URL:  google_calendar_webhook_url,
 			TANGO_URL:                    tango_url,
 			JABULANI_URL:                 jabulani_url,
 			DOMAIN:                       domain,
