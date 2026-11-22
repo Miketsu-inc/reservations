@@ -3,14 +3,12 @@ package merchant
 import (
 	"net/http"
 
-	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
 var ErrStatus = apperr.StatusMap{
-	ErrMerchantUrlNotUnique:   http.StatusConflict,
-	ErrMerchantNotFound:       http.StatusNotFound,
-	domain.ErrBookingNotFound: http.StatusNotFound,
+	ErrMerchantUrlNotUnique: http.StatusConflict,
+	ErrMerchantNotFound:     http.StatusNotFound,
 
 	ErrEmployeeNotFound:        http.StatusNotFound,
 	ErrMerchantServiceMismatch: http.StatusForbidden,

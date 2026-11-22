@@ -2,6 +2,7 @@ package booking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -67,6 +69,42 @@ func NewService(booking domain.BookingRepository, catalog domain.CatalogReposito
 
 func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 	s.enqueuer = client
+}
+
+func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeContext, bookingId int) (domain.Booking, error) {
+	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Booking{}, ErrBookingNotFound
+		}
+
+		return domain.Booking{}, err
+	}
+
+	if !booking.IsOwnedByMerchant(actor.MerchantId) {
+		return domain.Booking{}, ErrBookingNotFound
+	}
+
+	if !permission.CanManageTeam(actor) && (booking.EmployeeId == nil || *booking.EmployeeId != actor.EmployeeId) {
+		return domain.Booking{}, ErrBookingNotFound
+	}
+
+	return booking, nil
+}
+
+func (s *Service) GetByMerchant(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor), bookingId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BookingForCalendar{}, ErrBookingNotFound
+		}
+
+		return domain.BookingForCalendar{}, err
+	}
+
+	return booking, nil
 }
 
 func (s *Service) newBooking(ctx context.Context, tx pgx.Tx, booking domain.Booking, participants []domain.BookingParticipant,
@@ -454,7 +492,6 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int) error {
 	})
 }
 
-
 // prevent null booking price to avoid a lot of headaches
 func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UUID, price *currencyx.Price) (currencyx.Price, error) {
 	var outPrice currencyx.Price
@@ -651,6 +688,10 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 
 	if input.IsRecurring && input.Rrule == nil {
 		return validate.NewError("recurrence_rule is required for recurring bookings")
+	}
+
+	if !permission.CanActFor(actor, input.EmployeeId) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	// check if employee belongs to merchant
@@ -993,13 +1034,13 @@ type UpdateByMerchantInput struct {
 func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input UpdateByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
 	}
 
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking not found for this merchant")
+	if !permission.CanActFor(actor, input.EmployeeId) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if input.UpdateAllFuture && !booking.IsRecurring {
@@ -1458,17 +1499,13 @@ type CancelByMerchantInput struct {
 func (s *Service) CancelByMerchant(ctx context.Context, bookingId int, input CancelByMerchantInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
 	}
 
 	if input.CancelFuture && !booking.IsRecurring {
 		return fmt.Errorf("cannot cancel future occurrences of non-recurring booking")
-	}
-
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking not found for this merchant")
 	}
 
 	err = booking.CanCancel()
@@ -1543,13 +1580,9 @@ type UpdatePaticipantStatusInput struct {
 func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, participantId int, input UpdatePaticipantStatusInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
+	booking, err := s.getBookingForActor(ctx, actor, bookingId)
 	if err != nil {
 		return err
-	}
-
-	if !booking.IsOwnedByMerchant(actor.MerchantId) {
-		return fmt.Errorf("booking could not be found for this merchant")
 	}
 
 	if !booking.IsGroupBooking() {

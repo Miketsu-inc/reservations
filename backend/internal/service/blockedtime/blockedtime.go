@@ -3,12 +3,14 @@ package blockedtime
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -81,11 +83,58 @@ func optionalTimesEqual(a, b *time.Time) bool {
 	return a.Equal(*b)
 }
 
+func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.EmployeeContext, blockedTimeId int) (domain.BlockedTimeEmployees, error) {
+	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, blockedTimeId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+		}
+
+		return domain.BlockedTimeEmployees{}, err
+	}
+
+	if blockedTime.MerchantId != actor.MerchantId {
+		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+	}
+
+	if permission.CanManageTeam(actor) {
+		return blockedTime, nil
+	}
+
+	if !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
+		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
+	}
+
+	activeEmployees, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
+	if err != nil {
+		return domain.BlockedTimeEmployees{}, err
+	}
+
+	// Deactivated employees count as unassigned, the same as on the calendar,
+	// so they don't make a blocked time shared
+	activeIds := make([]int, 0, len(blockedTime.EmployeeIds))
+	for _, employee := range activeEmployees {
+		if slices.Contains(blockedTime.EmployeeIds, employee.Id) {
+			activeIds = append(activeIds, employee.Id)
+		}
+	}
+
+	if !permission.CanActFor(actor, activeIds...) {
+		return domain.BlockedTimeEmployees{}, domain.ErrEmployeeAccessDenied
+	}
+
+	return blockedTime, nil
+}
+
 func (s *Service) New(ctx context.Context, input NewInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
 	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
 		return err
+	}
+
+	if !permission.CanActFor(actor, input.EmployeeIds...) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
@@ -136,17 +185,13 @@ type UpdateInput struct {
 func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, input.BlockedTimeId)
+	blockedTime, err := s.getBlockedTimeForActor(ctx, actor, input.BlockedTimeId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrBlockedTimeNotFound
-		}
-
 		return err
 	}
 
-	if blockedTime.MerchantId != actor.MerchantId {
-		return ErrBlockedTimeNotFound
+	if !permission.CanActFor(actor, input.EmployeeIds...) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if err := validateBlockedTime(input.IsAllDay, input.BlockedDay, input.FromDate, input.ToDate); err != nil {
@@ -215,18 +260,9 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 func (s *Service) Delete(ctx context.Context, blockedTimeId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	// TODO: if the actor is not on the block time this will give an error
-	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeForEmployee(ctx, blockedTimeId, actor.EmployeeId)
+	blockedTime, err := s.getBlockedTimeForActor(ctx, actor, blockedTimeId)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrBlockedTimeNotFound
-		}
-
 		return err
-	}
-
-	if blockedTime.MerchantId != actor.MerchantId {
-		return ErrBlockedTimeNotFound
 	}
 
 	return s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {

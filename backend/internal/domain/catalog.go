@@ -24,7 +24,7 @@ type CatalogRepository interface {
 	ReorderServicesAfterUpdate(ctx context.Context, categoryId *int, merchantId uuid.UUID, exludeServiceId *int) error
 
 	GetServicesGroupedByCategory(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategory, error)
-	GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]ServicesGroupedByCategoriesForCalendar, error)
+	GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]ServicesGroupedByCategoriesForCalendar, error)
 	GetServiceWithPhases(ctx context.Context, serviceId int, merchantId uuid.UUID) (Service, error)
 	GetServicesForMerchantPage(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]MerchantPageServicesGroupedByCategory, error)
 	GetServiceDetailsForMerchantPage(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int) (PublicServiceDetails, error)

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 )
@@ -46,6 +47,50 @@ func mapToEmployeeResp(id *int, firstName, lastName *string, avatarImageId *uuid
 		FirstName: firstName,
 		LastName:  lastName,
 		AvatarUrl: mediaServ.NewURL(avatarImageId, mediaServ.VariantSmall),
+	}
+}
+
+func mapToGetByMerchantResp(in domain.BookingForCalendar) getByMerchantResp {
+	participants := make([]bookingParticipantResp, len(in.Participants))
+	for i, p := range in.Participants {
+		participants[i] = bookingParticipantResp{
+			Id:           p.Id,
+			CustomerId:   p.CustomerId,
+			FirstName:    p.FirstName,
+			LastName:     p.LastName,
+			CustomerNote: p.CustomerNote,
+			Status:       p.Status,
+			AvatarUrl:    mediaServ.NewURL(p.AvatarImageId, mediaServ.VariantSmall),
+		}
+	}
+
+	phases := make([]bookingPhaseResp, len(in.Phases))
+	for i, phase := range in.Phases {
+		phases[i] = bookingPhaseResp{
+			Duration:  int(phase.ToDate.Sub(phase.FromDate).Minutes()),
+			PhaseType: phase.PhaseType,
+		}
+	}
+
+	return getByMerchantResp{
+		ID:              in.ID,
+		BookingType:     in.BookingType,
+		BookingStatus:   in.BookingStatus,
+		FromDate:        in.FromDate,
+		ToDate:          in.ToDate,
+		IsRecurring:     in.IsRecurring,
+		Duration:        int(in.ToDate.Sub(in.FromDate).Minutes()),
+		MerchantNote:    in.MerchantNote,
+		EmployeeId:      in.EmployeeId,
+		IsUnassigned:    in.IsUnassigned,
+		ServiceId:       in.ServiceId,
+		ServiceName:     in.ServiceName,
+		ServiceColor:    in.ServiceColor,
+		MaxParticipants: in.MaxParticipants,
+		PricePerPerson:  in.PricePerPerson.ToFormatted(),
+		PriceType:       in.PriceType,
+		Participants:    participants,
+		Phases:          phases,
 	}
 }
 

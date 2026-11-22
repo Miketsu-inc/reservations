@@ -459,11 +459,12 @@ type bookingForCalendar struct {
 	Duration        int                             `json:"duration"`
 	MerchantNote    *string                         `json:"merchant_note"`
 	EmployeeId      *int                            `json:"employee_id"`
+	IsUnassigned    bool                            `json:"is_unassigned"`
 	ServiceId       *int                            `json:"service_id"`
 	ServiceName     string                          `json:"service_name"`
 	ServiceColor    *string                         `json:"service_color"`
 	MaxParticipants int                             `json:"max_participants"`
-	Price           currencyx.FormattedPrice        `json:"price"`
+	PricePerPerson  currencyx.FormattedPrice        `json:"price_per_person"`
 	PriceType       types.PriceType                 `json:"price_type"`
 	Participants    []bookingParticipantForCalendar `json:"participants"`
 	Phases          []bookingPhaseForCalendar       `json:"phases"`
@@ -487,6 +488,7 @@ type bookingParticipantForCalendar struct {
 type blockedTime struct {
 	ID            int        `json:"id"`
 	EmployeeIds   []int      `json:"employee_ids"`
+	IsUnassigned  bool       `json:"is_unassigned"`
 	Name          string     `json:"name"`
 	FromDate      *time.Time `json:"from_date"`
 	ToDate        *time.Time `json:"to_date"`
@@ -495,6 +497,8 @@ type blockedTime struct {
 	Icon          *string    `json:"icon"`
 	BlockedTypeId *int       `json:"blocked_type_id"`
 }
+
+const maxCalendarRange = 7 * 24 * time.Hour
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
 	startDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("start"))
@@ -511,6 +515,10 @@ func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) erro
 		return validate.NewError("calendar end date must be after start date")
 	}
 
+	if endDate.Sub(startDate) > maxCalendarRange {
+		return validate.NewError("calendar date range must not exceed 7 days")
+	}
+
 	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))
 	if err != nil {
 		return validate.NewError("invalid calendar time zone")
@@ -522,22 +530,6 @@ func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetCalendarEventsResp(bookings))
-
-	return nil
-}
-
-func (h *Handler) GetBookingForCalendar(w http.ResponseWriter, r *http.Request) error {
-	bookingId, err := strconv.Atoi(chi.URLParam(r, "bookingId"))
-	if err != nil {
-		return validate.NewError("invalid booking id")
-	}
-
-	booking, err := h.service.GetBookingForCalendar(r.Context(), bookingId)
-	if err != nil {
-		return merchantServ.ErrStatus.Resolve(err, "GetBookingForCalendar")
-	}
-
-	httputil.Success(w, http.StatusOK, mapToBookingForCalendarResp(booking))
 
 	return nil
 }

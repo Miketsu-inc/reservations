@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -201,6 +202,15 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 
 func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
+
+	if !permission.CanManageTeam(actor) {
+		member, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, actor.EmployeeId)
+		if err != nil {
+			return []domain.Employee{}, err
+		}
+
+		return []domain.Employee{member}, nil
+	}
 
 	teamMembers, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
 	if err != nil {

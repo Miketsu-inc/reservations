@@ -257,28 +257,31 @@ func (r *blockedTimeRepository) GetBlockedTimeEmployees(ctx context.Context, blo
 	return blockedTime, nil
 }
 
-func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID,
+// Only active employees are listed, a blocked time without any is unassigned
+func (r *blockedTimeRepository) GetBlockedTimesForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int,
 	startTime, endTime, startDay, endDay time.Time) ([]domain.BlockedTimeEvent, error) {
 	query := `
 	select bt.id, bt.name, bt.from_date, bt.to_date, bt.blocked_day, bt.is_all_day, btt.icon, btt.id as blocked_type_id,
-		coalesce(
-			array_agg(ebt.employee_id order by ebt.employee_id) filter (where ebt.employee_id is not null),
-			'{}'::int[]
-		) as employee_ids
+		coalesce(emp.employee_ids, '{}'::int[]) as employee_ids
 	from "BlockedTime" bt
-	left join "EmployeeBlockedTime" ebt on ebt.blocked_time_id = bt.id
 	left join "BlockedTimeType" btt on btt.id = bt.blocked_type_id
+	left join lateral (
+		select array_agg(ebt.employee_id order by ebt.employee_id) as employee_ids
+		from "EmployeeBlockedTime" ebt
+		join "Employee" e on e.id = ebt.employee_id
+		where ebt.blocked_time_id = bt.id and e.is_active
+	) emp on true
 	where bt.merchant_id = $1
 		and (
 			(bt.is_all_day and bt.blocked_day >= $4::date and bt.blocked_day < $5::date)
 			or
 			(not bt.is_all_day and bt.from_date < $3 and bt.to_date > $2)
 		)
-	group by bt.id, btt.id, btt.icon
+		and ($6::int is null or $6 = any(emp.employee_ids))
 	order by bt.id
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, startDay, endDay)
+	rows, _ := r.db.Query(ctx, query, merchantId, startTime, endTime, startDay, endDay, employeeId)
 	blockedTimes, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.BlockedTimeEvent])
 	if err != nil {
 		return []domain.BlockedTimeEvent{}, fmt.Errorf("GetBlockedTimesForCalendar: %w", err)

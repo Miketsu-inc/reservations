@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
 )
@@ -35,6 +36,10 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 		return GetBookingsResult{}, fmt.Errorf("exactly one booking subject must be provided")
 	}
 
+	if input.EmployeeId != nil && !permission.CanActFor(actor, *input.EmployeeId) {
+		return GetBookingsResult{}, domain.ErrEmployeeAccessDenied
+	}
+
 	decodedCursor, err := cursor.Decode[bookingCursor](input.Cursor)
 	if err != nil {
 		return GetBookingsResult{}, fmt.Errorf("decode booking cursor: %w", err)
@@ -52,7 +57,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 
 	var bookings []domain.BookingListItem
 	if input.CustomerId != nil {
-		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
+		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, permission.EmployeeScope(actor), input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	} else {
 		bookings, err = s.bookingRepo.GetBookingsForEmployee(ctx, actor.MerchantId, *input.EmployeeId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	}

@@ -254,7 +254,7 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 	return servicesGroupByCategory, nil
 }
 
-func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
+func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
 	query := `
 	select sc.id, sc.name,
 	coalesce (
@@ -274,11 +274,16 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
 	where s.merchant_id = $1 and s.is_active = true
+		and ($2::int is null or exists (
+			select 1
+			from "EmployeeService" es
+			where es.service_id = s.id and es.employee_id = $2
+		))
 	group by sc.id, sc.name
 	order by sc.sequence, sc.name
 	`
 
-	rows, _ := r.db.Query(ctx, query, merchantId)
+	rows, _ := r.db.Query(ctx, query, merchantId, employeeId)
 	servicesGroupByCategory, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ServicesGroupedByCategoriesForCalendar, error) {
 		var sgby domain.ServicesGroupedByCategoriesForCalendar
 		var services []byte

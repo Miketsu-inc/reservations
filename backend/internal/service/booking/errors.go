@@ -3,6 +3,7 @@ package booking
 import (
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
@@ -15,6 +16,8 @@ var ErrStatus = apperr.StatusMap{
 	ErrBookingInactiveService:      http.StatusConflict,
 	ErrBookingCancelDeadlinePassed: http.StatusConflict,
 	ErrBookingCannotBeModified:     http.StatusConflict,
+
+	domain.ErrEmployeeAccessDenied: http.StatusForbidden,
 }
 
 var ErrCustomerIsBlacklisted = &apperr.Error{Code: "customer_is_blacklisted", Message: "you are blacklisted, please contact the merchant by email or phone to make a booking"}

@@ -98,6 +98,10 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 				r.WithFunc(h.Middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.Merchants.CreateLogoUpload)
 				r.Delete("/logo", h.Merchants.RemoveLogo)
+
+				r.Patch("/settings/merchant-profile", h.Merchants.UpdateMerchantProfileSettings)
+				r.Patch("/settings/scheduling", h.Merchants.UpdateSchedulingSettings)
+				r.Patch("/settings/business-hours", h.Merchants.UpdateBusinessHoursSettings)
 			})
 
 			r.Group(func(r *httputil.Router) {
@@ -108,18 +112,14 @@ func NewRouter(h *Handlers) *httputil.Router {
 				r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
 
 				r.Get("/settings/merchant-profile", h.Merchants.GetMerchantProfileSettings)
-				r.Patch("/settings/merchant-profile", h.Merchants.UpdateMerchantProfileSettings)
 				r.Get("/settings/scheduling", h.Merchants.GetSchedulingSettings)
-				r.Patch("/settings/scheduling", h.Merchants.UpdateSchedulingSettings)
 				r.Get("/settings/business-hours", h.Merchants.GetBusinessHoursSettings)
-				r.Patch("/settings/business-hours", h.Merchants.UpdateBusinessHoursSettings)
 				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
 
 				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
 				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
 				r.Get("/calendar/events", h.Merchants.GetCalendarEvents)
-				r.Get("/calendar/bookings/{bookingId}", h.Merchants.GetBookingForCalendar)
 
 				r.Get("/integrations/google/calendar", h.Merchants.GoogleCalendar)
 			})

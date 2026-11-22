@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -1065,7 +1066,7 @@ func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, se
 func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId)
+	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor))
 	if err != nil {
 		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
 	}
