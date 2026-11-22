@@ -17,6 +17,7 @@ import {
   formatShortName,
   merchantInfoQueryOptions,
   merchantServicesQueryOptions,
+  publicReviewStatsQueryOptions,
   toAvatar,
 } from "@reservations/lib";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -25,10 +26,7 @@ import { useEffect, useState } from "react";
 import ReviewFiltersSidebar from "./-components/ReviewFiltersSidebar";
 import ReviewItem from "./-components/ReviewItem";
 import ReviewStats from "./-components/ReviewStats";
-import {
-  publicReviewsInfiniteQueryOptions,
-  publicReviewStatsQueryOptions,
-} from "./-components/reviewQueries";
+import { publicReviewsInfiniteQueryOptions } from "./-components/reviewQueries";
 
 const SORT_OPTIONS = [
   { value: "most_relevant", label: "Most relevant" },

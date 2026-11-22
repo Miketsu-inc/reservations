@@ -378,3 +378,30 @@ export function reviewFiltersToSearchParams({
 
   return params;
 }
+
+async function fetchPublicReviewStats(merchantName, locationId) {
+  const response = await fetch(
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/reviews/stats`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function publicReviewStatsQueryOptions(merchantName, locationId) {
+  return queryOptions({
+    queryKey: ["public-review-stats", merchantName, locationId],
+    queryFn: () => fetchPublicReviewStats(merchantName, locationId),
+  });
+}

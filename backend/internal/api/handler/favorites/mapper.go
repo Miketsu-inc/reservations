@@ -2,6 +2,7 @@ package favorites
 
 import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 )
 
 func mapToGetFavoritesResp(in []domain.FavoriteMerchant) []favoriteMerchantResp {
@@ -12,6 +13,9 @@ func mapToGetFavoritesResp(in []domain.FavoriteMerchant) []favoriteMerchantResp 
 			MerchantName:      f.MerchantName,
 			MerchantUrlName:   f.MerchantUrlName,
 			FormattedLocation: f.FormattedLocation,
+			AverageRating:     f.AverageRating,
+			ReviewCount:       f.ReviewCount,
+			MainImageUrl:      mediaServ.NewURL(f.MainImageId, mediaServ.VariantSmall),
 		}
 	}
 	return resp

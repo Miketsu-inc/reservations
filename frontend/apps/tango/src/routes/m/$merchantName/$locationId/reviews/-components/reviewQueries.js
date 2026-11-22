@@ -1,9 +1,5 @@
 import { reviewFiltersToSearchParams } from "@reservations/lib";
-import {
-  infiniteQueryOptions,
-  keepPreviousData,
-  queryOptions,
-} from "@tanstack/react-query";
+import { infiniteQueryOptions, keepPreviousData } from "@tanstack/react-query";
 
 async function fetchPublicReviews(merchantName, locationId, filters) {
   const params = reviewFiltersToSearchParams(filters);
@@ -43,32 +39,5 @@ export function publicReviewsInfiniteQueryOptions(
     getNextPageParam: (lastPage) =>
       lastPage.has_next_page ? lastPage.next_cursor : undefined,
     placeholderData: keepPreviousData,
-  });
-}
-
-async function fetchPublicReviewStats(merchantName, locationId) {
-  const response = await fetch(
-    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/reviews/stats`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-export function publicReviewStatsQueryOptions(merchantName, locationId) {
-  return queryOptions({
-    queryKey: ["public-review-stats", merchantName, locationId],
-    queryFn: () => fetchPublicReviewStats(merchantName, locationId),
   });
 }

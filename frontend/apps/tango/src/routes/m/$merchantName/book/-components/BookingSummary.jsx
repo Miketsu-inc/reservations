@@ -3,7 +3,6 @@ import {
   Calendar,
   Clock,
   Note01Icon,
-  StarIcon,
 } from "@hugeicons/core-free-icons";
 import { Button, Card, Icon } from "@reservations/components";
 import {
@@ -14,6 +13,7 @@ import {
   formatShortName,
 } from "@reservations/lib";
 import MerchantLogo from "../../-components/MerchantLogo";
+import RatingSummary from "../../-components/RatingSummary";
 
 const formatDate = (dateString) => {
   const date = dateStringToLocalDate(dateString);
@@ -87,6 +87,7 @@ export function getBookingSummaryDisplayInfo({
 
 export default function BookingSummary({
   fetchedSummary,
+  reviewStats,
   selectedSummary,
   searchEmployeeId,
   isLoading,
@@ -163,16 +164,21 @@ export default function BookingSummary({
             <h2 className="text-lg font-semibold">
               {fetchedSummary?.merchant_name}
             </h2>
-            <div className="flex items-center gap-1 text-sm">
-              <Icon
-                icon={StarIcon}
-                styles="size-4 text-fg-warning fill-warning"
-              />
-              <span className="font-medium">4.6</span>
-              <span className="text-fg-muted ml-1 cursor-pointer">
-                (9 reviews)
-              </span>
-            </div>
+            {reviewStats?.total_reviews > 0 ? (
+              <RatingSummary
+                average={reviewStats.average_rating}
+                styles="text-sm"
+              >
+                <span className="text-fg-muted">
+                  ({reviewStats.total_reviews}{" "}
+                  {reviewStats.total_reviews === 1 ? "review" : "reviews"})
+                </span>
+              </RatingSummary>
+            ) : (
+              reviewStats && (
+                <span className="text-fg-muted text-sm">No reviews yet</span>
+              )
+            )}
             <p className="text-fg-muted line-clamp-1 w-full text-sm">
               {fetchedSummary?.formatted_location}
             </p>

@@ -51,16 +51,29 @@ func (r *favoriteRepository) RemoveFavoriteMerchant(ctx context.Context, userId 
 
 func (r *favoriteRepository) GetFavoriteMerchants(ctx context.Context, userId uuid.UUID) ([]domain.FavoriteMerchant, error) {
 	query := `
-	select m.id as merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, l.formatted_location
+	select m.id as merchant_id, m.name as merchant_name, m.url_name as merchant_url_name, l.formatted_location,
+		rs.average_rating, rs.review_count, img.image_id as main_image_id
 	from "Favorite" f
 	inner join "Merchant" m on f.merchant_id = m.id
 	left join lateral (
-		select formatted_location
+		select id, formatted_location
 		from "Location"
 		where merchant_id = m.id and is_active is true
 		order by sequence, id
 		limit 1
 	) l on true
+	left join lateral (
+		select coalesce(round(avg(r.rating)::numeric, 1), 0)::float8 as average_rating, count(*)::int as review_count
+		from "Review" r
+		where r.merchant_id = m.id and r.location_id = l.id and r.status <> 'removed'
+	) rs on true
+	left join lateral (
+		select li.image_id
+		from "LocationImage" li
+		where li.location_id = l.id
+		order by li.sequence
+		limit 1
+	) img on true
 	where f.user_id = $1
 	order by f.created_at desc
 	`

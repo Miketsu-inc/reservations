@@ -1,8 +1,4 @@
-import {
-  FavouriteIcon,
-  Location01Icon,
-  StarIcon,
-} from "@hugeicons/core-free-icons";
+import { FavouriteIcon, Location01Icon } from "@hugeicons/core-free-icons";
 import {
   Button,
   Icon,
@@ -14,6 +10,7 @@ import { removeFavorite, useToast } from "@reservations/lib";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import RatingSummary from "../../m/$merchantName/-components/RatingSummary";
 
 async function fetchFavorites() {
   const response = await fetch("/api/v1/favorites", {
@@ -157,11 +154,20 @@ function FavoriteMerchantCard({ merchant, onRemove, isRemoving }) {
           className="relative flex h-36 w-full shrink-0 overflow-hidden
             rounded-lg"
         >
-          <img
-            className="size-full object-cover"
-            src="https://dummyimage.com/300x150/c402c4/000000"
-            alt="service photo"
-          />
+          {merchant.main_image_url ? (
+            <img
+              className="size-full object-cover"
+              src={merchant.main_image_url}
+              alt={merchant.merchant_name}
+            />
+          ) : (
+            <div
+              className="bg-hover text-fg-muted flex size-full items-center
+                justify-center text-2xl font-semibold"
+            >
+              {merchant.merchant_name.slice(0, 2).toUpperCase()}
+            </div>
+          )}
           <button
             className="group bg-bg-overlay border-border shadow-overlay absolute
               top-2 right-2 h-fit cursor-pointer rounded-full border p-1.5
@@ -179,14 +185,11 @@ function FavoriteMerchantCard({ merchant, onRemove, isRemoving }) {
         <div className="flex flex-col items-start gap-1.5 px-2">
           <div className="flex w-full items-center justify-between">
             <p className="font-semibold">{merchant.merchant_name}</p>
-            <div className="flex items-center gap-1 text-sm">
-              <Icon
-                icon={StarIcon}
-                styles="size-4 text-fg-warning fill-warning"
-              />
-              <span className="font-medium">4.6</span>
-              <span className="text-fg-muted ml-1 cursor-pointer">(9)</span>
-            </div>
+            {merchant.review_count > 0 && (
+              <RatingSummary average={merchant.average_rating} styles="text-sm">
+                <span className="text-fg-muted">({merchant.review_count})</span>
+              </RatingSummary>
+            )}
           </div>
           {merchant.formatted_location && (
             <div

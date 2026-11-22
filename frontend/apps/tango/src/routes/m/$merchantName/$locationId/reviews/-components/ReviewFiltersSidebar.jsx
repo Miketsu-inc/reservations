@@ -1,7 +1,7 @@
-import { StarIcon } from "@hugeicons/core-free-icons";
-import { Avatar, CheckBox, Icon, SearchInput } from "@reservations/components";
+import { Avatar, CheckBox, SearchInput } from "@reservations/components";
 import { formatShortName, toAvatar } from "@reservations/lib";
 import { useState } from "react";
+import RatingSummary from "../../../-components/RatingSummary";
 
 const COLLAPSED_COUNT = 5;
 
@@ -145,14 +145,12 @@ export default function ReviewFiltersSidebar({
         )}
         renderMeta={(member) =>
           member.review_count > 0 && (
-            <div className="flex shrink-0 items-center gap-1 text-xs">
-              <Icon
-                icon={StarIcon}
-                styles="size-3.5 fill-warning text-warning"
-              />
-              <span>{member.average_rating.toFixed(1)}</span>
+            <RatingSummary
+              average={member.average_rating}
+              styles="shrink-0 text-xs"
+            >
               <span className="text-fg-muted">({member.review_count})</span>
-            </div>
+            </RatingSummary>
           )
         }
       />
