@@ -118,6 +118,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
 				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
+				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
 				r.Get("/calendar/events", h.Merchants.GetCalendarEvents)
 
 				r.Get("/integrations/google/calendar", h.Merchants.GoogleCalendar)

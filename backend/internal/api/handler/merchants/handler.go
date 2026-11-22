@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
+	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	externalcalendarServ "github.com/miketsu-inc/reservations/backend/internal/service/externalcalendar"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
@@ -29,13 +30,15 @@ type Handler struct {
 	bookingServ     *bookingServ.Service
 	teamServ        *teamServ.Service
 	catalogServ     *catalogServ.Service
+	customerServ    *customerServ.Service
 	extcalendarServ *externalcalendarServ.Service
 	mediaServ       *mediaServ.Service
 }
 
 func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamServ *teamServ.Service,
-	catalogServ *catalogServ.Service, extcalendarServ *externalcalendarServ.Service, mediaServ *mediaServ.Service) *Handler {
-	return &Handler{service: s, bookingServ: bookingServ, teamServ: teamServ, catalogServ: catalogServ,
+	catalogServ *catalogServ.Service, customerServ *customerServ.Service, extcalendarServ *externalcalendarServ.Service,
+	mediaServ *mediaServ.Service) *Handler {
+	return &Handler{service: s, bookingServ: bookingServ, teamServ: teamServ, catalogServ: catalogServ, customerServ: customerServ,
 		extcalendarServ: extcalendarServ, mediaServ: mediaServ}
 }
 
@@ -414,6 +417,29 @@ func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request)
 	}
 
 	httputil.Success(w, http.StatusOK, mapToGetServicesForCalendarResp(services))
+
+	return nil
+}
+
+type getCustomersForCalendarResp struct {
+	CustomerId  uuid.UUID  `json:"customer_id"`
+	FirstName   string     `json:"first_name"`
+	LastName    string     `json:"last_name"`
+	Email       *string    `json:"email"`
+	PhoneNumber *string    `json:"phone_number"`
+	BirthDay    *time.Time `json:"birthday"`
+	IsDummy     bool       `json:"is_dummy"`
+	LastVisited *time.Time `json:"last_visited"`
+	AvatarUrl   *string    `json:"avatar_url"`
+}
+
+func (h *Handler) GetCustomersForCalendar(w http.ResponseWriter, r *http.Request) error {
+	customers, err := h.customerServ.GetCustomersForCalendar(r.Context())
+	if err != nil {
+		return customerServ.ErrStatus.Resolve(err, "GetCustomersForCalendar")
+	}
+
+	httputil.Success(w, http.StatusOK, mapToGetCustomersForCalendarResp(customers))
 
 	return nil
 }

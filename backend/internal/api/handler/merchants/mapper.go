@@ -268,6 +268,26 @@ func mapToGetServicesForCalendarResp(in []domain.ServicesGroupedByCategoriesForC
 	return servicesGroupedByCategories
 }
 
+func mapToGetCustomersForCalendarResp(in []domain.CustomerForCalendar) []getCustomersForCalendarResp {
+	customers := make([]getCustomersForCalendarResp, len(in))
+
+	for i, m := range in {
+		customers[i] = getCustomersForCalendarResp{
+			CustomerId:  m.CustomerId,
+			FirstName:   m.FirstName,
+			LastName:    m.LastName,
+			Email:       m.Email,
+			PhoneNumber: m.PhoneNumber,
+			BirthDay:    m.BirthDay,
+			IsDummy:     m.IsDummy,
+			LastVisited: m.LastVisited,
+			AvatarUrl:   mediaServ.NewURL(m.AvatarImageId, mediaServ.VariantSmall),
+		}
+	}
+
+	return customers
+}
+
 func mapToGetCalendarEventsResp(in domain.CalendarEvents) getCalendarEventsResp {
 	bookings := make([]bookingForCalendar, len(in.Bookings))
 

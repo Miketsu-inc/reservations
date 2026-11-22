@@ -249,6 +249,28 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	return customer, nil
 }
 
+func (r *customerRepository) GetCustomersForCalendar(ctx context.Context, merchantId uuid.UUID) ([]domain.CustomerForCalendar, error) {
+	query := `
+	select c.id as customer_id, coalesce(c.first_name, u.first_name) as first_name, coalesce(c.last_name, u.last_name) as last_name, coalesce(c.email, u.email) as email,
+		coalesce(c.phone_number, u.phone_number) as phone_number, c.birthday, c.user_id is null as is_dummy, max(b.from_date) as last_visited,
+		u.avatar_image_id
+	from "Customer" c
+	left join "User" u on c.user_id = u.id
+	left join "BookingParticipant" bp on bp.customer_id = c.id and bp.status = 'completed'
+	left join "Booking" b on bp.booking_id = b.id and b.merchant_id = $1 and b.from_date < now()
+	where c.merchant_id = $1
+	group by c.id, u.first_name, u.last_name, u.email, u.phone_number, u.avatar_image_id
+	`
+
+	rows, _ := r.db.Query(ctx, query, merchantId)
+	customers, err := pgx.CollectRows(rows, pgx.RowToStructByName[domain.CustomerForCalendar])
+	if err != nil {
+		return []domain.CustomerForCalendar{}, fmt.Errorf("GetCustomersForCalendar: %w", err)
+	}
+
+	return customers, nil
+}
+
 func (r *customerRepository) SetBlacklistStatusForCustomer(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, isBlacklisted bool, blacklistReason *string) error {
 	query := `
 	update "Customer" set is_blacklisted = $3, blacklist_reason = $4
