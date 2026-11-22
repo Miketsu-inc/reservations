@@ -221,6 +221,7 @@ export default function AppointmentTimeSelectionStep({
       <div className="mt-6 flex items-center justify-between">
         <EmployeePicker
           merchantName={merchantName}
+          locationId={locationId}
           serviceId={serviceId}
           employeeId={employeeId}
           employee={employee}

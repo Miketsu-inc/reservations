@@ -3,6 +3,7 @@ import { Button, Icon, ServerError } from "@reservations/components";
 import {
   formatTimeRange,
   invalidateLocalStorageAuth,
+  publicReviewStatsQueryOptions,
   useToast,
   useWindowSize,
 } from "@reservations/lib";
@@ -145,6 +146,11 @@ function BookingFLow() {
       search.employeeId
     )
   );
+
+  const { data: reviewStats } = useQuery({
+    ...publicReviewStatsQueryOptions(merchantName, search.locationId),
+    enabled: Boolean(search.locationId),
+  });
 
   const employeeInfo = selectedSummary.employee ?? fetchedSummary?.employee;
 
@@ -371,6 +377,7 @@ function BookingFLow() {
             <div className="w-110">
               <BookingSummary
                 fetchedSummary={fetchedSummary}
+                reviewStats={reviewStats}
                 selectedSummary={selectedSummary}
                 searchEmployeeId={search.employeeId}
                 isLoading={isLoading}

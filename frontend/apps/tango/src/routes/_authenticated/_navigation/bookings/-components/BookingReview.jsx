@@ -2,10 +2,9 @@ import {
   BanIcon,
   Edit03Icon,
   SquareLock02Icon,
-  StarIcon,
   TrashIcon,
 } from "@hugeicons/core-free-icons";
-import { Button, Card, Icon } from "@reservations/components";
+import { Button, Card, Icon, StarRating } from "@reservations/components";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -240,53 +239,5 @@ function PreviousReviewCard({ serviceName, employeeName, onUpdate }) {
         />
       </div>
     </Card>
-  );
-}
-
-export function StarRating({
-  value = 0,
-  onChange,
-  iconStyles = "size-5",
-  styles = "gap-1",
-}) {
-  if (!onChange) {
-    return (
-      <div className={`flex items-center ${styles}`}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Icon
-            key={star}
-            icon={StarIcon}
-            styles={`${iconStyles} ${
-              star <= value
-                ? "fill-warning text-warning"
-                : "text-border-strong fill-transparent"
-            }`}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex items-center ${styles}`}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange(star)}
-          className="cursor-pointer p-1"
-          aria-label={`${star} star${star > 1 ? "s" : ""}`}
-        >
-          <Icon
-            icon={StarIcon}
-            styles={`${iconStyles} ${
-              star <= value
-                ? "fill-warning text-warning"
-                : "text-border-strong fill-transparent"
-            }`}
-          />
-        </button>
-      ))}
-    </div>
   );
 }

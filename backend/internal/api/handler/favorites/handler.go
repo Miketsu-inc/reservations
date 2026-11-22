@@ -40,6 +40,9 @@ type favoriteMerchantResp struct {
 	MerchantName      string    `json:"merchant_name"`
 	MerchantUrlName   string    `json:"merchant_url_name"`
 	FormattedLocation *string   `json:"formatted_location"`
+	AverageRating     float64   `json:"average_rating"`
+	ReviewCount       int       `json:"review_count"`
+	MainImageUrl      *string   `json:"main_image_url"`
 }
 
 func (h *Handler) GetFavorites(w http.ResponseWriter, r *http.Request) error {

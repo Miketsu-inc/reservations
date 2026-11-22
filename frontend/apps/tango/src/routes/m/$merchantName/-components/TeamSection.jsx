@@ -1,13 +1,14 @@
-import { StarIcon } from "@hugeicons/core-free-icons";
-import { Avatar, Icon, Loading, ServerError } from "@reservations/components";
+import { Avatar, Loading, ServerError } from "@reservations/components";
 import {
   activeTeamQueryOptions,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
+import RatingSummary from "./RatingSummary";
 
-export default function TeamSection({ merchantName }) {
+export default function TeamSection({ merchantName, locationId }) {
   const { isWindowSmall } = useWindowSize();
 
   const {
@@ -15,7 +16,7 @@ export default function TeamSection({ merchantName }) {
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName) });
+  } = useQuery(activeTeamQueryOptions(merchantName, locationId));
 
   if (isError) {
     return <ServerError error={error.message} />;
@@ -49,19 +50,19 @@ export default function TeamSection({ merchantName }) {
 
               <div className="flex flex-col items-center justify-center gap-1.5">
                 <span className="leading-tight font-semibold">
-                  {employee.first_name} {employee.last_name.charAt(0)}.
+                  {formatShortName(employee)}
                 </span>
 
-                <div className="flex items-center gap-1.5">
-                  <Icon
-                    icon={StarIcon}
-                    styles="fill-warning size-4 text-fg-warning"
-                  />
-                  <div className="flex items-center gap-1 text-sm">
-                    <span className="font-medium">4.6</span>
-                    <span className="text-fg-muted">(9)</span>
-                  </div>
-                </div>
+                {employee.review_count > 0 && (
+                  <RatingSummary
+                    average={employee.average_rating}
+                    styles="text-sm"
+                  >
+                    <span className="text-fg-muted">
+                      ({employee.review_count})
+                    </span>
+                  </RatingSummary>
+                )}
               </div>
             </div>
           );

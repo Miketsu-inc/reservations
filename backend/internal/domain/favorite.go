@@ -24,8 +24,11 @@ type Favorite struct {
 }
 
 type FavoriteMerchant struct {
-	MerchantId        uuid.UUID `db:"merchant_id"`
-	MerchantName      string    `db:"merchant_name"`
-	MerchantUrlName   string    `db:"merchant_url_name"`
-	FormattedLocation *string   `db:"formatted_location"`
+	MerchantId        uuid.UUID  `db:"merchant_id"`
+	MerchantName      string     `db:"merchant_name"`
+	MerchantUrlName   string     `db:"merchant_url_name"`
+	FormattedLocation *string    `db:"formatted_location"`
+	AverageRating     float64    `db:"average_rating"`
+	ReviewCount       int        `db:"review_count"`
+	MainImageId       *uuid.UUID `db:"main_image_id"`
 }

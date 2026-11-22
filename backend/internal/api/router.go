@@ -25,6 +25,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
 	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
 	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
+	publicReviews "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants/reviews"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/merchantpage"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
@@ -38,6 +39,7 @@ type Handlers struct {
 	Auth              *auth.Handler
 	Bookings          *bookings.Handler
 	PublicMerchants   *publicMerchants.Handler
+	PublicReviews     *publicReviews.Handler
 	MerchantPage      *merchantpage.Handler
 	PublicBookings    *publicBookings.Handler
 	Merchants         *merchants.Handler
@@ -73,6 +75,7 @@ func NewRouter(h *Handlers) *httputil.Router {
 		r.Mount("/users", h.Users.Routes())
 		r.Mount("/favorites", h.Favorites.Routes())
 		r.Mount("/images", h.Media.Routes())
+		r.Mount("/public/merchants/{merchantName}/locations/{locationId}/reviews", h.PublicReviews.Routes())
 		r.Mount("/public/merchants/{merchantName}", h.PublicMerchants.Routes())
 		r.Mount("/public/bookings", h.PublicBookings.Routes())
 		r.Route("/merchants", func(r *httputil.Router) {

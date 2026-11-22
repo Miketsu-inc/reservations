@@ -6,18 +6,19 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, ServerError } from "@reservations/components";
 import {
-  activeTeamQueryOptions,
   formatDuration,
   getDisplayPrice,
+  serviceTeamQueryOptions,
   toAvatar,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import RatingSummary from "../../-components/RatingSummary";
 import { StepContentSkeleton } from "./StepContentSkeleton";
 
 export default function EmployeeSelectionStep({
   merchantName,
-  _locationId,
+  locationId,
   serviceId,
   _serviceType,
   onSelect,
@@ -28,7 +29,7 @@ export default function EmployeeSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName, serviceId) });
+  } = useQuery(serviceTeamQueryOptions(merchantName, locationId, serviceId));
 
   const [selectedEmployee, setSelectedEmployee] = useState();
 
@@ -116,13 +117,28 @@ export function EmployeeItem({
             <Icon icon={UserQuestion02Icon} styles="size-8" />
           </div>
         ) : (
-          <Avatar
-            styles="size-16! text-[16px]! shrink-0"
-            img={img}
-            initials={initials}
-          />
+          <div className="relative shrink-0">
+            <Avatar
+              styles="size-16! text-[16px]!"
+              img={img}
+              initials={initials}
+            />
+            {employee.review_count > 0 && (
+              <div
+                className="bg-bg-raised border-border shadow-card absolute
+                  -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md border px-1.5
+                  py-0.5"
+              >
+                <RatingSummary
+                  average={employee.average_rating}
+                  styles="text-xs"
+                />
+              </div>
+            )}
+          </div>
         )}
-        <div className="flex flex-col gap-1">
+
+        <div className="flex flex-col gap-2">
           <span className="font-semibold">{employee.first_name}</span>
           {noPreference ? (
             <span className="text-fg-muted text-sm">Maximal availability</span>

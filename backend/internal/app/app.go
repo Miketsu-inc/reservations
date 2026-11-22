@@ -28,6 +28,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/merchants/team"
 	publicBookings "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/bookings"
 	publicMerchants "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants"
+	publicReviews "github.com/miketsu-inc/reservations/backend/internal/api/handler/public/merchants/reviews"
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/merchantpage"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
@@ -95,7 +96,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 
 	emailService := emailSrv.NewService(cfg.RESEND_API_TEST, cfg.ENABLE_EMAILS)
 	authService := authSrv.NewService(merchantRepo, userRepo, teamRepo, kvClient, nil, transactionManager)
-	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, nil, transactionManager)
+	teamService := teamSrv.NewService(teamRepo, userRepo, merchantRepo, reviewRepo, nil, transactionManager)
 	catalogService := catalog.NewService(catalogRepo, merchantRepo, teamService, transactionManager)
 	blockedTimeService := blockedtimeSrv.NewService(blockedTimeRepo, teamRepo, teamService, nil, transactionManager)
 	bookingService := bookingSrv.NewService(bookingRepo, catalogRepo, merchantRepo, locationRepo, teamRepo, userRepo, customerRep, blockedTimeRepo, imageRepo, reviewRepo, emailService, nil, transactionManager)
@@ -138,6 +139,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 		Bookings:          bookings.NewHandler(bookingService),
 		PublicBookings:    publicBookings.NewHandler(bookingService, middlewareManager),
 		PublicMerchants:   publicMerchants.NewHandler(merchantService, catalogService, teamService),
+		PublicReviews:     publicReviews.NewHandler(merchantService, reviewService),
 		MerchantPage:      merchantpage.NewHandler(merchantService),
 		Merchants:         merchants.NewHandler(merchantService, bookingService, teamService, catalogService, customerService, externalCalendarService, mediaService),
 		BlockedTimes:      blockedtimes.NewHandler(blockedTimeService),

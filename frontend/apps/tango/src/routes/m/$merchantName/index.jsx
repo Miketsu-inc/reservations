@@ -6,48 +6,38 @@ import {
   InstagramIcon,
   Location01Icon,
   Mail01Icon,
-  StarIcon,
   TiktokIcon,
   Youtube,
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
-import { useWindowSize } from "@reservations/lib";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  merchantInfoQueryOptions,
+  publicReviewStatsQueryOptions,
+  useWindowSize,
+} from "@reservations/lib";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import BusinessHoursSection from "./-components/BusinessHoursSection";
 import FavoriteButton from "./-components/FavoriteButton";
 import Gallery from "./-components/Gallery";
 import MapboxMap from "./-components/MapboxMap";
 import MerchantLogo from "./-components/MerchantLogo";
+import RatingSummary from "./-components/RatingSummary";
 import ReservationSection from "./-components/ReservationSection";
 import ServiceSection from "./-components/ServiceSection";
 import TeamSection from "./-components/TeamSection";
 
-async function fetchMerchantInfo(name) {
-  const response = await fetch(`/api/v1/public/merchants/${name}`, {
-    method: "GET",
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw result.error;
-  } else {
-    return result.data;
-  }
-}
-
-function merchantInfoQueryOptions(name) {
-  return queryOptions({
-    queryKey: ["merchant-info", name],
-    queryFn: () => fetchMerchantInfo(name),
-  });
-}
-
 export const Route = createFileRoute("/m/$merchantName/")({
   component: MerchantPage,
   loader: async ({ params, context: { queryClient } }) => {
-    await queryClient.ensureQueryData(
+    const merchantInfo = await queryClient.ensureQueryData(
       merchantInfoQueryOptions(params.merchantName)
+    );
+    void queryClient.prefetchQuery(
+      publicReviewStatsQueryOptions(
+        params.merchantName,
+        merchantInfo.location_id
+      )
     );
   },
   errorComponent: ({ error }) => {
@@ -76,6 +66,11 @@ function MerchantPage() {
     error,
   } = useQuery(merchantInfoQueryOptions(merchantName));
 
+  const { data: reviewStats } = useQuery({
+    ...publicReviewStatsQueryOptions(merchantName, merchantInfo?.location_id),
+    enabled: Boolean(merchantInfo),
+  });
+
   if (isLoading) {
     return <Loading />;
   }
@@ -85,6 +80,27 @@ function MerchantPage() {
   }
 
   const businessHoursStatus = merchantInfo.business_hours_status;
+
+  const reviewCount = reviewStats?.total_reviews ?? 0;
+  const rating =
+    reviewStats &&
+    (reviewCount > 0 ? (
+      <RatingSummary average={reviewStats.average_rating}>
+        <Link
+          to="/m/$merchantName/$locationId/reviews"
+          params={{
+            merchantName,
+            locationId: String(merchantInfo.location_id),
+          }}
+          className="text-fg-primary hover:underline"
+        >
+          ({reviewCount}
+          {isWindowSmall ? "" : reviewCount === 1 ? " review" : " reviews"})
+        </Link>
+      </RatingSummary>
+    ) : (
+      <span>No reviews yet</span>
+    ));
 
   let nextOpenStr = "";
   if (!businessHoursStatus.is_business_open) {
@@ -129,16 +145,7 @@ function MerchantPage() {
                   {merchantInfo.merchant_name}
                 </h1>
                 <div className="text-fg-muted flex items-center gap-3">
-                  <div className="text-fg-warning flex items-center gap-1">
-                    <Icon
-                      icon={StarIcon}
-                      styles="size-5 fill-warning text-warning"
-                    />
-                    <span className="font-medium">4.6</span>
-                    <span className="text-fg-primary ml-1 cursor-pointer">
-                      (9 reviews)
-                    </span>
-                  </div>
+                  {rating}
                   <span>•</span>
                   <div className="flex items-center gap-2">
                     <Icon icon={Clock01Icon} styles="size-5" />
@@ -210,18 +217,7 @@ function MerchantPage() {
                 </h1>
               </div>
               <div className="text-fg-muted flex flex-wrap items-center gap-3">
-                <div className="text-fg-warning flex items-center gap-2">
-                  <Icon
-                    icon={StarIcon}
-                    styles="size-5 fill-warning text-warning"
-                  />
-                  <div className="flex items-center gap-1">
-                    <span>4.6</span>
-                    <button className="text-fg-primary" onClick={() => {}}>
-                      (9)
-                    </button>
-                  </div>
-                </div>
+                {rating}
                 <span>•</span>
                 <div className="flex items-center gap-2">
                   <Icon icon={Clock01Icon} styles="size-5" />
@@ -272,7 +268,10 @@ function MerchantPage() {
             </ReservationSection>
 
             <ReservationSection name="Team" show={true}>
-              <TeamSection merchantName={merchantName} />
+              <TeamSection
+                merchantName={merchantName}
+                locationId={merchantInfo.location_id}
+              />
             </ReservationSection>
 
             <ReservationSection
@@ -405,18 +404,7 @@ function MerchantPage() {
                     <h2 className="text-2xl font-semibold tracking-tight">
                       {merchantInfo.merchant_name}
                     </h2>
-                    <div
-                      className="flex items-center gap-1.5 text-sm font-medium"
-                    >
-                      <Icon
-                        icon={StarIcon}
-                        styles="size-4 fill-warning text-warning"
-                      />
-                      <span>4.6</span>
-                      <span className="text-fg-primary ml-1 font-normal">
-                        (9 reviews)
-                      </span>
-                    </div>
+                    <div className="text-fg-muted text-sm">{rating}</div>
                   </div>
                 </div>
                 <FavoriteButton

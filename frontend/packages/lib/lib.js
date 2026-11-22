@@ -35,6 +35,12 @@ export function getSafeRedirectUrl(value) {
   }
 }
 
+export function formatShortName(person, fallbackName = "") {
+  const lastInitial = person?.last_name ? ` ${person.last_name[0]}.` : "";
+
+  return `${person?.first_name ?? ""}${lastInitial}`.trim() || fallbackName;
+}
+
 export function toAvatar(person, fallbackName = "") {
   person ??= {};
   const name = [person.first_name, person.last_name].filter(Boolean).join(" ");

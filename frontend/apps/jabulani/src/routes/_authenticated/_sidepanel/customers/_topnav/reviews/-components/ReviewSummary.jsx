@@ -1,5 +1,11 @@
 import { StarIcon } from "@hugeicons/core-free-icons";
-import { Card, Icon, Loading, ServerError } from "@reservations/components";
+import {
+  Card,
+  Icon,
+  Loading,
+  ServerError,
+  StarRating,
+} from "@reservations/components";
 
 export default function ReviewSummary({
   stats,
@@ -45,18 +51,8 @@ export default function ReviewSummary({
           <span className="text-fg text-5xl font-bold">
             {average.toFixed(1)}
           </span>
-          <div className="mt-2 flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Icon
-                key={star}
-                icon={StarIcon}
-                styles={`size-5 ${
-                  star <= Math.round(average)
-                    ? "fill-warning text-warning"
-                    : "text-border-strong"
-                }`}
-              />
-            ))}
+          <div className="mt-2">
+            <StarRating value={Math.round(average)} />
           </div>
           <p className="text-fg-muted mt-2 text-xs">
             {total} {total === 1 ? "review" : "reviews"}

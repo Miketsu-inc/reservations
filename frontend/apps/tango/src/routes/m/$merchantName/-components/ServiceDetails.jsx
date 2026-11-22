@@ -18,6 +18,7 @@ import {
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -74,7 +75,7 @@ export default function ServiceDetails({
   });
 
   const { data: teamMembers } = useQuery({
-    ...activeTeamQueryOptions(merchantName),
+    ...activeTeamQueryOptions(merchantName, locationId),
     enabled: isOpen && !!merchantName,
   });
 
@@ -229,7 +230,9 @@ function DetailsContent({
                   img={assignedAvatar.img}
                   initials={assignedAvatar.initials}
                 />
-                <p className="text-fg text-sm">{assignedAvatar.name}</p>
+                <p className="text-fg text-sm">
+                  {formatShortName(assignedEmployee)}
+                </p>
               </div>
 
               {isGroupService && (

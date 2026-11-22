@@ -85,7 +85,7 @@ type reviewItemResp struct {
 	Status       string              `json:"status"`
 	ReportReason *string             `json:"report_reason"`
 	CreatedAt    time.Time           `json:"created_at"`
-	UpdatedAt    time.Time           `json:"updated_at"`
+	UpdatedAt    *time.Time          `json:"updated_at"`
 	Customer     reviewCustomerResp  `json:"customer"`
 	Employee     *reviewEmployeeResp `json:"employee"`
 	Reply        *reviewReplyResp    `json:"reply"`
@@ -102,7 +102,7 @@ func (h *Handler) GetReviews(w http.ResponseWriter, r *http.Request) error {
 
 	params, err := reviewServ.ParseReviewQueryParams(r.URL.Query())
 	if err != nil {
-		return validate.NewError(err.Error())
+		return err
 	}
 
 	result, err := h.service.GetReviews(r.Context(), reviewServ.GetReviewsInput{

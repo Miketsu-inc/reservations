@@ -22,16 +22,18 @@ type Service struct {
 	teamRepo     domain.TeamRepository
 	userRepo     domain.UserRepository
 	merchantRepo domain.MerchantRepository
+	reviewRepo   domain.ReviewRepository
 	enqueuer     queue.Enqueuer
 	txManager    db.TransactionManager
 }
 
-func NewService(team domain.TeamRepository, user domain.UserRepository, merchant domain.MerchantRepository, enqueuer queue.Enqueuer,
-	txManager db.TransactionManager) *Service {
+func NewService(team domain.TeamRepository, user domain.UserRepository, merchant domain.MerchantRepository, review domain.ReviewRepository,
+	enqueuer queue.Enqueuer, txManager db.TransactionManager) *Service {
 	return &Service{
 		teamRepo:     team,
 		userRepo:     user,
 		merchantRepo: merchant,
+		reviewRepo:   review,
 		enqueuer:     enqueuer,
 		txManager:    txManager,
 	}
@@ -220,43 +222,60 @@ func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, erro
 	return teamMembers, nil
 }
 
-func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string, serviceId *int) ([]domain.EmployeeWithServiceOverrides, error) {
+type RatedEmployee struct {
+	domain.Employee
+	Rating domain.EmployeeRating
+}
+
+func (s *Service) GetTeamByMerchantName(ctx context.Context, merchantName string, locationId int) ([]RatedEmployee, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		return []domain.EmployeeWithServiceOverrides{}, err
+		return []RatedEmployee{}, err
 	}
 
-	if serviceId != nil {
-		employees, err := s.teamRepo.GetActiveEmployeesForService(ctx, merchantId, *serviceId)
-		if err != nil {
-			return []domain.EmployeeWithServiceOverrides{}, err
-		}
-
-		return employees, nil
-	}
-
-	emps, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
+	employees, err := s.teamRepo.GetActiveEmployees(ctx, merchantId)
 	if err != nil {
-		return []domain.EmployeeWithServiceOverrides{}, err
+		return []RatedEmployee{}, err
 	}
 
-	employees := make([]domain.EmployeeWithServiceOverrides, len(emps))
-
-	for i, emp := range emps {
-		employees[i] = domain.EmployeeWithServiceOverrides{
-			Id:              emp.Id,
-			Role:            emp.Role,
-			FirstName:       emp.FirstName,
-			LastName:        emp.LastName,
-			Email:           emp.Email,
-			PhoneNumber:     emp.PhoneNumber,
-			AvatarImageId:   emp.AvatarImageId,
-			TotalDuration:   nil,
-			Price:           nil,
-			PriceType:       nil,
-			MaxParticipants: nil,
-		}
+	ratings, err := s.reviewRepo.GetEmployeeRatings(ctx, merchantId, &locationId)
+	if err != nil {
+		return []RatedEmployee{}, err
 	}
 
-	return employees, nil
+	team := make([]RatedEmployee, len(employees))
+	for i, emp := range employees {
+		team[i] = RatedEmployee{Employee: emp, Rating: ratings[emp.Id]}
+	}
+
+	return team, nil
+}
+
+type RatedServiceEmployee struct {
+	domain.EmployeeWithServiceOverrides
+	Rating domain.EmployeeRating
+}
+
+func (s *Service) GetServiceTeamByMerchantName(ctx context.Context, merchantName string, locationId int, serviceId int) ([]RatedServiceEmployee, error) {
+	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
+	if err != nil {
+		return []RatedServiceEmployee{}, err
+	}
+
+	employees, err := s.teamRepo.GetActiveEmployeesForService(ctx, merchantId, serviceId)
+	if err != nil {
+		return []RatedServiceEmployee{}, err
+	}
+
+	ratings, err := s.reviewRepo.GetEmployeeRatings(ctx, merchantId, &locationId)
+	if err != nil {
+		return []RatedServiceEmployee{}, err
+	}
+
+	team := make([]RatedServiceEmployee, len(employees))
+	for i, emp := range employees {
+		team[i] = RatedServiceEmployee{EmployeeWithServiceOverrides: emp, Rating: ratings[emp.Id]}
+	}
+
+	return team, nil
 }

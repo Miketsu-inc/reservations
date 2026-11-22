@@ -10,7 +10,8 @@ import {
   ServerError,
 } from "@reservations/components";
 import {
-  activeTeamQueryOptions,
+  serviceTeamQueryOptions,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -20,6 +21,7 @@ import { EmployeeItem } from "./EmployeeSelectionStep";
 
 export default function EmployeePicker({
   merchantName,
+  locationId,
   serviceId,
   employeeId,
   employee,
@@ -34,8 +36,8 @@ export default function EmployeePicker({
     isError,
     error,
   } = useQuery({
-    ...activeTeamQueryOptions(merchantName, serviceId),
-    enabled: isOpen && Boolean(merchantName && serviceId),
+    ...serviceTeamQueryOptions(merchantName, locationId, serviceId),
+    enabled: isOpen && Boolean(merchantName && locationId && serviceId),
   });
 
   const noPrefEmployee = { id: "no-pref", first_name: "No preference" };
@@ -46,7 +48,9 @@ export default function EmployeePicker({
   );
 
   const isNoPref = employeeId === "no-pref";
-  const { img, initials, name } = toAvatar(currentEmployee ?? employee);
+  const shownEmployee = currentEmployee ?? employee;
+  const { img, initials } = toAvatar(shownEmployee);
+  const name = formatShortName(shownEmployee);
 
   function handleEmployeeSelect(emp) {
     if (String(employeeId) !== String(emp.id)) {

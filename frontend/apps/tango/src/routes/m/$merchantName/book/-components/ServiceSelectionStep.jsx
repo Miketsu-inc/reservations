@@ -17,6 +17,7 @@ import {
   formatDuration,
   getDisplayPrice,
   merchantServicesQueryOptions,
+  formatShortName,
   toAvatar,
   useActiveSection,
 } from "@reservations/lib";
@@ -93,7 +94,8 @@ export default function ServiceSelectionStep({
     return <StepContentSkeleton />;
   }
 
-  const { img, initials, name } = toAvatar(employee);
+  const { img, initials } = toAvatar(employee);
+  const name = formatShortName(employee);
 
   return (
     <div className="flex h-full w-full flex-col gap-6">

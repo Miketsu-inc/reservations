@@ -26,6 +26,8 @@ type ReviewRepository interface {
 
 	GetReviews(ctx context.Context, filter ReviewFilter) ([]ReviewDetails, error)
 	GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (ReviewStats, error)
+	GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]int, error)
+	GetEmployeeRatings(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]EmployeeRating, error)
 }
 
 type Review struct {
@@ -43,7 +45,7 @@ type Review struct {
 	ReportReason *string    `db:"report_reason"`
 	ModeratedAt  *time.Time `db:"moderated_at"`
 	CreatedAt    time.Time  `db:"created_at"`
-	UpdatedAt    time.Time  `db:"updated_at"`
+	UpdatedAt    *time.Time `db:"updated_at"`
 }
 
 type ReviewReply struct {
@@ -68,13 +70,19 @@ type ReviewFilter struct {
 }
 
 type ReviewStats struct {
-	AverageRating float64 `db:"average_rating"`
-	TotalReviews  int     `db:"total_reviews"`
-	Count5Star    int     `db:"count_5_star"`
-	Count4Star    int     `db:"count_4_star"`
-	Count3Star    int     `db:"count_3_star"`
-	Count2Star    int     `db:"count_2_star"`
-	Count1Star    int     `db:"count_1_star"`
+	AverageRating float64     `db:"average_rating"`
+	TotalReviews  int         `db:"total_reviews"`
+	Count5Star    int         `db:"count_5_star"`
+	Count4Star    int         `db:"count_4_star"`
+	Count3Star    int         `db:"count_3_star"`
+	Count2Star    int         `db:"count_2_star"`
+	Count1Star    int         `db:"count_1_star"`
+	ServiceCounts map[int]int `db:"-"`
+}
+
+type EmployeeRating struct {
+	AverageRating float64
+	ReviewCount   int
 }
 
 type ReviewReplyInfo struct {

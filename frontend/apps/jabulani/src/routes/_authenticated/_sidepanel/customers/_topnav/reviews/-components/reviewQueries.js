@@ -1,4 +1,7 @@
-import { invalidateLocalStorageAuth } from "@reservations/lib";
+import {
+  invalidateLocalStorageAuth,
+  reviewFiltersToSearchParams,
+} from "@reservations/lib";
 import {
   infiniteQueryOptions,
   keepPreviousData,
@@ -7,38 +10,12 @@ import {
 
 export const PAGE_SIZE = 10;
 
-export async function fetchMerchantReviews(
-  merchantId,
-  {
-    stars,
-    employeeIds,
-    serviceIds,
-    hasReply,
-    sort = "newest",
-    cursor,
-    limit = PAGE_SIZE,
-  } = {}
-) {
-  const params = new URLSearchParams();
-  if (stars && stars !== "all") params.set("stars", String(stars));
-
-  if (employeeIds && employeeIds.length > 0) {
-    params.set("employee_ids", employeeIds.join(","));
-  }
-
-  if (serviceIds && serviceIds.length > 0) {
-    params.set("service_ids", serviceIds.join(","));
-  }
-
-  if (hasReply !== undefined && hasReply !== null && hasReply !== "all") {
-    params.set(
-      "has_reply",
-      hasReply === "replied" || hasReply === true ? "true" : "false"
-    );
-  }
-  if (sort) params.set("sort", sort);
-  if (limit) params.set("limit", String(limit));
-  if (cursor) params.set("cursor", cursor);
+export async function fetchMerchantReviews(merchantId, filters = {}) {
+  const params = reviewFiltersToSearchParams({
+    sort: "newest",
+    limit: PAGE_SIZE,
+    ...filters,
+  });
 
   const response = await fetch(
     `/api/v1/merchants/${merchantId}/reviews?${params.toString()}`,

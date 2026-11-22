@@ -218,19 +218,14 @@ export function meQueryOptions() {
   });
 }
 
-async function fetchActiveTeam(name, serviceId) {
-  const query = serviceId ? `?serviceId=${serviceId}` : "";
-
-  const response = await fetch(
-    `/api/v1/public/merchants/${name}/team${query}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "content-type": "application/json",
-      },
-    }
-  );
+async function fetchPublicTeam(path) {
+  const response = await fetch(`/api/v1/public/merchants/${path}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
   const result = await response.json();
   if (!response.ok) {
     throw result.error;
@@ -239,10 +234,21 @@ async function fetchActiveTeam(name, serviceId) {
   }
 }
 
-export function activeTeamQueryOptions(name, serviceId) {
+export function activeTeamQueryOptions(name, locationId) {
   return queryOptions({
-    queryKey: ["active-team", name, serviceId],
-    queryFn: () => fetchActiveTeam(name, serviceId),
+    queryKey: ["active-team", name, locationId],
+    queryFn: () => fetchPublicTeam(`${name}/locations/${locationId}/team`),
+  });
+}
+
+// employees who can do the service, with their price and duration for it
+export function serviceTeamQueryOptions(name, locationId, serviceId) {
+  return queryOptions({
+    queryKey: ["service-team", name, locationId, serviceId],
+    queryFn: () =>
+      fetchPublicTeam(
+        `${name}/locations/${locationId}/services/${serviceId}/team`
+      ),
   });
 }
 
@@ -327,4 +333,75 @@ export async function removeFavorite(merchantId) {
     invalidateLocalStorageAuth(response.status);
     throw result.error;
   }
+}
+
+async function fetchMerchantInfo(name) {
+  const response = await fetch(`/api/v1/public/merchants/${name}`, {
+    method: "GET",
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function merchantInfoQueryOptions(name) {
+  return queryOptions({
+    queryKey: ["merchant-info", name],
+    queryFn: () => fetchMerchantInfo(name),
+  });
+}
+
+export function reviewFiltersToSearchParams({
+  stars,
+  employeeIds,
+  serviceIds,
+  hasReply,
+  sort,
+  limit,
+  cursor,
+} = {}) {
+  const params = new URLSearchParams();
+
+  if (stars && stars !== "all") params.set("stars", String(stars));
+  if (employeeIds?.length) params.set("employee_ids", employeeIds.join(","));
+  if (serviceIds?.length) params.set("service_ids", serviceIds.join(","));
+  if (hasReply && hasReply !== "all") {
+    params.set("has_reply", String(hasReply === "replied"));
+  }
+  if (sort) params.set("sort", sort);
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+
+  return params;
+}
+
+async function fetchPublicReviewStats(merchantName, locationId) {
+  const response = await fetch(
+    `/api/v1/public/merchants/${merchantName}/locations/${locationId}/reviews/stats`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw result.error;
+  } else {
+    return result.data;
+  }
+}
+
+export function publicReviewStatsQueryOptions(merchantName, locationId) {
+  return queryOptions({
+    queryKey: ["public-review-stats", merchantName, locationId],
+    queryFn: () => fetchPublicReviewStats(merchantName, locationId),
+  });
 }

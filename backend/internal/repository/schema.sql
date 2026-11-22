@@ -449,7 +449,7 @@ create table if not exists "Review" (
     report_reason            text,
     moderated_at             timestamptz,
     created_at               timestamptz     not null default now(),
-    updated_at               timestamptz     not null default now(),
+    updated_at               timestamptz,
 
     check (status <> 'removed' or moderated_at is not null)
 );

@@ -15,6 +15,7 @@ import {
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  formatShortName,
   toAvatar,
 } from "@reservations/lib";
 import {
@@ -174,6 +175,7 @@ export default function GroupBookingStep({
       <div className="flex w-full items-center justify-between">
         <EmployeePicker
           merchantName={merchantName}
+          locationId={locationId}
           serviceId={serviceId}
           employeeId={employeeId}
           employee={employee}
@@ -281,7 +283,8 @@ export default function GroupBookingStep({
 
 function SessionCard({ session, isSelected, onSelect }) {
   const spotsLeft = session.max_participants - session.current_participants;
-  const { img, initials, name } = toAvatar(session.employee);
+  const { img, initials } = toAvatar(session.employee);
+  const name = formatShortName(session.employee);
 
   const durationMinutes = Math.max(
     0,
