@@ -1066,7 +1066,7 @@ func (s *Service) GetServiceDetails(ctx context.Context, merchantName string, se
 func (s *Service) GetServicesForCalendar(ctx context.Context) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor, permission.CalendarViewAll))
+	services, err := s.catalogRepo.GetServicesForCalendar(ctx, actor.MerchantId, permission.Calendar.EmployeeFilter(actor))
 	if err != nil {
 		return []domain.ServicesGroupedByCategoriesForCalendar{}, err
 	}

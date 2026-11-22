@@ -172,7 +172,7 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 }
 
 func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.EmployeeContext, employeeId int) error {
-	if !permission.CanActFor(actor, permission.AvatarsAll, employeeId) {
+	if !permission.Avatars.Allows(actor, employeeId) {
 		return ErrEmployeeAvatarForbidden
 	}
 

@@ -27,48 +27,53 @@ var (
 	LocationImagesEdit = Permission{"location_images:edit"}
 	TeamManage         = Permission{"team:manage"}
 
-	// The *All permissions grant access to every employee's records,
-	// without them the actor is limited to their own
-	TeamViewAll     = Permission{"team:view_all"}
-	CalendarViewAll = Permission{"calendar:view_all"}
-	BookingsAll     = Permission{"bookings:all"}
-	BlockedTimesAll = Permission{"blocked_times:all"}
-	AvatarsAll      = Permission{"avatars:all"}
+	// Only checked through their EmployeeScope
+	teamViewAll     = Permission{"team:view_all"}
+	calendarViewAll = Permission{"calendar:view_all"}
+	bookingsAll     = Permission{"bookings:all"}
+	blockedTimesAll = Permission{"blocked_times:all"}
+	avatarsAll      = Permission{"avatars:all"}
 )
 
 var rolePermissions = map[types.EmployeeRole][]Permission{
 	types.EmployeeRoleOwner: {
-		MerchantDelete, MerchantRename, SettingsEdit, LocationImagesEdit, TeamManage, TeamViewAll, CalendarViewAll,
-		BookingsAll, BlockedTimesAll, AvatarsAll,
+		MerchantDelete, MerchantRename, SettingsEdit, LocationImagesEdit, TeamManage,
+		teamViewAll, calendarViewAll, bookingsAll, blockedTimesAll, avatarsAll,
 	},
 	types.EmployeeRoleAdmin: {
-		SettingsEdit, LocationImagesEdit, TeamManage, TeamViewAll, CalendarViewAll,
-		BookingsAll, BlockedTimesAll, AvatarsAll,
+		SettingsEdit, LocationImagesEdit, TeamManage,
+		teamViewAll, calendarViewAll, bookingsAll, blockedTimesAll, avatarsAll,
 	},
 	types.EmployeeRoleStaff: {},
 }
 
 func ForRole(role types.EmployeeRole) []Permission {
-	return slices.Clone(rolePermissions[role])
+	return rolePermissions[role]
 }
 
 func Has(a actor.EmployeeContext, p Permission) bool {
 	return slices.Contains(rolePermissions[a.Role], p)
 }
 
-// Scope of employee data the actor can access
-// nil when the actor has the permission for every employee
-func EmployeeScope(a actor.EmployeeContext, all Permission) *int {
-	if Has(a, all) {
-		return nil
-	}
-
-	employeeId := a.EmployeeId
-	return &employeeId
+// Limits an actor to their own records unless they have the scope's permission
+type EmployeeScope struct {
+	all Permission
 }
 
-func CanActFor(a actor.EmployeeContext, all Permission, employeeIds ...int) bool {
-	if Has(a, all) {
+var (
+	Team         = EmployeeScope{teamViewAll}
+	Calendar     = EmployeeScope{calendarViewAll}
+	Bookings     = EmployeeScope{bookingsAll}
+	BlockedTimes = EmployeeScope{blockedTimesAll}
+	Avatars      = EmployeeScope{avatarsAll}
+)
+
+func (s EmployeeScope) AllowsEveryone(a actor.EmployeeContext) bool {
+	return Has(a, s.all)
+}
+
+func (s EmployeeScope) Allows(a actor.EmployeeContext, employeeIds ...int) bool {
+	if s.AllowsEveryone(a) {
 		return true
 	}
 
@@ -79,4 +84,14 @@ func CanActFor(a actor.EmployeeContext, all Permission, employeeIds ...int) bool
 	}
 
 	return true
+}
+
+// Employee filter for repository queries, nil when the actor is allowed everyone
+func (s EmployeeScope) EmployeeFilter(a actor.EmployeeContext) *int {
+	if s.AllowsEveryone(a) {
+		return nil
+	}
+
+	employeeId := a.EmployeeId
+	return &employeeId
 }
