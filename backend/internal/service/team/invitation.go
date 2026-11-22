@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/oauthutil"
 	"golang.org/x/text/language"
@@ -63,6 +64,11 @@ func (s *Service) invitationLanguage(ctx context.Context, tx pgx.Tx, inviteeEmai
 
 func (s *Service) InviteMember(ctx context.Context, email string, role types.EmployeeInvitationRole) error {
 	actor := actor.MustGetFromContext(ctx)
+	can := permission.For(actor)
+
+	if !can.Manage(role.ToEmployeeRole()) {
+		return ErrRoleAssignForbidden
+	}
 
 	token, err := oauthutil.RandomString(32)
 	if err != nil {
@@ -98,6 +104,10 @@ func (s *Service) InviteMember(ctx context.Context, email string, role types.Emp
 			}
 		} else {
 			invitationId = existing.Id
+
+			if !can.Manage(existing.Role.ToEmployeeRole()) {
+				return ErrInvitationForbidden
+			}
 
 			if err = canUpdateInvitation(existing); err != nil {
 				return err
@@ -148,7 +158,7 @@ func (s *Service) ResendInvitation(ctx context.Context, invitationId int) error 
 			return err
 		}
 
-		if invitation.MerchantId != actor.MerchantId {
+		if invitation.MerchantId != actor.MerchantId || !permission.For(actor).Manage(invitation.Role.ToEmployeeRole()) {
 			return ErrInvitationForbidden
 		}
 
@@ -206,7 +216,7 @@ func (s *Service) RevokeInvitation(ctx context.Context, invitationId int) error 
 		return err
 	}
 
-	if invitation.MerchantId != actor.MerchantId {
+	if invitation.MerchantId != actor.MerchantId || !permission.For(actor).Manage(invitation.Role.ToEmployeeRole()) {
 		return ErrInvitationForbidden
 	}
 

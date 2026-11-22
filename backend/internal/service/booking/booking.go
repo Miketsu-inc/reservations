@@ -85,7 +85,15 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 		return domain.Booking{}, ErrBookingNotFound
 	}
 
-	if !permission.Bookings.AllowsEveryone(actor) && (booking.EmployeeId == nil || *booking.EmployeeId != actor.EmployeeId) {
+	can := permission.For(actor)
+
+	// Unassigned bookings are only editable by those who can edit everyone's
+	canEdit := can.EditAll(permission.Bookings)
+	if booking.EmployeeId != nil {
+		canEdit = can.Edit(permission.Bookings, *booking.EmployeeId)
+	}
+
+	if !canEdit {
 		return domain.Booking{}, ErrBookingNotFound
 	}
 
@@ -95,7 +103,7 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 func (s *Service) GetByMerchant(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, permission.Bookings.EmployeeFilter(actor), bookingId)
+	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, permission.For(actor).ViewFilter(permission.Bookings), bookingId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.BookingForCalendar{}, ErrBookingNotFound
@@ -690,7 +698,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return validate.NewError("recurrence_rule is required for recurring bookings")
 	}
 
-	if !permission.Bookings.Allows(actor, input.EmployeeId) {
+	if !permission.For(actor).Edit(permission.Bookings, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -1039,7 +1047,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return err
 	}
 
-	if !permission.Bookings.Allows(actor, input.EmployeeId) {
+	if !permission.For(actor).Edit(permission.Bookings, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 

@@ -1,5 +1,6 @@
 import { Delete02Icon, Edit03Icon } from "@hugeicons/core-free-icons";
 import { Avatar, DeleteModal, Icon, Loading } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { toAvatar, useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 
@@ -13,6 +14,7 @@ export default function EmployeeTable({
   onDelete,
 }) {
   const { isWindowSmall } = useWindowSize();
+  const { can } = useAuth();
 
   const [selected, setSelected] = useState({
     id: 0,
@@ -81,14 +83,16 @@ export default function EmployeeTable({
             key={params.data.id}
             className="flex h-full flex-row items-center justify-center"
           >
-            <button
-              className="text-fg-muted hover:bg-hover hover:text-fg
-                cursor-pointer rounded-lg p-2"
-              onClick={() => onEdit(data[params.node.sourceRowIndex])}
-            >
-              <Icon icon={Edit03Icon} styles="size-4.5" />
-            </button>
-            {params.data.role !== "owner" && (
+            {can.manage(params.data.role) && (
+              <button
+                className="text-fg-muted hover:bg-hover hover:text-fg
+                  cursor-pointer rounded-lg p-2"
+                onClick={() => onEdit(data[params.node.sourceRowIndex])}
+              >
+                <Icon icon={Edit03Icon} styles="size-4.5" />
+              </button>
+            )}
+            {can.manage(params.data.role) && (
               <button
                 className="text-fg-muted hover:bg-hover hover:text-fg
                   cursor-pointer rounded-lg p-2"

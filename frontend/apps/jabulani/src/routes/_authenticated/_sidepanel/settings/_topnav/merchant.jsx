@@ -1,5 +1,5 @@
 import { Loading, ServerError, Textarea } from "@reservations/components";
-import { PERMISSIONS, useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -104,7 +104,7 @@ function MerchantPage() {
     },
   });
 
-  const canEditLogo = can(PERMISSIONS.SETTINGS_EDIT);
+  const canEditLogo = can.do(ACTIONS.SETTINGS_EDIT);
 
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));
@@ -232,8 +232,9 @@ function MerchantPage() {
           />
         </div>
       </SettingsSection>
-      {(can(PERMISSIONS.MERCHANT_RENAME) ||
-        can(PERMISSIONS.MERCHANT_DELETE)) && <DangerZone />}
+      {(can.do(ACTIONS.MERCHANT_RENAME) || can.do(ACTIONS.MERCHANT_DELETE)) && (
+        <DangerZone />
+      )}
     </div>
   );
 }

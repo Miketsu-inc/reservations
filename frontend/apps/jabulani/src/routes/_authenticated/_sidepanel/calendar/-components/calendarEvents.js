@@ -1,3 +1,4 @@
+import { RESOURCES } from "@reservations/jabulani/lib";
 import { DEFAULT_SERVICE_COLOR, toAvatar } from "@reservations/lib";
 import { UNASSIGNED_ID } from "./CalendarMemberFilter";
 
@@ -79,18 +80,17 @@ export function formatBookings(data) {
   });
 }
 
-// Staff can only change blocked times nobody else is on, ownEmployeeId is
-// null for owners and admins who can change any.
-export function formatBlockedTimes(data, canEditAll, ownEmployeeId) {
+export function formatBlockedTimes(data, can) {
   if (data === undefined) return;
 
   return data.map((blockedTime) => {
     const resourceIds = blockedTime.is_unassigned
       ? [UNASSIGNED_ID]
       : blockedTime.employee_ids;
+    // editAll also covers blocked times that have no employees
     const canEdit =
-      canEditAll ||
-      blockedTime.employee_ids.every((id) => id === ownEmployeeId);
+      can.editAll(RESOURCES.BLOCKED_TIMES) ||
+      can.edit(RESOURCES.BLOCKED_TIMES, ...blockedTime.employee_ids);
     const start = blockedTime.is_all_day
       ? blockedTime.blocked_day
       : blockedTime.from_date;

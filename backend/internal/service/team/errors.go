@@ -21,6 +21,8 @@ var ErrStatus = apperr.StatusMap{
 	ErrUserEmployeeCannotBeEdited:                  http.StatusForbidden,
 	ErrMultipleOwnersNotAllowed:                    http.StatusConflict,
 	ErrOwnerRoleChangeRestrictedToMerchantSettings: http.StatusConflict,
+	ErrEmployeeManageForbidden:                     http.StatusForbidden,
+	ErrRoleAssignForbidden:                         http.StatusForbidden,
 }
 
 var ErrPreferencesForbidden = &apperr.Error{Code: "preferences_forbidden", Message: "you do not have permission to access these preferences"}
@@ -37,3 +39,5 @@ var ErrEmployeeNotFound = &apperr.Error{Code: "employee_not_found", Message: "em
 var ErrUserEmployeeCannotBeEdited = &apperr.Error{Code: "user_employee_cannot_be_edited", Message: "employee created from user account cannot be edited"}
 var ErrMultipleOwnersNotAllowed = &apperr.Error{Code: "multiple_owners_not_allowed", Message: "there can be only one owner"}
 var ErrOwnerRoleChangeRestrictedToMerchantSettings = &apperr.Error{Code: "owner_role_change_restricted_to_merchant_settings", Message: "owner role can only be changed in merchant settings"}
+var ErrEmployeeManageForbidden = &apperr.Error{Code: "employee_manage_forbidden", Message: "you can not manage this team member"}
+var ErrRoleAssignForbidden = &apperr.Error{Code: "role_assign_forbidden", Message: "you can not assign this role"}

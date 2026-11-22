@@ -12,9 +12,9 @@ import (
 var ErrEmployeeAccountRequired = &apperr.Error{Code: "employee_account_required", Message: "you need an employee account to access this"}
 var ErrPermissionDenied = &apperr.Error{Code: "permission_denied", Message: "you do not have access to this resource"}
 
-// Checks that the employee has every given permission,
+// Checks that the employee can do every given action,
 // should be called after the employee authentication middleware
-func (m *Manager) RequirePermission(perms ...permission.Permission) func(next http.Handler) httputil.HandlerFunc {
+func (m *Manager) RequirePermission(actions ...permission.Action) func(next http.Handler) httputil.HandlerFunc {
 	return func(next http.Handler) httputil.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
 
@@ -26,12 +26,13 @@ func (m *Manager) RequirePermission(perms ...permission.Permission) func(next ht
 				}
 			}
 
-			for _, perm := range perms {
-				if !permission.Has(actor, perm) {
+			can := permission.For(actor)
+			for _, action := range actions {
+				if !can.Do(action) {
 					return &apperr.APIError{
 						Status: http.StatusForbidden,
 						Err:    ErrPermissionDenied,
-						Meta:   map[string]any{"required_permissions": perms},
+						Meta:   map[string]any{"required_actions": actions},
 					}
 				}
 			}

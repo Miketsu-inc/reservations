@@ -1,5 +1,5 @@
 import { Loading, Select, ServerError } from "@reservations/components";
-import { PERMISSIONS, useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
@@ -161,7 +161,7 @@ function CalendarPage() {
         </div>
       </SettingsSection>
 
-      {can(PERMISSIONS.CALENDAR_VIEW_ALL) && (
+      {can.viewAll(RESOURCES.CALENDAR) && (
         <SettingsSection
           title="Default view"
           description="Set the view that opens first on desktop."

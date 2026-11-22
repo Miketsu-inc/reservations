@@ -172,16 +172,17 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 }
 
 func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.EmployeeContext, employeeId int) error {
-	if !permission.Avatars.Allows(actor, employeeId) {
-		return ErrEmployeeAvatarForbidden
-	}
-
-	_, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, employeeId)
+	employee, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, employeeId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrEmployeeNotFound
 		}
 		return err
+	}
+
+	can := permission.For(actor)
+	if !can.Edit(permission.Avatars, employee.Id) && !can.Manage(employee.Role) {
+		return ErrEmployeeAvatarForbidden
 	}
 
 	return nil

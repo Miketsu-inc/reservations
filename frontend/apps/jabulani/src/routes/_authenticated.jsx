@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated")({
           employeeId: membership?.employee_id,
           employeeAvatarUrl: membership?.avatar_url,
           role: membership?.role,
-          permissions: membership?.permissions ?? [],
+          permissions: membership?.permissions,
         };
 
         localStorage.setItem("activeMerchantId", membership.merchant_id);

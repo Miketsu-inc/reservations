@@ -2,7 +2,7 @@ import { Calendar as FullCalendar } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
 import { ServerError } from "@reservations/components";
-import { PERMISSIONS, useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
   calendarTeamMembersQueryOptions,
@@ -112,9 +112,8 @@ export default function Calendar({ router, route, search }) {
     setSidePanelState(createBookingPanelState(bookingId));
   }
 
-  const { merchantId, employeeId, permissions, can } = useAuth();
-  const canViewTeam = can(PERMISSIONS.CALENDAR_VIEW_ALL);
-  const canEditAllBlockedTimes = can(PERMISSIONS.BLOCKED_TIMES_ALL);
+  const { merchantId, employeeId, can } = useAuth();
+  const canViewTeam = can.viewAll(RESOURCES.CALENDAR);
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },
@@ -144,7 +143,7 @@ export default function Calendar({ router, route, search }) {
   const [selectedRange, setSelectedRange] = useState(search.view);
 
   const { isWindowSmall } = useWindowSize();
-  const calendarRanges = getCalendarRanges(permissions, isWindowSmall);
+  const calendarRanges = getCalendarRanges(can, isWindowSmall);
   const calendarRef = useRef();
   const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
@@ -161,13 +160,9 @@ export default function Calendar({ router, route, search }) {
   const allEvents = useMemo(
     () => [
       ...formatBookings(events.bookings),
-      ...formatBlockedTimes(
-        events.blocked_times,
-        canEditAllBlockedTimes,
-        employeeId
-      ),
+      ...formatBlockedTimes(events.blocked_times, can),
     ],
-    [canEditAllBlockedTimes, employeeId, events.bookings, events.blocked_times]
+    [can, events.bookings, events.blocked_times]
   );
 
   const hasUnassigned =

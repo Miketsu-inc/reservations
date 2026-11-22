@@ -6,6 +6,7 @@ import {
   MoreVerticalIcon,
 } from "@hugeicons/core-free-icons";
 import {
+  Avatar,
   AvatarUpload,
   Card,
   DeleteModal,
@@ -17,7 +18,7 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   calendarTeamMembersQueryOptions,
   employeeQueryOptions,
@@ -56,7 +57,7 @@ function RouteComponent() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
-  const { merchantId, employeeId } = useAuth();
+  const { merchantId, employeeId, can } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
 
   const {
@@ -138,14 +139,19 @@ function RouteComponent() {
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              <AvatarUpload
-                img={img}
-                initials={initials}
-                alt={name}
-                url={`/api/v1/merchants/${merchantId}/team/${employee.id}/avatar`}
-                canRemove={employee.has_own_avatar}
-                onChange={refreshAvatar}
-              />
+              {can.edit(RESOURCES.AVATARS, employee.id) ||
+              can.manage(employee.role) ? (
+                <AvatarUpload
+                  img={img}
+                  initials={initials}
+                  alt={name}
+                  url={`/api/v1/merchants/${merchantId}/team/${employee.id}/avatar`}
+                  canRemove={employee.has_own_avatar}
+                  onChange={refreshAvatar}
+                />
+              ) : (
+                <Avatar img={img} initials={initials} alt={name} />
+              )}
 
               <div className="flex flex-col gap-1">
                 <div className="flex flex-col gap-2 md:flex-row md:gap-4">
@@ -175,38 +181,38 @@ function RouteComponent() {
               </div>
             </div>
             <div className="flex flex-col items-start">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className="hover:bg-hover hover:*:stroke-fg h-fit
-                      cursor-pointer rounded-lg p-1"
-                  >
-                    <Icon
-                      icon={MoreVerticalIcon}
-                      styles="size-6 rotate-90 text-fg-muted"
-                    />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="left" styles="w-auto">
-                  <div
-                    className="itmes-start flex w-auto flex-col *:flex *:w-full
-                      *:flex-row *:items-center *:rounded-lg *:p-2"
-                  >
-                    <PopoverClose asChild>
-                      <button
-                        className="hover:bg-hover cursor-pointer gap-3"
-                        onClick={() => {
-                          router.navigate({
-                            from: Route.fullPath,
-                            to: `/team/members/edit/${employee.id}`,
-                          });
-                        }}
-                      >
-                        <Icon icon={Edit03Icon} styles="size-5" />
-                        <p>Edit team member</p>
-                      </button>
-                    </PopoverClose>
-                    {employee.role !== "owner" && (
+              {can.manage(employee.role) && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="hover:bg-hover hover:*:stroke-fg h-fit
+                        cursor-pointer rounded-lg p-1"
+                    >
+                      <Icon
+                        icon={MoreVerticalIcon}
+                        styles="size-6 rotate-90 text-fg-muted"
+                      />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="left" styles="w-auto">
+                    <div
+                      className="itmes-start flex w-auto flex-col *:flex
+                        *:w-full *:flex-row *:items-center *:rounded-lg *:p-2"
+                    >
+                      <PopoverClose asChild>
+                        <button
+                          className="hover:bg-hover cursor-pointer gap-3"
+                          onClick={() => {
+                            router.navigate({
+                              from: Route.fullPath,
+                              to: `/team/members/edit/${employee.id}`,
+                            });
+                          }}
+                        >
+                          <Icon icon={Edit03Icon} styles="size-5" />
+                          <p>Edit team member</p>
+                        </button>
+                      </PopoverClose>
                       <PopoverClose asChild>
                         <button
                           onClick={() => setShowDeleteModal(true)}
@@ -219,10 +225,10 @@ function RouteComponent() {
                           <p className="text-fg-danger">Delete team member</p>
                         </button>
                       </PopoverClose>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </div>
 

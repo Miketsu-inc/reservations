@@ -1,5 +1,5 @@
 import { Button, Card, DeleteModal } from "@reservations/components";
-import { PERMISSIONS, useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   meQueryOptions,
@@ -78,7 +78,7 @@ export default function DangerZone() {
           These actions affect your business identity or permanently remove it.
         </p>
         <div className="flex flex-col gap-5">
-          {can(PERMISSIONS.MERCHANT_RENAME) && (
+          {can.do(ACTIONS.MERCHANT_RENAME) && (
             <>
               <DangerZoneItem
                 title="Change business name"
@@ -110,7 +110,7 @@ export default function DangerZone() {
             description="Transfer this business to another account."
             buttonText="Transfer ownership"
           />
-          {can(PERMISSIONS.MERCHANT_DELETE) && (
+          {can.do(ACTIONS.MERCHANT_DELETE) && (
             <>
               <div className="border-border-subtle border-t" />
               <DangerZoneItem

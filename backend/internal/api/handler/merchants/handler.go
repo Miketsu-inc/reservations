@@ -44,11 +44,18 @@ func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamS
 }
 
 type meResp struct {
-	UserId      uuid.UUID               `json:"user_id"`
-	MerchantId  uuid.UUID               `json:"merchant_id"`
-	EmployeeId  int                     `json:"employee_id"`
-	Role        types.EmployeeRole      `json:"role"`
-	Permissions []permission.Permission `json:"permissions"`
+	UserId      uuid.UUID          `json:"user_id"`
+	MerchantId  uuid.UUID          `json:"merchant_id"`
+	EmployeeId  int                `json:"employee_id"`
+	Role        types.EmployeeRole `json:"role"`
+	Permissions permissionsResp    `json:"permissions"`
+}
+
+type permissionsResp struct {
+	Actions         []permission.Action                      `json:"actions"`
+	View            map[permission.Resource]permission.Scope `json:"view"`
+	Edit            map[permission.Resource]permission.Scope `json:"edit"`
+	ManageableRoles []types.EmployeeRole                     `json:"manageable_roles"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {

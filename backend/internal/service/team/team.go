@@ -81,6 +81,10 @@ func (s *Service) NewMember(ctx context.Context, input NewMemberInput) error {
 
 	actor := actor.MustGetFromContext(ctx)
 
+	if !permission.For(actor).Manage(input.Role) {
+		return ErrRoleAssignForbidden
+	}
+
 	_, err := s.teamRepo.NewEmployee(ctx, domain.Employee{
 		MerchantId:  actor.MerchantId,
 		Role:        input.Role,
@@ -146,8 +150,18 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 		return err
 	}
 
+	can := permission.For(actor)
+
+	if !can.Manage(employee.Role) {
+		return ErrEmployeeManageForbidden
+	}
+
 	if err = validateUpdateEmployee(employee, input); err != nil {
 		return err
+	}
+
+	if input.Role != employee.Role && !can.Manage(input.Role) {
+		return ErrRoleAssignForbidden
 	}
 
 	err = s.teamRepo.UpdateEmployee(ctx, domain.Employee{
@@ -170,7 +184,20 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 func (s *Service) DeleteMember(ctx context.Context, memberId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
-	err := s.teamRepo.DeleteEmployee(ctx, actor.MerchantId, memberId)
+	employee, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, memberId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrEmployeeNotFound
+		}
+
+		return err
+	}
+
+	if !permission.For(actor).Manage(employee.Role) {
+		return ErrEmployeeManageForbidden
+	}
+
+	err = s.teamRepo.DeleteEmployee(ctx, actor.MerchantId, memberId)
 	if err != nil {
 		return err
 	}
@@ -203,7 +230,7 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	if !permission.Team.AllowsEveryone(actor) {
+	if !permission.For(actor).ViewAll(permission.Team) {
 		member, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, actor.EmployeeId)
 		if err != nil {
 			return []domain.Employee{}, err

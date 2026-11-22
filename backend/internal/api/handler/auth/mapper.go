@@ -5,6 +5,7 @@ import (
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
+	"github.com/miketsu-inc/reservations/backend/internal/types"
 )
 
 func mapToLoginInput(in loginReq) authServ.LoginInput {
@@ -55,7 +56,7 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 			MerchantUrlName: e.MerchantUrlName,
 			EmployeeId:      e.Id,
 			Role:            e.Role,
-			Permissions:     permission.ForRole(e.Role),
+			Permissions:     mapToPermissionsResp(permission.ForRole(e.Role)),
 			AvatarUrl:       mediaServ.NewURL(e.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}
@@ -68,5 +69,14 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 		PhoneNumber: in.User.PhoneNumber,
 		AvatarUrl:   mediaServ.NewURL(in.User.AvatarImageId, mediaServ.VariantSmall),
 		Memberships: memberships,
+	}
+}
+
+func mapToPermissionsResp(in permission.Grants) permissionsResp {
+	return permissionsResp{
+		Actions:         append([]permission.Action{}, in.Actions...),
+		View:            in.View,
+		Edit:            in.Edit,
+		ManageableRoles: append([]types.EmployeeRole{}, in.Manage...),
 	}
 }

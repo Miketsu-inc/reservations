@@ -4,5 +4,5 @@ export {
   isLocationComplete,
   locationFromMapboxFeature,
 } from "./location";
-export { hasPermission, PERMISSIONS } from "./permissions";
+export { ACTIONS, createPermissionChecker, RESOURCES } from "./permissions";
 export { getDefaultRecurrenceEnd } from "./recurrence";

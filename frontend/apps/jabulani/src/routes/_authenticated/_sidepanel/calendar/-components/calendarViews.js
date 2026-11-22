@@ -3,7 +3,7 @@ import {
   Layout3ColumnIcon,
   SquareIcon,
 } from "@hugeicons/core-free-icons";
-import { hasPermission, PERMISSIONS } from "@reservations/jabulani/lib";
+import { RESOURCES } from "@reservations/jabulani/lib";
 
 const dayRange = {
   value: "day",
@@ -41,11 +41,9 @@ export const timeGridViews = new Set([
   weekRange.view,
 ]);
 
-export function getCalendarRanges(permissions, isMobile) {
+export function getCalendarRanges(can, isMobile) {
   if (isMobile) return [agendaRange];
-  if (!hasPermission(permissions, PERMISSIONS.CALENDAR_VIEW_ALL)) {
-    return [weekRange];
-  }
+  if (!can.viewAll(RESOURCES.CALENDAR)) return [weekRange];
 
   return [dayRange, twoDayRange, weekRange];
 }

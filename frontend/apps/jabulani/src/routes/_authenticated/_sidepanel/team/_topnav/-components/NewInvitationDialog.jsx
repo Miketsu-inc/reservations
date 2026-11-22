@@ -13,7 +13,7 @@ import { useState } from "react";
 export default function NewInvitationDialog({ Route, isOpen, onClose }) {
   const { showToast } = useToast();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
-  const { merchantId } = useAuth();
+  const { merchantId, can } = useAuth();
   const [invitation, setInvitation] = useState({ email: "", role: "staff" });
 
   function updateInvitation(data) {
@@ -97,7 +97,7 @@ export default function NewInvitationDialog({ Route, isOpen, onClose }) {
               options={[
                 { value: "staff", label: "Staff" },
                 { value: "admin", label: "Admin" },
-              ]}
+              ].filter((option) => can.manage(option.value))}
               onSelect={(option) => updateInvitation({ role: option.value })}
               placeholder="Pick a role"
             />

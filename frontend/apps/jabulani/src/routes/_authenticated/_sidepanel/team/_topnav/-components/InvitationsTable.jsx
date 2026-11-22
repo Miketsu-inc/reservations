@@ -1,5 +1,6 @@
 import { MailRemoveIcon, RecoveryMailIcon } from "@hugeicons/core-free-icons";
 import { Icon, Loading } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { useWindowSize } from "@reservations/lib";
 import { lazy, Suspense } from "react";
 
@@ -39,6 +40,7 @@ export default function InvitationsTable({
   onResend,
 }) {
   const { isWindowSmall } = useWindowSize();
+  const { can } = useAuth();
 
   const columnDef = [
     { field: "id", hide: true },
@@ -104,9 +106,12 @@ export default function InvitationsTable({
       flex: 1,
       headerName: "",
       cellRenderer: (params) => {
+        const canManage = can.manage(params.data.role);
         const canResend =
-          params.data.status === "expired" || params.data.status === "revoked";
-        const canRevoke = params.data.status === "pending";
+          canManage &&
+          (params.data.status === "expired" ||
+            params.data.status === "revoked");
+        const canRevoke = canManage && params.data.status === "pending";
 
         return (
           <div

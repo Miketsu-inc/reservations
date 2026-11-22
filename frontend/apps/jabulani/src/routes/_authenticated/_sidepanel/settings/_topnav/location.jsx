@@ -19,8 +19,8 @@ import {
   ToggleGroup,
 } from "@reservations/components";
 import {
+  ACTIONS,
   isLocationComplete,
-  PERMISSIONS,
   useAuth,
 } from "@reservations/jabulani/lib";
 import {
@@ -281,7 +281,7 @@ function LocationPage() {
               key={location.id}
               location={location}
               merchantId={merchantId}
-              canEditPhotos={can(PERMISSIONS.LOCATION_IMAGES_EDIT)}
+              canEditPhotos={can.do(ACTIONS.LOCATION_IMAGES_EDIT)}
               onEdit={openEditor}
             />
           ))}

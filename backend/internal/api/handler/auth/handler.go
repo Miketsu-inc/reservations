@@ -187,13 +187,20 @@ type meResp struct {
 }
 
 type membershipsResp struct {
-	MerchantId      uuid.UUID               `json:"merchant_id"`
-	MerchantName    string                  `json:"merchant_name"`
-	MerchantUrlName string                  `json:"merchant_url_name"`
-	EmployeeId      int                     `json:"employee_id"`
-	Role            types.EmployeeRole      `json:"role"`
-	Permissions     []permission.Permission `json:"permissions"`
-	AvatarUrl       *string                 `json:"avatar_url"`
+	MerchantId      uuid.UUID          `json:"merchant_id"`
+	MerchantName    string             `json:"merchant_name"`
+	MerchantUrlName string             `json:"merchant_url_name"`
+	EmployeeId      int                `json:"employee_id"`
+	Role            types.EmployeeRole `json:"role"`
+	Permissions     permissionsResp    `json:"permissions"`
+	AvatarUrl       *string            `json:"avatar_url"`
+}
+
+type permissionsResp struct {
+	Actions         []permission.Action                      `json:"actions"`
+	View            map[permission.Resource]permission.Scope `json:"view"`
+	Edit            map[permission.Resource]permission.Scope `json:"edit"`
+	ManageableRoles []types.EmployeeRole                     `json:"manageable_roles"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {

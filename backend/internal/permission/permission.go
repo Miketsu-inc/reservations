@@ -6,92 +6,177 @@ import (
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/pkg/assert"
 )
 
-type Permission struct {
+// Merchant wide operations, an employee either can or can't do them
+type Action struct {
 	name string
 }
 
-func (p Permission) String() string {
-	return p.name
+func (a Action) String() string {
+	return a.name
 }
 
-func (p Permission) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.name)
+func (a Action) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.name)
 }
 
 var (
-	MerchantDelete     = Permission{"merchant:delete"}
-	MerchantRename     = Permission{"merchant:rename"}
-	SettingsEdit       = Permission{"settings:edit"}
-	LocationImagesEdit = Permission{"location_images:edit"}
-	TeamManage         = Permission{"team:manage"}
-
-	// Only checked through their EmployeeScope
-	teamViewAll     = Permission{"team:view_all"}
-	calendarViewAll = Permission{"calendar:view_all"}
-	bookingsAll     = Permission{"bookings:all"}
-	blockedTimesAll = Permission{"blocked_times:all"}
-	avatarsAll      = Permission{"avatars:all"}
+	MerchantDelete     = Action{"merchant:delete"}
+	MerchantRename     = Action{"merchant:rename"}
+	SettingsEdit       = Action{"settings:edit"}
+	LocationImagesEdit = Action{"location_images:edit"}
+	TeamManage         = Action{"team:manage"}
 )
 
-var rolePermissions = map[types.EmployeeRole][]Permission{
+// Records that belong to employees, access depends on whose they are
+type Resource struct {
+	name string
+}
+
+func (r Resource) String() string {
+	return r.name
+}
+
+// Text marshaling so resources can be JSON object keys
+func (r Resource) MarshalText() ([]byte, error) {
+	return []byte(r.name), nil
+}
+
+var (
+	Bookings     = Resource{"bookings"}
+	BlockedTimes = Resource{"blocked_times"}
+	Team         = Resource{"team"}
+	Calendar     = Resource{"calendar"}
+	Avatars      = Resource{"avatars"}
+)
+
+// The zero value means no access
+type Scope struct {
+	name string
+}
+
+func (s Scope) String() string {
+	return s.name
+}
+
+func (s Scope) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.name)
+}
+
+var (
+	Own = Scope{"own"}
+	All = Scope{"all"}
+)
+
+type Grants struct {
+	Actions []Action
+	View    map[Resource]Scope
+	Edit    map[Resource]Scope
+	Manage  []types.EmployeeRole
+}
+
+var roleGrants = map[types.EmployeeRole]Grants{
 	types.EmployeeRoleOwner: {
-		MerchantDelete, MerchantRename, SettingsEdit, LocationImagesEdit, TeamManage,
-		teamViewAll, calendarViewAll, bookingsAll, blockedTimesAll, avatarsAll,
+		Actions: []Action{MerchantDelete, MerchantRename, SettingsEdit, LocationImagesEdit, TeamManage},
+		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All, Calendar: All},
+		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Avatars: Own},
+		Manage:  []types.EmployeeRole{types.EmployeeRoleAdmin, types.EmployeeRoleStaff},
 	},
 	types.EmployeeRoleAdmin: {
-		SettingsEdit, LocationImagesEdit, TeamManage,
-		teamViewAll, calendarViewAll, bookingsAll, blockedTimesAll, avatarsAll,
+		Actions: []Action{SettingsEdit, LocationImagesEdit, TeamManage},
+		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All, Calendar: All},
+		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Avatars: Own},
+		Manage:  []types.EmployeeRole{types.EmployeeRoleStaff},
 	},
-	types.EmployeeRoleStaff: {},
+	types.EmployeeRoleStaff: {
+		View: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Team: Own, Calendar: Own},
+		Edit: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Avatars: Own},
+	},
 }
 
-func ForRole(role types.EmployeeRole) []Permission {
-	return rolePermissions[role]
+func ForRole(role types.EmployeeRole) Grants {
+	return roleGrants[role]
 }
 
-func Has(a actor.EmployeeContext, p Permission) bool {
-	return slices.Contains(rolePermissions[a.Role], p)
+type Checker struct {
+	employeeId int
+	grants     Grants
 }
 
-// Limits an actor to their own records unless they have the scope's permission
-type EmployeeScope struct {
-	all Permission
+func For(a actor.EmployeeContext) Checker {
+	return Checker{employeeId: a.EmployeeId, grants: roleGrants[a.Role]}
 }
 
-var (
-	Team         = EmployeeScope{teamViewAll}
-	Calendar     = EmployeeScope{calendarViewAll}
-	Bookings     = EmployeeScope{bookingsAll}
-	BlockedTimes = EmployeeScope{blockedTimesAll}
-	Avatars      = EmployeeScope{avatarsAll}
-)
-
-func (s EmployeeScope) AllowsEveryone(a actor.EmployeeContext) bool {
-	return Has(a, s.all)
+func (c Checker) Do(action Action) bool {
+	return slices.Contains(c.grants.Actions, action)
 }
 
-func (s EmployeeScope) Allows(a actor.EmployeeContext, employeeIds ...int) bool {
-	if s.AllowsEveryone(a) {
+func (c Checker) ViewAll(resource Resource) bool {
+	return c.grants.View[resource] == All
+}
+
+// A record is visible when any of its employees is visible, so shared records show up for each of them
+func (c Checker) View(resource Resource, employeeIds ...int) bool {
+	if len(employeeIds) == 0 {
+		return false
+	}
+
+	switch c.grants.View[resource] {
+	case All:
 		return true
+	case Own:
+		return slices.Contains(employeeIds, c.employeeId)
+	default:
+		return false
 	}
-
-	for _, employeeId := range employeeIds {
-		if employeeId != a.EmployeeId {
-			return false
-		}
-	}
-
-	return true
 }
 
-// Employee filter for repository queries, nil when the actor is allowed everyone
-func (s EmployeeScope) EmployeeFilter(a actor.EmployeeContext) *int {
-	if s.AllowsEveryone(a) {
+// Filter for repository queries, nil when every employee's records are visible
+func (c Checker) ViewFilter(resource Resource) *int {
+	switch c.grants.View[resource] {
+	case All:
 		return nil
+	case Own:
+		employeeId := c.employeeId
+		return &employeeId
+	default:
+		assert.Never("view filter for a resource the role can't view", resource)
+
+		// Employee ids are serial and start at 1, so this matches no records
+		noEmployee := 0
+		return &noEmployee
+	}
+}
+
+func (c Checker) EditAll(resource Resource) bool {
+	return c.grants.Edit[resource] == All
+}
+
+// A record is editable only when every one of its employees is editable
+func (c Checker) Edit(resource Resource, employeeIds ...int) bool {
+	if len(employeeIds) == 0 {
+		return false
 	}
 
-	employeeId := a.EmployeeId
-	return &employeeId
+	switch c.grants.Edit[resource] {
+	case All:
+		return true
+	case Own:
+		for _, employeeId := range employeeIds {
+			if employeeId != c.employeeId {
+				return false
+			}
+		}
+
+		return true
+	default:
+		return false
+	}
+}
+
+// Whether the actor can manage team members with the given role, including assigning it
+func (c Checker) Manage(role types.EmployeeRole) bool {
+	return slices.Contains(c.grants.Manage, role)
 }

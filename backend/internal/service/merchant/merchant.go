@@ -336,15 +336,17 @@ func (s *Service) GetCalendarEvents(ctx context.Context, startDate, endDate time
 
 	dateRange := timeutil.NewDateRange(startDate, endDate, timezone)
 
+	can := permission.For(actor)
+
 	var events domain.CalendarEvents
 	var err error
 
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, permission.Bookings.EmployeeFilter(actor), dateRange.StartTime, dateRange.EndTime)
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, can.ViewFilter(permission.Bookings), dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, permission.BlockedTimes.EmployeeFilter(actor),
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, can.ViewFilter(permission.BlockedTimes),
 		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
 		return domain.CalendarEvents{}, err
