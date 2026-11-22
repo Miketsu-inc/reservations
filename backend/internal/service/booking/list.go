@@ -36,7 +36,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 		return GetBookingsResult{}, fmt.Errorf("exactly one booking subject must be provided")
 	}
 
-	if input.EmployeeId != nil && !permission.CanActFor(actor, *input.EmployeeId) {
+	if input.EmployeeId != nil && !permission.CanActFor(actor, permission.BookingsAll, *input.EmployeeId) {
 		return GetBookingsResult{}, domain.ErrEmployeeAccessDenied
 	}
 
@@ -57,7 +57,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 
 	var bookings []domain.BookingListItem
 	if input.CustomerId != nil {
-		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, permission.EmployeeScope(actor), input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
+		bookings, err = s.bookingRepo.GetBookingsForCustomer(ctx, actor.MerchantId, *input.CustomerId, permission.EmployeeScope(actor, permission.BookingsAll), input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	} else {
 		bookings, err = s.bookingRepo.GetBookingsForEmployee(ctx, actor.MerchantId, *input.EmployeeId, input.Statuses, input.PageSize+1, decodedCursor.FromDate, decodedCursor.Id)
 	}

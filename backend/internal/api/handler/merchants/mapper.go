@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -13,10 +14,11 @@ import (
 
 func mapToMeResp(in actor.EmployeeContext) meResp {
 	return meResp{
-		UserId:     in.UserId,
-		MerchantId: in.MerchantId,
-		EmployeeId: in.EmployeeId,
-		Role:       in.Role,
+		UserId:      in.UserId,
+		MerchantId:  in.MerchantId,
+		EmployeeId:  in.EmployeeId,
+		Role:        in.Role,
+		Permissions: permission.ForRole(in.Role),
 	}
 }
 

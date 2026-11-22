@@ -1,5 +1,5 @@
 import { Button, Card, DeleteModal } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { PERMISSIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   meQueryOptions,
@@ -14,7 +14,7 @@ export default function DangerZone() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, can } = useAuth();
 
   async function deletehandler() {
     try {
@@ -78,23 +78,27 @@ export default function DangerZone() {
           These actions affect your business identity or permanently remove it.
         </p>
         <div className="flex flex-col gap-5">
-          <DangerZoneItem
-            title="Change business name"
-            description="Changing the name also changes the URL of your booking page."
-            action={
-              <MerchantNameModal
-                onSubmit={handleNameChange}
-                trigger={
-                  <Button
-                    variant="danger"
-                    styles="py-2 px-3 w-fit text-sm text-nowrap"
-                    buttonText="Change name"
+          {can(PERMISSIONS.MERCHANT_RENAME) && (
+            <>
+              <DangerZoneItem
+                title="Change business name"
+                description="Changing the name also changes the URL of your booking page."
+                action={
+                  <MerchantNameModal
+                    onSubmit={handleNameChange}
+                    trigger={
+                      <Button
+                        variant="danger"
+                        styles="py-2 px-3 w-fit text-sm text-nowrap"
+                        buttonText="Change name"
+                      />
+                    }
                   />
                 }
               />
-            }
-          />
-          <div className="border-border-subtle border-t" />
+              <div className="border-border-subtle border-t" />
+            </>
+          )}
           <DangerZoneItem
             title="Business visibility"
             description="Make this business private or public."
@@ -106,24 +110,28 @@ export default function DangerZone() {
             description="Transfer this business to another account."
             buttonText="Transfer ownership"
           />
-          <div className="border-border-subtle border-t" />
-          <DangerZoneItem
-            title="Delete business"
-            description="This permanently deletes the business and cannot be undone."
-            action={
-              <DeleteModal
-                onDelete={deletehandler}
-                itemName="this business"
-                trigger={
-                  <Button
-                    variant="danger"
-                    styles="py-2 px-3 w-fit text-sm text-nowrap"
-                    buttonText="Delete business"
+          {can(PERMISSIONS.MERCHANT_DELETE) && (
+            <>
+              <div className="border-border-subtle border-t" />
+              <DangerZoneItem
+                title="Delete business"
+                description="This permanently deletes the business and cannot be undone."
+                action={
+                  <DeleteModal
+                    onDelete={deletehandler}
+                    itemName="this business"
+                    trigger={
+                      <Button
+                        variant="danger"
+                        styles="py-2 px-3 w-fit text-sm text-nowrap"
+                        buttonText="Delete business"
+                      />
+                    }
                   />
                 }
               />
-            }
-          />
+            </>
+          )}
         </div>
       </Card>
     </section>

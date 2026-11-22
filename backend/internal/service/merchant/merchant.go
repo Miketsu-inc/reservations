@@ -339,12 +339,12 @@ func (s *Service) GetCalendarEvents(ctx context.Context, startDate, endDate time
 	var events domain.CalendarEvents
 	var err error
 
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor), dateRange.StartTime, dateRange.EndTime)
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor, permission.BookingsAll), dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor),
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor, permission.BlockedTimesAll),
 		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
 		return domain.CalendarEvents{}, err

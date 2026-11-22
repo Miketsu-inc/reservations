@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
@@ -54,6 +55,7 @@ func mapToMeResp(in teamServ.MeResult) meResp {
 			MerchantUrlName: e.MerchantUrlName,
 			EmployeeId:      e.Id,
 			Role:            e.Role,
+			Permissions:     permission.ForRole(e.Role),
 			AvatarUrl:       mediaServ.NewURL(e.AvatarImageId, mediaServ.VariantSmall),
 		}
 	}

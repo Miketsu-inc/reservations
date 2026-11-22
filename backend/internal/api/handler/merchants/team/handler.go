@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -35,7 +36,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Delete("/{id}/avatar", h.RemoveAvatar)
 
 	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+		r.UseFunc(h.middleware.RequirePermission(permission.TeamManage))
 
 		r.Post("/", h.NewMember)
 		r.Put("/{id}", h.UpdateMember)

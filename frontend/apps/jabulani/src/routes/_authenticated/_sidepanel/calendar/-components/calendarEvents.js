@@ -81,7 +81,7 @@ export function formatBookings(data) {
 
 // Staff can only change blocked times nobody else is on, ownEmployeeId is
 // null for owners and admins who can change any.
-export function formatBlockedTimes(data, ownEmployeeId) {
+export function formatBlockedTimes(data, canEditAll, ownEmployeeId) {
   if (data === undefined) return;
 
   return data.map((blockedTime) => {
@@ -89,7 +89,7 @@ export function formatBlockedTimes(data, ownEmployeeId) {
       ? [UNASSIGNED_ID]
       : blockedTime.employee_ids;
     const canEdit =
-      ownEmployeeId === null ||
+      canEditAll ||
       blockedTime.employee_ids.every((id) => id === ownEmployeeId);
     const start = blockedTime.is_all_day
       ? blockedTime.blocked_day

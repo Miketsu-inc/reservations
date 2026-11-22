@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -171,7 +172,7 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 }
 
 func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.EmployeeContext, employeeId int) error {
-	if actor.Role == types.EmployeeRoleStaff && actor.EmployeeId != employeeId {
+	if !permission.CanActFor(actor, permission.AvatarsAll, employeeId) {
 		return ErrEmployeeAvatarForbidden
 	}
 

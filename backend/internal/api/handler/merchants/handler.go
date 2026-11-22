@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	bookingServ "github.com/miketsu-inc/reservations/backend/internal/service/booking"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
@@ -43,10 +44,11 @@ func NewHandler(s *merchantServ.Service, bookingServ *bookingServ.Service, teamS
 }
 
 type meResp struct {
-	UserId     uuid.UUID          `json:"user_id"`
-	MerchantId uuid.UUID          `json:"merchant_id"`
-	EmployeeId int                `json:"employee_id"`
-	Role       types.EmployeeRole `json:"role"`
+	UserId      uuid.UUID               `json:"user_id"`
+	MerchantId  uuid.UUID               `json:"merchant_id"`
+	EmployeeId  int                     `json:"employee_id"`
+	Role        types.EmployeeRole      `json:"role"`
+	Permissions []permission.Permission `json:"permissions"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {

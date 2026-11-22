@@ -97,7 +97,7 @@ func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.Employ
 		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
 	}
 
-	if permission.CanManageTeam(actor) {
+	if permission.Has(actor, permission.BlockedTimesAll) {
 		return blockedTime, nil
 	}
 
@@ -119,7 +119,7 @@ func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.Employ
 		}
 	}
 
-	if !permission.CanActFor(actor, activeIds...) {
+	if !permission.CanActFor(actor, permission.BlockedTimesAll, activeIds...) {
 		return domain.BlockedTimeEmployees{}, domain.ErrEmployeeAccessDenied
 	}
 
@@ -133,7 +133,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return err
 	}
 
-	if !permission.CanActFor(actor, input.EmployeeIds...) {
+	if !permission.CanActFor(actor, permission.BlockedTimesAll, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -190,7 +190,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
-	if !permission.CanActFor(actor, input.EmployeeIds...) {
+	if !permission.CanActFor(actor, permission.BlockedTimesAll, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 

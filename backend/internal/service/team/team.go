@@ -203,7 +203,7 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	if !permission.CanManageTeam(actor) {
+	if !permission.Has(actor, permission.TeamViewAll) {
 		member, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, actor.EmployeeId)
 		if err != nil {
 			return []domain.Employee{}, err

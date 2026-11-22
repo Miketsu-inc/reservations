@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	locationServ "github.com/miketsu-inc/reservations/backend/internal/service/location"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -36,7 +37,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Get("/{id}/images", h.GetImages)
 
 	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+		r.UseFunc(h.middleware.RequirePermission(permission.LocationImagesEdit))
 
 		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/images", h.CreateImageUpload)
 		r.Put("/{id}/images/order", h.ReorderImages)
