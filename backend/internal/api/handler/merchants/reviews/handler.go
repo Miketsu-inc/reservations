@@ -102,7 +102,7 @@ func (h *Handler) GetReviews(w http.ResponseWriter, r *http.Request) error {
 
 	params, err := reviewServ.ParseReviewQueryParams(r.URL.Query())
 	if err != nil {
-		return validate.NewError(err.Error())
+		return err
 	}
 
 	result, err := h.service.GetReviews(r.Context(), reviewServ.GetReviewsInput{

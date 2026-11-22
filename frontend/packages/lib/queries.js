@@ -355,4 +355,26 @@ export function merchantInfoQueryOptions(name) {
   });
 }
 
+export function reviewFiltersToSearchParams({
+  stars,
+  employeeIds,
+  serviceIds,
+  hasReply,
+  sort,
+  limit,
+  cursor,
+} = {}) {
+  const params = new URLSearchParams();
 
+  if (stars && stars !== "all") params.set("stars", String(stars));
+  if (employeeIds?.length) params.set("employee_ids", employeeIds.join(","));
+  if (serviceIds?.length) params.set("service_ids", serviceIds.join(","));
+  if (hasReply && hasReply !== "all") {
+    params.set("has_reply", String(hasReply === "replied"));
+  }
+  if (sort) params.set("sort", sort);
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+
+  return params;
+}

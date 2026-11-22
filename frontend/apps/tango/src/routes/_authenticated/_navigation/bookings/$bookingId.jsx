@@ -18,6 +18,7 @@ import {
   getBookingStatusStyles,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  formatShortName,
   timeStringFromDate,
   toAvatar,
 } from "@reservations/lib";
@@ -238,7 +239,9 @@ function BookingDetailsPage() {
                     initials={employee.initials}
                   />
 
-                  <span className="text-fg text-sm">{employee.name}</span>
+                  <span className="text-fg text-sm">
+                    {formatShortName(booking.employee)}
+                  </span>
                 </div>
               )}
 

@@ -19,9 +19,9 @@ func mapToReviewStatsResp(stats domain.ReviewStats) reviewStatsResp {
 }
 
 func mapToGetReviewsResp(result reviewServ.GetReviewsResult) getReviewsResp {
-	reviews := make([]reviewItemResp, 0, len(result.Reviews))
-	for _, item := range result.Reviews {
-		reviews = append(reviews, mapToReviewItemResp(item))
+	reviews := make([]reviewItemResp, len(result.Reviews))
+	for i, item := range result.Reviews {
+		reviews[i] = mapToReviewItemResp(item)
 	}
 
 	return getReviewsResp{
@@ -31,46 +31,27 @@ func mapToGetReviewsResp(result reviewServ.GetReviewsResult) getReviewsResp {
 	}
 }
 
+func mapToReviewEmployeeResp(emp *domain.MinimalEmployeeInfo) *reviewEmployeeResp {
+	if emp == nil {
+		return nil
+	}
+
+	return &reviewEmployeeResp{
+		Id:        emp.Id,
+		FirstName: emp.FirstName,
+		LastName:  emp.LastName,
+		AvatarUrl: mediaServ.NewURL(emp.AvatarImageId, mediaServ.VariantSmall),
+	}
+}
+
 func mapToReviewItemResp(item domain.ReviewDetails) reviewItemResp {
-	var userAvatar *string
-	if item.Customer.AvatarImageId != nil {
-		userAvatar = mediaServ.NewURL(item.Customer.AvatarImageId, mediaServ.VariantSmall)
-	}
-
-	var emp *reviewEmployeeResp
-	if item.Employee != nil {
-		var empAvatar *string
-		if item.Employee.AvatarImageId != nil {
-			empAvatar = mediaServ.NewURL(item.Employee.AvatarImageId, mediaServ.VariantSmall)
-		}
-		emp = &reviewEmployeeResp{
-			Id:        item.Employee.Id,
-			FirstName: item.Employee.FirstName,
-			LastName:  item.Employee.LastName,
-			AvatarUrl: empAvatar,
-		}
-	}
-
 	var reply *reviewReplyResp
 	if item.Reply != nil {
-		var replyEmp *reviewEmployeeResp
-		if item.Reply.Employee != nil {
-			var replyEmpAvatar *string
-			if item.Reply.Employee.AvatarImageId != nil {
-				replyEmpAvatar = mediaServ.NewURL(item.Reply.Employee.AvatarImageId, mediaServ.VariantSmall)
-			}
-			replyEmp = &reviewEmployeeResp{
-				Id:        item.Reply.Employee.Id,
-				FirstName: item.Reply.Employee.FirstName,
-				LastName:  item.Reply.Employee.LastName,
-				AvatarUrl: replyEmpAvatar,
-			}
-		}
 		reply = &reviewReplyResp{
 			Comment:   item.Reply.Comment,
 			CreatedAt: item.Reply.CreatedAt,
 			UpdatedAt: item.Reply.UpdatedAt,
-			Employee:  replyEmp,
+			Employee:  mapToReviewEmployeeResp(item.Reply.Employee),
 		}
 	}
 
@@ -88,9 +69,9 @@ func mapToReviewItemResp(item domain.ReviewDetails) reviewItemResp {
 		Customer: reviewCustomerResp{
 			FirstName: item.Customer.FirstName,
 			LastName:  item.Customer.LastName,
-			AvatarUrl: userAvatar,
+			AvatarUrl: mediaServ.NewURL(item.Customer.AvatarImageId, mediaServ.VariantSmall),
 		},
-		Employee: emp,
+		Employee: mapToReviewEmployeeResp(item.Employee),
 		Reply:    reply,
 	}
 }

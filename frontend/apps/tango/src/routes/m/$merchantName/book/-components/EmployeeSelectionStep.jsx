@@ -28,9 +28,7 @@ export default function EmployeeSelectionStep({
     isLoading,
     isError,
     error,
-  } = useQuery({
-    ...serviceTeamQueryOptions(merchantName, locationId, serviceId),
-  });
+  } = useQuery(serviceTeamQueryOptions(merchantName, locationId, serviceId));
 
   const [selectedEmployee, setSelectedEmployee] = useState();
 

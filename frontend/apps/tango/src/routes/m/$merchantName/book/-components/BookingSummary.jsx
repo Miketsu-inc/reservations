@@ -11,7 +11,7 @@ import {
   formatDuration,
   formatTimeRange,
   getDisplayPrice,
-  toAvatar,
+  formatShortName,
 } from "@reservations/lib";
 import MerchantLogo from "../../-components/MerchantLogo";
 
@@ -44,12 +44,12 @@ export function getBookingSummaryDisplayInfo({
   let empOverrides = null;
 
   if (hasConcreteEmployee) {
-    employeeName = toAvatar(selectedEmp).name;
+    employeeName = formatShortName(selectedEmp);
     empOverrides = selectedEmp;
   } else if (isNoPref) {
     employeeName = "No preference";
   } else if (fetchedSummary?.employee) {
-    employeeName = toAvatar(fetchedSummary.employee).name;
+    employeeName = formatShortName(fetchedSummary.employee);
     empOverrides = fetchedSummary;
   }
 

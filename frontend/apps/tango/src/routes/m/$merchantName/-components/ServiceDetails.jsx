@@ -18,6 +18,7 @@ import {
   formatDuration,
   getDisplayPrice,
   invalidateLocalStorageAuth,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -229,7 +230,9 @@ function DetailsContent({
                   img={assignedAvatar.img}
                   initials={assignedAvatar.initials}
                 />
-                <p className="text-fg text-sm">{assignedAvatar.name}</p>
+                <p className="text-fg text-sm">
+                  {formatShortName(assignedEmployee)}
+                </p>
               </div>
 
               {isGroupService && (

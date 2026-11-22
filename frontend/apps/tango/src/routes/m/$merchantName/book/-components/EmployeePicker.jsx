@@ -11,6 +11,7 @@ import {
 } from "@reservations/components";
 import {
   serviceTeamQueryOptions,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -47,7 +48,9 @@ export default function EmployeePicker({
   );
 
   const isNoPref = employeeId === "no-pref";
-  const { img, initials, name } = toAvatar(currentEmployee ?? employee);
+  const shownEmployee = currentEmployee ?? employee;
+  const { img, initials } = toAvatar(shownEmployee);
+  const name = formatShortName(shownEmployee);
 
   function handleEmployeeSelect(emp) {
     if (String(employeeId) !== String(emp.id)) {

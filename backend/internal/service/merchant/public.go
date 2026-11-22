@@ -13,16 +13,21 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
-	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/timeutil"
 )
 
-func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.MerchantInfo, error) {
+func (s *Service) GetMerchantIdByUrlName(ctx context.Context, merchantName string) (uuid.UUID, error) {
 	merchantId, err := s.merchantRepo.GetMerchantIdByUrlName(ctx, strings.ToLower(merchantName))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.MerchantInfo{}, apperr.Wrap(ErrMerchantNotFound, err)
-		}
+		return uuid.UUID{}, err
+	}
+
+	return merchantId, nil
+}
+
+func (s *Service) GetInfo(ctx context.Context, merchantName string) (domain.MerchantInfo, error) {
+	merchantId, err := s.GetMerchantIdByUrlName(ctx, merchantName)
+	if err != nil {
 		return domain.MerchantInfo{}, err
 	}
 

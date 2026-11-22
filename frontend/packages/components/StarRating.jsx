@@ -24,12 +24,18 @@ export default function StarRating({
   }
 
   return (
-    <div className={`flex items-center ${styles}`}>
+    <div
+      className={`flex items-center ${styles}`}
+      role={onChange ? "radiogroup" : undefined}
+      aria-label={onChange ? "Rating" : undefined}
+    >
       {STARS.map((star) =>
         onChange ? (
           <button
             key={star}
             type="button"
+            role="radio"
+            aria-checked={star === value}
             onClick={() => onChange(star)}
             className="cursor-pointer p-1"
             aria-label={`${star} star${star > 1 ? "s" : ""}`}

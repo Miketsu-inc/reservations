@@ -244,7 +244,17 @@ func (s *Service) GetReviewStats(ctx context.Context, merchantId uuid.UUID, loca
 		}
 	}
 
-	return s.reviewRepo.GetReviewStats(ctx, merchantId, locationId)
+	stats, err := s.reviewRepo.GetReviewStats(ctx, merchantId, locationId)
+	if err != nil {
+		return domain.ReviewStats{}, err
+	}
+
+	stats.ServiceCounts, err = s.reviewRepo.GetReviewCountsByService(ctx, merchantId, locationId)
+	if err != nil {
+		return domain.ReviewStats{}, err
+	}
+
+	return stats, nil
 }
 
 type reviewCursor struct {
@@ -274,9 +284,8 @@ func (s *Service) GetReviews(ctx context.Context, input GetReviewsInput) (GetRev
 		defaultLoc, err := s.locationRepo.GetDefaultLocation(ctx, input.MerchantId)
 		if err != nil {
 			return GetReviewsResult{}, fmt.Errorf("GetDefaultLocation: %w", err)
-		} else {
-			locationId = &defaultLoc.Id
 		}
+		locationId = &defaultLoc.Id
 	}
 
 	filter := domain.ReviewFilter{

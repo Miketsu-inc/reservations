@@ -2,6 +2,7 @@ import { StarIcon } from "@hugeicons/core-free-icons";
 import { Avatar, Icon, Loading, ServerError } from "@reservations/components";
 import {
   activeTeamQueryOptions,
+  formatShortName,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
@@ -15,7 +16,7 @@ export default function TeamSection({ merchantName, locationId }) {
     isLoading,
     isError,
     error,
-  } = useQuery({ ...activeTeamQueryOptions(merchantName, locationId) });
+  } = useQuery(activeTeamQueryOptions(merchantName, locationId));
 
   if (isError) {
     return <ServerError error={error.message} />;
@@ -49,7 +50,7 @@ export default function TeamSection({ merchantName, locationId }) {
 
               <div className="flex flex-col items-center justify-center gap-1.5">
                 <span className="leading-tight font-semibold">
-                  {employee.first_name} {employee.last_name.charAt(0)}.
+                  {formatShortName(employee)}
                 </span>
 
                 <div className="flex items-center gap-1.5">

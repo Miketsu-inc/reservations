@@ -198,7 +198,7 @@ func (r *reviewRepository) UpsertReply(ctx context.Context, merchantId uuid.UUID
 func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (domain.ReviewStats, error) {
 	query := `
 	select 
-		coalesce(round(avg(r.rating)::numeric, 2), 0)::float8 as average_rating,
+		coalesce(round(avg(r.rating)::numeric, 1), 0)::float8 as average_rating,
 		count(*)::int as total_reviews,
 		count(*) filter (where r.rating = 5)::int as count_5_star,
 		count(*) filter (where r.rating = 4)::int as count_4_star,
@@ -222,6 +222,30 @@ func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.U
 	}
 
 	return stats, nil
+}
+
+func (r *reviewRepository) GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]int, error) {
+	query := `
+	select service_id, count(*)::int
+	from "Review"
+	where merchant_id = $1 and status <> 'removed' and service_id is not null
+	  and ($2::int is null or location_id = $2)
+	group by service_id
+	`
+
+	counts := make(map[int]int)
+	var serviceId, count int
+
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
+	_, err := pgx.ForEachRow(rows, []any{&serviceId, &count}, func() error {
+		counts[serviceId] = count
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("GetReviewCountsByService: %w", err)
+	}
+
+	return counts, nil
 }
 
 func (r *reviewRepository) GetEmployeeRatings(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]domain.EmployeeRating, error) {
