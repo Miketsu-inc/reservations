@@ -333,6 +333,7 @@ func mapToBookingForCalendarResp(in domain.BookingForCalendar) bookingForCalenda
 		FromDate:        in.FromDate,
 		ToDate:          in.ToDate,
 		IsRecurring:     in.IsRecurring,
+		Duration:        int(in.ToDate.Sub(in.FromDate).Minutes()),
 		MerchantNote:    in.MerchantNote,
 		EmployeeId:      in.EmployeeId,
 		IsUnassigned:    in.IsUnassigned,

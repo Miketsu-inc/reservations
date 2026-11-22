@@ -430,6 +430,7 @@ type bookingForCalendar struct {
 	FromDate        time.Time                       `json:"from_date"`
 	ToDate          time.Time                       `json:"to_date"`
 	IsRecurring     bool                            `json:"is_recurring"`
+	Duration        int                             `json:"duration"`
 	MerchantNote    *string                         `json:"merchant_note"`
 	EmployeeId      *int                            `json:"employee_id"`
 	IsUnassigned    bool                            `json:"is_unassigned"`
@@ -471,8 +472,8 @@ type blockedTime struct {
 	BlockedTypeId *int       `json:"blocked_type_id"`
 }
 
-// Covers a month view padded to full weeks
-const maxCalendarRange = 42 * 24 * time.Hour
+// The widest calendar view is a week
+const maxCalendarRange = 7 * 24 * time.Hour
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {
 	startDate, err := time.Parse(time.DateOnly, r.URL.Query().Get("start"))
@@ -490,7 +491,7 @@ func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	if endDate.Sub(startDate) > maxCalendarRange {
-		return validate.NewError("calendar date range must not exceed 42 days")
+		return validate.NewError("calendar date range must not exceed 7 days")
 	}
 
 	timezone, err := time.LoadLocation(r.URL.Query().Get("time_zone"))

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -338,12 +339,12 @@ func (s *Service) GetCalendarEvents(ctx context.Context, startDate, endDate time
 	var events domain.CalendarEvents
 	var err error
 
-	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, actor.ScopedEmployeeId(), dateRange.StartTime, dateRange.EndTime)
+	events.Bookings, err = s.bookingRepo.GetBookingsForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor), dateRange.StartTime, dateRange.EndTime)
 	if err != nil {
 		return domain.CalendarEvents{}, err
 	}
 
-	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, actor.ScopedEmployeeId(),
+	events.BlockedTimes, err = s.blockedTimeRepo.GetBlockedTimesForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor),
 		dateRange.StartTime, dateRange.EndTime, dateRange.StartDay, dateRange.EndDay)
 	if err != nil {
 		return domain.CalendarEvents{}, err

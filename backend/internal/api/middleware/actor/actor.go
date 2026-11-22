@@ -43,32 +43,3 @@ func GetFromContext(ctx context.Context) (EmployeeContext, bool) {
 func SetInContext(ctx context.Context, employee EmployeeContext) context.Context {
 	return context.WithValue(ctx, employeeCtxKey, employee)
 }
-
-// Staff only work with their own calendar, owners and admins with the whole team's
-func (e EmployeeContext) CanManageTeam() bool {
-	return e.Role != types.EmployeeRoleStaff
-}
-
-// The employee whose data reads are limited to, nil when the actor sees the whole team
-func (e EmployeeContext) ScopedEmployeeId() *int {
-	if e.CanManageTeam() {
-		return nil
-	}
-
-	employeeId := e.EmployeeId
-	return &employeeId
-}
-
-func (e EmployeeContext) CanManageEmployees(employeeIds ...int) bool {
-	if e.CanManageTeam() {
-		return true
-	}
-
-	for _, employeeId := range employeeIds {
-		if employeeId != e.EmployeeId {
-			return false
-		}
-	}
-
-	return true
-}

@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/utils"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -97,11 +98,11 @@ func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.Employ
 		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
 	}
 
-	if !actor.CanManageTeam() && !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
+	if !permission.CanManageTeam(actor) && !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
 		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
 	}
 
-	if !actor.CanManageEmployees(blockedTime.EmployeeIds...) {
+	if !permission.CanManageEmployees(actor, blockedTime.EmployeeIds...) {
 		return domain.BlockedTimeEmployees{}, domain.ErrEmployeeAccessDenied
 	}
 
@@ -115,7 +116,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return err
 	}
 
-	if !actor.CanManageEmployees(input.EmployeeIds...) {
+	if !permission.CanManageEmployees(actor, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -172,7 +173,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
-	if !actor.CanManageEmployees(input.EmployeeIds...) {
+	if !permission.CanManageEmployees(actor, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 

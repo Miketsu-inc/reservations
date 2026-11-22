@@ -15,6 +15,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/service/email"
 	"github.com/miketsu-inc/reservations/backend/internal/service/merchant"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -85,7 +86,7 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 		return domain.Booking{}, ErrBookingNotFound
 	}
 
-	if !actor.CanManageTeam() && (booking.EmployeeId == nil || *booking.EmployeeId != actor.EmployeeId) {
+	if !permission.CanManageTeam(actor) && (booking.EmployeeId == nil || *booking.EmployeeId != actor.EmployeeId) {
 		return domain.Booking{}, ErrBookingNotFound
 	}
 
@@ -95,7 +96,7 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 func (s *Service) GetByMerchant(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, actor.ScopedEmployeeId(), bookingId)
+	booking, err := s.bookingRepo.GetBookingForCalendar(ctx, actor.MerchantId, permission.EmployeeScope(actor), bookingId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.BookingForCalendar{}, ErrBookingNotFound
@@ -691,7 +692,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return validate.NewError("recurrence_rule is required for recurring bookings")
 	}
 
-	if !actor.CanManageEmployees(input.EmployeeId) {
+	if !permission.CanManageEmployees(actor, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -1040,7 +1041,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return err
 	}
 
-	if !actor.CanManageEmployees(input.EmployeeId) {
+	if !permission.CanManageEmployees(actor, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 

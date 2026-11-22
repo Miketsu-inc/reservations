@@ -26,8 +26,8 @@ func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
 	r.Get("/", h.GetBookings)
-	r.Get("/{id}", h.GetByMerchant)
 	r.Post("/", h.CreateByMerchant)
+	r.Get("/{id}", h.GetByMerchant)
 	r.Patch("/{id}", h.UpdateByMerchant)
 	r.Delete("/{id}", h.CancelByMerchant)
 
@@ -43,6 +43,7 @@ type getByMerchantResp struct {
 	FromDate        time.Time                `json:"from_date"`
 	ToDate          time.Time                `json:"to_date"`
 	IsRecurring     bool                     `json:"is_recurring"`
+	Duration        int                      `json:"duration"`
 	MerchantNote    *string                  `json:"merchant_note"`
 	EmployeeId      *int                     `json:"employee_id"`
 	IsUnassigned    bool                     `json:"is_unassigned"`

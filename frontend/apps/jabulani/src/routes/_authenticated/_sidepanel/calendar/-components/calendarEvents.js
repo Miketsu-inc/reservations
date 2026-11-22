@@ -70,8 +70,7 @@ export function formatBookings(data) {
         service_id: booking.service_id,
         employee_id: booking.employee_id,
         is_unassigned: booking.is_unassigned,
-        duration:
-          (new Date(booking.to_date) - new Date(booking.from_date)) / 60000,
+        duration: booking.duration,
         phases: booking.phases ?? [],
         price: booking.price_per_person,
         price_type: booking.price_type,
