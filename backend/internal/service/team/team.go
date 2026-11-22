@@ -200,7 +200,6 @@ func (s *Service) GetTeam(ctx context.Context) ([]domain.Employee, error) {
 	return teamMembers, nil
 }
 
-// Staff can only schedule for themselves, so they are the only member they get
 func (s *Service) GetActiveMembers(ctx context.Context) ([]domain.Employee, error) {
 	actor := actor.MustGetFromContext(ctx)
 

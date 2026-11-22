@@ -36,7 +36,7 @@ func (s *Service) GetBookings(ctx context.Context, input GetBookingsInput) (GetB
 		return GetBookingsResult{}, fmt.Errorf("exactly one booking subject must be provided")
 	}
 
-	if input.EmployeeId != nil && !permission.CanManageEmployees(actor, *input.EmployeeId) {
+	if input.EmployeeId != nil && !permission.CanActFor(actor, *input.EmployeeId) {
 		return GetBookingsResult{}, domain.ErrEmployeeAccessDenied
 	}
 

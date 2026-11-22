@@ -5,12 +5,12 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 )
 
-// Staff only work with their own calendar, owners and admins with the whole team's
 func CanManageTeam(a actor.EmployeeContext) bool {
 	return a.Role != types.EmployeeRoleStaff
 }
 
-// The employee whose data reads are limited to, nil when the actor sees the whole team
+// Scope of data the actor can access
+// nil when the actor sees the whole team
 func EmployeeScope(a actor.EmployeeContext) *int {
 	if CanManageTeam(a) {
 		return nil
@@ -20,7 +20,7 @@ func EmployeeScope(a actor.EmployeeContext) *int {
 	return &employeeId
 }
 
-func CanManageEmployees(a actor.EmployeeContext, employeeIds ...int) bool {
+func CanActFor(a actor.EmployeeContext, employeeIds ...int) bool {
 	if CanManageTeam(a) {
 		return true
 	}

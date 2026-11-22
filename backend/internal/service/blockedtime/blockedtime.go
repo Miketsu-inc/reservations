@@ -83,7 +83,6 @@ func optionalTimesEqual(a, b *time.Time) bool {
 	return a.Equal(*b)
 }
 
-// Staff only see blocked times they are on, and can only change the ones nobody else is on
 func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.EmployeeContext, blockedTimeId int) (domain.BlockedTimeEmployees, error) {
 	blockedTime, err := s.blockedTimeRepo.GetBlockedTimeEmployees(ctx, blockedTimeId)
 	if err != nil {
@@ -98,11 +97,29 @@ func (s *Service) getBlockedTimeForActor(ctx context.Context, actor actor.Employ
 		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
 	}
 
-	if !permission.CanManageTeam(actor) && !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
+	if permission.CanManageTeam(actor) {
+		return blockedTime, nil
+	}
+
+	if !slices.Contains(blockedTime.EmployeeIds, actor.EmployeeId) {
 		return domain.BlockedTimeEmployees{}, ErrBlockedTimeNotFound
 	}
 
-	if !permission.CanManageEmployees(actor, blockedTime.EmployeeIds...) {
+	activeEmployees, err := s.teamRepo.GetActiveEmployees(ctx, actor.MerchantId)
+	if err != nil {
+		return domain.BlockedTimeEmployees{}, err
+	}
+
+	// Deactivated employees count as unassigned, the same as on the calendar,
+	// so they don't make a blocked time shared
+	activeIds := make([]int, 0, len(blockedTime.EmployeeIds))
+	for _, employee := range activeEmployees {
+		if slices.Contains(blockedTime.EmployeeIds, employee.Id) {
+			activeIds = append(activeIds, employee.Id)
+		}
+	}
+
+	if !permission.CanActFor(actor, activeIds...) {
 		return domain.BlockedTimeEmployees{}, domain.ErrEmployeeAccessDenied
 	}
 
@@ -116,7 +133,7 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 		return err
 	}
 
-	if !permission.CanManageEmployees(actor, input.EmployeeIds...) {
+	if !permission.CanActFor(actor, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -173,7 +190,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
-	if !permission.CanManageEmployees(actor, input.EmployeeIds...) {
+	if !permission.CanActFor(actor, input.EmployeeIds...) {
 		return domain.ErrEmployeeAccessDenied
 	}
 

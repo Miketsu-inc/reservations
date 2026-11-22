@@ -472,7 +472,6 @@ type blockedTime struct {
 	BlockedTypeId *int       `json:"blocked_type_id"`
 }
 
-// The widest calendar view is a week
 const maxCalendarRange = 7 * 24 * time.Hour
 
 func (h *Handler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) error {

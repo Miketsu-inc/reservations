@@ -71,7 +71,6 @@ func (s *Service) SetEnqueuer(client queue.Enqueuer) {
 	s.enqueuer = client
 }
 
-// Bookings the actor is not allowed to see are reported as not found, so their existence is not revealed
 func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeContext, bookingId int) (domain.Booking, error) {
 	booking, err := s.bookingRepo.GetBooking(ctx, bookingId)
 	if err != nil {
@@ -493,7 +492,6 @@ func (s *Service) CancelByCustomer(ctx context.Context, bookingId int) error {
 	})
 }
 
-
 // prevent null booking price to avoid a lot of headaches
 func (s *Service) preventNilBookingPrice(ctx context.Context, merchantId uuid.UUID, price *currencyx.Price) (currencyx.Price, error) {
 	var outPrice currencyx.Price
@@ -692,7 +690,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return validate.NewError("recurrence_rule is required for recurring bookings")
 	}
 
-	if !permission.CanManageEmployees(actor, input.EmployeeId) {
+	if !permission.CanActFor(actor, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
@@ -1041,7 +1039,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 		return err
 	}
 
-	if !permission.CanManageEmployees(actor, input.EmployeeId) {
+	if !permission.CanActFor(actor, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
 	}
 
