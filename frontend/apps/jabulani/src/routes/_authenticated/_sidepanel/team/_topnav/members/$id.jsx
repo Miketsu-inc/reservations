@@ -123,6 +123,8 @@ function RouteComponent() {
   }
 
   const { img, initials, name } = toAvatar(employee);
+  const canManage = can.manage(employee.role);
+  const canEdit = can.edit(RESOURCES.TEAM, employee.id) || canManage;
 
   return (
     <div className="flex justify-center">
@@ -139,8 +141,7 @@ function RouteComponent() {
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              {can.edit(RESOURCES.AVATARS, employee.id) ||
-              can.manage(employee.role) ? (
+              {can.edit(RESOURCES.AVATARS, employee.id) || canManage ? (
                 <AvatarUpload
                   img={img}
                   initials={initials}
@@ -181,7 +182,7 @@ function RouteComponent() {
               </div>
             </div>
             <div className="flex flex-col items-start">
-              {can.manage(employee.role) && (
+              {canEdit && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -213,18 +214,20 @@ function RouteComponent() {
                           <p>Edit team member</p>
                         </button>
                       </PopoverClose>
-                      <PopoverClose asChild>
-                        <button
-                          onClick={() => setShowDeleteModal(true)}
-                          className="hover:bg-hover cursor-pointer gap-3"
-                        >
-                          <Icon
-                            icon={Delete02Icon}
-                            styles="text-fg-danger size-5 mb-0.5"
-                          />
-                          <p className="text-fg-danger">Delete team member</p>
-                        </button>
-                      </PopoverClose>
+                      {canManage && (
+                        <PopoverClose asChild>
+                          <button
+                            onClick={() => setShowDeleteModal(true)}
+                            className="hover:bg-hover cursor-pointer gap-3"
+                          >
+                            <Icon
+                              icon={Delete02Icon}
+                              styles="text-fg-danger size-5 mb-0.5"
+                            />
+                            <p className="text-fg-danger">Delete team member</p>
+                          </button>
+                        </PopoverClose>
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>

@@ -110,6 +110,10 @@ func validateUpdateEmployee(employee domain.Employee, input UpdateMemberInput) e
 		return ErrOwnerRoleChangeRestrictedToMerchantSettings
 	}
 
+	if employee.Role == types.EmployeeRoleOwner && !input.IsActive {
+		return ErrOwnerCannotBeDeactivated
+	}
+
 	if employee.UserId != nil {
 		if !utils.PtrEqual(employee.FirstName, input.FirstName) || !utils.PtrEqual(employee.LastName, input.LastName) ||
 			!utils.PtrEqual(employee.Email, input.Email) || !utils.PtrEqual(employee.PhoneNumber, input.PhoneNumber) {
@@ -152,7 +156,7 @@ func (s *Service) UpdateMember(ctx context.Context, memberId int, input UpdateMe
 
 	can := permission.For(actor)
 
-	if !can.Manage(employee.Role) {
+	if !can.Edit(permission.Team, employee.Id) && !can.Manage(employee.Role) {
 		return ErrEmployeeManageForbidden
 	}
 
