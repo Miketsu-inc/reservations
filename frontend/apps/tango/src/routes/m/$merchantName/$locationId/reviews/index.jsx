@@ -17,6 +17,7 @@ import {
   formatShortName,
   merchantInfoQueryOptions,
   merchantServicesQueryOptions,
+  publicReviewsInfiniteQueryOptions,
   publicReviewStatsQueryOptions,
   toAvatar,
 } from "@reservations/lib";
@@ -26,7 +27,6 @@ import { useEffect, useState } from "react";
 import ReviewFiltersSidebar from "./-components/ReviewFiltersSidebar";
 import ReviewItem from "./-components/ReviewItem";
 import ReviewStats from "./-components/ReviewStats";
-import { publicReviewsInfiniteQueryOptions } from "./-components/reviewQueries";
 
 const SORT_OPTIONS = [
   { value: "most_relevant", label: "Most relevant" },

@@ -24,6 +24,7 @@ import MapboxMap from "./-components/MapboxMap";
 import MerchantLogo from "./-components/MerchantLogo";
 import RatingSummary from "./-components/RatingSummary";
 import ReservationSection from "./-components/ReservationSection";
+import ReviewsSection from "./-components/ReviewsSection";
 import ServiceSection from "./-components/ServiceSection";
 import TeamSection from "./-components/TeamSection";
 
@@ -271,6 +272,17 @@ function MerchantPage() {
               <TeamSection
                 merchantName={merchantName}
                 locationId={merchantInfo.location_id}
+              />
+            </ReservationSection>
+
+            <ReservationSection
+              name="Reviews"
+              show={reviewStats?.total_reviews > 0}
+            >
+              <ReviewsSection
+                merchantName={merchantName}
+                merchantInfo={merchantInfo}
+                stats={reviewStats}
               />
             </ReservationSection>
 
