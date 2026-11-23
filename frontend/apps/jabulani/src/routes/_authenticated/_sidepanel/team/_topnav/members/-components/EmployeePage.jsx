@@ -1,4 +1,5 @@
 import { Button, Card, Input, Select, Switch } from "@reservations/components";
+import { useAuth } from "@reservations/jabulani/lib";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
@@ -12,6 +13,7 @@ const employeeFields = [
 ];
 
 export default function EmployeePage({ employee, onSave }) {
+  const { can } = useAuth();
   const originalData = useMemo(() => {
     return {
       id: employee?.id,
@@ -123,10 +125,14 @@ export default function EmployeePage({ employee, onSave }) {
             labelText="Role"
             styles="w-full"
             value={employeeData.role}
+            disabled={employee?.role === "owner"}
             options={[
               { value: "staff", label: "Staff" },
               { value: "admin", label: "Admin" },
-            ]}
+            ].filter(
+              (option) =>
+                can.manage(option.value) || option.value === employee?.role
+            )}
             allOptions={[
               { value: "staff", label: "Staff" },
               { value: "admin", label: "Admin" },
@@ -139,6 +145,7 @@ export default function EmployeePage({ employee, onSave }) {
             <p>Is active</p>
             <Switch
               size="large"
+              disabled={employee?.role === "owner"}
               defaultValue={employeeData.is_active}
               onSwitch={() =>
                 updateEmployeeData({ is_active: !employeeData.is_active })

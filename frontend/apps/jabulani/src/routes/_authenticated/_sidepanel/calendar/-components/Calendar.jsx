@@ -2,7 +2,7 @@ import { Calendar as FullCalendar } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import listPlugin from "@fullcalendar/react/list";
 import { ServerError } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   businessHoursQueryOptions,
   calendarTeamMembersQueryOptions,
@@ -46,7 +46,6 @@ import CalendarSidePanel from "./CalendarSidePanel";
 import calendarTheme from "./calendarTheme";
 import CalendarToolbar, { formatCalendarTitle } from "./CalendarToolbar";
 import {
-  canViewTeamCalendar,
   getCalendarRange,
   getCalendarRanges,
   getCalendarView,
@@ -113,8 +112,8 @@ export default function Calendar({ router, route, search }) {
     setSidePanelState(createBookingPanelState(bookingId));
   }
 
-  const { merchantId, employeeId, role } = useAuth();
-  const canViewTeam = canViewTeamCalendar(role);
+  const { merchantId, employeeId, can } = useAuth();
+  const canViewTeam = can.viewAll(RESOURCES.TEAM);
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },
@@ -144,7 +143,7 @@ export default function Calendar({ router, route, search }) {
   const [selectedRange, setSelectedRange] = useState(search.view);
 
   const { isWindowSmall } = useWindowSize();
-  const calendarRanges = getCalendarRanges(role, isWindowSmall);
+  const calendarRanges = getCalendarRanges(can, isWindowSmall);
   const calendarRef = useRef();
   const calendarScrollRef = useRef();
   const dragRevertRef = useRef(null);
@@ -161,12 +160,9 @@ export default function Calendar({ router, route, search }) {
   const allEvents = useMemo(
     () => [
       ...formatBookings(events.bookings),
-      ...formatBlockedTimes(
-        events.blocked_times,
-        canViewTeam ? null : employeeId
-      ),
+      ...formatBlockedTimes(events.blocked_times, can),
     ],
-    [canViewTeam, employeeId, events.bookings, events.blocked_times]
+    [can, events.bookings, events.blocked_times]
   );
 
   const hasUnassigned =

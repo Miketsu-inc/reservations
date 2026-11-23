@@ -2,20 +2,19 @@ package middleware
 
 import (
 	"net/http"
-	"slices"
 
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 )
 
 var ErrEmployeeAccountRequired = &apperr.Error{Code: "employee_account_required", Message: "you need an employee account to access this"}
-var ErrRoleAccessDenied = &apperr.Error{Code: "role_access_denied", Message: "you do not have access to this resource"}
+var ErrPermissionDenied = &apperr.Error{Code: "permission_denied", Message: "you do not have access to this resource"}
 
-// Role based access control middleware that check's wether an employee can access
-// a resource based on their role, should be called after the authentication middleware
-func (m *Manager) RoleBasedAccessControl(roles ...types.EmployeeRole) func(next http.Handler) httputil.HandlerFunc {
+// Checks that the employee can do every given action,
+// should be called after the employee authentication middleware
+func (m *Manager) RequirePermission(actions ...permission.Action) func(next http.Handler) httputil.HandlerFunc {
 	return func(next http.Handler) httputil.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
 
@@ -27,11 +26,14 @@ func (m *Manager) RoleBasedAccessControl(roles ...types.EmployeeRole) func(next 
 				}
 			}
 
-			if !slices.Contains(roles, actor.Role) {
-				return &apperr.APIError{
-					Status: http.StatusForbidden,
-					Err:    ErrRoleAccessDenied,
-					Meta:   map[string]any{"required_roles": roles},
+			can := permission.For(actor)
+			for _, action := range actions {
+				if !can.Do(action) {
+					return &apperr.APIError{
+						Status: http.StatusForbidden,
+						Err:    ErrPermissionDenied,
+						Meta:   map[string]any{"required_actions": actions},
+					}
 				}
 			}
 

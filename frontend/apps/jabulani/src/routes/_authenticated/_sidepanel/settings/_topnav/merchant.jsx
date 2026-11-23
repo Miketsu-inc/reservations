@@ -1,5 +1,5 @@
 import { Loading, ServerError, Textarea } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -78,7 +78,7 @@ export const Route = createFileRoute(
 });
 
 function MerchantPage() {
-  const { merchantId, role } = useAuth();
+  const { merchantId, can } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
   const { data: profileSettings, isLoading } = useQuery(
@@ -104,7 +104,7 @@ function MerchantPage() {
     },
   });
 
-  const canEditLogo = role === "owner" || role === "admin";
+  const canEditLogo = can.do(ACTIONS.EDIT_SETTINGS);
 
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));
@@ -232,7 +232,9 @@ function MerchantPage() {
           />
         </div>
       </SettingsSection>
-      {role === "owner" && <DangerZone />}
+      {(can.do(ACTIONS.RENAME_MERCHANT) || can.do(ACTIONS.DELETE_MERCHANT)) && (
+        <DangerZone />
+      )}
     </div>
   );
 }

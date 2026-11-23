@@ -1,5 +1,5 @@
 import { Loading, Select, ServerError } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   preferencesQueryOptions,
@@ -8,7 +8,6 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { canViewTeamCalendar } from "../../calendar/-components/calendarViews";
 import RadioInputGroup from "./-components/RadioInputGroup";
 import SettingsPageHeader from "./-components/SettingsPageHeader";
 import SettingsSaveAction from "./-components/SettingsSaveAction";
@@ -72,7 +71,7 @@ export const Route = createFileRoute(
 function CalendarPage() {
   const [unsavedChanges, setUnsavedChanges] = useState({});
 
-  const { merchantId, employeeId, role } = useAuth();
+  const { merchantId, employeeId, can } = useAuth();
   const { showToast } = useToast();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { data, isLoading, isError, error } = useQuery(
@@ -162,7 +161,7 @@ function CalendarPage() {
         </div>
       </SettingsSection>
 
-      {canViewTeamCalendar(role) && (
+      {can.viewAll(RESOURCES.TEAM) && (
         <SettingsSection
           title="Default view"
           description="Set the view that opens first on desktop."

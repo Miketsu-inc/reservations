@@ -18,7 +18,11 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
-import { isLocationComplete, useAuth } from "@reservations/jabulani/lib";
+import {
+  ACTIONS,
+  isLocationComplete,
+  useAuth,
+} from "@reservations/jabulani/lib";
 import {
   invalidateLocalStorageAuth,
   useToast,
@@ -207,7 +211,7 @@ function LocationCard({ location, merchantId, canEditPhotos, onEdit }) {
 }
 
 function LocationPage() {
-  const { merchantId, role } = useAuth();
+  const { merchantId, can } = useAuth();
   const { queryClient } = Route.useRouteContext({ from: Route.id });
   const { showToast } = useToast();
   const { isWindowSmall } = useWindowSize();
@@ -277,7 +281,7 @@ function LocationPage() {
               key={location.id}
               location={location}
               merchantId={merchantId}
-              canEditPhotos={role === "owner" || role === "admin"}
+              canEditPhotos={can.do(ACTIONS.EDIT_LOCATION_IMAGES)}
               onEdit={openEditor}
             />
           ))}

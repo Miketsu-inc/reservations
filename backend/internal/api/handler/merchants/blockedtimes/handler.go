@@ -30,7 +30,7 @@ func (h *Handler) Routes() *httputil.Router {
 
 type newReq struct {
 	Name          string  `json:"name" validate:"required"`
-	EmployeeIds   []int   `json:"employee_ids"`
+	EmployeeIds   []int   `json:"employee_ids" validate:"min=1"`
 	BlockedTypeId *int    `json:"blocked_type_id"`
 	FromDate      *string `json:"from_date"`
 	ToDate        *string `json:"to_date"`
@@ -63,7 +63,7 @@ func (h *Handler) New(w http.ResponseWriter, r *http.Request) error {
 type updateReq struct {
 	Id            int     `json:"id" validate:"required"`
 	Name          string  `json:"name" validate:"required"`
-	EmployeeIds   []int   `json:"employee_ids"`
+	EmployeeIds   []int   `json:"employee_ids" validate:"min=1"`
 	BlockedTypeId *int    `json:"blocked_type_id"`
 	FromDate      *string `json:"from_date"`
 	ToDate        *string `json:"to_date"`

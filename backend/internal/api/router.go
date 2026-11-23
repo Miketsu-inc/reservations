@@ -29,7 +29,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/handler/users"
 	"github.com/miketsu-inc/reservations/backend/internal/api/merchantpage"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/frontend/apps/jabulani"
 	"github.com/miketsu-inc/reservations/frontend/apps/tango"
@@ -89,15 +89,11 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 			r.Get("/me", h.Merchants.Me)
 
-			r.Group(func(r *httputil.Router) {
-				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner))
-
-				r.Delete("/", h.Merchants.Delete)
-				r.Patch("/name", h.Merchants.UpdateName)
-			})
+			r.WithFunc(h.Middleware.RequirePermission(permission.DeleteMerchant)).Delete("/", h.Merchants.Delete)
+			r.WithFunc(h.Middleware.RequirePermission(permission.RenameMerchant)).Patch("/name", h.Merchants.UpdateName)
 
 			r.Group(func(r *httputil.Router) {
-				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleOwner, types.EmployeeRoleAdmin))
+				r.UseFunc(h.Middleware.RequirePermission(permission.EditSettings))
 
 				r.WithFunc(h.Middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.Merchants.CreateLogoUpload)
 				r.Delete("/logo", h.Merchants.RemoveLogo)
@@ -107,25 +103,21 @@ func NewRouter(h *Handlers) *httputil.Router {
 				r.Patch("/settings/business-hours", h.Merchants.UpdateBusinessHoursSettings)
 			})
 
-			r.Group(func(r *httputil.Router) {
-				r.UseFunc(h.Middleware.RoleBasedAccessControl(types.EmployeeRoleStaff, types.EmployeeRoleAdmin, types.EmployeeRoleOwner))
+			r.Get("/dashboard/statistics", h.Merchants.GetDashboardStatistics)
+			r.Get("/dashboard/revenue", h.Merchants.GetDashboardRevenue)
+			r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
 
-				r.Get("/dashboard/statistics", h.Merchants.GetDashboardStatistics)
-				r.Get("/dashboard/revenue", h.Merchants.GetDashboardRevenue)
-				r.Get("/dashboard/bookings/{view}", h.Merchants.GetDashboardBookings)
+			r.Get("/settings/merchant-profile", h.Merchants.GetMerchantProfileSettings)
+			r.Get("/settings/scheduling", h.Merchants.GetSchedulingSettings)
+			r.Get("/settings/business-hours", h.Merchants.GetBusinessHoursSettings)
+			r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
 
-				r.Get("/settings/merchant-profile", h.Merchants.GetMerchantProfileSettings)
-				r.Get("/settings/scheduling", h.Merchants.GetSchedulingSettings)
-				r.Get("/settings/business-hours", h.Merchants.GetBusinessHoursSettings)
-				r.Get("/settings/business-hours/normalized", h.Merchants.GetNormalizedBusinessHours)
+			r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
+			r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
+			r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
+			r.Get("/calendar/events", h.Merchants.GetCalendarEvents)
 
-				r.Get("/calendar/team", h.Merchants.GetTeamForCalendar)
-				r.Get("/calendar/services", h.Merchants.GetServicesForCalendar)
-				r.Get("/calendar/customers", h.Merchants.GetCustomersForCalendar)
-				r.Get("/calendar/events", h.Merchants.GetCalendarEvents)
-
-				r.Get("/integrations/google/calendar", h.Merchants.GoogleCalendar)
-			})
+			r.Get("/integrations/google/calendar", h.Merchants.GoogleCalendar)
 
 			r.Mount("/bookings", h.Bookings.Routes())
 			r.Mount("/blocked-times", h.BlockedTimes.Routes())

@@ -13,6 +13,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/internal/jobs/args"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
@@ -171,16 +172,17 @@ func (s *Service) createUpload(ctx context.Context, image domain.Image, input Up
 }
 
 func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.EmployeeContext, employeeId int) error {
-	if actor.Role == types.EmployeeRoleStaff && actor.EmployeeId != employeeId {
-		return ErrEmployeeAvatarForbidden
-	}
-
-	_, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, employeeId)
+	employee, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, employeeId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrEmployeeNotFound
 		}
 		return err
+	}
+
+	can := permission.For(actor)
+	if !can.Edit(permission.Team, employee.Id) && !can.Manage(employee.Role) {
+		return ErrEmployeeAvatarForbidden
 	}
 
 	return nil

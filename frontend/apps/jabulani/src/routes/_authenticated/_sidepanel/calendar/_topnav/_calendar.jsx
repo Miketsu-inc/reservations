@@ -8,6 +8,7 @@ import {
   preferencesQueryOptions,
   SCREEN_LG,
 } from "@reservations/lib";
+import { createPermissionChecker, RESOURCES } from "@reservations/jabulani/lib";
 import {
   createFileRoute,
   Outlet,
@@ -17,7 +18,6 @@ import {
 import { lazy, Suspense } from "react";
 import { calendarBookingsQueryOptions } from "../-components/calendarQueries";
 import {
-  canViewTeamCalendar,
   getCalendarRanges,
   resolveCalendarRange,
 } from "../-components/calendarViews";
@@ -39,9 +39,11 @@ export const Route = createFileRoute(
     location,
     context: {
       queryClient,
-      authContext: { merchantId, employeeId, role },
+      authContext: { merchantId, employeeId, permissions },
     },
   }) => {
+    const can = createPermissionChecker(permissions, employeeId);
+
     // pre-import the calendar for faster loading
     importCalendar();
 
@@ -49,7 +51,7 @@ export const Route = createFileRoute(
       queryClient.ensureQueryData(
         preferencesQueryOptions(merchantId, employeeId)
       ),
-      canViewTeamCalendar(role) &&
+      can.viewAll(RESOURCES.TEAM) &&
         queryClient.ensureQueryData(
           calendarTeamMembersQueryOptions(merchantId)
         ),
@@ -57,7 +59,7 @@ export const Route = createFileRoute(
     ]);
 
     const view = resolveCalendarRange(
-      getCalendarRanges(role, window.innerWidth < SCREEN_LG),
+      getCalendarRanges(can, window.innerWidth < SCREEN_LG),
       search.view,
       preferences?.calendar_view
     );

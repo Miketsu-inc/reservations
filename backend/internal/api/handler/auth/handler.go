@@ -10,6 +10,7 @@ import (
 	"github.com/miketsu-inc/reservations/backend/cmd/config"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	authServ "github.com/miketsu-inc/reservations/backend/internal/service/auth"
 	teamServ "github.com/miketsu-inc/reservations/backend/internal/service/team"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
@@ -191,7 +192,15 @@ type membershipsResp struct {
 	MerchantUrlName string             `json:"merchant_url_name"`
 	EmployeeId      int                `json:"employee_id"`
 	Role            types.EmployeeRole `json:"role"`
+	Permissions     permissionsResp    `json:"permissions"`
 	AvatarUrl       *string            `json:"avatar_url"`
+}
+
+type permissionsResp struct {
+	Actions         []permission.Action                      `json:"actions"`
+	View            map[permission.Resource]permission.Scope `json:"view"`
+	Edit            map[permission.Resource]permission.Scope `json:"edit"`
+	ManageableRoles []types.EmployeeRole                     `json:"manageable_roles"`
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) error {
