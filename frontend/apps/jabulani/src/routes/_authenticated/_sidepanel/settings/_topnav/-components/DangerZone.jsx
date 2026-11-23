@@ -78,7 +78,7 @@ export default function DangerZone() {
           These actions affect your business identity or permanently remove it.
         </p>
         <div className="flex flex-col gap-5">
-          {can.do(ACTIONS.MERCHANT_RENAME) && (
+          {can.do(ACTIONS.RENAME_MERCHANT) && (
             <>
               <DangerZoneItem
                 title="Change business name"
@@ -110,7 +110,7 @@ export default function DangerZone() {
             description="Transfer this business to another account."
             buttonText="Transfer ownership"
           />
-          {can.do(ACTIONS.MERCHANT_DELETE) && (
+          {can.do(ACTIONS.DELETE_MERCHANT) && (
             <>
               <div className="border-border-subtle border-t" />
               <DangerZoneItem

@@ -36,7 +36,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Delete("/{id}/avatar", h.RemoveAvatar)
 
 	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RequirePermission(permission.TeamManage))
+		r.UseFunc(h.middleware.RequirePermission(permission.ManageTeam))
 
 		r.Post("/", h.NewMember)
 		r.Put("/{id}", h.UpdateMember)

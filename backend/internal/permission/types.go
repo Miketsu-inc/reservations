@@ -20,11 +20,11 @@ func (a Action) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	MerchantDelete     = Action{"merchant:delete"}
-	MerchantRename     = Action{"merchant:rename"}
-	SettingsEdit       = Action{"settings:edit"}
-	LocationImagesEdit = Action{"location_images:edit"}
-	TeamManage         = Action{"team:manage"}
+	DeleteMerchant     = Action{"merchant:delete"}
+	RenameMerchant     = Action{"merchant:rename"}
+	EditSettings       = Action{"settings:edit"}
+	EditLocationImages = Action{"location_images:edit"}
+	ManageTeam         = Action{"team:manage"}
 )
 
 // Records that belong to employees, access depends on whose they are

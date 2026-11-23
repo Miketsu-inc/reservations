@@ -86,11 +86,11 @@ func NewRouter(h *Handlers) *httputil.Router {
 
 			r.Get("/me", h.Merchants.Me)
 
-			r.WithFunc(h.Middleware.RequirePermission(permission.MerchantDelete)).Delete("/", h.Merchants.Delete)
-			r.WithFunc(h.Middleware.RequirePermission(permission.MerchantRename)).Patch("/name", h.Merchants.UpdateName)
+			r.WithFunc(h.Middleware.RequirePermission(permission.DeleteMerchant)).Delete("/", h.Merchants.Delete)
+			r.WithFunc(h.Middleware.RequirePermission(permission.RenameMerchant)).Patch("/name", h.Merchants.UpdateName)
 
 			r.Group(func(r *httputil.Router) {
-				r.UseFunc(h.Middleware.RequirePermission(permission.SettingsEdit))
+				r.UseFunc(h.Middleware.RequirePermission(permission.EditSettings))
 
 				r.WithFunc(h.Middleware.RateLimitByUser(30, time.Hour)).Post("/logo", h.Merchants.CreateLogoUpload)
 				r.Delete("/logo", h.Merchants.RemoveLogo)

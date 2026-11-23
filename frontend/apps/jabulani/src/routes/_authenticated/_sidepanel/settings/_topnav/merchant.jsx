@@ -104,7 +104,7 @@ function MerchantPage() {
     },
   });
 
-  const canEditLogo = can.do(ACTIONS.SETTINGS_EDIT);
+  const canEditLogo = can.do(ACTIONS.EDIT_SETTINGS);
 
   function handleInputData({ name, value }) {
     setChanges((current) => ({ ...current, [name]: value }));
@@ -232,7 +232,7 @@ function MerchantPage() {
           />
         </div>
       </SettingsSection>
-      {(can.do(ACTIONS.MERCHANT_RENAME) || can.do(ACTIONS.MERCHANT_DELETE)) && (
+      {(can.do(ACTIONS.RENAME_MERCHANT) || can.do(ACTIONS.DELETE_MERCHANT)) && (
         <DangerZone />
       )}
     </div>

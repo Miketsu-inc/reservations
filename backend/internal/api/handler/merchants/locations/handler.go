@@ -37,7 +37,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Get("/{id}/images", h.GetImages)
 
 	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RequirePermission(permission.LocationImagesEdit))
+		r.UseFunc(h.middleware.RequirePermission(permission.EditLocationImages))
 
 		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/images", h.CreateImageUpload)
 		r.Put("/{id}/images/order", h.ReorderImages)

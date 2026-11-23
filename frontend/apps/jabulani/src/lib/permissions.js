@@ -1,10 +1,10 @@
 // Mirrors the actions and resources in backend/internal/permission
 export const ACTIONS = {
-  MERCHANT_DELETE: "merchant:delete",
-  MERCHANT_RENAME: "merchant:rename",
-  SETTINGS_EDIT: "settings:edit",
-  LOCATION_IMAGES_EDIT: "location_images:edit",
-  TEAM_MANAGE: "team:manage",
+  DELETE_MERCHANT: "merchant:delete",
+  RENAME_MERCHANT: "merchant:rename",
+  EDIT_SETTINGS: "settings:edit",
+  EDIT_LOCATION_IMAGES: "location_images:edit",
+  MANAGE_TEAM: "team:manage",
 };
 
 export const RESOURCES = {
