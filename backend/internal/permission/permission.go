@@ -11,19 +11,19 @@ import (
 var roleGrants = map[types.EmployeeRole]Grants{
 	types.EmployeeRoleOwner: {
 		Actions: []Action{MerchantDelete, MerchantRename, SettingsEdit, LocationImagesEdit, TeamManage},
-		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All, Calendar: All},
-		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: Own, Avatars: Own},
+		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All},
+		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: Own},
 		Manage:  []types.EmployeeRole{types.EmployeeRoleAdmin, types.EmployeeRoleStaff},
 	},
 	types.EmployeeRoleAdmin: {
 		Actions: []Action{SettingsEdit, LocationImagesEdit, TeamManage},
-		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All, Calendar: All},
-		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: Own, Avatars: Own},
+		View:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: All},
+		Edit:    map[Resource]Scope{Bookings: All, BlockedTimes: All, Team: Own},
 		Manage:  []types.EmployeeRole{types.EmployeeRoleStaff},
 	},
 	types.EmployeeRoleStaff: {
-		View: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Team: Own, Calendar: Own},
-		Edit: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Team: Own, Avatars: Own},
+		View: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Team: Own},
+		Edit: map[Resource]Scope{Bookings: Own, BlockedTimes: Own, Team: Own},
 	},
 }
 

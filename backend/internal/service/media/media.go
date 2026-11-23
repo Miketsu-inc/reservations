@@ -181,7 +181,7 @@ func (s *Service) checkEmployeeAvatarAccess(ctx context.Context, actor actor.Emp
 	}
 
 	can := permission.For(actor)
-	if !can.Edit(permission.Avatars, employee.Id) && !can.Manage(employee.Role) {
+	if !can.Edit(permission.Team, employee.Id) && !can.Manage(employee.Role) {
 		return ErrEmployeeAvatarForbidden
 	}
 

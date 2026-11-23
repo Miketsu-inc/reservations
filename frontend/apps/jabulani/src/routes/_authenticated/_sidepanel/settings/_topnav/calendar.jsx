@@ -161,7 +161,7 @@ function CalendarPage() {
         </div>
       </SettingsSection>
 
-      {can.viewAll(RESOURCES.CALENDAR) && (
+      {can.viewAll(RESOURCES.TEAM) && (
         <SettingsSection
           title="Default view"
           description="Set the view that opens first on desktop."

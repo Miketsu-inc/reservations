@@ -113,7 +113,7 @@ export default function Calendar({ router, route, search }) {
   }
 
   const { merchantId, employeeId, can } = useAuth();
-  const canViewTeam = can.viewAll(RESOURCES.CALENDAR);
+  const canViewTeam = can.viewAll(RESOURCES.TEAM);
   const { queryClient } = route.useRouteContext({ from: route.id });
   const {
     data: events = { bookings: [], blocked_times: [] },

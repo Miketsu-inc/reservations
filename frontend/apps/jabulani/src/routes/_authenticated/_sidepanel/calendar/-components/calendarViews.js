@@ -43,7 +43,7 @@ export const timeGridViews = new Set([
 
 export function getCalendarRanges(can, isMobile) {
   if (isMobile) return [agendaRange];
-  if (!can.viewAll(RESOURCES.CALENDAR)) return [weekRange];
+  if (!can.viewAll(RESOURCES.TEAM)) return [weekRange];
 
   return [dayRange, twoDayRange, weekRange];
 }

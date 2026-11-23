@@ -6,20 +6,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
-	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
 	merchantServ "github.com/miketsu-inc/reservations/backend/internal/service/merchant"
-	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToMeResp(in actor.EmployeeContext) meResp {
 	return meResp{
-		UserId:      in.UserId,
-		MerchantId:  in.MerchantId,
-		EmployeeId:  in.EmployeeId,
-		Role:        in.Role,
-		Permissions: mapToPermissionsResp(permission.ForRole(in.Role)),
+		UserId:     in.UserId,
+		MerchantId: in.MerchantId,
+		EmployeeId: in.EmployeeId,
+		Role:       in.Role,
 	}
 }
 
@@ -390,14 +387,5 @@ func mapToUploadResp(in mediaServ.UploadResult) uploadResp {
 		Method:    in.Request.Method,
 		Headers:   headers,
 		ExpiresAt: in.Request.ExpiresAt,
-	}
-}
-
-func mapToPermissionsResp(in permission.Grants) permissionsResp {
-	return permissionsResp{
-		Actions:         append([]permission.Action{}, in.Actions...),
-		View:            in.View,
-		Edit:            in.Edit,
-		ManageableRoles: append([]types.EmployeeRole{}, in.Manage...),
 	}
 }

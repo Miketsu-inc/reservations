@@ -45,8 +45,6 @@ var (
 	Bookings     = Resource{"bookings"}
 	BlockedTimes = Resource{"blocked_times"}
 	Team         = Resource{"team"}
-	Calendar     = Resource{"calendar"}
-	Avatars      = Resource{"avatars"}
 )
 
 // The zero value means no access

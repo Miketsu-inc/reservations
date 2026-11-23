@@ -141,7 +141,7 @@ function RouteComponent() {
         <Card styles="flex flex-col items-start gap-4">
           <div className="flex w-full justify-between">
             <div className="flex items-center gap-4">
-              {can.edit(RESOURCES.AVATARS, employee.id) || canManage ? (
+              {canEdit ? (
                 <AvatarUpload
                   img={img}
                   initials={initials}

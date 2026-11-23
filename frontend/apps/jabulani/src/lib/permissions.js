@@ -11,8 +11,6 @@ export const RESOURCES = {
   BOOKINGS: "bookings",
   BLOCKED_TIMES: "blocked_times",
   TEAM: "team",
-  CALENDAR: "calendar",
-  AVATARS: "avatars",
 };
 
 export function createPermissionChecker(permissions, employeeId) {

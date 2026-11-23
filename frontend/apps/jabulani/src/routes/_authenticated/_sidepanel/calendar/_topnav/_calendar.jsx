@@ -51,7 +51,7 @@ export const Route = createFileRoute(
       queryClient.ensureQueryData(
         preferencesQueryOptions(merchantId, employeeId)
       ),
-      can.viewAll(RESOURCES.CALENDAR) &&
+      can.viewAll(RESOURCES.TEAM) &&
         queryClient.ensureQueryData(
           calendarTeamMembersQueryOptions(merchantId)
         ),
