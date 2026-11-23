@@ -8,9 +8,9 @@ import { Button, Card, Icon } from "@reservations/components";
 import {
   dateStringToLocalDate,
   formatDuration,
+  formatShortName,
   formatTimeRange,
   getDisplayPrice,
-  formatShortName,
 } from "@reservations/lib";
 import MerchantLogo from "../../-components/MerchantLogo";
 import RatingSummary from "../../-components/RatingSummary";
@@ -27,6 +27,14 @@ const formatDate = (dateString) => {
 
   return formattedDate;
 };
+
+// group bookings have end time
+export function formatSelectedTimeRange(selectedTime, durationMinutes) {
+  if (selectedTime.end_time) {
+    return `${selectedTime.time} - ${selectedTime.end_time}`;
+  }
+  return formatTimeRange(selectedTime.time, durationMinutes);
+}
 
 export function getBookingSummaryDisplayInfo({
   fetchedSummary,
@@ -95,6 +103,7 @@ export default function BookingSummary({
   canContinue,
   isSubmitting,
   currentStep,
+  customerNote,
 }) {
   const {
     serviceName,
@@ -198,7 +207,7 @@ export default function BookingSummary({
               <div className="flex items-center gap-2">
                 <Icon icon={Clock} styles="size-4 text-fg-muted" />
                 <span className="">
-                  {formatTimeRange(selectedSummary.time.time, totalDuration)}
+                  {formatSelectedTimeRange(selectedSummary.time, totalDuration)}
                 </span>
               </div>
             </div>
@@ -228,16 +237,14 @@ export default function BookingSummary({
             Select a service to continue...
           </p>
         )}
-        {selectedSummary.time?.customer_note && (
+        {customerNote && (
           <>
             <hr className="border-border-subtle my-5" />
             <div className="text-fg-muted flex items-start justify-start gap-2">
               <Icon icon={Note01Icon} styles="size-4 shrink-0 mt-0.5" />
               <p className="line-clamp-3 text-sm font-medium">
                 Your Note:{" "}
-                <span className="text-sm font-normal">
-                  {selectedSummary.time?.customer_note}
-                </span>
+                <span className="text-sm font-normal">{customerNote}</span>
               </p>
             </div>
           </>

@@ -1,9 +1,4 @@
-import {
-  DatePicker,
-  Loading,
-  ServerError,
-  Textarea,
-} from "@reservations/components";
+import { DatePicker, Loading, ServerError } from "@reservations/components";
 import {
   dateStringToLocalDate,
   formatToDateString,
@@ -132,7 +127,6 @@ export default function AppointmentTimeSelectionStep({
 }) {
   const [manualSelectedDay, setManualSelectedDay] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [customerNote, setCustomerNote] = useState("");
 
   function handleEmployeeChange(emp) {
     setSelectedSlot(null);
@@ -140,7 +134,6 @@ export default function AppointmentTimeSelectionStep({
       date: selectedDay,
       time: null,
       starts_at: null,
-      customer_note: customerNote,
     });
     onEmployeeChange(emp);
   }
@@ -185,7 +178,6 @@ export default function AppointmentTimeSelectionStep({
       date: dateStr,
       time: null,
       starts_at: null,
-      customer_note: customerNote,
     });
   }
 
@@ -199,18 +191,24 @@ export default function AppointmentTimeSelectionStep({
       date: selectedDay,
       time: slot.time,
       starts_at: slot.starts_at,
-      customer_note: customerNote,
     });
   }
 
   if (daysIsError) return <ServerError error={daysError.message} />;
   if (daysIsLoading) return <StepContentSkeleton />;
 
+  const hasDays = availableDays?.length > 0;
+  const firstDay = hasDays ? availableDays[0].date : undefined;
+  const lastDay = hasDays
+    ? availableDays[availableDays.length - 1].date
+    : undefined;
+
   const hasNoOpenings =
-    !timesIsLoading &&
-    dayTimes &&
-    dayTimes.morning.length === 0 &&
-    dayTimes.afternoon.length === 0;
+    !selectedDay ||
+    (!timesIsLoading &&
+      dayTimes &&
+      dayTimes.morning.length === 0 &&
+      dayTimes.afternoon.length === 0);
 
   return (
     <div className="flex h-full w-full max-w-full flex-col">
@@ -238,28 +236,25 @@ export default function AppointmentTimeSelectionStep({
             }
             firstDayOfWeek={"Monday"}
             clearAfterClose={true}
+            disabled={!hasDays}
             onSelect={handleDatePickerSelect}
-            disabledBefore={
-              dateStringToLocalDate(availableDays[0].date) ?? undefined
-            }
-            disabledAfter={
-              dateStringToLocalDate(
-                availableDays[availableDays.length - 1].date
-              ) ?? undefined
-            }
+            disabledBefore={dateStringToLocalDate(firstDay)}
+            disabledAfter={dateStringToLocalDate(lastDay)}
           />
         </div>
       </div>
-      <div
-        className="bg-bg sticky top-14.75 z-10 flex w-full max-w-full min-w-0
-          items-center gap-2 py-4 lg:top-17"
-      >
-        <DaySelector
-          days={availableDays}
-          selectedDate={selectedDay}
-          onSelect={handleDaySelect}
-        />
-      </div>
+      {hasDays && (
+        <div
+          className="bg-bg sticky top-14.75 z-10 flex w-full max-w-full min-w-0
+            items-center gap-2 py-4 lg:top-17"
+        >
+          <DaySelector
+            days={availableDays}
+            selectedDate={selectedDay}
+            onSelect={handleDaySelect}
+          />
+        </div>
+      )}
 
       <div className="mt-4 flex w-full flex-1 flex-col gap-6">
         {timesIsError ? (
@@ -270,10 +265,22 @@ export default function AppointmentTimeSelectionStep({
           <div
             className="flex flex-col items-center gap-1 px-4 py-10 text-center"
           >
-            <p className="font-medium">No availability for this day</p>
-            <p className="text-fg-muted text-sm">
-              There's no place left on this day. Please choose another date.
-            </p>
+            {selectedDay ? (
+              <>
+                <p className="font-medium">No availability for this day</p>
+                <p className="text-fg-muted text-sm">
+                  There's no place left on this day. Please choose another date.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium">No available times</p>
+                <p className="text-fg-muted text-sm">
+                  There are no open times for this service right now. Please
+                  check back later or choose another professional.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -297,24 +304,6 @@ export default function AppointmentTimeSelectionStep({
             </div>
           </>
         )}
-        <Textarea
-          styles="p-2 min-h-24"
-          id="customerNote"
-          name="customerNote"
-          labelText="Add a note to your booking (Optional)"
-          placeholder="E.g., I have sensitive skin..."
-          value={customerNote}
-          inputData={(data) => {
-            setCustomerNote(data.value);
-            onSelect({
-              date: selectedDay,
-              time: selectedSlot?.time ?? null,
-              starts_at: selectedSlot?.starts_at ?? null,
-              customer_note: data.value,
-            });
-          }}
-          required={false}
-        />
       </div>
     </div>
   );

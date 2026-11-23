@@ -18,6 +18,8 @@ export default function DatePicker({
   placeholderText,
   disabledBefore,
   disabledAfter,
+  disabledDays = [],
+  startMonth,
   labelText,
   required,
   disabled = false,
@@ -140,7 +142,12 @@ export default function DatePicker({
               }
             }}
             firstDayOfWeek={firstDayOfWeek}
-            disabled={[{ before: disabledBefore }, { after: disabledAfter }]}
+            disabled={[
+              { before: disabledBefore },
+              { after: disabledAfter },
+              ...disabledDays,
+            ]}
+            startMonth={startMonth}
             disabledSelectedModifier={
               disabledBefore?.getTime() > value?.getTime() ? value : undefined
             }

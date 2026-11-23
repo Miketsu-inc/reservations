@@ -8,14 +8,14 @@ import {
   DatePicker,
   Icon,
   ServerError,
-  Textarea,
 } from "@reservations/components";
 import {
   dateStringToLocalDate,
   formatDuration,
+  formatShortName,
+  formatToDateString,
   getDisplayPrice,
   invalidateLocalStorageAuth,
-  formatShortName,
   toAvatar,
 } from "@reservations/lib";
 import {
@@ -94,7 +94,6 @@ export default function GroupBookingStep({
   employee,
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
-  const [customerNote, setCustomerNote] = useState("");
 
   const {
     data: availability,
@@ -111,9 +110,12 @@ export default function GroupBookingStep({
     placeholderData: keepPreviousData,
   });
 
-  const groupBookings = availability?.bookings ?? [];
+  const groupBookings = useMemo(
+    () => availability?.bookings ?? [],
+    [availability]
+  );
   const groupedBookings = useMemo(() => {
-    const byDay = Map.groupBy(availability?.bookings ?? [], (s) => s.date);
+    const byDay = Map.groupBy(groupBookings, (s) => s.date);
 
     return [...byDay].map(([dateKey, sessions]) => {
       const date = dateStringToLocalDate(sessions[0].date);
@@ -125,7 +127,19 @@ export default function GroupBookingStep({
         sessions,
       };
     });
-  }, [availability]);
+  }, [groupBookings]);
+
+  const firstSessionDate = dateStringToLocalDate(groupBookings[0]?.date);
+  const lastSessionDate = dateStringToLocalDate(
+    groupBookings[groupBookings.length - 1]?.date
+  );
+
+  function handleDatePick(date) {
+    if (!date) return;
+    document
+      .getElementById(`sessions-${formatToDateString(date)}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function handleEmployeeChange(emp) {
     setSelectedSessionId(null);
@@ -134,7 +148,6 @@ export default function GroupBookingStep({
       time: null,
       starts_at: null,
       bookingId: null,
-      customer_note: customerNote,
     });
     onEmployeeChange(emp);
   }
@@ -147,16 +160,15 @@ export default function GroupBookingStep({
         time: null,
         starts_at: null,
         bookingId: null,
-        customer_note: customerNote,
       });
     } else {
       setSelectedSessionId(session.id);
       onSelect({
         date: session.date,
         time: session.time,
+        end_time: session.end_time,
         starts_at: session.from_date,
         bookingId: session.id,
-        customer_note: customerNote,
         employee: session.employee,
       });
     }
@@ -187,6 +199,18 @@ export default function GroupBookingStep({
             hideText={true}
             firstDayOfWeek="Monday"
             clearAfterClose={true}
+            closeOnSelect={true}
+            disabled={groupBookings.length === 0}
+            disabledBefore={firstSessionDate}
+            disabledAfter={lastSessionDate}
+            disabledDays={[
+              (date) =>
+                !groupedBookings.some(
+                  (g) => g.dateKey === formatToDateString(date)
+                ),
+            ]}
+            startMonth={firstSessionDate}
+            onSelect={handleDatePick}
           />
         </div>
       </div>
@@ -207,7 +231,8 @@ export default function GroupBookingStep({
             {groupedBookings.map((group) => (
               <div
                 key={group.dateKey}
-                className="relative flex w-full flex-col gap-2.5"
+                id={`sessions-${group.dateKey}`}
+                className="relative flex w-full scroll-mt-24 flex-col gap-2.5"
               >
                 <div className="flex items-baseline gap-2 select-none xl:hidden">
                   <span className={"text-xl leading-none font-bold"}>
@@ -250,32 +275,6 @@ export default function GroupBookingStep({
             ))}
           </div>
         )}
-
-        <Textarea
-          styles="p-2 min-h-24"
-          id="customerNote"
-          name="customerNote"
-          labelText="Add a note to your booking (Optional)"
-          placeholder="E.g., Any special requirements or requests..."
-          value={customerNote}
-          inputData={(data) => {
-            setCustomerNote(data.value);
-            const currentSession = groupBookings.find(
-              (s) => s.id === selectedSessionId
-            );
-            if (currentSession) {
-              onSelect({
-                date: currentSession.date,
-                time: currentSession.time,
-                starts_at: currentSession.from_date,
-                bookingId: currentSession.id,
-                customer_note: data.value,
-                employee: currentSession.employee,
-              });
-            }
-          }}
-          required={false}
-        />
       </div>
     </div>
   );
@@ -304,7 +303,7 @@ function SessionCard({ session, isSelected, onSelect }) {
         justify-between gap-3 rounded-xl border p-4 text-left transition-colors
         ${
           isSelected
-            ? "border-primary ring-primary-focus ring-2"
+            ? "border-primary ring-primary-focus ring-1"
             : "border-border hover:border-border-strong"
         }`}
     >

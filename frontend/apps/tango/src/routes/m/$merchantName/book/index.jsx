@@ -1,7 +1,6 @@
 import { ArrowLeft01Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
-import { Button, Icon, ServerError } from "@reservations/components";
+import { Button, Icon, ServerError, Textarea } from "@reservations/components";
 import {
-  formatTimeRange,
   invalidateLocalStorageAuth,
   publicReviewStatsQueryOptions,
   useToast,
@@ -12,6 +11,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import AppointmentTimeSelectionStep from "./-components/AppointmentTimeSelectionStep";
 import BookingSummary, {
+  formatSelectedTimeRange,
   getBookingSummaryDisplayInfo,
 } from "./-components/BookingSummary";
 import EmployeeSelectionStep from "./-components/EmployeeSelectionStep";
@@ -99,6 +99,7 @@ function BookingFLow() {
     time: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerNote, setCustomerNote] = useState("");
   const { isWindowSmall } = useWindowSize();
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -226,7 +227,7 @@ function BookingFLow() {
           service_id: search.serviceId,
           location_id: search.locationId,
           starts_at: selectedSummary.time.starts_at,
-          customer_note: selectedSummary.time.customer_note,
+          customer_note: customerNote,
           // For group bookings, "no-pref" in the URL does not mean the
           // selected booking has no employee.
           employee_id:
@@ -371,6 +372,25 @@ function BookingFLow() {
                 employee={employeeInfo}
               />
             )}
+
+            {currentStep === "time" && (
+              <div className="mt-6">
+                <Textarea
+                  styles="p-2 min-h-24"
+                  id="customerNote"
+                  name="customerNote"
+                  labelText="Add a note to your booking (Optional)"
+                  placeholder={
+                    search.type === "appointment"
+                      ? "E.g., I have sensitive skin..."
+                      : "E.g., Any special requirements or requests..."
+                  }
+                  value={customerNote}
+                  inputData={(data) => setCustomerNote(data.value)}
+                  required={false}
+                />
+              </div>
+            )}
           </div>
 
           {!isWindowSmall && (
@@ -385,6 +405,7 @@ function BookingFLow() {
                 canContinue={canContinue}
                 isSubmitting={isSubmitting}
                 currentStep={currentStep}
+                customerNote={customerNote}
               />
             </div>
           )}
@@ -403,8 +424,8 @@ function BookingFLow() {
             )}
             {selectedSummary.time?.time ? (
               <span className="text-fg-muted text-sm">
-                {formatTimeRange(
-                  selectedSummary.time?.time,
+                {formatSelectedTimeRange(
+                  selectedSummary.time,
                   summaryInfo.totalDuration
                 )}
               </span>

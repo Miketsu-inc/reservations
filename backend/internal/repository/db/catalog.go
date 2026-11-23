@@ -663,7 +663,7 @@ func (r *catalogRepository) GetMinimalServiceInfo(ctx context.Context, merchantI
 	)
 	select
         s.name,
-        s.total_duration,
+        case when $4::int is null then s.total_duration else eo.min_duration end as total_duration,
         coalesce(eo.min_duration, s.total_duration) as min_duration,
         coalesce(eo.max_duration, s.total_duration) as max_duration,
         s.price_per_person,
