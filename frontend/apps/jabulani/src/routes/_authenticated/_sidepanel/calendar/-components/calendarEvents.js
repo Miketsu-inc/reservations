@@ -87,7 +87,6 @@ export function formatBlockedTimes(data, can) {
     const resourceIds = blockedTime.is_unassigned
       ? [UNASSIGNED_ID]
       : blockedTime.employee_ids;
-    // editAll also covers blocked times that have no employees
     const canEdit =
       can.editAll(RESOURCES.BLOCKED_TIMES) ||
       can.edit(RESOURCES.BLOCKED_TIMES, ...blockedTime.employee_ids);

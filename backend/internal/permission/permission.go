@@ -48,7 +48,6 @@ func (c Checker) ViewAll(resource Resource) bool {
 	return c.grants.View[resource] == All
 }
 
-// A record is visible when any of its employees is visible, so shared records show up for each of them
 func (c Checker) View(resource Resource, employeeIds ...int) bool {
 	if len(employeeIds) == 0 {
 		return false
@@ -75,7 +74,6 @@ func (c Checker) ViewFilter(resource Resource) *int {
 	default:
 		assert.Never("view filter for a resource the role can't view", resource)
 
-		// Employee ids are serial and start at 1, so this matches no records
 		noEmployee := 0
 		return &noEmployee
 	}
@@ -85,7 +83,6 @@ func (c Checker) EditAll(resource Resource) bool {
 	return c.grants.Edit[resource] == All
 }
 
-// A record is editable only when every one of its employees is editable
 func (c Checker) Edit(resource Resource, employeeIds ...int) bool {
 	if len(employeeIds) == 0 {
 		return false
@@ -107,7 +104,6 @@ func (c Checker) Edit(resource Resource, employeeIds ...int) bool {
 	}
 }
 
-// Whether the actor can manage team members with the given role, including assigning it
 func (c Checker) Manage(role types.EmployeeRole) bool {
 	return slices.Contains(c.grants.Manage, role)
 }

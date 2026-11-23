@@ -36,7 +36,6 @@ func (r Resource) String() string {
 	return r.name
 }
 
-// Text marshaling so resources can be JSON object keys
 func (r Resource) MarshalText() ([]byte, error) {
 	return []byte(r.name), nil
 }
@@ -47,7 +46,6 @@ var (
 	Team         = Resource{"team"}
 )
 
-// The zero value means no access
 type Scope struct {
 	name string
 }

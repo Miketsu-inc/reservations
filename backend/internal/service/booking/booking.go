@@ -87,10 +87,13 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 
 	can := permission.For(actor)
 
+	var canEdit bool
+
 	// Unassigned bookings are only editable by those who can edit everyone's
-	canEdit := can.EditAll(permission.Bookings)
 	if booking.EmployeeId != nil {
 		canEdit = can.Edit(permission.Bookings, *booking.EmployeeId)
+	} else {
+		canEdit = can.EditAll(permission.Bookings)
 	}
 
 	if !canEdit {
