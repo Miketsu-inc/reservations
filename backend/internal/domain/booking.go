@@ -46,8 +46,8 @@ type BookingRepository interface {
 	DeleteParticipantByCustomer(ctx context.Context, customerId uuid.UUID, merchantId uuid.UUID) error
 
 	GetBooking(ctx context.Context, bookingId int) (Booking, error)
-	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
-	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
+	GetLatestBookings(ctx context.Context, merchantId uuid.UUID, employeeId *int, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
+	GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, employeeId *int, afterDate time.Time, rowLimit int) ([]PublicBookingDetails, error)
 	GetBookingsForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, startTime, endTime time.Time) ([]BookingForCalendar, error)
 	GetBookingForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int, bookingId int) (BookingForCalendar, error)
 	GetBookingForExternalCalendar(ctx context.Context, bookingId int) (BookingForExternalCalendar, error)

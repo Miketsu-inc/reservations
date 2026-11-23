@@ -408,6 +408,7 @@ type calendarServiceResp struct {
 	Color           string                    `json:"color"`
 	BookingType     types.BookingType         `json:"booking_type"`
 	MaxParticipants int                       `json:"max_participants"`
+	EmployeeIds     []int                     `json:"employee_ids"`
 }
 
 func (h *Handler) GetServicesForCalendar(w http.ResponseWriter, r *http.Request) error {

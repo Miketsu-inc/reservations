@@ -10,7 +10,7 @@ import {
   Select,
   ServerError,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import {
   BUFFER_TIME_OPTIONS,
   formatDuration,
@@ -21,6 +21,7 @@ import {
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Block, createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { canEditService } from "../-components/servicehooks";
 
 const durationUnitOptions = [
   { value: "min", label: "minutes" },
@@ -157,6 +158,7 @@ function TeamMemberSettingsPage() {
 
 function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
   const { showToast } = useToast();
+  const { can } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [serverError, setServerError] = useState();
   const [isSaving, setIsSaving] = useState(false);
@@ -174,9 +176,20 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
       ?.label ?? formatDuration(defaultBufferTime);
   const isGroupService = data.booking_type !== "appointment";
 
+  // joining a service needs the service itself to be editable
+  const canJoin = canEditService(
+    can,
+    lastSavedEmployees
+      .filter((employee) => employee.is_assigned)
+      .map((employee) => employee.employee_id)
+  );
+  const editableEmployees = employees.filter((employee) =>
+    can.edit(RESOURCES.SERVICES, employee.employee_id)
+  );
+
   const hasUnsavedChanges =
     JSON.stringify(employees) !== JSON.stringify(lastSavedEmployees);
-  const hasOverrides = employees.some(
+  const hasOverrides = editableEmployees.some(
     (employee) => employee.is_assigned && hasEmployeeOverrides(employee)
   );
 
@@ -217,7 +230,10 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
   function resetAll() {
     setEmployees((current) =>
       current.map((employee) =>
-        employee.is_assigned ? resetOverrides(employee) : employee
+        employee.is_assigned &&
+        can.edit(RESOURCES.SERVICES, employee.employee_id)
+          ? resetOverrides(employee)
+          : employee
       )
     );
   }
@@ -264,7 +280,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
             "content-type": "application/json",
           },
           body: JSON.stringify({
-            employees: employees.map((employee) => ({
+            employees: editableEmployees.map((employee) => ({
               employee_id: employee.employee_id,
               is_assigned: employee.is_assigned,
               price: employee.price,
@@ -413,6 +429,18 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
                 <EmployeeSettingsRow
                   key={employee.employee_id}
                   employee={employee}
+                  isEditable={can.edit(
+                    RESOURCES.SERVICES,
+                    employee.employee_id
+                  )}
+                  canAssign={
+                    canJoin ||
+                    lastSavedEmployees.some(
+                      (saved) =>
+                        saved.employee_id === employee.employee_id &&
+                        saved.is_assigned
+                    )
+                  }
                   data={data}
                   isGroupService={isGroupService}
                   isExpanded={expandedEmployeeIds.has(employee.employee_id)}
@@ -448,6 +476,8 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
 
 function EmployeeSettingsRow({
   employee,
+  isEditable,
+  canAssign,
   data,
   isGroupService,
   isExpanded,
@@ -483,254 +513,261 @@ function EmployeeSettingsRow({
 
   return (
     <li className={employee.is_assigned ? "" : "bg-bg"}>
-      <div
-        className="grid grid-cols-1 gap-4 p-5
-          xl:grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
-          xl:items-center"
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <CheckBox
-            checked={employee.is_assigned}
-            onChange={(event) =>
-              onUpdate(
-                event.target.checked
-                  ? { is_assigned: true }
-                  : resetOverrides({ ...employee, is_assigned: false })
-              )
-            }
-            aria-label={`${employee.is_assigned ? "Remove" : "Assign"} ${name}`}
-            styles="shrink-0"
-          />
-          <Avatar
-            styles={`size-11! shrink-0 text-sm ${
-              employee.is_assigned ? "" : "opacity-50"
-            }`}
-            img={img}
-            initials={initials}
-          />
-          <div
-            className={`min-w-0 ${employee.is_assigned ? "" : "opacity-50"}`}
-          >
-            <p className="truncate">{name}</p>
-            <p className="text-fg-muted text-sm">
-              {employee.is_assigned
-                ? employee.role
-                : `${employee.role} · not assigned`}
-            </p>
+      <fieldset disabled={!isEditable} className="contents">
+        <div
+          className="grid grid-cols-1 gap-4 p-5
+            xl:grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
+            xl:items-center"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <CheckBox
+              checked={employee.is_assigned}
+              disabled={!canAssign}
+              onChange={(event) =>
+                onUpdate(
+                  event.target.checked
+                    ? { is_assigned: true }
+                    : resetOverrides({ ...employee, is_assigned: false })
+                )
+              }
+              aria-label={`${employee.is_assigned ? "Remove" : "Assign"} ${name}`}
+              styles="shrink-0"
+            />
+            <Avatar
+              styles={`size-11! shrink-0 text-sm ${
+                employee.is_assigned ? "" : "opacity-50"
+              }`}
+              img={img}
+              initials={initials}
+            />
+            <div
+              className={`min-w-0 ${employee.is_assigned ? "" : "opacity-50"}`}
+            >
+              <p className="truncate">{name}</p>
+              <p className="text-fg-muted text-sm">
+                {employee.is_assigned
+                  ? employee.role
+                  : `${employee.role} · not assigned`}
+              </p>
+            </div>
+          </div>
+
+          <div className={employee.is_assigned ? "" : "opacity-50"}>
+            <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
+              Duration (default: {formatDuration(data.default_duration)})
+            </span>
+            {isSingleDuration && singlePhase ? (
+              <PhaseDurationInput
+                styles="w-full"
+                unitStyles="w-28!"
+                employee={employee}
+                phase={singlePhase}
+                durationUnit={getDurationUnit(singlePhase.id)}
+                disabled={!employee.is_assigned}
+                onDurationUnitChange={(durationUnit) =>
+                  setDurationUnit(singlePhase.id, durationUnit)
+                }
+                onUpdate={(duration) => onUpdatePhase(singlePhase.id, duration)}
+              />
+            ) : (
+              <Input
+                id={`employee-${employee.employee_id}-total-duration`}
+                name={`employee-${employee.employee_id}-total-duration`}
+                aria-label={`Calculated duration for ${name}`}
+                type="text"
+                required={false}
+                value={formatDuration(durationSum)}
+                disabled
+              />
+            )}
+          </div>
+
+          <div className={employee.is_assigned ? "" : "opacity-50"}>
+            <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
+              Price type (default: {data.default_price_type})
+            </span>
+            <Select
+              options={priceTypeOptions}
+              value={effectivePriceType}
+              disabled={!employee.is_assigned}
+              onSelect={(option) => {
+                const priceType =
+                  option.value === data.default_price_type
+                    ? null
+                    : option.value;
+                onUpdate({
+                  price_type: priceType,
+                  ...(option.value === "free"
+                    ? {
+                        price: priceType ? { number: "0", currency } : null,
+                      }
+                    : employee.price_type === "free" &&
+                        employee.price?.number === "0"
+                      ? { price: null }
+                      : {}),
+                });
+              }}
+            />
+          </div>
+
+          <div className={employee.is_assigned ? "" : "opacity-50"}>
+            <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
+              Price (default: {formatPrice(data.default_price)})
+            </span>
+            <Input
+              id={`employee-${employee.employee_id}-price`}
+              name={`employee-${employee.employee_id}-price`}
+              aria-label={`Price for ${name}`}
+              type="number"
+              min={0}
+              max={1000000}
+              required={false}
+              placeholder={data.default_price?.number ?? ""}
+              value={employee.price?.number ?? ""}
+              disabled={!employee.is_assigned || effectivePriceType === "free"}
+              inputData={({ value }) =>
+                onUpdate({
+                  price: value === "" ? null : { number: value, currency },
+                })
+              }
+            >
+              <span
+                className="border-border-strong peer-disabled:text-fg-muted
+                  peer-disabled:border-border peer-disabled:bg-bg-sunken
+                  bg-bg-input rounded-r-lg border px-4 py-1.5"
+              >
+                {currency}
+              </span>
+            </Input>
+          </div>
+
+          <div className="flex items-center gap-2 xl:justify-self-end">
+            <button
+              type="button"
+              onClick={onToggleExpanded}
+              disabled={!employee.is_assigned}
+              aria-expanded={isExpanded}
+              aria-label={`${isExpanded ? "Hide" : "Show"} more settings for ${name}`}
+              className="hover:bg-hover flex cursor-pointer items-center gap-1
+                rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
+                disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <span>{isExpanded ? "Less" : "More"}</span>
+              <Icon
+                icon={ArrowDown01Icon}
+                styles={`size-5 transition-transform ${
+                  isExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={onReset}
+              disabled={!employee.is_assigned || !hasOverrides}
+              className="text-fg-primary hover:bg-primary-subtle cursor-pointer
+                rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
+                disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              Reset
+            </button>
           </div>
         </div>
 
-        <div className={employee.is_assigned ? "" : "opacity-50"}>
-          <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
-            Duration (default: {formatDuration(data.default_duration)})
-          </span>
-          {isSingleDuration && singlePhase ? (
-            <PhaseDurationInput
-              styles="w-full"
-              unitStyles="w-28!"
-              employee={employee}
-              phase={singlePhase}
-              durationUnit={getDurationUnit(singlePhase.id)}
-              disabled={!employee.is_assigned}
-              onDurationUnitChange={(durationUnit) =>
-                setDurationUnit(singlePhase.id, durationUnit)
-              }
-              onUpdate={(duration) => onUpdatePhase(singlePhase.id, duration)}
-            />
-          ) : (
-            <Input
-              id={`employee-${employee.employee_id}-total-duration`}
-              name={`employee-${employee.employee_id}-total-duration`}
-              aria-label={`Calculated duration for ${name}`}
-              type="text"
-              required={false}
-              value={formatDuration(durationSum)}
-              disabled
-            />
-          )}
-        </div>
-
-        <div className={employee.is_assigned ? "" : "opacity-50"}>
-          <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
-            Price type (default: {data.default_price_type})
-          </span>
-          <Select
-            options={priceTypeOptions}
-            value={effectivePriceType}
-            disabled={!employee.is_assigned}
-            onSelect={(option) => {
-              const priceType =
-                option.value === data.default_price_type ? null : option.value;
-              onUpdate({
-                price_type: priceType,
-                ...(option.value === "free"
-                  ? {
-                      price: priceType ? { number: "0", currency } : null,
-                    }
-                  : employee.price_type === "free" &&
-                      employee.price?.number === "0"
-                    ? { price: null }
-                    : {}),
-              });
-            }}
-          />
-        </div>
-
-        <div className={employee.is_assigned ? "" : "opacity-50"}>
-          <span className="flex items-center gap-1 pb-1 text-sm xl:hidden">
-            Price (default: {formatPrice(data.default_price)})
-          </span>
-          <Input
-            id={`employee-${employee.employee_id}-price`}
-            name={`employee-${employee.employee_id}-price`}
-            aria-label={`Price for ${name}`}
-            type="number"
-            min={0}
-            max={1000000}
-            required={false}
-            placeholder={data.default_price?.number ?? ""}
-            value={employee.price?.number ?? ""}
-            disabled={!employee.is_assigned || effectivePriceType === "free"}
-            inputData={({ value }) =>
-              onUpdate({
-                price: value === "" ? null : { number: value, currency },
-              })
-            }
+        {isExpanded && employee.is_assigned && (
+          <div
+            className="grid grid-cols-1 px-5 py-6
+              xl:grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
+              xl:gap-x-4"
           >
-            <span
-              className="border-border-strong peer-disabled:text-fg-muted
-                peer-disabled:border-border peer-disabled:bg-bg-sunken
-                bg-bg-input rounded-r-lg border px-4 py-1.5"
-            >
-              {currency}
-            </span>
-          </Input>
-        </div>
+            <div className="flex flex-col gap-8 xl:col-start-2 xl:col-end-6">
+              {data.phases.length > 1 && (
+                <section>
+                  <h3 className="mb-3 font-semibold">Duration</h3>
+                  <div className="flex flex-col gap-4 pt-4">
+                    {data.phases.map((phase) => (
+                      <div key={phase.id} className="flex flex-row gap-4">
+                        <PhaseDurationInput
+                          unitStyles="w-32! xl:w-52!"
+                          employee={employee}
+                          phase={phase}
+                          durationUnit={getDurationUnit(phase.id)}
+                          onDurationUnitChange={(unit) =>
+                            setDurationUnit(phase.id, unit)
+                          }
+                          onUpdate={(duration) =>
+                            onUpdatePhase(phase.id, duration)
+                          }
+                        />
+                        <PhaseTypeBadge phaseType={phase.phase_type} />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-        <div className="flex items-center gap-2 xl:justify-self-end">
-          <button
-            type="button"
-            onClick={onToggleExpanded}
-            disabled={!employee.is_assigned}
-            aria-expanded={isExpanded}
-            aria-label={`${isExpanded ? "Hide" : "Show"} more settings for ${name}`}
-            className="hover:bg-hover flex cursor-pointer items-center gap-1
-              rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
-              disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <span>{isExpanded ? "Less" : "More"}</span>
-            <Icon
-              icon={ArrowDown01Icon}
-              styles={`size-5 transition-transform ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={!employee.is_assigned || !hasOverrides}
-            className="text-fg-primary hover:bg-primary-subtle cursor-pointer
-              rounded-lg px-2 py-1.5 text-sm disabled:cursor-default
-              disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-
-      {isExpanded && employee.is_assigned && (
-        <div
-          className="grid grid-cols-1 px-5 py-6
-            xl:grid-cols-[minmax(12.5rem,1.3fr)_minmax(12.5rem,1fr)_minmax(10rem,1fr)_minmax(11rem,1fr)_8rem]
-            xl:gap-x-4"
-        >
-          <div className="flex flex-col gap-8 xl:col-start-2 xl:col-end-6">
-            {data.phases.length > 1 && (
               <section>
-                <h3 className="mb-3 font-semibold">Duration</h3>
-                <div className="flex flex-col gap-4 pt-4">
-                  {data.phases.map((phase) => (
-                    <div key={phase.id} className="flex flex-row gap-4">
-                      <PhaseDurationInput
-                        unitStyles="w-32! xl:w-52!"
-                        employee={employee}
-                        phase={phase}
-                        durationUnit={getDurationUnit(phase.id)}
-                        onDurationUnitChange={(unit) =>
-                          setDurationUnit(phase.id, unit)
-                        }
-                        onUpdate={(duration) =>
-                          onUpdatePhase(phase.id, duration)
+                <h3 className="font-semibold">Booking settings</h3>
+                <div
+                  className={`grid gap-4 pt-4 ${
+                    isGroupService ? "sm:grid-cols-3" : "sm:grid-cols-1"
+                  }`}
+                >
+                  {isGroupService && (
+                    <>
+                      <Input
+                        id={`employee-${employee.employee_id}-min-participants`}
+                        name={`employee-${employee.employee_id}-min-participants`}
+                        type="number"
+                        min={1}
+                        required={false}
+                        labelText={`Minimum participants (default: ${data.default_min_participants})`}
+                        placeholder={data.default_min_participants}
+                        value={employee.min_participants ?? ""}
+                        inputData={({ value }) =>
+                          onUpdate({
+                            min_participants:
+                              value === "" ? null : Number(value),
+                          })
                         }
                       />
-                      <PhaseTypeBadge phaseType={phase.phase_type} />
-                    </div>
-                  ))}
+                      <Input
+                        id={`employee-${employee.employee_id}-max-participants`}
+                        name={`employee-${employee.employee_id}-max-participants`}
+                        type="number"
+                        min={1}
+                        required={false}
+                        labelText={`Maximum participants (default: ${data.default_max_participants})`}
+                        placeholder={data.default_max_participants}
+                        value={employee.max_participants ?? ""}
+                        inputData={({ value }) =>
+                          onUpdate({
+                            max_participants:
+                              value === "" ? null : Number(value),
+                          })
+                        }
+                      />
+                    </>
+                  )}
+                  <Select
+                    options={BUFFER_TIME_OPTIONS}
+                    labelText={`Buffer time (default: ${defaultBufferTimeLabel})`}
+                    required={false}
+                    value={employee.buffer_time ?? defaultBufferTime}
+                    onSelect={(option) =>
+                      onUpdate({
+                        buffer_time:
+                          option.value === defaultBufferTime
+                            ? null
+                            : option.value,
+                      })
+                    }
+                  />
                 </div>
               </section>
-            )}
-
-            <section>
-              <h3 className="font-semibold">Booking settings</h3>
-              <div
-                className={`grid gap-4 pt-4 ${
-                  isGroupService ? "sm:grid-cols-3" : "sm:grid-cols-1"
-                }`}
-              >
-                {isGroupService && (
-                  <>
-                    <Input
-                      id={`employee-${employee.employee_id}-min-participants`}
-                      name={`employee-${employee.employee_id}-min-participants`}
-                      type="number"
-                      min={1}
-                      required={false}
-                      labelText={`Minimum participants (default: ${data.default_min_participants})`}
-                      placeholder={data.default_min_participants}
-                      value={employee.min_participants ?? ""}
-                      inputData={({ value }) =>
-                        onUpdate({
-                          min_participants: value === "" ? null : Number(value),
-                        })
-                      }
-                    />
-                    <Input
-                      id={`employee-${employee.employee_id}-max-participants`}
-                      name={`employee-${employee.employee_id}-max-participants`}
-                      type="number"
-                      min={1}
-                      required={false}
-                      labelText={`Maximum participants (default: ${data.default_max_participants})`}
-                      placeholder={data.default_max_participants}
-                      value={employee.max_participants ?? ""}
-                      inputData={({ value }) =>
-                        onUpdate({
-                          max_participants: value === "" ? null : Number(value),
-                        })
-                      }
-                    />
-                  </>
-                )}
-                <Select
-                  options={BUFFER_TIME_OPTIONS}
-                  labelText={`Buffer time (default: ${defaultBufferTimeLabel})`}
-                  required={false}
-                  value={employee.buffer_time ?? defaultBufferTime}
-                  onSelect={(option) =>
-                    onUpdate({
-                      buffer_time:
-                        option.value === defaultBufferTime
-                          ? null
-                          : option.value,
-                    })
-                  }
-                />
-              </div>
-            </section>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </fieldset>
     </li>
   );
 }

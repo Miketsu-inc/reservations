@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
@@ -14,11 +16,12 @@ import (
 )
 
 type Handler struct {
-	service *catalogServ.Service
+	service    *catalogServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *catalogServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *catalogServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -37,8 +40,9 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Patch("/{id}/deactivate", h.Deactivate)
 
 	r.Get("/", h.GetAll)
-	r.Put("/reorder", h.Reorder)
 	r.Get("/form-options", h.GetFormOptions)
+
+	r.WithFunc(h.middleware.RequirePermission(permission.ManageServices)).Put("/reorder", h.Reorder)
 
 	return r
 }
@@ -368,6 +372,7 @@ type serviceResp struct {
 	MaxParticipants int                       `json:"max_participants"`
 	Sequence        int                       `json:"sequence"`
 	Phases          []phaseReq                `json:"phases"`
+	EmployeeIds     []int                     `json:"employee_ids"`
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {

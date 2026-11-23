@@ -7,6 +7,7 @@ import {
   UserSwitchIcon,
 } from "@hugeicons/core-free-icons";
 import { Avatar, DeleteModal, Icon, Loading } from "@reservations/components";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import { toAvatar, useWindowSize } from "@reservations/lib";
 import { lazy, Suspense, useState } from "react";
 import BookingRing from "./BookingRing";
@@ -24,6 +25,8 @@ export default function CustomersTable({
   noRowsOverlayComponent,
 }) {
   const { isWindowSmall } = useWindowSize();
+  const { can } = useAuth();
+  const canManage = can.do(ACTIONS.MANAGE_CUSTOMERS);
   const [selected, setSelected] = useState({
     id: 0,
     first_name: "",
@@ -121,7 +124,9 @@ export default function CustomersTable({
             >
               <Icon icon={Edit03Icon} styles="size-4.5" />
             </button>
-            {params.data.is_dummy ? (
+            {!canManage ? (
+              <></>
+            ) : params.data.is_dummy ? (
               <>
                 {params.data.times_booked || params.data.times_cancelled ? (
                   <button

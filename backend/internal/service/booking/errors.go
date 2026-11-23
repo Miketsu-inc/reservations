@@ -11,11 +11,12 @@ var ErrStatus = apperr.StatusMap{
 	ErrCustomerIsBlacklisted: http.StatusForbidden,
 	ErrTimeIsNotAvailable:    http.StatusConflict,
 
-	ErrEmployeeNotFoundForService: http.StatusNotFound,
-	ErrBookingNotFound:            http.StatusNotFound,
-	ErrBookingInactiveService:      http.StatusConflict,
-	ErrBookingCancelDeadlinePassed: http.StatusConflict,
-	ErrBookingCannotBeModified:     http.StatusConflict,
+	ErrEmployeeNotFoundForService:   http.StatusNotFound,
+	ErrEmployeeNotAssignedToService: http.StatusConflict,
+	ErrBookingNotFound:              http.StatusNotFound,
+	ErrBookingInactiveService:       http.StatusConflict,
+	ErrBookingCancelDeadlinePassed:  http.StatusConflict,
+	ErrBookingCannotBeModified:      http.StatusConflict,
 
 	domain.ErrEmployeeAccessDenied: http.StatusForbidden,
 }
@@ -26,4 +27,5 @@ var ErrBookingNotFound = &apperr.Error{Code: "booking_not_found", Message: "book
 var ErrBookingCancelDeadlinePassed = &apperr.Error{Code: "booking_cancel_deadline_passed", Message: "it's too late to cancel this booking"}
 var ErrBookingCannotBeModified = &apperr.Error{Code: "booking_cannot_be_modified", Message: "booking has already been cancelled"}
 var ErrEmployeeNotFoundForService = &apperr.Error{Code: "employee_not_found_for_service", Message: "there is no employee doing this service"}
+var ErrEmployeeNotAssignedToService = &apperr.Error{Code: "employee_not_assigned_to_service", Message: "the selected team member does not do this service"}
 var ErrBookingInactiveService = &apperr.Error{Code: "booking_inactive_service", Message: "cannot book to an inactive service"}

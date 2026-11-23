@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	reviewServ "github.com/miketsu-inc/reservations/backend/internal/service/review"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
@@ -43,9 +42,7 @@ type reviewStatsResp struct {
 }
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
-	actor := actor.MustGetFromContext(r.Context())
-
-	stats, err := h.service.GetReviewStats(r.Context(), actor.MerchantId, nil)
+	stats, err := h.service.GetReviewStatsByMerchant(r.Context())
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "GetReviewStats")
 	}
@@ -98,17 +95,12 @@ type getReviewsResp struct {
 }
 
 func (h *Handler) GetReviews(w http.ResponseWriter, r *http.Request) error {
-	actor := actor.MustGetFromContext(r.Context())
-
 	params, err := reviewServ.ParseReviewQueryParams(r.URL.Query())
 	if err != nil {
 		return err
 	}
 
-	result, err := h.service.GetReviews(r.Context(), reviewServ.GetReviewsInput{
-		MerchantId:        actor.MerchantId,
-		ReviewQueryParams: params,
-	})
+	result, err := h.service.GetReviewsByMerchant(r.Context(), params)
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "GetReviews")
 	}
@@ -123,8 +115,6 @@ type replyReq struct {
 }
 
 func (h *Handler) Reply(w http.ResponseWriter, r *http.Request) error {
-	actor := actor.MustGetFromContext(r.Context())
-
 	reviewId, err := strconv.Atoi(chi.URLParam(r, "reviewId"))
 	if err != nil {
 		return validate.NewError("invalid review_id")
@@ -135,7 +125,7 @@ func (h *Handler) Reply(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	err = h.service.ReplyReview(r.Context(), actor.MerchantId, actor.EmployeeId, reviewId, req.Comment)
+	err = h.service.ReplyReview(r.Context(), reviewId, req.Comment)
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "ReplyReview")
 	}
@@ -144,14 +134,12 @@ func (h *Handler) Reply(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *Handler) DeleteReply(w http.ResponseWriter, r *http.Request) error {
-	actor := actor.MustGetFromContext(r.Context())
-
 	reviewId, err := strconv.Atoi(chi.URLParam(r, "reviewId"))
 	if err != nil {
 		return validate.NewError("invalid review_id")
 	}
 
-	err = h.service.DeleteReviewReply(r.Context(), actor.MerchantId, reviewId)
+	err = h.service.DeleteReviewReply(r.Context(), reviewId)
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "DeleteReviewReply")
 	}
@@ -164,8 +152,6 @@ type reportReq struct {
 }
 
 func (h *Handler) Report(w http.ResponseWriter, r *http.Request) error {
-	actor := actor.MustGetFromContext(r.Context())
-
 	reviewId, err := strconv.Atoi(chi.URLParam(r, "reviewId"))
 	if err != nil {
 		return validate.NewError("invalid review_id")
@@ -176,7 +162,7 @@ func (h *Handler) Report(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	err = h.service.ReportReview(r.Context(), actor.MerchantId, reviewId, req.Reason)
+	err = h.service.ReportReview(r.Context(), reviewId, req.Reason)
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "ReportReview")
 	}

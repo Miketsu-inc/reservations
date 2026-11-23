@@ -1,9 +1,13 @@
 import { User03Icon } from "@hugeicons/core-free-icons";
 import { Icon, Loading, ServerError } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import {
+  ACTIONS,
+  createPermissionChecker,
+  useAuth,
+} from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "./-components/BlacklistModal";
 import CustomersTable from "./-components/CustomersTable";
@@ -40,6 +44,16 @@ export const Route = createFileRoute(
   "/_authenticated/_sidepanel/customers/_topnav/blacklist"
 )({
   component: BlacklistPage,
+  beforeLoad: ({ context: { authContext } }) => {
+    const can = createPermissionChecker(
+      authContext.permissions,
+      authContext.employeeId
+    );
+
+    if (!can.do(ACTIONS.MANAGE_CUSTOMERS)) {
+      throw redirect({ to: "/customers" });
+    }
+  },
   loader: async ({
     context: {
       queryClient,

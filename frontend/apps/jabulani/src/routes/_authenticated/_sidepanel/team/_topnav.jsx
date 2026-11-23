@@ -1,10 +1,21 @@
 import { HierarchyIcon, MailAccount01Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
 import { TopNavBar, TopNavBarItem } from "@reservations/jabulani/components";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { ACTIONS, createPermissionChecker } from "@reservations/jabulani/lib";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/team/_topnav")(
   {
+    beforeLoad: ({ context: { authContext } }) => {
+      const can = createPermissionChecker(
+        authContext.permissions,
+        authContext.employeeId
+      );
+
+      if (!can.do(ACTIONS.MANAGE_TEAM)) {
+        throw redirect({ to: "/calendar" });
+      }
+    },
     component: RouteComponent,
   }
 );

@@ -5,27 +5,34 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	blockedtimeServ "github.com/miketsu-inc/reservations/backend/internal/service/blockedtime"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Handler struct {
-	service *blockedtimeServ.Service
+	service    *blockedtimeServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *blockedtimeServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *blockedtimeServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	r.Post("/", h.New)
-	r.Put("/{id}", h.Update)
-	r.Delete("/{id}", h.Delete)
-
 	r.Get("/", h.GetAll)
+
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.RequirePermission(permission.EditSettings))
+
+		r.Post("/", h.New)
+		r.Put("/{id}", h.Update)
+		r.Delete("/{id}", h.Delete)
+	})
 
 	return r
 }

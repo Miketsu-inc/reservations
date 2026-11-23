@@ -6,7 +6,7 @@ import {
   ScrollSpySection,
 } from "@reservations/components";
 import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -14,7 +14,7 @@ import ProductAdder from "./ProductAdder";
 import { ServiceBasicDetails } from "./ServiceBasicDetails";
 import ServiceBookingSettings from "./ServiceBookingSettings";
 import { ServicePricingDuration } from "./ServicePricingDuration";
-import { normalizeServicePhases } from "./servicehooks";
+import { canEditService, normalizeServicePhases } from "./servicehooks";
 
 export default function ServicePage({
   // Fix for react compiler bug
@@ -28,6 +28,11 @@ export default function ServicePage({
   onSave,
   route,
 }) {
+  const { merchantId, employeeId, can } = useAuth();
+  // anyone can create a service as long as they assign themselves
+  const canEdit = !service?.id || canEditService(can, service.employee_ids);
+  const canEditAll = can.editAll(RESOURCES.SERVICES);
+
   const originalData = useMemo(
     () => ({
       id: service?.id,
@@ -51,10 +56,10 @@ export default function ServicePage({
         approval_policy: service?.settings?.approval_policy ?? null,
       },
       phases: service?.phases || [],
-      employee_ids: service?.employee_ids || [],
+      employee_ids: service?.employee_ids || (canEditAll ? [] : [employeeId]),
       used_products: service?.used_products || [],
     }),
-    [service]
+    [service, canEditAll, employeeId]
   );
   const router = useRouter();
   const serviceFormRef = useRef(null);
@@ -62,7 +67,6 @@ export default function ServicePage({
   const lastSavedData = useRef(originalData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
 
   const isGroupService = serviceData.booking_type !== "appointment";
 
@@ -166,19 +170,21 @@ export default function ServicePage({
               <p className="text-xl font-semibold">
                 {serviceData.id ? "Edit service" : "New service"}
               </p>
-              <div
-                className="bg-bg-raised border-t-border fixed bottom-0 left-0
-                  z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
-                  md:bg-transparent md:p-0"
-              >
-                <Button
-                  type="button"
-                  styles="py-2 px-6 w-full"
-                  variant="primary"
-                  buttonText="Save"
-                  onClick={() => serviceFormRef.current.requestSubmit()}
-                />
-              </div>
+              {canEdit && (
+                <div
+                  className="bg-bg-raised border-t-border fixed bottom-0 left-0
+                    z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
+                    md:bg-transparent md:p-0"
+                >
+                  <Button
+                    type="button"
+                    styles="py-2 px-6 w-full"
+                    variant="primary"
+                    buttonText="Save"
+                    onClick={() => serviceFormRef.current.requestSubmit()}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full md:min-h-0 md:flex-1 md:overflow-y-auto">
@@ -257,7 +263,7 @@ export default function ServicePage({
                       settings={serviceData.settings}
                     />
                   </ScrollSpySection>
-                  {service?.id && (
+                  {service?.id && canEdit && (
                     <Button
                       type="button"
                       styles="py-4 mb-2 shadow-none bg-transparent

@@ -50,6 +50,34 @@ func validateService(phaseCount int, bookingType types.BookingType, maxParticipa
 	return nil
 }
 
+// Unassigned services are only editable by those who can edit everyone's
+func canEditService(can permission.Checker, employeeIds []int) bool {
+	if len(employeeIds) == 0 {
+		return can.EditAll(permission.Services)
+	}
+
+	return can.Edit(permission.Services, employeeIds...)
+}
+
+func (s *Service) checkServiceEditable(ctx context.Context, actor actor.EmployeeContext, serviceId int) error {
+	// only checks that the service belongs to the merchant
+	if _, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId); err != nil {
+		return err
+	}
+
+	// inactive employees don't make a service shared
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
+	if err != nil {
+		return err
+	}
+
+	if !canEditService(permission.For(actor), employeeIds) {
+		return domain.ErrEmployeeAccessDenied
+	}
+
+	return nil
+}
+
 type NewInput struct {
 	BookingType     types.BookingType
 	Name            string
@@ -92,6 +120,10 @@ func (s *Service) New(ctx context.Context, input NewInput) error {
 
 	if err := validateService(len(input.Phases), input.BookingType, input.MaxParticipants); err != nil {
 		return err
+	}
+
+	if !canEditService(permission.For(actor), input.EmployeeIds) {
+		return domain.ErrEmployeeAccessDenied
 	}
 
 	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
@@ -341,6 +373,15 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
+	if err := s.checkServiceEditable(ctx, actor, input.Id); err != nil {
+		return err
+	}
+
+	// the new assignees have to be editable too, so staff can't hand a service to someone else
+	if !canEditService(permission.For(actor), input.EmployeeIds) {
+		return domain.ErrEmployeeAccessDenied
+	}
+
 	if err := s.teamService.IsInActiveEmployees(ctx, actor.MerchantId, input.EmployeeIds); err != nil {
 		return err
 	}
@@ -500,6 +541,10 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 
 func (s *Service) Delete(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkServiceEditable(ctx, actor, serviceId); err != nil {
+		return err
+	}
 
 	err := s.txManager.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err := s.catalogRepo.WithTx(tx).DeleteService(ctx, actor.MerchantId, serviceId)
@@ -668,6 +713,32 @@ type teamMemberSettingsChanges struct {
 	phaseOverrides             []domain.EmployeeServicePhase
 }
 
+// Everyone can change their own row. Joining a service also needs the service itself
+// to be editable, otherwise staff could take over an unassigned service by joining it
+func checkTeamMemberSettingsEditable(can permission.Checker, settings []domain.EmployeeServiceSettings, inputs []UpdateTeamMemberSettingsInput) error {
+	assignedIds := make([]int, 0, len(settings))
+	wasAssigned := make(map[int]bool, len(settings))
+	for _, employee := range settings {
+		wasAssigned[employee.EmployeeId] = employee.IsAssigned
+
+		if employee.IsAssigned {
+			assignedIds = append(assignedIds, employee.EmployeeId)
+		}
+	}
+
+	for _, input := range inputs {
+		if !can.Edit(permission.Services, input.EmployeeId) {
+			return domain.ErrEmployeeAccessDenied
+		}
+
+		if input.IsAssigned && !wasAssigned[input.EmployeeId] && !canEditService(can, assignedIds) {
+			return domain.ErrEmployeeAccessDenied
+		}
+	}
+
+	return nil
+}
+
 func buildTeamMemberSettingsChanges(service domain.Service, settings []domain.EmployeeServiceSettings,
 	inputs []UpdateTeamMemberSettingsInput) (teamMemberSettingsChanges, error) {
 
@@ -795,6 +866,10 @@ func (s *Service) UpdateTeamMemberSettings(ctx context.Context, serviceId int, i
 			return err
 		}
 
+		if err := checkTeamMemberSettingsEditable(permission.For(actor), settings, inputs); err != nil {
+			return err
+		}
+
 		changes, err := buildTeamMemberSettingsChanges(service, settings, inputs)
 		if err != nil {
 			return err
@@ -837,8 +912,14 @@ type UpdateServiceProductInput struct {
 	UsedProducts []ConnectedProductsInput
 }
 
-// TODO: this does not check wether the service and product belong to the merchant updating it
+// TODO: this does not check wether the products belong to the merchant updating it
 func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input UpdateServiceProductInput) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkServiceEditable(ctx, actor, serviceId); err != nil {
+		return err
+	}
+
 	var products []domain.ConnectedProducts
 	for _, product := range input.UsedProducts {
 		products = append(products, domain.ConnectedProducts{
@@ -895,6 +976,10 @@ func (s *Service) UpdateServiceProduct(ctx context.Context, serviceId int, input
 func (s *Service) Activate(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
 
+	if err := s.checkServiceEditable(ctx, actor, serviceId); err != nil {
+		return err
+	}
+
 	err := s.catalogRepo.ActivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {
 		return err
@@ -905,6 +990,10 @@ func (s *Service) Activate(ctx context.Context, serviceId int) error {
 
 func (s *Service) Deactivate(ctx context.Context, serviceId int) error {
 	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkServiceEditable(ctx, actor, serviceId); err != nil {
+		return err
+	}
 
 	err := s.catalogRepo.DeactivateService(ctx, actor.MerchantId, serviceId)
 	if err != nil {

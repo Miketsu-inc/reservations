@@ -35,8 +35,8 @@ type MerchantRepository interface {
 	GetBookingSettingsByMerchantAndService(ctx context.Context, merchantId uuid.UUID, serviceId int) (MerchantBookingSettings, error)
 	GetMerchantSummary(ctx context.Context, merchantId uuid.UUID, locationId int) (MerchantSummary, error)
 
-	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
-	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, startDate time.Time, endDate time.Time, timezone *time.Location) ([]RevenueStat, error)
+	GetDashboardStats(ctx context.Context, merchantId uuid.UUID, employeeId *int, startDate time.Time, endDate time.Time, prevStartDate time.Time) (DashboardStatistics, error)
+	GetRevenueStats(ctx context.Context, merchantId uuid.UUID, employeeId *int, startDate time.Time, endDate time.Time, timezone *time.Location) ([]RevenueStat, error)
 
 	NewBusinessHours(ctx context.Context, locationId int, businessHours BusinessHours) error
 	DeleteOutdatedBusinessHours(ctx context.Context, locationId int, businessHours BusinessHours) error

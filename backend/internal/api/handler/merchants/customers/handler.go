@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	customerServ "github.com/miketsu-inc/reservations/backend/internal/service/customer"
 	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
@@ -13,11 +15,12 @@ import (
 )
 
 type Handler struct {
-	service *customerServ.Service
+	service    *customerServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *customerServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *customerServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
@@ -25,16 +28,21 @@ func (h *Handler) Routes() *httputil.Router {
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
-	r.Delete("/{id}", h.Delete)
 	r.Get("/{id}", h.Get)
-
 	r.Get("/{id}/stats", h.GetStats)
-	r.Put("/{id}/blacklist", h.Blacklist)
-	r.Delete("/{id}/blacklist", h.UnBlacklist)
 
 	r.Get("/", h.GetAll)
-	r.Put("/transfer", h.TransferBookings)
-	r.Get("/blacklist", h.GetAllBlacklisted)
+
+	r.Group(func(r *httputil.Router) {
+		r.UseFunc(h.middleware.RequirePermission(permission.ManageCustomers))
+
+		r.Delete("/{id}", h.Delete)
+		r.Put("/{id}/blacklist", h.Blacklist)
+		r.Delete("/{id}/blacklist", h.UnBlacklist)
+
+		r.Put("/transfer", h.TransferBookings)
+		r.Get("/blacklist", h.GetAllBlacklisted)
+	})
 
 	return r
 }

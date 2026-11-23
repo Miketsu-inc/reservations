@@ -635,8 +635,8 @@ func (r *bookingRepository) GetBooking(ctx context.Context, bookingId int) (doma
 	return booking, nil
 }
 
-func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
-	bookings, err := r.getDashboardBookings(ctx, merchantId, afterDate, rowLimit, "b.id desc")
+func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uuid.UUID, employeeId *int, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
+	bookings, err := r.getDashboardBookings(ctx, merchantId, employeeId, afterDate, rowLimit, "b.id desc")
 	if err != nil {
 		return []domain.PublicBookingDetails{}, fmt.Errorf("GetLatestBookings: %w", err)
 	}
@@ -644,8 +644,8 @@ func (r *bookingRepository) GetLatestBookings(ctx context.Context, merchantId uu
 	return bookings, nil
 }
 
-func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
-	bookings, err := r.getDashboardBookings(ctx, merchantId, afterDate, rowLimit, "b.from_date")
+func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId uuid.UUID, employeeId *int, afterDate time.Time, rowLimit int) ([]domain.PublicBookingDetails, error) {
+	bookings, err := r.getDashboardBookings(ctx, merchantId, employeeId, afterDate, rowLimit, "b.from_date")
 	if err != nil {
 		return []domain.PublicBookingDetails{}, fmt.Errorf("GetUpcomingBookings: %w", err)
 	}
@@ -654,7 +654,7 @@ func (r *bookingRepository) GetUpcomingBookings(ctx context.Context, merchantId 
 }
 
 // the bookings are limited before the joins, so participants are only aggregated for the returned rows
-func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId uuid.UUID, afterDate time.Time, rowLimit int, orderBy string) ([]domain.PublicBookingDetails, error) {
+func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId uuid.UUID, employeeId *int, afterDate time.Time, rowLimit int, orderBy string) ([]domain.PublicBookingDetails, error) {
 	query := fmt.Sprintf(`
 	select b.id, b.booking_type, b.status as booking_status, b.is_recurring, b.from_date, b.to_date, b.merchant_note,
 		b.price_per_person, b.price_type, b.service_name, s.color as service_color, b.current_participants, b.max_participants,
@@ -664,6 +664,7 @@ func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId
 	from (
 		select * from "Booking" b
 		where b.merchant_id = $1 and b.from_date >= $2 and b.status not in ('completed', 'cancelled')
+			and ($4::int is null or b.employee_id = $4)
 		order by %[1]s
 		limit $3
 	) b
@@ -689,7 +690,7 @@ func (r *bookingRepository) getDashboardBookings(ctx context.Context, merchantId
 	order by %[1]s
 	`, orderBy)
 
-	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit)
+	rows, _ := r.db.Query(ctx, query, merchantId, afterDate, rowLimit, employeeId)
 	return pgx.CollectRows(rows, pgx.RowToStructByName[domain.PublicBookingDetails])
 }
 

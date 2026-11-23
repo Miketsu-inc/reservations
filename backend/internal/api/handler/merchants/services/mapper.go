@@ -247,6 +247,7 @@ func mapToGetAllResp(in []domain.ServicesGroupedByCategory) []getAllResp {
 				MaxParticipants: s.MaxParticipants,
 				Sequence:        s.Sequence,
 				Phases:          mapToPhaseReqs(s.Phases),
+				EmployeeIds:     s.EmployeeIds,
 			}
 		}
 

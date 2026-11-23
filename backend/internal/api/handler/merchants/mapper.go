@@ -255,6 +255,7 @@ func mapToGetServicesForCalendarResp(in []domain.ServicesGroupedByCategoriesForC
 				Color:           s.Color,
 				BookingType:     s.BookingType,
 				MaxParticipants: s.MaxParticipants,
+				EmployeeIds:     s.EmployeeIds,
 			}
 		}
 

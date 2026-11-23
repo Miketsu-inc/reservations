@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -101,6 +102,20 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 	}
 
 	return booking, nil
+}
+
+// Inactive employees are left out, so they can't get new bookings either
+func (s *Service) checkEmployeeDoesService(ctx context.Context, serviceId int, employeeId int) error {
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(employeeIds, employeeId) {
+		return ErrEmployeeNotAssignedToService
+	}
+
+	return nil
 }
 
 func (s *Service) GetByMerchant(ctx context.Context, bookingId int) (domain.BookingForCalendar, error) {
@@ -715,6 +730,10 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return err
 	}
 
+	if err := s.checkEmployeeDoesService(ctx, service.Id, input.EmployeeId); err != nil {
+		return err
+	}
+
 	if !service.IsGroupService() && len(input.Customers) > 1 {
 		return fmt.Errorf("appointments cannot have more than 1 customer")
 	}
@@ -1052,6 +1071,18 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 
 	if !permission.For(actor).Edit(permission.Bookings, input.EmployeeId) {
 		return domain.ErrEmployeeAccessDenied
+	}
+
+	if booking.EmployeeId == nil || *booking.EmployeeId != input.EmployeeId {
+		// the service could have been deleted since, then there is no assignment to check
+		if booking.ServiceId != nil {
+			err = s.checkEmployeeDoesService(ctx, *booking.ServiceId, input.EmployeeId)
+		} else {
+			_, err = s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	if input.UpdateAllFuture && !booking.IsRecurring {
@@ -1657,15 +1688,16 @@ func (s *Service) UpdateParticipantStatus(ctx context.Context, bookingId int, pa
 func (s *Service) GetDashboardBookings(ctx context.Context, view string) ([]domain.PublicBookingDetails, error) {
 	actor := actor.MustGetFromContext(ctx)
 	afterDate := time.Now().UTC()
+	employeeFilter := permission.For(actor).ViewFilter(permission.Bookings)
 
 	var bookings []domain.PublicBookingDetails
 	var err error
 
 	switch view {
 	case "latest":
-		bookings, err = s.bookingRepo.GetLatestBookings(ctx, actor.MerchantId, afterDate, 3)
+		bookings, err = s.bookingRepo.GetLatestBookings(ctx, actor.MerchantId, employeeFilter, afterDate, 3)
 	case "upcoming":
-		bookings, err = s.bookingRepo.GetUpcomingBookings(ctx, actor.MerchantId, afterDate, 1)
+		bookings, err = s.bookingRepo.GetUpcomingBookings(ctx, actor.MerchantId, employeeFilter, afterDate, 1)
 	default:
 		return []domain.PublicBookingDetails{}, validate.NewError("invalid booking view")
 	}

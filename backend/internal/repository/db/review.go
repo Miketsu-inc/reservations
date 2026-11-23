@@ -195,7 +195,7 @@ func (r *reviewRepository) UpsertReply(ctx context.Context, merchantId uuid.UUID
 	return nil
 }
 
-func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (domain.ReviewStats, error) {
+func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int, employeeId *int) (domain.ReviewStats, error) {
 	query := `
 	select 
 		coalesce(round(avg(r.rating)::numeric, 1), 0)::float8 as average_rating,
@@ -208,9 +208,10 @@ func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.U
 	from "Review" r
 	where r.merchant_id = $1 and r.status <> 'removed'
 	  and ($2::int is null or r.location_id = $2)
+	  and ($3::int is null or r.employee_id = $3)
 	`
 
-	rows, err := r.db.Query(ctx, query, merchantId, locationId)
+	rows, err := r.db.Query(ctx, query, merchantId, locationId, employeeId)
 	if err != nil {
 		return domain.ReviewStats{}, fmt.Errorf("GetMerchantReviewStats query: %w", err)
 	}
@@ -224,19 +225,20 @@ func (r *reviewRepository) GetReviewStats(ctx context.Context, merchantId uuid.U
 	return stats, nil
 }
 
-func (r *reviewRepository) GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]int, error) {
+func (r *reviewRepository) GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int, employeeId *int) (map[int]int, error) {
 	query := `
 	select service_id, count(*)::int
 	from "Review"
 	where merchant_id = $1 and status <> 'removed' and service_id is not null
 	  and ($2::int is null or location_id = $2)
+	  and ($3::int is null or employee_id = $3)
 	group by service_id
 	`
 
 	counts := make(map[int]int)
 	var serviceId, count int
 
-	rows, _ := r.db.Query(ctx, query, merchantId, locationId)
+	rows, _ := r.db.Query(ctx, query, merchantId, locationId, employeeId)
 	_, err := pgx.ForEachRow(rows, []any{&serviceId, &count}, func() error {
 		counts[serviceId] = count
 		return nil

@@ -83,6 +83,8 @@ type Service struct {
 	ApprovalPolicy   *types.ApprovalType `db:"approval_policy" json:"approval_policy"`
 	// for convenience we do not really query the service without the phases anyway
 	Phases []ServicePhase
+	// only filled for the merchant's service list
+	EmployeeIds []int `db:"-" json:"employee_ids"`
 }
 
 func (s *Service) IsGroupService() bool {
@@ -261,6 +263,7 @@ type CalendarService struct {
 	Color           string            `json:"color"`
 	BookingType     types.BookingType `json:"booking_type"`
 	MaxParticipants int               `json:"max_participants"`
+	EmployeeIds     []int             `json:"employee_ids"`
 }
 
 type EmployeeService struct {

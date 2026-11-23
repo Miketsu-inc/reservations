@@ -25,6 +25,7 @@ var ErrStatus = apperr.StatusMap{
 	ErrDuplicateEmployeeServicePhase:          http.StatusBadRequest,
 	ErrDuplicateServiceId:                     http.StatusBadRequest,
 	ErrDuplicateServiceCategoryId:             http.StatusBadRequest,
+	domain.ErrEmployeeAccessDenied:            http.StatusForbidden,
 }
 
 var (

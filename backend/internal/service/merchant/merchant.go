@@ -142,7 +142,7 @@ func (s *Service) GetDashboardStatistics(ctx context.Context, period int, timezo
 	now := time.Now()
 	currPeriodStart, periodEnd, prevPeriodStart := getPeriodDates(now, period, timezone)
 
-	statistics, err := s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, currPeriodStart.UTC(), now.UTC(), prevPeriodStart.UTC())
+	statistics, err := s.merchantRepo.GetDashboardStats(ctx, actor.MerchantId, permission.For(actor).ViewFilter(permission.Bookings), currPeriodStart.UTC(), now.UTC(), prevPeriodStart.UTC())
 	if err != nil {
 		return GetDashboardStatisticsResult{}, err
 	}
@@ -160,7 +160,7 @@ func (s *Service) GetDashboardRevenue(ctx context.Context, period int, timezone 
 	now := time.Now()
 	currPeriodStart, periodEnd, _ := getPeriodDates(now, period, timezone)
 
-	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, currPeriodStart.UTC(), now.UTC(), timezone)
+	revenue, err := s.merchantRepo.GetRevenueStats(ctx, actor.MerchantId, permission.For(actor).ViewFilter(permission.Bookings), currPeriodStart.UTC(), now.UTC(), timezone)
 	if err != nil {
 		return domain.DashboardRevenue{}, err
 	}

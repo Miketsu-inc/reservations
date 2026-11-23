@@ -181,7 +181,13 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 					'phase_type', sp.phase_type
 				) order by sp.sequence
 			) filter (where sp.id is not null),
-		'[]'::jsonb) as phases
+		'[]'::jsonb) as phases,
+		coalesce((
+			select array_agg(es.employee_id order by es.employee_id)
+			from "EmployeeService" es
+			join "Employee" e on e.id = es.employee_id and e.is_active
+			where es.service_id = s.id
+		), '{}'::int[]) as employee_ids
 		from "Service" s
 		left join "ServicePhase" sp on s.id = sp.service_id
 		where s.merchant_id = $1
@@ -209,7 +215,8 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 				'booking_window_max', s.booking_window_max,
 				'buffer_time', s.buffer_time,
 				'approval_policy', s.approval_policy,
-				'phases', s.phases
+				'phases', s.phases,
+				'employee_ids', s.employee_ids
 			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services
@@ -267,7 +274,13 @@ func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchant
 				'price_type', s.price_type,
 				'color', s.color,
 				'booking_type', s.booking_type,
-				'max_participants', s.max_participants
+				'max_participants', s.max_participants,
+				'employee_ids', (
+					select coalesce(array_agg(es.employee_id order by es.employee_id), '{}'::int[])
+					from "EmployeeService" es
+					join "Employee" e on e.id = es.employee_id and e.is_active is true
+					where es.service_id = s.id
+				)
 			) order by s.sequence
 		) filter (where s.id is not null),
 	'[]'::jsonb) as services

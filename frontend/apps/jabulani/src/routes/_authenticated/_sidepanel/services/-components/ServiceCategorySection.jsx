@@ -13,7 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import { useToast } from "@reservations/lib";
 import { useState } from "react";
 import EditServiceCategoryModal from "./EditServiceCategoryModal";
@@ -31,7 +31,7 @@ export default function ServiceCategorySection({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, can } = useAuth();
 
   async function deleteHandler() {
     const response = await fetch(
@@ -77,7 +77,7 @@ export default function ServiceCategorySection({
           <p className="text-base font-semibold">{`${category.id ? `${category.name}` : "Uncategorized"}`}</p>
         </div>
         <div className="flex flex-row gap-0.5">
-          {category.id !== null && (
+          {category.id !== null && can.do(ACTIONS.MANAGE_SERVICES) && (
             <CategoryOptions
               category={category}
               categoryCount={categoryCount}

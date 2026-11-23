@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
   Switch,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   formatDuration,
   invalidateLocalStorageAuth,
@@ -22,6 +22,7 @@ import {
   useWindowSize,
 } from "@reservations/lib";
 import { Link } from "@tanstack/react-router";
+import { canEditService } from "./servicehooks";
 
 export default function ServiceCard({
   service,
@@ -32,7 +33,9 @@ export default function ServiceCard({
 }) {
   const { isWindowSmall } = useWindowSize();
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, can } = useAuth();
+  const canEdit = canEditService(can, service.employee_ids);
+  const canReorder = can.do(ACTIONS.MANAGE_SERVICES);
 
   async function serviceStatusHandler(isActive) {
     const response = await fetch(
@@ -112,6 +115,8 @@ export default function ServiceCard({
             </Link>
             <ServiceOptions
               service={service}
+              canEdit={canEdit}
+              canReorder={canReorder}
               serviceCount={serviceCount}
               onActiveSwitch={serviceStatusHandler}
               onMoveDown={() => onMove(service.id, "backward")}
@@ -127,12 +132,16 @@ export default function ServiceCard({
 
 function ServiceOptions({
   service,
+  canEdit,
+  canReorder,
   serviceCount,
   onMoveDown,
   onMoveUp,
   onActiveSwitch,
   onDelete,
 }) {
+  if (!canEdit && !canReorder) return null;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -148,53 +157,61 @@ function ServiceOptions({
           className="flex flex-col items-start *:flex *:w-full *:flex-row
             *:items-center *:gap-2.5 *:rounded-lg *:p-2"
         >
-          <div className="flex flex-row items-center">
-            <Switch
-              size="small"
-              onSwitch={onActiveSwitch}
-              defaultValue={service.is_active}
-            />
-            <p>Active</p>
-          </div>
-          <PopoverClose asChild>
-            <button
-              disabled={service.sequence === serviceCount}
-              onClick={onMoveDown}
-              className={`${
-                service.sequence === serviceCount
-                  ? "opacity-35"
-                  : "hover:bg-hover cursor-pointer"
-                }`}
-            >
-              <Icon
-                icon={ArrowLeft02Icon}
-                styles="size-4.5 -rotate-90 text-fg-muted"
+          {canEdit && (
+            <div className="flex flex-row items-center">
+              <Switch
+                size="small"
+                onSwitch={onActiveSwitch}
+                defaultValue={service.is_active}
               />
-              <p>Move down</p>
-            </button>
-          </PopoverClose>
-          <PopoverClose asChild>
-            <button
-              disabled={service.sequence === 1}
-              onClick={onMoveUp}
-              className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hover cursor-pointer"}`}
-            >
-              <Icon
-                icon={ArrowLeft02Icon}
-                styles="size-4.5 rotate-90 text-fg-muted"
-              />
-              <p>Move up</p>
-            </button>
-          </PopoverClose>
-          <PopoverClose asChild>
-            <button
-              onClick={onDelete}
-              className="hover:bg-hover text-fg-danger cursor-pointer"
-            >
-              <Icon icon={Delete02Icon} styles="size-4.5" />
-              <p>Delete</p>
-            </button>
-          </PopoverClose>
+              <p>Active</p>
+            </div>
+          )}
+          {canReorder && (
+            <>
+              <PopoverClose asChild>
+                <button
+                  disabled={service.sequence === serviceCount}
+                  onClick={onMoveDown}
+                  className={`${
+                    service.sequence === serviceCount
+                      ? "opacity-35"
+                      : "hover:bg-hover cursor-pointer"
+                  }`}
+                >
+                  <Icon
+                    icon={ArrowLeft02Icon}
+                    styles="size-4.5 -rotate-90 text-fg-muted"
+                  />
+                  <p>Move down</p>
+                </button>
+              </PopoverClose>
+              <PopoverClose asChild>
+                <button
+                  disabled={service.sequence === 1}
+                  onClick={onMoveUp}
+                  className={`${service.sequence === 1 ? "opacity-35" : "hover:bg-hover cursor-pointer"}`}
+                >
+                  <Icon
+                    icon={ArrowLeft02Icon}
+                    styles="size-4.5 rotate-90 text-fg-muted"
+                  />
+                  <p>Move up</p>
+                </button>
+              </PopoverClose>
+            </>
+          )}
+          {canEdit && (
+            <PopoverClose asChild>
+              <button
+                onClick={onDelete}
+                className="hover:bg-hover text-fg-danger cursor-pointer"
+              >
+                <Icon icon={Delete02Icon} styles="size-4.5" />
+                <p>Delete</p>
+              </button>
+            </PopoverClose>
+          )}
         </div>
       </PopoverContent>
     </Popover>

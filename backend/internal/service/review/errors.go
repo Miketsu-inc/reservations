@@ -3,6 +3,7 @@ package review
 import (
 	"net/http"
 
+	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	"github.com/miketsu-inc/reservations/backend/pkg/apperr"
 )
 
@@ -18,6 +19,9 @@ var ErrStatus = apperr.StatusMap{
 	ErrReviewFrozen:  http.StatusForbidden,
 	ErrReviewRemoved: http.StatusForbidden,
 	ErrUnauthorized:  http.StatusForbidden,
+
+	ErrReviewNotFound:              http.StatusNotFound,
+	domain.ErrEmployeeAccessDenied: http.StatusForbidden,
 }
 
 var (
@@ -29,5 +33,6 @@ var (
 	ErrReviewAlreadyExists       = &apperr.Error{Code: "review_already_exists", Message: "this service and team member combination has already been reviewed"}
 	ErrReviewFrozen              = &apperr.Error{Code: "review_frozen", Message: "review is currently under moderation review and cannot be edited"}
 	ErrReviewRemoved             = &apperr.Error{Code: "review_removed", Message: "removed reviews cannot be edited"}
+	ErrReviewNotFound            = &apperr.Error{Code: "review_not_found", Message: "review not found"}
 	ErrUnauthorized              = &apperr.Error{Code: "unauthorized", Message: "you are not authorized to perform this action"}
 )

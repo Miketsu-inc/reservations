@@ -81,6 +81,15 @@ export default function NewBookingPanel({
     .flatMap((category) => category.services)
     .find((service) => service.id === bookingData.serviceId);
   const isGroupBooking = selectedService?.booking_type === "class";
+
+  const employeeCategories = categories
+    .map((category) => ({
+      ...category,
+      services: category.services.filter((service) =>
+        service.employee_ids.includes(bookingData.employee_id)
+      ),
+    }))
+    .filter((category) => category.services.length > 0);
   const hasSelection = bookingData?.customers.length > 0;
 
   const isMobilePanelActive =
@@ -257,7 +266,7 @@ export default function NewBookingPanel({
       <div className={`${isWindowSmall ? "w-full" : "w-110"} relative`}>
         {!selectedService ? (
           <ServiceSelector
-            categories={categories}
+            categories={employeeCategories}
             onClose={onClose}
             onSelect={handleServiceChange}
             isNested={false}
@@ -273,7 +282,7 @@ export default function NewBookingPanel({
             >
               {nestedPageState.active === "service-selector" && (
                 <ServiceSelector
-                  categories={categories}
+                  categories={employeeCategories}
                   onClose={onClose}
                   isNested={true}
                   onSelect={handleServiceChange}
@@ -421,6 +430,7 @@ export default function NewBookingPanel({
                   </div>
                   <TeamMemberSelect
                     value={bookingData.employee_id}
+                    employeeIds={selectedService.employee_ids}
                     onSelect={(option) =>
                       updateBookingData({ employee_id: option.value })
                     }
