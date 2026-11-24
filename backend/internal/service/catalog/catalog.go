@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -62,6 +63,10 @@ func canEditService(can permission.Checker, employeeIds []int) bool {
 func (s *Service) checkServiceEditable(ctx context.Context, actor actor.EmployeeContext, serviceId int) error {
 	// only checks that the service belongs to the merchant
 	if _, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrServiceNotFound
+		}
+
 		return err
 	}
 
