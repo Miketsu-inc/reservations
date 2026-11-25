@@ -47,14 +47,14 @@ func validateStruct(s any) error {
 			jsonTag, ok := getJsonTagForField(s, err.Field())
 			assert.True(ok, fmt.Sprintf("%s field does not have a json tag", err.Field()), err.Error())
 
-			return fmt.Errorf("'%s': %s", jsonTag, errorMessageForTag(err))
+			return fmt.Errorf("'%s': %s", jsonTag, errorMessageForTag(s, err))
 		}
 	}
 
 	return nil
 }
 
-func errorMessageForTag(err validator.FieldError) string {
+func errorMessageForTag(s any, err validator.FieldError) string {
 	switch err.Tag() {
 	case "required":
 		return "This field is required"
@@ -68,6 +68,10 @@ func errorMessageForTag(err validator.FieldError) string {
 		return fmt.Sprintf("This field should be at least %s long", err.Param())
 	case "max":
 		return fmt.Sprintf("This field should be at most %s long", err.Param())
+	case "nefield":
+		if otherTag, ok := getJsonTagForField(s, err.Param()); ok {
+			return fmt.Sprintf("Must be different from '%s'", otherTag)
+		}
 	}
 	return err.Error()
 }

@@ -36,6 +36,8 @@ export default function CustomerPage({ customer, onSave }) {
   const router = useRouter();
   const [customerData, setCustomerData] = useState(originalData);
   const [lastSavedData, setLastSavedData] = useState(originalData);
+  const hasUnsavedChanges =
+    JSON.stringify(customerData) !== JSON.stringify(lastSavedData);
 
   function updateCustomerData(data) {
     setCustomerData((prev) => ({ ...prev, ...data }));
@@ -81,7 +83,7 @@ export default function CustomerPage({ customer, onSave }) {
   return (
     <Block
       shouldBlockFn={() => {
-        if (JSON.stringify(customerData) === JSON.stringify(lastSavedData)) {
+        if (!hasUnsavedChanges) {
           return false;
         }
         const canLeave = confirm(
@@ -89,6 +91,7 @@ export default function CustomerPage({ customer, onSave }) {
         );
         return !canLeave;
       }}
+      enableBeforeUnload={hasUnsavedChanges}
     >
       <form onSubmit={submitHandler} className="flex justify-center px-4 pt-4">
         <div

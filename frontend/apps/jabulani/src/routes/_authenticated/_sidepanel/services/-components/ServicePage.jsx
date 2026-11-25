@@ -65,6 +65,9 @@ export default function ServicePage({
   const serviceFormRef = useRef(null);
   const [serviceData, setServiceData] = useState(originalData);
   const lastSavedData = useRef(originalData);
+  // reads the ref at call time, so a save right before navigating doesn't block it
+  const hasUnsavedChanges = () =>
+    JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
 
@@ -145,9 +148,10 @@ export default function ServicePage({
   return (
     <Block
       shouldBlockFn={() =>
-        JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current) &&
+        hasUnsavedChanges() &&
         !confirm("You have unsaved changes, are you sure you want to leave?")
       }
+      enableBeforeUnload={hasUnsavedChanges}
     >
       {service?.id && (
         <DeleteModal

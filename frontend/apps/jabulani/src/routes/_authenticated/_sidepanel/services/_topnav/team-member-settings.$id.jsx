@@ -336,6 +336,7 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
         hasUnsavedChanges &&
         !confirm("You have unsaved changes, are you sure you want to leave?")
       }
+      enableBeforeUnload={hasUnsavedChanges}
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 md:py-8">
         <div className="mb-5 flex items-center justify-between gap-3">

@@ -246,8 +246,8 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 }
 
 type transferBookingsReq struct {
-	FromCustomerId uuid.UUID `json:"from_customer_id"`
-	ToCustomerId   uuid.UUID `json:"to_customer_id"`
+	FromCustomerId uuid.UUID `json:"from_customer_id" validate:"required"`
+	ToCustomerId   uuid.UUID `json:"to_customer_id" validate:"required,nefield=FromCustomerId"`
 }
 
 func (h *Handler) TransferBookings(w http.ResponseWriter, r *http.Request) error {

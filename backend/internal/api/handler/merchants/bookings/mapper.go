@@ -112,6 +112,16 @@ func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMer
 		}
 	}
 
+	var rrule *bookingServ.RecurringRuleInput
+	if in.Rrule != nil {
+		rrule = &bookingServ.RecurringRuleInput{
+			Frequency: in.Rrule.Frequency,
+			Interval:  in.Rrule.Interval,
+			Weekdays:  in.Rrule.Weekdays,
+			UntilDate: in.Rrule.UntilDate,
+		}
+	}
+
 	return bookingServ.CreateByMerchantInput{
 		Customers:    customers,
 		ServiceId:    in.ServiceId,
@@ -119,12 +129,7 @@ func mapToCreateByMerchantInput(in createByMerchantReq) (bookingServ.CreateByMer
 		TimeStamp:    timeStamp,
 		MerchantNote: in.MerchantNote,
 		IsRecurring:  in.IsRecurring,
-		Rrule: &bookingServ.RecurringRuleInput{
-			Frequency: in.Rrule.Frequency,
-			Interval:  in.Rrule.Interval,
-			Weekdays:  in.Rrule.Weekdays,
-			UntilDate: in.Rrule.UntilDate,
-		},
+		Rrule:        rrule,
 	}, nil
 }
 

@@ -24,15 +24,12 @@ func NewHandler(s *catalogServ.Service, m *middleware.Manager) *Handler {
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
+	r.UseFunc(h.middleware.RequirePermission(permission.ManageServices))
+
 	r.Post("/", h.New)
-
-	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RequirePermission(permission.ManageServices))
-
-		r.Put("/{id}", h.Update)
-		r.Delete("/{id}", h.Delete)
-		r.Put("/reorder", h.ReorderCategories)
-	})
+	r.Put("/{id}", h.Update)
+	r.Delete("/{id}", h.Delete)
+	r.Put("/reorder", h.ReorderCategories)
 
 	return r
 }
