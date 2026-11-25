@@ -1,3 +1,4 @@
+import { useState } from "react";
 import MerchantLogo from "./MerchantLogo";
 
 // has to match the backend's small variant size
@@ -48,22 +49,18 @@ export default function Gallery({ images, merchantName, logoUrl }) {
     );
   }
 
-  const [cover, ...rest] = images;
-  const side = rest.slice(0, 2);
+  const side = images.slice(1, 3);
 
   return (
     <div
       className={`${side.length > 0 ? "lg:grid-cols-[2fr_1fr]" : ""} grid w-full
         grid-cols-1 gap-2 lg:h-125 lg:overflow-hidden lg:rounded-2xl`}
     >
-      <div className="relative h-62.5 w-full lg:h-full">
-        <GalleryImage
-          image={cover}
-          sizes={side.length > 0 ? "(min-width: 1024px) 66vw, 100vw" : "100vw"}
-          alt={merchantName}
-          priority
-        />
-      </div>
+      <Carousel
+        images={images}
+        merchantName={merchantName}
+        hasSide={side.length > 0}
+      />
       {side.length > 0 && (
         <div className="hidden h-full w-full flex-col gap-2 lg:flex">
           {side.map((image) => (
@@ -72,6 +69,52 @@ export default function Gallery({ images, merchantName, logoUrl }) {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function Carousel({ images, merchantName, hasSide }) {
+  const [current, setCurrent] = useState(0);
+
+  function handleScroll(e) {
+    const el = e.currentTarget;
+    if (el.clientWidth === 0) return;
+    setCurrent(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  return (
+    <div className="relative h-68 w-full lg:h-full">
+      <div
+        className="flex size-full snap-x snap-mandatory scrollbar-none
+          overflow-x-auto overscroll-x-contain lg:overflow-hidden"
+        onScroll={handleScroll}
+      >
+        {images.map((image, i) => (
+          <div
+            key={image.url}
+            className={`relative h-full w-full shrink-0 snap-center
+            ${i > 0 ? "lg:hidden" : ""}`}
+          >
+            <GalleryImage
+              image={image}
+              sizes={
+                i === 0 && hasSide ? "(min-width: 1024px) 66vw, 100vw" : "100vw"
+              }
+              alt={merchantName}
+              priority={i === 0}
+            />
+          </div>
+        ))}
+      </div>
+      {images.length > 1 && (
+        <span
+          className="pointer-events-none absolute right-5 bottom-9 rounded-full
+            bg-black/60 px-2.5 py-1 text-sm font-medium text-white tabular-nums
+            lg:hidden"
+        >
+          {current + 1}/{images.length}
+        </span>
       )}
     </div>
   );
