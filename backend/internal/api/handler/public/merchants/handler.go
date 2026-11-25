@@ -100,9 +100,10 @@ type timeSlotResp struct {
 }
 
 type businessHoursStatusResp struct {
-	IsOpen      bool    `json:"is_business_open"`
-	CloseTime   *string `json:"close_time"`
-	NextOpenDay *int    `json:"next_open_day"`
+	IsOpen        bool    `json:"is_business_open"`
+	CloseTime     *string `json:"close_time"`
+	NextOpenDay   *int    `json:"next_open_day"`
+	DaysUntilOpen *int    `json:"days_until_open"`
 }
 
 func (h *Handler) GetInfo(w http.ResponseWriter, r *http.Request) error {

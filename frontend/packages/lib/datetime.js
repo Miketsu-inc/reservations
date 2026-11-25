@@ -321,3 +321,15 @@ export function formatRelativeDate(dateValue) {
     year: "numeric",
   }).format(date);
 }
+
+export function formatServiceDurationWithEmployeeOverrides(service) {
+  if (
+    service?.min_duration &&
+    service?.max_duration &&
+    service.min_duration !== service.max_duration
+  ) {
+    return `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`;
+  }
+
+  return formatDuration(service?.total_duration);
+}

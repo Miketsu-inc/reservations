@@ -1,7 +1,6 @@
 import {
   ArrowLeft01Icon,
   Call02Icon,
-  Clock01Icon,
   Facebook01Icon,
   InstagramIcon,
   Location01Icon,
@@ -11,19 +10,24 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button, Icon, Loading, ServerError } from "@reservations/components";
 import {
+  activeTeamQueryOptions,
   merchantInfoQueryOptions,
+  merchantServicesQueryOptions,
   publicReviewStatsQueryOptions,
-  useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import BusinessHoursSection from "./-components/BusinessHoursSection";
+import BusinessHours from "./-components/BusinessHours";
 import FavoriteButton from "./-components/FavoriteButton";
 import Gallery from "./-components/Gallery";
 import MapboxMap from "./-components/MapboxMap";
 import MerchantLogo from "./-components/MerchantLogo";
 import RatingSummary from "./-components/RatingSummary";
-import ReservationSection from "./-components/ReservationSection";
+import {
+  DirectionsLink,
+  OpenStatus,
+  Section,
+} from "./-components/ReservationPageUtils";
 import ReviewsSection from "./-components/ReviewsSection";
 import ServiceSection from "./-components/ServiceSection";
 import TeamSection from "./-components/TeamSection";
@@ -31,14 +35,17 @@ import TeamSection from "./-components/TeamSection";
 export const Route = createFileRoute("/m/$merchantName/")({
   component: MerchantPage,
   loader: async ({ params, context: { queryClient } }) => {
+    const { merchantName } = params;
+    void queryClient.prefetchQuery(merchantServicesQueryOptions(merchantName));
+
     const merchantInfo = await queryClient.ensureQueryData(
-      merchantInfoQueryOptions(params.merchantName)
+      merchantInfoQueryOptions(merchantName)
     );
     void queryClient.prefetchQuery(
-      publicReviewStatsQueryOptions(
-        params.merchantName,
-        merchantInfo.location_id
-      )
+      publicReviewStatsQueryOptions(merchantName, merchantInfo.location_id)
+    );
+    void queryClient.prefetchQuery(
+      activeTeamQueryOptions(merchantName, merchantInfo.location_id)
     );
   },
   errorComponent: ({ error }) => {
@@ -46,19 +53,8 @@ export const Route = createFileRoute("/m/$merchantName/")({
   },
 });
 
-const days = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
 function MerchantPage() {
   const { merchantName } = Route.useParams({ from: Route.id });
-  const { isWindowSmall } = useWindowSize();
 
   const {
     data: merchantInfo,
@@ -96,21 +92,15 @@ function MerchantPage() {
           className="text-fg-primary hover:underline"
         >
           ({reviewCount}
-          {isWindowSmall ? "" : reviewCount === 1 ? " review" : " reviews"})
+          <span className="hidden lg:inline">
+            {reviewCount === 1 ? " review" : " reviews"}
+          </span>
+          )
         </Link>
       </RatingSummary>
     ) : (
       <span>No reviews yet</span>
     ));
-
-  let nextOpenStr = "";
-  if (!businessHoursStatus.is_business_open) {
-    const todayIndex = new Date().getDay();
-    nextOpenStr =
-      businessHoursStatus.next_open_day === todayIndex
-        ? "later today"
-        : `on ${days[businessHoursStatus.next_open_day]}`;
-  }
 
   return (
     <div className="bg-bg relative flex min-h-screen w-full flex-col">
@@ -118,7 +108,11 @@ function MerchantPage() {
         className="bg-bg border-border sticky top-0 z-50 flex w-full
           items-center justify-between border-b p-3 shadow-sm lg:hidden"
       >
-        <Link className="hover:bg-hover rounded-md p-1" to="/home">
+        <Link
+          className="hover:bg-hover rounded-md p-1"
+          to="/home"
+          aria-label="Back to home"
+        >
           <Icon icon={ArrowLeft01Icon} styles="text-fg" />
         </Link>
         <span className="truncate px-2.5 text-lg font-semibold">
@@ -131,65 +125,41 @@ function MerchantPage() {
       </div>
 
       <div className="mx-auto flex w-full max-w-360 flex-col lg:px-10 lg:pt-6">
-        {!isWindowSmall && (
-          <>
-            <Link
-              className="hover:bg-hover border-border bg-bg-raised shadow-card
-                mb-5 flex h-fit w-fit rounded-full border p-2.5"
-              to="/home"
-            >
-              <Icon icon={ArrowLeft01Icon} styles="text-fg size-5" />
-            </Link>
-            <div className="flex w-full items-start justify-between pb-4">
-              <div className="flex flex-col gap-3">
-                <h1 className="text-4xl font-semibold">
-                  {merchantInfo.merchant_name}
-                </h1>
-                <div className="text-fg-muted flex items-center gap-3">
-                  {rating}
-                  <span>•</span>
-                  <div className="flex items-center gap-2">
-                    <Icon icon={Clock01Icon} styles="size-5" />
-                    {businessHoursStatus.is_business_open ? (
-                      <span className="flex items-center gap-1">
-                        <span className="text-fg-success">Open</span>- closes at{" "}
-                        {businessHoursStatus.close_time}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-nowrap">
-                        <span className="text-fg-warning">Closed</span>- opens{" "}
-                        {nextOpenStr}
-                      </span>
-                    )}
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center gap-2">
-                    <Icon icon={Location01Icon} styles="size-5" />
-                    <div className="flex items-start gap-2">
-                      <p>{merchantInfo.formatted_location}</p>
-
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-fg-primary hover:underline"
-                      >
-                        (Plan a ride)
-                      </a>
-                    </div>
-                  </div>
+        <div className="hidden lg:block">
+          <Link
+            className="hover:bg-hover border-border bg-bg-raised shadow-card
+              mb-5 flex h-fit w-fit rounded-full border p-2.5"
+            to="/home"
+            aria-label="Back to home"
+          >
+            <Icon icon={ArrowLeft01Icon} styles="text-fg size-5" />
+          </Link>
+          <div className="flex w-full items-start justify-between pb-4">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-4xl font-semibold">
+                {merchantInfo.merchant_name}
+              </h1>
+              <div className="text-fg-muted flex items-center gap-3">
+                {rating}
+                <span>•</span>
+                <OpenStatus status={businessHoursStatus} />
+                <span>•</span>
+                <div className="flex items-center gap-2">
+                  <Icon icon={Location01Icon} styles="size-5" />
+                  <p>{merchantInfo.formatted_location}</p>
+                  <DirectionsLink geoPoint={merchantInfo.geo_point} />
                 </div>
               </div>
-
-              <FavoriteButton
-                merchantId={merchantInfo.merchant_id}
-                styles="bg-bg-raised border-border shadow-card hover:bg-hover
-                  mt-1.5 h-fit cursor-pointer rounded-full border p-3
-                  hover:scale-105"
-              />
             </div>
-          </>
-        )}
+
+            <FavoriteButton
+              merchantId={merchantInfo.merchant_id}
+              styles="bg-bg-raised border-border shadow-card hover:bg-hover
+                mt-1.5 h-fit cursor-pointer rounded-full border p-3
+                hover:scale-105"
+            />
+          </div>
+        </div>
 
         <Gallery
           images={merchantInfo.images}
@@ -220,22 +190,7 @@ function MerchantPage() {
               <div className="text-fg-muted flex flex-wrap items-center gap-3">
                 {rating}
                 <span>•</span>
-                <div className="flex items-center gap-2">
-                  <Icon icon={Clock01Icon} styles="size-5" />
-                  {businessHoursStatus.is_business_open ? (
-                    <span className="flex items-center gap-1">
-                      <span className="text-fg-success font-medium">Open</span>-
-                      closes at {businessHoursStatus.close_time}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-nowrap">
-                      <span className="text-fg-warning font-medium">
-                        Closed
-                      </span>
-                      - opens {nextOpenStr}
-                    </span>
-                  )}
-                </div>
+                <OpenStatus status={businessHoursStatus} />
               </div>
               <div className="text-fg-muted flex items-center gap-2">
                 <Icon icon={Location01Icon} styles="size-5" />
@@ -257,78 +212,71 @@ function MerchantPage() {
                 </div>
               )}
             </div>
-            <ReservationSection name="Select a Service" show={true}>
+            <Section name="Select a Service">
               <ServiceSection
                 router={Route}
                 merchantInfo={merchantInfo}
                 merchantName={merchantName}
               />
-            </ReservationSection>
-            <ReservationSection name="About us" show={merchantInfo.about_us}>
+            </Section>
+            <Section name="About us" show={Boolean(merchantInfo.about_us)}>
               <p className="text-fg-muted">{merchantInfo.about_us}</p>
-            </ReservationSection>
+            </Section>
 
-            <ReservationSection name="Team" show={true}>
+            <Section name="Team">
               <TeamSection
                 merchantName={merchantName}
                 locationId={merchantInfo.location_id}
               />
-            </ReservationSection>
+            </Section>
 
-            <ReservationSection
-              name="Reviews"
-              show={reviewStats?.total_reviews > 0}
-            >
+            <Section name="Reviews" show={reviewCount > 0}>
               <ReviewsSection
                 merchantName={merchantName}
                 merchantInfo={merchantInfo}
                 stats={reviewStats}
               />
-            </ReservationSection>
+            </Section>
 
-            <ReservationSection
+            <Section
               name="Location"
-              show={merchantInfo.formatted_location}
+              show={Boolean(merchantInfo.formatted_location)}
             >
               <div className="flex flex-col gap-4 lg:gap-6">
                 <div className="flex flex-wrap items-start gap-1">
                   <p>{merchantInfo.formatted_location}</p>
-
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${merchantInfo.geo_point.latitude},${merchantInfo.geo_point.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-fg-primary hover:underline"
-                  >
-                    (Plan a ride)
-                  </a>
+                  <DirectionsLink geoPoint={merchantInfo.geo_point} />
                 </div>
                 <div
                   className="border-border shadow-card overflow-hidden
                     rounded-2xl border"
                 >
                   <MapboxMap
-                    styles={isWindowSmall ? "h-64 w-full" : "h-87.5 w-full"}
+                    styles="h-64 w-full lg:h-87.5"
                     coordinates={[
                       merchantInfo.geo_point.longitude,
                       merchantInfo.geo_point.latitude,
                     ]}
-                    minHeight={isWindowSmall ? 200 : 350}
-                    zoom={isWindowSmall ? 13 : 14}
+                    minHeight={200}
+                    zoom={14}
                   />
                 </div>
 
-                <p className="text-fg-muted text-center text-sm">
-                  {merchantInfo.parking_info}
-                </p>
+                {merchantInfo.parking_info && (
+                  <p className="text-fg-muted text-center text-sm">
+                    {merchantInfo.parking_info}
+                  </p>
+                )}
               </div>
-            </ReservationSection>
+            </Section>
 
             <div
               className="border-border bg-bg sticky bottom-0 z-10 flex w-full
                 items-center justify-between py-3 lg:hidden"
             >
-              <span>{merchantName}</span>
+              <span className="truncate pr-3 font-medium">
+                {merchantInfo.merchant_name}
+              </span>
               <Link
                 from={Route.fullPath}
                 to="book"
@@ -339,17 +287,17 @@ function MerchantPage() {
             </div>
 
             <div className="flex w-full flex-col gap-10 lg:flex-row lg:gap-20">
-              <ReservationSection name="Business Hours" show={true}>
+              <Section name="Business Hours">
                 <div className="pt-2 lg:w-96">
-                  <BusinessHoursSection
-                    hoursData={merchantInfo.business_hours}
-                  />
+                  <BusinessHours hoursData={merchantInfo.business_hours} />
                 </div>
-              </ReservationSection>
+              </Section>
 
-              <ReservationSection
+              <Section
                 name="Contact"
-                show={merchantInfo.contact_email || merchantInfo.phone_number}
+                show={Boolean(
+                  merchantInfo.contact_email || merchantInfo.phone_number
+                )}
               >
                 <div className="flex flex-col gap-6 pt-2 lg:gap-8">
                   <div
@@ -396,7 +344,7 @@ function MerchantPage() {
                     </div>
                   </div>
                 </div>
-              </ReservationSection>
+              </Section>
             </div>
           </div>
 
@@ -437,22 +385,7 @@ function MerchantPage() {
                 className="border-border-subtle text-fg-muted mt-2 flex flex-col
                   gap-4 border-t pt-6 text-sm"
               >
-                <div className="flex items-center gap-2">
-                  <Icon icon={Clock01Icon} styles="size-4" />
-                  {businessHoursStatus.is_business_open ? (
-                    <span className="flex items-center gap-1">
-                      <span className="text-fg-success font-medium">Open</span>-
-                      closes at {businessHoursStatus.close_time}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-nowrap">
-                      <span className="text-fg-warning font-medium">
-                        Closed
-                      </span>
-                      - opens {nextOpenStr}
-                    </span>
-                  )}
-                </div>
+                <OpenStatus status={businessHoursStatus} iconStyles="size-4" />
                 <div className="flex items-start gap-1.5">
                   <Icon icon={Location01Icon} styles="size-4 mt-0.5" />
                   <span>{merchantInfo.formatted_location}</span>

@@ -82,8 +82,9 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 		for _, shift := range shiftsToday {
 			businessStart := time.Date(year, month, day, shift.StartTime.Hour(), shift.StartTime.Minute(), 0, 0, tz)
 			if now.Before(businessStart) {
-				val := today
+				val, daysUntilOpen := today, 0
 				status.NextOpenDay = &val
+				status.DaysUntilOpen = &daysUntilOpen
 				foundNextOpen = true
 				break
 			}
@@ -93,8 +94,9 @@ func CalculateBusinessStatus(businessHours domain.BusinessHours, now time.Time) 
 			for i := 1; i <= 7; i++ {
 				nextDay := (today + i) % 7
 				if len(businessHours[nextDay]) > 0 {
-					val := nextDay
+					val, daysUntilOpen := nextDay, i
 					status.NextOpenDay = &val
+					status.DaysUntilOpen = &daysUntilOpen
 					break
 				}
 			}

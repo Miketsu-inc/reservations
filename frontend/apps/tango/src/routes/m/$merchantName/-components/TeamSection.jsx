@@ -3,14 +3,11 @@ import {
   activeTeamQueryOptions,
   formatShortName,
   toAvatar,
-  useWindowSize,
 } from "@reservations/lib";
 import { useQuery } from "@tanstack/react-query";
 import RatingSummary from "./RatingSummary";
 
 export default function TeamSection({ merchantName, locationId }) {
-  const { isWindowSmall } = useWindowSize();
-
   const {
     data: employees,
     isLoading,
@@ -29,8 +26,9 @@ export default function TeamSection({ merchantName, locationId }) {
   return (
     <div className="flex flex-col">
       <div
-        className="flex w-full scrollbar-thin gap-8 overflow-x-auto lg:flex-wrap
-          lg:gap-x-16 lg:gap-y-12 dark:scheme-dark"
+        className="flex w-full scrollbar-thin gap-8 overflow-x-auto pb-2 sm:pb-0
+          lg:flex-wrap lg:gap-x-16 lg:gap-y-12 lg:overflow-visible
+          dark:scheme-dark"
       >
         {employees.map((employee) => {
           const { img, initials } = toAvatar(employee);
@@ -42,8 +40,8 @@ export default function TeamSection({ merchantName, locationId }) {
                 text-center"
             >
               <Avatar
-                styles={`shrink-0 font-semibold
-                ${isWindowSmall ? "size-20 text-lg!" : "size-22 text-xl!"}`}
+                styles="size-20 shrink-0 text-lg! font-semibold lg:size-22
+                  lg:text-xl!"
                 img={img}
                 initials={initials}
               />

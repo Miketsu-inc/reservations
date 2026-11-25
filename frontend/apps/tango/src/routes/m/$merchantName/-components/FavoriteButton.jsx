@@ -32,7 +32,7 @@ async function fetchIsFavorite(merchantId) {
 
 function isFavoriteQueryOptions(merchantId) {
   return queryOptions({
-    queryKey: ["is-favourite", merchantId],
+    queryKey: ["is-favorite", merchantId],
     queryFn: () => fetchIsFavorite(merchantId),
     retry: false,
   });
@@ -58,8 +58,8 @@ export default function FavoriteButton({ merchantId, styles }) {
     enabled: Boolean(merchantId),
   });
 
-  const isFavourite = favoriteData?.is_favorite;
-  const [isTogglingFav, setIsTogglingFav] = useState(false);
+  const isFavorite = favoriteData?.is_favorite;
+  const [isToggling, setIsToggling] = useState(false);
 
   async function handleToggleFavorite() {
     if (!favoriteData?.is_authenticated) {
@@ -70,24 +70,24 @@ export default function FavoriteButton({ merchantId, styles }) {
       return;
     }
 
-    if (!merchantId || isTogglingFav) return;
+    if (!merchantId || isToggling) return;
 
     try {
-      setIsTogglingFav(true);
+      setIsToggling(true);
 
-      if (isFavourite) {
+      if (isFavorite) {
         await removeFavorite(merchantId);
       } else {
         await addFavorite(merchantId);
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["is-favourite", merchantId],
+        queryKey: isFavoriteQueryOptions(merchantId).queryKey,
       });
     } catch {
       showToast({ message: "Failed to update favorite", variant: "error" });
     } finally {
-      setIsTogglingFav(false);
+      setIsToggling(false);
     }
   }
 
@@ -99,13 +99,13 @@ export default function FavoriteButton({ merchantId, styles }) {
         active:scale-95 disabled:pointer-events-none disabled:opacity-50
         ${styles || ""}`}
       onClick={handleToggleFavorite}
-      disabled={isTogglingFav}
-      aria-label={isFavourite ? "Remove from favorites" : "Add to favorites"}
+      disabled={isToggling}
+      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
     >
       <Icon
         icon={FavouriteIcon}
         styles={`size-5 transition-all duration-200 group-hover:scale-105 ${
-          isFavourite
+          isFavorite
             ? "text-danger fill-danger "
             : "text-fg group-hover:text-fg-danger "
           }`}

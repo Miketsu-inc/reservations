@@ -28,9 +28,10 @@ func mapToGetInfo(in domain.MerchantInfo) getInfoResp {
 	}
 
 	businessStatus := businessHoursStatusResp{
-		IsOpen:      in.BusinessHoursStatus.IsOpen,
-		CloseTime:   in.BusinessHoursStatus.CloseTime,
-		NextOpenDay: in.BusinessHoursStatus.NextOpenDay,
+		IsOpen:        in.BusinessHoursStatus.IsOpen,
+		CloseTime:     in.BusinessHoursStatus.CloseTime,
+		NextOpenDay:   in.BusinessHoursStatus.NextOpenDay,
+		DaysUntilOpen: in.BusinessHoursStatus.DaysUntilOpen,
 	}
 
 	images := make([]imageResp, len(in.Images))

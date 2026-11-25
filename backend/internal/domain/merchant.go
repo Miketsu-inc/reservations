@@ -68,9 +68,10 @@ type TimeSlot struct {
 type BusinessHours map[int][]TimeSlot
 
 type BusinessHoursStatus struct {
-	IsOpen      bool
-	CloseTime   *string
-	NextOpenDay *int
+	IsOpen        bool
+	CloseTime     *string
+	NextOpenDay   *int
+	DaysUntilOpen *int
 }
 
 type MerchantInfo struct {

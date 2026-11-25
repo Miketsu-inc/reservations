@@ -14,10 +14,10 @@ import {
   ToggleGroup,
 } from "@reservations/components";
 import {
-  formatDuration,
+  formatServiceDurationWithEmployeeOverrides,
+  formatShortName,
   getDisplayPrice,
   merchantServicesQueryOptions,
-  formatShortName,
   toAvatar,
   useActiveSection,
 } from "@reservations/lib";
@@ -204,13 +204,6 @@ export default function ServiceSelectionStep({
 function ServiceItem({ service, isSelected, onSelect }) {
   const isGroup = service.booking_type !== "appointment";
 
-  const durationText =
-    service.min_duration &&
-    service.max_duration &&
-    service.min_duration !== service.max_duration
-      ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
-      : formatDuration(service.total_duration);
-
   return (
     <li
       role="radio"
@@ -229,7 +222,7 @@ function ServiceItem({ service, isSelected, onSelect }) {
         <div className="text-fg-muted flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
             <Icon icon={Clock01Icon} styles="size-3.5" />
-            <span>{durationText}</span>
+            <span>{formatServiceDurationWithEmployeeOverrides(service)}</span>
           </div>
 
           {isGroup && (

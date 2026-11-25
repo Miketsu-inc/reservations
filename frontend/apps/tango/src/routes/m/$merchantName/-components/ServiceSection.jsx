@@ -9,7 +9,7 @@ import {
   ToggleGroup,
 } from "@reservations/components";
 import {
-  formatDuration,
+  formatServiceDurationWithEmployeeOverrides,
   getDisplayPrice,
   merchantServicesQueryOptions,
 } from "@reservations/lib";
@@ -152,7 +152,9 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
               </>
             ) : (
               <p className="text-fg-muted">
-                No services available in this category.
+                {showToggles
+                  ? "No services available in this category."
+                  : "This merchant has no services yet."}
               </p>
             )}
           </div>
@@ -165,29 +167,26 @@ export default function ServiceSection({ router, merchantInfo, merchantName }) {
 function ServiceItem({ service, router, locationId, onClick }) {
   return (
     <div
-      type="button"
       onClick={() => onClick?.(service)}
       className="group border-border bg-bg-raised shadow-card
         hover:border-border-strong flex w-full cursor-pointer items-center
         justify-between gap-4 rounded-xl border p-4 text-left"
     >
-      <div className="flex flex-col gap-2.5">
+      <button
+        type="button"
+        className="flex cursor-pointer flex-col gap-2.5 text-left
+          focus-visible:outline-none"
+      >
         <p className="text-fg leading-tight font-semibold">{service.name}</p>
 
         <div className="text-fg-muted flex items-center gap-2 text-sm">
-          <span>
-            {service.min_duration &&
-            service.max_duration &&
-            service.min_duration !== service.max_duration
-              ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
-              : formatDuration(service.total_duration)}
-          </span>
+          <span>{formatServiceDurationWithEmployeeOverrides(service)}</span>
           <span className="bg-fg-muted size-1 rounded-full"></span>
           <span className="text-fg">
             {getDisplayPrice(service.price, service.price_type)}
           </span>
         </div>
-      </div>
+      </button>
       <Link
         from={router.fullPath}
         to="book"
@@ -196,6 +195,8 @@ function ServiceItem({ service, router, locationId, onClick }) {
           serviceId: service.id,
           type: service.booking_type,
         }}
+        // don't also open the details dialog
+        onClick={(e) => e.stopPropagation()}
       >
         <Button
           variant="primary"

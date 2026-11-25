@@ -15,17 +15,16 @@ import {
 import {
   activeTeamQueryOptions,
   dateStringToLocalDate,
-  formatDuration,
-  getDisplayPrice,
-  invalidateLocalStorageAuth,
+  formatServiceDurationWithEmployeeOverrides,
   formatShortName,
+  getDisplayPrice,
   toAvatar,
   useWindowSize,
 } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-async function fetchNextAvailable(merchantName, serviceId, locationId) {
+async function fetchNextAvailable(merchantName, locationId, serviceId) {
   const response = await fetch(
     `/api/v1/public/merchants/${merchantName}/locations/${locationId}/services/${serviceId}/availability/next`,
     {
@@ -39,17 +38,16 @@ async function fetchNextAvailable(merchantName, serviceId, locationId) {
 
   const result = await response.json();
   if (!response.ok) {
-    invalidateLocalStorageAuth(response.status);
     throw result.error;
   } else {
     return result.data;
   }
 }
 
-function nextAvailableQueryOptions(merchantName, serviceId, locationId) {
+function nextAvailableQueryOptions(merchantName, locationId, serviceId) {
   return queryOptions({
-    queryKey: ["next-available", merchantName, serviceId, locationId],
-    queryFn: () => fetchNextAvailable(merchantName, serviceId, locationId),
+    queryKey: ["next-available", merchantName, locationId, serviceId],
+    queryFn: () => fetchNextAvailable(merchantName, locationId, serviceId),
   });
 }
 
@@ -70,18 +68,14 @@ export default function ServiceDetails({
     isError,
     error,
   } = useQuery({
-    ...nextAvailableQueryOptions(merchantName, service?.id, locationId),
-    enabled: isOpen,
+    ...nextAvailableQueryOptions(merchantName, locationId, service?.id),
+    enabled: isOpen && Boolean(service),
   });
 
   const { data: teamMembers } = useQuery({
     ...activeTeamQueryOptions(merchantName, locationId),
     enabled: isOpen && !!merchantName,
   });
-
-  if (isError) {
-    return <ServerError error={error.message} />;
-  }
 
   const hasAvailableSlot = Boolean(nextAvailable?.from_date);
 
@@ -103,6 +97,7 @@ export default function ServiceDetails({
           hasAvailable={hasAvailableSlot}
           category={category}
           isLoading={isLoading}
+          error={isError ? error.message : null}
           router={router}
           locationId={locationId}
           teamMembers={teamMembers}
@@ -123,6 +118,7 @@ function DetailsContent({
   hasAvailable,
   router,
   isLoading,
+  error,
   onClose,
   locationId,
   teamMembers,
@@ -169,18 +165,16 @@ function DetailsContent({
               <div className="text-fg flex items-center gap-1">
                 <Icon icon={Clock01Icon} styles="size-5" />
                 <span>
-                  {service?.min_duration &&
-                  service?.max_duration &&
-                  service.min_duration !== service.max_duration
-                    ? `${formatDuration(service.min_duration)} - ${formatDuration(service.max_duration)}`
-                    : formatDuration(service?.total_duration)}
+                  {formatServiceDurationWithEmployeeOverrides(service)}
                 </span>
               </div>
             </div>
           </div>
         </div>
         {service?.description && <p className="">{service?.description}</p>}
-        {isLoading ? (
+        {error ? (
+          <ServerError error={error} />
+        ) : isLoading ? (
           <div
             className="border-border bg-hover h-24 animate-pulse rounded-lg
               border"

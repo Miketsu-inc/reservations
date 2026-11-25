@@ -71,3 +71,13 @@ export const DEFAULT_SERVICE_COLOR = "#035afc";
 
 export const TANGO_URL = import.meta.env.VITE_TANGO_URL;
 export const JABULANI_URL = import.meta.env.VITE_JABULANI_URL;
+
+export const WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
