@@ -104,7 +104,7 @@ func New(ctx context.Context, cfg *config.Config) *App {
 	externalCalendarService := externalcalendarSrv.NewService(externalCalendarRepo, blockedTimeRepo, merchantRepo, bookingRepo, teamRepo, nil, transactionManager)
 	merchantService := merchantSrv.NewService(bookingRepo, catalogRepo, locationRepo, merchantRepo, customerRep, blockedTimeRepo, teamRepo, imageRepo, transactionManager)
 	locationService := locationSrv.NewService(locationRepo, merchantRepo, transactionManager)
-	favoriteService := favoriteSrv.NewService(favoriteRepo)
+	favoriteService := favoriteSrv.NewService(favoriteRepo, locationRepo)
 	productService := productSrv.NewService(productRepo)
 	userService := userSrv.NewService(userRepo, customerRep, teamRepo, transactionManager)
 	mediaService := mediaSrv.NewService(imageRepo, userRepo, teamRepo, locationRepo, merchantRepo, uploadsBucket, mediaBucket, imgproxyClient, nil, transactionManager)

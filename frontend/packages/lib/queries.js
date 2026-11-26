@@ -307,14 +307,17 @@ export function employeeQueryOptions(merchantId, id) {
   });
 }
 
-export async function addFavorite(merchantId) {
-  const response = await fetch(`/api/v1/favorites/${merchantId}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+export async function addFavorite(merchantId, locationId) {
+  const response = await fetch(
+    `/api/v1/favorites/merchants/${merchantId}/locations/${locationId}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const result = await response.json().catch(() => ({}));
@@ -323,14 +326,17 @@ export async function addFavorite(merchantId) {
   }
 }
 
-export async function removeFavorite(merchantId) {
-  const response = await fetch(`/api/v1/favorites/${merchantId}`, {
-    method: "DELETE",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+export async function removeFavorite(merchantId, locationId) {
+  const response = await fetch(
+    `/api/v1/favorites/merchants/${merchantId}/locations/${locationId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const result = await response.json();

@@ -9,14 +9,17 @@ import { addFavorite, removeFavorite, useToast } from "@reservations/lib";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-async function fetchIsFavorite(merchantId) {
-  const response = await fetch(`/api/v1/favorites/${merchantId}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "content-type": "application/json",
-    },
-  });
+async function fetchIsFavorite(merchantId, locationId) {
+  const response = await fetch(
+    `/api/v1/favorites/merchants/${merchantId}/locations/${locationId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "content-type": "application/json",
+      },
+    }
+  );
 
   if (response.status === 401) {
     return { is_favorite: false, is_authenticated: false };
@@ -30,10 +33,10 @@ async function fetchIsFavorite(merchantId) {
   }
 }
 
-function isFavoriteQueryOptions(merchantId) {
+function isFavoriteQueryOptions(merchantId, locationId) {
   return queryOptions({
-    queryKey: ["is-favorite", merchantId],
-    queryFn: () => fetchIsFavorite(merchantId),
+    queryKey: ["is-favorite", merchantId, locationId],
+    queryFn: () => fetchIsFavorite(merchantId, locationId),
     retry: false,
   });
 }
@@ -49,13 +52,13 @@ function withConditionalTooltip(condition, content, children) {
   );
 }
 
-export default function FavoriteButton({ merchantId, styles }) {
+export default function FavoriteButton({ merchantId, locationId, styles }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
   const { data: favoriteData } = useQuery({
-    ...isFavoriteQueryOptions(merchantId),
-    enabled: Boolean(merchantId),
+    ...isFavoriteQueryOptions(merchantId, locationId),
+    enabled: Boolean(merchantId && locationId),
   });
 
   const isFavorite = favoriteData?.is_favorite;
@@ -70,19 +73,19 @@ export default function FavoriteButton({ merchantId, styles }) {
       return;
     }
 
-    if (!merchantId || isToggling) return;
+    if (!merchantId || !locationId || isToggling) return;
 
     try {
       setIsToggling(true);
 
       if (isFavorite) {
-        await removeFavorite(merchantId);
+        await removeFavorite(merchantId, locationId);
       } else {
-        await addFavorite(merchantId);
+        await addFavorite(merchantId, locationId);
       }
 
       await queryClient.invalidateQueries({
-        queryKey: isFavoriteQueryOptions(merchantId).queryKey,
+        queryKey: isFavoriteQueryOptions(merchantId, locationId).queryKey,
       });
     } catch {
       showToast({ message: "Failed to update favorite", variant: "error" });

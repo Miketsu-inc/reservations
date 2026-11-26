@@ -52,12 +52,12 @@ function FavoritesPage() {
   const { queryClient } = Route.useRouteContext();
   const { showToast } = useToast();
 
-  async function handleRemoveFavorite(merchantId) {
+  async function handleRemoveFavorite(merchantId, locationId) {
     if (removingId) return;
     try {
-      setRemovingId(merchantId);
+      setRemovingId(locationId);
 
-      await removeFavorite(merchantId);
+      await removeFavorite(merchantId, locationId);
 
       await queryClient.invalidateQueries({ queryKey: ["favourites"] });
     } catch {
@@ -127,10 +127,15 @@ function FavoritesPage() {
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
             {filteredFavorites.map((merchant) => (
               <FavoriteMerchantCard
-                key={merchant.merchant_id}
+                key={merchant.location_id}
                 merchant={merchant}
-                onRemove={() => handleRemoveFavorite(merchant.merchant_id)}
-                isRemoving={removingId === merchant.merchant_id}
+                onRemove={() =>
+                  handleRemoveFavorite(
+                    merchant.merchant_id,
+                    merchant.location_id
+                  )
+                }
+                isRemoving={removingId === merchant.location_id}
               />
             ))}
           </div>

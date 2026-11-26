@@ -120,6 +120,7 @@ function MerchantPage() {
         </span>
         <FavoriteButton
           merchantId={merchantInfo.merchant_id}
+          locationId={merchantInfo.location_id}
           styles="hover:bg-hover cursor-pointer rounded-md p-1"
         />
       </div>
@@ -154,6 +155,7 @@ function MerchantPage() {
 
             <FavoriteButton
               merchantId={merchantInfo.merchant_id}
+              locationId={merchantInfo.location_id}
               styles="bg-bg-raised border-border shadow-card hover:bg-hover
                 mt-1.5 h-fit cursor-pointer rounded-full border p-3
                 hover:scale-105"
@@ -369,6 +371,7 @@ function MerchantPage() {
                 </div>
                 <FavoriteButton
                   merchantId={merchantInfo.merchant_id}
+                  locationId={merchantInfo.location_id}
                   styles="bg-bg-raised border-border hover:bg-hover h-fit
                     cursor-pointer rounded-full border p-2.5 hover:scale-105"
                 />
