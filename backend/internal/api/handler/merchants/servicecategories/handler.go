@@ -5,21 +5,26 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	"github.com/miketsu-inc/reservations/backend/pkg/httputil"
 	"github.com/miketsu-inc/reservations/backend/pkg/validate"
 )
 
 type Handler struct {
-	service *catalogServ.Service
+	service    *catalogServ.Service
+	middleware *middleware.Manager
 }
 
-func NewHandler(s *catalogServ.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s *catalogServ.Service, m *middleware.Manager) *Handler {
+	return &Handler{service: s, middleware: m}
 }
 
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
+
+	r.UseFunc(h.middleware.RequirePermission(permission.ManageServices))
 
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)

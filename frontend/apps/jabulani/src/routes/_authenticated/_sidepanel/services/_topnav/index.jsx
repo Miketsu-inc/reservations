@@ -1,4 +1,4 @@
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import {
   Button,
   DeleteModal,
@@ -11,7 +11,7 @@ import {
   SearchInput,
   ServerError,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -88,7 +88,8 @@ export const Route = createFileRoute(
 function ServicesPage() {
   const [serverError, setServerError] = useState();
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
+  const { merchantId, can } = useAuth();
+  const canManageServices = can.do(ACTIONS.MANAGE_SERVICES);
 
   const [selected, setSelected] = useState({ id: 0, name: "" });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -251,36 +252,48 @@ function ServicesPage() {
                 searchText={searchText}
                 onChange={(text) => setSearchText(text)}
               />
-              <Popover>
-                <PopoverTrigger asChild>
+              {canManageServices ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      styles="py-2 pr-2.5 pl-3.5 text-sm"
+                      childSide="right"
+                      variant="primary"
+                      buttonText="New"
+                    >
+                      <Icon icon={ArrowDown01Icon} styles="size-4 ml-1.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end">
+                    <div
+                      className="*:hover:bg-hover flex flex-col items-start
+                        *:w-full *:rounded-lg *:p-2"
+                    >
+                      <Link from={Route.fullPath} to="/services/new">
+                        Service
+                      </Link>
+                      <PopoverClose asChild>
+                        <button
+                          onClick={() => setShowAddCategoryModal(true)}
+                          className="cursor-pointer text-left"
+                        >
+                          Category
+                        </button>
+                      </PopoverClose>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Link from={Route.fullPath} to="/services/new">
                   <Button
-                    styles="py-2 pr-2.5 pl-3.5 text-sm"
-                    childSide="right"
                     variant="primary"
-                    buttonText="New"
+                    styles="py-2 pr-3 pl-2.5 text-sm w-fit"
+                    buttonText="New Service"
                   >
-                    <Icon icon={ArrowDown01Icon} styles="size-4 ml-1.5" />
+                    <Icon icon={PlusSignIcon} styles="size-4 mr-1.5" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end">
-                  <div
-                    className="*:hover:bg-hover flex flex-col items-start
-                      *:w-full *:rounded-lg *:p-2"
-                  >
-                    <Link from={Route.fullPath} to="/services/new">
-                      Service
-                    </Link>
-                    <PopoverClose asChild>
-                      <button
-                        onClick={() => setShowAddCategoryModal(true)}
-                        className="cursor-pointer text-left"
-                      >
-                        Category
-                      </button>
-                    </PopoverClose>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                </Link>
+              )}
             </div>
           </div>
           <ul className="flex flex-col gap-4">

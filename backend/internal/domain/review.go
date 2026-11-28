@@ -25,8 +25,8 @@ type ReviewRepository interface {
 	DeleteReply(ctx context.Context, merchantId uuid.UUID, reviewId int) error
 
 	GetReviews(ctx context.Context, filter ReviewFilter) ([]ReviewDetails, error)
-	GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (ReviewStats, error)
-	GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]int, error)
+	GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int, employeeId *int) (ReviewStats, error)
+	GetReviewCountsByService(ctx context.Context, merchantId uuid.UUID, locationId *int, employeeId *int) (map[int]int, error)
 	GetEmployeeRatings(ctx context.Context, merchantId uuid.UUID, locationId *int) (map[int]EmployeeRating, error)
 }
 

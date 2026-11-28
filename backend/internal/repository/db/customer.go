@@ -185,7 +185,7 @@ func (r *customerRepository) GetCustomerInfo(ctx context.Context, merchantId uui
 	return customer, nil
 }
 
-func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID) (domain.CustomerStatistics, error) {
+func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uuid.UUID, customerId uuid.UUID, employeeId *int) (domain.CustomerStatistics, error) {
 	query := `
 	with customer_bookings as (
 		select b.id, b.from_date, b.to_date, b.service_name, b.price_per_person,
@@ -196,6 +196,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 		from "BookingParticipant" bp
 		join "Booking" b on b.id = bp.booking_id and b.merchant_id = $1
 		where bp.customer_id = $2 and b.cancelled_by_merchant_on is null
+			and ($3::int is null or b.employee_id = $3)
 	)
 	select count(cb.id) filter (where cb.status = 'booked') as times_booked,
 		count(cb.id) filter (where cb.status = 'confirmed') as times_confirmed,
@@ -236,7 +237,7 @@ func (r *customerRepository) GetCustomerStats(ctx context.Context, merchantId uu
 	`
 
 	var customer domain.CustomerStatistics
-	err := r.db.QueryRow(ctx, query, merchantId, customerId).Scan(
+	err := r.db.QueryRow(ctx, query, merchantId, customerId, employeeId).Scan(
 		&customer.TimesBooked, &customer.TimesConfirmed,
 		&customer.TimesCompleted, &customer.TimesCancelled, &customer.TimesNoShow,
 		&customer.FirstBooking, &customer.CompletedValues,

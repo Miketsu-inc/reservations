@@ -1,11 +1,23 @@
 import { HierarchyIcon, MailAccount01Icon } from "@hugeicons/core-free-icons";
-import { Icon } from "@reservations/components";
+import { Icon, ServerError } from "@reservations/components";
 import { TopNavBar, TopNavBarItem } from "@reservations/jabulani/components";
+import { ACTIONS, createPermissionChecker } from "@reservations/jabulani/lib";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/_sidepanel/team/_topnav")(
   {
+    beforeLoad: ({ context: { authContext } }) => {
+      const can = createPermissionChecker(
+        authContext.permissions,
+        authContext.employeeId
+      );
+
+      if (!can.do(ACTIONS.MANAGE_TEAM)) {
+        throw new Error("You don't have access to this page");
+      }
+    },
     component: RouteComponent,
+    errorComponent: ({ error }) => <ServerError error={error.message} />,
   }
 );
 

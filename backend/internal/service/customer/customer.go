@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/repository"
 	"github.com/miketsu-inc/reservations/backend/pkg/db"
 )
@@ -137,7 +138,7 @@ func (s *Service) Get(ctx context.Context, customerId uuid.UUID) (domain.Custome
 func (s *Service) GetStats(ctx context.Context, customerId uuid.UUID) (domain.CustomerStatistics, error) {
 	actor := actor.MustGetFromContext(ctx)
 
-	customerStats, err := s.customerRepo.GetCustomerStats(ctx, actor.MerchantId, customerId)
+	customerStats, err := s.customerRepo.GetCustomerStats(ctx, actor.MerchantId, customerId, permission.For(actor).ViewFilter(permission.Bookings))
 	if err != nil {
 		return domain.CustomerStatistics{}, err
 	}

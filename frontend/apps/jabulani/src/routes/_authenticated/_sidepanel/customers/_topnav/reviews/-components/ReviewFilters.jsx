@@ -7,6 +7,7 @@ import {
   Toggle,
   ToggleGroup,
 } from "@reservations/components";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import { toAvatar } from "@reservations/lib";
 
 const REPLY_OPTIONS = [
@@ -38,6 +39,8 @@ export default function ReviewFilters({
   team = [],
   totalCount,
 }) {
+  const { can } = useAuth();
+  const showTeamFilter = can.viewAll(RESOURCES.REVIEWS);
   const serviceOptions = services.map((svc) => ({
     value: svc.id,
     label: svc.name,
@@ -113,7 +116,13 @@ export default function ReviewFilters({
           />
         </div>
 
-        <div className="col-span-1 md:col-span-3">
+        <div
+          className={
+            showTeamFilter
+              ? "col-span-1 md:col-span-3"
+              : "col-span-2 md:col-span-6"
+          }
+        >
           <MultiSelect
             options={serviceOptions}
             values={serviceIds}
@@ -123,15 +132,17 @@ export default function ReviewFilters({
           />
         </div>
 
-        <div className="col-span-1 md:col-span-3">
-          <MultiSelect
-            options={teamOptions}
-            values={employeeIds}
-            onSelect={(values) => onChange({ employeeIds: values })}
-            placeholder="Select team members"
-            displayText="team member"
-          />
-        </div>
+        {showTeamFilter && (
+          <div className="col-span-1 md:col-span-3">
+            <MultiSelect
+              options={teamOptions}
+              values={employeeIds}
+              onSelect={(values) => onChange({ employeeIds: values })}
+              placeholder="Select team members"
+              displayText="team member"
+            />
+          </div>
+        )}
       </div>
 
       {activeFilters.length > 0 && (

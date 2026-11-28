@@ -60,7 +60,7 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) error {
 		return merchantServ.ErrStatus.Resolve(err, "GetMerchantIdByUrlName")
 	}
 
-	stats, err := h.reviewServ.GetReviewStats(r.Context(), merchantId, &urlLocationId)
+	stats, err := h.reviewServ.GetReviewStats(r.Context(), merchantId, &urlLocationId, nil)
 	if err != nil {
 		return reviewServ.ErrStatus.Resolve(err, "GetReviewStats")
 	}

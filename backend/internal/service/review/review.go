@@ -8,8 +8,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/actor"
 	"github.com/miketsu-inc/reservations/backend/internal/api/middleware/jwt"
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
+	"github.com/miketsu-inc/reservations/backend/internal/permission"
 	"github.com/miketsu-inc/reservations/backend/internal/types"
 	"github.com/miketsu-inc/reservations/backend/pkg/cursor"
 )
@@ -233,7 +235,7 @@ func (s *Service) DeleteReview(ctx context.Context, reviewId int) error {
 	return nil
 }
 
-func (s *Service) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int) (domain.ReviewStats, error) {
+func (s *Service) GetReviewStats(ctx context.Context, merchantId uuid.UUID, locationId *int, employeeId *int) (domain.ReviewStats, error) {
 	if locationId == nil {
 		defaultLoc, err := s.locationRepo.GetDefaultLocation(ctx, merchantId)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -244,17 +246,23 @@ func (s *Service) GetReviewStats(ctx context.Context, merchantId uuid.UUID, loca
 		}
 	}
 
-	stats, err := s.reviewRepo.GetReviewStats(ctx, merchantId, locationId)
+	stats, err := s.reviewRepo.GetReviewStats(ctx, merchantId, locationId, employeeId)
 	if err != nil {
 		return domain.ReviewStats{}, err
 	}
 
-	stats.ServiceCounts, err = s.reviewRepo.GetReviewCountsByService(ctx, merchantId, locationId)
+	stats.ServiceCounts, err = s.reviewRepo.GetReviewCountsByService(ctx, merchantId, locationId, employeeId)
 	if err != nil {
 		return domain.ReviewStats{}, err
 	}
 
 	return stats, nil
+}
+
+func (s *Service) GetReviewStatsByMerchant(ctx context.Context) (domain.ReviewStats, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	return s.GetReviewStats(ctx, actor.MerchantId, nil, permission.For(actor).ViewFilter(permission.Reviews))
 }
 
 type reviewCursor struct {
@@ -327,14 +335,83 @@ func (s *Service) GetReviews(ctx context.Context, input GetReviewsInput) (GetRev
 	}, nil
 }
 
-func (s *Service) ReplyReview(ctx context.Context, merchantId uuid.UUID, employeeId int, reviewId int, comment string) error {
-	return s.reviewRepo.UpsertReply(ctx, merchantId, reviewId, employeeId, comment)
+func (s *Service) GetReviewsByMerchant(ctx context.Context, params ReviewQueryParams) (GetReviewsResult, error) {
+	actor := actor.MustGetFromContext(ctx)
+
+	if employeeId := permission.For(actor).ViewFilter(permission.Reviews); employeeId != nil {
+		for _, id := range params.EmployeeIds {
+			if id != *employeeId {
+				return GetReviewsResult{}, domain.ErrEmployeeAccessDenied
+			}
+		}
+
+		params.EmployeeIds = []int{*employeeId}
+	}
+
+	return s.GetReviews(ctx, GetReviewsInput{
+		MerchantId:        actor.MerchantId,
+		ReviewQueryParams: params,
+	})
 }
 
-func (s *Service) DeleteReviewReply(ctx context.Context, merchantId uuid.UUID, reviewId int) error {
-	return s.reviewRepo.DeleteReply(ctx, merchantId, reviewId)
+func (s *Service) checkReviewEditable(ctx context.Context, actor actor.EmployeeContext, reviewId int) error {
+	review, err := s.reviewRepo.GetReviewById(ctx, reviewId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrReviewNotFound
+		}
+
+		return err
+	}
+
+	if review.MerchantId != actor.MerchantId {
+		return ErrReviewNotFound
+	}
+
+	can := permission.For(actor)
+
+	var canEdit bool
+
+	// Reviews whose employee was deleted are only editable by those who can edit everyone's
+	if review.EmployeeId != nil {
+		canEdit = can.Edit(permission.Reviews, *review.EmployeeId)
+	} else {
+		canEdit = can.EditAll(permission.Reviews)
+	}
+
+	if !canEdit {
+		return ErrReviewNotFound
+	}
+
+	return nil
 }
 
-func (s *Service) ReportReview(ctx context.Context, merchantId uuid.UUID, reviewId int, reason string) error {
-	return s.reviewRepo.ReportReview(ctx, reviewId, merchantId, reason)
+func (s *Service) ReplyReview(ctx context.Context, reviewId int, comment string) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkReviewEditable(ctx, actor, reviewId); err != nil {
+		return err
+	}
+
+	return s.reviewRepo.UpsertReply(ctx, actor.MerchantId, reviewId, actor.EmployeeId, comment)
+}
+
+func (s *Service) DeleteReviewReply(ctx context.Context, reviewId int) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkReviewEditable(ctx, actor, reviewId); err != nil {
+		return err
+	}
+
+	return s.reviewRepo.DeleteReply(ctx, actor.MerchantId, reviewId)
+}
+
+func (s *Service) ReportReview(ctx context.Context, reviewId int, reason string) error {
+	actor := actor.MustGetFromContext(ctx)
+
+	if err := s.checkReviewEditable(ctx, actor, reviewId); err != nil {
+		return err
+	}
+
+	return s.reviewRepo.ReportReview(ctx, reviewId, actor.MerchantId, reason)
 }

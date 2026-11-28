@@ -6,7 +6,7 @@ import {
   ScrollSpySection,
 } from "@reservations/components";
 import { TeamMemberMultiSelect } from "@reservations/jabulani/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { Block, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -14,7 +14,7 @@ import ProductAdder from "./ProductAdder";
 import { ServiceBasicDetails } from "./ServiceBasicDetails";
 import ServiceBookingSettings from "./ServiceBookingSettings";
 import { ServicePricingDuration } from "./ServicePricingDuration";
-import { normalizeServicePhases } from "./servicehooks";
+import { canEditService, normalizeServicePhases } from "./servicehooks";
 
 export default function ServicePage({
   // Fix for react compiler bug
@@ -28,6 +28,10 @@ export default function ServicePage({
   onSave,
   route,
 }) {
+  const { merchantId, employeeId, can } = useAuth();
+  const canEdit = !service?.id || canEditService(can, service.employee_ids);
+  const canEditAll = can.editAll(RESOURCES.SERVICES);
+
   const originalData = useMemo(
     () => ({
       id: service?.id,
@@ -51,18 +55,22 @@ export default function ServicePage({
         approval_policy: service?.settings?.approval_policy ?? null,
       },
       phases: service?.phases || [],
-      employee_ids: service?.employee_ids || [],
+      employee_ids: service?.employee_ids || (canEditAll ? [] : [employeeId]),
       used_products: service?.used_products || [],
     }),
-    [service]
+    [service, canEditAll, employeeId]
   );
   const router = useRouter();
   const serviceFormRef = useRef(null);
   const [serviceData, setServiceData] = useState(originalData);
   const lastSavedData = useRef(originalData);
+
+  // reads the ref at call time, so a save right before navigating doesn't block it
+  const hasUnsavedChanges = () =>
+    JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
-  const { merchantId } = useAuth();
 
   const isGroupService = serviceData.booking_type !== "appointment";
 
@@ -141,9 +149,10 @@ export default function ServicePage({
   return (
     <Block
       shouldBlockFn={() =>
-        JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current) &&
+        hasUnsavedChanges() &&
         !confirm("You have unsaved changes, are you sure you want to leave?")
       }
+      enableBeforeUnload={hasUnsavedChanges}
     >
       {service?.id && (
         <DeleteModal
@@ -166,19 +175,21 @@ export default function ServicePage({
               <p className="text-xl font-semibold">
                 {serviceData.id ? "Edit service" : "New service"}
               </p>
-              <div
-                className="bg-bg-raised border-t-border fixed bottom-0 left-0
-                  z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
-                  md:bg-transparent md:p-0"
-              >
-                <Button
-                  type="button"
-                  styles="py-2 px-6 w-full"
-                  variant="primary"
-                  buttonText="Save"
-                  onClick={() => serviceFormRef.current.requestSubmit()}
-                />
-              </div>
+              {canEdit && (
+                <div
+                  className="bg-bg-raised border-t-border fixed bottom-0 left-0
+                    z-30 w-full border-t p-4 md:static md:w-auto md:border-t-0
+                    md:bg-transparent md:p-0"
+                >
+                  <Button
+                    type="button"
+                    styles="py-2 px-6 w-full"
+                    variant="primary"
+                    buttonText="Save"
+                    onClick={() => serviceFormRef.current.requestSubmit()}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full md:min-h-0 md:flex-1 md:overflow-y-auto">
@@ -188,85 +199,88 @@ export default function ServicePage({
             >
               <ScrollSpyNav />
               <div className="min-w-0 px-4 pt-4 pb-16 md:px-0 md:pt-0 md:pb-0">
-                <div className="flex flex-col gap-16">
-                  <form
-                    ref={serviceFormRef}
-                    className="flex flex-col gap-16"
-                    onSubmit={saveService}
-                  >
-                    <ScrollSpySection id="basicDetails" label="Basic details">
-                      <p className="mb-5 font-semibold">Basic details</p>
-                      <ServiceBasicDetails
-                        service={serviceData}
-                        categories={categories}
-                        onUpdate={updateServiceData}
-                      />
-                    </ScrollSpySection>
-                    <ScrollSpySection
-                      id="pricingDuration"
-                      label="Pricing & duration"
+                <fieldset disabled={!canEdit} className="contents">
+                  <div className="flex flex-col gap-16">
+                    <form
+                      ref={serviceFormRef}
+                      className="flex flex-col gap-16"
+                      onSubmit={saveService}
                     >
-                      <p className="mb-5 font-semibold">Pricing & duration</p>
-                      <ServicePricingDuration
-                        service={serviceData}
-                        setService={setServiceData}
-                        onUpdate={updateServiceData}
-                      />
-                    </ScrollSpySection>
-                    <ScrollSpySection id="teamMembers" label="Team members">
-                      <p className="mb-5 font-semibold">Team members</p>
-                      <TeamMemberMultiSelect
-                        values={serviceData.employee_ids}
-                        onSelect={(employeeIds) =>
-                          updateServiceData({ employee_ids: employeeIds })
+                      <ScrollSpySection id="basicDetails" label="Basic details">
+                        <p className="mb-5 font-semibold">Basic details</p>
+                        <ServiceBasicDetails
+                          service={serviceData}
+                          categories={categories}
+                          onUpdate={updateServiceData}
+                        />
+                      </ScrollSpySection>
+                      <ScrollSpySection
+                        id="pricingDuration"
+                        label="Pricing & duration"
+                      >
+                        <p className="mb-5 font-semibold">Pricing & duration</p>
+                        <ServicePricingDuration
+                          service={serviceData}
+                          setService={setServiceData}
+                          onUpdate={updateServiceData}
+                        />
+                      </ScrollSpySection>
+                      <ScrollSpySection id="teamMembers" label="Team members">
+                        <p className="mb-5 font-semibold">Team members</p>
+                        <TeamMemberMultiSelect
+                          values={serviceData.employee_ids}
+                          disabled={!canEditAll}
+                          onSelect={(employeeIds) =>
+                            updateServiceData({ employee_ids: employeeIds })
+                          }
+                        />
+                        {service?.id && (
+                          <div className="pt-8">
+                            <p className="font-medium">
+                              Advanced team member settings
+                            </p>
+                            <p className="text-fg-muted text-sm">
+                              Manage assignments and override service defaults.
+                            </p>
+                            <Link
+                              to={`/services/team-member-settings/${service.id}`}
+                              className="text-fg-primary inline-block py-2
+                                text-sm hover:underline"
+                            >
+                              Advanced settings
+                            </Link>
+                          </div>
+                        )}
+                      </ScrollSpySection>
+                    </form>
+                    <ScrollSpySection id="products" label="Products">
+                      <p className="mb-5 font-semibold">Products</p>
+                      <ProductAdder
+                        availableProducts={products}
+                        usedProducts={serviceData.used_products}
+                        onUpdate={(updated) =>
+                          updateServiceData({ used_products: updated })
                         }
                       />
-                      {service?.id && (
-                        <div className="pt-8">
-                          <p className="font-medium">
-                            Advanced team member settings
-                          </p>
-                          <p className="text-fg-muted text-sm">
-                            Manage assignments and override service defaults.
-                          </p>
-                          <Link
-                            to={`/services/team-member-settings/${service.id}`}
-                            className="text-fg-primary inline-block py-2 text-sm
-                              hover:underline"
-                          >
-                            Advanced settings
-                          </Link>
-                        </div>
-                      )}
                     </ScrollSpySection>
-                  </form>
-                  <ScrollSpySection id="products" label="Products">
-                    <p className="mb-5 font-semibold">Products</p>
-                    <ProductAdder
-                      availableProducts={products}
-                      usedProducts={serviceData.used_products}
-                      onUpdate={(updated) =>
-                        updateServiceData({ used_products: updated })
-                      }
-                    />
-                  </ScrollSpySection>
-                  <ScrollSpySection id="bookings" label="Bookings">
-                    <p className="mb-5 font-semibold">Bookings</p>
-                    <ServiceBookingSettings
-                      onUpdate={updateServiceData}
-                      settings={serviceData.settings}
-                    />
-                  </ScrollSpySection>
-                  {service?.id && (
-                    <Button
-                      type="button"
-                      styles="py-4 mb-2 shadow-none bg-transparent
-                        hover:bg-transparent! text-fg-danger!"
-                      buttonText="Delete service"
-                      onClick={() => setShowDeleteModal(true)}
-                    ></Button>
-                  )}
-                </div>
+                    <ScrollSpySection id="bookings" label="Bookings">
+                      <p className="mb-5 font-semibold">Bookings</p>
+                      <ServiceBookingSettings
+                        onUpdate={updateServiceData}
+                        settings={serviceData.settings}
+                      />
+                    </ScrollSpySection>
+                    {service?.id && canEdit && (
+                      <Button
+                        type="button"
+                        styles="py-4 mb-2 shadow-none bg-transparent
+                          hover:bg-transparent! text-fg-danger!"
+                        buttonText="Delete service"
+                        onClick={() => setShowDeleteModal(true)}
+                      ></Button>
+                    )}
+                  </div>
+                </fieldset>
               </div>
             </div>
           </div>

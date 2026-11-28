@@ -29,15 +29,15 @@ func NewHandler(s *locationServ.Service, ms *mediaServ.Service, m *middleware.Ma
 func (h *Handler) Routes() *httputil.Router {
 	r := httputil.NewRouter()
 
-	// TODO: temp until signup flow is figured out?
-	r.Post("/", h.New)
 	r.Get("/", h.GetAll)
-	r.Patch("/{id}", h.Update)
-
 	r.Get("/{id}/images", h.GetImages)
 
 	r.Group(func(r *httputil.Router) {
-		r.UseFunc(h.middleware.RequirePermission(permission.EditLocationImages))
+		r.UseFunc(h.middleware.RequirePermission(permission.EditSettings))
+
+		// TODO: temp until signup flow is figured out?
+		r.Post("/", h.New)
+		r.Patch("/{id}", h.Update)
 
 		r.WithFunc(h.middleware.RateLimitByUser(30, time.Hour)).Post("/{id}/images", h.CreateImageUpload)
 		r.Put("/{id}/images/order", h.ReorderImages)

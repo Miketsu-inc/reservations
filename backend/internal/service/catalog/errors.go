@@ -25,9 +25,12 @@ var ErrStatus = apperr.StatusMap{
 	ErrDuplicateEmployeeServicePhase:          http.StatusBadRequest,
 	ErrDuplicateServiceId:                     http.StatusBadRequest,
 	ErrDuplicateServiceCategoryId:             http.StatusBadRequest,
+	domain.ErrEmployeeAccessDenied:            http.StatusForbidden,
+	ErrServiceNotFound:                        http.StatusNotFound,
 }
 
 var (
+	ErrServiceNotFound              = &apperr.Error{Code: "service_not_found", Message: "service not found"}
 	ErrDuplicateServiceId           = &apperr.Error{Code: "duplicate_service_id", Message: "a service can only appear once"}
 	ErrServicePhasesRequired        = &apperr.Error{Code: "service_phases_required", Message: "service must have at least one phase"}
 	ErrServicePriceCurrencyMismatch = &apperr.Error{Code: "service_price_currency_mismatch", Message: "service price currency must match the merchant currency"}

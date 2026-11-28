@@ -29,7 +29,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   meQueryOptions,
   TANGO_URL,
@@ -61,7 +61,7 @@ function SidePanelLayout() {
   );
 
   const { data: user, isLoading } = useQuery(meQueryOptions());
-  const { role, merchantUrlName, employeeAvatarUrl } = useAuth();
+  const { role, merchantUrlName, employeeAvatarUrl, can } = useAuth();
 
   const isOpen = isWindowSmall ? isOpenend : true;
 
@@ -117,6 +117,7 @@ function SidePanelLayout() {
       href: "/team",
       label: "Team",
       icon: <Icon icon={CorporateIcon} styles="size-5" />,
+      isHidden: !can.do(ACTIONS.MANAGE_TEAM),
     },
     {
       href: "/products",
@@ -279,52 +280,54 @@ function SidePanelLayout() {
             className="flex min-h-0 flex-1 flex-col justify-between px-3 py-2"
           >
             <ol className="flex flex-col space-y-1.5">
-              {navigation.map((item, index) => (
-                <li key={index}>
-                  {withConditionalTooltip(
-                    !isWindowSmall && isCollapsed,
-                    item.label,
-                    <Link
-                      onClick={
-                        item?.onClick ? item.onClick : closeSidePanelHandler
-                      }
-                      to={item.href}
-                      activeProps={{
-                        className:
-                          "bg-bg-raised! text-fg! shadow-card ring-border ring-1 [&>span:first-child]:text-fg-primary!",
-                      }}
-                      className={`${isCollapsed && !isWindowSmall ? "h-9 w-10 justify-center" : "h-9 px-2.5"}
-                      text-fg-muted hover:bg-hover hover:text-fg flex
-                      items-center rounded-lg text-sm font-medium`}
-                    >
-                      <span className="text-fg-muted shrink-0">
-                        {item.icon}
-                      </span>
-                      {(!isCollapsed || isWindowSmall) && (
-                        <>
-                          <span
-                            className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
-                            ms-3 flex-1 whitespace-nowrap
-                            transition-[opacity,width] duration-300`}
-                          >
-                            {item.label}
-                          </span>
-                          {item.isPro && (
+              {navigation
+                .filter((item) => !item.isHidden)
+                .map((item, index) => (
+                  <li key={index}>
+                    {withConditionalTooltip(
+                      !isWindowSmall && isCollapsed,
+                      item.label,
+                      <Link
+                        onClick={
+                          item?.onClick ? item.onClick : closeSidePanelHandler
+                        }
+                        to={item.href}
+                        activeProps={{
+                          className:
+                            "bg-bg-raised! text-fg! shadow-card ring-border ring-1 [&>span:first-child]:text-fg-primary!",
+                        }}
+                        className={`${isCollapsed && !isWindowSmall ? "h-9 w-10 justify-center" : "h-9 px-2.5"}
+                        text-fg-muted hover:bg-hover hover:text-fg flex
+                        items-center rounded-lg text-sm font-medium`}
+                      >
+                        <span className="text-fg-muted shrink-0">
+                          {item.icon}
+                        </span>
+                        {(!isCollapsed || isWindowSmall) && (
+                          <>
                             <span
-                              className="bg-primary-subtle text-fg-primary ms-3
-                                inline-flex items-center justify-center
-                                rounded-full px-2 py-0.5 text-[11px]
-                                font-semibold tracking-wide uppercase"
+                              className={`${!isWindowSmall && isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
+                              ms-3 flex-1 whitespace-nowrap
+                              transition-[opacity,width] duration-300`}
                             >
-                              Pro
+                              {item.label}
                             </span>
-                          )}
-                        </>
-                      )}
-                    </Link>
-                  )}
-                </li>
-              ))}
+                            {item.isPro && (
+                              <span
+                                className="bg-primary-subtle text-fg-primary
+                                  ms-3 inline-flex items-center justify-center
+                                  rounded-full px-2 py-0.5 text-[11px]
+                                  font-semibold tracking-wide uppercase"
+                              >
+                                Pro
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </Link>
+                    )}
+                  </li>
+                ))}
             </ol>
             <Popover>
               <PopoverTrigger>

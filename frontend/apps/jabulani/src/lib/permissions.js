@@ -3,14 +3,17 @@ export const ACTIONS = {
   DELETE_MERCHANT: "merchant:delete",
   RENAME_MERCHANT: "merchant:rename",
   EDIT_SETTINGS: "settings:edit",
-  EDIT_LOCATION_IMAGES: "location_images:edit",
   MANAGE_TEAM: "team:manage",
+  MANAGE_CUSTOMERS: "customers:manage",
+  MANAGE_SERVICES: "services:manage",
 };
 
 export const RESOURCES = {
   BOOKINGS: "bookings",
   BLOCKED_TIMES: "blocked_times",
   TEAM: "team",
+  SERVICES: "services",
+  REVIEWS: "reviews",
 };
 
 export function createPermissionChecker(permissions, employeeId) {

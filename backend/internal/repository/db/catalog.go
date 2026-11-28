@@ -163,61 +163,43 @@ func (r *catalogRepository) ReorderServicesAfterUpdate(ctx context.Context, cate
 	return nil
 }
 
-// TODO: full outer joins can be expensive, this should be reevaluated later for performance
 func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, merchantId uuid.UUID) ([]domain.ServicesGroupedByCategory, error) {
 	query := `
-	with services as (
-		select s.id, s.merchant_id, s.category_id, s.booking_type, s.name, s.description, s.color, s.total_duration, s.price_per_person, s.price_type,
-			s.is_active, s.sequence, s.min_participants, s.max_participants, s.cancel_deadline, s.booking_window_min, s.booking_window_max,
-			s.buffer_time, s.approval_policy,
-		coalesce (
-			jsonb_agg(
-				jsonb_build_object(
-					'id', sp.id,
-					'service_id', sp.service_id,
-					'name', sp.name,
-					'sequence', sp.sequence,
-					'duration', sp.duration,
-					'phase_type', sp.phase_type
-				) order by sp.sequence
-			) filter (where sp.id is not null),
-		'[]'::jsonb) as phases
-		from "Service" s
-		left join "ServicePhase" sp on s.id = sp.service_id
-		where s.merchant_id = $1
-		group by s.id
-	)
-	select sc.id, sc.name, sc.sequence,
-	coalesce (
+	with employee_ids as (
+		select es.service_id, array_agg(es.employee_id order by es.employee_id) as ids
+		from "EmployeeService" es
+		join "Employee" e on e.id = es.employee_id
+		where e.merchant_id = $1 and e.is_active
+		group by es.service_id
+	),
+	services as (
+		select s.category_id,
 		jsonb_agg(
 			jsonb_build_object(
 				'id', s.id,
-				'merchant_id', s.merchant_id,
-				'booking_type', s.booking_type,
 				'name', s.name,
-				'description', s.description,
 				'color', s.color,
 				'total_duration', s.total_duration,
-				'price_per_person', s.price_per_person,
-				'price_type', s.price_type,
+				'booking_type', s.booking_type,
 				'is_active', s.is_active,
 				'sequence', s.sequence,
-				'min_participants', s.min_participants,
-				'max_participants', s.max_participants,
-				'cancel_deadline', s.cancel_deadline,
-				'booking_window_min', s.booking_window_min,
-				'booking_window_max', s.booking_window_max,
-				'buffer_time', s.buffer_time,
-				'approval_policy', s.approval_policy,
-				'phases', s.phases
+				'employee_ids', coalesce(ei.ids, '{}'::int[])
 			) order by s.sequence
-		) filter (where s.id is not null),
-	'[]'::jsonb) as services
+		) as services
+		from "Service" s
+		left join employee_ids ei on ei.service_id = s.id
+		where s.merchant_id = $1
+		group by s.category_id
+	)
+	select sc.id, sc.name, sc.sequence, coalesce(s.services, '[]'::jsonb) as services
 	from "ServiceCategory" sc
-	full outer join services s on s.category_id = sc.id
-	where sc.merchant_id = $1 or s.merchant_id = $1
-	group by sc.id, sc.name
-	order by sc.sequence, sc.name nulls last
+	left join services s on s.category_id = sc.id
+	where sc.merchant_id = $1
+	union all
+	select null, null, null, s.services
+	from services s
+	where s.category_id is null
+	order by sequence nulls last, name
 	`
 
 	rows, _ := r.db.Query(ctx, query, merchantId)
@@ -236,7 +218,7 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 				return domain.ServicesGroupedByCategory{}, err
 			}
 		} else {
-			sgby.Services = []domain.Service{}
+			sgby.Services = []domain.ServiceEmployees{}
 		}
 
 		return sgby, nil
@@ -256,23 +238,30 @@ func (r *catalogRepository) GetServicesGroupedByCategory(ctx context.Context, me
 
 func (r *catalogRepository) GetServicesForCalendar(ctx context.Context, merchantId uuid.UUID, employeeId *int) ([]domain.ServicesGroupedByCategoriesForCalendar, error) {
 	query := `
+	with employee_ids as (
+		select es.service_id, array_agg(es.employee_id order by es.employee_id) as ids
+		from "EmployeeService" es
+		join "Employee" e on e.id = es.employee_id
+		where e.merchant_id = $1 and e.is_active
+		group by es.service_id
+	)
 	select sc.id, sc.name,
-	coalesce (
-		jsonb_agg(
-			jsonb_build_object(
-				'id', s.id,
-				'name', s.name,
-				'duration', s.total_duration,
-				'price', s.price_per_person,
-				'price_type', s.price_type,
-				'color', s.color,
-				'booking_type', s.booking_type,
-				'max_participants', s.max_participants
-			) order by s.sequence
-		) filter (where s.id is not null),
-	'[]'::jsonb) as services
+	jsonb_agg(
+		jsonb_build_object(
+			'id', s.id,
+			'name', s.name,
+			'duration', s.total_duration,
+			'price', s.price_per_person,
+			'price_type', s.price_type,
+			'color', s.color,
+			'booking_type', s.booking_type,
+			'max_participants', s.max_participants,
+			'employee_ids', coalesce(ei.ids, '{}'::int[])
+		) order by s.sequence
+	) as services
 	from "Service" s
 	left join "ServiceCategory" sc on s.category_id = sc.id
+	left join employee_ids ei on ei.service_id = s.id
 	where s.merchant_id = $1 and s.is_active = true
 		and ($2::int is null or exists (
 			select 1
@@ -759,19 +748,21 @@ func (r *catalogRepository) GetServiceWithPhasesForEmployees(ctx context.Context
 	return result, nil
 }
 
-func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error) {
+func (r *catalogRepository) GetEmployeeIdsForService(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]int, error) {
 	query := `
 	select coalesce(
-		array_agg(es.employee_id order by es.employee_id),
+		array_agg(e.id order by e.id) filter (where e.id is not null),
 		'{}'::int[]
 		)
-	from "EmployeeService" es
-	join "Employee" e on e.id = es.employee_id and e.is_active is true
-	where es.service_id = $1
+	from "Service" s
+	left join "EmployeeService" es on es.service_id = s.id
+	left join "Employee" e on e.id = es.employee_id and e.is_active
+	where s.id = $1 and s.merchant_id = $2
+	group by s.id
 	`
 
 	var employeeIds []int
-	err := r.db.QueryRow(ctx, query, serviceId).Scan(&employeeIds)
+	err := r.db.QueryRow(ctx, query, serviceId, merchantId).Scan(&employeeIds)
 	if err != nil {
 		return []int{}, fmt.Errorf("GetEmployeeIdsForService: %w", err)
 	}

@@ -8,4 +8,4 @@ var ErrPhoneNumberNotUnique = &apperr.Error{Code: "phone_number_not_unique", Mes
 var ErrEmployeesRequired = &apperr.Error{Code: "employees_required", Message: "at least one team member must be assigned"}
 var ErrDuplicateEmployee = &apperr.Error{Code: "duplicate_employee", Message: "a team member can only be assigned once"}
 var ErrEmployeeNotActive = &apperr.Error{Code: "employee_not_active", Message: "team member must be active and belong to this merchant"}
-var ErrEmployeeAccessDenied = &apperr.Error{Code: "employee_access_denied", Message: "you can only manage your own bookings and blocked times"}
+var ErrEmployeeAccessDenied = &apperr.Error{Code: "employee_access_denied", Message: "you can only manage your own records"}

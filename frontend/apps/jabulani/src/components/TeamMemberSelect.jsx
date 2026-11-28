@@ -7,8 +7,9 @@ export default function TeamMemberSelect({
   value,
   onSelect,
   hideWhenSingle = true,
-  labelText = "Employee",
-  placeholder = "Select an employee",
+  labelText = "Team member",
+  placeholder = "Select a team member",
+  allowedMemberIds,
   disabled,
   ...props
 }) {
@@ -28,16 +29,23 @@ export default function TeamMemberSelect({
     return null;
   }
 
-  const options = team.map((member) => {
-    const { img, initials, name } = toAvatar(member);
-    return {
-      value: member.id,
-      label: name,
-      icon: (
-        <Avatar styles="size-6! text-[10px]!" img={img} initials={initials} />
-      ),
-    };
-  });
+  const options = team
+    .filter(
+      (member) =>
+        !allowedMemberIds ||
+        allowedMemberIds.includes(member.id) ||
+        member.id === value
+    )
+    .map((member) => {
+      const { img, initials, name } = toAvatar(member);
+      return {
+        value: member.id,
+        label: name,
+        icon: (
+          <Avatar styles="size-6! text-[10px]!" img={img} initials={initials} />
+        ),
+      };
+    });
 
   return (
     <Select

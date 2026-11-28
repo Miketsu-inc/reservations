@@ -20,11 +20,12 @@ func (a Action) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	DeleteMerchant     = Action{"merchant:delete"}
-	RenameMerchant     = Action{"merchant:rename"}
-	EditSettings       = Action{"settings:edit"}
-	EditLocationImages = Action{"location_images:edit"}
-	ManageTeam         = Action{"team:manage"}
+	DeleteMerchant  = Action{"merchant:delete"}
+	RenameMerchant  = Action{"merchant:rename"}
+	EditSettings    = Action{"settings:edit"}
+	ManageTeam      = Action{"team:manage"}
+	ManageCustomers = Action{"customers:manage"}
+	ManageServices  = Action{"services:manage"}
 )
 
 // Records that belong to employees, access depends on whose they are
@@ -44,6 +45,8 @@ var (
 	Bookings     = Resource{"bookings"}
 	BlockedTimes = Resource{"blocked_times"}
 	Team         = Resource{"team"}
+	Services     = Resource{"services"}
+	Reviews      = Resource{"reviews"}
 )
 
 type Scope struct {

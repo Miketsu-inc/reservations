@@ -15,6 +15,7 @@ import {
   StarRating,
   Textarea,
 } from "@reservations/components";
+import { RESOURCES, useAuth } from "@reservations/jabulani/lib";
 import { formatRelativeDate, toAvatar } from "@reservations/lib";
 import { useState } from "react";
 
@@ -27,6 +28,12 @@ export default function ReviewCard({
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { can } = useAuth();
+
+  // reviews whose employee was deleted are only editable by those who can edit everyone's
+  const canEdit = review.employee?.id
+    ? can.edit(RESOURCES.REVIEWS, review.employee.id)
+    : can.editAll(RESOURCES.REVIEWS);
 
   const customer = toAvatar(review.customer);
   const employee = review.employee ? toAvatar(review.employee) : null;
@@ -87,37 +94,39 @@ export default function ReviewCard({
         <div className="flex items-center gap-2">
           <StarRating value={review.rating} iconStyles="size-4 sm:size-5" />
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="text-fg-muted hover:bg-hover cursor-pointer
-                  rounded-lg p-1"
-                aria-label="Review actions"
-              >
-                <Icon icon={MoreVerticalIcon} styles="size-5" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="end">
-              {isReported ? (
-                <p className="text-fg-muted p-2 text-sm">
-                  Reported - under review
-                </p>
-              ) : (
-                <PopoverClose asChild>
-                  <button
-                    type="button"
-                    onClick={() => onReport(review)}
-                    className="text-fg-danger hover:bg-hover flex w-full
-                      items-center gap-2 rounded-md p-2 text-sm"
-                  >
-                    <Icon icon={Flag01Icon} styles="size-4" />
-                    Report review
-                  </button>
-                </PopoverClose>
-              )}
-            </PopoverContent>
-          </Popover>
+          {canEdit && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="text-fg-muted hover:bg-hover cursor-pointer
+                    rounded-lg p-1"
+                  aria-label="Review actions"
+                >
+                  <Icon icon={MoreVerticalIcon} styles="size-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end">
+                {isReported ? (
+                  <p className="text-fg-muted p-2 text-sm">
+                    Reported - under review
+                  </p>
+                ) : (
+                  <PopoverClose asChild>
+                    <button
+                      type="button"
+                      onClick={() => onReport(review)}
+                      className="text-fg-danger hover:bg-hover flex w-full
+                        items-center gap-2 rounded-md p-2 text-sm"
+                    >
+                      <Icon icon={Flag01Icon} styles="size-4" />
+                      Report review
+                    </button>
+                  </PopoverClose>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
 
@@ -180,33 +189,37 @@ export default function ReviewCard({
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
             {review.reply.comment}
           </p>
-          <div className="text-fg-muted flex gap-3 text-xs">
-            <button
-              type="button"
-              onClick={startReplying}
-              className="hover:text-fg cursor-pointer"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onDeleteReply(review.id)}
-              className="hover:text-fg-danger cursor-pointer"
-            >
-              Delete
-            </button>
-          </div>
+          {canEdit && (
+            <div className="text-fg-muted flex gap-3 text-xs">
+              <button
+                type="button"
+                onClick={startReplying}
+                className="hover:text-fg cursor-pointer"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteReply(review.id)}
+                className="hover:text-fg-danger cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       ) : (
-        <Button
-          variant="secondary"
-          styles="px-3 py-1.5 text-xs gap-1.5 w-fit"
-          buttonText="Reply"
-          type="button"
-          onClick={startReplying}
-        >
-          <Icon icon={Comment01Icon} styles="size-3.5" />
-        </Button>
+        canEdit && (
+          <Button
+            variant="secondary"
+            styles="px-3 py-1.5 text-xs gap-1.5 w-fit"
+            buttonText="Reply"
+            type="button"
+            onClick={startReplying}
+          >
+            <Icon icon={Comment01Icon} styles="size-3.5" />
+          </Button>
+        )
       )}
     </Card>
   );

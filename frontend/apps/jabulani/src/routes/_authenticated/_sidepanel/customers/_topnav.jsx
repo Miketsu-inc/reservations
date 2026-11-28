@@ -5,6 +5,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Icon } from "@reservations/components";
 import { TopNavBar, TopNavBarItem } from "@reservations/jabulani/components";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   createFileRoute,
   Outlet,
@@ -19,6 +20,7 @@ export const Route = createFileRoute(
 
 function CustomersLayout() {
   const pathName = useRouterState({ select: (s) => s.location.pathname });
+  const { can } = useAuth();
   const isCustomersActive =
     pathName === "/customers" ||
     (pathName.startsWith("/customers/") &&
@@ -37,14 +39,16 @@ function CustomersLayout() {
           <Icon icon={User03Icon} styles="size-4.5" />
           <span>Customers</span>
         </TopNavBarItem>
-        <TopNavBarItem
-          from={Route.fullPath}
-          to="/customers/blacklist"
-          activeOptions={{ exact: true }}
-        >
-          <Icon icon={UnavailableIcon} styles="size-4.5" />
-          <span>Blacklisted</span>
-        </TopNavBarItem>
+        {can.do(ACTIONS.MANAGE_CUSTOMERS) && (
+          <TopNavBarItem
+            from={Route.fullPath}
+            to="/customers/blacklist"
+            activeOptions={{ exact: true }}
+          >
+            <Icon icon={UnavailableIcon} styles="size-4.5" />
+            <span>Blacklisted</span>
+          </TopNavBarItem>
+        )}
         <TopNavBarItem
           from={Route.fullPath}
           to="/customers/reviews"

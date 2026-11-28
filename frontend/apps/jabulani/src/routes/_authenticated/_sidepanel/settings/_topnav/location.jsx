@@ -281,7 +281,7 @@ function LocationPage() {
               key={location.id}
               location={location}
               merchantId={merchantId}
-              canEditPhotos={can.do(ACTIONS.EDIT_LOCATION_IMAGES)}
+              canEditPhotos={can.do(ACTIONS.EDIT_SETTINGS)}
               onEdit={openEditor}
             />
           ))}

@@ -4,7 +4,6 @@ import (
 	"github.com/miketsu-inc/reservations/backend/internal/domain"
 	catalogServ "github.com/miketsu-inc/reservations/backend/internal/service/catalog"
 	mediaServ "github.com/miketsu-inc/reservations/backend/internal/service/media"
-	"github.com/miketsu-inc/reservations/backend/pkg/currencyx"
 )
 
 func mapToPhaseReqs(in []domain.ServicePhase) []phaseReq {
@@ -232,21 +231,14 @@ func mapToGetAllResp(in []domain.ServicesGroupedByCategory) []getAllResp {
 
 		for j, s := range c.Services {
 			services[j] = serviceResp{
-				Id:              s.Id,
-				MerchantId:      s.MerchantId,
-				BookingType:     s.BookingType,
-				CategoryId:      s.CategoryId,
-				Name:            s.Name,
-				Description:     s.Description,
-				Color:           s.Color,
-				TotalDuration:   s.TotalDuration,
-				Price:           currencyx.FormatPrice(s.Price),
-				PriceType:       s.PriceType,
-				IsActive:        s.IsActive,
-				MinParticipants: s.MinParticipants,
-				MaxParticipants: s.MaxParticipants,
-				Sequence:        s.Sequence,
-				Phases:          mapToPhaseReqs(s.Phases),
+				Id:            s.Id,
+				Name:          s.Name,
+				Color:         s.Color,
+				TotalDuration: s.TotalDuration,
+				BookingType:   s.BookingType,
+				IsActive:      s.IsActive,
+				Sequence:      s.Sequence,
+				EmployeeIds:   s.EmployeeIds,
 			}
 		}
 

@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
   ServerError,
 } from "@reservations/components";
-import { useAuth } from "@reservations/jabulani/lib";
+import { ACTIONS, useAuth } from "@reservations/jabulani/lib";
 import {
   customersQueryOptions,
   invalidateLocalStorageAuth,
@@ -271,6 +271,9 @@ function CustomerActions({
   onEdit,
   onTransfer,
 }) {
+  const { can } = useAuth();
+  const canManage = can.do(ACTIONS.MANAGE_CUSTOMERS);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -291,7 +294,7 @@ function CustomerActions({
           className="flex flex-col *:flex *:items-center *:gap-3 *:rounded-lg
             *:p-2"
         >
-          {!customer.is_dummy && (
+          {canManage && !customer.is_dummy && (
             <PopoverClose asChild>
               <button
                 className="hover:bg-hover cursor-pointer"
@@ -322,7 +325,7 @@ function CustomerActions({
               Edit customer
             </button>
           </PopoverClose>
-          {customer.is_dummy && hasBookings && (
+          {canManage && customer.is_dummy && hasBookings && (
             <PopoverClose asChild>
               <button
                 className="hover:bg-hover cursor-pointer"
@@ -334,7 +337,7 @@ function CustomerActions({
               </button>
             </PopoverClose>
           )}
-          {customer.is_dummy && (
+          {canManage && customer.is_dummy && (
             <PopoverClose asChild>
               <button
                 className="hover:bg-hover text-fg-danger cursor-pointer"
