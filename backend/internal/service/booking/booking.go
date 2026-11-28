@@ -719,11 +719,6 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return domain.ErrEmployeeAccessDenied
 	}
 
-	// check if employee belongs to merchant
-	if _, err := s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId); err != nil {
-		return err
-	}
-
 	service, err := s.catalogRepo.GetServiceWithPhases(ctx, input.ServiceId, actor.MerchantId)
 	if err != nil {
 		return err

@@ -124,58 +124,60 @@ export default function CustomersTable({
             >
               <Icon icon={Edit03Icon} styles="size-4.5" />
             </button>
-            {!canManage ? (
-              <></>
-            ) : params.data.is_dummy ? (
-              <>
-                {params.data.times_booked || params.data.times_cancelled ? (
+            {canManage &&
+              (params.data.is_dummy ? (
+                <>
+                  {params.data.times_booked || params.data.times_cancelled ? (
+                    <button
+                      className="text-fg-muted hover:bg-hover hover:text-fg
+                        cursor-pointer rounded-lg p-2"
+                      onClick={() => onTransfer(params.data.id)}
+                    >
+                      <Icon icon={UserSwitchIcon} styles="size-4.5" />
+                    </button>
+                  ) : (
+                    <></>
+                  )}
                   <button
                     className="text-fg-muted hover:bg-hover hover:text-fg
                       cursor-pointer rounded-lg p-2"
-                    onClick={() => onTransfer(params.data.id)}
+                    onClick={() => {
+                      setSelected({
+                        id: params.data.id,
+                        first_name: params.data.first_name,
+                        last_name: params.data.last_name,
+                      });
+                      setShowDeleteModal(true);
+                    }}
                   >
-                    <Icon icon={UserSwitchIcon} styles="size-4.5" />
+                    <Icon
+                      icon={Delete02Icon}
+                      styles="size-4.5 text-fg-danger"
+                    />
                   </button>
-                ) : (
-                  <></>
-                )}
-                <button
-                  className="text-fg-muted hover:bg-hover hover:text-fg
-                    cursor-pointer rounded-lg p-2"
-                  onClick={() => {
-                    setSelected({
-                      id: params.data.id,
-                      first_name: params.data.first_name,
-                      last_name: params.data.last_name,
-                    });
-                    setShowDeleteModal(true);
-                  }}
-                >
-                  <Icon icon={Delete02Icon} styles="size-4.5 text-fg-danger" />
-                </button>
-              </>
-            ) : (
-              // the handler will decide to blacklist or to delete from blacklist
-              <>
-                {params.data.is_blacklisted ? (
-                  <button
-                    className="text-fg-muted hover:bg-hover hover:text-fg
-                      cursor-pointer rounded-lg p-2"
-                    onClick={() => onBlackList(params.data)}
-                  >
-                    <Icon icon={CheckmarkCircle02Icon} styles="size-4.5" />
-                  </button>
-                ) : (
-                  <button
-                    className="text-fg-muted hover:bg-hover hover:text-fg
-                      cursor-pointer rounded-lg p-2"
-                    onClick={() => onBlackList(params.data)}
-                  >
-                    <Icon icon={UnavailableIcon} styles="size-4.5" />
-                  </button>
-                )}
-              </>
-            )}
+                </>
+              ) : (
+                // the handler will decide to blacklist or to delete from blacklist
+                <>
+                  {params.data.is_blacklisted ? (
+                    <button
+                      className="text-fg-muted hover:bg-hover hover:text-fg
+                        cursor-pointer rounded-lg p-2"
+                      onClick={() => onBlackList(params.data)}
+                    >
+                      <Icon icon={CheckmarkCircle02Icon} styles="size-4.5" />
+                    </button>
+                  ) : (
+                    <button
+                      className="text-fg-muted hover:bg-hover hover:text-fg
+                        cursor-pointer rounded-lg p-2"
+                      onClick={() => onBlackList(params.data)}
+                    >
+                      <Icon icon={UnavailableIcon} styles="size-4.5" />
+                    </button>
+                  )}
+                </>
+              ))}
           </div>
         );
       },

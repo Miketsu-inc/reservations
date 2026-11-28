@@ -199,85 +199,88 @@ export default function ServicePage({
             >
               <ScrollSpyNav />
               <div className="min-w-0 px-4 pt-4 pb-16 md:px-0 md:pt-0 md:pb-0">
-                <div className="flex flex-col gap-16">
-                  <form
-                    ref={serviceFormRef}
-                    className="flex flex-col gap-16"
-                    onSubmit={saveService}
-                  >
-                    <ScrollSpySection id="basicDetails" label="Basic details">
-                      <p className="mb-5 font-semibold">Basic details</p>
-                      <ServiceBasicDetails
-                        service={serviceData}
-                        categories={categories}
-                        onUpdate={updateServiceData}
-                      />
-                    </ScrollSpySection>
-                    <ScrollSpySection
-                      id="pricingDuration"
-                      label="Pricing & duration"
+                <fieldset disabled={!canEdit} className="contents">
+                  <div className="flex flex-col gap-16">
+                    <form
+                      ref={serviceFormRef}
+                      className="flex flex-col gap-16"
+                      onSubmit={saveService}
                     >
-                      <p className="mb-5 font-semibold">Pricing & duration</p>
-                      <ServicePricingDuration
-                        service={serviceData}
-                        setService={setServiceData}
-                        onUpdate={updateServiceData}
-                      />
-                    </ScrollSpySection>
-                    <ScrollSpySection id="teamMembers" label="Team members">
-                      <p className="mb-5 font-semibold">Team members</p>
-                      <TeamMemberMultiSelect
-                        values={serviceData.employee_ids}
-                        onSelect={(employeeIds) =>
-                          updateServiceData({ employee_ids: employeeIds })
+                      <ScrollSpySection id="basicDetails" label="Basic details">
+                        <p className="mb-5 font-semibold">Basic details</p>
+                        <ServiceBasicDetails
+                          service={serviceData}
+                          categories={categories}
+                          onUpdate={updateServiceData}
+                        />
+                      </ScrollSpySection>
+                      <ScrollSpySection
+                        id="pricingDuration"
+                        label="Pricing & duration"
+                      >
+                        <p className="mb-5 font-semibold">Pricing & duration</p>
+                        <ServicePricingDuration
+                          service={serviceData}
+                          setService={setServiceData}
+                          onUpdate={updateServiceData}
+                        />
+                      </ScrollSpySection>
+                      <ScrollSpySection id="teamMembers" label="Team members">
+                        <p className="mb-5 font-semibold">Team members</p>
+                        <TeamMemberMultiSelect
+                          values={serviceData.employee_ids}
+                          disabled={!canEditAll}
+                          onSelect={(employeeIds) =>
+                            updateServiceData({ employee_ids: employeeIds })
+                          }
+                        />
+                        {service?.id && (
+                          <div className="pt-8">
+                            <p className="font-medium">
+                              Advanced team member settings
+                            </p>
+                            <p className="text-fg-muted text-sm">
+                              Manage assignments and override service defaults.
+                            </p>
+                            <Link
+                              to={`/services/team-member-settings/${service.id}`}
+                              className="text-fg-primary inline-block py-2
+                                text-sm hover:underline"
+                            >
+                              Advanced settings
+                            </Link>
+                          </div>
+                        )}
+                      </ScrollSpySection>
+                    </form>
+                    <ScrollSpySection id="products" label="Products">
+                      <p className="mb-5 font-semibold">Products</p>
+                      <ProductAdder
+                        availableProducts={products}
+                        usedProducts={serviceData.used_products}
+                        onUpdate={(updated) =>
+                          updateServiceData({ used_products: updated })
                         }
                       />
-                      {service?.id && (
-                        <div className="pt-8">
-                          <p className="font-medium">
-                            Advanced team member settings
-                          </p>
-                          <p className="text-fg-muted text-sm">
-                            Manage assignments and override service defaults.
-                          </p>
-                          <Link
-                            to={`/services/team-member-settings/${service.id}`}
-                            className="text-fg-primary inline-block py-2 text-sm
-                              hover:underline"
-                          >
-                            Advanced settings
-                          </Link>
-                        </div>
-                      )}
                     </ScrollSpySection>
-                  </form>
-                  <ScrollSpySection id="products" label="Products">
-                    <p className="mb-5 font-semibold">Products</p>
-                    <ProductAdder
-                      availableProducts={products}
-                      usedProducts={serviceData.used_products}
-                      onUpdate={(updated) =>
-                        updateServiceData({ used_products: updated })
-                      }
-                    />
-                  </ScrollSpySection>
-                  <ScrollSpySection id="bookings" label="Bookings">
-                    <p className="mb-5 font-semibold">Bookings</p>
-                    <ServiceBookingSettings
-                      onUpdate={updateServiceData}
-                      settings={serviceData.settings}
-                    />
-                  </ScrollSpySection>
-                  {service?.id && canEdit && (
-                    <Button
-                      type="button"
-                      styles="py-4 mb-2 shadow-none bg-transparent
-                        hover:bg-transparent! text-fg-danger!"
-                      buttonText="Delete service"
-                      onClick={() => setShowDeleteModal(true)}
-                    ></Button>
-                  )}
-                </div>
+                    <ScrollSpySection id="bookings" label="Bookings">
+                      <p className="mb-5 font-semibold">Bookings</p>
+                      <ServiceBookingSettings
+                        onUpdate={updateServiceData}
+                        settings={serviceData.settings}
+                      />
+                    </ScrollSpySection>
+                    {service?.id && canEdit && (
+                      <Button
+                        type="button"
+                        styles="py-4 mb-2 shadow-none bg-transparent
+                          hover:bg-transparent! text-fg-danger!"
+                        buttonText="Delete service"
+                        onClick={() => setShowDeleteModal(true)}
+                      ></Button>
+                    )}
+                  </div>
+                </fieldset>
               </div>
             </div>
           </div>

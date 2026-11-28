@@ -7,7 +7,7 @@ import {
 } from "@reservations/jabulani/lib";
 import { invalidateLocalStorageAuth, useToast } from "@reservations/lib";
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import BlacklistModal from "./-components/BlacklistModal";
 import CustomersTable from "./-components/CustomersTable";
@@ -51,7 +51,7 @@ export const Route = createFileRoute(
     );
 
     if (!can.do(ACTIONS.MANAGE_CUSTOMERS)) {
-      throw redirect({ to: "/customers" });
+      throw new Error("You don't have access to this page");
     }
   },
   loader: async ({
