@@ -471,7 +471,7 @@ export default function EditBookingPanel({
 
             <TeamMemberSelect
               value={bookingData.employeeId}
-              employeeIds={selectedService?.employee_ids}
+              allowedMemberIds={selectedService?.employee_ids}
               onSelect={(option) =>
                 updateBookingData({ employeeId: option.value })
               }

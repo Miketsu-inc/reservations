@@ -32,7 +32,7 @@ type CatalogRepository interface {
 	GetServicePageFormOptions(ctx context.Context, merchantId uuid.UUID) (ServicePageFormOptions, error)
 	GetMinimalServiceInfo(ctx context.Context, merchantId uuid.UUID, serviceId int, locationId int, employeeId *int) (MinimalServiceInfo, error)
 	GetServiceWithPhasesForEmployees(ctx context.Context, serviceId int, employeeIds []int) (map[int]Service, error)
-	GetEmployeeIdsForService(ctx context.Context, serviceId int) ([]int, error)
+	GetEmployeeIdsForService(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]int, error)
 	GetEmployeeServiceSettings(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServiceSettings, error)
 	GetEmployeeServicePhaseOverrides(ctx context.Context, merchantId uuid.UUID, serviceId int) ([]EmployeeServicePhase, error)
 
@@ -83,8 +83,6 @@ type Service struct {
 	ApprovalPolicy   *types.ApprovalType `db:"approval_policy" json:"approval_policy"`
 	// for convenience we do not really query the service without the phases anyway
 	Phases []ServicePhase
-	// only filled for the merchant's service list
-	EmployeeIds []int `db:"-" json:"employee_ids"`
 }
 
 func (s *Service) IsGroupService() bool {
@@ -158,11 +156,22 @@ type ServiceSettings struct {
 	ApprovalPolicy   *types.ApprovalType `json:"approval_policy"`
 }
 
+type ServiceEmployees struct {
+	Id            int               `json:"id"`
+	Name          string            `json:"name"`
+	Color         string            `json:"color"`
+	TotalDuration int               `json:"total_duration"`
+	BookingType   types.BookingType `json:"booking_type"`
+	IsActive      bool              `json:"is_active"`
+	Sequence      int               `json:"sequence"`
+	EmployeeIds   []int             `json:"employee_ids"`
+}
+
 type ServicesGroupedByCategory struct {
-	Id       *int      `json:"id"`
-	Name     *string   `json:"name"`
-	Sequence *int      `json:"sequence"`
-	Services []Service `json:"services"`
+	Id       *int               `json:"id"`
+	Name     *string            `json:"name"`
+	Sequence *int               `json:"sequence"`
+	Services []ServiceEmployees `json:"services"`
 }
 
 type MerchantPageService struct {

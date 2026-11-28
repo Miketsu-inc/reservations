@@ -104,9 +104,8 @@ func (s *Service) getBookingForActor(ctx context.Context, actor actor.EmployeeCo
 	return booking, nil
 }
 
-// Inactive employees are left out, so they can't get new bookings either
-func (s *Service) checkEmployeeDoesService(ctx context.Context, serviceId int, employeeId int) error {
-	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
+func (s *Service) checkEmployeeDoesService(ctx context.Context, merchantId uuid.UUID, serviceId int, employeeId int) error {
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, merchantId, serviceId)
 	if err != nil {
 		return err
 	}
@@ -195,7 +194,7 @@ func (s *Service) assignEmployee(ctx context.Context, tx pgx.Tx, merchantId uuid
 		employeeIds = []int{*employeeId}
 	} else {
 		var err error
-		employeeIds, err = s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, serviceId)
+		employeeIds, err = s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, merchantId, serviceId)
 		if err != nil {
 			return 0, domain.Service{}, err
 		}
@@ -730,7 +729,7 @@ func (s *Service) CreateByMerchant(ctx context.Context, input CreateByMerchantIn
 		return err
 	}
 
-	if err := s.checkEmployeeDoesService(ctx, service.Id, input.EmployeeId); err != nil {
+	if err := s.checkEmployeeDoesService(ctx, actor.MerchantId, service.Id, input.EmployeeId); err != nil {
 		return err
 	}
 
@@ -1076,7 +1075,7 @@ func (s *Service) UpdateByMerchant(ctx context.Context, bookingId int, input Upd
 	if booking.EmployeeId == nil || *booking.EmployeeId != input.EmployeeId {
 		// the service could have been deleted since, then there is no assignment to check
 		if booking.ServiceId != nil {
-			err = s.checkEmployeeDoesService(ctx, *booking.ServiceId, input.EmployeeId)
+			err = s.checkEmployeeDoesService(ctx, actor.MerchantId, *booking.ServiceId, input.EmployeeId)
 		} else {
 			_, err = s.teamRepo.GetEmployee(ctx, actor.MerchantId, input.EmployeeId)
 		}

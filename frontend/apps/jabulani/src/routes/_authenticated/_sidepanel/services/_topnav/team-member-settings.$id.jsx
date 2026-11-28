@@ -176,7 +176,6 @@ function TeamMemberSettingsForm({ data, merchantId, serviceId, queryClient }) {
       ?.label ?? formatDuration(defaultBufferTime);
   const isGroupService = data.booking_type !== "appointment";
 
-  // joining a service needs the service itself to be editable
   const canJoin = canEditService(
     can,
     lastSavedEmployees

@@ -51,7 +51,6 @@ func validateService(phaseCount int, bookingType types.BookingType, maxParticipa
 	return nil
 }
 
-// Unassigned services are only editable by those who can edit everyone's
 func canEditService(can permission.Checker, employeeIds []int) bool {
 	if len(employeeIds) == 0 {
 		return can.EditAll(permission.Services)
@@ -61,18 +60,12 @@ func canEditService(can permission.Checker, employeeIds []int) bool {
 }
 
 func (s *Service) checkServiceEditable(ctx context.Context, actor actor.EmployeeContext, serviceId int) error {
-	// only checks that the service belongs to the merchant
-	if _, err := s.catalogRepo.GetServiceWithPhases(ctx, serviceId, actor.MerchantId); err != nil {
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, actor.MerchantId, serviceId)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrServiceNotFound
 		}
 
-		return err
-	}
-
-	// inactive employees don't make a service shared
-	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
-	if err != nil {
 		return err
 	}
 
@@ -382,7 +375,6 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 		return err
 	}
 
-	// the new assignees have to be editable too, so staff can't hand a service to someone else
 	if !canEditService(permission.For(actor), input.EmployeeIds) {
 		return domain.ErrEmployeeAccessDenied
 	}
@@ -490,7 +482,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) error {
 			return err
 		}
 
-		existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, input.Id)
+		existingEmployees, err := s.catalogRepo.WithTx(tx).GetEmployeeIdsForService(ctx, actor.MerchantId, input.Id)
 		if err != nil {
 			return err
 		}
@@ -718,8 +710,6 @@ type teamMemberSettingsChanges struct {
 	phaseOverrides             []domain.EmployeeServicePhase
 }
 
-// Everyone can change their own row. Joining a service also needs the service itself
-// to be editable, otherwise staff could take over an unassigned service by joining it
 func checkTeamMemberSettingsEditable(can permission.Checker, settings []domain.EmployeeServiceSettings, inputs []UpdateTeamMemberSettingsInput) error {
 	assignedIds := make([]int, 0, len(settings))
 	wasAssigned := make(map[int]bool, len(settings))

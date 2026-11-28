@@ -1,7 +1,6 @@
 import { RESOURCES } from "@reservations/jabulani/lib";
 import { useCallback } from "react";
 
-// Unassigned services are only editable by those who can edit everyone's
 export function canEditService(can, employeeIds) {
   if (employeeIds.length === 0) return can.editAll(RESOURCES.SERVICES);
   return can.edit(RESOURCES.SERVICES, ...employeeIds);

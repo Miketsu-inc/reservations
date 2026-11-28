@@ -430,7 +430,7 @@ export default function NewBookingPanel({
                   </div>
                   <TeamMemberSelect
                     value={bookingData.employee_id}
-                    employeeIds={selectedService.employee_ids}
+                    allowedMemberIds={selectedService.employee_ids}
                     onSelect={(option) =>
                       updateBookingData({ employee_id: option.value })
                     }

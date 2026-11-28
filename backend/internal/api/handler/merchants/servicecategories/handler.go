@@ -29,6 +29,7 @@ func (h *Handler) Routes() *httputil.Router {
 	r.Post("/", h.New)
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
+
 	r.Put("/reorder", h.ReorderCategories)
 
 	return r

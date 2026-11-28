@@ -357,22 +357,14 @@ type getAllResp struct {
 }
 
 type serviceResp struct {
-	Id              int                       `json:"id"`
-	MerchantId      uuid.UUID                 `json:"merchant_id"`
-	BookingType     types.BookingType         `json:"booking_type"`
-	CategoryId      *int                      `json:"category_id"`
-	Name            string                    `json:"name"`
-	Description     *string                   `json:"description"`
-	Color           string                    `json:"color"`
-	TotalDuration   int                       `json:"total_duration"`
-	Price           *currencyx.FormattedPrice `json:"price"`
-	PriceType       types.PriceType           `json:"price_type"`
-	IsActive        bool                      `json:"is_active"`
-	MinParticipants int                       `json:"min_participants"`
-	MaxParticipants int                       `json:"max_participants"`
-	Sequence        int                       `json:"sequence"`
-	Phases          []phaseReq                `json:"phases"`
-	EmployeeIds     []int                     `json:"employee_ids"`
+	Id            int               `json:"id"`
+	Name          string            `json:"name"`
+	Color         string            `json:"color"`
+	TotalDuration int               `json:"total_duration"`
+	BookingType   types.BookingType `json:"booking_type"`
+	IsActive      bool              `json:"is_active"`
+	Sequence      int               `json:"sequence"`
+	EmployeeIds   []int             `json:"employee_ids"`
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {

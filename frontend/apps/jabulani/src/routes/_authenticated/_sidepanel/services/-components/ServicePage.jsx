@@ -29,7 +29,6 @@ export default function ServicePage({
   route,
 }) {
   const { merchantId, employeeId, can } = useAuth();
-  // anyone can create a service as long as they assign themselves
   const canEdit = !service?.id || canEditService(can, service.employee_ids);
   const canEditAll = can.editAll(RESOURCES.SERVICES);
 
@@ -65,9 +64,11 @@ export default function ServicePage({
   const serviceFormRef = useRef(null);
   const [serviceData, setServiceData] = useState(originalData);
   const lastSavedData = useRef(originalData);
+
   // reads the ref at call time, so a save right before navigating doesn't block it
   const hasUnsavedChanges = () =>
     JSON.stringify(serviceData) !== JSON.stringify(lastSavedData.current);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
 

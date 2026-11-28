@@ -190,13 +190,17 @@ func (s *Service) fetchEmployeeAvailabilityData(ctx context.Context, serviceId i
 	return result, nil
 }
 
-func (s *Service) resolveEmployeeIds(ctx context.Context, serviceId int, employeeId *int) ([]int, error) {
+func (s *Service) resolveEmployeeIds(ctx context.Context, merchantId uuid.UUID, serviceId int, employeeId *int) ([]int, error) {
 	if employeeId != nil {
 		return []int{*employeeId}, nil
 	}
 
-	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, serviceId)
+	employeeIds, err := s.catalogRepo.GetEmployeeIdsForService(ctx, merchantId, serviceId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrMerchantServiceMismatch
+		}
+
 		return nil, err
 	}
 
@@ -255,7 +259,7 @@ func (s *Service) GetNextAvailability(ctx context.Context, merchantName string, 
 			return NextAvailable{}, err
 		}
 
-		employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, nil)
+		employeeIds, err := s.resolveEmployeeIds(ctx, merchantId, serviceId, nil)
 		if err != nil {
 			return NextAvailable{}, err
 		}
@@ -392,7 +396,7 @@ func (s *Service) GetDayAvailability(ctx context.Context, merchantName string, s
 		return []DayAvailability{}, err
 	}
 
-	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
+	employeeIds, err := s.resolveEmployeeIds(ctx, merchantId, serviceId, employeeId)
 	if err != nil {
 		return []DayAvailability{}, err
 	}
@@ -467,7 +471,7 @@ func (s *Service) GetAvailabilityForDay(ctx context.Context, merchantName string
 		return FormattedAvailableTimes{}, err
 	}
 
-	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
+	employeeIds, err := s.resolveEmployeeIds(ctx, merchantId, serviceId, employeeId)
 	if err != nil {
 		return FormattedAvailableTimes{}, err
 	}
@@ -563,7 +567,7 @@ func (s *Service) GetGroupAvailability(ctx context.Context, merchantName string,
 		return GroupAvailabilityResult{}, err
 	}
 
-	employeeIds, err := s.resolveEmployeeIds(ctx, serviceId, employeeId)
+	employeeIds, err := s.resolveEmployeeIds(ctx, merchantId, serviceId, employeeId)
 	if err != nil {
 		return GroupAvailabilityResult{}, err
 	}

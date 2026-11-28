@@ -7,9 +7,9 @@ export default function TeamMemberSelect({
   value,
   onSelect,
   hideWhenSingle = true,
-  labelText = "Employee",
-  placeholder = "Select an employee",
-  employeeIds,
+  labelText = "Team member",
+  placeholder = "Select a team member",
+  allowedMemberIds,
   disabled,
   ...props
 }) {
@@ -29,11 +29,12 @@ export default function TeamMemberSelect({
     return null;
   }
 
-  // the current value stays selectable, so an existing record keeps showing its employee
   const options = team
     .filter(
       (member) =>
-        !employeeIds || employeeIds.includes(member.id) || member.id === value
+        !allowedMemberIds ||
+        allowedMemberIds.includes(member.id) ||
+        member.id === value
     )
     .map((member) => {
       const { img, initials, name } = toAvatar(member);
